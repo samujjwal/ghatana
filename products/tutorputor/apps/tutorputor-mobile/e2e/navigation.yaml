@@ -1,0 +1,21 @@
+appId: com.tutorputor.mobile
+---
+# Navigation Flow
+# Tests tab-based navigation structure and stack transitions
+- launchApp
+
+# Verify initial Learn tab is active
+- assertVisible: "Learn"
+- assertVisible: "Continue Learning"
+
+# Navigate to Explore tab
+- tapOn: "Explore"
+- assertVisible: "Explore"
+
+# Navigate to Profile tab
+- tapOn: "Profile"
+- assertVisible: "Profile"
+
+# Return to Learn tab
+- tapOn: "Learn"
+- assertVisible: "Continue Learning"

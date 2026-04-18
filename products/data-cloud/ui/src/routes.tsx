@@ -4,7 +4,7 @@
  * Simplified route structure following the improvement plan:
  * - Unified Data Explorer (replaces Collections, Datasets, Lineage, Quality)
  * - Unified Pipeline Center (replaces Workflows)
- * - Unified Insights (replaces Dashboards, Brain, Cost)
+ * - Unified Insights (operator analytics, brain status, cost review)
  * - Trust Center (replaces Governance)
  *
  * @doc.type config
@@ -14,6 +14,7 @@
 
 import React from 'react';
 import type { RouteObject } from 'react-router';
+import { Navigate } from 'react-router';
 import { DefaultLayout } from './layouts/DefaultLayout';
 import { LoadingState } from './components/common/LoadingState';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
@@ -86,7 +87,7 @@ const AgentPluginManagerPage = React.lazy(() =>
   import('./pages/AgentPluginManagerPage').then((m) => ({ default: m.AgentPluginManagerPage }))
 );
 
-// Legacy pages (kept for backward compatibility)
+// Compatibility alias pages (kept for deep-link continuity)
 const CreateCollectionPage = React.lazy(() =>
   import('./pages/CreateCollectionPage').then((m) => ({ default: m.CreateCollectionPage }))
 );
@@ -211,8 +212,16 @@ export const routes: RouteObject[] = [
             element: withSuspense(DataExplorer),
           },
           {
+            path: 'new',
+            element: withSuspense(CreateCollectionPage),
+          },
+          {
             path: ':id',
             element: withSuspense(DataExplorer),
+          },
+          {
+            path: ':id/edit',
+            element: withSuspense(EditCollectionPage),
           },
           {
             path: ':id/:view',
@@ -322,7 +331,7 @@ export const routes: RouteObject[] = [
       },
 
       // =========================================
-      // LEGACY ROUTES (Backward Compatibility)
+      // COMPATIBILITY ROUTES (Deep-link Continuity)
       // =========================================
 
       { path: 'dashboard', element: withSuspense(IntelligentHub) },
@@ -332,8 +341,8 @@ export const routes: RouteObject[] = [
       { path: 'collections/:id', element: withSuspense(DataExplorer) },
       { path: 'collections/:id/edit', element: withSuspense(EditCollectionPage) },
       { path: 'datasets', element: withSuspense(DataExplorer) },
-      { path: 'lineage', element: withSuspense(DataExplorer) },
-      { path: 'quality', element: withSuspense(DataExplorer) },
+      { path: 'lineage', element: <Navigate to="/data?view=lineage" replace /> },
+      { path: 'quality', element: <Navigate to="/data?view=quality" replace /> },
       { path: 'workflows', element: withSuspense(WorkflowsPage) },
       { path: 'workflows/new', element: withSuspense(SmartWorkflowBuilder) },
       { path: 'workflows/:id', element: withSuspense(WorkflowDesigner) },

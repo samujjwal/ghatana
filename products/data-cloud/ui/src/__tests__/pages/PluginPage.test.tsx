@@ -1,8 +1,8 @@
 /**
  * Tests for the Plugins Page.
  *
- * Covers the PluginsPage component — plugin browsing (marketplace),
- * installed tab, and upload tab rendering.
+ * Covers the PluginsPage component — bundled plugin inventory,
+ * installed tab, and launcher-bound delivery guidance rendering.
  *
  * @doc.type test
  * @doc.purpose RTL tests for PluginsPage rendering and interactions
@@ -10,6 +10,12 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+    PLUGIN_DELIVERY_BOUNDARY_CONTINUATION,
+    PLUGIN_DELIVERY_BOUNDARY_DETAIL,
+    PLUGINS_CATALOG_BOUNDARY_DETAIL,
+    PLUGINS_INVENTORY_HEADER_DETAIL,
+} from '@/lib/runtime-boundaries';
 import { TestWrapper } from '../test-utils/wrapper';
 import type { Plugin } from '../../api/plugin.service';
 
@@ -96,7 +102,7 @@ describe('PluginPage — PluginsPage', () => {
         expect(screen.getByText('PII Guard')).toBeInTheDocument();
         expect(within(screen.getByText('Total').closest('div')?.parentElement?.parentElement as HTMLElement).getByText('2')).toBeInTheDocument();
         expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(2);
-        expect(screen.getByText(/monitor the bundled plugins shipped with the current launcher build/i)).toBeInTheDocument();
+        expect(screen.getByText(PLUGINS_INVENTORY_HEADER_DETAIL)).toBeInTheDocument();
     });
 
     it('filters installed plugins by search, category, and status then clears filters', async () => {
@@ -142,10 +148,11 @@ describe('PluginPage — PluginsPage', () => {
         await screen.findByText('Alpha Connector');
 
         fireEvent.click(screen.getByRole('button', { name: /catalog boundary/i }));
-        expect(screen.getByText(/marketplace browsing, runtime installation, and custom uploads are intentionally unavailable/i)).toBeInTheDocument();
+        expect(screen.getByText(PLUGINS_CATALOG_BOUNDARY_DETAIL)).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: /deployment/i }));
-        expect(screen.getByText(/publish a new Data Cloud server build that includes the updated bundled plugin artifact/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /How Plugin Changes Ship/i }).parentElement).toHaveTextContent(PLUGIN_DELIVERY_BOUNDARY_DETAIL);
+        expect(screen.getByRole('heading', { name: /How Plugin Changes Ship/i }).parentElement).toHaveTextContent(PLUGIN_DELIVERY_BOUNDARY_CONTINUATION);
     });
 
     it('invokes the canonical runtime toggle actions for installed plugins', async () => {

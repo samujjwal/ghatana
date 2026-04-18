@@ -9,29 +9,16 @@
  * @doc.pattern Service
  */
 
+import { z } from 'zod';
 import { apiClient } from '../lib/api/client';
+import SessionBootstrap from '../lib/auth/session';
 import type { AlertRule } from '../components/alerts/AlertRuleForm';
+import {
+  ALERTS_UNSUPPORTED_MESSAGE,
+  createRuntimeBoundaryError,
+} from '@/lib/runtime-boundaries';
 
-export const ALERTS_UNSUPPORTED_MESSAGE = 'Alert management APIs are not exposed by the current Data Cloud launcher API.';
-
-function unsupportedAlertsOperation<T>(message: string = ALERTS_UNSUPPORTED_MESSAGE): Promise<T> {
-  return Promise.reject(new Error(message));
-}
-
-function createInertEventSource(): EventSource {
-  return {
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-    close: () => undefined,
-    dispatchEvent: () => false,
-    onerror: null,
-    onmessage: null,
-    onopen: null,
-    readyState: EventSource.CLOSED,
-    url: '',
-    withCredentials: false,
-  } as unknown as EventSource;
-}
+export { ALERTS_UNSUPPORTED_MESSAGE } from '@/lib/runtime-boundaries';
 
 export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
@@ -75,76 +62,271 @@ export interface AlertQueryParams {
   offset?: number;
 }
 
+const AlertSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  severity: z.enum(['critical', 'warning', 'info']),
+  status: z.enum(['active', 'acknowledged', 'resolved']),
+  source: z.string(),
+  createdAt: z.string(),
+  acknowledgedAt: z.string().optional(),
+  resolvedAt: z.string().optional(),
+});
+
+const AlertGroupSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  rootCause: z.string(),
+  alertIds: z.array(z.string()),
+  aiConfidence: z.number(),
+  suggestedAction: z.string(),
+  suggestedActionType: z.enum(['auto', 'manual']),
+});
+
+const ResolutionSuggestionSchema = z.object({
+  id: z.string(),
+  alertId: z.string(),
+  suggestion: z.string(),
+  confidence: z.number(),
+  canAutoResolve: z.boolean(),
+  steps: z.array(z.string()).optional(),
+});
+
+const AlertRuleSchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  description: z.string().optional(),
+  enabled: z.boolean(),
+  severity: z.enum(['critical', 'warning', 'info']),
+  conditionType: z.enum(['threshold', 'anomaly', 'pattern', 'absence']),
+  metric: z.string(),
+  operator: z.enum(['gt', 'lt', 'eq', 'gte', 'lte']),
+  threshold: z.number(),
+  duration: z.number(),
+  channels: z.array(z.enum(['email', 'slack', 'webhook', 'pagerduty'])),
+  recipients: z.array(z.string()).optional(),
+  webhookUrl: z.string().optional(),
+});
+
+const AlertListEnvelopeSchema = z.object({
+  tenantId: z.string(),
+  alerts: z.array(AlertSchema),
+  count: z.number(),
+  timestamp: z.string(),
+});
+
+const AlertGroupListEnvelopeSchema = z.object({
+  tenantId: z.string(),
+  groups: z.array(AlertGroupSchema),
+  count: z.number(),
+  timestamp: z.string(),
+});
+
+const ResolutionSuggestionEnvelopeSchema = z.object({
+  tenantId: z.string(),
+  suggestions: z.array(ResolutionSuggestionSchema),
+  count: z.number(),
+  timestamp: z.string(),
+});
+
+const AlertRuleListEnvelopeSchema = z.object({
+  tenantId: z.string(),
+  rules: z.array(AlertRuleSchema),
+  count: z.number(),
+  timestamp: z.string(),
+});
+
+const ALERT_EVENT_TYPES = [
+  'alert.acknowledged',
+  'alert.resolved',
+  'alert.group.resolved',
+  'alert.suggestion.applied',
+  'alert.rule.created',
+  'alert.rule.updated',
+  'alert.rule.deleted',
+] as const;
+
+function getTenantId(explicitTenantId?: string): string {
+  return explicitTenantId ?? SessionBootstrap.requireTenantId();
+}
+
+function normaliseApiError(error: unknown): never {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    const status = Number((error as { status?: unknown }).status);
+    if (status === 404 || status === 405 || status === 501) {
+      throw createRuntimeBoundaryError(ALERTS_UNSUPPORTED_MESSAGE);
+    }
+  }
+  throw error instanceof Error ? error : new Error('Unknown alerts API error');
+}
+
 export class AlertsService {
   /** List active and historical alerts */
   async getAlerts(params: AlertQueryParams = {}): Promise<Alert[]> {
-    void params;
-    return unsupportedAlertsOperation<Alert[]>();
+    const tenantId = getTenantId(params.tenantId);
+    try {
+      const response = await apiClient.get('/alerts', {
+        params: {
+          ...params,
+          tenantId,
+        },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return AlertListEnvelopeSchema.parse(response).alerts;
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Acknowledge an alert */
   async acknowledgeAlert(alertId: string): Promise<Alert> {
-    void alertId;
-    return unsupportedAlertsOperation<Alert>();
+    const tenantId = getTenantId();
+    try {
+      const response = await apiClient.post(`/alerts/${alertId}/acknowledge`, {}, {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return AlertSchema.parse(response);
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Resolve an alert */
   async resolveAlert(alertId: string): Promise<Alert> {
-    void alertId;
-    return unsupportedAlertsOperation<Alert>();
+    const tenantId = getTenantId();
+    try {
+      const response = await apiClient.post(`/alerts/${alertId}/resolve`, {}, {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return AlertSchema.parse(response);
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Get AI-detected correlated alert groups */
   async getAlertGroups(): Promise<AlertGroup[]> {
-    return unsupportedAlertsOperation<AlertGroup[]>();
+    const tenantId = getTenantId();
+    try {
+      const response = await apiClient.get('/alerts/groups', {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return AlertGroupListEnvelopeSchema.parse(response).groups;
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Auto-resolve a correlated alert group */
   async resolveGroup(groupId: string): Promise<void> {
-    void groupId;
-    return unsupportedAlertsOperation<void>();
+    const tenantId = getTenantId();
+    try {
+      await apiClient.post(`/alerts/groups/${groupId}/resolve`, {}, {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Get AI resolution suggestions for active alerts */
   async getResolutionSuggestions(): Promise<ResolutionSuggestion[]> {
-    return unsupportedAlertsOperation<ResolutionSuggestion[]>();
+    const tenantId = getTenantId();
+    try {
+      const response = await apiClient.get('/alerts/suggestions', {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return ResolutionSuggestionEnvelopeSchema.parse(response).suggestions;
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Apply an AI resolution suggestion */
   async applySuggestion(suggestionId: string): Promise<void> {
-    void suggestionId;
-    return unsupportedAlertsOperation<void>();
+    const tenantId = getTenantId();
+    try {
+      await apiClient.post(`/alerts/suggestions/${suggestionId}/apply`, {}, {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Open an SSE stream for live alert events */
   openStream(): EventSource {
-    return createInertEventSource();
+    const tenantId = getTenantId();
+    const query = new URLSearchParams({
+      tenantId,
+      types: ALERT_EVENT_TYPES.join(','),
+    });
+    const baseUrl = import.meta.env.VITE_API_URL ?? '/api/v1';
+    return new EventSource(`${baseUrl}/alerts/stream?${query.toString()}`);
   }
 
   // ==================== Alert Rules (B5) ====================
 
   /** List all configured alert rules */
   async listAlertRules(): Promise<AlertRule[]> {
-    return unsupportedAlertsOperation<AlertRule[]>();
+    const tenantId = getTenantId();
+    try {
+      const response = await apiClient.get('/alerts/rules', {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return AlertRuleListEnvelopeSchema.parse(response).rules;
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Create a new alert rule */
   async createAlertRule(rule: Omit<AlertRule, 'id'>): Promise<AlertRule> {
-    void rule;
-    return unsupportedAlertsOperation<AlertRule>();
+    const tenantId = getTenantId();
+    try {
+      const response = await apiClient.post('/alerts/rules', rule, {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return AlertRuleSchema.parse(response);
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Update an existing alert rule */
   async updateAlertRule(ruleId: string, rule: Partial<AlertRule>): Promise<AlertRule> {
-    void ruleId;
-    void rule;
-    return unsupportedAlertsOperation<AlertRule>();
+    const tenantId = getTenantId();
+    try {
+      const response = await apiClient.put(`/alerts/rules/${ruleId}`, rule, {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+      return AlertRuleSchema.parse(response);
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 
   /** Delete an alert rule */
   async deleteAlertRule(ruleId: string): Promise<void> {
-    void ruleId;
-    return unsupportedAlertsOperation<void>();
+    const tenantId = getTenantId();
+    try {
+      await apiClient.delete(`/alerts/rules/${ruleId}`, {
+        params: { tenantId },
+        headers: { 'X-Tenant-ID': tenantId },
+      });
+    } catch (error) {
+      return normaliseApiError(error);
+    }
   }
 }
 

@@ -83,7 +83,6 @@ class DataCloudHttpServerAiAssistTest {
 
         @Test
         @DisplayName("returns 200 with suggestion when LLM is wired")
-        @SuppressWarnings("unchecked")
         void withLlm_returns200WithSuggestion() throws Exception {
             CompletionResult result = mock(CompletionResult.class);
             when(result.getText()).thenReturn("You could add an 'updatedAt' timestamp field.");
@@ -101,13 +100,13 @@ class DataCloudHttpServerAiAssistTest {
                 "{\"collection\":\"users\",\"fields\":[\"id\",\"email\"]}");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked") Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = readJsonObject(resp.body());
             assertThat(body).containsKey("data");
-            @SuppressWarnings("unchecked") Map<String, Object> data = (Map<String, Object>) body.get("data");
+            Map<String, Object> data = readChildObject(body, "data");
             // LLM response is wrapped as {"suggestions": [...]} by the handler
             assertThat(data).containsKey("suggestions");
             assertThat(body).containsKey("ai");
-            @SuppressWarnings("unchecked") Map<String, Object> ai = (Map<String, Object>) body.get("ai");
+            Map<String, Object> ai = readChildObject(body, "ai");
             assertThat((Double) ai.get("confidence")).isGreaterThan(0.0);
             assertThat(ai).containsEntry("fallback", false);
         }
@@ -123,17 +122,16 @@ class DataCloudHttpServerAiAssistTest {
                 "{\"collection\":\"orders\",\"fields\":[\"id\",\"amount\"]}");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked") Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = readJsonObject(resp.body());
             assertThat(body).containsKey("data");
             assertThat(body).containsKey("ai");
-            @SuppressWarnings("unchecked") Map<String, Object> ai = (Map<String, Object>) body.get("ai");
+            Map<String, Object> ai = readChildObject(body, "ai");
             assertThat(ai).containsEntry("fallback", true);
             assertThat((Double) ai.get("confidence")).isLessThan(0.5);
         }
 
         @Test
         @DisplayName("returns 200 with heuristic fallback when LLM throws")
-        @SuppressWarnings("unchecked")
         void withLlmError_fallsBackGracefully() throws Exception {
             // Use Promise.ofException() so the Eventloop propagates the failure to the handler
             when(mockCompletion.complete(any()))
@@ -148,8 +146,8 @@ class DataCloudHttpServerAiAssistTest {
                 "{\"collection\":\"products\",\"fields\":[\"sku\"]}");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked") Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-            @SuppressWarnings("unchecked") Map<String, Object> ai = (Map<String, Object>) body.get("ai");
+            Map<String, Object> body = readJsonObject(resp.body());
+            Map<String, Object> ai = readChildObject(body, "ai");
             assertThat(ai).containsEntry("fallback", true);
         }
     }
@@ -171,14 +169,78 @@ class DataCloudHttpServerAiAssistTest {
                 "{\"collections\":[\"orders\"],\"goal\":\"revenue trend\"}");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked") Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = readJsonObject(resp.body());
             assertThat(body).containsKey("data");
-            @SuppressWarnings("unchecked") Map<String, Object> ai = (Map<String, Object>) body.get("ai");
+            Map<String, Object> ai = readChildObject(body, "ai");
             assertThat(ai).containsEntry("fallback", true);
+        }
+
+        @Test
+        @DisplayName("quality summary exposes fallback rates and separates workflow draft telemetry")
+        @SuppressWarnings("unchecked")
+        void qualitySummary_reportsTypeMetrics() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            post("/api/v1/analytics/suggest", "{\"collections\":[\"orders\"],\"goal\":\"revenue trend\"}");
+            post("/api/v1/pipelines/draft", "{\"prompt\":\"Load customer data and validate records\"}");
+
+            HttpResponse<String> resp = get("/api/v1/ai/quality-summary");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> body = readJsonObject(resp.body());
+            Map<String, Object> data = readChildObject(body, "data");
+            assertThat(data).containsEntry("scope", "launcher-process");
+            Map<String, Object> summary = readChildObject(data, "summary");
+            assertThat(summary).containsEntry("requestCount", 2);
+            assertThat(summary).containsEntry("fallbackCount", 2);
+            assertThat(summary).containsEntry("llmConfigured", false);
+
+            java.util.List<Map<String, Object>> types = (java.util.List<Map<String, Object>>) data.get("types");
+            Map<String, Object> analyticsSuggest = types.stream()
+                .filter(type -> "analytics_suggest".equals(type.get("type")))
+                .findFirst()
+                .orElseThrow();
+            Map<String, Object> pipelineDraft = types.stream()
+                .filter(type -> "pipeline_draft".equals(type.get("type")))
+                .findFirst()
+                .orElseThrow();
+
+            assertThat(analyticsSuggest).containsEntry("fallbackCount", 1);
+            assertThat(analyticsSuggest).containsEntry("requestCount", 1);
+            assertThat(analyticsSuggest).containsEntry("route", "/api/v1/analytics/suggest");
+            assertThat(pipelineDraft).containsEntry("fallbackCount", 1);
+            assertThat(pipelineDraft).containsEntry("route", "/api/v1/pipelines/draft");
+            assertThat(pipelineDraft).containsEntry("provenanceMode", "ai-envelope-and-draft-provenance");
         }
     }
 
     // ──────────────────── POST /api/v1/pipelines/:id/optimise-hint ────────────────────
+
+    @Nested
+    @DisplayName("POST /api/v1/pipelines/draft")
+    class PipelineDraftTests {
+
+        @Test
+        @DisplayName("returns 200 with heuristic draft when no LLM")
+        void noLlm_returns200WithDraft() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = post("/api/v1/pipelines/draft",
+                "{\"prompt\":\"Load customer data, validate records, save to warehouse\"}");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> body = readJsonObject(resp.body());
+            Map<String, Object> data = readChildObject(body, "data");
+            assertThat(data).containsKeys("workflowId", "name", "description", "steps", "provenance");
+            assertThat(data.get("steps")).isInstanceOfAny(java.util.List.class);
+            Map<String, Object> ai = readChildObject(body, "ai");
+            assertThat(ai).containsEntry("fallback", true);
+        }
+    }
 
     @Nested
     @DisplayName("POST /api/v1/pipelines/:pipelineId/optimise-hint")
@@ -195,7 +257,7 @@ class DataCloudHttpServerAiAssistTest {
                 "{\"pipelineId\":\"etl-001\",\"avgLatencyMs\":8000,\"stepCount\":12}");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked") Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = readJsonObject(resp.body());
             assertThat(body).containsKey("data");
         }
     }
@@ -217,7 +279,7 @@ class DataCloudHttpServerAiAssistTest {
                 "{\"queryType\":\"SEARCH\",\"collection\":\"events\",\"resultCount\":42}");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked") Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = readJsonObject(resp.body());
             assertThat(body).containsKey("data");
             assertThat(body).containsKey("ai");
         }
@@ -230,8 +292,28 @@ class DataCloudHttpServerAiAssistTest {
             .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
             .uri(URI.create("http://127.0.0.1:" + port + path))
             .header("Content-Type", "application/json")
+            .header("X-Tenant-ID", "tenant-a")
             .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> get(String path) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("X-Tenant-ID", "tenant-a")
+            .build();
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> readJsonObject(String payload) throws IOException {
+        return mapper.readValue(payload, Map.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> readChildObject(Map<String, Object> parent, String key) {
+        return (Map<String, Object>) parent.get(key);
     }
 
     private static int findFreePort() throws IOException {

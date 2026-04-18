@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDashboard } from "../hooks/useDashboard";
-import { Box, Card } from "@/components/ui";
+import { useRecommendations } from "../hooks/useRecommendations";
+import { Box, Card, Button } from "@/components/ui";
 import { cardStyles, textStyles, badgeStyles, cn } from "../theme";
 import { StatCard } from "../components/StatCard";
 import { PageHeader } from "../components/PageHeader";
-import { ContentGenerationNav } from "../components/content-generation/ContentGenerationNav";
+import { ChevronDown, ChevronUp, Sparkles, BookOpen, Compass, Brain, Target } from "lucide-react";
 
 // Local type definitions for component props
 type EnrollmentStatus = "active" | "completed" | "paused" | "expired";
@@ -12,6 +14,7 @@ type EnrollmentStatus = "active" | "completed" | "paused" | "expired";
 interface Enrollment {
   id: string;
   moduleId: string;
+  moduleTitle?: string;
   status: EnrollmentStatus;
   progress: number;
   progressPercent: number;
@@ -34,16 +37,20 @@ interface ModuleSummary {
   tags: string[];
   domain?: string;
   progressPercent?: number;
+  isAiRecommended?: boolean;
+  recommendationReason?: string;
 }
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data, isLoading, error } = useDashboard();
+  const { data: aiRecommendations } = useRecommendations();
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading dashboard...</div>
+        <div className="text-lg">Loading your learning...</div>
       </div>
     );
   }
@@ -51,7 +58,7 @@ export function DashboardPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-600">Error loading dashboard</div>
+        <div className="text-red-600">Could not load dashboard. Please try again.</div>
       </div>
     );
   }
@@ -60,79 +67,49 @@ export function DashboardPage() {
     return null;
   }
 
-  const userName = data.user?.displayName || data.user?.email || "Student";
-  const userEmail = data.user?.email;
+  const userName = data.user?.displayName?.split(" ")[0] || data.user?.email || "Learner";
   const currentEnrollments = data.currentEnrollments ?? [];
-  const recommendedModules = data.recommendedModules ?? [];
-  const stats = data.stats;
-
-  const totalEnrollments = currentEnrollments.length;
-  const completedEnrollments = currentEnrollments.filter(
-    (enrollment) => enrollment.status === "completed",
-  ).length;
-  const averageProgress =
-    totalEnrollments > 0
-      ? currentEnrollments.reduce(
-          (sum, enrollment) => sum + (enrollment.progressPercent ?? 0),
-          0,
-        ) / totalEnrollments
-      : 0;
+  const recommendedModules = aiRecommendations?.modules ?? data.recommendedModules ?? [];
+  const hasActiveEnrollments = currentEnrollments.length > 0;
+  const topEnrollment = hasActiveEnrollments ? currentEnrollments[0] : null;
 
   const dashboardStats = {
-    totalEnrollments: stats?.totalEnrollments ?? totalEnrollments,
-    completedModules: stats?.completedModules ?? completedEnrollments,
-    averageProgress: stats?.averageProgress ?? averageProgress,
+    totalEnrollments: data.stats?.totalEnrollments ?? currentEnrollments.length,
+    completedModules: data.stats?.completedModules ?? currentEnrollments.filter(e => e.status === "completed").length,
+    averageProgress: data.stats?.averageProgress ?? 0,
   };
-  const featureTiles = [
-    {
-      icon: "🧭",
-      title: "Learning Pathways",
-      description: "Follow curated paths tailored to your goals.",
-      href: "/pathways",
-    },
-    {
-      icon: "📚",
-      title: "Browse Modules",
-      description: "Search and explore all available modules.",
-      href: "/search",
-    },
-    {
-      icon: "🤖",
-      title: "AI Tutor",
-      description: "Get on-demand explanations and guidance.",
-      href: "/ai-tutor",
-    },
-    {
-      icon: "📝",
-      title: "Assessments",
-      description: "Check your understanding with quizzes and exams.",
-      href: "/assessments",
-    },
-    {
-      icon: "📈",
-      title: "Analytics",
-      description: "Track your progress and learning trends.",
-      href: "/analytics",
-    },
-    {
-      icon: "🛒",
-      title: "Marketplace",
-      description: "Discover new simulations and learning content.",
-      href: "/marketplace",
-    },
+
+  // Primary quick actions (always visible)
+  const primaryActions = [
+    { icon: BookOpen, label: "Browse Modules", href: "/modules", color: "bg-blue-500" },
+    { icon: Brain, label: "AI Tutor", href: "/ai-tutor", color: "bg-purple-500" },
+  ];
+
+  // Advanced tools (progressively disclosed)
+  const advancedActions = [
+    { icon: Compass, label: "Learning Pathways", href: "/pathways", color: "bg-green-500" },
+    { icon: Target, label: "Assessments", href: "/assessments", color: "bg-orange-500" },
   ];
 
   return (
     <Box className="p-6">
       <div className="max-w-6xl mx-auto">
-        <PageHeader
-          title={`Welcome back, ${userName}`}
-          description={userEmail || undefined}
-        />
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className={cn(textStyles.h1, "mb-2")}>
+            Hello, {userName}!
+          </h1>
+          <p className={textStyles.muted}>
+            {hasActiveEnrollments
+              ? "Ready to continue your journey?"
+              : "What would you like to learn today?"}
+          </p>
+        </div>
 
+        {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 min-w-[260px]">
           <StatCard
-            title="Enrollments"
+            title="Enrolled"
             value={dashboardStats.totalEnrollments}
             color="blue"
           />
@@ -143,78 +120,44 @@ export function DashboardPage() {
           />
           <StatCard
             title="Avg. Progress"
-            value={`${dashboardStats.averageProgress.toFixed(0)}%`}
-            color="orange"
+            value={`${Math.round(dashboardStats.averageProgress)}%`}
+            color="indigo"
           />
         </div>
 
-        <ContentGenerationNav />
+        {/* Primary CTA: Continue Learning */}
+        {hasActiveEnrollments && topEnrollment && (
+          <section className="mb-8">
+            <ContinueLearningCard 
+              enrollment={topEnrollment}
+              onResume={() => navigate(`/modules/${topEnrollment.moduleId}`)}
+              onViewAll={() => navigate("/enrollments")}
+            />
+          </section>
+        )}
 
-        <section className="mb-12">
-          <h2 className={cn(textStyles.h2, "mb-2")}>
-            Design your learning journey
-          </h2>
-          <p className={cn(textStyles.muted, "mb-4")}>
-            Jump into the core areas of TutorPutor just like the Design section
-            in AEP.
-          </p>
-          <div className="grid grid-cols-1 gap-4">
-            {featureTiles.map((tile) => (
-              <Link
-                key={tile.title}
-                to={tile.href}
-                className={cn(
-                  cardStyles.interactive,
-                  cardStyles.padded,
-                  "flex items-start gap-4",
-                )}
-              >
-                <span className="text-3xl mt-1">{tile.icon}</span>
-                <div>
-                  <h3 className={cn(textStyles.h3, "mb-1")}>{tile.title}</h3>
-                  <p className={textStyles.muted}>{tile.description}</p>
-                </div>
-              </Link>
-            ))}
+        {/* Secondary: Start Something New */}
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className={textStyles.h2}>Start Something New</h2>
+            <Link 
+              to="/modules" 
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              Explore all →
+            </Link>
           </div>
-        </section>
-
-        <section className="mb-12 mt-8">
-          <h2 className={cn(textStyles.h2, "mb-4")}>Current Enrollments</h2>
-          {currentEnrollments.length === 0 ? (
-            <Card padded={false} className={cn(cardStyles.base, "text-center")}>
-              <div className={cn("p-6", textStyles.muted)}>
-                No active enrollments. Start learning by exploring modules
-                below!
-              </div>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentEnrollments.map((enrollment) => (
-                <EnrollmentCard
-                  key={enrollment.id}
-                  enrollment={enrollment}
-                  module={recommendedModules.find(
-                    (m) => m.id === enrollment.moduleId,
-                  )}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section>
-          <h2 className={cn(textStyles.h2, "mb-4")}>Recommended Modules</h2>
+          
           {recommendedModules.length === 0 ? (
-            <Card padded={false} className={cn(cardStyles.base, "text-center")}>
-              <div className={cn("p-6", textStyles.muted)}>
-                No recommended modules yet. Explore pathways or modules to get
-                personalized suggestions.
-              </div>
-            </Card>
+            <EmptyState 
+              icon="🎯"
+              title="Discover your next learning adventure"
+              description="Our AI will recommend modules based on your interests and goals."
+              action={{ label: "Browse Modules", href: "/modules" }}
+            />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedModules.map((module) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recommendedModules.slice(0, 3).map((module) => (
                 <ModuleCard
                   key={module.id}
                   module={module}
@@ -224,54 +167,116 @@ export function DashboardPage() {
             </div>
           )}
         </section>
+
+        {/* Quick Actions */}
+        <section className="mb-8">
+          <h2 className={cn(textStyles.h2, "mb-4")}>Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {primaryActions.map((action) => (
+              <QuickActionButton key={action.label} {...action} />
+            ))}
+          </div>
+
+          {/* Progressive Disclosure: More Options */}
+          <div className="mt-4">
+            <button
+              onClick={() => setShowMoreOptions(!showMoreOptions)}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              {showMoreOptions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {showMoreOptions ? "Show less" : "More options"}
+            </button>
+            
+            {showMoreOptions && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 animate-in fade-in slide-in-from-top-2">
+                {advancedActions.map((action) => (
+                  <QuickActionButton key={action.label} {...action} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* All Enrollments (if more than 1) */}
+        {currentEnrollments.length > 1 && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={textStyles.h2}>My Learning</h2>
+              <Link 
+                to="/enrollments" 
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                See all →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {currentEnrollments.slice(1, 3).map((enrollment) => (
+                <CompactEnrollmentCard
+                  key={enrollment.id}
+                  enrollment={enrollment}
+                  onClick={() => navigate(`/modules/${enrollment.moduleId}`)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </Box>
   );
 }
 
-function EnrollmentCard({
-  enrollment,
-  module,
-}: {
-  enrollment: Enrollment;
-  module?: ModuleSummary;
+// Components
+
+function ContinueLearningCard({ 
+  enrollment, 
+  onResume, 
+  onViewAll 
+}: { 
+  enrollment: Enrollment; 
+  onResume: () => void;
+  onViewAll: () => void;
 }) {
   return (
-    <Card
-      padded={false}
-      className={cn(cardStyles.base, "hover:shadow-md transition-shadow")}
-    >
+    <Card className={cn(cardStyles.base, "bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100")}>
       <div className="p-6">
-        <h3 className={cn(textStyles.h3, "mb-2")}>
-          {module?.title || "Module"}
-        </h3>
-        <div className="mb-4">
-          <div className={cn("flex justify-between mb-2", textStyles.small)}>
-            <span>Progress</span>
-            <span>{enrollment.progressPercent.toFixed(1)}%</span>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <span className={cn(badgeStyles.info, "mb-2 inline-block")}>Continue Learning</span>
+            <h3 className={cn(textStyles.h3, "text-indigo-900")}>
+              {enrollment.moduleTitle || "Your Current Module"}
+            </h3>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div className="text-right">
+            <span className="text-2xl font-bold text-indigo-600">
+              {Math.round(enrollment.progressPercent)}%
+            </span>
+            <p className="text-sm text-gray-500">complete</p>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="w-full bg-white rounded-full h-3 shadow-inner">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all shadow-sm"
               style={{ width: `${enrollment.progressPercent}%` }}
             />
           </div>
         </div>
-        <div
-          className={cn(textStyles.small, "text-gray-500 dark:text-gray-400")}
-        >
-          Status: <span className="font-medium">{enrollment.status}</span>
-        </div>
-        {enrollment.timeSpentSeconds > 0 && (
-          <div
-            className={cn(
-              textStyles.small,
-              "text-gray-500 dark:text-gray-400 mt-1",
-            )}
+
+        <div className="flex gap-3">
+          <Button 
+            onClick={onResume}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
           >
-            Time spent: {Math.floor(enrollment.timeSpentSeconds / 60)} minutes
-          </div>
-        )}
+            Resume Learning
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={onViewAll}
+          >
+            See All
+          </Button>
+        </div>
       </div>
     </Card>
   );
@@ -287,40 +292,132 @@ function ModuleCard({
   return (
     <Card
       padded={false}
-      className={cn(cardStyles.interactive, "cursor-pointer")}
+      className={cn(cardStyles.interactive, "cursor-pointer hover:shadow-md transition-all")}
       onClick={onClick}
     >
-      <div className="p-6">
+      <div className="p-5">
         <div className="flex items-start justify-between mb-2">
-          <h3 className={textStyles.h3}>{module.title}</h3>
-          <span className={badgeStyles.info}>{module.domain}</span>
+          <h3 className={cn(textStyles.h4, "line-clamp-2 flex-1 mr-2")}>{module.title}</h3>
+          {module.isAiRecommended && (
+            <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" title="AI Recommended" />
+          )}
         </div>
-        <p className={cn(textStyles.small, "mb-4")}>{module.tags.join(", ")}</p>
-        <div
-          className={cn("flex items-center justify-between", textStyles.small)}
-        >
-          <span className="text-gray-500 dark:text-gray-400">
-            {module.estimatedTimeMinutes} min
-          </span>
-          <span className="text-gray-500 dark:text-gray-400 capitalize">
-            {module.difficulty}
-          </span>
+        
+        {module.recommendationReason && (
+          <p className="text-xs text-amber-600 mb-2 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            {module.recommendationReason}
+          </p>
+        )}
+        
+        <p className={cn(textStyles.small, "text-gray-500 mb-3 line-clamp-2")}>
+          {module.description || module.tags.join(", ")}
+        </p>
+        
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span className={cn(badgeStyles.info, "text-xs py-0.5 px-2")}>{module.domain}</span>
+          <span>{module.estimatedTimeMinutes} min</span>
         </div>
-        {module.progressPercent !== undefined && (
-          <div className="mt-4">
-            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-              <span>Your progress</span>
-              <span>{module.progressPercent.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+      </div>
+    </Card>
+  );
+}
+
+function CompactEnrollmentCard({
+  enrollment,
+  onClick,
+}: {
+  enrollment: Enrollment;
+  onClick?: () => void;
+}) {
+  return (
+    <Card
+      padded={false}
+      className={cn(cardStyles.interactive, "cursor-pointer hover:shadow-sm transition-all")}
+      onClick={onClick}
+    >
+      <div className="p-4 flex items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <h4 className={cn(textStyles.h4, "truncate")}>
+            {enrollment.moduleTitle || "Module"}
+          </h4>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="flex-1 bg-gray-200 rounded-full h-1.5">
               <div
-                className="bg-green-600 h-1.5 rounded-full"
-                style={{ width: `${module.progressPercent}%` }}
+                className="bg-blue-500 h-1.5 rounded-full"
+                style={{ width: `${enrollment.progressPercent}%` }}
               />
             </div>
+            <span className="text-xs text-gray-600 font-medium">
+              {Math.round(enrollment.progressPercent)}%
+            </span>
           </div>
-        )}
+        </div>
+        <span className={cn(
+          "text-xs px-2 py-1 rounded-full",
+          enrollment.status === "active" ? "bg-green-100 text-green-700" :
+          enrollment.status === "completed" ? "bg-blue-100 text-blue-700" :
+          "bg-gray-100 text-gray-700"
+        )}>
+          {enrollment.status}
+        </span>
       </div>
+    </Card>
+  );
+}
+
+function QuickActionButton({
+  icon: Icon,
+  label,
+  href,
+  color,
+}: {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+  color: string;
+}) {
+  return (
+    <Link
+      to={href}
+      className={cn(
+        "flex items-center gap-3 p-3 rounded-lg transition-all",
+        "hover:bg-gray-50 dark:hover:bg-gray-800",
+        "border border-gray-200 dark:border-gray-700 hover:border-gray-300"
+      )}
+    >
+      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white", color)}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <span className="font-medium text-gray-900 dark:text-gray-100">{label}</span>
+    </Link>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  action: { label: string; href: string };
+}) {
+  const navigate = useNavigate();
+  
+  return (
+    <Card className={cn(cardStyles.base, "text-center py-12")}>
+      <div className="text-5xl mb-4">{icon}</div>
+      <h3 className={cn(textStyles.h3, "mb-2")}>{title}</h3>
+      <p className={cn(textStyles.muted, "mb-6 max-w-md mx-auto")}>{description}</p>
+      <Button 
+        onClick={() => navigate(action.href)}
+        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+      >
+        {action.label}
+      </Button>
     </Card>
   );
 }

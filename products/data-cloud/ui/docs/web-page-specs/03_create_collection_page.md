@@ -2,7 +2,8 @@
 
 Related routes & files:
 
-- Route: `/collections/new`
+- Canonical route: `/data/new`
+- Compatibility alias: `/collections/new`
 - Page: `src/pages/CreateCollectionPage.tsx`
 - Form component: `src/features/collection/components/CollectionForm.tsx`
 
@@ -19,7 +20,7 @@ Related routes & files:
 - Let users create a new collection with:
   - Basic metadata (name, description).
   - Schema definition (fields and constraints).
-- After creation, send the user back to the Collections list.
+- After creation, send the user back to the canonical Data Explorer list.
 
 **Non-goals:**
 
@@ -37,7 +38,7 @@ Related routes & files:
 **Key scenarios:**
 
 1. **Creating a new collection from scratch**
-   - User clicks `New Collection` from list or dashboard.
+  - User clicks `New Collection` from Data Explorer or Intelligent Hub.
    - Fills the form (collection name, schema fields).
    - Submits and sees confirmation.
 
@@ -52,13 +53,11 @@ From `CreateCollectionPage.tsx`:
   - Card containing `<CollectionForm>`.
 
 - On submit:
-  - Uses `mockApiClient` to create a new collection with:
-    - Generated IDs (`col-*`, `schema-*`, `field-*`).
-    - Initialized `entityCount = 0` and timestamps.
-  - Shows success toast and navigates back to `/collections`.
+  - Uses `collectionsApi.create(...)` to create the collection through the canonical adapter.
+  - Shows success toast and navigates back to `/data`.
 
 - On cancel:
-  - Navigates back to `/collections`.
+  - Navigates back to `/data`.
 
 ---
 
@@ -102,7 +101,7 @@ For a real Data Cloud deployment, Create Collection should:
 ## 8. Links to More Detail & Working Entry Points
 
 - Collection form: `src/features/collection/components/CollectionForm.tsx`
-- Mock data helpers: `src/lib/mock-data.ts`
+- Data Explorer entrypoint: `src/pages/DataExplorer.tsx`
 
 ---
 
@@ -142,5 +141,5 @@ Schema
 
 On success:
 - Toast: "Collection created successfully".
-- Redirect to `/collections`.
+- Redirect to `/data`.
 ```

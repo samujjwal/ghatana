@@ -558,9 +558,10 @@ public class PIIDetector {
 **Caveat**: Too many alerts may cause alert fatigue
 
 **Evidence**:
-- Comprehensive alerting implemented
-- Alert prioritization not optimized
-- No alert suppression rules
+- Metrics, tracing, and logging are implemented, and the product UI now exposes launcher-backed alert listing, triage mutations, derived grouping/suggestions, rules, and an SSE entrypoint for operator workflows.
+- Alert prioritization is not optimized.
+- No alert suppression rules are documented here.
+- Canonical live alert list, acknowledge, resolve, and stream routes are still absent from the current launcher surface.
 
 **Impact**:
 - Important alerts missed

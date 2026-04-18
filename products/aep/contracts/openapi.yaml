@@ -1739,6 +1739,94 @@ paths:
                   deletedCount:
                     type: integer
 
+  # ========== AI Suggestions ==========
+  /api/v1/ai/suggestions:
+    get:
+      summary: Get AI-scored pipeline suggestions
+      operationId: getAiSuggestions
+      tags: [AI]
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: string
+          description: Tenant context for suggestions
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Maximum number of suggestions to return
+      responses:
+        '200':
+          description: Scored suggestion list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  count:
+                    type: integer
+                  tenantId:
+                    type: string
+                  generatedAt:
+                    type: string
+                    format: date-time
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ========== NLQ ==========
+  /api/v1/nlp/parse:
+    post:
+      summary: Parse a natural-language query into structured intent and entities
+      operationId: parseNlQuery
+      tags: [NLP]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  description: Free-text operator query
+                tenantId:
+                  type: string
+      responses:
+        '200':
+          description: Parsed intent and entities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  intent:
+                    type: string
+                  confidence:
+                    type: number
+                    format: double
+                  entities:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  query:
+                    type: string
+                  tenantId:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
 # ========================================================================
 # Components
 # ========================================================================

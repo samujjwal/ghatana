@@ -75,6 +75,14 @@ export interface UserPreferences {
   costSensitivity: 'low' | 'medium' | 'high';
   speedPreference: 'fast' | 'balanced' | 'quality';
   specialtyPreference: boolean;
+  // UserAIPreferences fields
+  enableAISuggestions: boolean;
+  enablePredictions: boolean;
+  enableCopilot: boolean;
+  preferredModel?: string;
+  temperature?: number;
+  customPromptPrefix?: string;
+  excludedAgents?: string[];
 }
 
 export interface AISuggestion {
@@ -294,6 +302,11 @@ class ContextAwareSuggestionEngine {
   }
 
   async generateSuggestions(request: AIRequest): Promise<AISuggestion[]> {
+    // Respect user's enableAISuggestions preference
+    if (!request.context.userPreferences.enableAISuggestions) {
+      return [];
+    }
+
     // Check cache first
     const cacheKey = this.generateCacheKey(request);
     const cached = this.suggestionCache.get(cacheKey);
@@ -360,8 +373,33 @@ class ContextAwareSuggestionEngine {
       }
     });
 
+    // Filter out excluded agents
+    const excludedAgents = request.context.userPreferences.excludedAgents || [];
+    const filteredProviders = capableProviders.filter(
+      (provider) => !excludedAgents.includes(provider.id)
+    );
+
+    // If preferredModel is specified, prioritize it
+    const preferredModel = request.context.userPreferences.preferredModel;
+    if (preferredModel) {
+      const preferredProvider = filteredProviders.find(
+        (p) => p.id === preferredModel || p.name.toLowerCase().includes(preferredModel.toLowerCase())
+      );
+      if (preferredProvider) {
+        // Put preferred provider first, then sort the rest
+        const otherProviders = filteredProviders
+          .filter((p) => p.id !== preferredProvider.id)
+          .sort((a, b) => {
+            const aScore = this.calculateProviderScore(a, request, analysis);
+            const bScore = this.calculateProviderScore(b, request, analysis);
+            return bScore - aScore;
+          });
+        return [preferredProvider, ...otherProviders].slice(0, 3);
+      }
+    }
+
     // Sort by context relevance
-    return capableProviders
+    return filteredProviders
       .sort((a, b) => {
         const aScore = this.calculateProviderScore(a, request, analysis);
         const bScore = this.calculateProviderScore(b, request, analysis);
@@ -462,7 +500,7 @@ class ContextAwareSuggestionEngine {
         content: {
           framework: 'react',
           language: 'typescript',
-          code: '// Generated code would go here',
+          code: null, // AI code generation not yet implemented
         },
         confidence: 0.85,
         provider: provider.id,
@@ -480,7 +518,7 @@ class ContextAwareSuggestionEngine {
         content: {
           framework: 'express',
           language: 'typescript',
-          code: '// Generated API code would go here',
+          code: null, // AI code generation not yet implemented
         },
         confidence: 0.78,
         provider: provider.id,
@@ -832,7 +870,7 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
       const provider = this.selectProvider(request);
       this.providerRegistry.updateMetrics(provider.id, {
         success: true,
-        latency: 1000, // Would be actual latency
+        latency: parseInt(process.env.AI_DEFAULT_LATENCY_MS || '1000', 10),
         cost: suggestions.reduce((total, s) => total + s.estimatedCost, 0),
       });
 
@@ -842,9 +880,9 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
       const provider = this.selectProvider(request);
       this.providerRegistry.updateMetrics(provider.id, {
         success: false,
-        latency: 5000,
+        latency: parseInt(process.env.AI_ERROR_LATENCY_MS || '5000', 10),
         cost: 0,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       });
 
       throw error;

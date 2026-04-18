@@ -1,28 +1,32 @@
 /**
  * Smart Workflow Builder Page
  *
- * Intent-based workflow creation with progressive disclosure.
+ * Intent-based pipeline creation with progressive disclosure.
  * Users describe what they want in natural language, then continue in the
  * runtime-backed pipeline editor when automation is unavailable.
  *
  * Features:
  * - Natural language pipeline description
  * - Explicit boundary handling when AI generation is unavailable
- * - Simple list-based editing for basic workflows
+ * - Simple list-based editing for basic pipelines
  * - "Advanced mode" toggle to expand to full canvas
  *
  * @doc.type page
- * @doc.purpose Intent-based workflow builder
+ * @doc.purpose Intent-based pipeline builder
  * @doc.layer frontend
  */
 
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
+import { smartWorkflowGenerationBoundary } from '../components/common/unsupportedSurfaceRegistry';
+import SessionBootstrap from '../lib/auth/session';
+import { generateWorkflowDraft, type WorkflowDraft } from '../lib/api/ai';
+import { workflowsApi, type WorkflowEdge, type WorkflowNode } from '../lib/api/workflows';
 import {
   Sparkles,
   Play,
-  Save,
   ArrowRight,
   ArrowLeft,
   ChevronRight,
@@ -36,8 +40,6 @@ import {
   Wand2,
   Upload,
   Download,
-  Code,
-  Settings,
   CheckCircle,
   AlertCircle,
   Loader2,
@@ -45,6 +47,12 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
+import {
+  SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL,
+  SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE,
+  SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_DETAIL,
+  SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_TITLE,
+} from '../lib/runtime-boundaries';
 import { CommandBar, CommandBarTrigger, AmbientIntelligenceBar } from '../components/core';
 
 /**
@@ -76,6 +84,55 @@ interface GeneratedWorkflow {
   description: string;
   steps: PipelineStep[];
   aiConfidence: number;
+  reviewRequired: boolean;
+  provenance: WorkflowDraft['provenance'];
+  fallback: boolean;
+}
+
+function toPipelineStep(step: WorkflowDraft['steps'][number]): PipelineStep {
+  return {
+    id: step.id,
+    type: step.type,
+    name: step.name,
+    description: step.description,
+    aiGenerated: true,
+    confidence: step.confidence,
+    config: step.config,
+    status: step.confidence >= 0.6 ? 'valid' : 'pending',
+  };
+}
+
+function toWorkflowNode(step: PipelineStep, index: number): WorkflowNode {
+  return {
+    id: step.id,
+    type: step.type,
+    label: step.name,
+    position: {
+      x: 120 + index * 260,
+      y: 180,
+    },
+    data: {
+      description: step.description,
+      config: step.config ?? {},
+      aiGenerated: step.aiGenerated,
+      confidence: step.confidence,
+    },
+  };
+}
+
+function toWorkflowEdges(steps: PipelineStep[]): WorkflowEdge[] {
+  return steps.slice(1).map((step, index) => ({
+    id: `edge-${steps[index].id}-${step.id}`,
+    source: steps[index].id,
+    target: step.id,
+  }));
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
 }
 
 /**
@@ -403,7 +460,7 @@ function StepCard({
 }
 
 /**
- * Smart Workflow Builder Page
+ * Smart Workflow Builder page component.
  */
 export function SmartWorkflowBuilder() {
   const navigate = useNavigate();
@@ -411,22 +468,53 @@ export function SmartWorkflowBuilder() {
   const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai.assist', 'ai_assist', 'assist']);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationBoundaryMessage, setGenerationBoundaryMessage] = useState<string | null>(null);
+  const [showGenerationBoundary, setShowGenerationBoundary] = useState(false);
   const [workflow, setWorkflow] = useState<GeneratedWorkflow | null>(null);
   const [advancedMode, setAdvancedMode] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [deploymentError, setDeploymentError] = useState<string | null>(null);
+  const [isDeploying, setIsDeploying] = useState(false);
 
   // Generate workflow from prompt
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
 
-    setIsGenerating(true);
+    if (aiAssistCapability?.status === 'unavailable') {
+      setWorkflow(null);
+      setShowGenerationBoundary(true);
+      return;
+    }
 
-    setWorkflow(null);
-    setGenerationBoundaryMessage(
-      'Natural-language pipeline generation is not exposed by the current Data Cloud launcher API. Use this page to capture intent, then continue in the manual pipeline editor.',
-    );
-    setIsGenerating(false);
-  }, [prompt]);
+    setIsGenerating(true);
+    setGenerationError(null);
+    setDeploymentError(null);
+    setShowGenerationBoundary(false);
+
+    try {
+      const tenantId = SessionBootstrap.requireTenantId();
+      const response = await generateWorkflowDraft(tenantId, prompt.trim());
+      setWorkflow({
+        id: response.data.draft.workflowId,
+        name: response.data.draft.name,
+        description: response.data.draft.description,
+        steps: response.data.draft.steps.map(toPipelineStep),
+        aiConfidence: response.data.confidence,
+        reviewRequired: response.data.draft.reviewRequired,
+        provenance: response.data.draft.provenance,
+        fallback: response.data.fallback,
+      });
+    } catch (error) {
+      setWorkflow(null);
+      const message = getErrorMessage(error, 'Workflow draft generation failed.');
+      if (/unavailable|unsupported/i.test(message)) {
+        setShowGenerationBoundary(true);
+      } else {
+        setGenerationError(message);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [aiAssistCapability?.status, prompt]);
 
   // Delete step
   const handleDeleteStep = useCallback(
@@ -481,17 +569,43 @@ export function SmartWorkflowBuilder() {
   }, [workflow]);
 
   // Deploy workflow
-  const handleDeploy = useCallback(() => {
-    // In real app, would save and deploy
-    alert('Workflow deployed successfully!');
-    navigate('/pipelines');
-  }, [navigate]);
+  const handleDeploy = useCallback(async () => {
+    if (!workflow) {
+      return;
+    }
+
+    setIsDeploying(true);
+    setDeploymentError(null);
+
+    try {
+      const created = await workflowsApi.create({
+        name: workflow.name,
+        description: workflow.description,
+        nodes: workflow.steps.map(toWorkflowNode),
+        edges: toWorkflowEdges(workflow.steps),
+        tags: ['smart-builder', 'ai-generated'],
+        metadata: {
+          aiConfidence: workflow.aiConfidence,
+          fallback: workflow.fallback,
+          reviewRequired: workflow.reviewRequired,
+          prompt,
+          provenance: workflow.provenance,
+          reviewedAt: new Date().toISOString(),
+        },
+      });
+      navigate(`/pipelines/${created.id}`);
+    } catch (error) {
+      setDeploymentError(getErrorMessage(error, 'Unable to save workflow draft to the runtime-backed pipeline registry.'));
+    } finally {
+      setIsDeploying(false);
+    }
+  }, [navigate, prompt, workflow]);
 
   // Switch to advanced mode (full canvas)
   const handleAdvancedMode = useCallback(() => {
     if (workflow) {
       // Navigate to full workflow designer with current workflow
-      navigate(`/workflows/${workflow.id}?mode=advanced`);
+      navigate(`/pipelines/${workflow.id}?mode=advanced`);
     }
   }, [workflow, navigate]);
 
@@ -526,16 +640,20 @@ export function SmartWorkflowBuilder() {
                   Advanced Mode
                 </button>
                 <button
-                  onClick={handleDeploy}
+                  onClick={() => {
+                    void handleDeploy();
+                  }}
+                  disabled={isDeploying}
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 rounded-lg',
                     'bg-primary-600 hover:bg-primary-700',
                     'text-white text-sm font-medium',
-                    'transition-colors'
+                    'transition-colors',
+                    'disabled:opacity-60 disabled:cursor-not-allowed'
                   )}
                 >
-                  <Play className="h-4 w-4" />
-                  Deploy
+                  {isDeploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  {isDeploying ? 'Saving…' : 'Deploy'}
                 </button>
               </>
             )}
@@ -599,16 +717,26 @@ export function SmartWorkflowBuilder() {
                 ) : (
                   <>
                     <Zap className="h-4 w-4" />
-                    Check AI Builder Availability
+                    Generate Draft
                   </>
                 )}
               </button>
             </div>
 
-            {generationBoundaryMessage && (
-              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                <p className="font-medium">AI pipeline builder unavailable</p>
-                <p className="mt-1">{generationBoundaryMessage}</p>
+            {generationError && (
+              <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+                {generationError}
+              </div>
+            )}
+
+            {showGenerationBoundary && (
+              <div className="mt-4">
+                <UnsupportedSurfaceBoundary
+                  title={smartWorkflowGenerationBoundary.title}
+                  summary={smartWorkflowGenerationBoundary.summary}
+                  details={smartWorkflowGenerationBoundary.details}
+                  state={smartWorkflowGenerationBoundary.state}
+                />
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     onClick={() => navigate('/pipelines')}
@@ -617,7 +745,7 @@ export function SmartWorkflowBuilder() {
                     Open Pipelines
                   </button>
                   <button
-                    onClick={() => setGenerationBoundaryMessage(null)}
+                    onClick={() => setShowGenerationBoundary(false)}
                     className="rounded-lg border border-amber-400 px-3 py-2 text-xs font-medium hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/30"
                   >
                     Dismiss
@@ -628,18 +756,18 @@ export function SmartWorkflowBuilder() {
 
             {aiAssistCapability?.status === 'unavailable' && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                <p className="font-medium">AI assist unavailable</p>
+                <p className="font-medium">{SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_TITLE}</p>
                 <p className="mt-1">
-                  {aiAssistCapability.detail ?? 'Runtime capability truth reports AI assist as unavailable. You can still capture intent here and continue in the manual pipeline editor.'}
+                  {aiAssistCapability.detail ?? SMART_WORKFLOW_AI_ASSIST_UNAVAILABLE_DETAIL}
                 </p>
               </div>
             )}
 
             {aiAssistCapability?.status === 'degraded' && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                <p className="font-medium">AI assist degraded</p>
+                <p className="font-medium">{SMART_WORKFLOW_AI_ASSIST_DEGRADED_TITLE}</p>
                 <p className="mt-1">
-                  {aiAssistCapability.detail ?? 'Runtime capability truth reports AI assist as degraded. Suggestions should be treated as advisory only.'}
+                  {aiAssistCapability.detail ?? SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL}
                 </p>
               </div>
             )}
@@ -653,7 +781,7 @@ export function SmartWorkflowBuilder() {
                     key={index}
                     onClick={() => {
                       setPrompt(example);
-                      setGenerationBoundaryMessage(null);
+                      setShowGenerationBoundary(false);
                     }}
                     className={cn(
                       'px-3 py-1.5 rounded-full text-xs',
@@ -688,7 +816,9 @@ export function SmartWorkflowBuilder() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => handleGenerate()}
+                  onClick={() => {
+                    void handleGenerate();
+                  }}
                   className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -703,6 +833,31 @@ export function SmartWorkflowBuilder() {
                 </button>
               </div>
             </div>
+
+            {(workflow.reviewRequired || workflow.aiConfidence < 0.75 || workflow.fallback) && (
+              <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <p className="font-medium">Review required before deployment</p>
+                <p className="mt-1">
+                  This draft was generated with {Math.round(workflow.aiConfidence * 100)}% confidence.
+                  Confirm source, transform, and destination steps before saving it to the pipeline registry.
+                </p>
+              </div>
+            )}
+
+            <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              <p className="font-medium text-gray-900 dark:text-gray-100">{workflow.name}</p>
+              <p className="mt-1">{workflow.description}</p>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Generated {new Date(workflow.provenance.generatedAt).toLocaleString()} via {workflow.provenance.strategy}.
+                Prompt summary: {workflow.provenance.promptSummary}
+              </p>
+            </div>
+
+            {deploymentError && (
+              <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+                {deploymentError}
+              </div>
+            )}
 
             {/* Pipeline Steps */}
             <div className="space-y-4">
@@ -764,7 +919,7 @@ export function SmartWorkflowBuilder() {
                     template={template}
                     onSelect={() => {
                       setPrompt(template.prompt);
-                      setGenerationBoundaryMessage(null);
+                      setShowGenerationBoundary(false);
                     }}
                   />
                 ))}

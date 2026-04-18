@@ -10,6 +10,9 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -26,19 +29,43 @@ import java.util.UUID;
 public final class SemanticSearchHandler {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
+    
+    public enum EmbeddingMode {
+        DETERMINISTIC_HASH,
+        REAL_EMBEDDING
+    }
 
     private final VectorMemoryPlugin vectorPlugin;
     private final HttpHandlerSupport http;
     private final ObjectMapper objectMapper;
+    private final EmbeddingMode embeddingMode;
+    private final String aiInferenceServiceUrl;
+    private final String internalApiKey;
 
     public SemanticSearchHandler(VectorMemoryPlugin vectorPlugin,
                                  DataCloudClient client,
                                  HttpHandlerSupport http,
                                  ObjectMapper objectMapper) {
+        this(vectorPlugin, client, http, objectMapper, 
+             EmbeddingMode.valueOf(System.getenv().getOrDefault("EMBEDDING_MODE", "DETERMINISTIC_HASH")),
+             System.getenv().getOrDefault("AI_INFERENCE_SERVICE_URL", "http://localhost:8083"),
+             System.getenv().getOrDefault("INTERNAL_API_KEY", ""));
+    }
+
+    public SemanticSearchHandler(VectorMemoryPlugin vectorPlugin,
+                                 DataCloudClient client,
+                                 HttpHandlerSupport http,
+                                 ObjectMapper objectMapper,
+                                 EmbeddingMode embeddingMode,
+                                 String aiInferenceServiceUrl,
+                                 String internalApiKey) {
         this.vectorPlugin = Objects.requireNonNull(vectorPlugin, "vectorPlugin");
         Objects.requireNonNull(client, "client");
         this.http = Objects.requireNonNull(http, "http");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.embeddingMode = Objects.requireNonNull(embeddingMode, "embeddingMode");
+        this.aiInferenceServiceUrl = Objects.requireNonNull(aiInferenceServiceUrl, "aiInferenceServiceUrl");
+        this.internalApiKey = internalApiKey != null ? internalApiKey : "";
     }
 
     public Promise<Void> indexEntity(String tenantId, String collection, DataCloudClient.Entity entity) {
@@ -142,6 +169,64 @@ public final class SemanticSearchHandler {
     }
 
     public static float[] embedText(String content) {
+        return embedTextHash(content);
+    }
+
+    public float[] embedTextWithMode(String content, String tenantId) {
+        if (embeddingMode == EmbeddingMode.REAL_EMBEDDING) {
+            try {
+                return embedTextViaAI(content, tenantId);
+            } catch (Exception e) {
+                // Fallback to hash mode if AI service is unavailable
+                return embedTextHash(content);
+            }
+        }
+        return embedTextHash(content);
+    }
+
+    private float[] embedTextViaAI(String content, String tenantId) {
+        try {
+            HttpClient httpClient = HttpClient.newHttpClient();
+            
+            Map<String, Object> requestBody = Map.of(
+                "tenant", tenantId,
+                "text", content
+            );
+            
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
+            
+            java.net.http.HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder()
+                .uri(URI.create(aiInferenceServiceUrl + "/v1/embeddings"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + internalApiKey)
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonBody));
+
+            java.net.http.HttpRequest request = requestBuilder.build();
+
+            java.net.http.HttpResponse<String> response = httpClient.send(
+                request,
+                java.net.http.HttpResponse.BodyHandlers.ofString()
+            );
+            
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("AI inference service returned status " + response.statusCode());
+            }
+            
+            Map<String, Object> responseBody = objectMapper.readValue(response.body(), MAP_TYPE);
+            List<Number> vectorList = (List<Number>) responseBody.get("vector");
+            
+            float[] vector = new float[vectorList.size()];
+            for (int i = 0; i < vectorList.size(); i++) {
+                vector[i] = vectorList.get(i).floatValue();
+            }
+            
+            return vector;
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Failed to call AI inference service", e);
+        }
+    }
+
+    private static float[] embedTextHash(String content) {
         int dimensions = 128;
         float[] vector = new float[dimensions];
         String normalized = content == null ? "" : content.toLowerCase();
@@ -168,6 +253,10 @@ public final class SemanticSearchHandler {
             vector[index] = vector[index] / norm;
         }
         return vector;
+    }
+
+    public EmbeddingMode getEmbeddingMode() {
+        return embeddingMode;
     }
 
     private Map<String, Object> parseBody(String json) {

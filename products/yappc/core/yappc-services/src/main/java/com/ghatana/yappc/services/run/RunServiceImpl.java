@@ -29,12 +29,15 @@ public class RunServiceImpl implements RunService {
 
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
+    private final CiCdPort ciCdAdapter;
 
     public RunServiceImpl(
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            CiCdPort ciCdAdapter) {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
+        this.ciCdAdapter = ciCdAdapter != null ? ciCdAdapter : new NoOpCiCdAdapter();
     }
 
     @Override
@@ -185,12 +188,7 @@ public class RunServiceImpl implements RunService {
                 .build());
         }
 
-        return Promise.of(TaskResult.builder()
-                .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-            .output("Build completed successfully for " + safeTaskName(task))
-                .durationMs(System.currentTimeMillis() - startTime)
-                .build());
+        return ciCdAdapter.build(task);
     }
 
     private Promise<TaskResult> executeTestTask(RunTask task) {
@@ -205,12 +203,7 @@ public class RunServiceImpl implements RunService {
                 .build());
         }
 
-        return Promise.of(TaskResult.builder()
-                .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-            .output("All tests passed for " + safeTaskName(task))
-                .durationMs(System.currentTimeMillis() - startTime)
-                .build());
+        return ciCdAdapter.test(task);
     }
 
     private Promise<TaskResult> executeDeployTask(RunTask task) {
@@ -225,17 +218,7 @@ public class RunServiceImpl implements RunService {
                     .build());
         }
 
-        String targetEnvironment = asString(task.config().get("environment"));
-        if (targetEnvironment == null || targetEnvironment.isBlank()) {
-            targetEnvironment = "default";
-        }
-
-        return Promise.of(TaskResult.builder()
-                .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-                .output("Deployment completed to " + targetEnvironment)
-                .durationMs(System.currentTimeMillis() - startTime)
-                .build());
+        return ciCdAdapter.deploy(task);
     }
 
     private Promise<TaskResult> executeMigrateTask(RunTask task) {
@@ -250,41 +233,48 @@ public class RunServiceImpl implements RunService {
                 .build());
         }
 
-        return Promise.of(TaskResult.builder()
-                .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-            .output("Migration completed for " + safeTaskName(task))
-                .durationMs(System.currentTimeMillis() - startTime)
-                .build());
+        return ciCdAdapter.migrate(task);
     }
 
     private Promise<RunResult> performRollback(String deploymentId, String targetVersion) {
-        return Promise.of(RunResult.builder()
-                .id(UUID.randomUUID().toString())
-                .runSpecRef(deploymentId)
-                .status(RunStatus.SUCCESS)
-                .taskResults(List.of())
-                .startedAt(Instant.now())
-                .completedAt(Instant.now())
-                .metadata(Map.of("rollback_to", targetVersion))
-                .build());
+        return ciCdAdapter.rollback(deploymentId, targetVersion)
+                .then(taskResult -> RunResult.builder()
+                        .id(UUID.randomUUID().toString())
+                        .runSpecRef(deploymentId)
+                        .status(taskResult.status())
+                        .taskResults(List.of(taskResult))
+                        .startedAt(Instant.now())
+                        .completedAt(Instant.now())
+                        .metadata(Map.of("rollback_to", targetVersion))
+                        .build());
     }
 
     private Promise<RunResult> performPromotion(String deploymentId, String targetEnvironment) {
-        return Promise.of(RunResult.builder()
-                .id(UUID.randomUUID().toString())
-                .runSpecRef(deploymentId)
-                .status(RunStatus.SUCCESS)
-                .taskResults(List.of())
-                .startedAt(Instant.now())
-                .completedAt(Instant.now())
-                .metadata(Map.of("promoted_to", targetEnvironment,
-                        "environment", targetEnvironment))
-                .build());
+        // Promotion is typically a deploy operation to a different environment
+        RunTask deployTask = RunTask.builder()
+                .id("promote-" + deploymentId)
+                .type("deploy")
+                .name("Promote " + deploymentId + " to " + targetEnvironment)
+                .config(Map.of("environment", targetEnvironment, "deploymentId", deploymentId))
+                .dependencies(List.of())
+                .build();
+
+        return ciCdAdapter.deploy(deployTask)
+                .then(taskResult -> RunResult.builder()
+                        .id(UUID.randomUUID().toString())
+                        .runSpecRef(deploymentId)
+                        .status(taskResult.status())
+                        .taskResults(List.of(taskResult))
+                        .startedAt(Instant.now())
+                        .completedAt(Instant.now())
+                        .metadata(Map.of("promoted_to", targetEnvironment))
+                        .build());
     }
 
     private RunStatus determineOverallStatus(List<TaskResult> taskResults) {
-        if (taskResults.stream().allMatch(r -> r.status() == RunStatus.SUCCESS)) {
+        if (taskResults.stream().anyMatch(r -> r.status() == RunStatus.NOT_READY)) {
+            return RunStatus.NOT_READY;
+        } else if (taskResults.stream().allMatch(r -> r.status() == RunStatus.SUCCESS)) {
             return RunStatus.SUCCESS;
         } else if (taskResults.stream().anyMatch(r -> r.status() == RunStatus.FAILED)) {
             return RunStatus.FAILED;

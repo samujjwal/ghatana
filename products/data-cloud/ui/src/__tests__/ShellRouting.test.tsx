@@ -22,22 +22,22 @@ describe('[M001]: Shell Routing', () => {
   });
 
   describe('Route Resolution', () => {
-    it('[M001]: navigate_to_dashboard_resolves_correctly', async () => {
+    it('[M001]: navigate_to_home_resolves_correctly', async () => {
       const user = userEvent.setup();
 
       render(
         <BrowserRouter>
           <nav>
-            <button onClick={() => mockNavigate('/dashboard', {})}>Dashboard</button>
+            <button onClick={() => mockNavigate('/', {})}>Home</button>
           </nav>
         </BrowserRouter>
       );
 
-      // When navigating to dashboard
-      await user.click(screen.getByText('Dashboard'));
+      // When navigating to the primary home route
+      await user.click(screen.getByText('Home'));
 
       // Then route should be resolved
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard', expect.any(Object));
+      expect(mockNavigate).toHaveBeenCalledWith('/', expect.any(Object));
     });
 
     it('[M001]: navigate_to_entities_resolves_correctly', async () => {
@@ -76,7 +76,7 @@ describe('[M001]: Shell Routing', () => {
       const isAuthenticated = false;
       
       // When accessing protected route
-      const protectedRoute = '/dashboard';
+      const protectedRoute = '/data';
       
       // Then redirect to login
       if (!isAuthenticated) {
@@ -130,10 +130,10 @@ describe('[M001]: Shell Routing', () => {
       const locale = 'en';
       
       // When generating breadcrumbs
-      const label = locale === 'en' ? 'Dashboard' : 'Tableau de bord';
+      const label = locale === 'en' ? 'Home' : 'Accueil';
       
       // Then labels should be localized
-      expect(label).toBe('Dashboard');
+      expect(label).toBe('Home');
     });
   });
 

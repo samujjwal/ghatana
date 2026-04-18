@@ -1,6 +1,6 @@
 # 16. Governance & Security Hub – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec corresponds to the Governance & Security UI section in `frontend_todo (1).md`.
+> **Status:** Partially implemented as the Trust Center at `/trust`. The current shipped surface exposes governance summaries, retention classification, purge preview and execute flows, redaction, compliance refresh, explicit read-only access-review disclosure, audit visibility, derived operator recommendations, and lifecycle-truth cards that separate live actions from unavailable policy lifecycle work, but not the full policy/role management hub described below.
 
 ---
 
@@ -13,7 +13,7 @@
 **Primary goals:**
 
 - Offer a single entry point for governance and security operations.
-- Expose role and permission management in a clear, auditable way.
+- Expose current action-backed governance summaries in a clear, auditable way.
 - Provide UIs for policy definition and PII scan inspection.
 - Surface and explore audit logs related to data access and changes.
 
@@ -34,15 +34,22 @@
 
 **Key scenarios:**
 
-1. **Granting access to a team**
-   - Governance user navigates to Roles & Permissions.
-   - Adds a team to a role with access to specific datasets / workflows.
+1. **Applying a retention policy now**
+   - Operator opens Trust Center.
+   - Uses the recommendation rail or quick action to stage retention classification and confirms the result directly against launcher-backed governance routes.
 
-2. **Reviewing PII scan results**
-   - User opens PII Scan Results view.
-   - Filters for new or high-risk findings and assigns owners to remediate.
+2. **Running a purge safely**
+   - Operator performs a dry run, reviews the confirmation token and estimated rows, then explicitly executes the purge.
 
-3. **Investigating suspicious activity**
+3. **Checking access review reality before escalation**
+   - Operator opens Trust Center.
+   - Uses the access review quick action to confirm that this deployment is still read-only for approval mutations instead of presenting a fake approval workflow.
+
+4. **Acting on derived governance guidance**
+   - Operator opens Trust Center.
+   - Reviews recommendations derived from compliance summary, PII registry, retention-expiry counts, and audit failures, then jumps straight into a prefilled action.
+
+4. **Investigating suspicious activity**
    - User opens Audit Logs explorer.
    - Searches for access to a sensitive dataset during a time window.
 
@@ -50,12 +57,11 @@
 
 ## 3. Content & Layout Overview
 
-The Governance & Security Hub is a **sectioned page (or mini-portal)** with navigation to sub-views:
+The Governance & Security Hub is a **target-state sectioned page (or mini-portal)**. The current shipped Trust Center represents the narrower action-backed subset of that vision:
 
 1. **Overview section**
-   - High-level summary cards:
-     - Number of roles, users, and teams.
-     - Policies in effect, PII findings, recent critical audit events.
+   - High-level summary cards and action summaries:
+   - Policies in effect, compliance posture, recent audit events, recommendation cards, lifecycle-truth cards, quick actions, and explicit boundary messaging for still-read-only lifecycle areas.
 
 2. **Role Manager**
    - Table of roles with descriptions and scopes.
@@ -66,8 +72,10 @@ The Governance & Security Hub is a **sectioned page (or mini-portal)** with navi
    - Ability to grant/revoke dataset- and workflow-level access (within policy constraints).
 
 4. **Policy Builder UI**
-   - UI for defining high-level access and data handling policies (e.g., who can access PII fields, retention rules).
+   - Target-state UI for defining high-level access and data handling policies (e.g., who can access PII fields, retention rules).
    - Templates for common policy types.
+   - Current shipped Trust Center stops short of general policy mutation, exposes lifecycle truth for create/update/toggle/delete gaps, and keeps unsupported lifecycle areas explicit.
+   - Browser evidence should cover real retention/redaction/purge flows, derived recommendation-to-action prefills, lifecycle-truth cards, and the read-only access review summary instead of relying on generic shell screenshots alone.
 
 5. **PII Scan Results Viewer**
    - List of scan findings (dataset/column, classification, confidence, status).
@@ -84,7 +92,7 @@ The Governance & Security Hub is a **sectioned page (or mini-portal)** with navi
 - **Clarity of impact:**
   - When changing roles or permissions, clearly show what access is being granted or revoked.
 - **Traceability:**
-  - Every governance action should be associated with an actor and timestamp.
+   - Every governance action should be associated with an actor, timestamp, and explicit launcher response state.
 - **Safe defaults:**
   - Guardrails around granting broad or risky permissions.
 - **Readable security language:**
@@ -111,7 +119,7 @@ For real deployments, this hub should:
 - **What-if previews:**
   - Before applying a policy, show which users/datasets it affects.
 - **Inline warnings:**
-  - Warn when policy changes may break downstream workflows or dashboards.
+   - Warn when policy changes may break downstream pipelines or operator insight consumers.
 
 ---
 
@@ -127,7 +135,7 @@ For real deployments, this hub should:
 
 ## 8. Links to More Detail & Working Entry Points
 
-- Dashboard: `01_dashboard_page.md` (high-level compliance and audit signals).
+- Intelligent Hub: `01_dashboard_page.md` (home-surface trust entry point and handoff).
 - Dataset-related specs: `11_dataset_explorer_list_page.md`, `12_dataset_detail_insights_page.md`.
 - Workflow specs: `05_workflows_page.md`, `06_workflow_designer_canvas.md`.
 - Backend governance plans: see `backend_todo (1).md` – Metadata, Governance & Security.

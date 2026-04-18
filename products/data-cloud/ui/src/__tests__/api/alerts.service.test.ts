@@ -1,36 +1,267 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
-import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '@/api/alerts.service';
+const { mockApiClient, mockRequireTenantId } = vi.hoisted(() => ({
+  mockApiClient: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
+  mockRequireTenantId: vi.fn(() => TEST_TENANT_ID),
+}));
 
-describe('alertsService unsupported boundaries', () => {
-  it('fails explicitly for unsupported alert management routes', async () => {
-    await expect(alertsService.getAlerts()).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.getAlertGroups()).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.getResolutionSuggestions()).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.acknowledgeAlert('alert-1')).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.resolveAlert('alert-1')).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.resolveGroup('group-1')).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.applySuggestion('suggestion-1')).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.listAlertRules()).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
-    await expect(alertsService.createAlertRule({
-      name: 'Critical backlog',
-      description: 'Track consumer lag',
+class MockEventSource {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSED = 2;
+
+  readonly url: string;
+  readonly withCredentials = false;
+  readonly readyState = MockEventSource.CONNECTING;
+  onerror: ((this: EventSource, ev: Event) => unknown) | null = null;
+  onmessage: ((this: EventSource, ev: MessageEvent) => unknown) | null = null;
+  onopen: ((this: EventSource, ev: Event) => unknown) | null = null;
+
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  addEventListener(): void {}
+
+  removeEventListener(): void {}
+
+  dispatchEvent(): boolean {
+    return false;
+  }
+
+  close(): void {}
+}
+
+vi.mock('@/lib/api/client', () => ({
+  apiClient: mockApiClient,
+}));
+
+vi.mock('@/lib/auth/session', () => ({
+  default: {
+    requireTenantId: mockRequireTenantId,
+  },
+}));
+
+import { alertsService } from '@/api/alerts.service';
+
+describe('alertsService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal('EventSource', MockEventSource as unknown as typeof EventSource);
+    vi.stubEnv('VITE_API_URL', '/api/v1');
+  });
+
+  it('lists alerts from the canonical launcher envelope', async () => {
+    mockApiClient.get.mockResolvedValue({
+      tenantId: TEST_TENANT_ID,
+      alerts: [
+        {
+          id: 'alert-1',
+          title: 'Kafka lag spike',
+          description: 'Consumer lag exceeded threshold',
+          severity: 'critical',
+          status: 'active',
+          source: 'kafka',
+          createdAt: '2026-04-18T10:00:00Z',
+        },
+      ],
+      count: 1,
+      timestamp: '2026-04-18T10:01:00Z',
+    });
+
+    const alerts = await alertsService.getAlerts({ severity: 'critical', limit: 25 });
+
+    expect(mockApiClient.get).toHaveBeenCalledWith('/alerts', {
+      params: {
+        severity: 'critical',
+        limit: 25,
+        tenantId: TEST_TENANT_ID,
+      },
+      headers: { 'X-Tenant-ID': TEST_TENANT_ID },
+    });
+    expect(alerts).toEqual([
+      expect.objectContaining({ id: 'alert-1', severity: 'critical', status: 'active' }),
+    ]);
+  });
+
+  it('maps group and suggestion envelopes into page-ready data', async () => {
+    mockApiClient.get
+      .mockResolvedValueOnce({
+        tenantId: TEST_TENANT_ID,
+        groups: [
+          {
+            id: 'group-kafka',
+            title: 'Kafka degradation',
+            rootCause: 'Kafka',
+            alertIds: ['alert-1', 'alert-2'],
+            aiConfidence: 0.84,
+            suggestedAction: 'Restart consumer group',
+            suggestedActionType: 'auto',
+          },
+        ],
+        count: 1,
+        timestamp: '2026-04-18T10:05:00Z',
+      })
+      .mockResolvedValueOnce({
+        tenantId: TEST_TENANT_ID,
+        suggestions: [
+          {
+            id: 'suggestion-alert-1',
+            alertId: 'alert-1',
+            suggestion: 'Restart consumer group',
+            confidence: 0.91,
+            canAutoResolve: true,
+            steps: ['Inspect lag', 'Restart consumer'],
+          },
+        ],
+        count: 1,
+        timestamp: '2026-04-18T10:06:00Z',
+      });
+
+    const groups = await alertsService.getAlertGroups();
+    const suggestions = await alertsService.getResolutionSuggestions();
+
+    expect(groups[0]?.id).toBe('group-kafka');
+    expect(suggestions[0]?.steps).toEqual(['Inspect lag', 'Restart consumer']);
+  });
+
+  it('acknowledges and resolves alerts through canonical mutation routes', async () => {
+    mockApiClient.post
+      .mockResolvedValueOnce({
+        id: 'alert-1',
+        title: 'Kafka lag spike',
+        description: 'Consumer lag exceeded threshold',
+        severity: 'critical',
+        status: 'acknowledged',
+        source: 'kafka',
+        createdAt: '2026-04-18T10:00:00Z',
+        acknowledgedAt: '2026-04-18T10:02:00Z',
+      })
+      .mockResolvedValueOnce({
+        id: 'alert-1',
+        title: 'Kafka lag spike',
+        description: 'Consumer lag exceeded threshold',
+        severity: 'critical',
+        status: 'resolved',
+        source: 'kafka',
+        createdAt: '2026-04-18T10:00:00Z',
+        resolvedAt: '2026-04-18T10:03:00Z',
+      });
+
+    const acknowledged = await alertsService.acknowledgeAlert('alert-1');
+    const resolved = await alertsService.resolveAlert('alert-1');
+
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(1, '/alerts/alert-1/acknowledge', {}, {
+      params: { tenantId: TEST_TENANT_ID },
+      headers: { 'X-Tenant-ID': TEST_TENANT_ID },
+    });
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(2, '/alerts/alert-1/resolve', {}, {
+      params: { tenantId: TEST_TENANT_ID },
+      headers: { 'X-Tenant-ID': TEST_TENANT_ID },
+    });
+    expect(acknowledged.status).toBe('acknowledged');
+    expect(resolved.status).toBe('resolved');
+  });
+
+  it('applies group and suggestion actions without inventing extra client payloads', async () => {
+    mockApiClient.post.mockResolvedValue({ ok: true });
+
+    await alertsService.resolveGroup('group-kafka');
+    await alertsService.applySuggestion('suggestion-alert-1');
+
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(1, '/alerts/groups/group-kafka/resolve', {}, {
+      params: { tenantId: TEST_TENANT_ID },
+      headers: { 'X-Tenant-ID': TEST_TENANT_ID },
+    });
+    expect(mockApiClient.post).toHaveBeenNthCalledWith(2, '/alerts/suggestions/suggestion-alert-1/apply', {}, {
+      params: { tenantId: TEST_TENANT_ID },
+      headers: { 'X-Tenant-ID': TEST_TENANT_ID },
+    });
+  });
+
+  it('creates, updates, and deletes alert rules through the live alerts routes', async () => {
+    mockApiClient.get.mockResolvedValue({
+      tenantId: TEST_TENANT_ID,
+      rules: [
+        {
+          id: 'rule-1',
+          name: 'High CPU',
+          description: 'Detect CPU pressure',
+          enabled: true,
+          severity: 'warning',
+          conditionType: 'threshold',
+          metric: 'cpu_usage',
+          operator: 'gt',
+          threshold: 85,
+          duration: 5,
+          channels: ['email'],
+          recipients: ['ops@ghatana.dev'],
+        },
+      ],
+      count: 1,
+      timestamp: '2026-04-18T10:10:00Z',
+    });
+    mockApiClient.post.mockResolvedValue({
+      id: 'rule-2',
+      name: 'Kafka lag',
+      enabled: true,
       severity: 'critical',
       conditionType: 'threshold',
       metric: 'queue_depth',
       operator: 'gt',
-      threshold: 1000,
-      duration: 5,
-      channels: ['email'],
+      threshold: 100,
+      duration: 10,
+      channels: ['slack'],
+    });
+    mockApiClient.put.mockResolvedValue({
+      id: 'rule-2',
+      name: 'Kafka lag',
+      enabled: false,
+      severity: 'critical',
+      conditionType: 'threshold',
+      metric: 'queue_depth',
+      operator: 'gt',
+      threshold: 100,
+      duration: 10,
+      channels: ['slack'],
+    });
+    mockApiClient.delete.mockResolvedValue(undefined);
+
+    const rules = await alertsService.listAlertRules();
+    const created = await alertsService.createAlertRule({
+      name: 'Kafka lag',
       enabled: true,
-    })).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
+      severity: 'critical',
+      conditionType: 'threshold',
+      metric: 'queue_depth',
+      operator: 'gt',
+      threshold: 100,
+      duration: 10,
+      channels: ['slack'],
+    });
+    const updated = await alertsService.updateAlertRule('rule-2', { enabled: false });
+    await alertsService.deleteAlertRule('rule-2');
+
+    expect(rules[0]?.id).toBe('rule-1');
+    expect(created.id).toBe('rule-2');
+    expect(updated.enabled).toBe(false);
+    expect(mockApiClient.delete).toHaveBeenCalledWith('/alerts/rules/rule-2', {
+      params: { tenantId: TEST_TENANT_ID },
+      headers: { 'X-Tenant-ID': TEST_TENANT_ID },
+    });
   });
 
-  it('returns an inert closed event stream when live alerts are unsupported', () => {
+  it('opens an alerts stream on the canonical SSE route', () => {
     const stream = alertsService.openStream();
 
-    expect(stream.readyState).toBe(EventSource.CLOSED);
-    expect(typeof stream.addEventListener).toBe('function');
-    expect(typeof stream.close).toBe('function');
+    expect(stream.url).toBe(
+      '/api/v1/alerts/stream?tenantId=tenant-alpha&types=alert.acknowledged%2Calert.resolved%2Calert.group.resolved%2Calert.suggestion.applied%2Calert.rule.created%2Calert.rule.updated%2Calert.rule.deleted',
+    );
   });
 });

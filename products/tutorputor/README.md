@@ -49,9 +49,9 @@ tutorputor-mobile (RN)     ─┤                            ↓                
 
 ## Current Delivery Notes
 
-- Mobile is not a production-ready learner application yet. The repo contains React Native storage, sync, and offline primitives, but no shipped application shell or navigation entrypoint.
+- Mobile app is in development with offline-first architecture (React Native 0.85, SQLite, MMKV, background sync). Core screens and navigation are implemented, but full production deployment to app stores is pending.
 - Web offline support is partially implemented through a service worker, IndexedDB-backed caching, and queued progress mutations in `apps/tutorputor-web`.
-- Real-time support exists in platform analytics and collaboration services, while some web collaboration surfaces still use polling fallbacks instead of full live updates.
+- Real-time collaboration is implemented using WebSockets for cursor tracking and Redis pub/sub for chat messaging (not Redis streams as previously documented).
 
 ## Prerequisites
 
@@ -90,8 +90,11 @@ tr clean --all         # Deep clean
 | Document | Path |
 |----------|------|
 | **Getting Started** | [docs/guides/DEVELOPMENT_SETUP.md](docs/guides/DEVELOPMENT_SETUP.md) |
+| **Onboarding** | [docs/guides/ONBOARDING.md](docs/guides/ONBOARDING.md) |
+| **Deployment** | [docs/guides/DEPLOYMENT.md](docs/guides/DEPLOYMENT.md) |
 | **CLI Reference** | [bin/README.md](bin/README.md) |
 | **Architecture** | [docs/architecture/README.md](docs/architecture/README.md) |
+| **API Documentation** | [docs/api/README.md](docs/api/README.md) |
 | **Current State** | [docs/architecture/CURRENT_STATE.md](docs/architecture/CURRENT_STATE.md) |
 | **Product Spec** | [docs/architecture/specs/PRODUCT_SPEC.md](docs/architecture/specs/PRODUCT_SPEC.md) |
 | **Coding Standards** | [docs/guidelines/CODING.md](docs/guidelines/CODING.md) |

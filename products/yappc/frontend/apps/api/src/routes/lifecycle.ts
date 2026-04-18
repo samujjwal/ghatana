@@ -10,9 +10,12 @@
  * @doc.pattern REST Controller
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyRequest } from 'fastify';
+import { type PrismaClient, type Prisma, LifecyclePhase } from '@prisma/client';
 import { getPrismaClient } from '../database/client.js';
 import { requirePermission, requireRole } from '../middleware/rbac.middleware';
+import { getAuditService } from '../services/audit/audit.service';
+import { AIService } from '../services/ai/ai.service';
 
 type LifecyclePhaseId =
   | 'INTENT'
@@ -168,6 +171,15 @@ const LIFECYCLE_PHASES_BY_ID: Record<
   {} as Record<LifecyclePhaseId, LifecyclePhaseDefinition>
 );
 
+// Stage-specific gate requirements derived from lifecycle phases
+const STAGE_GATE_REQUIREMENTS: Record<number, string[]> = LIFECYCLE_PHASES.reduce(
+  (accumulator, phase) => ({
+    ...accumulator,
+    [phase.stage]: phase.keyArtifacts,
+  }),
+  {} as Record<number, string[]>
+);
+
 // ============================================================================
 // Utilities
 // ============================================================================
@@ -177,6 +189,53 @@ const LIFECYCLE_PHASES_BY_ID: Record<
  */
 function validateProjectId(projectId: string | undefined): projectId is string {
   return !!(projectId && projectId.trim().length > 0);
+}
+
+/**
+ * Log structured audit event for stage transitions
+ */
+async function logStageTransitionAuditEvent(params: {
+  request: FastifyRequest;
+  projectId: string;
+  fromStage: number;
+  toStage: number;
+  forced: boolean;
+  gateEvaluation?: any;
+}): Promise<void> {
+  const { request, projectId, fromStage, toStage, forced, gateEvaluation } = params;
+
+  if (!request.user?.userId) {
+    return;
+  }
+
+  try {
+    await getAuditService().log({
+      action: forced ? 'STAGE_TRANSITION_FORCED' : 'STAGE_TRANSITIONED',
+      actor: request.user.userId,
+      actorRole: request.user.role,
+      resource: `/lifecycle/projects/${projectId}/stages/transition`,
+      severity: forced ? 'warn' : 'info',
+      details: forced
+        ? `Force transitioned project ${projectId} from stage ${fromStage} to ${toStage} by ${request.user.role}`
+        : `Transitioned project ${projectId} from stage ${fromStage} to ${toStage}`,
+      ipAddress: request.ip,
+      userAgent: request.headers['user-agent'],
+      method: request.method,
+      status: 200,
+      tenantId: request.user.tenantId,
+      success: true,
+      metadata: {
+        projectId,
+        fromStage,
+        toStage,
+        forced,
+        gateEvaluation,
+        actorRole: request.user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to log stage transition audit event:', error);
+  }
 }
 
 function isLifecyclePhaseId(value: string): value is LifecyclePhaseId {
@@ -413,6 +472,135 @@ function buildProgressiveDisclosureModel(
   };
 }
 
+/**
+ * Calculate task risk based on priority and status
+ * TODO: Replace with real security scan results when available
+ */
+function calculateTaskRisk(priority: string, status: string): number {
+  // Base risk by priority
+  let riskScore = 0;
+  switch (priority.toUpperCase()) {
+    case 'HIGH':
+      riskScore = 75;
+      break;
+    case 'MEDIUM':
+      riskScore = 50;
+      break;
+    case 'LOW':
+      riskScore = 25;
+      break;
+    default:
+      riskScore = 40;
+  }
+
+  // Adjust risk based on status
+  switch (status.toUpperCase()) {
+    case 'TODO':
+    case 'PENDING':
+      riskScore += 10; // Higher risk for incomplete tasks
+      break;
+    case 'IN_PROGRESS':
+      riskScore += 5;
+      break;
+    case 'DONE':
+    case 'COMPLETED':
+      riskScore -= 15; // Lower risk for completed tasks
+      break;
+    case 'BLOCKED':
+      riskScore += 20; // Higher risk for blocked tasks
+      break;
+  }
+
+  // Ensure risk is within 0-100 range
+  return Math.max(0, Math.min(100, riskScore));
+}
+
+/**
+ * Evaluate stage gate requirements for transition
+ */
+async function evaluateStageGate(
+  prisma: PrismaClient,
+  projectId: string,
+  fromStage: number,
+  toStage: number
+): Promise<{
+  canProceed: boolean;
+  readiness: number;
+  requiredArtifacts: Array<{ type: string; required: number; current: number }>;
+  unmetCriteria: string[];
+  gateStatus: 'OPEN' | 'CLOSED';
+}> {
+  // Define required artifacts by stage
+  const stageRequirements: Record<number, string[]> = {
+    0: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
+    1: ['Architecture Diagram', 'Tech Stack', 'API Design'],
+    2: ['Test Plan', 'Test Cases', 'Test Results'],
+    3: ['Source Code', 'Documentation', 'Build Artifacts'],
+    4: ['Deployment Script', 'Environment Config', 'Smoke Test Results'],
+    5: ['Dashboards', 'Alerts', 'SLOs'],
+    6: ['Improvement Backlog', 'Performance Metrics', 'Next Iteration Plan'],
+  };
+
+  const requiredArtifacts = stageRequirements[fromStage] || [];
+  const artifacts = await prisma.lifecycleArtifact.findMany({
+    where: {
+      projectId,
+      flowStage: fromStage,
+    },
+  });
+
+  const completedArtifacts = artifacts.filter((a) => a.status === 'approved');
+  const readiness = requiredArtifacts.length === 0
+    ? 100
+    : Math.min(100, Math.round((completedArtifacts.length / requiredArtifacts.length) * 100));
+
+  const artifactRequirements = requiredArtifacts.map((type) => ({
+    type,
+    required: 1,
+    current: artifacts.filter((a) => a.type === type && a.status === 'approved').length,
+  }));
+
+  const unmetCriteria = artifactRequirements
+    .filter((req) => req.current < req.required)
+    .map((req) => `Missing or incomplete: ${req.type}`);
+
+  const canProceed = readiness >= 80 && unmetCriteria.length === 0;
+  const gateStatus = canProceed ? 'OPEN' : 'CLOSED';
+
+  return {
+    canProceed,
+    readiness,
+    requiredArtifacts: artifactRequirements,
+    unmetCriteria,
+    gateStatus,
+  };
+}
+
+/**
+ * Safely extract a numeric field from Prisma Json metadata.
+ */
+function safeMetadataNumber(metadata: unknown, key: string): number | undefined {
+  if (metadata !== null && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const val = (metadata as Record<string, unknown>)[key];
+    return typeof val === 'number' ? val : undefined;
+  }
+  return undefined;
+}
+
+function getPhaseFromStage(stage: number): LifecyclePhaseId {
+  const phaseMap: Record<number, LifecyclePhaseId> = {
+    0: 'INTENT',
+    1: 'SHAPE',
+    2: 'VALIDATE',
+    3: 'GENERATE',
+    4: 'RUN',
+    5: 'OBSERVE',
+    6: 'IMPROVE',
+  };
+  
+  return phaseMap[stage] || 'INTENT';
+}
+
 const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
   // ========================================================================
   // Phases (P0 - Critical)
@@ -570,7 +758,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: requirePermission('workflow', 'update') },
     async (request, reply) => {
       const { id: projectId } = request.params as { id: string };
-      const body = request.body as unknown;
+      const body = request.body as { targetPhase?: string; userId?: string; reason?: string };
 
       if (!validateProjectId(projectId)) {
         return reply.status(400).send({
@@ -588,8 +776,8 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(404).send({ error: 'Project not found' });
       }
 
-      const currentPhase = project.lifecyclePhase || 'INTENT';
-      const targetPhase = body.targetPhase;
+      const currentPhase = project.lifecyclePhase ?? 'INTENT';
+      const targetPhase = body.targetPhase ?? '';
       const phaseOrder = [
         'INTENT',
         'SHAPE',
@@ -602,7 +790,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       const currentIndex = phaseOrder.indexOf(currentPhase);
       const targetIndex = phaseOrder.indexOf(targetPhase);
 
-      if (targetIndex === -1) {
+      if (targetIndex === -1 || targetPhase === '') {
         return reply.status(400).send({
           error: 'Invalid target phase',
           validPhases: phaseOrder,
@@ -611,7 +799,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
 
       const updatedProject = await prisma.project.update({
         where: { id: projectId },
-        data: { lifecyclePhase: targetPhase },
+        data: { lifecyclePhase: targetPhase as LifecyclePhase },
       });
 
       await prisma.lifecycleActivityLog.create({
@@ -625,8 +813,8 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
             toPhase: targetPhase,
             fromStage: currentIndex,
             toStage: targetIndex,
-            reason: body.reason || 'Manual transition',
-          },
+            reason: body.reason ?? 'Manual transition',
+          } as Prisma.InputJsonValue,
         },
       });
 
@@ -779,7 +967,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
    * Validate if a project can pass through a gate
    */
   fastify.post('/gates/validate', async (request, reply) => {
-    const body = request.body as unknown;
+    const body = request.body as { projectId?: string; phase?: string; gate?: string };
     const { projectId, phase, gate } = body;
 
     if (!validateProjectId(projectId)) {
@@ -795,7 +983,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     const artifacts = await prisma.lifecycleArtifact.findMany({
       where: {
         projectId,
-        phase: phase || 'INTENT',
+        phase: (phase ?? 'INTENT') as LifecyclePhase,
         status: 'approved',
       },
     });
@@ -834,7 +1022,8 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       'alerts-configured': { requiredArtifacts: ['Alerts'], minCount: 1 },
     };
 
-    const requirement = gateRequirements[gate] || {
+    type GateRequirement = { requiredArtifacts: string[]; minCount: number };
+    const requirement: GateRequirement = (gate ? (gateRequirements[gate] as GateRequirement) : undefined) ?? {
       requiredArtifacts: [],
       minCount: 0,
     };
@@ -905,20 +1094,33 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       const prisma = getPrismaClient();
       const body = request.body as unknown;
 
+      const artifactBody = body as {
+        projectId?: string;
+        title?: string;
+        type?: string;
+        description?: string;
+        content?: string;
+        status?: string;
+        phase?: string;
+        flowStage?: number;
+        createdBy?: string;
+        linkedArtifacts?: string[];
+        metadata?: Record<string, unknown>;
+      };
+
       const artifact = await prisma.lifecycleArtifact.create({
         data: {
-          id: body.id,
-          projectId: body.projectId,
-          title: body.title,
-          type: body.type,
-          description: body.description,
-          content: body.content,
-          status: body.status || 'draft',
-          phase: body.phase || 'INTENT',
-          fowStage: body.fowStage || 1,
-          createdBy: body.createdBy || 'system',
-          linkedArtifacts: body.linkedArtifacts || [],
-          metadata: body.metadata || {},
+          projectId: artifactBody.projectId ?? '',
+          title: artifactBody.title ?? '',
+          type: artifactBody.type ?? '',
+          description: artifactBody.description,
+          content: artifactBody.content,
+          status: artifactBody.status ?? 'draft',
+          phase: (artifactBody.phase ?? 'INTENT') as LifecyclePhase,
+          flowStage: artifactBody.flowStage ?? 0,
+          createdBy: artifactBody.createdBy ?? 'system',
+          linkedArtifacts: artifactBody.linkedArtifacts ?? [],
+          metadata: (artifactBody.metadata ?? {}) as Prisma.InputJsonValue,
         },
       });
 
@@ -931,7 +1133,14 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: requirePermission('workflow', 'update') },
     async (request, reply) => {
       const { artifactId } = request.params as { artifactId: string };
-      const body = request.body as unknown;
+      const body = request.body as {
+        title?: string;
+        description?: string;
+        content?: string;
+        status?: string;
+        phase?: string;
+        metadata?: Record<string, unknown>;
+      };
       const prisma = getPrismaClient();
       const artifact = await prisma.lifecycleArtifact.update({
         where: { id: artifactId },
@@ -940,7 +1149,8 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
           description: body.description,
           content: body.content,
           status: body.status,
-          metadata: body.metadata,
+          ...(body.phase !== undefined && { phase: body.phase as LifecyclePhase }),
+          ...(body.metadata !== undefined && { metadata: body.metadata as Prisma.InputJsonValue }),
         },
       });
 
@@ -987,17 +1197,23 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     // Transform to evidence format
-    const evidence = logs.map((log) => ({
-      id: log.id,
-      type: 'audit',
-      title: log.action,
-      description: log.description,
-      timestamp: log.timestamp,
-      phase: 'INTENT',
-      fowStage: 1,
-      status: 'approved',
-      metadata: log.metadata,
-    }));
+    const evidence = logs.map((log) => {
+      // Derive phase from stage or metadata
+      const flowStage = safeMetadataNumber(log.metadata, 'stage') ?? safeMetadataNumber(log.metadata, 'flowStage') ?? 1;
+      const phase = getPhaseFromStage(flowStage);
+
+      return {
+        id: log.id,
+        type: 'audit',
+        title: log.action,
+        description: log.description,
+        timestamp: log.timestamp,
+        phase,
+        flowStage,
+        status: 'approved',
+        metadata: log.metadata,
+      };
+    });
 
     return evidence;
   });
@@ -1032,29 +1248,34 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
+    // Get stage-specific requirements
+    const requiredArtifactTypes = STAGE_GATE_REQUIREMENTS[parsedStage];
+    if (!requiredArtifactTypes) {
+      return reply.status(400).send({
+        error: 'Invalid stage. No gate requirements defined for this stage.',
+        received: parsedStage,
+      });
+    }
+
     const artifacts = await prisma.lifecycleArtifact.findMany({
       where: {
         projectId,
-        fowStage: parsedStage,
+        flowStage: parsedStage,
       },
     });
 
-    const requiredArtifacts = [
-      'Idea Brief',
-      'Problem Statement',
-      'Requirements',
-    ];
     const completedArtifacts = artifacts.filter((a) => a.status === 'approved');
     const readiness = Math.min(
       100,
-      Math.round((completedArtifacts.length / requiredArtifacts.length) * 100)
+      Math.round((completedArtifacts.length / requiredArtifactTypes.length) * 100)
     );
 
     return {
       stage: parseInt(stage),
       readiness,
       canProceed: readiness >= 80,
-      requiredArtifacts: requiredArtifacts.map((type) => ({
+      requiredArtifactTypes,
+      requiredArtifacts: requiredArtifactTypes.map((type) => ({
         type,
         required: 1,
         current: artifacts.filter(
@@ -1071,7 +1292,12 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: requirePermission('workflow', 'update') },
     async (request, reply) => {
       const { projectId } = request.params as { projectId: string };
-      const body = request.body as unknown;
+      const body = request.body as {
+        fromStage: number;
+        toStage: number;
+        userId?: string;
+        force?: boolean;
+      };
 
       // Validate projectId
       if (!validateProjectId(projectId)) {
@@ -1081,18 +1307,114 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      // Validate request body
+      if (typeof body.fromStage !== 'number' || typeof body.toStage !== 'number') {
+        return reply.status(400).send({
+          error: 'Invalid request body. fromStage and toStage must be numbers.',
+        });
+      }
+
+      if (body.toStage <= body.fromStage) {
+        return reply.status(400).send({
+          error: 'Invalid transition. toStage must be greater than fromStage.',
+        });
+      }
+
+      // Guard force transitions to ADMIN/OWNER roles only
+      if (body.force === true) {
+        const userRole = (request.user as { role?: string })?.role;
+        if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
+          return reply.status(403).send({
+            error: 'Forbidden',
+            message: 'Force stage transitions require ADMIN or OWNER role.',
+          });
+        }
+      }
+
       const prisma = getPrismaClient();
+
+      // Validate that fromStage matches the project's actual current lifecycle stage
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { lifecyclePhase: true },
+      });
+
+      if (!project) {
+        return reply.status(404).send({
+          error: 'Project not found',
+          projectId,
+        });
+      }
+
+      const currentPhase = project.lifecyclePhase || 'INTENT';
+      const currentPhaseIndex = LIFECYCLE_PHASE_ORDER.indexOf(currentPhase);
+      
+      if (currentPhaseIndex !== body.fromStage) {
+        return reply.status(400).send({
+          error: 'Invalid fromStage. Does not match project current lifecycle stage.',
+          fromStage: body.fromStage,
+          currentStage: currentPhaseIndex,
+          currentPhase,
+          message: `Project is currently at stage ${currentPhaseIndex} (${currentPhase}), but request specified fromStage ${body.fromStage}.`,
+        });
+      }
+
+      // Check gate requirements before allowing transition
+      const gateEvaluation = await evaluateStageGate(
+        prisma,
+        projectId,
+        body.fromStage,
+        body.toStage
+      );
+
+      // Allow force transition if explicitly requested (for admin override)
+      if (!gateEvaluation.canProceed && !body.force) {
+        return reply.status(422).send({
+          error: 'Stage transition blocked by gate requirements',
+          fromStage: body.fromStage,
+          toStage: body.toStage,
+          gateEvaluation,
+          message: 'Complete required artifacts and criteria before advancing',
+        });
+      }
+
+      // Record the transition
+      const userRole = (request.user as { role?: string; userId?: string })?.role;
+      const userId = (request.user as { userId?: string })?.userId || body.userId || 'system';
+
       await prisma.lifecycleActivityLog.create({
         data: {
           projectId,
-          userId: body.userId || 'system',
-          action: 'STAGE_TRANSITIONED',
-          description: `Transitioned from stage ${body.fromStage} to ${body.toStage}`,
-          metadata: body,
+          userId,
+          action: body.force ? 'STAGE_TRANSITION_FORCED' : 'STAGE_TRANSITIONED',
+          description: body.force
+            ? `Force transitioned from stage ${body.fromStage} to ${body.toStage} by ${userRole}`
+            : `Transitioned from stage ${body.fromStage} to ${body.toStage}`,
+          metadata: {
+            ...body,
+            gateEvaluation,
+            forced: body.force ?? false,
+            actorRole: userRole,
+          } as Prisma.InputJsonValue,
         },
       });
 
-      return { success: true, currentStage: body.toStage };
+      // Log structured audit event
+      await logStageTransitionAuditEvent({
+        request,
+        projectId,
+        fromStage: body.fromStage,
+        toStage: body.toStage,
+        forced: body.force ?? false,
+        gateEvaluation,
+      });
+
+      return { 
+        success: true, 
+        currentStage: body.toStage,
+        gateEvaluation,
+        forced: body.force || false,
+      };
     }
   );
 
@@ -1128,7 +1450,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         title: 'Define Problem Statement',
         description: 'Create a clear problem statement',
         phase: phase || 'INTENT',
-        fowStage: 1,
+        flowStage: 1,
         persona: 'Product Manager',
         priority: 'high',
         status: 'pending',
@@ -1141,7 +1463,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       title: item.title,
       description: item.description || '',
       phase: phase || 'INTENT',
-      fowStage: 1,
+      flowStage: 1,
       persona: 'Developer',
       priority: item.priority.toLowerCase(),
       estimatedEffort: item.estimatedEffort || 0,
@@ -1156,26 +1478,84 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       const { taskId } = request.params as { taskId: string };
       const body = request.body as unknown;
 
-      // Simulate task execution
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const enableTaskExecution = process.env.ENABLE_TASK_EXECUTION === 'true';
 
-      return {
-        taskId,
-        status: 'completed',
-        steps: [
-          { id: '1', status: 'completed', output: 'Context analyzed' },
-          { id: '2', status: 'completed', output: 'Content generated' },
-          { id: '3', status: 'completed', output: 'Validation passed' },
-        ],
-        artifacts: [
-          { id: 'new-art', title: 'Generated Artifact', type: 'Document' },
-        ],
-        logs: [
-          'Task execution started',
-          'Processing inputs...',
-          'Task completed successfully',
-        ],
-      };
+      if (!enableTaskExecution) {
+        // Task execution is not yet implemented - queue for future CI/CD integration
+        return reply.status(202).send({
+          taskId,
+          status: 'queued',
+          message: 'Task queued for execution. CI/CD adapter not yet connected.',
+          recommendation: 'Configure ENABLE_TASK_EXECUTION=true when CI/CD integration is available.',
+        });
+      }
+
+      // Use CI/CD adapter for task execution
+      const { createCICDAdapter } = await import('../services/cicd/CICDAdapter');
+      const cicdAdapter = createCICDAdapter();
+
+      try {
+        // Determine task type from body or taskId
+        const taskType = (body as { type?: string })?.type || 'build';
+        const projectId = (body as { projectId?: string })?.projectId;
+
+        let result;
+        switch (taskType) {
+          case 'build':
+            result = await cicdAdapter.executeBuildTask(taskId, {
+              projectId: projectId || 'unknown',
+              branch: (body as { branch?: string })?.branch,
+              commitSha: (body as { commitSha?: string })?.commitSha,
+              environment: (body as { environment?: string })?.environment,
+              buildCommand: (body as { buildCommand?: string })?.buildCommand,
+              variables: (body as { variables?: Record<string, string> })?.variables,
+            });
+            break;
+          case 'test':
+            result = await cicdAdapter.executeTestTask(taskId, {
+              projectId: projectId || 'unknown',
+              branch: (body as { branch?: string })?.branch,
+              commitSha: (body as { commitSha?: string })?.commitSha,
+              testCommand: (body as { testCommand?: string })?.testCommand,
+              coverageThreshold: (body as { coverageThreshold?: number })?.coverageThreshold,
+              variables: (body as { variables?: Record<string, string> })?.variables,
+            });
+            break;
+          case 'deploy':
+            result = await cicdAdapter.executeDeployTask(taskId, {
+              projectId: projectId || 'unknown',
+              branch: (body as { branch?: string })?.branch,
+              commitSha: (body as { commitSha?: string })?.commitSha,
+              environment: (body as { environment?: string })?.environment || 'production',
+              deployCommand: (body as { deployCommand?: string })?.deployCommand,
+              variables: (body as { variables?: Record<string, string> })?.variables,
+            });
+            break;
+          default:
+            return reply.status(400).send({
+              error: 'Invalid task type',
+              taskId,
+              taskType,
+              message: 'Task type must be one of: build, test, deploy',
+            });
+        }
+
+        return reply.status(202).send({
+          taskId,
+          status: result.status,
+          executionId: result.executionId,
+          message: `Task ${taskType} execution started`,
+          logs: result.logs,
+          metadata: result.metadata,
+        });
+      } catch (error) {
+        console.error(`Error executing task ${taskId}:`, error);
+        return reply.status(500).send({
+          error: 'Task execution failed',
+          taskId,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
   );
 
@@ -1198,23 +1578,71 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       const prisma = getPrismaClient();
+      const javaBackendUrl = process.env.JAVA_BACKEND_URL ?? 'http://localhost:7003';
+      const currentPhase = phase ?? 'INTENT';
+
+      // Attempt dynamic generation from Java AI backend using current project state
+      try {
+        const [artifacts, recentLogs] = await Promise.all([
+          prisma.lifecycleArtifact.findMany({
+            where: { projectId },
+            select: { type: true, status: true, phase: true },
+            take: 20,
+          }),
+          prisma.lifecycleActivityLog.findMany({
+            where: { projectId },
+            orderBy: { timestamp: 'desc' },
+            take: 5,
+            select: { action: true, description: true },
+          }),
+        ]);
+
+        const contextPayload = {
+          projectId,
+          phase: currentPhase,
+          artifactSummary: artifacts,
+          recentActivity: recentLogs,
+        };
+
+        const aiResponse = await fetch(`${javaBackendUrl}/api/v1/yappc/intent/recommendations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contextPayload),
+          signal: AbortSignal.timeout(5000),
+        });
+
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json() as { recommendations?: unknown[] };
+          if (Array.isArray(aiData.recommendations) && aiData.recommendations.length > 0) {
+            return aiData.recommendations;
+          }
+        }
+      } catch (err) {
+        fastify.log.warn({ projectId, phase: currentPhase, err }, 'AI recommendations endpoint unavailable; falling back to stored insights');
+      }
+
+      // Fallback: read pre-stored insights from DB
       const insights = await prisma.lifecycleAIInsight.findMany({
         where: { projectId },
         orderBy: { createdAt: 'desc' },
         take: 5,
       });
 
+      const phaseDefinition = LIFECYCLE_PHASES_BY_ID[currentPhase as LifecyclePhaseId];
+      const flowStage = phaseDefinition?.stage ?? 0;
+
       return insights.map((insight) => ({
         id: insight.id,
         type: 'insight',
         title: insight.title,
-        description: insight.description || '',
+        description: insight.description ?? '',
         confidence: insight.confidence,
-        phase: phase || 'INTENT',
-        fowStage: 1,
+        phase: currentPhase,
+        flowStage,
         persona: 'AI Assistant',
         priority: insight.severity.toLowerCase(),
         actionable: insight.status === 'PENDING',
+        source: 'stored_insight',
       }));
     }
   );
@@ -1242,17 +1670,22 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       take: 100,
     });
 
-    return logs.map((log) => ({
-      id: log.id,
-      type: log.action,
-      timestamp: log.timestamp,
-      userId: log.userId,
-      projectId: log.projectId,
-      fowStage: 1,
-      phase: 'INTENT',
-      metadata: log.metadata,
-      description: log.description || '',
-    }));
+    return logs.map((log) => {
+      const flowStage = safeMetadataNumber(log.metadata, 'stage') ?? safeMetadataNumber(log.metadata, 'flowStage') ?? 1;
+      const phase = getPhaseFromStage(flowStage);
+
+      return {
+        id: log.id,
+        type: log.action,
+        timestamp: log.timestamp,
+        userId: log.userId,
+        projectId: log.projectId,
+        flowStage,
+        phase,
+        metadata: log.metadata,
+        description: log.description ?? '',
+      };
+    });
   });
 
   fastify.post(
@@ -1260,7 +1693,13 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: requireRole('ADMIN') },
     async (request, reply) => {
       const { projectId } = request.params as { projectId: string };
-      const body = request.body as unknown;
+      const body = request.body as {
+        userId?: string;
+        type?: string;
+        action?: string;
+        description?: string;
+        metadata?: Record<string, unknown>;
+      };
 
       // Validate projectId
       if (!validateProjectId(projectId)) {
@@ -1274,10 +1713,10 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       const log = await prisma.lifecycleActivityLog.create({
         data: {
           projectId,
-          userId: body.userId || 'system',
-          action: body.type || body.action,
+          userId: body.userId ?? 'system',
+          action: body.type ?? body.action ?? 'UNKNOWN',
           description: body.description,
-          metadata: body.metadata || {},
+          metadata: (body.metadata ?? {}) as Prisma.InputJsonValue,
         },
       });
 
@@ -1285,66 +1724,6 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // ========================================================================
-  // Persona Derivation (Universal Endpoint)
-  // ========================================================================
-
-  fastify.post('/personas/derive', async (request, reply) => {
-    const body = request.body as unknown;
-    const { projectId, phase, fowStage } = body;
-
-    // Validate projectId
-    if (!validateProjectId(projectId)) {
-      return reply.status(400).send({
-        error: 'Invalid projectId. Must be a non-empty string.',
-        received: projectId,
-      });
-    }
-
-    const personas: Record<number, unknown> = {
-      0: {
-        persona: 'Product Owner',
-        confidence: 0.85,
-        reason: 'Intent phase requires strategic thinking',
-      },
-      1: {
-        persona: 'Architect',
-        confidence: 0.9,
-        reason: 'Shape phase requires technical design',
-      },
-      2: {
-        persona: 'QA Engineer',
-        confidence: 0.88,
-        reason: 'Validate phase requires testing',
-      },
-      3: {
-        persona: 'Developer',
-        confidence: 0.92,
-        reason: 'Generate phase requires coding',
-      },
-      4: {
-        persona: 'DevOps Engineer',
-        confidence: 0.89,
-        reason: 'Run phase requires deployment',
-      },
-      5: {
-        persona: 'SRE',
-        confidence: 0.87,
-        reason: 'Observe phase requires monitoring',
-      },
-      6: {
-        persona: 'Product Manager',
-        confidence: 0.84,
-        reason: 'Improve phase requires planning',
-      },
-    };
-
-    return personas[phase] || personas[0];
-  });
-
-  // ========================================================================
-  // DevSecOps Items
-  // ========================================================================
 
   fastify.get('/projects/:projectId/devsecops', async (request, reply) => {
     const { projectId } = request.params as { projectId: string };
@@ -1372,8 +1751,119 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       status: item.status.toLowerCase().replace('_', '-'),
       assignee: item.assignedPersona || null,
       dueDate: null,
-      risk: Math.floor(Math.random() * 100), // Placeholder
+      // Calculate basic risk based on priority and status
+      // TODO: Replace with real security scan results when available
+      risk: calculateTaskRisk(item.priority, item.status),
     }));
+  });
+
+  // ========================================================================
+  // Persona Derivation (AI-backed with fallback)
+  // ========================================================================
+
+  fastify.post('/personas/derive', async (request, reply) => {
+    const body = request.body as { projectId?: unknown; phase?: unknown; useAI?: unknown; userId?: unknown };
+    const projectId = typeof body.projectId === 'string' ? body.projectId : undefined;
+    const phase = typeof body.phase === 'string' ? body.phase : 'INTENT';
+    const useAI = typeof body.useAI === 'boolean' ? body.useAI : true;
+    const userId = typeof body.userId === 'string' ? body.userId : 'system';
+
+    // Validate projectId
+    if (!projectId) {
+      return reply.status(400).send({
+        error: 'projectId is required',
+      });
+    }
+
+    const prisma = getPrismaClient();
+    const phaseDefinition = LIFECYCLE_PHASES.find((p) => p.id === phase);
+
+    // Get project context for AI recommendation
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { name: true, description: true },
+    });
+
+    const artifacts = await prisma.lifecycleArtifact.findMany({
+      where: { projectId, phase: phase as LifecyclePhase },
+      take: 10,
+    });
+
+    // Try AI-backed persona recommendation if enabled
+    if (useAI) {
+      try {
+        const aiService = new AIService({
+          prisma,
+          javaBackendUrl: process.env.JAVA_BACKEND_URL || 'http://localhost:8080',
+          enableCaching: true,
+          cacheTTL: 300000,
+        });
+        const artifactSummary = artifacts.map(a => `${a.title}: ${a.status}`).join(', ');
+        const personaList = phaseDefinition?.personas?.join(', ') || 'Product Owner, Product Manager';
+        
+        const prompt = `Given a project in the ${phaseDefinition?.name || phase} phase, recommend the most appropriate persona from this list: ${personaList}.
+        
+Project: ${project?.name || 'Unknown'}
+Description: ${project?.description || 'No description'}
+Phase: ${phaseDefinition?.name || phase} - ${phaseDefinition?.description || ''}
+Key Artifacts (${artifacts.length}): ${artifactSummary || 'None'}
+
+Respond with JSON format:
+{
+  "persona": "recommended persona name",
+  "reasoning": "brief explanation",
+  "confidence": 0.0-1.0
+}`;
+
+        const aiResponse = await aiService.sendCopilotMessage({
+          sessionId: `persona-${projectId}-${phase}`,
+          userId,
+          message: prompt,
+        });
+
+        // Parse AI response
+        const personaMatch = aiResponse.response.match(/"persona"\s*:\s*"([^"]+)"/);
+        const reasoningMatch = aiResponse.response.match(/"reasoning"\s*:\s*"([^"]+)"/);
+        const confidenceMatch = aiResponse.response.match(/"confidence"\s*:\s*([\d.]+)/);
+
+        if (personaMatch) {
+          return {
+            persona: personaMatch[1],
+            confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.8,
+            reasoning: reasoningMatch ? reasoningMatch[1] : 'AI recommendation based on project context',
+            phase,
+            source: 'AI',
+            artifactCount: artifacts.length,
+          };
+        }
+      } catch (error) {
+        // Fallback to phase definition if AI fails
+        console.error('AI persona recommendation failed, falling back to phase definition:', error);
+      }
+    }
+
+    // Fallback: Derive persona from phase definition's canonical persona list
+    const primaryPersona = phaseDefinition?.personas[0] ?? 'Product Owner';
+
+    const approvedCount = await prisma.lifecycleArtifact.count({
+      where: { projectId, phase: phase as LifecyclePhase, status: 'APPROVED' },
+    });
+
+    const baseConfidence = 0.75;
+    const completionBonus = artifacts.length > 0 ? (approvedCount / artifacts.length) * 0.2 : 0;
+    const confidence = Math.round((baseConfidence + completionBonus) * 100) / 100;
+
+    return {
+      persona: primaryPersona,
+      confidence,
+      phase,
+      reasoning: phaseDefinition
+        ? `${phaseDefinition.name} phase: ${phaseDefinition.description}`
+        : 'Default phase context',
+      source: 'phase_definition',
+      artifactCount: artifacts.length,
+      approvedCount,
+    };
   });
 
   // ========================================================================

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
@@ -25,7 +26,7 @@ describe('collection-data client', () => {
     const record = {
       id: 'record-1',
       collectionId: 'orders',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       data: { id: '1', total: 42 },
       createdAt: '2026-04-15T13:00:00Z',
       updatedAt: '2026-04-15T13:01:00Z',
@@ -37,9 +38,9 @@ describe('collection-data client', () => {
     mockApiClient.get.mockResolvedValueOnce(record);
     mockApiClient.put.mockResolvedValueOnce({ ...record, version: 2, updatedBy: 'editor' });
 
-    const created = await collectionDataClient.createRecord('tenant-a', 'orders', { data: { id: '1', total: 42 } });
-    const loaded = await collectionDataClient.getRecord('tenant-a', 'orders', 'record-1');
-    const updated = await collectionDataClient.updateRecord('tenant-a', 'orders', 'record-1', { data: { id: '1', total: 43 } });
+    const created = await collectionDataClient.createRecord(TEST_TENANT_ID, 'orders', { data: { id: '1', total: 42 } });
+    const loaded = await collectionDataClient.getRecord(TEST_TENANT_ID, 'orders', 'record-1');
+    const updated = await collectionDataClient.updateRecord(TEST_TENANT_ID, 'orders', 'record-1', { data: { id: '1', total: 43 } });
 
     expect(created.version).toBe(1);
     expect(loaded.id).toBe('record-1');
@@ -53,7 +54,7 @@ describe('collection-data client', () => {
         {
           id: 'record-1',
           collectionId: 'orders',
-          tenantId: 'tenant-a',
+          tenantId: TEST_TENANT_ID,
           data: { id: '1' },
           createdAt: '2026-04-15T13:00:00Z',
           updatedAt: '2026-04-15T13:00:00Z',
@@ -71,7 +72,7 @@ describe('collection-data client', () => {
         {
           id: 'record-2',
           collectionId: 'orders',
-          tenantId: 'tenant-a',
+          tenantId: TEST_TENANT_ID,
           data: { id: '2' },
           createdAt: '2026-04-15T13:02:00Z',
           updatedAt: '2026-04-15T13:02:00Z',
@@ -84,9 +85,9 @@ describe('collection-data client', () => {
     });
     mockApiClient.post.mockResolvedValueOnce({ deleted: 2 });
 
-    const listed = await collectionDataClient.listRecords('tenant-a', 'orders', { limit: 20, offset: 0, search: '1' });
-    const bulkCreated = await collectionDataClient.bulkCreateRecords('tenant-a', 'orders', { records: [{ id: '2' }] });
-    const deletedCount = await collectionDataClient.bulkDeleteRecords('tenant-a', 'orders', ['record-1', 'record-2']);
+    const listed = await collectionDataClient.listRecords(TEST_TENANT_ID, 'orders', { limit: 20, offset: 0, search: '1' });
+    const bulkCreated = await collectionDataClient.bulkCreateRecords(TEST_TENANT_ID, 'orders', { records: [{ id: '2' }] });
+    const deletedCount = await collectionDataClient.bulkDeleteRecords(TEST_TENANT_ID, 'orders', ['record-1', 'record-2']);
 
     expect(listed.total).toBe(1);
     expect(bulkCreated.successful).toHaveLength(1);

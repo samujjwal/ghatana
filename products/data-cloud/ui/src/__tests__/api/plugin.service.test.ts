@@ -1,4 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  PLUGIN_COMPATIBILITY_BOUNDARY_WARNING,
+  PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE,
+  PLUGIN_INSTALL_BOUNDARY_MESSAGE,
+  PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE,
+  PLUGIN_UNINSTALL_BOUNDARY_MESSAGE,
+} from '@/lib/runtime-boundaries';
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
@@ -74,10 +81,20 @@ describe('pluginService contract mapping', () => {
     expect(mockApiClient.get).toHaveBeenCalledWith('/plugins/plugin-orders');
   });
 
-  it('fails explicitly for unsupported marketplace and runtime mutation helpers', async () => {
-    await expect(pluginService.updatePluginConfiguration('plugin-orders', { retries: 3 })).rejects.toThrow(/Plugin configuration is not exposed/i);
-    await expect(pluginService.uninstallPlugin('plugin-orders')).rejects.toThrow(/cannot be uninstalled at runtime/i);
-    await expect(pluginService.getMarketplacePlugin('marketplace-plugin')).rejects.toThrow(/Marketplace metadata is not exposed/i);
-    await expect(pluginService.installPlugin({ pluginId: 'marketplace-plugin' })).rejects.toThrow(/Runtime plugin installation is not supported/i);
+  it('fails explicitly for unsupported marketplace and runtime delivery helpers', async () => {
+    await expect(pluginService.updatePluginConfiguration('plugin-orders', { retries: 3 })).rejects.toThrow(PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE);
+    await expect(pluginService.uninstallPlugin('plugin-orders')).rejects.toThrow(PLUGIN_UNINSTALL_BOUNDARY_MESSAGE);
+    await expect(pluginService.getMarketplacePlugin('marketplace-plugin')).rejects.toThrow(PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE);
+    await expect(pluginService.installPlugin({ pluginId: 'marketplace-plugin' })).rejects.toThrow(PLUGIN_INSTALL_BOUNDARY_MESSAGE);
+  });
+
+  it('returns a canonical compatibility warning for bundled-only validation', async () => {
+    const validation = await pluginService.validatePlugin('plugin-orders');
+
+    expect(validation).toEqual({
+      compatible: true,
+      issues: [],
+      warnings: [PLUGIN_COMPATIBILITY_BOUNDARY_WARNING],
+    });
   });
 });

@@ -428,11 +428,11 @@ export function PluginCard({
               </>
             ) : mode === 'marketplace' && marketplacePlugin ? (
               <>
-                {/* View Details - Marketplace */}
+                {/* View Details - Future catalog placeholder */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    // For marketplace, could show a preview modal or navigate
+                    // Placeholder for a future launcher-backed plugin catalog preview
                   }}
                   className={cn(
                     'px-3 py-1.5 text-xs font-medium rounded-lg',

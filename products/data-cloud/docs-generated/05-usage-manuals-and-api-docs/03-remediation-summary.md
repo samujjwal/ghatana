@@ -222,13 +222,13 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph Before["Before: 3 Path Models"]
-        B1["/api/collections"]
+        B1["deprecated CRUD /api/v1/collections"]
         B2["/api/v1/..."]
         B3["/api/v1/tenants/..."]
     end
     
     subgraph After["After: 1 Model"]
-        A1["Header-based tenant<br/>X-Tenant-ID"]
+        A1["/api/v1/entities/dc_collections<br/>Header-based tenant via X-Tenant-ID"]
     end
     
     Before -->|Aligned| After
@@ -237,11 +237,12 @@ flowchart LR
 - Unified on `/api/v1/entities/:collection` with `X-Tenant-ID` header
 - Deleted duplicate `openapi.yaml` from launcher
 - Made `docs/openapi.yaml` canonical
+- Canonical UI collection journeys now resolve through `/data` plus entity-backed collection APIs rather than legacy `/collections` routes
 
 ### 4. Dead Code Removal
 
 **Deleted:**
-- 11 dead UI pages (BrainDashboardPage, CollectionsPage, etc.)
+- 11 dead UI pages and route variants replaced by canonical Intelligent Hub, Data Explorer, and Pipelines surfaces
 - 5 dedicated test files for dead pages
 - `RootLayout.tsx` (unused)
 - Duplicate Storybook stories
@@ -272,7 +273,7 @@ flowchart LR
 |------|--------|-------|
 | Remove `shared-services/feature-store-ingest/` | ⏳ Cleanup | Excluded from build, safe to remove |
 | OpenAPI spec alignment | ⏳ Ongoing | Incremental updates |
-| Data-fabric route decision | 📋 Pending | Product decision needed |
+| Data-fabric route decision | ⚠️ Scoped | Current `/fabric` route is preview-only and intentionally not promoted as a primary workflow |
 
 ---
 

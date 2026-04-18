@@ -3,10 +3,15 @@ import { Provider } from 'jotai';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it } from 'vitest';
+import {
+  AI_COLLABORATOR_FOOTER_NOTE,
+  AI_COLLABORATOR_BOUNDARY_MESSAGE,
+  AI_COLLABORATOR_BOUNDARY_TITLE,
+  AI_COLLABORATOR_CONTEXT_HINT,
+} from '@/lib/runtime-boundaries';
 
 import {
   AICollaborator,
-  AI_COLLABORATOR_BOUNDARY_MESSAGE,
 } from '../AICollaborator';
 
 function Wrapper({ children }: { children: React.ReactNode }) {
@@ -33,7 +38,9 @@ describe('AICollaborator', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '+' }));
 
-    expect(screen.getByText('AI collaborator unavailable in launcher mode')).toBeDefined();
+    expect(screen.getByText(AI_COLLABORATOR_BOUNDARY_TITLE)).toBeDefined();
     expect(screen.getByText(AI_COLLABORATOR_BOUNDARY_MESSAGE)).toBeDefined();
+    expect(screen.getByText(AI_COLLABORATOR_CONTEXT_HINT)).toBeDefined();
+    expect(screen.getByText(AI_COLLABORATOR_FOOTER_NOTE)).toBeDefined();
   });
 });

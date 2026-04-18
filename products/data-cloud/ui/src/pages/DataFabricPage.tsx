@@ -26,6 +26,8 @@ import {
   type OnConnect,
 } from '@ghatana/canvas/flow';
 import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
+import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
+import { dataFabricMetricsBoundary } from '../components/common/unsupportedSurfaceRegistry';
 
 // =============================================================================
 // Types
@@ -49,9 +51,6 @@ interface FabricMetricsResponse {
   totalStorageGb: number;
   lastUpdated: string;
 }
-
-export const FABRIC_METRICS_BOUNDARY_MESSAGE =
-  'Live data-fabric metrics are not exposed by the current Data Cloud launcher API. This page shows a preview topology only.';
 
 const PREVIEW_FABRIC_METRICS: FabricMetricsResponse = {
   tiers: [
@@ -341,7 +340,6 @@ export function DataFabricPage(): React.ReactElement {
           <p className="text-sm text-gray-500 mt-0.5">
             Live four-tier event cloud topology — HOT → WARM → COOL → COLD
           </p>
-          <p className="text-xs text-amber-700 mt-1">{FABRIC_METRICS_BOUNDARY_MESSAGE}</p>
         </div>
         <div className="flex items-center gap-3">
           {/* B10: Manual Tier Migration */}
@@ -403,6 +401,14 @@ export function DataFabricPage(): React.ReactElement {
           </button>
         </div>
       )}
+
+      <UnsupportedSurfaceBoundary
+        className="mx-6 mt-4"
+        title={dataFabricMetricsBoundary.title}
+        summary={dataFabricMetricsBoundary.summary}
+        details={dataFabricMetricsBoundary.details}
+        state={dataFabricMetricsBoundary.state}
+      />
 
       <StatBar metrics={fabricMetrics} />
 

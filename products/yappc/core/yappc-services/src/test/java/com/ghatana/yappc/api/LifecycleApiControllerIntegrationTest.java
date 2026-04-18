@@ -20,6 +20,8 @@ import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
+import com.ghatana.yappc.services.run.CiCdPort;
+import com.ghatana.yappc.services.run.NoOpCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
 import com.ghatana.yappc.services.run.RunServiceImpl;
 import com.ghatana.yappc.services.shape.ShapeService;
@@ -27,6 +29,8 @@ import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import io.activej.bytebuf.ByteBuf;
+import io.activej.eventloop.Eventloop;
+import io.activej.http.AsyncHttpClient;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -63,10 +67,14 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
         ShapeService shapeService = new ShapeServiceImpl(completionService, auditLogger, metrics);
         ValidationService validationService = new ValidationServiceImpl(policyEngine, auditLogger, metrics);
         GenerationService generationService = new GenerationServiceImpl(completionService, auditLogger, metrics);
-        RunService runService = new RunServiceImpl(auditLogger, metrics);
+        CiCdPort ciCdPort = new NoOpCiCdAdapter();
+        RunService runService = new RunServiceImpl(auditLogger, metrics, ciCdPort);
         ObserveService observeService = new ObserveServiceImpl(metrics, auditLogger);
         LearningService learningService = new LearningServiceImpl(completionService, auditLogger, metrics);
         EvolutionService evolutionService = new EvolutionServiceImpl(completionService, auditLogger, metrics);
+
+        Eventloop testEventloop = Eventloop.builder().build();
+        AsyncHttpClient testHttpClient = AsyncHttpClient.builder(testEventloop).build();
 
         controller = new LifecycleApiController(
                 intentService,
@@ -76,7 +84,9 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
                 runService,
                 observeService,
                 learningService,
-                evolutionService);
+                evolutionService,
+                testEventloop,
+                testHttpClient);
     }
 
     @Test

@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Collections E2E Tests
+ * Data Explorer E2E Tests
  * 
- * Tests the complete collections workflow including:
+ * Tests the complete data explorer workflow including:
  * - Listing collections
  * - Creating new collections
  * - Viewing collection details
@@ -11,36 +11,31 @@ import { test, expect } from '@playwright/test';
  * - Deleting collections
  * 
  * @doc.type test
- * @doc.purpose E2E tests for collections functionality
+ * @doc.purpose E2E tests for data explorer functionality
  * @doc.layer testing
  */
 
-test.describe('Collections', () => {
+test.describe('Data Explorer', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to collections page before each test
-    await page.goto('/collections');
+    await page.goto('/data');
   });
 
   test('should display collections list', async ({ page }) => {
-    // Wait for the page to load
-    await expect(page.locator('h1')).toContainText('Collections');
-    
-    // Check for "New Collection" button
-    await expect(page.getByRole('link', { name: /new collection/i })).toBeVisible();
+    await expect(page.getByTestId('data-explorer-page')).toBeVisible();
+    await expect(page.locator('h1')).toContainText('Data Explorer');
+    await expect(page.getByTestId('create-collection-button')).toBeVisible();
   });
 
   test('should navigate to create collection page', async ({ page }) => {
     // Click "New Collection" button
-    await page.getByRole('link', { name: /new collection/i }).click();
+    await page.getByTestId('create-collection-button').click();
     
-    // Verify we're on the create page
-    await expect(page).toHaveURL(/\/collections\/new/);
+    await expect(page).toHaveURL(/\/data\/new/);
     await expect(page.locator('h1')).toContainText('Create New Collection');
   });
 
   test('should create a new collection', async ({ page }) => {
-    // Navigate to create page
-    await page.goto('/collections/new');
+    await page.goto('/data/new');
     
     // Fill in the form
     await page.getByLabel(/name/i).fill('Test Collection');
@@ -49,37 +44,29 @@ test.describe('Collections', () => {
     // Submit the form
     await page.getByRole('button', { name: /create|save/i }).click();
     
-    // Verify redirect to collections list
-    await expect(page).toHaveURL(/\/collections$/);
-    
-    // Verify success message (if using toast notifications)
+    await expect(page).toHaveURL(/\/data$/);
     await expect(page.locator('text=created successfully')).toBeVisible({ timeout: 5000 });
   });
 
   test('should view collection details', async ({ page }) => {
     // Click on first collection in the list
-    const firstCollection = page.locator('[data-testid="collection-item"]').first();
+    const firstCollection = page.getByTestId('collection-item').first();
     await firstCollection.click();
     
-    // Verify we're on the detail page
-    await expect(page).toHaveURL(/\/collections\/[^/]+$/);
-    
-    // Check for collection details
+    await expect(page).toHaveURL(/\/data\/[^/]+$/);
     await expect(page.locator('text=/Entity Count|Schema Fields|Created At/i')).toBeVisible();
   });
 
   test('should edit a collection', async ({ page }) => {
     // Navigate to first collection
-    const firstCollection = page.locator('[data-testid="collection-item"]').first();
+    const firstCollection = page.getByTestId('collection-item').first();
     await firstCollection.click();
     
     // Click edit button
     await page.getByRole('link', { name: /edit/i }).click();
     
-    // Verify we're on edit page
-    await expect(page).toHaveURL(/\/collections\/[^/]+\/edit/);
-    
-    // Update the description
+    await expect(page).toHaveURL(/\/data\/[^/]+\/edit/);
+
     const descriptionField = page.getByLabel(/description/i);
     await descriptionField.clear();
     await descriptionField.fill('Updated description');
@@ -87,13 +74,12 @@ test.describe('Collections', () => {
     // Save changes
     await page.getByRole('button', { name: /save|update/i }).click();
     
-    // Verify success
     await expect(page.locator('text=updated successfully')).toBeVisible({ timeout: 5000 });
   });
 
   test('should search collections', async ({ page }) => {
     // Type in search box
-    const searchBox = page.getByPlaceholder(/search/i);
+    const searchBox = page.getByTestId('collection-search-input');
     if (await searchBox.isVisible()) {
       await searchBox.fill('test');
       
@@ -101,7 +87,7 @@ test.describe('Collections', () => {
       await page.waitForTimeout(500);
       
       // Verify filtered results
-      const collections = page.locator('[data-testid="collection-item"]');
+      const collections = page.getByTestId('collection-item');
       await expect(collections.first()).toBeVisible();
     }
   });

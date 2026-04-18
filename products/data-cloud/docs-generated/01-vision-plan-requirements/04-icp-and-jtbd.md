@@ -45,7 +45,7 @@ This is a strategy document, not a proof document. It translates the existing te
 | --------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | ML engineering teams needing feature and model support          | Feature store, registry, pipelines, and monitoring are documented    | The product story is still broader than ML alone                   |
 | Internal platform teams in larger enterprises                   | Isolation, governance, audit, and API breadth fit internal platforms | Validation evidence and enterprise buying artifacts are still thin |
-| Product teams needing real-time analytics and operational views | Streaming, dashboards, and real-time interfaces are present          | Buyer story is less explicit than the platform story               |
+| Product teams needing real-time analytics and operational views | Streaming, canonical query flows, and operator insight surfaces are present | Buyer story is less explicit than the platform story               |
 
 ### 1.3 Anti-ICP / Low-Fit Segments
 
@@ -179,7 +179,7 @@ Data Cloud should lead with **platform consolidation for engineering teams**, no
 | Buyer wants a drop-in warehouse replacement only                       | Data Cloud is documented as a broader platform                           |
 | Buyer expects consumer-grade self-serve simplicity                     | Current documentation assumes engineering ownership                      |
 | Buyer requires validated enterprise-grade isolation claims immediately | Current docs still need claim reconciliation and proof artifacts         |
-| Team only needs BI dashboards                                          | Data Cloud is likely too broad and operationally heavy for that use case |
+| Team only needs a lightweight BI dashboard                             | Data Cloud is likely too broad and operationally heavy for that use case |
 
 ---
 

@@ -2,12 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
+import { alertsSurfaceBoundary } from '@/components/common/unsupportedSurfaceRegistry';
+import { ALERTS_UNSUPPORTED_MESSAGE } from '@/lib/runtime-boundaries';
 
 const { mockAlertsService } = vi.hoisted(() => ({
   mockAlertsService: {
     getAlerts: vi.fn(),
     getAlertGroups: vi.fn(),
     getResolutionSuggestions: vi.fn(),
+    listAlertRules: vi.fn(),
     acknowledgeAlert: vi.fn(),
     resolveAlert: vi.fn(),
     resolveGroup: vi.fn(),
@@ -19,7 +22,7 @@ const { mockAlertsService } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../api/alerts.service', () => ({
-  ALERTS_UNSUPPORTED_MESSAGE: 'Alert management APIs are not exposed by the current Data Cloud launcher API.',
+  ALERTS_UNSUPPORTED_MESSAGE,
   alertsService: mockAlertsService,
 }));
 
@@ -69,12 +72,29 @@ const sampleSuggestions = [
   },
 ];
 
+const sampleRules = [
+  {
+    id: 'rule-1',
+    name: 'Kafka lag',
+    description: 'Escalate when backlog spikes',
+    enabled: true,
+    severity: 'critical',
+    conditionType: 'threshold',
+    metric: 'queue_depth',
+    operator: 'gt',
+    threshold: 1000,
+    duration: 5,
+    channels: ['email'],
+  },
+];
+
 describe('AlertsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAlertsService.getAlerts.mockResolvedValue(sampleAlerts);
     mockAlertsService.getAlertGroups.mockResolvedValue(sampleGroups);
     mockAlertsService.getResolutionSuggestions.mockResolvedValue(sampleSuggestions);
+    mockAlertsService.listAlertRules.mockResolvedValue(sampleRules);
     mockAlertsService.acknowledgeAlert.mockResolvedValue(sampleAlerts[0]);
     mockAlertsService.resolveAlert.mockResolvedValue({ ...sampleAlerts[0], status: 'resolved' });
     mockAlertsService.resolveGroup.mockResolvedValue(undefined);
@@ -92,8 +112,18 @@ describe('AlertsPage', () => {
     await screen.findByText('Kafka backlog spike');
 
     expect(screen.getByRole('heading', { name: 'Alerts' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Create Alert Rule/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Review Rules/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /AI Grouped/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 enabled rules/i)).toBeInTheDocument();
+  });
+
+  it('shows an alert truth panel with route, stream, and coverage metrics', async () => {
+    render(<AlertsPage />, { wrapper: TestWrapper });
+
+    expect(await screen.findByText(/Route Coverage/i)).toBeInTheDocument();
+    expect(screen.getByText(/7\/7 live/i)).toBeInTheDocument();
+    expect(screen.getByText(/Grouped Coverage/i)).toBeInTheDocument();
+    expect(screen.getByText(/Suggestion Coverage/i)).toBeInTheDocument();
   });
 
   it('shows canonical alert count summary cards', async () => {
@@ -132,9 +162,33 @@ describe('AlertsPage', () => {
     render(<AlertsPage />, { wrapper: TestWrapper });
 
     await screen.findByText('Kafka backlog spike');
+    await user.click(screen.getByRole('button', { name: /review rules/i }));
     await user.click(screen.getByRole('button', { name: /create alert rule/i }));
 
     expect(screen.getAllByText(/create alert rule/i).length).toBeGreaterThan(0);
+  });
+
+  it('opens an existing alert rule from the live rules snapshot', async () => {
+    const user = userEvent.setup();
+    render(<AlertsPage />, { wrapper: TestWrapper });
+
+    await screen.findByText('Kafka backlog spike');
+    await user.click(screen.getByRole('button', { name: /review rules/i }));
+    await user.click(screen.getByRole('button', { name: /Kafka lag/i }));
+
+    expect(screen.getByDisplayValue('Kafka lag')).toBeInTheDocument();
+  });
+
+  it('keeps rule management collapsed until explicitly requested', async () => {
+    const user = userEvent.setup();
+    render(<AlertsPage />, { wrapper: TestWrapper });
+
+    await screen.findByText('Kafka backlog spike');
+    expect(screen.queryByRole('button', { name: /Create Alert Rule/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Review Rules/i }));
+
+    expect(screen.getByRole('button', { name: /Create Alert Rule/i })).toBeInTheDocument();
   });
 
   it('switches to list view and applies AI suggestions through the canonical service', async () => {
@@ -155,13 +209,15 @@ describe('AlertsPage', () => {
   });
 
   it('surfaces an honest unsupported-state banner when the launcher does not expose alerts routes', async () => {
-    mockAlertsService.getAlerts.mockRejectedValueOnce(new Error('Alert management APIs are not exposed by the current Data Cloud launcher API.'));
-    mockAlertsService.getAlertGroups.mockRejectedValueOnce(new Error('Alert management APIs are not exposed by the current Data Cloud launcher API.'));
-    mockAlertsService.getResolutionSuggestions.mockRejectedValueOnce(new Error('Alert management APIs are not exposed by the current Data Cloud launcher API.'));
+    mockAlertsService.getAlerts.mockRejectedValueOnce(new Error(ALERTS_UNSUPPORTED_MESSAGE));
+    mockAlertsService.getAlertGroups.mockRejectedValueOnce(new Error(ALERTS_UNSUPPORTED_MESSAGE));
+    mockAlertsService.getResolutionSuggestions.mockRejectedValueOnce(new Error(ALERTS_UNSUPPORTED_MESSAGE));
 
     render(<AlertsPage />, { wrapper: TestWrapper });
 
-    expect(await screen.findByText(/Alerts Surface Not Available/i)).toBeInTheDocument();
-    expect(screen.getByText(/does not expose live alert management routes/i)).toBeInTheDocument();
+    expect(await screen.findByText(alertsSurfaceBoundary.title)).toBeInTheDocument();
+    expect(screen.getByText(alertsSurfaceBoundary.summary)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Create Alert Rule/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/AI-Detected Correlations/i)).not.toBeInTheDocument();
   });
 });

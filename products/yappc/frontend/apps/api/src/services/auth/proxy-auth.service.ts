@@ -99,9 +99,18 @@ export class ProxyAuthService {
    * Get current user via Java lifecycle service
    */
   async getCurrentUser(userId: string): Promise<AuthUser> {
+    const apiKey = process.env.YAPPC_API_KEY;
+    
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error(
+        'YAPPC_API_KEY environment variable is required but not set. ' +
+        'Please configure the API key for internal service communication.'
+      );
+    }
+
     const response = await apiClient.get<AuthUser>(`/api/auth/users/${userId}`, {
       headers: {
-        'X-API-Key': process.env.YAPPC_API_KEY ?? '',
+        'X-API-Key': apiKey,
       },
     });
 

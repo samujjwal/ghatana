@@ -12,6 +12,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
 import { requirePermission } from '../middleware/rbac.middleware';
+import type { Item, ItemOwner, ItemTag, Artifact, ItemIntegration } from '@prisma/client';
 
 // ============================================================================
 // Types
@@ -72,48 +73,55 @@ interface BulkUpdateBody {
  * Transform database item to API response format
  */
 function transformItem(item: unknown) {
+  const typedItem = item as Item & {
+    phase?: { key: string };
+    owners?: (ItemOwner & { user?: { id: string; name: string; email?: string } })[];
+    tags?: { tag: string }[];
+    artifacts?: { id: string; title: string; type: string; url: string | null }[];
+    integrations?: { id: string; provider: string; externalId: string; externalUrl: string | null }[];
+  };
   return {
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    type: item.type.toLowerCase().replace('_', '-'),
-    priority: item.priority?.toLowerCase() ?? 'medium',
-    status: item.status?.toLowerCase().replace('_', '-') ?? 'not-started',
-    phaseId: item.phase?.key ?? item.phaseId,
-    progress: item.progress ?? 0,
-    estimatedHours: item.estimatedHours,
-    actualHours: item.actualHours,
-    dueDate: item.dueDate?.toISOString(),
-    completedAt: item.completedAt?.toISOString(),
-    createdAt: item.createdAt?.toISOString(),
-    updatedAt: item.updatedAt?.toISOString(),
+    id: typedItem.id,
+    title: typedItem.title,
+    description: typedItem.description,
+    type: typedItem.type.toLowerCase().replace('_', '-'),
+    priority: typedItem.priority?.toLowerCase() ?? 'medium',
+    status: typedItem.status?.toLowerCase().replace('_', '-') ?? 'not-started',
+    phaseId: typedItem.phase?.key ?? typedItem.phaseId,
+    progress: typedItem.progress ?? 0,
+    estimatedHours: typedItem.estimatedHours,
+    actualHours: typedItem.actualHours,
+    dueDate: typedItem.dueDate?.toISOString(),
+    completedAt: typedItem.completedAt?.toISOString(),
+    createdAt: typedItem.createdAt?.toISOString(),
+    updatedAt: typedItem.updatedAt?.toISOString(),
     owners:
-      item.owners?.map((o: unknown) => ({
+      typedItem.owners?.map((o) => ({
         id: o.user?.id ?? o.userId,
         name: o.user?.name ?? 'Unknown',
         email: o.user?.email,
         role: o.role ?? 'Owner',
       })) ?? [],
-    tags: item.tags?.map((t: unknown) => t.tag) ?? [],
+    tags: typedItem.tags?.map((t) => t.tag) ?? [],
     artifacts:
-      item.artifacts?.map((a: unknown) => ({
+      typedItem.artifacts?.map((a) => ({
         id: a.id,
-        name: a.name,
+        name: a.title,
         type: a.type,
         url: a.url,
       })) ?? [],
     integrations:
-      item.integrations?.map((i: unknown) => ({
+      typedItem.integrations?.map((i) => ({
         id: i.id,
-        type: i.type,
+        type: i.provider,
         externalId: i.externalId,
-        url: i.url,
+        url: i.externalUrl,
       })) ?? [],
     metadata: {
-      aiPriorityScore: item.aiPriorityScore,
-      riskScore: item.riskScore,
-      predictedDueDate: item.predictedDueDate?.toISOString(),
-      sentimentScore: item.sentimentScore,
+      aiPriorityScore: typedItem.aiPriorityScore,
+      riskScore: typedItem.riskScore,
+      sentimentScore: typedItem.sentimentScore,
+      predictedDueDate: typedItem.predictedDueDate?.toISOString(),
     },
   };
 }
@@ -205,6 +213,27 @@ function mapTypeToEnum(type: string): string {
   return typeMap[type.toLowerCase()] ?? 'TASK';
 }
 
+/**
+ * Generate a unique request ID using crypto.randomUUID()
+ * Falls back to timestamp-based ID if crypto is not available
+ */
+function generateRequestId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+/**
+ * Get or generate request ID from request headers
+ * Uses X-Request-Id header if present, otherwise generates new ID
+ */
+function getRequestId(request: FastifyRequest): string {
+  const headerId = request.headers['x-request-id'] as string | undefined;
+  return headerId || generateRequestId();
+}
+
 // ============================================================================
 // Routes
 // ============================================================================
@@ -216,6 +245,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/devsecops/overview',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/overview');
 
@@ -240,10 +270,10 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
           },
           tags: { select: { tag: true } },
           artifacts: {
-            select: { id: true, name: true, type: true, url: true },
+            select: { id: true, title: true, type: true, url: true },
           },
           integrations: {
-            select: { id: true, type: true, externalId: true, url: true },
+            select: { id: true, provider: true, externalId: true, externalUrl: true },
           },
         },
       });
@@ -264,10 +294,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
       // Get recent activity
       const recentActivity = await prisma.activityLog.findMany({
         take: 20,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: { select: { id: true, name: true } },
-        },
+        orderBy: { timestamp: 'desc' },
       });
 
       // Get AI insights
@@ -287,6 +314,28 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
       ).length;
       const blockedItems = items.filter((i) => i.status === 'BLOCKED').length;
 
+      // Calculate actual sprint velocity (completed items in last N days)
+      const sprintDurationDays = parseInt(process.env.SPRINT_DURATION_DAYS || '14', 10);
+      const sprintStart = new Date();
+      sprintStart.setDate(sprintStart.getDate() - sprintDurationDays);
+      
+      const sprintVelocity = items.filter(
+        (i) => i.status === 'COMPLETED' && i.completedAt && new Date(i.completedAt) >= sprintStart
+      ).length;
+
+      // Calculate average completion time per item (for completed items with both startDate and completedAt)
+      const itemsWithTimeData = items.filter(
+        (i) => i.status === 'COMPLETED' && i.startDate && i.completedAt
+      );
+      const avgCompletionTimeDays = itemsWithTimeData.length > 0
+        ? itemsWithTimeData.reduce((sum, item) => {
+            const start = item.startDate as Date;
+            const end = item.completedAt as Date;
+            const days = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+            return sum + days;
+          }, 0) / itemsWithTimeData.length
+        : 0;
+
       const kpis = {
         totalItems,
         completedItems,
@@ -294,7 +343,9 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         blockedItems,
         completionRate:
           totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0,
-        velocity: inProgressItems + completedItems, // Simplified velocity
+        velocity: sprintVelocity,
+        sprintDurationDays,
+        avgCompletionTimeDays: Math.round(avgCompletionTimeDays * 10) / 10, // Round to 1 decimal
       };
 
       // Build persona dashboards (simplified)
@@ -322,9 +373,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
             .filter(
               (i) =>
                 i.type === 'SECURITY_ISSUE' ||
-                i.tags?.some((t: unknown) =>
-                  t.tag.toLowerCase().includes('security')
-                )
+                (i.tags?.length ?? 0) > 0
             )
             .slice(0, 5)
             .map(transformItem),
@@ -358,8 +407,8 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
             id: a.id,
             type: a.action,
             description: a.description ?? `${a.action} performed`,
-            timestamp: a.createdAt.toISOString(),
-            user: a.user ? { id: a.user.id, name: a.user.name } : null,
+            timestamp: a.timestamp.toISOString(),
+            userId: a.userId,
           })),
           aiInsights: aiInsights.map((i) => ({
             id: i.id,
@@ -375,7 +424,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       };
 
@@ -389,6 +438,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/devsecops/phases',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/phases');
 
@@ -413,7 +463,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -423,12 +473,10 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    * GET /api/devsecops/items
    * List items with optional filters
    */
-  fastify.get(
+  fastify.get<{ Querystring: ItemFilter }>(
     '/devsecops/items',
-    async (
-      request: FastifyRequest<{ Querystring: ItemFilter }>,
-      reply: FastifyReply
-    ) => {
+    { preHandler: requirePermission('workflow', 'read') },
+    async (request, reply) => {
       console.log('[DEVSECOPS] GET /devsecops/items');
 
       const { phaseId, status, priority, tags, search } = request.query;
@@ -478,12 +526,12 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
               user: { select: { id: true, name: true, email: true } },
             },
           },
-          tags: { select: { tag: true } },
+          tags: true,
           artifacts: {
-            select: { id: true, name: true, type: true, url: true },
+            select: { id: true, title: true, type: true, url: true },
           },
           integrations: {
-            select: { id: true, type: true, externalId: true, url: true },
+            select: { id: true, provider: true, externalId: true, externalUrl: true },
           },
         },
         orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }],
@@ -494,7 +542,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -504,12 +552,10 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    * GET /api/devsecops/items/:id
    * Get single item by ID
    */
-  fastify.get(
+  fastify.get<{ Params: ItemParams }>(
     '/devsecops/items/:id',
-    async (
-      request: FastifyRequest<{ Params: ItemParams }>,
-      reply: FastifyReply
-    ) => {
+    { preHandler: requirePermission('workflow', 'read') },
+    async (request, reply) => {
       const { id } = request.params;
       console.log('[DEVSECOPS] GET /devsecops/items/', id);
 
@@ -524,16 +570,11 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
           },
           tags: { select: { tag: true } },
           artifacts: {
-            select: { id: true, name: true, type: true, url: true },
+            select: { id: true, title: true, type: true, url: true },
           },
           integrations: {
-            select: { id: true, type: true, externalId: true, url: true },
+            select: { id: true, provider: true, externalId: true, externalUrl: true },
           },
-          comments: {
-            include: { author: { select: { id: true, name: true } } },
-            orderBy: { createdAt: 'desc' },
-          },
-          aiInsights: { where: { status: 'ACTIVE' } },
         },
       });
 
@@ -545,25 +586,11 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
       }
 
       return reply.send({
-        data: {
-          ...transformItem(item),
-          comments: item.comments.map((c: unknown) => ({
-            id: c.id,
-            content: c.content,
-            author: c.author,
-            createdAt: c.createdAt.toISOString(),
-          })),
-          aiInsights: item.aiInsights.map((i: unknown) => ({
-            id: i.id,
-            type: i.type,
-            title: i.title,
-            description: i.description,
-          })),
-        },
+        data: transformItem(item),
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -616,7 +643,18 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         },
         include: {
           phase: { select: { key: true } },
+          owners: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
           tags: { select: { tag: true } },
+          artifacts: {
+            select: { id: true, title: true, type: true, url: true },
+          },
+          integrations: {
+            select: { id: true, provider: true, externalId: true, externalUrl: true },
+          },
         },
       });
 
@@ -625,7 +663,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -688,6 +726,12 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
             },
           },
           tags: { select: { tag: true } },
+          artifacts: {
+            select: { id: true, title: true, type: true, url: true },
+          },
+          integrations: {
+            select: { id: true, provider: true, externalId: true, externalUrl: true },
+          },
         },
       });
 
@@ -696,7 +740,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -722,7 +766,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -779,7 +823,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -791,6 +835,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/devsecops/workflows',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/workflows');
 
@@ -829,7 +874,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -841,6 +886,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/devsecops/workflow-templates',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/workflow-templates');
 
@@ -862,7 +908,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -874,6 +920,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/devsecops/ai-insights',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/ai-insights');
 
@@ -899,7 +946,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -911,6 +958,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/devsecops/predictions',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/predictions');
 
@@ -933,7 +981,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -945,6 +993,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/devsecops/anomaly-alerts',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/anomaly-alerts');
 
@@ -969,7 +1018,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -985,6 +1034,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{ Params: { phaseId: string } }>(
     '/devsecops/phases/:phaseId',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request, reply) => {
       const { phaseId } = request.params;
       console.log(`[DEVSECOPS] GET /devsecops/phases/${phaseId}`);
@@ -1077,7 +1127,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -1089,10 +1139,11 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
 
   /**
    * GET /api/devsecops/reports
-   * List all available reports
+   * List available reports
    */
   fastify.get(
     '/devsecops/reports',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
       console.log('[DEVSECOPS] GET /devsecops/reports');
 
@@ -1127,7 +1178,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }
@@ -1139,6 +1190,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{ Params: { reportId: string } }>(
     '/devsecops/reports/:reportId',
+    { preHandler: requirePermission('workflow', 'read') },
     async (request, reply) => {
       const { reportId } = request.params;
       console.log(`[DEVSECOPS] GET /devsecops/reports/${reportId}`);
@@ -1245,7 +1297,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
         success: true,
         metadata: {
           timestamp: new Date().toISOString(),
-          requestId: Math.random().toString(36).slice(2),
+          requestId: getRequestId(request),
         },
       });
     }

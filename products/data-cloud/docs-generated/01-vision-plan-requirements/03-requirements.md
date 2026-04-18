@@ -98,9 +98,9 @@ This document defines **156 requirements** for Data-Cloud based on evidence from
 | -------- | ------------------------ | ----------------------------------------------- | ---------------------------------------- | -------------- | ------------------- |
 | DC-F-019 | Ad-hoc SQL Queries       | Interactive SQL query execution                 | AnalyticsHandler, ClickHouse integration | ✅ Implemented | 🧪 Tested           |
 | DC-F-020 | Natural Language Queries | Query system using natural language             | NLP service, query translation           | ✅ Implemented | ⚠️ Partially Tested |
-| DC-F-021 | Visual Query Builder     | Drag-and-drop query interface                   | SQL workspace UI, query builder          | ✅ Implemented | 🧪 Tested           |
-| DC-F-022 | Report Generation        | Automated report creation and scheduling        | Report service, report scheduler         | ✅ Implemented | 🧪 Tested           |
-| DC-F-023 | Interactive Dashboards   | Real-time dashboards with customizable widgets  | Dashboard service, chart components      | ✅ Implemented | 🧪 Tested           |
+| DC-F-021 | Visual Query Builder     | Drag-and-drop query interface                   | SQL workspace UI and partial query-builder affordances | ⚠️ Partial | ⚠️ Partially Tested |
+| DC-F-022 | Report Generation        | Automated report creation and scheduling        | Backend reporting capabilities are documented, but no primary report workflow is promoted in the current UI | ⚠️ Partial | ⚠️ Partially Tested |
+| DC-F-023 | Interactive Analytics    | Unified operator insights surface and historical dashboard compatibility | Insights surface, chart components, legacy dashboard aliases | ⚠️ Partial | ⚠️ Partially Tested |
 | DC-F-024 | Data Visualization       | Multiple chart types and visual representations | Visualization library, chart components  | ✅ Implemented | 🧪 Tested           |
 | DC-F-025 | OLAP Operations          | Cube-based analytics with roll-up/drill-down    | OLAP engine, cube definitions            | ✅ Implemented | ⚠️ Partially Tested |
 | DC-F-026 | Predictive Analytics     | Forecasting and trend analysis capabilities     | Prediction service, trend analysis       | ✅ Implemented | ⚠️ Partially Tested |
@@ -134,10 +134,10 @@ This document defines **156 requirements** for Data-Cloud based on evidence from
 | ID       | Requirement          | Description                                            | Evidence                             | Implementation | Test Coverage       |
 | -------- | -------------------- | ------------------------------------------------------ | ------------------------------------ | -------------- | ------------------- |
 | DC-F-041 | Plugin Framework     | Core plugin discovery and lifecycle management         | Plugin framework, ServiceLoader      | ✅ Implemented | 🧪 Tested           |
-| DC-F-042 | Plugin Registry      | Central registry for plugin discovery and distribution | Plugin registry, plugin distribution | ✅ Implemented | ⚠️ Partially Tested |
+| DC-F-042 | Plugin Registry      | Bundled plugin inventory, discovery, and runtime toggles | Plugin inventory routes, bundled plugin metadata | ⚠️ Partial | ⚠️ Partially Tested |
 | DC-F-043 | Plugin Isolation     | Secure plugin execution environment                    | Plugin isolation, sandboxing         | ✅ Implemented | ⚠️ Partially Tested |
 | DC-F-044 | Plugin Communication | Inter-plugin communication and data sharing            | Plugin communication API             | ✅ Implemented | ⚠️ Partially Tested |
-| DC-F-045 | Plugin Updates       | Automatic plugin updates and version management        | Plugin updates, version management   | ✅ Implemented | ⚠️ Partially Tested |
+| DC-F-045 | Plugin Updates       | Bundled plugin upgrade-intent and release-note guidance | Upgrade-intent route, delivery guidance, changelog messaging | ⚠️ Partial | ⚠️ Partially Tested |
 
 ### 7. Real-time Features
 
@@ -157,9 +157,9 @@ This document defines **156 requirements** for Data-Cloud based on evidence from
 | DC-F-052 | Dark Mode Support   | Dark/light theme switching             | Theme system, dark mode                 | ✅ Implemented | 🧪 Tested     |
 | DC-F-053 | Command Bar         | Natural language command interface     | CommandBar component, AI intent parsing | ✅ Implemented | 🧪 Tested     |
 | DC-F-054 | Data Explorer       | Unified data exploration interface     | DataExplorer page, data visualization   | ✅ Implemented | 🧪 Tested     |
-| DC-F-055 | Workflow Designer   | Visual workflow building interface     | WorkflowDesigner, drag-and-drop         | ✅ Implemented | 🧪 Tested     |
-| DC-F-056 | SQL Workspace       | Interactive SQL query interface        | SqlWorkspacePage, query editor          | ✅ Implemented | 🧪 Tested     |
-| DC-F-057 | Settings Management | User and system settings interface     | SettingsPage, configuration UI          | ✅ Implemented | 🧪 Tested     |
+| DC-F-055 | Pipeline Designer   | Visual pipeline building interface     | WorkflowDesigner canvas, advanced pipeline editor, Smart Workflow Builder handoff | ⚠️ Partial | 🧪 Tested     |
+| DC-F-056 | SQL Workspace       | Interactive SQL query interface        | SqlWorkspacePage, query editor, analytics suggest path | ⚠️ Partial | 🧪 Tested     |
+| DC-F-057 | Settings Management | Admin-only boundary surface for future user/system settings | SettingsPage boundary UI                | ⚠️ Partial | 🧪 Tested     |
 
 ### 9. API & Integration
 
@@ -191,7 +191,7 @@ This document defines **156 requirements** for Data-Cloud based on evidence from
 | DC-F-071 | Metrics Collection     | Comprehensive metrics collection and reporting | Metrics collection, Micrometer   | ✅ Implemented | 🧪 Tested           |
 | DC-F-072 | Distributed Tracing    | Request tracing across services                | Distributed tracing, tracing IDs | ✅ Implemented | 🧪 Tested           |
 | DC-F-073 | Structured Logging     | Structured logging with correlation IDs        | Structured logging, correlation  | ✅ Implemented | 🧪 Tested           |
-| DC-F-074 | Alerting               | Proactive alerting and notification            | Alerting system, notification    | ✅ Implemented | 🧪 Tested           |
+| DC-F-074 | Alerting               | Operator-facing alerts triage with live list, acknowledge, resolve, rules, grouping, suggestions, and stream routes | AlertsPage, launcher alerts routes, alerts service | ⚠️ Partial | 🧪 Tested           |
 | DC-F-075 | Performance Monitoring | Real-time performance monitoring               | Performance monitoring, metrics  | ✅ Implemented | ⚠️ Partially Tested |
 
 ### 12. Documentation & Developer Experience

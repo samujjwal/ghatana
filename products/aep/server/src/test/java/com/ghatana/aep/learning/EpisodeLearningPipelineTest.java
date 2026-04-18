@@ -269,15 +269,15 @@ class EpisodeLearningPipelineTest {
         @Test
         @DisplayName("review item context includes provenance and auto-promotable flag")
         void run_autoPromotableConfidence_taggedInContext() {
-            // Use a pipeline with autoPromoteThreshold=0.90; gate returns 0.95
+            // Use a pipeline with autoPromoteThreshold=0.85 (default); gate returns 0.90
             EpisodeLearningPipeline pipeline = new EpisodeLearningPipeline(
-                    dataCloud, gate, queue, 10, 0.70, 0.90);
+                    dataCloud, gate, queue, 10, 0.70, 0.85);
             List<Entity> enoughEpisodes = successEpisodes(AGENT_A, 12);
 
             when(dataCloud.query(eq(TENANT), anyString(), any(Query.class)))
                     .thenReturn(Promise.of(enoughEpisodes));
             when(gate.evaluate(any(UpdateCandidate.class), any(EvaluationContext.class)))
-                    .thenReturn(Promise.of(new GateResult("regression", true, 0.95, 0.70, "excellent")));
+                    .thenReturn(Promise.of(new GateResult("regression", true, 0.90, 0.70, "excellent")));
 
             ArgumentCaptor<ReviewItem> captor = ArgumentCaptor.forClass(ReviewItem.class);
             when(queue.enqueue(captor.capture())).thenReturn(Promise.of(reviewItem));
@@ -286,7 +286,28 @@ class EpisodeLearningPipelineTest {
 
             ReviewItem submitted = captor.getValue();
             assertThat(submitted.getEvaluationSummary()).contains("auto-promotable");
-            assertThat(submitted.getConfidenceScore()).isGreaterThanOrEqualTo(0.95);
+            assertThat(submitted.getConfidenceScore()).isGreaterThanOrEqualTo(0.90);
+        }
+
+        @Test
+        @DisplayName("review item not tagged auto-promotable when confidence below threshold")
+        void run_belowAutoPromoteThreshold_notTaggedAutoPromotable() {
+            // Use default pipeline with autoPromoteThreshold=0.85; gate returns 0.80
+            List<Entity> enoughEpisodes = successEpisodes(AGENT_A, 12);
+
+            when(dataCloud.query(eq(TENANT), anyString(), any(Query.class)))
+                    .thenReturn(Promise.of(enoughEpisodes));
+            when(gate.evaluate(any(UpdateCandidate.class), any(EvaluationContext.class)))
+                    .thenReturn(Promise.of(new GateResult("regression", true, 0.80, 0.70, "good")));
+
+            ArgumentCaptor<ReviewItem> captor = ArgumentCaptor.forClass(ReviewItem.class);
+            when(queue.enqueue(captor.capture())).thenReturn(Promise.of(reviewItem));
+
+            pipelineDefault.run(TENANT).getResult();
+
+            ReviewItem submitted = captor.getValue();
+            assertThat(submitted.getEvaluationSummary()).doesNotContain("auto-promotable");
+            assertThat(submitted.getConfidenceScore()).isLessThan(0.85);
         }
 
         @Test

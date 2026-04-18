@@ -36,6 +36,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@ghatana/design-system';
 import { cn } from '../../lib/theme';
+import SessionBootstrap from '../../lib/auth/session';
 
 // Types
 export interface Execution {
@@ -71,7 +72,7 @@ const EXECUTION_VISIBILITY_NOTE = 'Execution telemetry is not exposed by the sta
 const SYSTEM_HEALTH_NOTE = 'System health summary is not exposed by the standalone launcher API.';
 
 function getTenantId(): string {
-    return localStorage.getItem('tenantId') || 'default-tenant';
+    return SessionBootstrap.getTenantId() ?? '';
 }
 
 async function fetchActiveExecutions(): Promise<Execution[]> {

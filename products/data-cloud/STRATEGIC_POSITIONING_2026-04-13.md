@@ -40,10 +40,10 @@ No incumbent does this today. Snowflake, Databricks, and Confluent each own a sl
 | Governance (policy-enforced) | Strong (RBAC + masking)     | Strong (Unity Catalog)   | Schema Registry + governance | Simulated                                | **Real policy enforcement**     |
 | Self-deployable              | No (SaaS only)              | No (SaaS/managed)        | No (SaaS primarily)          | **Yes (standalone + K8s + Helm)**        | **Yes**                         |
 | Federated query              | Limited                     | Strong (Unity Catalog)   | External tables              | Partial (Trino + ClickHouse)             | **Strong**                      |
-| Plugin extensibility         | Marketplace (curated)       | Partner Connect          | Connectors                   | SPI + bundled plugins                    | **Open SPI + marketplace**      |
+| Plugin extensibility         | Marketplace (curated)       | Partner Connect          | Connectors                   | SPI + bundled plugins                    | **Open SPI + bundled plugin delivery** |
 | Voice/multimodal             | No                          | No                       | No                           | **VoiceGatewayHandler exists**           | **First-mover**                 |
 | Feature store                | None native                 | Feature Store (MLflow)   | None                         | **feature-store-ingest exists**          | **Native real-time features**   |
-| Operator experience          | Dashboard-only              | Workspace-heavy          | CLI-heavy                    | **UI + API + CLI**                       | **Unified operator console**    |
+| Operator experience          | Dashboard-centric           | Workspace-heavy          | CLI-heavy                    | **UI + API + CLI**                       | **Unified operator console**    |
 
 ### 2.3 Where Every Competitor Is Weak
 
@@ -149,7 +149,7 @@ These directly address the audit's critical findings and are non-negotiable for 
 | E6  | **Capability registry (API + UI)**                        | Operators must see exactly what is wired, degraded, unavailable   | No competitor does this well                            |
 | E7  | **Real plugin lifecycle: enable/disable bundled plugins** | Remove fake install/upload; honest about what's available         | Honest product surface                                  |
 | E8  | **Agent catalog as MCP endpoint**                         | AI agents need context via Model Context Protocol                 | First-mover: no competitor exposes data platform as MCP |
-| E9  | **SSE streaming with backpressure**                       | Real-time dashboards and agent subscriptions                      | Already partially built (SSE_QUEUE_CAPACITY = 512)      |
+| E9  | **SSE streaming with backpressure**                       | Real-time insight updates and agent subscriptions                 | Already partially built (SSE_QUEUE_CAPACITY = 512)      |
 | E10 | **Correlation ID propagation**                            | Distributed tracing across entity → event → agent flows           | Enterprise observability requirement                    |
 
 ### 4.3 P2: Competitive Differentiation (Ship within 16-20 weeks)
@@ -180,7 +180,7 @@ These directly address the audit's critical findings and are non-negotiable for 
 | F7  | **GraphQL API for entity queries** — graph-native query language for entity + relationship queries            | Better developer experience for frontend-heavy teams                                                                               | Common enterprise requirement                                |
 | F8  | **Embedding pipeline** — auto-embed entities for vector search and RAG                                        | LLM applications need embeddings. Integrated pipeline eliminates separate infra                                                    | Matches Confluent embeddings, integrated with entity context |
 | F9  | **Agent memory with TTL and context window management** — MemoryPlane as production service                   | AI agents need persistent memory with lifecycle management                                                                         | Already partially built                                      |
-| F10 | **Marketplace for certified plugins** — community/partner plugin ecosystem                                    | Extensibility is a moat when combined with trust                                                                                   | Long-term ecosystem play                                     |
+| F10 | **Certified bundled plugin delivery** — curated plugin ecosystem without runtime marketplace claims          | Extensibility is a moat when combined with trust                                                                                   | Long-term ecosystem play                                     |
 
 ---
 

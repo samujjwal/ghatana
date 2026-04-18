@@ -12,12 +12,15 @@
 
 import * as React from 'react';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import {
+    VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE,
+    createRuntimeBoundaryError,
+} from '@/lib/runtime-boundaries';
 
-export const VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE =
-    'Visualization metrics, dashboards, detailed health, and recent-event integration APIs are not exposed by the current Data Cloud launcher API.';
+export { VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 function createVisualizationBoundaryError(): Error {
-    return new Error(VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE);
+    return createRuntimeBoundaryError(VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 // ============================================

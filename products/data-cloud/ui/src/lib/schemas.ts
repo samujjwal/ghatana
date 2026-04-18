@@ -87,10 +87,14 @@ export const UserActivityItemSchema = z.object({
 /**
  * Continue working item schema
  */
+const ContinueWorkingItemTypeSchema = z
+  .enum(['collection', 'workflow', 'query', 'insight', 'dashboard'])
+  .transform((type) => (type === 'dashboard' ? 'insight' : type));
+
 export const ContinueWorkingItemSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  type: z.enum(['collection', 'workflow', 'query', 'dashboard']),
+  type: ContinueWorkingItemTypeSchema,
   lastAccessed: z.string().datetime(),
   path: z.string().min(1),
 });

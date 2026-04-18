@@ -40,6 +40,7 @@
  */
 
 import { apiClient, type ApiError } from './client';
+import SessionBootstrap from '../auth/session';
 import { z } from 'zod';
 
 const CollectionRecordSchema = z.object({
@@ -160,7 +161,7 @@ class CollectionDataClient {
   }
 
   private getRequestConfig() {
-    const tenantId = localStorage.getItem('tenantId');
+    const tenantId = SessionBootstrap.getTenantId();
     const headers: Record<string, string> = {};
     if (tenantId) {
       headers['X-Tenant-ID'] = tenantId;
@@ -447,7 +448,7 @@ class CollectionDataClient {
    * @param tenantId the tenant ID
    */
   setTenantId(tenantId: string): void {
-    localStorage.setItem('tenantId', tenantId);
+    SessionBootstrap.setTenantId(tenantId);
   }
 
   /**

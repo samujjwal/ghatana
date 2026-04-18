@@ -2,8 +2,9 @@
  * Agent Registry API Service
  *
  * Provides API client for Data Cloud Agent Registry operations.
- * Supports agent registration, lifecycle management, capability updates,
- * execution history, and SSE-based live registry event streaming.
+ * Supports launcher-backed catalog reads only.
+ * Registration, lifecycle mutation, execution history, and live registry
+ * events remain owned by AEP rather than this product surface.
  *
  * @doc.type service
  * @doc.purpose Agent Registry API client for agent management
@@ -17,9 +18,9 @@ import {
   type AgentCapability as BackendAgentCapability,
   type AgentCatalogEntry,
 } from '../contracts/schemas';
+import { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
-export const AGENT_REGISTRY_BOUNDARY_MESSAGE =
-  'Agent registration, deregistration, execution history, and live registry events are not exposed by the current Data Cloud launcher API.';
+export { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 // =============================================================================
 // Types
@@ -110,7 +111,7 @@ function mapCatalogEntry(entry: AgentCatalogEntry): AgentDefinition {
     name: entry.name ?? 'Unnamed Agent',
     description: entry.description ?? 'No description provided.',
     version: entry.version ?? 'unknown',
-    tenantId: entry.tenantId ?? 'default',
+    tenantId: entry.tenantId ?? '',
     status: normalizeAgentStatus(entry.status),
     capabilities: entry.capabilities ?? [],
     registeredAt: entry.registeredAt ?? timestamp,

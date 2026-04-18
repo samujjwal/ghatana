@@ -12,9 +12,12 @@
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../lib/api/client';
+import SessionBootstrap from '../lib/auth/session';
 import {
+  AnalyticsExplainResponseSchema,
   AnalyticsSuggestResponseSchema,
   AnalyticsSqlQueryResponseSchema,
+  type AnalyticsExplainResponse,
   type AnalyticsSuggestQuery,
   type AnalyticsSuggestResponse,
   type AnalyticsSqlQueryResponse,
@@ -23,7 +26,41 @@ import {
 const API_BASE = '/api/v1';
 
 function getTenantId(): string {
-  return localStorage.getItem('tenantId') || 'default-tenant';
+  return SessionBootstrap.requireTenantId();
+}
+
+export interface AnalyticsSqlSuggestionResult {
+  suggestions: AnalyticsSuggestQuery[];
+  fallback: boolean;
+  confidence: number;
+  model?: string;
+  reasons: string[];
+}
+
+export type AnalyticsExplainResult = AnalyticsExplainResponse;
+
+/**
+ * Fetches query templates for a natural-language analytics intent.
+ *
+ * POST /api/v1/analytics/suggest
+ */
+export async function fetchAnalyticsQuerySuggestions(
+  intent: string,
+): Promise<AnalyticsSqlSuggestionResult> {
+  const tenantId = getTenantId();
+  const response = await apiClient.post<AnalyticsSuggestResponse>(
+    '/analytics/suggest',
+    { intent, limit: 5 },
+    { headers: { 'X-Tenant-ID': tenantId } },
+  );
+  const resp = AnalyticsSuggestResponseSchema.parse(response);
+  return {
+    suggestions: resp.data?.queries ?? [],
+    fallback: resp.ai?.fallback ?? false,
+    confidence: resp.ai?.confidence ?? 0,
+    model: resp.ai?.model,
+    reasons: resp.ai?.reasons ?? [],
+  };
 }
 
 export type QueryResultData = AnalyticsSqlQueryResponse;
@@ -50,6 +87,24 @@ export async function executeAnalyticsQuery(
     { headers: { 'X-Tenant-ID': tenantId } },
   );
   return AnalyticsSqlQueryResponseSchema.parse(response);
+}
+
+/**
+ * Explains a SQL query without executing it.
+ *
+ * POST /api/v1/analytics/explain
+ */
+export async function explainAnalyticsQuery(
+  sql: string,
+  parameters: Record<string, unknown> = {}
+): Promise<AnalyticsExplainResult> {
+  const tenantId = getTenantId();
+  const response = await apiClient.post<AnalyticsExplainResponse>(
+    '/analytics/explain',
+    { query: sql, parameters },
+    { headers: { 'X-Tenant-ID': tenantId } },
+  );
+  return AnalyticsExplainResponseSchema.parse(response);
 }
 
 /**
@@ -240,12 +295,11 @@ function mapQuerySuggestionType(query: AnalyticsSuggestQuery): AnalyticsAiSugges
  * const { data: suggestions, isLoading, isFallback } = useAnalyticsAiSuggestions();
  */
 export function useAnalyticsAiSuggestions() {
-  const tenantId =
-    typeof localStorage !== 'undefined' ? (localStorage.getItem('tenantId') ?? 'default-tenant') : 'default-tenant';
+  const tenantId = SessionBootstrap.getTenantId();
 
   return useQuery<AnalyticsAiSuggestion[]>({
-    queryKey: ['analytics', 'ai-suggestions', tenantId],
-    queryFn: () => fetchAnalyticsSuggestions(tenantId),
+    queryKey: ['analytics', 'ai-suggestions', tenantId ?? 'missing-tenant'],
+    queryFn: () => fetchAnalyticsSuggestions(SessionBootstrap.requireTenantId()),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
     // Never throw — always resolve to at least the fallback list

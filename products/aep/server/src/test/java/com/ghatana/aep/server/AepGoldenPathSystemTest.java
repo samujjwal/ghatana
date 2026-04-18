@@ -93,6 +93,23 @@ class AepGoldenPathSystemTest {
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
         assertThat(body).containsKey("eventId");
         assertThat(body.get("success")).isEqualTo(true);
+
+        // Functional assertion: verify event was actually processed and recorded
+        String eventId = String.valueOf(body.get("eventId"));
+        assertThat(eventId).isNotNull();
+        assertThat(eventId).isNotEmpty();
+
+        // Verify the event appears in the run list (proves processing completed)
+        HttpResponse<String> runsResp = get("/api/v1/runs?tenantId=tenant-acme");
+        assertThat(runsResp.statusCode()).isEqualTo(200);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> runsBody = mapper.readValue(runsResp.body(), Map.class);
+        List<?> runs = (List<?>) runsBody.get("runs");
+        assertThat(runs).isNotEmpty();
+
+        // Verify SLO metrics were recorded
+        long totalRuns = sloTotalRuns();
+        assertThat(totalRuns).isGreaterThan(0);
     }
 
     // ── 2. SLO counters increment after processing ────────────────────────────
@@ -279,6 +296,22 @@ class AepGoldenPathSystemTest {
         // Batch response: { "tenantId": ..., "total": ..., "successCount": ..., "events": [...] }
         assertThat(body).containsKey("total");
         assertThat(body).containsKey("successCount");
+
+        // Functional assertion: verify all events were processed
+        int total = ((Number) body.get("total")).intValue();
+        int successCount = ((Number) body.get("successCount")).intValue();
+        assertThat(total).isEqualTo(2);
+        assertThat(successCount).isEqualTo(2);
+
+        // Verify events array contains eventId for each event
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> events = (List<Map<String, Object>>) body.get("events");
+        assertThat(events).hasSize(2);
+        for (Map<String, Object> event : events) {
+            assertThat(event).containsKey("eventId");
+            assertThat(event.get("eventId")).isNotNull();
+            assertThat(event.get("success")).isEqualTo(true);
+        }
     }
 
     // ── 12. Multi-tenant isolation: separate tenant sees separate run list ─────

@@ -24,6 +24,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -64,14 +68,21 @@ class DurableMultiTenantLoadIntegrationTest {
     private static final int TENANT_COUNT = Integer.getInteger("datacloud.load.tenants", 100);
     private static final int ENTITY_OPS_PER_TENANT = Integer.getInteger("datacloud.load.entityOpsPerTenant", 10);
     private static final int EVENT_OPS_PER_TENANT = Integer.getInteger("datacloud.load.eventOpsPerTenant", 10);
+    private static final int EVENT_BURST_BATCH_SIZE = Integer.getInteger("datacloud.load.eventBurstBatchSize", 10_000);
     private static final long TIMEOUT_SECONDS = Long.getLong("datacloud.load.timeoutSeconds", 180L);
     private static final long MAX_HEAP_DELTA_MB = Long.getLong("datacloud.load.maxHeapDeltaMb", 256L);
     private static final long MAX_P95_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP95EntitySaveMs", 4_000L);
     private static final long MAX_P95_EVENT_APPEND_MS = Long.getLong("datacloud.load.maxP95EventAppendMs", 2_500L);
     private static final long MAX_P95_QUERY_MS = Long.getLong("datacloud.load.maxP95QueryMs", 2_500L);
+    private static final long MAX_P99_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP99EntitySaveMs", 0L);
+    private static final long MAX_P99_QUERY_MS = Long.getLong("datacloud.load.maxP99QueryMs", 0L);
+    private static final int MIN_P99_SAMPLE_SIZE = Integer.getInteger("datacloud.load.minP99SampleSize", 100);
     private static final int ITERATIONS = Integer.getInteger("datacloud.load.iterations", 1);
     private static final double MIN_THROUGHPUT_OPS_PER_SECOND = Double.parseDouble(
         System.getProperty("datacloud.load.minThroughputOpsPerSecond", "0")
+    );
+    private static final double MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND = Double.parseDouble(
+        System.getProperty("datacloud.load.minEventBurstThroughputOpsPerSecond", "0")
     );
     private static final String METRICS_OUTPUT = System.getProperty("datacloud.load.metricsOutput", "");
 
@@ -129,6 +140,8 @@ class DurableMultiTenantLoadIntegrationTest {
             .readTimeoutMs(5_000L)
             .build());
 
+        preWarmTenants();
+
         List<Map<String, Object>> iterationSummaries = new ArrayList<>();
 
         for (int iteration = 1; iteration <= ITERATIONS; iteration++) {
@@ -152,13 +165,25 @@ class DurableMultiTenantLoadIntegrationTest {
             .mapToDouble(summary -> ((Number) summary.get("throughputOpsPerSecond")).doubleValue())
             .max()
             .orElse(0.0d);
+        double bestEventBurstThroughput = iterationSummaries.stream()
+            .mapToDouble(summary -> ((Number) summary.get("eventBurstThroughputOpsPerSecond")).doubleValue())
+            .max()
+            .orElse(0.0d);
 
         assertThat(aggregateEntityWrites).isGreaterThanOrEqualTo(minEntityWrites);
         assertThat(aggregateEventAppends).isGreaterThanOrEqualTo(minEventAppends);
         assertThat(aggregateQueries).isGreaterThanOrEqualTo(minQueries);
         assertThat(bestThroughput).isGreaterThanOrEqualTo(MIN_THROUGHPUT_OPS_PER_SECOND);
+        assertThat(bestEventBurstThroughput).isGreaterThanOrEqualTo(MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND);
 
-        writeMetricsReport(iterationSummaries, aggregateEntityWrites, aggregateEventAppends, aggregateQueries, bestThroughput);
+        writeMetricsReport(
+            iterationSummaries,
+            aggregateEntityWrites,
+            aggregateEventAppends,
+            aggregateQueries,
+            bestThroughput,
+            bestEventBurstThroughput
+        );
     }
 
     private Map<String, Object> runSingleIteration(int iteration) throws InterruptedException {
@@ -204,6 +229,9 @@ class DurableMultiTenantLoadIntegrationTest {
         long entitySaveP95 = percentile(entitySaveLatenciesMs, 0.95d);
         long eventAppendP95 = percentile(eventAppendLatenciesMs, 0.95d);
         long queryP95 = percentile(queryLatenciesMs, 0.95d);
+        long entitySaveP99 = percentile(entitySaveLatenciesMs, 0.99d);
+        long queryP99 = percentile(queryLatenciesMs, 0.99d);
+        double eventBurstThroughputPerSecond = measureEventBurstThroughput(tenantIdFor(0), EVENT_BURST_BATCH_SIZE);
 
         assertThat(failures).isEmpty();
         assertThat(entityWrites.get()).isEqualTo((long) TENANT_COUNT * ENTITY_OPS_PER_TENANT);
@@ -212,12 +240,19 @@ class DurableMultiTenantLoadIntegrationTest {
         assertThat(entitySaveP95).isLessThanOrEqualTo(MAX_P95_ENTITY_SAVE_MS);
         assertThat(eventAppendP95).isLessThanOrEqualTo(MAX_P95_EVENT_APPEND_MS);
         assertThat(queryP95).isLessThanOrEqualTo(MAX_P95_QUERY_MS);
+        if (MAX_P99_ENTITY_SAVE_MS > 0 && entitySaveLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE) {
+            assertThat(entitySaveP99).isLessThanOrEqualTo(MAX_P99_ENTITY_SAVE_MS);
+        }
+        if (MAX_P99_QUERY_MS > 0 && queryLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE) {
+            assertThat(queryP99).isLessThanOrEqualTo(MAX_P99_QUERY_MS);
+        }
+        assertThat(eventBurstThroughputPerSecond).isGreaterThanOrEqualTo(MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND);
         assertThat(heapDeltaMb).isLessThanOrEqualTo(MAX_HEAP_DELTA_MB);
         assertThat(throughputPerSecond).isPositive();
 
         try (var connection = POSTGRES.createConnection("");
              var statement = connection.prepareStatement(
-                 "SELECT tenant_id, COUNT(*) AS entity_count FROM entities GROUP BY tenant_id ORDER BY tenant_id"
+                 "SELECT tenant_id, COUNT(*) AS entity_count FROM entities WHERE collection_name LIKE 'load-orders-%' GROUP BY tenant_id ORDER BY tenant_id"
              );
              var resultSet = statement.executeQuery()) {
             int tenantRows = 0;
@@ -242,6 +277,13 @@ class DurableMultiTenantLoadIntegrationTest {
             Map.entry("entitySaveP95Ms", entitySaveP95),
             Map.entry("eventAppendP95Ms", eventAppendP95),
             Map.entry("queryP95Ms", queryP95),
+            Map.entry("entitySaveP99Ms", entitySaveP99),
+            Map.entry("queryP99Ms", queryP99),
+            Map.entry("minP99SampleSize", MIN_P99_SAMPLE_SIZE),
+            Map.entry("entitySaveP99Evaluated", MAX_P99_ENTITY_SAVE_MS > 0 && entitySaveLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE),
+            Map.entry("queryP99Evaluated", MAX_P99_QUERY_MS > 0 && queryLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE),
+            Map.entry("eventBurstBatchSize", EVENT_BURST_BATCH_SIZE),
+            Map.entry("eventBurstThroughputOpsPerSecond", eventBurstThroughputPerSecond),
             Map.entry("throughputOpsPerSecond", throughputPerSecond),
             Map.entry("durationSeconds", durationNanos / 1_000_000_000.0d),
             Map.entry("timestamp", Instant.now().toString())
@@ -253,7 +295,8 @@ class DurableMultiTenantLoadIntegrationTest {
         long aggregateEntityWrites,
         long aggregateEventAppends,
         long aggregateQueries,
-        double bestThroughput
+        double bestThroughput,
+        double bestEventBurstThroughput
     ) {
         if (METRICS_OUTPUT.isBlank()) {
             return;
@@ -269,7 +312,11 @@ class DurableMultiTenantLoadIntegrationTest {
             Map.entry("aggregateEventAppends", aggregateEventAppends),
             Map.entry("aggregateQueries", aggregateQueries),
             Map.entry("bestThroughputOpsPerSecond", bestThroughput),
+            Map.entry("bestEventBurstThroughputOpsPerSecond", bestEventBurstThroughput),
             Map.entry("minThroughputOpsPerSecond", MIN_THROUGHPUT_OPS_PER_SECOND),
+            Map.entry("minEventBurstThroughputOpsPerSecond", MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND),
+            Map.entry("maxP99EntitySaveMs", MAX_P99_ENTITY_SAVE_MS),
+            Map.entry("maxP99QueryMs", MAX_P99_QUERY_MS),
             Map.entry("generatedAt", Instant.now().toString()),
             Map.entry("iterationsSummary", iterationSummaries)
         );
@@ -280,6 +327,86 @@ class DurableMultiTenantLoadIntegrationTest {
         } catch (Exception exception) {
             throw new AssertionError("failed to write durable load metrics report", exception);
         }
+    }
+
+    private void preWarmTenants() {
+        ensureTenantTopicsExist();
+        for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) {
+            String tenantId = tenantIdFor(tenantIndex);
+            TenantContext tenant = TenantContext.of(tenantId);
+            String warmupEntityId = UUID.nameUUIDFromBytes((tenantId + "-warmup-entity").getBytes(StandardCharsets.UTF_8)).toString();
+            runBlocking(() -> entityStore.save(tenant, EntityStore.Entity.builder()
+                .collection("warmup-orders-" + tenantId)
+                .id(warmupEntityId)
+                .data(Map.of("tenantTag", tenantId, "warmup", true))
+                .build()));
+            runBlocking(() -> eventStore.append(tenant, EventLogStore.EventEntry.builder()
+                .eventType("warmup.event")
+                .timestamp(Instant.now())
+                .payload(writePayloadBytes(tenantId, -1))
+                .headers(Map.of("tenant", tenantId, "warmup", "true"))
+                .idempotencyKey(tenantId + "-warmup")
+                .build()));
+        }
+    }
+
+    private void ensureTenantTopicsExist() {
+        Map<String, Object> adminProps = Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, normalizeBootstrapServers(KAFKA.getBootstrapServers()));
+        try (AdminClient adminClient = AdminClient.create(adminProps)) {
+            List<NewTopic> topics = new ArrayList<>(TENANT_COUNT);
+            for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) {
+                topics.add(new NewTopic(topicFor(tenantIdFor(tenantIndex)), 1, (short) 1));
+            }
+            CreateTopicsResult result = adminClient.createTopics(topics);
+            result.all().get(30, TimeUnit.SECONDS);
+        } catch (Exception exception) {
+            String message = exception.getMessage();
+            if (message == null || !message.contains("already exists")) {
+                throw new IllegalStateException("failed to pre-create durable-load Kafka topics", exception);
+            }
+        }
+    }
+
+    private double measureEventBurstThroughput(String tenantId, int eventCount) {
+        TenantContext tenant = TenantContext.of(tenantId);
+        List<EventLogStore.EventEntry> entries = new ArrayList<>(eventCount);
+        for (int index = 0; index < eventCount; index++) {
+            entries.add(EventLogStore.EventEntry.builder()
+                .eventType("entity.load-burst")
+                .timestamp(Instant.now())
+                .payload(writePayloadBytes(tenantId, index))
+                .headers(Map.of("tenant", tenantId, "phase", "burst"))
+                .idempotencyKey(tenantId + "-burst-" + index)
+                .build());
+        }
+
+        long startedAt = System.nanoTime();
+        List<Offset> offsets = runBlocking(() -> eventStore.appendBatch(tenant, entries));
+        long durationNanos = System.nanoTime() - startedAt;
+
+        assertThat(offsets).hasSize(eventCount);
+        return eventCount / Math.max(1.0d, durationNanos / 1_000_000_000.0d);
+    }
+
+    private static <T> T runBlocking(Supplier<Promise<T>> operation) {
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
+        final Object[] result = new Object[1];
+        final Throwable[] failure = new Throwable[1];
+        eventloop.execute(() -> operation.get().whenComplete((value, error) -> {
+            result[0] = value;
+            failure[0] = error;
+        }));
+        eventloop.run();
+        if (failure[0] != null) {
+            throw new IllegalStateException("blocking performance helper failed", failure[0]);
+        }
+        @SuppressWarnings("unchecked")
+        T castResult = (T) result[0];
+        return castResult;
+    }
+
+    private static String topicFor(String tenantId) {
+        return "datacloud." + tenantId + ".events";
     }
 
     private void runTenantScenario(
@@ -340,22 +467,26 @@ class DurableMultiTenantLoadIntegrationTest {
             }));
         }
 
-        for (int index = 0; index < EVENT_OPS_PER_TENANT; index++) {
-            final int eventIndex = index;
-            chain = chain.then(() -> measureLatency(
-                () -> eventStore.append(tenant, EventLogStore.EventEntry.builder()
+        chain = chain.then(() -> {
+            List<EventLogStore.EventEntry> entries = new ArrayList<>(EVENT_OPS_PER_TENANT);
+            for (int index = 0; index < EVENT_OPS_PER_TENANT; index++) {
+                entries.add(EventLogStore.EventEntry.builder()
                     .eventType("entity.load-tested")
                     .timestamp(Instant.now())
-                    .payload(writePayloadBytes(tenantId, eventIndex))
+                    .payload(writePayloadBytes(tenantId, index))
                     .headers(Map.of("tenant", tenantId))
-                    .idempotencyKey(tenantId + "-event-" + eventIndex)
-                    .build()),
+                    .idempotencyKey(tenantId + "-event-" + index)
+                    .build());
+            }
+            return measureBatchLatencyPerEvent(
+                () -> eventStore.appendBatch(tenant, entries),
+                EVENT_OPS_PER_TENANT,
                 eventAppendLatenciesMs
-            ).map(offset -> {
-                eventAppends.incrementAndGet();
+            ).map(offsets -> {
+                eventAppends.addAndGet(offsets.size());
                 return (Void) null;
-            }));
-        }
+            });
+        });
 
         chain = chain.then(() -> measureLatency(
             () -> entityStore.query(tenant, EntityStore.QuerySpec.builder()
@@ -390,6 +521,21 @@ class DurableMultiTenantLoadIntegrationTest {
         return operation.get().whenComplete(($, error) -> latenciesMs.add(
             TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos)
         ));
+    }
+
+    private static <T> Promise<T> measureBatchLatencyPerEvent(
+        Supplier<Promise<T>> operation,
+        int batchSize,
+        Queue<Long> latenciesMs
+    ) {
+        long startNanos = System.nanoTime();
+        return operation.get().whenComplete(($, error) -> {
+            long totalMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            long perEventMs = Math.max(1L, totalMs / Math.max(1, batchSize));
+            for (int index = 0; index < batchSize; index++) {
+                latenciesMs.add(perEventMs);
+            }
+        });
     }
 
     private static String normalizeBootstrapServers(String bootstrapServers) {

@@ -13,5 +13,6 @@ public enum RunStatus {
     RUNNING,
     SUCCESS,
     FAILED,
-    CANCELLED
+    CANCELLED,
+    NOT_READY
 }

@@ -7,7 +7,7 @@
  * @doc.purpose Pipeline editor toolbar
  * @doc.layer frontend
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import clsx from 'clsx';
 import {
@@ -21,6 +21,29 @@ import {
   validationAtom,
 } from '@/stores/pipeline.store';
 import type { PipelineStatus } from '@/types/pipeline.types';
+
+// ─── Tooltip Helper ─────────────────────────────────────────────────────
+
+function Tooltip({ children, content }: { children: React.ReactNode; content: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        className="cursor-help"
+      >
+        {children}
+      </div>
+      {show && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap z-50">
+          {content}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Status badge colors ─────────────────────────────────────────────
 
@@ -101,87 +124,99 @@ export function PipelineToolbar({
       <div className="flex-1" />
 
       {/* Undo / Redo */}
-      <button
-        onClick={onUndo}
-        disabled={!canUndo}
-        className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-        title="Undo (Ctrl+Z)"
-        data-testid="btn-undo"
-      >
-        ↩
-      </button>
-      <button
-        onClick={onRedo}
-        disabled={!canRedo}
-        className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-        title="Redo (Ctrl+Y)"
-        data-testid="btn-redo"
-      >
-        ↪
-      </button>
+      <Tooltip content="Undo last change (Ctrl+Z)">
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+          data-testid="btn-undo"
+        >
+          ↩
+        </button>
+      </Tooltip>
+      <Tooltip content="Redo last change (Ctrl+Y)">
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+          data-testid="btn-redo"
+        >
+          ↪
+        </button>
+      </Tooltip>
 
       {/* Divider */}
       <div className="w-px h-6 bg-gray-200" />
 
       {/* Validate */}
-      <button
-        onClick={onValidate}
-        disabled={validating}
-        className={clsx(
-          'px-3 py-1 text-xs font-medium rounded border transition-colors',
-          hasErrors
-            ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
-            : 'border-gray-200 hover:bg-gray-100',
-          'disabled:opacity-50',
-        )}
-        data-testid="btn-validate"
-      >
-        {validating ? 'Validating…' : hasErrors ? `⚠ ${validation.errors.length} errors` : 'Validate'}
-      </button>
+      <Tooltip content="Validate pipeline structure and dependencies">
+        <button
+          onClick={onValidate}
+          disabled={validating}
+          className={clsx(
+            'px-3 py-1 text-xs font-medium rounded border transition-colors',
+            hasErrors
+              ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
+              : 'border-gray-200 hover:bg-gray-100',
+            'disabled:opacity-50',
+          )}
+          data-testid="btn-validate"
+        >
+          {validating ? 'Validating…' : hasErrors ? `⚠ ${validation.errors.length} errors` : 'Validate'}
+        </button>
+      </Tooltip>
 
       {/* Save */}
-      <button
-        onClick={onSave}
-        disabled={!dirty || saving}
-        className="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white
-                   hover:bg-blue-700 disabled:opacity-40 transition-colors"
-        data-testid="btn-save"
-      >
-        {saving ? 'Saving…' : 'Save'}
-      </button>
+      <Tooltip content="Save pipeline to backend">
+        <button
+          onClick={onSave}
+          disabled={!dirty || saving}
+          className="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white
+                     hover:bg-blue-700 disabled:opacity-40 transition-colors"
+          data-testid="btn-save"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </Tooltip>
 
       {/* Run Now */}
       {onRunNow && (
-        <button
-          onClick={onRunNow}
-          disabled={running}
-          className="px-3 py-1 text-xs font-medium rounded bg-green-600 text-white
-                     hover:bg-green-700 disabled:opacity-40 transition-colors"
-          data-testid="btn-run-now"
-        >
-          {running ? 'Running…' : '▶ Run'}
-        </button>
+        <Tooltip content="Trigger pipeline execution with test event">
+          <button
+            onClick={onRunNow}
+            disabled={running}
+            className="px-3 py-1 text-xs font-medium rounded bg-green-600 text-white
+                       hover:bg-green-700 disabled:opacity-40 transition-colors"
+            data-testid="btn-run-now"
+          >
+            {running ? 'Running…' : '▶ Run'}
+          </button>
+        </Tooltip>
       )}
 
       {/* Export */}
-      <button
-        onClick={onExport}
-        className="px-3 py-1 text-xs font-medium rounded border border-gray-200
-                   hover:bg-gray-100 transition-colors"
-        data-testid="btn-export"
-      >
-        Export JSON
-      </button>
+      <Tooltip content="Export pipeline as JSON file">
+        <button
+          onClick={onExport}
+          className="px-3 py-1 text-xs font-medium rounded border border-gray-200
+                     hover:bg-gray-100 transition-colors"
+          data-testid="btn-export"
+        >
+          Export JSON
+        </button>
+      </Tooltip>
 
       {/* New */}
-      <button
-        onClick={onNew}
-        className="px-3 py-1 text-xs font-medium rounded border border-gray-200
-                   hover:bg-gray-100 transition-colors"
-        data-testid="btn-new"
-      >
-        + New
-      </button>
+      <Tooltip content="Create new pipeline (unsaved changes will be lost)">
+        <button
+          onClick={onNew}
+          className="px-3 py-1 text-xs font-medium rounded border border-gray-200
+                     hover:bg-gray-100 transition-colors"
+          data-testid="btn-new"
+        >
+          + New
+        </button>
+      </Tooltip>
     </header>
   );
 }

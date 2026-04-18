@@ -6,6 +6,8 @@ package com.ghatana.aep.server.store;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.consent.ConsentService;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Entity;
@@ -85,6 +87,7 @@ public final class DataCloudPatternStore implements PatternRepository {
     private static final long CACHE_TTL_MS = 60_000L;
 
     private final DataCloudClient client;
+    private final Optional<ConsentService> consentService;
 
     // Keyed by pattern UUID → cached metadata + expiry
     private final ConcurrentHashMap<UUID, CacheEntry> cache = new ConcurrentHashMap<>();
@@ -100,7 +103,18 @@ public final class DataCloudPatternStore implements PatternRepository {
      * @param client Data-Cloud client wired to the correct tenant/server; must not be {@code null}
      */
     public DataCloudPatternStore(DataCloudClient client) {
+        this(client, null);
+    }
+
+    /**
+     * Constructs a new store backed by the given Data-Cloud client with optional consent service.
+     *
+     * @param client Data-Cloud client wired to the correct tenant/server; must not be {@code null}
+     * @param consentService optional consent service for data operation checks
+     */
+    public DataCloudPatternStore(DataCloudClient client, ConsentService consentService) {
         this.client = java.util.Objects.requireNonNull(client, "DataCloudClient must not be null");
+        this.consentService = Optional.ofNullable(consentService);
     }
 
     // =========================================================================
@@ -117,6 +131,30 @@ public final class DataCloudPatternStore implements PatternRepository {
     public Promise<PatternMetadata> save(PatternSpecification spec) {
         UUID id = spec.getId() != null ? spec.getId() : UUID.randomUUID();
         String tenantId = spec.getTenantId();
+        
+        // Check consent before saving
+        if (consentService.isPresent()) {
+            AepEngine.Event consentEvent = new AepEngine.Event(
+                "pattern.save",
+                Map.of("patternId", id.toString(), "name", spec.getName()),
+                Map.of("tenantId", tenantId),
+                Instant.now()
+            );
+            return consentService.get().evaluateConsent(tenantId, consentEvent)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        log.warn("[pattern-store] save denied by consent: {} for id={} tenant={}", 
+                            decision.reason(), id, tenantId);
+                        throw new IllegalStateException("Consent denied: " + decision.reason());
+                    }
+                    return performSave(id, tenantId, spec);
+                });
+        }
+        
+        return performSave(id, tenantId, spec);
+    }
+
+    private Promise<PatternMetadata> performSave(UUID id, String tenantId, PatternSpecification spec) {
         Map<String, Object> data = toEntityData(id, spec);
         return client.save(tenantId, COLLECTION, data)
                 .map(this::toMetadata)
@@ -210,6 +248,30 @@ public final class DataCloudPatternStore implements PatternRepository {
     @Override
     public Promise<PatternMetadata> updatePattern(UUID id, PatternSpecification newSpec) {
         String tenantId = newSpec.getTenantId();
+        
+        // Check consent before updating
+        if (consentService.isPresent()) {
+            AepEngine.Event consentEvent = new AepEngine.Event(
+                "pattern.update",
+                Map.of("patternId", id.toString(), "name", newSpec.getName()),
+                Map.of("tenantId", tenantId),
+                Instant.now()
+            );
+            return consentService.get().evaluateConsent(tenantId, consentEvent)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        log.warn("[pattern-store] update denied by consent: {} for id={} tenant={}", 
+                            decision.reason(), id, tenantId);
+                        throw new IllegalStateException("Consent denied: " + decision.reason());
+                    }
+                    return performUpdate(id, tenantId, newSpec);
+                });
+        }
+        
+        return performUpdate(id, tenantId, newSpec);
+    }
+
+    private Promise<PatternMetadata> performUpdate(UUID id, String tenantId, PatternSpecification newSpec) {
         Map<String, Object> data = toEntityData(id, newSpec);
         cache.remove(id);
         return client.save(tenantId, COLLECTION, data)
@@ -254,8 +316,31 @@ public final class DataCloudPatternStore implements PatternRepository {
     /** {@inheritDoc} */
     @Override
     public Promise<Void> delete(UUID id) {
+        // Check consent before deleting
+        if (consentService.isPresent()) {
+            AepEngine.Event consentEvent = new AepEngine.Event(
+                "pattern.delete",
+                Map.of("patternId", id.toString()),
+                Map.of("tenantId", "system"),
+                Instant.now()
+            );
+            return consentService.get().evaluateConsent("system", consentEvent)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        log.warn("[pattern-store] delete denied by consent: {} for id={}", 
+                            decision.reason(), id);
+                        throw new IllegalStateException("Consent denied: " + decision.reason());
+                    }
+                    return performDelete("system", id);
+                });
+        }
+        
+        return performDelete("system", id);
+    }
+
+    private Promise<Void> performDelete(String tenantId, UUID id) {
         cache.remove(id);
-        return client.delete("system", COLLECTION, id.toString())
+        return client.delete(tenantId, COLLECTION, id.toString())
                 .map(ignored -> (Void) null)
                 .whenException(e ->
                     log.error("[pattern-store] delete failed id={}: {}", id, e.getMessage(), e));
@@ -269,12 +354,26 @@ public final class DataCloudPatternStore implements PatternRepository {
      * @return promise completing when the entity is removed
      */
     public Promise<Void> delete(String tenantId, UUID id) {
-        cache.remove(id);
-        return client.delete(tenantId, COLLECTION, id.toString())
-                .map(ignored -> (Void) null)
-                .whenException(e ->
-                    log.error("[pattern-store] tenant delete failed tenant={} id={}: {}",
-                            tenantId, id, e.getMessage(), e));
+        // Check consent before deleting
+        if (consentService.isPresent()) {
+            AepEngine.Event consentEvent = new AepEngine.Event(
+                "pattern.delete",
+                Map.of("patternId", id.toString()),
+                Map.of("tenantId", tenantId),
+                Instant.now()
+            );
+            return consentService.get().evaluateConsent(tenantId, consentEvent)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        log.warn("[pattern-store] tenant delete denied by consent: {} for tenant={} id={}", 
+                            decision.reason(), tenantId, id);
+                        throw new IllegalStateException("Consent denied: " + decision.reason());
+                    }
+                    return performDelete(tenantId, id);
+                });
+        }
+        
+        return performDelete(tenantId, id);
     }
 
     /** {@inheritDoc} */

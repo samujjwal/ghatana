@@ -1145,6 +1145,281 @@ components:
             fallback:
               type: boolean
 
+    WorkflowDraftStep:
+      type: object
+      required: [id, type, name, description, confidence, config]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [source, transform, destination, condition]
+        name:
+          type: string
+        description:
+          type: string
+        confidence:
+          type: number
+        config:
+          $ref: "#/components/schemas/FreeformObject"
+
+    WorkflowDraftProvenance:
+      type: object
+      required: [generatedAt, strategy, promptSummary]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        strategy:
+          type: string
+        promptSummary:
+          type: string
+
+    WorkflowDraftResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [workflowId, name, description, reviewRequired, provenance, steps]
+          properties:
+            workflowId:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+            reviewRequired:
+              type: boolean
+            provenance:
+              $ref: "#/components/schemas/WorkflowDraftProvenance"
+            steps:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowDraftStep"
+        ai:
+          type: object
+          properties:
+            confidence:
+              type: number
+            model:
+              type: string
+            fallback:
+              type: boolean
+
+    Alert:
+      type: object
+      required: [id, tenantId, title, description, severity, status, source, createdAt]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        status:
+          type: string
+          enum: [active, acknowledged, resolved]
+        source:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        acknowledgedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+
+    AlertListResponse:
+      type: object
+      required: [tenantId, alerts, count, timestamp]
+      properties:
+        tenantId:
+          type: string
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alert"
+        count:
+          type: integer
+          format: int32
+        timestamp:
+          type: string
+          format: date-time
+
+    AlertGroup:
+      type: object
+      required: [id, title, rootCause, alertIds, aiConfidence, suggestedAction, suggestedActionType]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        rootCause:
+          type: string
+        alertIds:
+          type: array
+          items:
+            type: string
+        aiConfidence:
+          type: number
+        suggestedAction:
+          type: string
+        suggestedActionType:
+          type: string
+          enum: [auto, manual]
+
+    AlertGroupListResponse:
+      type: object
+      required: [tenantId, groups, count, timestamp]
+      properties:
+        tenantId:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertGroup"
+        count:
+          type: integer
+          format: int32
+        timestamp:
+          type: string
+          format: date-time
+
+    AlertResolutionSuggestion:
+      type: object
+      required: [id, alertId, suggestion, confidence, canAutoResolve]
+      properties:
+        id:
+          type: string
+        alertId:
+          type: string
+        suggestion:
+          type: string
+        confidence:
+          type: number
+        canAutoResolve:
+          type: boolean
+        steps:
+          type: array
+          items:
+            type: string
+
+    AlertResolutionSuggestionListResponse:
+      type: object
+      required: [tenantId, suggestions, count, timestamp]
+      properties:
+        tenantId:
+          type: string
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertResolutionSuggestion"
+        count:
+          type: integer
+          format: int32
+        timestamp:
+          type: string
+          format: date-time
+
+    AlertRule:
+      type: object
+      required: [id, tenantId, name, enabled, severity, conditionType, metric, operator, threshold, duration, channels]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        conditionType:
+          type: string
+          enum: [threshold, anomaly, pattern, absence]
+        metric:
+          type: string
+        operator:
+          type: string
+          enum: [gt, lt, eq, gte, lte]
+        threshold:
+          type: number
+        duration:
+          type: integer
+          format: int32
+        channels:
+          type: array
+          items:
+            type: string
+            enum: [email, slack, webhook, pagerduty]
+        recipients:
+          type: array
+          items:
+            type: string
+        webhookUrl:
+          type: string
+
+    AlertRuleListResponse:
+      type: object
+      required: [tenantId, rules, count, timestamp]
+      properties:
+        tenantId:
+          type: string
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertRule"
+        count:
+          type: integer
+          format: int32
+        timestamp:
+          type: string
+          format: date-time
+
+    AlertGroupResolveResponse:
+      type: object
+      required: [groupId, tenantId, resolvedAlertIds, resolvedAt]
+      properties:
+        groupId:
+          type: string
+        tenantId:
+          type: string
+        resolvedAlertIds:
+          type: array
+          items:
+            type: string
+        resolvedAt:
+          type: string
+          format: date-time
+
+    AlertSuggestionApplyResponse:
+      type: object
+      required: [suggestionId, tenantId, resolvedAlertIds, appliedAt]
+      properties:
+        suggestionId:
+          type: string
+        tenantId:
+          type: string
+        resolvedAlertIds:
+          type: array
+          items:
+            type: string
+        appliedAt:
+          type: string
+          format: date-time
+
     SimilarEntityMatch:
       type: object
       required: [id, collection, score, data]
@@ -1850,6 +2125,19 @@ paths:
                         message:
                           type: string
 
+  /health/deep:
+    get:
+      summary: Deep dependency-aware health breakdown
+      operationId: healthDeepGet
+      tags: [health]
+      responses:
+        "200":
+          description: Deep health status across runtime dependencies.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
   /ready:
     get:
       summary: Readiness probe (Kubernetes)
@@ -2219,6 +2507,237 @@ paths:
               schema:
                 $ref: "#/components/schemas/WorkflowExecutionSummary"
         "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Alerts ─────────────────────────────────────────────────────────────────
+
+  /api/v1/alerts:
+    get:
+      summary: List operational alerts
+      operationId: apiV1AlertsGet
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+        - $ref: "#/components/parameters/offsetQuery"
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [critical, warning, info]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, acknowledged, resolved]
+      responses:
+        "200":
+          description: Alert list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertListResponse"
+
+  /api/v1/alerts/{alertId}/acknowledge:
+    post:
+      summary: Acknowledge an alert
+      operationId: apiV1AlertsAlertIdAcknowledgePost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Alert acknowledged.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/alerts/{alertId}/resolve:
+    post:
+      summary: Resolve an alert
+      operationId: apiV1AlertsAlertIdResolvePost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Alert resolved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/alerts/groups:
+    get:
+      summary: List AI-correlated alert groups
+      operationId: apiV1AlertsGroupsGet
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Correlated alert groups.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertGroupListResponse"
+
+  /api/v1/alerts/groups/{groupId}/resolve:
+    post:
+      summary: Resolve every alert in a correlated group
+      operationId: apiV1AlertsGroupsGroupIdResolvePost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Group resolved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertGroupResolveResponse"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/alerts/suggestions:
+    get:
+      summary: List AI-generated alert resolution suggestions
+      operationId: apiV1AlertsSuggestionsGet
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Resolution suggestions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertResolutionSuggestionListResponse"
+
+  /api/v1/alerts/suggestions/{suggestionId}/apply:
+    post:
+      summary: Apply an AI-generated alert resolution suggestion
+      operationId: apiV1AlertsSuggestionsSuggestionIdApplyPost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Suggestion applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertSuggestionApplyResponse"
+
+  /api/v1/alerts/rules:
+    get:
+      summary: List alert rules
+      operationId: apiV1AlertsRulesGet
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Alert rules.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertRuleListResponse"
+    post:
+      summary: Create an alert rule
+      operationId: apiV1AlertsRulesPost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertRule"
+      responses:
+        "201":
+          description: Alert rule created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertRule"
+
+  /api/v1/alerts/rules/{ruleId}:
+    put:
+      summary: Update an alert rule
+      operationId: apiV1AlertsRulesRuleIdPut
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertRule"
+      responses:
+        "200":
+          description: Alert rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertRule"
+    delete:
+      summary: Delete an alert rule
+      operationId: apiV1AlertsRulesRuleIdDelete
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Alert rule deleted.
+
+  /api/v1/alerts/stream:
+    get:
+      summary: Stream live alert updates via server-sent events
+      operationId: apiV1AlertsStreamGet
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Server-sent event stream of alert activity.
+          content:
+            text/event-stream:
+              schema:
+                type: string
 
   # ── Checkpoints ────────────────────────────────────────────────────────────
 
@@ -3323,6 +3842,27 @@ paths:
 
   # ── Pipeline AI hint ─────────────────────────────────────────────────────
 
+  /api/v1/pipelines/draft:
+    post:
+      summary: AI-assisted workflow draft generation (DC-E3)
+      operationId: apiV1PipelinesDraftPost
+      tags: [pipelines, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Reviewable workflow draft with ordered steps and provenance metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDraftResponse"
+
   /api/v1/pipelines/{pipelineId}/optimise-hint:
     post:
       summary: AI-assisted pipeline optimisation hints (DC-E3)
@@ -3562,6 +4102,21 @@ paths:
               $ref: "#/components/schemas/PrivacyRedactionRequest"
       responses:
         "200": { description: Redaction result with list of redacted fields }
+
+  /api/v1/governance/privacy/verify:
+    get:
+      summary: Verify privacy redaction posture
+      operationId: apiV1GovernancePrivacyVerifyGet
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Verification status for redaction and privacy controls.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   /api/v1/governance/privacy/pii-fields:
     get:

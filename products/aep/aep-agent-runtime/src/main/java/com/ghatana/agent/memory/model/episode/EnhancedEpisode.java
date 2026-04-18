@@ -2,6 +2,7 @@ package com.ghatana.agent.memory.model.episode;
 
 import com.ghatana.agent.memory.model.*;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;

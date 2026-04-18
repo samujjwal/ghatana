@@ -235,17 +235,23 @@ public final class VoiceIntentCatalog {
         if (utterance == null || utterance.isBlank()) return List.of();
         String lower = utterance.toLowerCase();
         return ALL.stream()
-            .filter(i -> {
-                // Simple keyword overlap: intent name tokens in utterance
-                String[] tokens = i.name().split("_");
-                int overlap = 0;
-                for (String t : tokens) {
-                    if (lower.contains(t)) overlap++;
-                }
-                return overlap >= Math.max(1, tokens.length / 2);
-            })
+            .map(intent -> Map.entry(intent, overlapScore(intent, lower)))
+            .filter(entry -> entry.getValue() >= Math.max(1, entry.getKey().name().split("_").length / 2))
+            .sorted((left, right) -> Integer.compare(right.getValue(), left.getValue()))
+            .map(Map.Entry::getKey)
             .limit(3)
             .toList();
+    }
+
+    private static int overlapScore(VoiceIntent intent, String lowerUtterance) {
+        String[] tokens = intent.name().split("_");
+        int overlap = 0;
+        for (String token : tokens) {
+            if (lowerUtterance.contains(token)) {
+                overlap++;
+            }
+        }
+        return overlap;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

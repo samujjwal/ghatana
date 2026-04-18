@@ -14,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class PostgresEntityStore implements EntityStore, AutoCloseable {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
     private static final String ENTITY_SELECT_COLUMNS =
         "id, collection_name, data, created_at, created_by, updated_at, updated_by, version";
+    private static final int DELETE_BATCH_CHUNK_SIZE = 500;
 
     private final PostgresEntityStoreConfig config;
     private final ExecutorService blockingExecutor;
@@ -210,25 +212,76 @@ public class PostgresEntityStore implements EntityStore, AutoCloseable {
         return Promise.ofBlocking(blockingExecutor, () -> {
             List<BatchError<String>> errors = new ArrayList<>();
             int successCount = 0;
-            for (int index = 0; index < ids.size(); index++) {
-                EntityId id = ids.get(index);
+            try (Connection connection = openTenantConnection(tenant);
+                 PreparedStatement statement = connection.prepareStatement(
+                     "UPDATE entities SET active = FALSE, updated_at = ?, version = version + 1 WHERE tenant_id = ? AND id = ?::uuid AND active = TRUE"
+                 )) {
+                boolean originalAutoCommit = connection.getAutoCommit();
+                connection.setAutoCommit(false);
                 try {
-                    try (Connection connection = openTenantConnection(tenant);
-                         PreparedStatement statement = connection.prepareStatement(
-                             "UPDATE entities SET active = FALSE, updated_at = ?, version = version + 1 WHERE tenant_id = ? AND id = ?::uuid AND active = TRUE"
-                         )) {
-                        statement.setTimestamp(1, Timestamp.from(Instant.now()));
-                        statement.setString(2, tenant.tenantId());
-                        statement.setObject(3, UUID.fromString(id.value()));
-                        statement.executeUpdate();
+                    List<Integer> pendingIndices = new ArrayList<>();
+                    List<EntityId> pendingIds = new ArrayList<>();
+                    Timestamp now = Timestamp.from(Instant.now());
+
+                    for (int index = 0; index < ids.size(); index++) {
+                        EntityId id = ids.get(index);
+                        try {
+                            statement.setTimestamp(1, now);
+                            statement.setString(2, tenant.tenantId());
+                            statement.setObject(3, UUID.fromString(id.value()));
+                            statement.addBatch();
+                            pendingIndices.add(index);
+                            pendingIds.add(id);
+                        } catch (Exception exception) {
+                            errors.add(new BatchError<>(index, id.value(), "DELETE_FAILED", exception.getMessage()));
+                        }
+
+                        if (pendingIds.size() == DELETE_BATCH_CHUNK_SIZE) {
+                            successCount += executeDeleteChunk(statement, pendingIndices, pendingIds, errors);
+                            pendingIndices.clear();
+                            pendingIds.clear();
+                        }
                     }
-                    successCount++;
-                } catch (Exception exception) {
-                    errors.add(new BatchError<>(index, id.value(), "DELETE_FAILED", exception.getMessage()));
+
+                    if (!pendingIds.isEmpty()) {
+                        successCount += executeDeleteChunk(statement, pendingIndices, pendingIds, errors);
+                    }
+
+                    connection.commit();
+                } catch (SQLException exception) {
+                    connection.rollback();
+                    throw exception;
+                } finally {
+                    connection.setAutoCommit(originalAutoCommit);
                 }
             }
             return new BatchResult<>(ids.size(), successCount, errors.size(), errors);
         });
+    }
+
+    private int executeDeleteChunk(
+        PreparedStatement statement,
+        List<Integer> pendingIndices,
+        List<EntityId> pendingIds,
+        List<BatchError<String>> errors
+    ) throws SQLException {
+        int[] results = statement.executeBatch();
+        statement.clearBatch();
+
+        int successCount = 0;
+        for (int resultIndex = 0; resultIndex < results.length; resultIndex++) {
+            if (results[resultIndex] == Statement.EXECUTE_FAILED) {
+                errors.add(new BatchError<>(
+                    pendingIndices.get(resultIndex),
+                    pendingIds.get(resultIndex).value(),
+                    "DELETE_FAILED",
+                    "Batch delete execution failed"
+                ));
+                continue;
+            }
+            successCount++;
+        }
+        return successCount;
     }
 
     @Override

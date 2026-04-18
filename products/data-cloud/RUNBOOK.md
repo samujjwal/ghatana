@@ -4,6 +4,8 @@
 
 This runbook covers the validated Data Cloud deployment paths and the verification steps that now exist in the repository.
 
+The UI's shell-role mode is a disclosure and diagnostics aid only. It does not change backend authorization or tenant boundaries.
+
 ## Deployment Modes
 
 ### Local development

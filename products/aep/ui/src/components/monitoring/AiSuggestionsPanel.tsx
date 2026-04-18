@@ -64,15 +64,19 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
   const { data: suggestions, isLoading, error } = useQuery({
     queryKey: ['aep', 'ai-suggestions', tenantId],
     queryFn: async (): Promise<AiSuggestion[]> => {
-      const response = await fetch(`/api/v1/ai/suggestions?tenantId=${tenantId}`);
+      const response = await fetch(`/api/v1/ai/suggestions?tenantId=${encodeURIComponent(tenantId)}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch AI suggestions: ${response.statusText}`);
       }
-      return response.json();
+      const body: unknown = await response.json();
+      if (body !== null && typeof body === 'object' && 'suggestions' in body && Array.isArray((body as Record<string, unknown>).suggestions)) {
+        return (body as { suggestions: AiSuggestion[] }).suggestions;
+      }
+      return Array.isArray(body) ? (body as AiSuggestion[]) : [];
     },
     enabled: isFeatureEnabled('AI_SUGGESTIONS'),
-    staleTime: 60_000, // Cache for 1 minute
-    refetchInterval: 5 * 60_000, // Refetch every 5 minutes
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
   if (!isFeatureEnabled('AI_SUGGESTIONS')) {
@@ -90,7 +94,18 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
     );
   }
 
-  if (error || !suggestions?.length) {
+  if (error) {
+    return (
+      <div className={`bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 ${className}`}>
+        <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+          AI suggestions unavailable — {error instanceof Error ? error.message : 'unknown error'}
+        </p>
+      </div>
+    );
+  }
+
+  if (!suggestions?.length) {
     return null;
   }
 
@@ -189,11 +204,15 @@ export function useAiSuggestions(tenantId: string) {
   const { data: suggestions, isLoading, error, refetch } = useQuery({
     queryKey: ['aep', 'ai-suggestions', tenantId],
     queryFn: async (): Promise<AiSuggestion[]> => {
-      const response = await fetch(`/api/v1/ai/suggestions?tenantId=${tenantId}`);
+      const response = await fetch(`/api/v1/ai/suggestions?tenantId=${encodeURIComponent(tenantId)}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch AI suggestions: ${response.statusText}`);
       }
-      return response.json();
+      const body: unknown = await response.json();
+      if (body !== null && typeof body === 'object' && 'suggestions' in body && Array.isArray((body as Record<string, unknown>).suggestions)) {
+        return (body as { suggestions: AiSuggestion[] }).suggestions;
+      }
+      return Array.isArray(body) ? (body as AiSuggestion[]) : [];
     },
     enabled: isFeatureEnabled('AI_SUGGESTIONS'),
     staleTime: 60_000,

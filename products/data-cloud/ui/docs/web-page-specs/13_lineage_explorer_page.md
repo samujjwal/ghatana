@@ -1,6 +1,6 @@
-# 13. Lineage Explorer Page – Deep-Dive Spec
+# 13. Lineage Preview in Data Explorer – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec describes the lineage explorer called out in `frontend_todo (1).md`.
+> **Status:** Partially implemented. Current lineage access is a canonical `/data?view=lineage` preview inside Data Explorer, while the richer standalone explorer below remains a longer-term expansion path.
 
 ---
 
@@ -8,11 +8,11 @@
 
 **One-sentence intent:**
 
-> Show **end-to-end data lineage** across datasets, workflows, and reports as an interactive graph, helping users understand upstream/downstream dependencies and impact.
+> Show **end-to-end data lineage** for the selected collection inside Data Explorer, then expand toward a richer standalone graph workspace only when the product genuinely needs it.
 
 **Primary goals:**
 
-- Visualize upstream and downstream lineage for a selected dataset, workflow, or report.
+- Visualize upstream and downstream lineage for a selected dataset, pipeline, or derived insight surface.
 - Let users navigate the graph and inspect node/edge details.
 - Integrate with glossary and governance concepts (business terms, PII, policies).
 
@@ -38,8 +38,8 @@
    - Lineage Explorer shows downstream workflows and reports.
 
 2. **Root cause analysis after a failure**
-   - A critical dashboard shows wrong numbers.
-   - User opens lineage from the report and navigates upstream to find problematic inputs.
+  - An operator insight or query result shows wrong numbers.
+  - User opens lineage preview from the data view and navigates upstream to find problematic inputs.
 
 3. **Governance checks**
    - User inspects lineage paths carrying PII to verify policy compliance.
@@ -50,10 +50,15 @@
 
 Core layout components:
 
+- **Current shipped entry point**
+  - User starts in Data Explorer and switches the view toggle to `Lineage`.
+  - `/lineage` is a compatibility handoff that redirects to `/data?view=lineage`.
+  - The selected collection drives the lineage and downstream-impact requests.
+
 - **Header**
-  - Title: `Lineage Explorer`.
-  - Current focus node (e.g., `orders_dataset`).
-  - Controls to adjust depth, direction (upstream/downstream), and filters.
+  - Title stays inside the Data Explorer detail panel as `Lineage preview`.
+  - Current focus node follows the selected collection.
+  - Future controls may add depth, direction, and filters if the preview grows into a larger workspace.
 
 - **Graph canvas** (D3/Cytoscape-style)
   - Nodes representing datasets, workflows, external systems, and reports.
@@ -62,7 +67,7 @@ Core layout components:
 
 - **Node details panel**
   - Appears when a node is selected.
-  - Shows type, description, owners, tags, health, and key links (to Dataset Detail, Workflow Designer, dashboards).
+  - Shows type, description, owners, tags, health, and key links (to Dataset Detail, advanced pipeline editor, and query surfaces).
 
 - **Legend & filters**
   - Legend explaining node and edge shapes/colors.
@@ -85,7 +90,7 @@ Core layout components:
 
 ## 5. Completeness and Real-World Coverage
 
-A complete Lineage Explorer should:
+A complete lineage experience should:
 
 1. Integrate with the **metadata catalog’s lineage model** (table/column/workflow-level).
 2. Represent external sources and sinks (APIs, streams, lakes, BI tools).
@@ -109,15 +114,15 @@ A complete Lineage Explorer should:
 ## 7. Coherence with App Creator / Canvas & Platform
 
 - Shares interaction patterns with Workflow Designer and other canvases (selection, pan/zoom, mini-map).
-- Nodes representing workflows can link into the Workflow Designer for editing.
-- Datasets and reports connect back to Dataset Detail and dashboard pages.
+- Nodes representing pipelines can link into the advanced pipeline editor for editing.
+- Datasets and derived outputs connect back to Dataset Detail, Query, and operator insight pages rather than a dedicated BI product.
 
 ---
 
 ## 8. Links to More Detail & Working Entry Points
 
 - Dataset Detail: `12_dataset_detail_insights_page.md`.
-- Workflows: `05_workflows_page.md`, `06_workflow_designer_canvas.md`.
+- Pipelines: `05_workflows_page.md`, `06_workflow_designer_canvas.md`.
 - Governance UIs (future): policies, PII reports.
 
 ---
@@ -138,16 +143,11 @@ A complete Lineage Explorer should:
 ## 10. Mockup / Expected Layout & Content
 
 ```text
-H1: Lineage Explorer
-Focus: orders_dataset            [ Depth: 2 ▾ ] [ Direction: Up+Down ▾ ]
+Data Explorer → View: [Overview] [Schema] [Lineage] [Quality]
 
-[ Graph canvas showing upstream sources and downstream reports ]
-
-Node details (right panel):
-- Type: Dataset
-- Name: orders_dataset
-- Owners: Data Platform Team
-- Tags: [pii] [gold]
-- Health: 92/100
-- Links: [Open Dataset Detail] [Open Lineage in SQL Workspace] [Related Workflows]
+Lineage preview
+- Current collection: orders
+- Upstream/downstream graph snapshot
+- Downstream impact summary
+- Links: [Open Query] [Related Pipelines] [Return to Data]
 ```

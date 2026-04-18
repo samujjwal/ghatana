@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
+import { settingsSurfaceBoundaries } from '@/components/common/unsupportedSurfaceRegistry';
 import { SettingsPage } from '../../pages/SettingsPage';
 
 
@@ -10,8 +11,8 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { wrapper: TestWrapper });
 
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Profile Settings' })).toBeInTheDocument();
-    expect(screen.getByText(/unavailable in current deployment/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: settingsSurfaceBoundaries.profile.title })).toBeInTheDocument();
+    expect(screen.getByText(settingsSurfaceBoundaries.profile.summary)).toBeInTheDocument();
   });
 
   it('shows all four settings sections', () => {
@@ -24,7 +25,7 @@ describe('SettingsPage', () => {
 
   it('defaults to Profile section', () => {
     render(<SettingsPage />, { wrapper: TestWrapper });
-    expect(screen.getByRole('heading', { name: 'Profile Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: settingsSurfaceBoundaries.profile.title })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /profile/i })).toHaveClass('bg-blue-50');
   });
 
@@ -33,8 +34,8 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { wrapper: TestWrapper });
     await user.click(screen.getByText('Preferences'));
 
-    expect(screen.getByRole('heading', { name: 'Preferences' })).toBeInTheDocument();
-    expect(screen.getByText(/preference persistence is not wired/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: settingsSurfaceBoundaries.preferences.title })).toBeInTheDocument();
+    expect(screen.getByText(settingsSurfaceBoundaries.preferences.summary)).toBeInTheDocument();
   });
 
   it('switches to Notifications section on click', async () => {
@@ -42,8 +43,8 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { wrapper: TestWrapper });
     await user.click(screen.getByText('Notifications'));
 
-    expect(screen.getByRole('heading', { name: 'Notification Settings' })).toBeInTheDocument();
-    expect(screen.getByText(/notification channel preferences are not backed/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: settingsSurfaceBoundaries.notifications.title })).toBeInTheDocument();
+    expect(screen.getByText(settingsSurfaceBoundaries.notifications.summary)).toBeInTheDocument();
   });
 
   it('switches to API Keys section on click', async () => {
@@ -51,7 +52,7 @@ describe('SettingsPage', () => {
     render(<SettingsPage />, { wrapper: TestWrapper });
     await user.click(screen.getByText('API Keys'));
 
-    expect(screen.getByRole('heading', { name: 'API Keys' })).toBeInTheDocument();
-    expect(screen.getByText(/launcher bootstrap/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: settingsSurfaceBoundaries.api.title })).toBeInTheDocument();
+    expect(screen.getByText(settingsSurfaceBoundaries.api.summary)).toBeInTheDocument();
   });
 });

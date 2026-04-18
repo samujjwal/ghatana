@@ -46,21 +46,56 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
     private static final Pattern TEXT_FALLBACK_PATTERN =
             Pattern.compile("\"(?:text|content|result)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
 
-    private final ManagedChannel channel;
+    /**
+     * STT mode enumeration
+     */
+    public enum SttMode {
+        GRPC,
+        LLM_FALLBACK,
+        NOP
+    }
 
-    public GrpcSttClientAdapter(String host, int port) {
+    private final ManagedChannel channel;
+    private final SttMode configuredMode;
+    private SttMode currentMode = SttMode.LLM_FALLBACK;
+
+    /**
+     * Creates a new gRPC STT client adapter.
+     *
+     * @param host the Whisper gRPC service host
+     * @param port the Whisper gRPC service port
+     * @param sttMode the configured STT mode (GRPC, LLM_FALLBACK, or NOP)
+     */
+    public GrpcSttClientAdapter(String host, int port, SttMode sttMode) {
         this.channel = ManagedChannelBuilder.forAddress(host, port)
                 .usePlaintext()
                 .build();
-        LOG.info("STT gRPC client connected to {}:{}", host, port);
+        this.configuredMode = sttMode;
+        LOG.info("STT gRPC client connected to {}:{} with mode {}", host, port, sttMode);
+    }
+
+    /**
+     * Creates a new gRPC STT client adapter with default LLM_FALLBACK mode.
+     *
+     * @param host the Whisper gRPC service host
+     * @param port the Whisper gRPC service port
+     */
+    public GrpcSttClientAdapter(String host, int port) {
+        this(host, port, SttMode.LLM_FALLBACK);
     }
 
     /**
      * Transcribe audio bytes.
      *
-     * <p>Delegates to the AI Inference HTTP fallback while the gRPC proto stubs
-     * for the STT service are not yet generated. Once {@code stt_service.proto}
-     * is compiled, replace the body with:
+     * <p>Respects the configured STT mode:
+     * <ul>
+     *   <li>{@code GRPC}: Uses real Whisper gRPC endpoint (requires proto stubs)</li>
+     *   <li>{@code LLM_FALLBACK}: Uses AI Inference HTTP fallback</li>
+     *   <li>{@code NOP}: Returns empty result (disabled)</li>
+     * </ul>
+     *
+     * <p>When {@code GRPC} mode is configured and gRPC stubs are available, replace
+     * the placeholder with:
      * <pre>{@code
      * SttServiceGrpc.SttServiceBlockingStub stub =
      *     SttServiceGrpc.newBlockingStub(channel).withDeadlineAfter(30, TimeUnit.SECONDS);
@@ -81,15 +116,74 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
     @Override
     public AudioResult transcribe(byte[] audioData) {
         try {
-            LOG.debug("Transcribing {} bytes via AI Inference HTTP fallback", audioData.length);
-            return transcribeViaAiInference(audioData);
+            switch (configuredMode) {
+                case GRPC:
+                    LOG.debug("Transcribing {} bytes via Whisper gRPC", audioData.length);
+                    currentMode = SttMode.GRPC;
+                    return transcribeViaGrpc(audioData);
+                case LLM_FALLBACK:
+                    LOG.debug("Transcribing {} bytes via AI Inference HTTP fallback", audioData.length);
+                    currentMode = SttMode.LLM_FALLBACK;
+                    return transcribeViaAiInference(audioData);
+                case NOP:
+                    LOG.debug("STT disabled (NOP mode)");
+                    currentMode = SttMode.NOP;
+                    return AudioResult.builder().transcription("").confidence(0.0).build();
+                default:
+                    LOG.warn("Unknown STT mode: {}, falling back to LLM", configuredMode);
+                    currentMode = SttMode.LLM_FALLBACK;
+                    return transcribeViaAiInference(audioData);
+            }
         } catch (StatusRuntimeException e) {
-            LOG.error("STT gRPC call failed: {}", e.getStatus(), e);
-            return AudioResult.error("STT service error: " + e.getStatus().getDescription());
+            LOG.error("STT gRPC call failed: {}, falling back to LLM", e.getStatus(), e);
+            currentMode = SttMode.LLM_FALLBACK;
+            return transcribeViaAiInference(audioData);
         } catch (Exception e) {
             LOG.error("STT transcription error", e);
+            currentMode = SttMode.NOP;
             return AudioResult.error(e.getMessage());
         }
+    }
+
+    /**
+     * Get the current STT mode
+     *
+     * @return current STT mode (GRPC, LLM_FALLBACK, or NOP)
+     */
+    public SttMode getCurrentMode() {
+        return currentMode;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Whisper gRPC transcription (placeholder until proto stubs are generated)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Transcribe audio via Whisper gRPC endpoint.
+     *
+     * <p>This is a placeholder method. Once {@code stt_service.proto} is compiled
+     * and gRPC stubs are generated, replace this implementation with real gRPC calls.
+     *
+     * @param audioData raw audio bytes
+     * @return AudioResult with transcription and confidence
+     */
+    private AudioResult transcribeViaGrpc(byte[] audioData) {
+        // TODO: Replace with real gRPC call once proto stubs are generated
+        // Example implementation:
+        // SttServiceGrpc.SttServiceBlockingStub stub =
+        //     SttServiceGrpc.newBlockingStub(channel).withDeadlineAfter(30, TimeUnit.SECONDS);
+        // TranscribeRequest req = TranscribeRequest.newBuilder()
+        //     .setAudioData(ByteString.copyFrom(audioData))
+        //     .setSampleRate(16000)
+        //     .build();
+        // TranscribeResponse resp = stub.transcribe(req);
+        // return AudioResult.builder()
+        //     .transcription(resp.getTranscription())
+        //     .confidence(resp.getConfidence())
+        //     .build();
+
+        LOG.warn("Whisper gRPC transcription not yet implemented - falling back to LLM");
+        return transcribeViaAiInference(audioData);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

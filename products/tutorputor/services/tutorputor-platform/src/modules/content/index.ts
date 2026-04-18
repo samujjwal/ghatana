@@ -19,6 +19,8 @@ import { registerPublishRoutes } from "./publish/routes.js";
 import { registerModalityConversionRoutes } from "./modality-conversion/routes.js";
 import { registerQualityMLRoutes } from "./quality-ml/routes.js";
 import { registerABTestingRoutes } from "./experiments/ab-testing/routes.js";
+import { registerRestoreRoutes } from "./restore/routes.js";
+import { registerVersioningRoutes } from "./versioning/routes.js";
 
 /**
  * Content module - consolidates:
@@ -102,6 +104,12 @@ export const contentModule: FastifyPluginAsync = async (app) => {
 
   // Register experimentation routes
   registerABTestingRoutes(app, { prisma });
+
+  // Register soft delete / restore routes
+  registerRestoreRoutes(app, { prisma });
+
+  // Register content versioning routes
+  registerVersioningRoutes(app, { prisma });
 
   app.log.info("✅ Content module routes registered");
 };

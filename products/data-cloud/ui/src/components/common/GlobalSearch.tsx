@@ -21,13 +21,13 @@ import {
     Settings,
     BarChart3,
     Shield,
-    Bell,
     ArrowRight,
     Loader2,
 } from 'lucide-react';
 import { cn, textStyles, bgStyles } from '../../lib/theme';
 import { collectionsApi } from '../../lib/api/collections';
 import { workflowsApi } from '../../lib/api/workflows';
+import SessionBootstrap, { type ShellRole, canAccessShellRole } from '../../lib/auth/session';
 
 /**
  * Search result item
@@ -40,21 +40,29 @@ interface SearchResult {
     icon: React.ReactNode;
     path?: string;
     action?: () => void;
+    minimumShellRole?: ShellRole;
 }
 
 /**
  * Quick navigation items (static)
  */
 const quickNavItems: SearchResult[] = [
-    { id: 'nav-dashboard', title: 'Dashboard', type: 'page', icon: <BarChart3 className="h-4 w-4" />, path: '/dashboard' },
-    { id: 'nav-collections', title: 'Collections', type: 'page', icon: <Database className="h-4 w-4" />, path: '/collections' },
-    { id: 'nav-workflows', title: 'Workflows', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/workflows' },
-    { id: 'nav-sql', title: 'SQL Workspace', type: 'page', icon: <FileText className="h-4 w-4" />, path: '/sql' },
+    { id: 'nav-home', title: 'Home', type: 'page', icon: <BarChart3 className="h-4 w-4" />, path: '/' },
+    { id: 'nav-data', title: 'Data', type: 'page', icon: <Database className="h-4 w-4" />, path: '/data' },
+    { id: 'nav-pipelines', title: 'Pipelines', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/pipelines' },
+    { id: 'nav-query', title: 'Query', type: 'page', icon: <FileText className="h-4 w-4" />, path: '/query' },
     { id: 'nav-lineage', title: 'Lineage Preview', description: 'Open the Data Explorer lineage preview', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/data?view=lineage' },
-    { id: 'nav-governance', title: 'Governance', type: 'page', icon: <Shield className="h-4 w-4" />, path: '/governance' },
-    { id: 'nav-alerts', title: 'Alerts', type: 'page', icon: <Bell className="h-4 w-4" />, path: '/alerts' },
-    { id: 'nav-settings', title: 'Settings', type: 'page', icon: <Settings className="h-4 w-4" />, path: '/settings' },
+    { id: 'nav-insights', title: 'Insights', type: 'page', icon: <BarChart3 className="h-4 w-4" />, path: '/insights', minimumShellRole: 'operator' },
+    { id: 'nav-trust', title: 'Trust', type: 'page', icon: <Shield className="h-4 w-4" />, path: '/trust', minimumShellRole: 'operator' },
+    { id: 'nav-events', title: 'Events', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/events', minimumShellRole: 'operator' },
+    { id: 'nav-settings', title: 'Settings', type: 'page', icon: <Settings className="h-4 w-4" />, path: '/settings', minimumShellRole: 'admin' },
 ];
+
+function getVisibleQuickNavItems(shellRole: ShellRole): SearchResult[] {
+    return quickNavItems.filter((item) =>
+        canAccessShellRole(shellRole, item.minimumShellRole ?? 'primary-user')
+    );
+}
 
 interface GlobalSearchProps {
     isOpen: boolean;
@@ -69,6 +77,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+    const shellRole = SessionBootstrap.getShellRole();
 
     const searchEnabled = query.length >= 2;
 
@@ -87,15 +96,16 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
     });
 
     const isLoading = collectionsLoading || workflowsLoading;
+    const visibleQuickNavItems = getVisibleQuickNavItems(shellRole);
 
     // Build results from API data + static quick nav items
     const getResults = useCallback((): SearchResult[] => {
         if (!query.trim()) {
-            return quickNavItems;
+            return visibleQuickNavItems;
         }
 
         const lowerQuery = query.toLowerCase();
-        const matchedNav = quickNavItems.filter(
+        const matchedNav = visibleQuickNavItems.filter(
             (item) =>
                 item.title.toLowerCase().includes(lowerQuery) ||
                 item.description?.toLowerCase().includes(lowerQuery)
@@ -107,7 +117,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
             description: col.description,
             type: 'collection' as const,
             icon: <Database className="h-4 w-4" />,
-            path: `/collections/${col.id}`,
+            path: `/data/${col.id}`,
         }));
 
         const workflowResults: SearchResult[] = (workflowsPage?.items ?? []).map((wf) => ({
@@ -116,11 +126,11 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
             description: wf.description,
             type: 'workflow' as const,
             icon: <Workflow className="h-4 w-4" />,
-            path: `/workflows/${wf.id}`,
+            path: `/pipelines/${wf.id}`,
         }));
 
         return [...matchedNav, ...collectionResults, ...workflowResults];
-    }, [query, collectionsPage, workflowsPage]);
+    }, [query, collectionsPage, visibleQuickNavItems, workflowsPage]);
 
     const results = getResults();
 
@@ -205,7 +215,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
                                 setSelectedIndex(0);
                             }}
                             onKeyDown={handleKeyDown}
-                            placeholder="Search collections, workflows, pages..."
+                            placeholder="Search data, pipelines, and pages..."
                             className={cn(
                                 'flex-1 bg-transparent border-none outline-none',
                                 'text-gray-900 dark:text-white placeholder-gray-400'

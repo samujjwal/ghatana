@@ -1,12 +1,16 @@
-# 2. Collections Page – List & Detail – Deep-Dive Spec
+# 2. Data Explorer – List & Detail – Deep-Dive Spec
 
 Related routes & files:
 
 - Routes:
-  - `/collections` – list view
-  - `/collections/:id` – detail view
-- Page: `src/pages/CollectionsPage.tsx`
-- Mock API: `src/lib/mock-api-client.ts`, `src/lib/mock-data.ts`
+  - `/data` – list view
+  - `/data/new` – create view handoff
+  - `/data/:id` – detail view
+  - `/data/:id/edit` – edit flow
+  - compatibility aliases: `/collections`, `/collections/new`, `/collections/:id`, `/collections/:id/edit`
+- Page: `src/pages/DataExplorer.tsx`
+
+_Reality note: the canonical product route is now `/data`; the old `/collections` path remains a compatibility alias only._
 
 ---
 
@@ -40,24 +44,24 @@ Related routes & files:
 **Key scenarios:**
 
 1. **Scanning available collections**
-   - User lands on `/collections` and sees all collections with name, description, entity count, active status, and last updated.
+  - User lands on `/data` and sees all collections with name, description, entity count, active status, and last updated.
 
 2. **Inspecting a specific collection**
-   - User clicks a collection card → `/collections/:id`.
+  - User clicks a collection card → `/data/:id`.
    - Sees ID, entity count, schema fields, created/updated timestamps.
 
 3. **Starting a new collection**
-   - From an empty state or top-right button, user clicks `New Collection` → `/collections/new`.
+  - From an empty state or top-right button, user clicks `New Collection` → `/data/new`.
 
 ---
 
 ## 3. Content & Layout Overview
 
-From `CollectionsPage.tsx`:
+From `DataExplorer.tsx`:
 
-- List view (`/collections`):
-  - Header: `Collections` + `New Collection` button.
-  - `CollectionsList` component:
+- List view (`/data`):
+  - Header: `Data` + `New Collection` button.
+  - collection list section:
     - Loading state (spinner + text).
     - Error state (red alert with message).
     - Empty state: "No collections" + CTA to create.
@@ -67,12 +71,12 @@ From `CollectionsPage.tsx`:
       - Entity count.
       - Last updated date.
 
-- Detail view (`/collections/:id`):
-  - Back button to `Collections`.
+- Detail view (`/data/:id`):
+  - Back button to `Data`.
   - Card with:
     - Name, description, Active/Inactive badge.
     - Properties: ID, entity count, schema fields (pill badges), created at, last updated.
-  - Edit button → `/collections/:id/edit`.
+  - Edit button → `/data/:id/edit`.
   - **Planned expansion (Dataset Explorer alignment):** below the main card, reserve space for dataset insight panels such as schema viewer, sample data preview, data quality metrics, cost and usage summaries, and an optimization-history timeline (driven by backend metrics from the Data Brain).
 
 ---
@@ -96,7 +100,7 @@ A more complete collections page should:
 2. Display additional metadata (owners, tags, usage stats) sourced from the metadata catalog.
 3. Show links to **related workflows** or data-fabric configurations (connectors, storage profiles) that read from or write to this collection.
 4. Surface **dataset-level insights** in the detail view, such as data quality scores, storage/compute cost estimates, access heatmaps, and summaries of recent optimizer actions (promotions, compactions, tiering moves).
-5. Provide entry points into dedicated **Dataset Explorer** and **Lineage Explorer** pages where users can see sample data, detailed lineage graphs, and performance dashboards for this collection.
+5. Provide entry points into dedicated **Dataset Explorer** and **Lineage Explorer** pages where users can see sample data, detailed lineage graphs, and performance or cost summaries for this collection.
 
 ---
 
@@ -152,9 +156,9 @@ A more complete collections page should:
 ## 10. Mockup / Expected Layout & Content
 
 ```text
-List view (/collections)
+List view (/data)
 -------------------------------------------------------------------------------
-H1: Collections                           [ New Collection ]
+H1: Data                                  [ New Collection ]
 
 [Card] "Orders"   [Active]
 - 12,345 entities • Updated 2025-11-18
@@ -169,9 +173,9 @@ Empty state example
 - "No collections"
 - "Get started by creating a new collection." [ New Collection ]
 
-Detail view (/collections/:id)
+Detail view (/data/:id)
 -------------------------------------------------------------------------------
-← Back to Collections         [ Edit ]
+← Back to Data                [ Edit ]
 
 H2: Orders           [Active]
 "Order events from ecommerce system"

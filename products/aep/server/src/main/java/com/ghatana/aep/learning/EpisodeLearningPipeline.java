@@ -85,7 +85,7 @@ public class EpisodeLearningPipeline {
 
     /**
      * Creates a pipeline with default thresholds:
-     * min episodes = 10, review threshold = 0.70, auto-promote threshold = 0.90.
+     * min episodes = 10, review threshold = 0.70, auto-promote threshold = 0.85.
      *
      * @param agentDataCloud  DataCloud client for episode queries (required)
      * @param evaluationGate  composite evaluation gate (required)
@@ -95,7 +95,7 @@ public class EpisodeLearningPipeline {
             @NotNull DataCloudClient agentDataCloud,
             @NotNull CompositeEvaluationGate evaluationGate,
             @org.jetbrains.annotations.Nullable HumanReviewQueue reviewQueue) {
-        this(agentDataCloud, evaluationGate, reviewQueue, 10, 0.70, 0.90);
+        this(agentDataCloud, evaluationGate, reviewQueue, 10, 0.70, 0.85);
     }
 
     /**

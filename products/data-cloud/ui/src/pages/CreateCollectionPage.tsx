@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { dataCloudApi } from '../lib/api/data-cloud-api';
+import { collectionsApi } from '../lib/api/collections';
 import { CollectionForm } from '../features/collection/components/CollectionForm';
 import type { CollectionFormData } from '../features/collection/components/CollectionForm';
 import { toast } from 'sonner';
@@ -12,8 +12,7 @@ export function CreateCollectionPage() {
   const handleSubmit = async (data: CollectionFormData) => {
     setIsSubmitting(true);
     try {
-      // Create collection via API
-      await dataCloudApi.createCollection({
+      await collectionsApi.create({
         name: data.name,
         description: data.description,
         schemaType: 'entity',
@@ -21,7 +20,7 @@ export function CreateCollectionPage() {
       });
 
       toast.success('Collection created successfully');
-      navigate('/collections');
+      navigate('/data');
     } catch (error) {
       console.error('Error creating collection:', error);
       toast.error('Failed to create collection');
@@ -31,7 +30,7 @@ export function CreateCollectionPage() {
   };
 
   const handleCancel = () => {
-    navigate('/collections');
+    navigate('/data');
   };
 
   return (

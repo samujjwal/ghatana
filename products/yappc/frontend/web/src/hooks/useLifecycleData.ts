@@ -40,11 +40,11 @@ export const lifecycleKeys = {
     evidenceByType: (projectId: string, type: string) => [...lifecycleKeys.evidence(projectId), 'type', type] as const,
     gate: (projectId: string, stage: FOWStage) => [...lifecycleKeys.all, 'gate', projectId, stage] as const,
     nextTask: (projectId: string, phase: LifecyclePhase, persona?: string) => [...lifecycleKeys.all, 'next-task', projectId, phase, persona] as const,
-    aiRecommendations: (projectId: string, phase: LifecyclePhase, fowStage: FOWStage) => [...lifecycleKeys.all, 'ai-recommendations', projectId, phase, fowStage] as const,
+    aiRecommendations: (projectId: string, phase: LifecyclePhase, flowStage: FOWStage) => [...lifecycleKeys.all, 'ai-recommendations', projectId, phase, flowStage] as const,
     aiInsights: (projectId: string) => [...lifecycleKeys.all, 'ai-insights', projectId] as const,
     readinessAnomalies: (projectId: string) => [...lifecycleKeys.all, 'readiness-anomalies', projectId] as const,
     audit: (projectId: string) => [...lifecycleKeys.all, 'audit', projectId] as const,
-    derivedPersona: (projectId: string, phase: LifecyclePhase, fowStage: FOWStage) => [...lifecycleKeys.all, 'persona', projectId, phase, fowStage] as const,
+    derivedPersona: (projectId: string, phase: LifecyclePhase, flowStage: FOWStage) => [...lifecycleKeys.all, 'persona', projectId, phase, flowStage] as const,
     automationPlan: (projectId: string, phase: LifecyclePhase) => [...lifecycleKeys.all, 'automation-plan', projectId, phase] as const,
 };
 
@@ -117,7 +117,7 @@ export function useCreateArtifact(options?: UseMutationOptions<Artifact, Error, 
             if (data) {
                 queryClient.invalidateQueries({ queryKey: lifecycleKeys.artifacts(data.projectId) });
                 queryClient.invalidateQueries({ queryKey: lifecycleKeys.evidence(data.projectId) });
-                queryClient.invalidateQueries({ queryKey: lifecycleKeys.gate(data.projectId, data.fowStage) });
+                queryClient.invalidateQueries({ queryKey: lifecycleKeys.gate(data.projectId, data.flowStage) });
             }
         },
         ...options,
@@ -148,7 +148,7 @@ export function useUpdateArtifact(options?: UseMutationOptions<Artifact, Error, 
             queryClient.invalidateQueries({ queryKey: lifecycleKeys.artifact(variables.artifactId) });
             if (data) {
                 queryClient.invalidateQueries({ queryKey: lifecycleKeys.artifacts(data.projectId) });
-                queryClient.invalidateQueries({ queryKey: lifecycleKeys.gate(data.projectId, data.fowStage) });
+                queryClient.invalidateQueries({ queryKey: lifecycleKeys.gate(data.projectId, data.flowStage) });
             }
         },
         ...options,
@@ -291,10 +291,21 @@ export function useNextBestTask(projectId: string, phase?: LifecyclePhase, perso
     });
 }
 
-export function useExecuteTask(options?: UseMutationOptions<unknown, Error, { taskId: string; input: Record<string, unknown> }>) {
+export function useExecuteTask() {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    type ExecuteTaskInput = { taskId: string; input: Record<string, unknown> };
+    type ExecuteTaskResult = {
+        taskId: string;
+        status: 'completed' | 'failed' | 'queued';
+        message?: string;
+        recommendation?: string;
+        steps?: Array<{ id: string; status: string; output?: string }>;
+        artifacts?: Artifact[];
+        logs?: string[];
+    };
+
+    return useMutation<ExecuteTaskResult, Error, ExecuteTaskInput, { previousData: unknown }>({
         mutationFn: ({ taskId, input }) => lifecycleAPI.tasks.executeTask(taskId, input),
         onMutate: async ({ taskId }) => {
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.all });
@@ -304,6 +315,14 @@ export function useExecuteTask(options?: UseMutationOptions<unknown, Error, { ta
         },
         onError: (err, _, context) => {
             queryClient.setQueryData(lifecycleKeys.all, context?.previousData);
+        },
+        onSuccess: (data) => {
+            // Handle queued status response when CI/CD adapter is not connected
+            if (data && typeof data === 'object' && 'status' in data && data.status === 'queued') {
+                // Queued status - CI/CD adapter not yet connected
+                // The UI component should handle displaying this appropriately
+                return;
+            }
         },
         onSettled: (data) => {
             queryClient.invalidateQueries({ queryKey: lifecycleKeys.all });
@@ -315,7 +334,6 @@ export function useExecuteTask(options?: UseMutationOptions<unknown, Error, { ta
                 }
             }
         },
-        ...options,
     });
 }
 
@@ -327,16 +345,16 @@ export function useAIRecommendations(
     projectId: string,
     context: {
         phase: LifecyclePhase;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         persona?: string;
         recentActivity?: string[];
     },
     options?: UseQueryOptions<AIRecommendation[], Error>
 ) {
     return useQuery({
-        queryKey: lifecycleKeys.aiRecommendations(projectId, context.phase, context.fowStage),
+        queryKey: lifecycleKeys.aiRecommendations(projectId, context.phase, context.flowStage),
         queryFn: () => lifecycleAPI.ai.getRecommendations(projectId, context),
-        enabled: !!projectId && context.phase !== undefined && context.fowStage !== undefined,
+        enabled: !!projectId && context.phase !== undefined && context.flowStage !== undefined,
         staleTime: 60000,
         ...options,
     });
@@ -376,7 +394,7 @@ export function useValidateArtifact(options?: UseMutationOptions<unknown, Error,
 export function useAuditEvents(
     projectId: string,
     filters?: {
-        fowStage?: FOWStage;
+        flowStage?: FOWStage;
         phase?: LifecyclePhase;
         startDate?: Date;
         endDate?: Date;
@@ -428,14 +446,14 @@ export function useDerivedPersona(
     context: {
         projectId: string;
         phase: LifecyclePhase;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         recentTasks?: string[];
         recentArtifacts?: ArtifactType[];
     },
     options?: UseQueryOptions<{ persona: string; confidence: number; reasoning: string }, Error>
 ) {
     return useQuery({
-        queryKey: lifecycleKeys.derivedPersona(context.projectId, context.phase, context.fowStage),
+        queryKey: lifecycleKeys.derivedPersona(context.projectId, context.phase, context.flowStage),
         queryFn: () => lifecycleAPI.personas.derivePersona(context),
         staleTime: 120000, // 2 minutes
         ...options,
@@ -482,12 +500,12 @@ export function useApplyLifecycleAutomationPlan(
 /**
  * Get complete lifecycle context for a project
  */
-export function useLifecycleContext(projectId: string, fowStage: FOWStage, phase: LifecyclePhase) {
+export function useLifecycleContext(projectId: string, flowStage: FOWStage, phase: LifecyclePhase) {
     const artifacts = useArtifacts(projectId);
     const evidence = useEvidence(projectId);
-    const gateStatus = useGateStatus(projectId, fowStage);
+    const gateStatus = useGateStatus(projectId, flowStage);
     const nextTask = useNextBestTask(projectId, phase);
-    const persona = useDerivedPersona({ projectId, phase, fowStage });
+    const persona = useDerivedPersona({ projectId, phase, flowStage });
 
     return {
         artifacts,

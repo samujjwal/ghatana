@@ -396,6 +396,45 @@ class DataCloudHttpServerGovernanceTest {
         }
 
         @Test
+        @DisplayName("real purge submits 1000+ expired entities as a single batch delete")
+        void realPurge_largeBatch_usesDeleteBatchOnce() throws Exception {
+            for (int index = 0; index < 1_200; index++) {
+                storeEntity(entity(
+                    "bulk-" + index,
+                    "bulk_expired_events",
+                    Map.of("expiresAt", Instant.now().minusSeconds(600 + index).toString())));
+            }
+
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            String dryRunBody = mapper.writeValueAsString(Map.of(
+                "collection", "bulk_expired_events",
+                "dryRun", true
+            ));
+            HttpResponse<String> dryRunResp = post("/api/v1/governance/retention/purge", dryRunBody);
+            assertThat(dryRunResp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dryRunData = (Map<String, Object>) mapper.readValue(dryRunResp.body(), Map.class).get("data");
+            String confirmationToken = (String) dryRunData.get("confirmationToken");
+
+            String purgeBody = mapper.writeValueAsString(Map.of(
+                "collection", "bulk_expired_events",
+                "confirmationToken", confirmationToken
+            ));
+            HttpResponse<String> resp = post("/api/v1/governance/retention/purge", purgeBody);
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) mapper.readValue(resp.body(), Map.class).get("data");
+            assertThat(data.get("status")).isEqualTo("PURGE_COMPLETED");
+            assertThat(data.get("deletedRows")).isEqualTo(1_200);
+            verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 1_200));
+            assertThat(entityState.getOrDefault("bulk_expired_events", Map.of())).isEmpty();
+        }
+
+        @Test
         @DisplayName("missing confirmationToken returns error")
         @SuppressWarnings("unchecked")
         void missingToken_returnsError() throws Exception {
@@ -477,7 +516,6 @@ class DataCloudHttpServerGovernanceTest {
 
                     assertThat(getResponse.statusCode()).isEqualTo(200);
                     Map<String, Object> getBody = mapper.readValue(getResponse.body(), Map.class);
-                    @SuppressWarnings("unchecked")
                     Map<String, Object> entityData = (Map<String, Object>) getBody.get("data");
                     assertThat(entityData.get("email")).isEqualTo("[REDACTED]");
                     assertThat(entityData.get("phone")).isEqualTo("[REDACTED]");

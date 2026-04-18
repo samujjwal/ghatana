@@ -2,7 +2,8 @@
 
 Related routes & files:
 
-- Route: `/collections/:id/edit`
+- Canonical route: `/data/:id/edit`
+- Compatibility alias: `/collections/:id/edit`
 - Page: `src/pages/EditCollectionPage.tsx`
 - Form component: `src/features/collection/components/CollectionForm.tsx`
 
@@ -36,7 +37,7 @@ Related routes & files:
 **Key scenarios:**
 
 1. **Minor schema or description tweak**
-   - User opens `/collections/:id/edit`.
+  - User opens `/data/:id/edit`.
    - Adjusts a field label or description.
    - Saves changes and reviews updated collection.
 
@@ -50,9 +51,9 @@ Related routes & files:
 From `EditCollectionPage.tsx`:
 
 - On mount:
-  - Uses `mockApiClient.getCollectionById(id)` to load collection.
+  - Uses `collectionsApi.get(id)` to load collection.
   - Shows spinner while loading.
-  - On error, shows toast and navigates back to `/collections`.
+  - On error, shows toast and navigates back to `/data`.
 
 - Page layout:
   - Header: `Edit Collection` + subtitle.
@@ -63,8 +64,8 @@ From `EditCollectionPage.tsx`:
     - Merges form data.
     - Updates `updatedAt` timestamp.
     - Keeps existing field IDs when names match, or generates new ones.
-  - Calls `mockApiClient.updateCollection`.
-  - Shows success toast and navigates back to `/collections/:id`.
+  - Calls `collectionsApi.update(...)`.
+  - Shows success toast and navigates back to `/data/:id`.
 
 - On cancel:
   - Navigates back to detail or list as appropriate.
@@ -111,7 +112,7 @@ For production:
 
 ## 8. Links to More Detail & Working Entry Points
 
-- Collections list/detail: `src/pages/CollectionsPage.tsx`
+- Collections list/detail: `src/pages/DataExplorer.tsx`
 - Collection form: `src/features/collection/components/CollectionForm.tsx`
 
 ---
@@ -144,5 +145,5 @@ H1: Edit Collection
 
 Error / not found example:
 - "Collection not found" message.
-- [ Back to Collections ] button.
+- [ Back to Data ] button.
 ```

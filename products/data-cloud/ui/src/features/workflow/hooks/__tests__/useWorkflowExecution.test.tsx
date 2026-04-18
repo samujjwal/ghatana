@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { Provider } from 'jotai';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import SessionBootstrap from '../../../../lib/auth/session';
 
 vi.mock('../../../../lib/api/workflow-client', () => ({
   workflowClient: {
@@ -22,6 +23,9 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 describe('useWorkflowExecution', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+    SessionBootstrap.setTenantId('tenant-workflows');
   });
 
   it('starts a synthetic running execution from the canonical execute response without calling unsupported status lookup', async () => {
@@ -41,5 +45,6 @@ describe('useWorkflowExecution', () => {
     expect(result.current.execution.id).toBe('exec-1');
     expect(result.current.execution.workflowId).toBe('wf-1');
     expect(result.current.execution.status).toBe('RUNNING');
+    expect(result.current.execution.tenantId).toBe('tenant-workflows');
   });
 });

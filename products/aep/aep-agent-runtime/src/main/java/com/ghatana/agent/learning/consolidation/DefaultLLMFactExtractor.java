@@ -10,6 +10,7 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.LLMGateway;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,10 +87,12 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
      */
     @Override
     public @NotNull Promise<List<EnhancedFact>> extractFacts(@NotNull EnhancedEpisode episode) {
+        String userPrompt = buildUserPrompt(episode);
+        
         CompletionRequest request = CompletionRequest.builder()
             .messages(List.of(
                 ChatMessage.system(SYSTEM_PROMPT),
-                ChatMessage.user(buildUserPrompt(episode))
+                ChatMessage.user(userPrompt)
             ))
             .maxTokens(MAX_RESPONSE_TOKENS)
             .temperature(0.2)

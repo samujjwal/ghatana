@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING } from '@/lib/runtime-boundaries';
 
 const { mockApiClient, mockCollectionsApi } = vi.hoisted(() => ({
   mockApiClient: {
@@ -112,5 +113,12 @@ describe('costService contract mapping', () => {
       status: 'SCHEDULED',
       eventsMigrated: 100,
     });
+  });
+
+  it('surfaces an explicit predictive-routing boundary warning', async () => {
+    const prediction = await costService.predictQuery('select * from orders');
+
+    expect(prediction.warnings).toEqual([COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING]);
+    expect(prediction.recommendedTier).toBe('WARM');
   });
 });

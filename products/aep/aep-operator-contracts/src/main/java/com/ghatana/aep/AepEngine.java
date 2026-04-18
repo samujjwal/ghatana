@@ -3,9 +3,12 @@ package com.ghatana.aep;
 import com.ghatana.aep.event.EventCloud;
 import io.activej.promise.Promise;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -73,6 +76,27 @@ public interface AepEngine extends AutoCloseable {
      * @return promise of registered pattern
      */
     Promise<Pattern> registerPattern(String tenantId, PatternDefinition definition);
+
+    /**
+     * Register a custom pattern detector for a tenant.
+     * <p>
+     * Pattern detectors are invoked during event processing to detect patterns
+     * that match the event stream. This allows external modules (e.g., aep-analytics)
+     * to register sophisticated pattern detection agents without creating circular
+     * module dependencies.
+     *
+     * @param tenantId tenant identifier
+     * @param detector pattern detector implementation
+     */
+    void registerPatternDetector(String tenantId, PatternDetector detector);
+
+    /**
+     * Unregister a pattern detector for a tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param detector pattern detector to remove
+     */
+    void unregisterPatternDetector(String tenantId, PatternDetector detector);
 
     /**
      * Get a pattern by ID.
@@ -327,6 +351,9 @@ public interface AepEngine extends AutoCloseable {
 
     /**
      * Pipeline definition.
+     * <p>
+     * Pipelines are executed as a DAG (Directed Acyclic Graph) where each step
+     * can depend on other steps. The executor ensures steps run in dependency order.
      */
     record Pipeline(
         String id,
@@ -338,15 +365,82 @@ public interface AepEngine extends AutoCloseable {
             java.util.Objects.requireNonNull(name, "name required");
             steps = steps != null ? List.copyOf(steps) : List.of();
         }
+
+        /** Returns true if this pipeline has no cycles (valid DAG). */
+        public boolean isValidDAG() {
+            return !hasCycles();
+        }
+
+        private boolean hasCycles() {
+            Set<String> visited = new HashSet<>();
+            Set<String> recursionStack = new HashSet<>();
+
+            for (PipelineStep step : steps) {
+                if (hasCycle(step.id(), visited, recursionStack)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean hasCycle(String stepId, Set<String> visited, Set<String> recursionStack) {
+            if (recursionStack.contains(stepId)) {
+                return true;
+            }
+            if (visited.contains(stepId)) {
+                return false;
+            }
+
+            visited.add(stepId);
+            recursionStack.add(stepId);
+
+            PipelineStep step = findStep(stepId);
+            if (step != null) {
+                for (String dep : step.dependsOn()) {
+                    if (hasCycle(dep, visited, recursionStack)) {
+                        return true;
+                    }
+                }
+            }
+
+            recursionStack.remove(stepId);
+            return false;
+        }
+
+        private PipelineStep findStep(String stepId) {
+            return steps.stream().filter(s -> s.id().equals(stepId)).findFirst().orElse(null);
+        }
     }
 
     /**
      * Pipeline step.
+     * <p>
+     * Steps can have dependencies on other steps via {@link #dependsOn}. The DAG executor
+     * ensures that steps are only executed after all their dependencies have completed successfully.
      */
     record PipelineStep(
+        String id,
         String type,
-        Map<String, Object> config
-    ) {}
+        Map<String, Object> config,
+        List<String> dependsOn
+    ) {
+        public PipelineStep {
+            Objects.requireNonNull(id, "id required");
+            Objects.requireNonNull(type, "type required");
+            config = config != null ? Map.copyOf(config) : Map.of();
+            dependsOn = dependsOn != null ? List.copyOf(dependsOn) : List.of();
+        }
+
+        /** Convenience constructor for steps without dependencies. */
+        public PipelineStep(String id, String type, Map<String, Object> config) {
+            this(id, type, config, List.of());
+        }
+
+        /** Returns true if this step has no dependencies. */
+        public boolean isRoot() {
+            return dependsOn.isEmpty();
+        }
+    }
 
     /**
      * Pattern definition for registration.
@@ -441,5 +535,31 @@ public interface AepEngine extends AutoCloseable {
     interface Subscription {
         void cancel();
         boolean isCancelled();
+    }
+
+    /**
+     * Pattern detector interface for custom pattern detection logic.
+     * <p>
+     * Implementations can be registered via {@link #registerPatternDetector(String, PatternDetector)}
+     * to participate in event processing pattern detection. This allows external
+     * modules (e.g., aep-analytics) to provide sophisticated pattern detection
+     * without creating circular module dependencies.
+     *
+     * <p>Implementations must be thread-safe and non-blocking.
+     *
+     * @see #registerPatternDetector(String, PatternDetector)
+     */
+    @FunctionalInterface
+    interface PatternDetector {
+
+        /**
+         * Detect patterns in the given event.
+         *
+         * @param tenantId tenant identifier
+         * @param event the event to analyze
+         * @param patterns registered patterns for the tenant
+         * @return promise of detected patterns (empty list if none)
+         */
+        Promise<List<Detection>> detect(String tenantId, Event event, List<Pattern> patterns);
     }
 }

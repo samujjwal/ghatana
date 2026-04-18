@@ -2,9 +2,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it } from 'vitest';
+import { BRAIN_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 import {
-  BRAIN_INTEGRATION_BOUNDARY_MESSAGE,
   useBrainAgents,
 } from '../agent-integration';
 

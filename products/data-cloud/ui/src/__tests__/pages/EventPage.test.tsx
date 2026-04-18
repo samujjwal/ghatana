@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 vi.mock('../../api/events.service', () => ({
     eventsService: {
@@ -30,7 +31,7 @@ const mockOpenStream = vi.mocked(eventsService.openStream);
 const sampleEvents = [
     {
         id: 'evt-001',
-        tenantId: 'tenant-a',
+        tenantId: TEST_TENANT_ID,
         eventType: 'AGENT_COMPLETED',
         tier: 'HOT',
         payload: { agentId: 'ag-1' },
@@ -40,7 +41,7 @@ const sampleEvents = [
     },
     {
         id: 'evt-002',
-        tenantId: 'tenant-a',
+        tenantId: TEST_TENANT_ID,
         eventType: 'PIPELINE_FAILED',
         tier: 'WARM',
         payload: { pipelineId: 'pip-1', error: 'Timeout' },

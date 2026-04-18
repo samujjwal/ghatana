@@ -1,5 +1,7 @@
 # Data Cloud UI – Web Page Specs Index
 
+_Reality note: several filenames retain historical labels such as "dashboard", "collections", or "workflows", but the shipped primary journeys now center on Intelligent Hub, Data Explorer, Pipelines, and Query. Treat the current route and status notes inside each page as the source of truth._
+
 These specs document the **Data Cloud UI** pages at the level of:
 
 - **Intention** – why the page exists.
@@ -19,25 +21,25 @@ Each spec follows the 10-section structure we use for App Creator, Software Org,
 ## 1. Core Data Cloud Pages
 
 - `01_dashboard_page.md`  
-  Overview dashboard for collections, workflows, executions, audit/compliance, and quick actions.
+  Intelligent Hub home surface with outcome-first launchers and role-aware disclosure notes.
 
 - `02_collections_page.md`  
-  Collections list + detail page (mock API-backed) for viewing and navigating Data Cloud collections.
+  Data Explorer list + detail surface for canonical `/data` collection navigation.
 
 - `03_create_collection_page.md`  
-  Create Collection page for defining new collections and schemas.
+  Create Collection page for canonical `/data/new` collection creation.
 
 - `04_edit_collection_page.md`  
-  Edit Collection page for updating existing collection metadata and schema.
+  Edit Collection page for canonical `/data/:id/edit` collection updates.
 
 - `05_workflows_page.md`  
-  Workflows list page showing existing workflows and their structure.
+  Pipelines list page showing existing workflows and their structure.
 
 - `06_workflow_designer_canvas.md`  
-  Workflow Designer page embedding the workflow canvas for building/editing workflows.
+  Pipeline editing flow, including intent capture in Smart Workflow Builder and advanced editing in Workflow Designer.
 
 - `07_workflow_list_page.md`  
-  Simple workflow list stub page (legacy or experimental list view).
+  Legacy workflow-list stub page that redirects readers toward the canonical Pipelines surface.
 
 - `08_not_found_page.md`  
   404 Not Found page.
@@ -55,27 +57,19 @@ Each spec follows the 10-section structure we use for App Creator, Software Org,
 ## 3. Data Cloud Platform Pages (Implemented)
 
 - `11_dataset_explorer_list_page.md`  
-  **✅ Implemented**: Global Dataset Explorer list view with search, filters, and sorting across all Data Cloud datasets.
-  - Route: `/datasets`
-  - Component: `DatasetExplorerPage.tsx`
+  Planned broader Dataset Explorer. Current implemented collection-centric surface is the canonical `/data` Data Explorer.
 
 - `12_dataset_detail_insights_page.md`  
   Dataset Detail & Insights page showing schema, sample data, quality, cost, usage, and optimizer history.
 
 - `13_lineage_explorer_page.md`  
-  **✅ Implemented**: Lineage Explorer canvas for visualizing upstream/downstream data flows and dependencies.
-  - Route: `/lineage`
-  - Component: `LineageExplorerPage.tsx`
+  Planned richer Lineage Explorer. Current implemented lineage entry point is the `/data?view=lineage` preview.
 
 - `14_sql_workspace_page.md`  
-  **✅ Implemented**: SQL Workspace for authoring, running, and managing queries with schema-aware assistance.
-  - Route: `/sql`
-  - Component: `SqlWorkspacePage.tsx`
+  Current SQL Workspace reality for canonical `/query`, with live analytics execution and partial NLQ assistance.
 
-- `01_dashboard_page.md` (Dashboards & Metrics variant)
-  **✅ Implemented**: Dashboards & Metrics page for configuring and viewing custom dashboards.
-  - Route: `/dashboards`
-  - Component: `DashboardsPage.tsx`
+- `01_dashboard_page.md` (historical home-surface filename)
+  Historical dashboard material is now consolidated under Intelligent Hub and the unified Insights surface.
 
 - `15_ai_assistant_and_semantic_search.md`  
   Cross-cutting AI Assistant and semantic search surface for NL→SQL, NL→workflows, and dataset discovery.
@@ -83,10 +77,10 @@ Each spec follows the 10-section structure we use for App Creator, Software Org,
 ## 4. Governance & Alerts (Planned/Future)
 
 - `16_governance_and_security_hub_page.md`  
-  Governance & Security hub for roles, permissions, policies, PII scans, and audit logs.
+  Trust Center reality plus longer-term governance hub direction.
 
 - `17_alerts_and_notifications_page.md`  
-  Alerts & Notifications center for viewing alerts and configuring alert rules and channels.
+  Alerts reality and roadmap spec; current product route is a live operator-only triage surface with broader incident-management work still pending.
 
 ---
 

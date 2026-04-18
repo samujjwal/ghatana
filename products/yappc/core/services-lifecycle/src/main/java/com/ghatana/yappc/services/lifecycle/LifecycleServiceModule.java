@@ -186,13 +186,20 @@ public class LifecycleServiceModule extends AbstractModule {
 
     // ========== Phase 4: Run ==========
 
+    /** Provides CiCdPort for CI/CD system integration. */
+    @Provides
+    CiCdPort ciCdPort() {
+        return new NoOpCiCdAdapter();
+    }
+
     /** Provides RunService for build execution and orchestration. */
     @Provides
     RunService runService(
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            CiCdPort ciCdPort) {
         logger.info("Creating RunService");
-        return new RunServiceImpl(auditLogger, metrics);
+        return new RunServiceImpl(auditLogger, metrics, ciCdPort);
     }
 
     // ========== Phase 5: Observe ==========

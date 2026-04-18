@@ -48,13 +48,11 @@ import {
   type MemoryItem as BackendMemoryItem,
   type MemoryRootListResponse as BackendMemoryRootListResponse,
 } from '../contracts/schemas';
-
-class UnsupportedBoundaryError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'UnsupportedBoundaryError';
-  }
-}
+import {
+  AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE,
+  BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE,
+  UnsupportedRuntimeBoundaryError,
+} from '@/lib/runtime-boundaries';
 
 export interface SalienceScore {
   score: number;
@@ -424,9 +422,7 @@ export class BrainService {
   ): Promise<AutonomyState> {
     void domain;
     void policy;
-    throw new UnsupportedBoundaryError(
-      'Domain-level autonomy policy updates are not exposed by the current Data Cloud HTTP API; only /api/v1/autonomy/level is writable.'
-    );
+    throw new UnsupportedRuntimeBoundaryError(AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -482,9 +478,7 @@ export class BrainService {
    */
   async storeMemory(memory: Partial<MemoryRecall>): Promise<MemoryRecall> {
     void memory;
-    throw new UnsupportedBoundaryError(
-      'Brain memory store is not exposed by the current Data Cloud HTTP API without an explicit agentId-backed memory route.'
-    );
+    throw new UnsupportedRuntimeBoundaryError(BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE);
   }
 
   // ==================== Patterns ====================

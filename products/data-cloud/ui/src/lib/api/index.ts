@@ -21,7 +21,6 @@ export type {
     BulkCreateRequest,
     BulkCreateResponse,
 } from './collection-data-client';
-export { dataCloudApi } from './data-cloud-api';
 
 // Re-export default clients
 export { default as apiClient } from './client';

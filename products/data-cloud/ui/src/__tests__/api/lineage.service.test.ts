@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
@@ -23,7 +24,7 @@ describe('lineageService', () => {
   it('maps canonical lineage graph responses into the UI graph model', async () => {
     mockApiClient.get.mockResolvedValue({
       collection: 'orders',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       direction: 'BOTH',
       timestamp: '2026-04-15T12:00:00Z',
       dag: {
@@ -59,7 +60,7 @@ describe('lineageService', () => {
   it('maps canonical impact responses into the UI impact model', async () => {
     mockApiClient.get.mockResolvedValue({
       collection: 'orders',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       impactLevel: 'MEDIUM',
       affectedCount: 2,
       affectedCollections: ['orders_dashboard', 'orders_ml_features'],

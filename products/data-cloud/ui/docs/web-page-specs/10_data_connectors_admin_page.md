@@ -9,6 +9,10 @@ Related routes & files:
 
 _Note: This page is part of a **modular data-fabric admin feature**, intended to be plugged into an admin shell (e.g., `/admin/data-fabric/connectors`)._
 
+_Current product reality: the only product-level Data Fabric route is `/fabric`, and it remains a preview-only operator surface rather than a full admin shell._
+
+_Discovery note: treat this document as feature-local design guidance, not a currently promoted product workflow._
+
 ---
 
 ## 1. Intention (Clear & Unambiguous)
@@ -29,7 +33,7 @@ _Note: This page is part of a **modular data-fabric admin feature**, intended to
 
 - Low-level ETL job design (detailed transformations and mapping live elsewhere).
 - Storage profile administration (covered by the Storage Profiles page).
-- Full observability of sync pipelines (logs/metrics dashboards are assumed external for now).
+- Full observability of sync pipelines (logs and monitoring views are assumed external for now).
 
 ---
 

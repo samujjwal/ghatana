@@ -40,7 +40,7 @@ export interface AuditEventData {
     userId: string;
     projectId: string;
     artifactId?: string;
-    fowStage: FOWStage;
+    flowStage: FOWStage;
     phase: LifecyclePhase;
     metadata?: Record<string, unknown>;
     description?: string;
@@ -66,7 +66,7 @@ export class AuditService {
             userId: eventData.userId,
             projectId: eventData.projectId,
             artifactId: eventData.artifactId,
-            fowStage: eventData.fowStage,
+            flowStage: eventData.flowStage,
             phase: eventData.phase,
             metadata: eventData.metadata,
             description,
@@ -98,7 +98,7 @@ export class AuditService {
         artifactId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
         metadata?: Record<string, unknown>;
     }): Promise<AuditEvent> {
@@ -108,7 +108,7 @@ export class AuditService {
             userId: data.userId,
             projectId: data.projectId,
             artifactId: data.artifactId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
             metadata: data.metadata,
         });
@@ -122,7 +122,7 @@ export class AuditService {
         artifactId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
         changes?: Record<string, unknown>;
     }): Promise<AuditEvent> {
@@ -132,7 +132,7 @@ export class AuditService {
             userId: data.userId,
             projectId: data.projectId,
             artifactId: data.artifactId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
             metadata: { changes: data.changes },
         });
@@ -146,7 +146,7 @@ export class AuditService {
         artifactId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
     }): Promise<AuditEvent> {
         return this.emit({
@@ -155,7 +155,7 @@ export class AuditService {
             userId: data.userId,
             projectId: data.projectId,
             artifactId: data.artifactId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
         });
     }
@@ -168,7 +168,7 @@ export class AuditService {
         artifactId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
     }): Promise<AuditEvent> {
         return this.emit({
@@ -177,7 +177,7 @@ export class AuditService {
             userId: data.userId,
             projectId: data.projectId,
             artifactId: data.artifactId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
         });
     }
@@ -196,7 +196,7 @@ export class AuditService {
             verb: AuditVerb.COMPLETED,
             userId: data.userId,
             projectId: data.projectId,
-            fowStage: data.toStage,
+            flowStage: data.toStage,
             phase: data.phase,
             metadata: { fromStage: data.fromStage },
             description: `Transitioned from stage ${data.fromStage} to ${data.toStage}`,
@@ -210,7 +210,7 @@ export class AuditService {
         taskId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
         taskType: string;
     }): Promise<AuditEvent> {
@@ -219,7 +219,7 @@ export class AuditService {
             verb: AuditVerb.STARTED,
             userId: data.userId,
             projectId: data.projectId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
             metadata: { taskId: data.taskId, taskType: data.taskType },
         });
@@ -232,7 +232,7 @@ export class AuditService {
         taskId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
         taskType: string;
         outputArtifacts?: string[];
@@ -242,7 +242,7 @@ export class AuditService {
             verb: AuditVerb.COMPLETED,
             userId: data.userId,
             projectId: data.projectId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
             metadata: {
                 taskId: data.taskId,
@@ -260,7 +260,7 @@ export class AuditService {
         projectId: string;
         artifactId: string;
         evidenceId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
     }): Promise<AuditEvent> {
         return this.emit({
@@ -269,7 +269,7 @@ export class AuditService {
             userId: data.userId,
             projectId: data.projectId,
             artifactId: data.artifactId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
             metadata: { evidenceId: data.evidenceId },
         });
@@ -282,7 +282,7 @@ export class AuditService {
         releaseId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
         environment: string;
     }): Promise<AuditEvent> {
@@ -291,7 +291,7 @@ export class AuditService {
             verb: AuditVerb.DEPLOYED,
             userId: data.userId,
             projectId: data.projectId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
             metadata: { releaseId: data.releaseId, environment: data.environment },
         });
@@ -304,7 +304,7 @@ export class AuditService {
         releaseId: string;
         userId: string;
         projectId: string;
-        fowStage: FOWStage;
+        flowStage: FOWStage;
         phase: LifecyclePhase;
         verificationResults: unknown;
     }): Promise<AuditEvent> {
@@ -313,7 +313,7 @@ export class AuditService {
             verb: AuditVerb.VERIFIED,
             userId: data.userId,
             projectId: data.projectId,
-            fowStage: data.fowStage,
+            flowStage: data.flowStage,
             phase: data.phase,
             metadata: {
                 releaseId: data.releaseId,
@@ -336,12 +336,12 @@ export const auditService = new AuditService();
 /**
  * Hook to access audit service with current user/project context
  */
-export function useAuditService(projectId: string, userId: string, fowStage: FOWStage, phase: LifecyclePhase) {
+export function useAuditService(projectId: string, userId: string, flowStage: FOWStage, phase: LifecyclePhase) {
     const emit = (eventData: Partial<AuditEventData>) => {
         return auditService.emit({
             userId,
             projectId,
-            fowStage,
+            flowStage,
             phase,
             ...eventData,
         } as AuditEventData);
@@ -350,14 +350,14 @@ export function useAuditService(projectId: string, userId: string, fowStage: FOW
     return {
         emit,
         artifactCreated: (artifactType: ArtifactType, artifactId: string, metadata?: Record<string, unknown>) =>
-            auditService.artifactCreated({ artifactType, artifactId, userId, projectId, fowStage, phase, metadata }),
+            auditService.artifactCreated({ artifactType, artifactId, userId, projectId, flowStage, phase, metadata }),
         artifactUpdated: (artifactType: ArtifactType, artifactId: string, changes?: Record<string, unknown>) =>
-            auditService.artifactUpdated({ artifactType, artifactId, userId, projectId, fowStage, phase, changes }),
+            auditService.artifactUpdated({ artifactType, artifactId, userId, projectId, flowStage, phase, changes }),
         artifactDeleted: (artifactType: ArtifactType, artifactId: string) =>
-            auditService.artifactDeleted({ artifactType, artifactId, userId, projectId, fowStage, phase }),
+            auditService.artifactDeleted({ artifactType, artifactId, userId, projectId, flowStage, phase }),
         taskStarted: (taskId: string, taskType: string) =>
-            auditService.taskStarted({ taskId, userId, projectId, fowStage, phase, taskType }),
+            auditService.taskStarted({ taskId, userId, projectId, flowStage, phase, taskType }),
         taskCompleted: (taskId: string, taskType: string, outputArtifacts?: string[]) =>
-            auditService.taskCompleted({ taskId, userId, projectId, fowStage, phase, taskType, outputArtifacts }),
+            auditService.taskCompleted({ taskId, userId, projectId, flowStage, phase, taskType, outputArtifacts }),
     };
 }

@@ -29,6 +29,7 @@ import {
 } from "./execution-service.js";
 type GenerationRequestConfig = Record<string, unknown>;
 import { GenerationQueueDispatcher } from "./queue-dispatcher.js";
+import { IntentInferenceService } from "./intent-service.js";
 
 type RedisPubSubClient = Redis & {
   removeAllListeners(event?: string): void;
@@ -65,6 +66,11 @@ const resultsBodySchema = z.object({
   results: z.array(z.record(z.unknown())).min(1),
 });
 
+const inferIntentBodySchema = z.object({
+  topic: z.string().trim().min(1).max(200),
+  preferredDomain: z.string().trim().min(1).optional(),
+});
+
 const validationErrorResponse = (issues: z.ZodIssue[]) => ({
   error: "Invalid request",
   details: issues,
@@ -84,6 +90,7 @@ export function registerGenerationRoutes(
     deps.redis,
   );
   const dispatcher = new GenerationQueueDispatcher(deps.prisma);
+  const intentService = new IntentInferenceService(deps.prisma);
 
   const adminGuard = roleGuard(["admin", "content_creator", "superadmin"]);
 
@@ -478,6 +485,76 @@ export function registerGenerationRoutes(
           err instanceof Error ? err.message : "Recording results failed";
         return reply.status(400).send({ error: message });
       }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // POST /generation/infer-intent — AI-powered intent inference from topic
+  // ---------------------------------------------------------------------------
+  app.post<{
+    Body: { topic: string; preferredDomain?: string };
+  }>(
+    "/generation/infer-intent",
+    { preHandler: [adminGuard] },
+    async (request, reply) => {
+      const tenantId = getTenantId(request);
+      const userId = getUserId(request);
+      const bodyResult = inferIntentBodySchema.safeParse(request.body);
+
+      if (!bodyResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
+      const { topic, preferredDomain } = bodyResult.data;
+
+      try {
+        const intent = await intentService.inferIntent({
+          tenantId,
+          userId,
+          topic,
+          preferredDomain,
+        });
+
+        return reply.send({ data: intent });
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Intent inference failed";
+        return reply.status(500).send({ error: message });
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // GET /generation/notifications/stream — SSE stream for job status updates
+  // ---------------------------------------------------------------------------
+  app.get(
+    "/generation/notifications/stream",
+    { preHandler: [adminGuard] },
+    async (request, reply) => {
+      const userId = getUserId(request);
+
+      reply.raw.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      });
+
+      // Send initial connection message
+      reply.raw.write(`data: ${JSON.stringify({ type: "connected", userId })}\n\n`);
+
+      // Keep connection alive with ping every 30 seconds
+      const keepAlive = setInterval(() => {
+        reply.raw.write(`: ping\n\n`);
+      }, 30000);
+
+      // Clean up on close
+      request.raw.on("close", () => {
+        clearInterval(keepAlive);
+      });
+
+      return reply;
     },
   );
 }

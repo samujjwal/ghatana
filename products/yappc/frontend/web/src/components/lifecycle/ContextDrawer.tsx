@@ -27,7 +27,7 @@ import { LifecyclePhase } from '@/types/lifecycle';
 interface ContextDrawerProps {
     open?: boolean;
     onToggle?: () => void;
-    fowStage: FOWStage;
+    flowStage: FOWStage;
     phase: LifecyclePhase;
 }
 
@@ -160,8 +160,8 @@ function ArtifactsTab({ projectId }: { projectId: string }) {
 // Audit Tab
 // ============================================================================
 
-function AuditTab({ projectId, fowStage, phase }: { projectId: string; fowStage: FOWStage; phase: LifecyclePhase }) {
-    const { data: auditEvents, isLoading, error } = useAuditEvents(projectId, { fowStage, phase });
+function AuditTab({ projectId, flowStage, phase }: { projectId: string; flowStage: FOWStage; phase: LifecyclePhase }) {
+    const { data: auditEvents, isLoading, error } = useAuditEvents(projectId, { flowStage, phase });
 
     if (isLoading) {
         return (
@@ -213,7 +213,7 @@ function AuditTab({ projectId, fowStage, phase }: { projectId: string; fowStage:
 // Main Context Drawer Component
 // ============================================================================
 
-export function ContextDrawer({ open = true, onToggle, fowStage, phase }: ContextDrawerProps) {
+export function ContextDrawer({ open = true, onToggle, flowStage, phase }: ContextDrawerProps) {
     const { projectId } = useParams();
     const [activeTab, setActiveTab] = useState('ai');
 
@@ -232,7 +232,7 @@ export function ContextDrawer({ open = true, onToggle, fowStage, phase }: Contex
             case 'artifacts':
                 return <ArtifactsTab projectId={projectId} />;
             case 'audit':
-                return <AuditTab projectId={projectId} fowStage={fowStage} phase={phase} />;
+                return <AuditTab projectId={projectId} flowStage={flowStage} phase={phase} />;
             default:
                 return null;
         }

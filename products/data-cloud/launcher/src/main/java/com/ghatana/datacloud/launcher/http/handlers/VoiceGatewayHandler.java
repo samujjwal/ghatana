@@ -5,6 +5,7 @@ import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.VoiceIntentCatalog;
 import com.ghatana.datacloud.launcher.http.VoiceIntentCatalog.VoiceIntent;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -95,6 +97,7 @@ public class VoiceGatewayHandler {
     /** Maximum voice requests per tenant per minute. */
     static final int VOICE_RATE_LIMIT_PER_MINUTE = 30;
 
+    private final DataCloudClient dataCloudClient;          // nullable — direct read-side execution skipped when absent
     private final ObjectMapper objectMapper;
     private final HttpHandlerSupport http;
     private final Executor blockingExecutor;
@@ -115,7 +118,19 @@ public class VoiceGatewayHandler {
             Executor blockingExecutor,
             VoiceSttPort sttPort,
             VoiceTtsPort ttsPort) {
-        this(completionService, auditService, objectMapper, http, blockingExecutor, sttPort, ttsPort, null);
+        this(null, completionService, auditService, objectMapper, http, blockingExecutor, sttPort, ttsPort, null);
+    }
+
+    public VoiceGatewayHandler(
+            DataCloudClient dataCloudClient,
+            CompletionService completionService,
+            AuditService auditService,
+            ObjectMapper objectMapper,
+            HttpHandlerSupport http,
+            Executor blockingExecutor,
+            VoiceSttPort sttPort,
+            VoiceTtsPort ttsPort) {
+        this(dataCloudClient, completionService, auditService, objectMapper, http, blockingExecutor, sttPort, ttsPort, null);
     }
 
     public VoiceGatewayHandler(
@@ -127,6 +142,20 @@ public class VoiceGatewayHandler {
             VoiceSttPort sttPort,
             VoiceTtsPort ttsPort,
             ContextLayerHandler contextLayer) {
+        this(null, completionService, auditService, objectMapper, http, blockingExecutor, sttPort, ttsPort, contextLayer);
+    }
+
+    public VoiceGatewayHandler(
+            DataCloudClient dataCloudClient,
+            CompletionService completionService,
+            AuditService auditService,
+            ObjectMapper objectMapper,
+            HttpHandlerSupport http,
+            Executor blockingExecutor,
+            VoiceSttPort sttPort,
+            VoiceTtsPort ttsPort,
+            ContextLayerHandler contextLayer) {
+        this.dataCloudClient   = dataCloudClient;
         this.completionService = completionService;
         this.auditService      = auditService;
         this.objectMapper      = objectMapper;
@@ -566,44 +595,40 @@ public class VoiceGatewayHandler {
             VoiceIntent intent, Map<String, String> params,
             String tenantId, String requestId, double confidence, String languageHint) {
 
-        String resolvedPath  = intent.resolvePath(params);
-        String speechSummary = buildSpeechSummary(intent, params);
-
         emitVoiceAudit(tenantId, requestId, intent.name(), "EXECUTED", true);
 
-        // Optionally synthesize server-side audio via the configured TTS provider
-        if (ttsPort.isAvailable() && !speechSummary.isBlank()) {
-            String lang = (languageHint != null && !languageHint.isBlank()) ? languageHint : "en";
-            return ttsPort.synthesize(speechSummary, lang)
-                .then(
-                    audioBytes -> {
-                        Map<String, Object> execution = buildExecutionMap(
-                            intent, params, resolvedPath, speechSummary, audioBytes);
-                        ApiResponse envelope = ApiResponse.success(execution, tenantId, requestId)
-                            .withAiMeta(confidence, "voice-gateway",
-                                        List.of(confidence >= KEYWORD_CONFIDENCE ? "llm-classified" : "keyword-heuristic"),
-                                        confidence < KEYWORD_CONFIDENCE);
-                        return Promise.of(http.envelopeResponse(envelope, objectMapper));
-                    },
-                    e -> {
-                        log.warn("[DC-E4] TTS synthesis failed, continuing without audio: {}", e.getMessage());
-                        Map<String, Object> execution = buildExecutionMap(
-                            intent, params, resolvedPath, speechSummary, new byte[0]);
-                        ApiResponse envelope = ApiResponse.success(execution, tenantId, requestId)
-                            .withAiMeta(confidence, "voice-gateway",
-                                        List.of(confidence >= KEYWORD_CONFIDENCE ? "llm-classified" : "keyword-heuristic"),
-                                        confidence < KEYWORD_CONFIDENCE);
-                        return Promise.of(http.envelopeResponse(envelope, objectMapper));
-                    });
-        }
-
-        Map<String, Object> execution = buildExecutionMap(
-            intent, params, resolvedPath, speechSummary, new byte[0]);
-        ApiResponse envelope = ApiResponse.success(execution, tenantId, requestId)
-            .withAiMeta(confidence, "voice-gateway",
+        return executeIntentPayload(intent, params, tenantId, languageHint)
+            .map(execution -> {
+                ApiResponse envelope = ApiResponse.success(execution, tenantId, requestId)
+                    .withAiMeta(confidence, "voice-gateway",
                         List.of(confidence >= KEYWORD_CONFIDENCE ? "llm-classified" : "keyword-heuristic"),
                         confidence < KEYWORD_CONFIDENCE);
-        return Promise.of(http.envelopeResponse(envelope, objectMapper));
+                return http.envelopeResponse(envelope, objectMapper);
+            });
+    }
+
+    public Promise<Map<String, Object>> executeIntentPayload(
+            VoiceIntent intent,
+            Map<String, String> params,
+            String tenantId,
+            String languageHint) {
+
+        String resolvedPath  = intent.resolvePath(params);
+
+        return resolveIntentResult(intent, params, tenantId)
+            .then(result -> {
+                String speechSummary = buildSpeechSummary(intent, params, result);
+                if (ttsPort.isAvailable() && !speechSummary.isBlank()) {
+                    String lang = (languageHint != null && !languageHint.isBlank()) ? languageHint : "en";
+                    return ttsPort.synthesize(speechSummary, lang)
+                        .map(audioBytes -> buildExecutionMap(intent, params, resolvedPath, speechSummary, audioBytes, result))
+                        .then(Promise::of, e -> {
+                            log.warn("[DC-E4] TTS synthesis failed, continuing without audio: {}", e.getMessage());
+                            return Promise.of(buildExecutionMap(intent, params, resolvedPath, speechSummary, new byte[0], result));
+                        });
+                }
+                return Promise.of(buildExecutionMap(intent, params, resolvedPath, speechSummary, new byte[0], result));
+            });
     }
 
     /**
@@ -613,7 +638,7 @@ public class VoiceGatewayHandler {
      */
     private static Map<String, Object> buildExecutionMap(
             VoiceIntent intent, Map<String, String> params, String resolvedPath,
-            String speechSummary, byte[] audioBytes) {
+            String speechSummary, byte[] audioBytes, Map<String, Object> result) {
         Map<String, Object> execution = new HashMap<>();
         execution.put("executed",      true);
         execution.put("intentName",    intent.name());
@@ -623,6 +648,9 @@ public class VoiceGatewayHandler {
         execution.put("sensitivity",   intent.sensitivity().name());
         execution.put("description",   intent.description());
         execution.put("speechSummary", speechSummary);
+        if (result != null && !result.isEmpty()) {
+            execution.put("result", result);
+        }
         if (audioBytes != null && audioBytes.length > 0) {
             execution.put("audioBase64", Base64.getEncoder().encodeToString(audioBytes));
         }
@@ -630,13 +658,16 @@ public class VoiceGatewayHandler {
     }
 
     /** Builds a short, speech-friendly summary of the resolved action. */
-    private static String buildSpeechSummary(VoiceIntent intent, Map<String, String> params) {
+    private static String buildSpeechSummary(VoiceIntent intent, Map<String, String> params, Map<String, Object> result) {
         return switch (intent.name()) {
-            case "query_entities"       -> "Querying " + params.getOrDefault("collection", "entities") + ".";
-            case "get_entity"           -> "Getting entity " + params.getOrDefault("id", "") + ".";
+            case "query_entities"       -> "Found " + resultCount(result, "entityCount") + " entities in "
+                + params.getOrDefault("collection", "entities") + ".";
+            case "get_entity"           -> Boolean.TRUE.equals(result.get("found"))
+                ? "Found entity " + params.getOrDefault("id", "") + " in " + params.getOrDefault("collection", "collection") + "."
+                : "No entity found for " + params.getOrDefault("id", "") + ".";
             case "create_entity"        -> "Creating entity in " + params.getOrDefault("collection", "collection") + ".";
             case "delete_entity"        -> "Deleting entity " + params.getOrDefault("id", "") + ".";
-            case "query_events"         -> "Retrieving event log.";
+            case "query_events"         -> "Found " + resultCount(result, "eventCount") + " events.";
             case "append_event"         -> "Appending event of type " + params.getOrDefault("type", "unknown") + ".";
             case "list_pipelines"       -> "Listing pipelines.";
             case "get_pipeline_status"  -> "Checking pipeline " + params.getOrDefault("pipelineId", "") + ".";
@@ -648,6 +679,89 @@ public class VoiceGatewayHandler {
             case "list_models"          -> "Listing ML models.";
             default                     -> "Executing " + intent.description() + ".";
         };
+    }
+
+    private Promise<Map<String, Object>> resolveIntentResult(
+            VoiceIntent intent,
+            Map<String, String> params,
+            String tenantId) {
+        if (dataCloudClient == null) {
+            return Promise.of(Map.of());
+        }
+
+        return switch (intent.name()) {
+            case "query_entities" -> dataCloudClient.query(
+                    tenantId,
+                    params.get("collection"),
+                    DataCloudClient.Query.builder().limit(parseIntOrDefault(params.get("limit"), 25)).build())
+                .map(entities -> {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("entityCount", entities.size());
+                    result.put("entities", entities.stream().map(VoiceGatewayHandler::toResponseEntity).toList());
+                    return result;
+                });
+            case "get_entity" -> dataCloudClient.findById(
+                    tenantId,
+                    params.get("collection"),
+                    params.get("id"))
+                .map(entity -> {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("found", entity.isPresent());
+                    entity.ifPresent(value -> result.put("entity", toResponseEntity(value)));
+                    return result;
+                });
+            case "query_events" -> dataCloudClient.queryEvents(
+                    tenantId,
+                    params.containsKey("type")
+                        ? DataCloudClient.EventQuery.byType(params.get("type"))
+                        : DataCloudClient.EventQuery.all())
+                .map(events -> {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("eventCount", events.size());
+                    result.put("events", events.stream()
+                        .limit(parseIntOrDefault(params.get("limit"), 25))
+                        .map(VoiceGatewayHandler::toResponseEvent)
+                        .toList());
+                    return result;
+                });
+            default -> Promise.of(Map.of());
+        };
+    }
+
+    private static Map<String, Object> toResponseEntity(DataCloudClient.Entity entity) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", entity.id());
+        result.put("collection", entity.collection());
+        result.put("data", entity.data());
+        result.put("createdAt", entity.createdAt().toString());
+        result.put("updatedAt", entity.updatedAt().toString());
+        result.put("version", entity.version());
+        return result;
+    }
+
+    private static Map<String, Object> toResponseEvent(DataCloudClient.Event event) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", event.type());
+        result.put("payload", event.payload());
+        result.put("headers", event.headers());
+        result.put("timestamp", event.timestamp().toString());
+        return result;
+    }
+
+    private static int parseIntOrDefault(String value, int defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return defaultValue;
+        }
+    }
+
+    private static int resultCount(Map<String, Object> result, String key) {
+        Object value = result.get(key);
+        return value instanceof Number number ? number.intValue() : 0;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

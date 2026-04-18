@@ -108,4 +108,83 @@ class ObserveServiceTest extends EventloopTestBase {
             assertTrue(e.getMessage().contains("Audit failed"));
         }
     }
+
+    @Test
+    void shouldCollectMetricsWithDurationTaskCountAndSuccessRate() {
+        // GIVEN
+        AuditLogger auditLogger = mock(AuditLogger.class);
+        MetricsCollector metrics = mock(MetricsCollector.class);
+
+        when(auditLogger.log(any(Map.class)))
+                .thenReturn(Promise.complete());
+
+        ObserveService service = new ObserveServiceImpl(metrics, auditLogger);
+        
+        java.time.Instant startedAt = java.time.Instant.now();
+        java.time.Instant completedAt = startedAt.plusSeconds(5);
+        
+        com.ghatana.yappc.domain.run.TaskResult task1 = com.ghatana.yappc.domain.run.TaskResult.builder()
+                .taskId("task-1")
+                .status(com.ghatana.yappc.domain.run.RunStatus.SUCCESS)
+                .build();
+        com.ghatana.yappc.domain.run.TaskResult task2 = com.ghatana.yappc.domain.run.TaskResult.builder()
+                .taskId("task-2")
+                .status(com.ghatana.yappc.domain.run.RunStatus.SUCCESS)
+                .build();
+        com.ghatana.yappc.domain.run.TaskResult task3 = com.ghatana.yappc.domain.run.TaskResult.builder()
+                .taskId("task-3")
+                .status(com.ghatana.yappc.domain.run.RunStatus.FAILED)
+                .build();
+
+        RunResult run = RunResult.builder()
+                .id("result-123")
+                .runSpecRef("run-123")
+                .status(com.ghatana.yappc.domain.run.RunStatus.FAILED)
+                .startedAt(startedAt)
+                .completedAt(completedAt)
+                .taskResults(List.of(task1, task2, task3))
+                .metadata(java.util.Map.of("environment", "production"))
+                .build();
+
+        // WHEN
+        Observation result = runPromise(() -> service.collect(run));
+
+        // THEN
+        assertNotNull(result);
+        assertNotNull(result.metrics());
+        
+        // Verify metrics include run.duration, run.task_count, and run.success_rate
+        boolean hasDuration = result.metrics().stream()
+                .anyMatch(m -> m.name().equals("run.duration"));
+        boolean hasTaskCount = result.metrics().stream()
+                .anyMatch(m -> m.name().equals("run.task_count"));
+        boolean hasSuccessRate = result.metrics().stream()
+                .anyMatch(m -> m.name().equals("run.success_rate"));
+        
+        assertTrue(hasDuration, "Metrics should include run.duration");
+        assertTrue(hasTaskCount, "Metrics should include run.task_count");
+        assertTrue(hasSuccessRate, "Metrics should include run.success_rate");
+        
+        // Verify metric values
+        result.metrics().stream()
+                .filter(m -> m.name().equals("run.duration"))
+                .forEach(m -> {
+                    assertTrue(m.value() instanceof Long);
+                    assertTrue((Long) m.value() >= 0);
+                });
+        
+        result.metrics().stream()
+                .filter(m -> m.name().equals("run.task_count"))
+                .forEach(m -> {
+                    assertTrue(m.value() instanceof Long);
+                    assertEquals(3L, m.value());
+                });
+        
+        result.metrics().stream()
+                .filter(m -> m.name().equals("run.success_rate"))
+                .forEach(m -> {
+                    assertTrue(m.value() instanceof Double);
+                    assertEquals(66.66666666666666, (Double) m.value(), 0.001);
+                });
+    }
 }

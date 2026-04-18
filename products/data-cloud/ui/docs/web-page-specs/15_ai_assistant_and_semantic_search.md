@@ -1,6 +1,6 @@
 # 15. AI Assistant & Semantic Search – Deep-Dive Spec
 
-> **Status:** Planned cross-cutting feature – no concrete implementation in Data Cloud UI yet. This spec captures the AI Assistant and semantic search capabilities from `frontend_todo (1).md`.
+> **Status:** Partial cross-cutting feature. The current UI ships an outcome-first Intelligent Hub, limited SQL suggestion assistance, and capability-bound AI surfaces, but it does not yet provide canonical end-to-end workflow draft generation from natural language.
 
 ---
 
@@ -13,9 +13,9 @@
 **Primary goals:**
 
 - Offer a chat-like assistant UI available from anywhere in the app.
-- Support natural language → SQL and natural language → workflow.
-- Explain queries, workflows, and lineage in human terms.
-- Enable semantic search for datasets, columns, and workflows.
+- Support natural language → SQL and related dataset discovery in the current product.
+- Explain queries, pipelines, and lineage in human terms.
+- Enable semantic search for datasets, columns, and pipelines.
 
 **Non-goals:**
 
@@ -40,10 +40,10 @@
 
 2. **Natural language → workflow**
    - User asks: "Create a nightly job that syncs customers from CRM to the Gold `customers` table and notifies Slack on errors".
-   - Assistant suggests a workflow template or node sequence and opens it in Workflow Designer.
+  - Assistant suggests a pipeline template or node sequence and opens it in the advanced pipeline editor when supported.
 
 3. **Explaining lineage and metrics**
-   - User asks: "Why is the `revenue` metric on the Executive Dashboard higher this week?".
+  - User asks: "Why is the `revenue` metric in Insights higher this week?".
    - Assistant inspects lineage, recent optimizer actions, and cost/usage, then returns an explanation and links.
 
 ---
@@ -62,7 +62,7 @@ Key surfaces:
   - Suggested prompts and follow-up questions.
 
 - **Semantic search bar** (global or in Dataset Explorer)
-  - Searches across datasets, columns, workflows, and dashboards using embeddings.
+  - Searches across datasets, columns, pipelines, and key insight pages using embeddings.
 
 - **Context-aware actions**
   - From SQL Workspace: "Explain this query" or "Optimize this query".
@@ -109,7 +109,7 @@ A robust AI Assistant should:
 
 ## 7. Coherence with App Creator / Canvas & Platform
 
-- The assistant should be consistent across Data Cloud workspaces (Collections, SQL, App Creator, AEP).
+- The assistant should be consistent across Data Cloud workspaces (Data Explorer, Query, App Creator, AEP).
 - It can help generate **app schemas and flows** in App Creator, similar to workflows here.
 - Semantic search should share a unified embedding/index service with other products.
 

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockCollectionsAPI, mockWorkflowsAPI, mockAlertsAPI } from './helpers/api-mocks';
+import { disableOnboardingWizard, dismissOnboardingWizard, mockCollectionsAPI, mockWorkflowsAPI, mockAlertsAPI, mockQueryWorkspaceAPI, mockGovernanceAPI } from './helpers/api-mocks';
 
 /**
  * Visual Regression Tests — Data-Cloud UI
@@ -87,10 +87,10 @@ async function waitForPageStable(page: import('@playwright/test').Page) {
 }
 
 // =============================================================================
-//  DASHBOARD
+//  HOME SURFACE
 // =============================================================================
 
-test.describe('Visual Regression — Dashboard', () => {
+test.describe('Visual Regression — Home Surface', () => {
   test.beforeEach(async ({ page }) => {
     await mockCollectionsAPI(page);
     await page.goto('/');
@@ -98,22 +98,22 @@ test.describe('Visual Regression — Dashboard', () => {
     await maskDynamicContent(page);
   });
 
-  test('dashboard full page — desktop (1280×800)', async ({ page }) => {
+  test('home surface full page — desktop (1280×800)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(page).toHaveScreenshot('dashboard-desktop.png', SCREENSHOT_OPTS);
   });
 
-  test('dashboard full page — tablet (768×1024)', async ({ page }) => {
+  test('home surface full page — tablet (768×1024)', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await expect(page).toHaveScreenshot('dashboard-tablet.png', SCREENSHOT_OPTS);
   });
 
-  test('dashboard full page — mobile (375×667)', async ({ page }) => {
+  test('home surface full page — mobile (375×667)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(page).toHaveScreenshot('dashboard-mobile.png', SCREENSHOT_OPTS);
   });
 
-  test('dashboard KPI cards section', async ({ page }) => {
+  test('home surface summary cards section', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const kpiSection = page.locator('[data-testid="kpi-cards"], .kpi-cards, [class*="KPICard"]').first();
     if (await kpiSection.isVisible().catch(() => false)) {
@@ -135,7 +135,7 @@ test.describe('Visual Regression — Dashboard', () => {
 test.describe('Visual Regression — Collections', () => {
   test.beforeEach(async ({ page }) => {
     await mockCollectionsAPI(page);
-    await page.goto('/collections');
+    await page.goto('/data');
     await waitForPageStable(page);
     await maskDynamicContent(page);
   });
@@ -152,7 +152,7 @@ test.describe('Visual Regression — Collections', () => {
 
   test('collections empty state', async ({ page }) => {
     // Override the mock to return an empty list
-    await page.route('**/api/v1/entities/dc_collections', async (route) => {
+    await page.route('**/api/v1/entities/dc_collections*', async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -163,7 +163,7 @@ test.describe('Visual Regression — Collections', () => {
         route.continue();
       }
     });
-    await page.goto('/collections');
+    await page.goto('/data');
     await waitForPageStable(page);
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(page).toHaveScreenshot('collections-empty-state.png', SCREENSHOT_OPTS);
@@ -182,13 +182,15 @@ test.describe('Visual Regression — Workflows', () => {
     await maskDynamicContent(page);
   });
 
-  test('workflows list — desktop', async ({ page }) => {
+  test('pipelines list — desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('workflows-page')).toBeVisible();
     await expect(page).toHaveScreenshot('workflows-list-desktop.png', SCREENSHOT_OPTS);
   });
 
-  test('workflows list — mobile', async ({ page }) => {
+  test('pipelines list — mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
+    await expect(page.getByTestId('workflows-page')).toBeVisible();
     await expect(page).toHaveScreenshot('workflows-list-mobile.png', SCREENSHOT_OPTS);
   });
 });
@@ -207,22 +209,81 @@ test.describe('Visual Regression — Alerts', () => {
 
   test('alerts page — desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('alerts-page')).toBeVisible();
     await expect(page).toHaveScreenshot('alerts-desktop.png', SCREENSHOT_OPTS);
   });
 
   test('alerts page — no active alerts (all clear)', async ({ page }) => {
     await page.route('**/api/v1/alerts*', async (route) => {
+      const url = route.request().url();
+      if (url.includes('/groups')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ tenantId: 'test-tenant', groups: [], count: 0, timestamp: new Date('2026-04-18T00:00:00.000Z').toISOString() }),
+        });
+        return;
+      }
+      if (url.includes('/suggestions')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ tenantId: 'test-tenant', suggestions: [], count: 0, timestamp: new Date('2026-04-18T00:00:00.000Z').toISOString() }),
+        });
+        return;
+      }
+      if (url.includes('/rules')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ tenantId: 'test-tenant', rules: [], count: 0, timestamp: new Date('2026-04-18T00:00:00.000Z').toISOString() }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ items: [], total: 0 }),
+        body: JSON.stringify({ tenantId: 'test-tenant', alerts: [], count: 0, timestamp: new Date('2026-04-18T00:00:00.000Z').toISOString() }),
       });
     });
     await page.goto('/alerts');
     await waitForPageStable(page);
     await maskDynamicContent(page);
     await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('alerts-page')).toBeVisible();
     await expect(page).toHaveScreenshot('alerts-empty-state.png', SCREENSHOT_OPTS);
+  });
+});
+
+// =============================================================================
+//  SQL WORKSPACE
+// =============================================================================
+
+test.describe('Visual Regression — SQL Workspace', () => {
+  test.beforeEach(async ({ page }) => {
+    await disableOnboardingWizard(page);
+    await mockCollectionsAPI(page);
+    await mockQueryWorkspaceAPI(page);
+    await page.goto('/query');
+    await dismissOnboardingWizard(page);
+    await waitForPageStable(page);
+    await maskDynamicContent(page);
+  });
+
+  test('sql workspace — desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('sql-workspace-page')).toBeVisible();
+    await expect(page).toHaveScreenshot('sql-workspace-desktop.png', SCREENSHOT_OPTS);
+  });
+
+  test('sql workspace — ai assist panel', async ({ page }) => {
+    await page.getByTestId('sql-ai-assist-toggle').click();
+    await page.getByTestId('sql-ai-assist-input').fill('Show top products this week');
+    await page.getByTestId('sql-ai-assist-generate').click();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('sql-ai-assist-panel')).toBeVisible();
+    await expect(page.getByTestId('sql-ai-assist-panel')).toHaveScreenshot('sql-workspace-ai-assist.png', SCREENSHOT_OPTS);
   });
 });
 
@@ -236,12 +297,12 @@ test.describe('Visual Regression — Settings', () => {
     await waitForPageStable(page);
   });
 
-  test('settings page — desktop', async ({ page }) => {
+  test('settings boundary page — desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(page).toHaveScreenshot('settings-desktop.png', SCREENSHOT_OPTS);
   });
 
-  test('settings page — mobile', async ({ page }) => {
+  test('settings boundary page — mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(page).toHaveScreenshot('settings-mobile.png', SCREENSHOT_OPTS);
   });
@@ -253,14 +314,27 @@ test.describe('Visual Regression — Settings', () => {
 
 test.describe('Visual Regression — Governance / Trust Center', () => {
   test.beforeEach(async ({ page }) => {
+    await disableOnboardingWizard(page);
+    await mockGovernanceAPI(page);
     await page.goto('/trust');
+    await dismissOnboardingWizard(page);
     await waitForPageStable(page);
     await maskDynamicContent(page);
   });
 
   test('trust center — desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('trust-center-page')).toBeVisible();
     await expect(page).toHaveScreenshot('trust-center-desktop.png', SCREENSHOT_OPTS);
+  });
+
+  test('trust center — purge assistant preview', async ({ page }) => {
+    await page.getByTestId('trust-quick-action-purge-retention').click();
+    await page.getByTestId('trust-purge-collection').fill('customers');
+    await page.getByTestId('trust-quick-action-submit').click();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('trust-quick-action-dialog')).toBeVisible();
+    await expect(page.getByTestId('trust-quick-action-dialog')).toHaveScreenshot('trust-center-purge-preview.png', SCREENSHOT_OPTS);
   });
 });
 

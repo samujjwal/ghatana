@@ -40,7 +40,7 @@ import type { GhostNodeTemplate } from '../workspace';
 export interface UseCanvasHandlersConfig {
     projectId: string;
     currentPhase: LifecyclePhase;
-    fowStage: FOWStage;
+    flowStage: FOWStage;
     personaName: string | undefined;
     artifacts: Array<{ id: string; type: string; title: string; description?: string; status: string; createdBy?: string; phase: LifecyclePhase; linkedArtifacts?: string[]; data?: Record<string, unknown> }> | undefined;
     userId: string | null;
@@ -48,7 +48,7 @@ export interface UseCanvasHandlersConfig {
 }
 
 export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
-    const { projectId, currentPhase, fowStage, personaName, artifacts, userId, reactFlowInstance } = config;
+    const { projectId, currentPhase, flowStage, personaName, artifacts, userId, reactFlowInstance } = config;
 
     const nodes = useAtomValue(nodesAtom);
     const edges = useAtomValue(edgesAtom);

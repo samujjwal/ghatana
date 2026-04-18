@@ -1,6 +1,6 @@
 # 14. SQL Workspace Page – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec implements the SQL Workspace ideas from `frontend_todo (1).md`.
+> **Status:** Partially implemented. The current canonical route is `/query`, with live analytics execution, runtime capability truth, recommendation guidance, explain-plan review, and partial NLQ assistance; this spec still describes the fuller target state beyond the shipped surface.
 
 ---
 
@@ -12,11 +12,11 @@
 
 **Primary goals:**
 
-- Allow users to write and run SQL queries.
-- Provide schema-aware autocomplete and helpers.
-- Show results in a responsive, virtualized grid.
+- Allow users to write and run SQL queries against the canonical analytics route.
+- Provide schema-aware helpers plus runtime-aware engine recommendations.
+- Show results in a responsive table and expose live capability truth before optional paths are used.
 - Manage saved queries, versions, and history.
-- Offer AI-powered query insights and optimization suggestions.
+- Offer AI-powered query suggestions with explicit low-confidence clarification instead of pretending every NL request is unambiguous.
 
 **Non-goals:**
 
@@ -39,7 +39,7 @@
    - User opens SQL Workspace, writes SQL referencing datasets from the catalog, and views results.
 
 2. **Query optimization**
-   - User pastes an existing slow query; the workspace highlights anti-patterns and suggests improvements.
+  - User pastes an existing slow or cross-source query; the workspace recommends direct, federated, or review-first execution.
 
 3. **Saved query management**
    - User maintains a library of saved queries with versions and descriptions.
@@ -51,8 +51,8 @@
 Proposed layout:
 
 - **Header**
-  - Name of current query (or "Untitled Query").
-  - Buttons: Run, Save, Save As, Explain, Format.
+  - Current query workspace heading.
+  - Buttons: Run, Save, AI Assist, engine toggle, and lightweight formatting controls.
 
 - **Main split view**
   - Left/top: **SQL editor** (Monaco-based) with:
@@ -66,8 +66,11 @@ Proposed layout:
   - Schema browser tied to the metadata catalog.
   - List of saved queries and history.
 
-- **Status area**
-  - Query execution status, timing, and row counts.
+- **Runtime truth area**
+  - Capability truth panel for analytics, Trino/federation, and AI assist.
+  - Recommendation banner for direct vs federated vs review-first execution.
+  - Explain-plan review showing query type, data sources, estimated cost, and execution guardrails before optional paths are used.
+  - Optional dependency warning when launcher capability truth is degraded or unavailable.
 
 ---
 
@@ -76,7 +79,7 @@ Proposed layout:
 - **Responsive editing:**
   - Large queries and results should be manageable without lag.
 - **Actionable feedback:**
-  - Highlight slow/expensive patterns and suggest indexes/partitions/materializations.
+  - Highlight slow/expensive patterns, recommend the supported execution path, expose explain-plan guardrails, and ask for clarification when collection scope is ambiguous.
 - **Safe defaults:**
   - Guardrails for destructive operations in shared environments.
 - **Keyboard-centric:**
@@ -109,7 +112,8 @@ A complete SQL Workspace should:
 
 ## 7. Coherence with App Creator / Canvas & Platform
 
-- Queries often back **dashboards and apps** built via App Creator; this workspace is where they are prototyped.
+- Queries often back **operator insights, derived views, and apps** built elsewhere in the platform; this workspace is where they are prototyped.
+- In the current product, this route is the canonical query workbench rather than one member of a larger analytics suite.
 - Successful queries can be converted into **workflow nodes** or templates.
 - Shares components and patterns with other workspaces (Dataset Explorer, Lineage Explorer).
 
@@ -129,12 +133,15 @@ A complete SQL Workspace should:
    - Decide which engines are supported and how to route queries.
 
 2. **Plan/Explain integration:**
-   - Define APIs for retrieving and visualizing query plans and cost estimates.
+  - The workspace now calls the canonical explain route and surfaces a review-first plan summary; richer plan visualization and cost breakdown still remain open.
 
-3. **AI insights pipeline:**
+3. **Clarification workflow expansion:**
+  - Extend the current low-confidence scope prompts into richer guided clarification when multiple collections or time windows are plausible.
+
+4. **AI insights pipeline:**
    - Connect telemetry to ML models that power SQL suggestions.
 
-4. **Saved query model:**
+5. **Saved query model:**
    - Design schema for saved queries, versions, and access control.
 
 ---

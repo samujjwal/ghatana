@@ -356,11 +356,13 @@ DELETE /api/v1/entities/bulk
 
 ## Collection Management API
 
+_Reality note: the current frontend collection experience uses entity-backed collection metadata endpoints under `/api/v1/entities/dc_collections`. Historical `/api/v1/collections` CRUD examples below should be treated as deprecated compatibility documentation; operator cost-report and migration routes remain registered separately._
+
 ### 1. Collection CRUD Operations
 
 #### Create Collection
 ```http
-POST /api/v1/collections
+POST /api/v1/entities/dc_collections
 ```
 
 **Request:**
@@ -442,7 +444,7 @@ POST /api/v1/collections
 
 #### Get Collection
 ```http
-GET /api/v1/collections/{collectionId}
+GET /api/v1/entities/dc_collections/{collectionId}
 ```
 
 **Response (200 OK):**
@@ -489,7 +491,7 @@ GET /api/v1/collections/{collectionId}
 
 #### List Collections
 ```http
-GET /api/v1/collections?page=0&size=20&sortBy=createdAt&sortOrder=DESC
+GET /api/v1/entities/dc_collections?limit=20&offset=0
 ```
 
 **Response (200 OK):**
@@ -884,6 +886,8 @@ POST /api/v1/models/{modelId}/predict
 
 ## Brain API (AI Assistance)
 
+Note: these brain endpoints remain part of the documented backend surface, but the current UI no longer treats historical dashboard/brain routes as primary discovery. Operator-facing insight flows are consolidated under `/insights`.
+
 ### 1. Brain Status
 
 #### Get Brain Status
@@ -1103,6 +1107,8 @@ POST /api/v1/memory/search
 ---
 
 ## Governance API
+
+Note: the current UI Trust Center consumes read-oriented governance and guided action flows such as retention classification, purge preview, redaction, and audit visibility. Full policy/role CRUD remains a longer-term target.
 
 ### 1. Access Control
 

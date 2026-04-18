@@ -135,9 +135,10 @@ class EndToEndWorkflowTest extends EventloopTestBase {
     @DisplayName("4. persist workflow output entities and append a completion event")
     void step4PersistEntitiesAndPublishEvent() {
         for (int index = 1; index <= 5; index++) {
+            final int entityIndex = index;
             DataCloudClient.Entity entity = runPromise(() -> client.save(TENANT_ID, COLLECTION_NAME, Map.of(
-                "index", index,
-                "value", "entity-" + index,
+                "index", entityIndex,
+                "value", "entity-" + entityIndex,
                 "executionId", executionId
             )));
             publishedEntityIds.add(entity.id());

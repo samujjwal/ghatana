@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import { executionAtom, executionStatusAtom } from '@/stores/workflow.store';
 import { getWebSocketService, type WebSocketMessage, type WebSocketEventType } from '@/lib/services/websocketService';
+import SessionBootstrap from '@/lib/auth/session';
 import type { WorkflowExecution, NodeExecutionStatus, ExecutionStatusValue } from '@/types/workflow.types';
 import type { WebSocketService } from '@/lib/services/websocketService';
 
@@ -127,7 +128,7 @@ export function useExecutionStream(
               progress: 0,
               nodeStatuses: [],
               nodeExecutions: [],
-              tenantId: String(message.data?.tenantId ?? 'default-tenant'),
+              tenantId: String(message.data?.tenantId ?? SessionBootstrap.getTenantId() ?? ''),
               startedAt: message.timestamp,
             });
             break;

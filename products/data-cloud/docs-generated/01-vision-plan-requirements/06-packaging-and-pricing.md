@@ -92,6 +92,7 @@ This is a working model, not a finalized price sheet.
 **Dependency**
 
 - This tier is only credible once readiness claims are reconciled and validated.
+- Current UI trust posture is driven more by Trust Center plus boundary-guarded admin pages than by a fully mature settings or alerting console.
 
 ---
 

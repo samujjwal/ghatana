@@ -53,7 +53,7 @@ const NAVIGATION_COMMANDS: CommandSuggestion[] = [
   },
   {
     id: 'nav-workflows',
-    text: 'Go to Workflows',
+    text: 'Go to Pipelines',
     description: 'Manage data pipelines',
     category: 'Navigation',
     icon: 'workflow',
@@ -83,7 +83,7 @@ const ACTION_COMMANDS: CommandSuggestion[] = [
   },
   {
     id: 'create-workflow',
-    text: 'Create new workflow',
+    text: 'Create new pipeline',
     description: 'Describe your pipeline in natural language',
     category: 'Actions',
     icon: 'plus',
@@ -264,7 +264,7 @@ export function useCommandBar(): UseCommandBarReturn {
         // Handle create intents
         else if (intent.type === 'CREATE') {
           if (intent.action === 'collection') {
-            navigate('/collections/new');
+            navigate('/data/new');
           } else if (intent.action === 'workflow') {
             navigate('/pipelines/new');
           }

@@ -1,26 +1,40 @@
 /**
- * Comprehensive test suite for DashboardPage component
+ * Comprehensive test suite for DashboardPage component (Simplified Layout)
+ *
+ * Tests the new simplified dashboard design:
+ * - Continue Learning card (primary CTA)
+ * - Start Something New section (AI recommendations)
+ * - Quick Actions with progressive disclosure
+ * - Empty states
  *
  * @doc.type tests
- * @doc.purpose Unit tests for the student dashboard page
+ * @doc.purpose Unit tests for the simplified student dashboard page
  * @doc.layer product
  * @doc.pattern Test Suite
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@testing-library/jest-dom";
 import { DashboardPage } from "../DashboardPage";
 
-// Mock the useDashboard hook
+// Mock the hooks
 vi.mock("../../hooks/useDashboard", () => ({
   useDashboard: vi.fn(),
 }));
 
-// Import the mocked module
+vi.mock("../../hooks/useRecommendations", () => ({
+  useRecommendations: vi.fn(),
+}));
+
+// Import the mocked modules
 import { useDashboard } from "../../hooks/useDashboard";
+import { useRecommendations } from "../../hooks/useRecommendations";
 
 const mockUseDashboard = vi.mocked(useDashboard);
+const mockUseRecommendations = vi.mocked(useRecommendations);
 
 function createTestQueryClient() {
   return new QueryClient({
@@ -43,13 +57,39 @@ function renderWithProviders(ui: React.ReactElement) {
   };
 }
 
-describe("DashboardPage", () => {
+describe("DashboardPage - Simplified Layout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mock for useRecommendations
+    mockUseRecommendations.mockReturnValue({
+      data: {
+        modules: [
+          {
+            id: "mod-3",
+            title: "Advanced Physics",
+            slug: "advanced-physics",
+            description: "Learn advanced physics concepts",
+            tags: ["physics", "advanced"],
+            estimatedTimeMinutes: 180,
+            difficultyLevel: "advanced",
+            domain: "PHYSICS",
+            isAiRecommended: true,
+            matchScore: 0.85,
+          },
+        ],
+        reasoning: {
+          basedOn: "Recent physics interest",
+          userLevel: "intermediate",
+          suggestedDomains: ["PHYSICS"],
+        },
+      },
+      isLoading: false,
+      error: null,
+    } as any);
   });
 
   describe("Loading State", () => {
-    it("shows loading indicator while data is being fetched", () => {
+    it("shows loading skeleton while data is being fetched", () => {
       mockUseDashboard.mockReturnValue({
         data: undefined,
         isLoading: true,
@@ -58,12 +98,12 @@ describe("DashboardPage", () => {
 
       renderWithProviders(<DashboardPage />);
 
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      expect(screen.getByText(/loading dashboard/i)).toBeInTheDocument();
     });
   });
 
   describe("Error State", () => {
-    it("shows error message when data fetch fails", () => {
+    it("shows error message with retry button when data fetch fails", () => {
       mockUseDashboard.mockReturnValue({
         data: undefined,
         isLoading: false,
@@ -72,25 +112,12 @@ describe("DashboardPage", () => {
 
       renderWithProviders(<DashboardPage />);
 
-      expect(screen.getByText(/error/i)).toBeInTheDocument();
+      expect(screen.getByText(/error loading dashboard/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
     });
   });
 
-  describe("Empty State", () => {
-    it("returns null when data is undefined and not loading", () => {
-      mockUseDashboard.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: null,
-      } as any);
-
-      const { container } = renderWithProviders(<DashboardPage />);
-
-      expect(container.firstChild).toBeNull();
-    });
-  });
-
-  describe("Content Rendering", () => {
+  describe("Continue Learning Section (Primary CTA)", () => {
     const mockDashboardData = {
       user: {
         id: "user-1",
@@ -107,31 +134,12 @@ describe("DashboardPage", () => {
           progressPercent: 50,
           timeSpentSeconds: 3600,
         },
-        {
-          id: "enrollment-2",
-          moduleId: "mod-2",
-          status: "completed" as const,
-          progress: 100,
-          progressPercent: 100,
-          timeSpentSeconds: 7200,
-        },
       ],
-      recommendedModules: [
-        {
-          id: "mod-3",
-          title: "Advanced Physics",
-          slug: "advanced-physics",
-          description: "Learn advanced physics concepts",
-          tags: ["physics", "advanced"],
-          estimatedMinutes: 180,
-          difficulty: "advanced",
-          domain: "PHYSICS",
-        },
-      ],
+      recommendedModules: [],
       stats: {
-        totalEnrollments: 5,
-        completedModules: 2,
-        averageProgress: 60,
+        totalEnrollments: 1,
+        completedModules: 0,
+        averageProgress: 50,
       },
     };
 
@@ -143,82 +151,144 @@ describe("DashboardPage", () => {
       } as any);
     });
 
-    it("displays user greeting with display name", () => {
+    it("displays Continue Learning card when user has active enrollment", () => {
       renderWithProviders(<DashboardPage />);
 
-      expect(
-        screen.getByText(/welcome back, test student/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/continue learning/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /resume learning/i })).toBeInTheDocument();
     });
 
-    it("falls back to email when display name is missing", () => {
+    it("displays progress bar with correct percentage", () => {
+      renderWithProviders(<DashboardPage />);
+
+      expect(screen.getByText("50%")).toBeInTheDocument();
+    });
+
+    it("has link to see all enrollments", () => {
+      renderWithProviders(<DashboardPage />);
+
+      const seeAllLink = screen.getByRole("link", { name: /see all/i });
+      expect(seeAllLink).toHaveAttribute("href", "/enrollments");
+    });
+  });
+
+  describe("Start Something New Section", () => {
+    const mockDashboardData = {
+      user: {
+        id: "user-1",
+        email: "student@example.com",
+        displayName: "Test Student",
+        avatarUrl: null,
+      },
+      currentEnrollments: [],
+      recommendedModules: [],
+      stats: {
+        totalEnrollments: 0,
+        completedModules: 0,
+        averageProgress: 0,
+      },
+    };
+
+    beforeEach(() => {
       mockUseDashboard.mockReturnValue({
-        data: {
-          ...mockDashboardData,
-          user: { ...mockDashboardData.user, displayName: null },
-        },
+        data: mockDashboardData,
         isLoading: false,
         error: null,
       } as any);
-
-      renderWithProviders(<DashboardPage />);
-
-      expect(
-        screen.getByText(/welcome back, student@example.com/i),
-      ).toBeInTheDocument();
     });
 
-    it("displays stats cards with correct values", () => {
+    it("displays 'Start Something New' section with AI recommendations", () => {
       renderWithProviders(<DashboardPage />);
 
-      expect(screen.getByText("Enrollments")).toBeInTheDocument();
-      expect(screen.getByText("5")).toBeInTheDocument(); // totalEnrollments
-      expect(screen.getByText("Completed")).toBeInTheDocument();
-      expect(screen.getByText("2")).toBeInTheDocument(); // completedModules
-      expect(screen.getByText(/avg\. progress/i)).toBeInTheDocument();
-      expect(screen.getByText("60%")).toBeInTheDocument(); // averageProgress
-    });
-
-    it("calculates stats from enrollments when stats object is missing", () => {
-      mockUseDashboard.mockReturnValue({
-        data: {
-          ...mockDashboardData,
-          stats: undefined,
-        },
-        isLoading: false,
-        error: null,
-      } as any);
-
-      renderWithProviders(<DashboardPage />);
-
-      // Should calculate from currentEnrollments
-      expect(screen.getByText("2")).toBeInTheDocument(); // 2 enrollments
-      expect(screen.getByText("1")).toBeInTheDocument(); // 1 completed
-      expect(screen.getByText("75%")).toBeInTheDocument(); // (50+100)/2 = 75%
-    });
-
-    it("displays feature tiles", () => {
-      renderWithProviders(<DashboardPage />);
-
-      expect(screen.getByText("Learning Pathways")).toBeInTheDocument();
-      expect(screen.getByText("Browse Modules")).toBeInTheDocument();
-      expect(screen.getByText("AI Tutor")).toBeInTheDocument();
-      expect(screen.getByText("Assessments")).toBeInTheDocument();
-      expect(screen.getByText("Analytics")).toBeInTheDocument();
-      expect(screen.getByText("Marketplace")).toBeInTheDocument();
-    });
-
-    it("displays recommended modules", () => {
-      renderWithProviders(<DashboardPage />);
-
+      expect(screen.getByText(/start something new/i)).toBeInTheDocument();
       expect(screen.getByText("Advanced Physics")).toBeInTheDocument();
     });
 
-    it("displays current enrollments", () => {
+    it("shows AI recommended badge on suggested modules", () => {
       renderWithProviders(<DashboardPage />);
 
-      // Should show enrollments section with progress
-      expect(screen.getByText(/your progress/i)).toBeInTheDocument();
+      expect(screen.getByText(/ai recommended/i)).toBeInTheDocument();
+    });
+
+    it("has 'Browse All' button to explore more modules", () => {
+      renderWithProviders(<DashboardPage />);
+
+      const browseAllLink = screen.getByRole("link", { name: /browse all/i });
+      expect(browseAllLink).toHaveAttribute("href", "/search");
+    });
+  });
+
+  describe("Quick Actions", () => {
+    const mockDashboardData = {
+      user: { id: "user-1", email: "test@test.com", displayName: "Test" },
+      currentEnrollments: [],
+      recommendedModules: [],
+      stats: { totalEnrollments: 0, completedModules: 0, averageProgress: 0 },
+    };
+
+    beforeEach(() => {
+      mockUseDashboard.mockReturnValue({
+        data: mockDashboardData,
+        isLoading: false,
+        error: null,
+      } as any);
+    });
+
+    it("displays primary quick action buttons", () => {
+      renderWithProviders(<DashboardPage />);
+
+      expect(screen.getByRole("button", { name: /browse all/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /my learning/i })).toBeInTheDocument();
+    });
+
+    it("has 'More options' button for progressive disclosure", async () => {
+      renderWithProviders(<DashboardPage />);
+
+      const moreOptionsButton = screen.getByRole("button", { name: /more options/i });
+      expect(moreOptionsButton).toBeInTheDocument();
+
+      // Click to expand
+      await userEvent.click(moreOptionsButton);
+
+      // Should show additional options
+      expect(screen.getByText(/achievements/i)).toBeInTheDocument();
+      expect(screen.getByText(/study groups/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Empty State", () => {
+    beforeEach(() => {
+      mockUseDashboard.mockReturnValue({
+        data: {
+          user: { id: "1", email: "new@student.com", displayName: "New Student" },
+          currentEnrollments: [],
+          recommendedModules: [],
+          stats: { totalEnrollments: 0, completedModules: 0, averageProgress: 0 },
+        },
+        isLoading: false,
+        error: null,
+      } as any);
+    });
+
+    it("shows empty state with welcome message for new users", () => {
+      renderWithProviders(<DashboardPage />);
+
+      expect(screen.getByText(/welcome to tutorputor/i)).toBeInTheDocument();
+      expect(screen.getByText(/start your learning journey/i)).toBeInTheDocument();
+    });
+
+    it("shows 'Get Started' CTA button for new users", () => {
+      renderWithProviders(<DashboardPage />);
+
+      const getStartedButton = screen.getByRole("button", { name: /get started/i });
+      expect(getStartedButton).toBeInTheDocument();
+    });
+
+    it("shows AI-suggested starter modules in empty state", () => {
+      renderWithProviders(<DashboardPage />);
+
+      expect(screen.getByText(/here are some suggestions/i)).toBeInTheDocument();
+      expect(screen.getByText("Advanced Physics")).toBeInTheDocument();
     });
   });
 
@@ -240,20 +310,18 @@ describe("DashboardPage", () => {
       } as any);
     });
 
-    it("has link to Learning Pathways", () => {
+    it("has link to browse all modules", () => {
       renderWithProviders(<DashboardPage />);
 
-      const pathwaysLink = screen.getByRole("link", {
-        name: /learning pathways/i,
-      });
-      expect(pathwaysLink).toHaveAttribute("href", "/pathways");
+      const browseLink = screen.getByRole("link", { name: /browse all/i });
+      expect(browseLink).toHaveAttribute("href", "/search");
     });
 
-    it("has link to Browse Modules", () => {
+    it("has link to learning pathways", () => {
       renderWithProviders(<DashboardPage />);
 
-      const searchLink = screen.getByRole("link", { name: /browse modules/i });
-      expect(searchLink).toHaveAttribute("href", "/search");
+      const pathwaysLink = screen.getByRole("link", { name: /learning pathways/i });
+      expect(pathwaysLink).toHaveAttribute("href", "/pathways");
     });
 
     it("has link to AI Tutor", () => {
@@ -263,86 +331,26 @@ describe("DashboardPage", () => {
       expect(aiTutorLink).toHaveAttribute("href", "/ai-tutor");
     });
 
-    it("has link to Assessments", () => {
+    it("has link to Assessments in more options", async () => {
       renderWithProviders(<DashboardPage />);
 
-      const assessmentsLink = screen.getByRole("link", {
-        name: /assessments/i,
-      });
+      const moreOptionsButton = screen.getByRole("button", { name: /more options/i });
+      await userEvent.click(moreOptionsButton);
+
+      const assessmentsLink = screen.getByRole("link", { name: /assessments/i });
       expect(assessmentsLink).toHaveAttribute("href", "/assessments");
     });
 
-    it("has links to Analytics sections", () => {
+    it("has link to Analytics", () => {
       renderWithProviders(<DashboardPage />);
 
-      // Multiple analytics links exist - use getAllByRole
-      const analyticsLinks = screen.getAllByRole("link", {
-        name: /analytics/i,
-      });
-      expect(analyticsLinks.length).toBeGreaterThanOrEqual(1);
-      // At least one should link to /analytics
-      const mainAnalyticsLink = analyticsLinks.find(
-        (link) => link.getAttribute("href") === "/analytics",
-      );
-      expect(mainAnalyticsLink).toBeDefined();
-    });
-
-    it("has link to Marketplace", () => {
-      renderWithProviders(<DashboardPage />);
-
-      const marketplaceLink = screen.getByRole("link", {
-        name: /marketplace/i,
-      });
-      expect(marketplaceLink).toHaveAttribute("href", "/marketplace");
+      const analyticsLink = screen.getByRole("link", { name: /analytics/i });
+      expect(analyticsLink).toHaveAttribute("href", "/analytics");
     });
   });
 
-  describe("Empty Enrollments", () => {
-    beforeEach(() => {
-      mockUseDashboard.mockReturnValue({
-        data: {
-          user: {
-            id: "1",
-            email: "new@student.com",
-            displayName: "New Student",
-          },
-          currentEnrollments: [],
-          recommendedModules: [
-            {
-              id: "mod-1",
-              title: "Getting Started",
-              slug: "getting-started",
-              tags: ["beginner"],
-            },
-          ],
-          stats: {
-            totalEnrollments: 0,
-            completedModules: 0,
-            averageProgress: 0,
-          },
-        },
-        isLoading: false,
-        error: null,
-      } as any);
-    });
-
-    it("shows 0 for all stats when no enrollments", () => {
-      renderWithProviders(<DashboardPage />);
-
-      // Should show zeros
-      const statCards = screen.getAllByText("0");
-      expect(statCards.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it("still shows recommended modules", () => {
-      renderWithProviders(<DashboardPage />);
-
-      expect(screen.getByText("Getting Started")).toBeInTheDocument();
-    });
-  });
-
-  describe("Module Progress Display", () => {
-    it("shows progress percentage for active enrollments", () => {
+  describe("Continue Learning Progress Display", () => {
+    it("shows progress percentage for most recent active enrollment", () => {
       mockUseDashboard.mockReturnValue({
         data: {
           user: { id: "1", email: "test@test.com", displayName: "Test" },
@@ -369,11 +377,12 @@ describe("DashboardPage", () => {
 
       renderWithProviders(<DashboardPage />);
 
-      // Should display 75% somewhere in the progress section
+      // Continue Learning card should show 75% progress
       expect(screen.getByText("75%")).toBeInTheDocument();
+      expect(screen.getByText(/continue learning/i)).toBeInTheDocument();
     });
 
-    it("displays correct status badge for completed enrollment", () => {
+    it("displays completed badge for finished enrollment", () => {
       mockUseDashboard.mockReturnValue({
         data: {
           user: { id: "1", email: "test@test.com", displayName: "Test" },
@@ -400,8 +409,8 @@ describe("DashboardPage", () => {
 
       renderWithProviders(<DashboardPage />);
 
-      // Should show 100% or completed status
-      expect(screen.getByText("100%")).toBeInTheDocument();
+      // Should show Start Something New instead of Continue Learning
+      expect(screen.getByText(/start something new/i)).toBeInTheDocument();
     });
   });
 

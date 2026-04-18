@@ -89,6 +89,17 @@ class AiAssistHandlerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("pipeline draft rejects missing tenant before loading body")
+    void pipelineDraftRejectsMissingTenant() {
+        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+
+        HttpResponse response = runPromise(() -> handler.handlePipelineDraft(request));
+
+        assertThat(response).isSameAs(errorResponse);
+        verify(request, never()).loadBody(4096);
+    }
+
+    @Test
     @DisplayName("brain explain rejects missing tenant before loading body")
     void brainExplainRejectsMissingTenant() {
         when(http.requireTenantIdOrFail(request)).thenReturn(null);

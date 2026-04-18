@@ -166,6 +166,7 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
     queryFn: () => getGovernanceComplianceSummary(tenantId),
     staleTime: 30_000,
   });
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   if (isLoading) {
     return <p className="py-10 text-center text-sm text-gray-400">Loading compliance summary…</p>;
@@ -218,16 +219,26 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
             {data.soc2.overallStatus}
           </p>
 
-          <div className="mt-4 space-y-2">
-            {data.soc2.controls.map((control) => (
-              <div key={control.controlId} className="flex items-start justify-between gap-3 rounded border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{control.controlId}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{control.description}</p>
-                </div>
-                <span className="text-xs font-semibold text-green-600 dark:text-green-400">{control.status}</span>
+          <div className="mt-4">
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+            >
+              {showAdvanced ? 'Hide' : 'Show'} advanced controls
+            </button>
+            {showAdvanced && (
+              <div className="mt-3 space-y-2">
+                {data.soc2.controls.map((control) => (
+                  <div key={control.controlId} className="flex items-start justify-between gap-3 rounded border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{control.controlId}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{control.description}</p>
+                    </div>
+                    <span className="text-xs font-semibold text-green-600 dark:text-green-400">{control.status}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

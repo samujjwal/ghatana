@@ -154,6 +154,8 @@ The previous version of this audit identified real strategic gaps, but some of i
 | Technical Operations        | Technical overview, scaling guide, engineering caveats, DR runbook  | Good implementation-facing guidance             | Validation evidence is thinner than language implies              | 7.0/10 |
 | API and Usage               | API reference plus OpenAPI spec                                     | Broad and concrete surface documentation        | Limited usage journeys, onboarding sequences, or adoption recipes | 7.5/10 |
 | Governance and Risk         | Gap/risk summary, change log, owner metadata                        | Risks and mitigations are explicit              | Not fully reconciled with capability and readiness claims         | 6.5/10 |
+
+Route-truth reconciliation has improved since this audit snapshot for the UI-facing manuals, especially around canonical `/data` and `/pipelines` navigation plus shell-role disclosure. Remaining follow-up is narrower now and mostly limited to residual copy or test artifacts that still imply full dashboard, alerts, or writable settings maturity.
 | Cross-Document Consistency  | Partial                                                             | Some shared themes repeat cleanly               | Multiple count and readiness contradictions undermine trust       | 5.0/10 |
 
 ---
@@ -288,7 +290,7 @@ These are **hypotheses**, not validated conclusions.
 | Candidate ICP                                                                  | Why It Fits the Current Docs                                                   | What Is Still Missing                                 |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------- |
 | Platform engineering teams inside multi-tenant SaaS products                   | Strong emphasis on isolation, runtime boundaries, APIs, and storage layers     | Buyer pain, budget owner, and adoption path           |
-| Product engineering teams building operational analytics or real-time features | Eventing, entity APIs, dashboards, and real-time interfaces are all documented | Specific workflows, benchmarks, and proof points      |
+| Product engineering teams building operational analytics or real-time features | Eventing, entity APIs, canonical query flows, and operator insight surfaces are documented | Specific workflows, benchmarks, and proof points      |
 | ML engineering teams needing feature and model infrastructure                  | Feature store, model registry, pipeline, and monitoring material is present    | Evidence of model workflow depth and production usage |
 
 ### Opportunity Areas Worth Evaluating

@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
+import {
+  WORKFLOW_HINTS_DEGRADED_DETAIL,
+  WORKFLOW_HINTS_DEGRADED_TITLE,
+  WORKFLOW_HINTS_UNAVAILABLE_DETAIL,
+  WORKFLOW_HINTS_UNAVAILABLE_TITLE,
+} from '@/lib/runtime-boundaries';
 
 const { mockWorkflowsApi, mockAi, mockCapabilities } = vi.hoisted(() => ({
   mockWorkflowsApi: {
@@ -90,7 +96,7 @@ describe('WorkflowsPage', () => {
             label: 'AI Assist',
             status: 'unavailable',
             summary: 'NOT_CONFIGURED',
-            detail: 'AI assist is not configured in this environment.',
+            detail: WORKFLOW_HINTS_UNAVAILABLE_DETAIL,
             rawValue: 'NOT_CONFIGURED',
           },
         ],
@@ -101,9 +107,34 @@ describe('WorkflowsPage', () => {
 
     expect(await screen.findByText('Nightly Order Sync')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Nightly Order Sync'));
+    fireEvent.click(screen.getByText(/Show pipeline details/i));
 
-    expect(await screen.findByText(/AI optimisation hints unavailable/i)).toBeInTheDocument();
+    expect(await screen.findByText(WORKFLOW_HINTS_UNAVAILABLE_TITLE)).toBeInTheDocument();
     expect(mockAi.getPipelineOptimisationHints).not.toHaveBeenCalled();
+  });
+
+  it('renders the calmer outcome-first pipeline list with next-action messaging', async () => {
+    render(<WorkflowsPage />, { wrapper: TestWrapper });
+
+    expect(await screen.findByText('Nightly Order Sync')).toBeInTheDocument();
+    expect(screen.getByText(/Keep the list about outcomes, not pipeline internals/i)).toBeInTheDocument();
+    expect(screen.getByText(/Check the latest outcome/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Review pipeline/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Advanced editor/i })).toBeInTheDocument();
+  });
+
+  it('keeps advanced pipeline details behind progressive disclosure in the review modal', async () => {
+    render(<WorkflowsPage />, { wrapper: TestWrapper });
+
+    fireEvent.click(await screen.findByText('Nightly Order Sync'));
+
+    expect(screen.getByText(/Show pipeline details/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Inline AI Recommendations/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/Show pipeline details/i));
+
+    expect(screen.getAllByText(/Flow size/i).length).toBeGreaterThan(1);
+    expect(screen.getAllByText(/Owner/i).length).toBeGreaterThan(1);
   });
 
   it('shows a degraded warning for AI hints when ai assist is degraded', async () => {
@@ -118,7 +149,7 @@ describe('WorkflowsPage', () => {
             label: 'AI Assist',
             status: 'degraded',
             summary: 'DEGRADED',
-            detail: 'LLM backing service is temporarily unavailable.',
+            detail: WORKFLOW_HINTS_DEGRADED_DETAIL,
             rawValue: 'DEGRADED',
           },
         ],
@@ -129,8 +160,9 @@ describe('WorkflowsPage', () => {
 
     expect(await screen.findByText('Nightly Order Sync')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Nightly Order Sync'));
+    fireEvent.click(screen.getByText(/Show pipeline details/i));
 
-    expect(await screen.findByText(/AI optimisation hints degraded/i)).toBeInTheDocument();
-    expect(screen.getByText(/LLM backing service is temporarily unavailable./i)).toBeInTheDocument();
+    expect(await screen.findByText(WORKFLOW_HINTS_DEGRADED_TITLE)).toBeInTheDocument();
+    expect(screen.getByText(WORKFLOW_HINTS_DEGRADED_DETAIL)).toBeInTheDocument();
   });
 });

@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE,
+  BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE,
+} from '@/lib/runtime-boundaries';
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
@@ -130,7 +134,7 @@ describe('brainService autonomy boundaries', () => {
   it('fails explicitly for unsupported domain policy updates', async () => {
     await expect(
       brainService.updateAutonomyPolicy('security', { mode: 'ADVISORY' })
-    ).rejects.toThrow(/not exposed by the current Data Cloud HTTP API/i);
+    ).rejects.toThrow(AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE);
   });
 
   it('maps memory recall onto the canonical root memory plane', async () => {
@@ -177,7 +181,7 @@ describe('brainService autonomy boundaries', () => {
   it('fails explicitly for unsupported memory store calls without agent identity', async () => {
     await expect(
       brainService.storeMemory({ content: 'remember this' })
-    ).rejects.toThrow(/not exposed by the current Data Cloud HTTP API/i);
+    ).rejects.toThrow(BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE);
   });
 
   it('maps canonical brain stats into the UI brain stats model', async () => {

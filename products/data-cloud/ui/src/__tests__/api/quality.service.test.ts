@@ -1,4 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
+import {
+  createQualityCorrelationBoundaryMessage,
+  QUALITY_PII_MASK_BOUNDARY_MESSAGE,
+  QUALITY_VALIDATION_RULE_CREATE_BOUNDARY_MESSAGE,
+  QUALITY_VALIDATION_RULE_DELETE_BOUNDARY_MESSAGE,
+  QUALITY_VALIDATION_RULE_UPDATE_BOUNDARY_MESSAGE,
+} from '@/lib/runtime-boundaries';
 
 const { mockApiClient, mockCollectionsApi } = vi.hoisted(() => ({
   mockApiClient: {
@@ -58,7 +66,7 @@ describe('qualityService contract mapping', () => {
         effectiveCount: 2,
       },
       meta: {
-        tenantId: 'tenant-a',
+        tenantId: TEST_TENANT_ID,
         requestId: 'req-1',
         timestamp: '2026-04-15T07:06:00Z',
         apiVersion: 'v1',
@@ -96,9 +104,18 @@ describe('qualityService contract mapping', () => {
   });
 
   it('fails explicitly for unsupported validation-rule and masking operations', async () => {
-    await expect(qualityService.maskPII('orders', ['customerEmail'])).rejects.toThrow(/Bulk field masking is not exposed/i);
-    await expect(qualityService.createValidationRule({ name: 'Required Email' })).rejects.toThrow(/Validation rule creation is not exposed/i);
-    await expect(qualityService.updateValidationRule('rule-1', { enabled: false })).rejects.toThrow(/Validation rule updates are not exposed/i);
-    await expect(qualityService.deleteValidationRule('rule-1')).rejects.toThrow(/Validation rule deletion is not exposed/i);
+    await expect(qualityService.maskPII('orders', ['customerEmail'])).rejects.toThrow(QUALITY_PII_MASK_BOUNDARY_MESSAGE);
+    await expect(qualityService.createValidationRule({ name: 'Required Email' })).rejects.toThrow(QUALITY_VALIDATION_RULE_CREATE_BOUNDARY_MESSAGE);
+    await expect(qualityService.updateValidationRule('rule-1', { enabled: false })).rejects.toThrow(QUALITY_VALIDATION_RULE_UPDATE_BOUNDARY_MESSAGE);
+    await expect(qualityService.deleteValidationRule('rule-1')).rejects.toThrow(QUALITY_VALIDATION_RULE_DELETE_BOUNDARY_MESSAGE);
+  });
+
+  it('surfaces an explicit root-cause boundary message for unsupported quality correlation', async () => {
+    const result = await qualityService.correlateQualityDrop('orders', '2026-04-15T07:05:00Z');
+
+    expect(result).toEqual({
+      events: [],
+      rootCause: createQualityCorrelationBoundaryMessage('orders', '2026-04-15T07:05:00Z'),
+    });
   });
 });

@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 vi.mock('../../api/memory.service', () => ({
     memoryService: {
@@ -36,7 +37,7 @@ const mockGetConsolidationStatus = vi.mocked(memoryService.getConsolidationStatu
 const sampleItems = [
   {
     id: 'mem-001',
-    tenantId: 'tenant-a',
+    tenantId: TEST_TENANT_ID,
     agentId: 'agent-123',
     type: 'EPISODIC' as const,
     content: 'User asked about refund policy',
@@ -47,7 +48,7 @@ const sampleItems = [
   },
   {
     id: 'mem-002',
-    tenantId: 'tenant-a',
+    tenantId: TEST_TENANT_ID,
     agentId: 'agent-456',
     type: 'EPISODIC' as const,
     content: 'Failed to process order #12345',
@@ -129,7 +130,7 @@ describe('MemoryPage — MemoryPlaneViewerPage', () => {
         fireEvent.click(screen.getAllByLabelText('Delete memory item')[0]);
 
         await waitFor(() => {
-            expect(mockDeleteMemoryItem).toHaveBeenCalledWith('default', 'mem-001');
+            expect(mockDeleteMemoryItem).toHaveBeenCalledWith('agent-123', 'mem-001');
         });
     });
 });

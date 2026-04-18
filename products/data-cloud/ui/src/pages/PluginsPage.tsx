@@ -1,14 +1,13 @@
 /**
  * Plugins Page
  *
- * Plugin management interface for browsing, installing, and configuring plugins.
+ * Plugin management interface for bundled inventory, toggles, and upgrade guidance.
  *
  * Features:
- * - Browse marketplace and installed plugins
- * - Install/uninstall plugins
+ * - Browse bundled plugin inventory and installed state
  * - Enable/disable plugins
  * - Configure plugin settings
- * - Upload custom plugins
+ * - Review bundled-plugin delivery guidance
  *
  * @doc.type page
  * @doc.purpose Plugin management interface
@@ -29,6 +28,13 @@ import {
   Activity,
 } from 'lucide-react';
 import { cn, buttonStyles, inputStyles, textStyles, bgStyles } from '../lib/theme';
+import {
+  PLUGIN_DELIVERY_BOUNDARY_CONTINUATION,
+  PLUGIN_DELIVERY_BOUNDARY_DETAIL,
+  PLUGINS_EMPTY_STATE_DETAIL,
+  PLUGINS_INVENTORY_HEADER_DETAIL,
+  PLUGINS_CATALOG_BOUNDARY_DETAIL,
+} from '../lib/runtime-boundaries';
 import { PluginCard } from '../components/plugins/PluginCard';
 import {
   pluginService,
@@ -127,15 +133,15 @@ export function PluginsPage(): React.ReactElement {
   };
 
   return (
-    <div className={cn('min-h-screen', bgStyles.page)}>
+    <div className={cn('min-h-screen', bgStyles.page)} data-testid="plugins-page">
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className={textStyles.h1}>Plugins</h1>
-              <p className={cn(textStyles.body, 'mt-1')}>
-                Monitor the bundled plugins shipped with the current launcher build
+              <p className={cn(textStyles.body, 'mt-1')} data-testid="plugins-header-detail">
+                {PLUGINS_INVENTORY_HEADER_DETAIL}
               </p>
             </div>
             <button
@@ -150,7 +156,7 @@ export function PluginsPage(): React.ReactElement {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4" data-testid="plugins-stats-grid">
             <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-gray-400" />
@@ -197,6 +203,7 @@ export function PluginsPage(): React.ReactElement {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                data-testid={`plugins-tab-${tab.id}`}
                 className={cn(
                   'px-4 py-3 flex items-center gap-2 text-sm font-medium border-b-2 -mb-px transition-colors',
                   activeTab === tab.id
@@ -224,6 +231,7 @@ export function PluginsPage(): React.ReactElement {
                 placeholder="Search plugins..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                data-testid="plugins-search-input"
                 className={cn(inputStyles.base, 'pl-10')}
               />
             </div>
@@ -234,6 +242,7 @@ export function PluginsPage(): React.ReactElement {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value as PluginCategory | 'all')}
+                data-testid="plugins-category-filter"
                 className={cn(inputStyles.base, 'w-48')}
               >
                 {categories.map((cat) => (
@@ -251,6 +260,7 @@ export function PluginsPage(): React.ReactElement {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                  data-testid="plugins-status-filter"
                   className={cn(inputStyles.base, 'w-40')}
                 >
                   <option value="all">All Status</option>
@@ -305,7 +315,7 @@ export function PluginsPage(): React.ReactElement {
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className={cn(textStyles.h3, 'mb-2')}>No plugins installed</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  No bundled plugins are currently registered in this launcher build
+                  {PLUGINS_EMPTY_STATE_DETAIL}
                 </p>
               </div>
             ) : filteredInstalledPlugins.length === 0 ? (
@@ -327,7 +337,7 @@ export function PluginsPage(): React.ReactElement {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-testid="plugins-installed-grid">
                 {filteredInstalledPlugins.map((plugin) => (
                   <PluginCard
                     key={plugin.id}
@@ -344,14 +354,13 @@ export function PluginsPage(): React.ReactElement {
         )}
 
         {activeTab === 'catalog' && (
-          <div className="max-w-3xl mx-auto rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-100">
+          <div className="max-w-3xl mx-auto rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-100" data-testid="plugins-catalog-boundary">
             <div className="flex items-start gap-3">
               <Shield className="mt-0.5 h-5 w-5 flex-shrink-0" />
               <div>
                 <h3 className={cn(textStyles.h3, 'mb-2')}>Bundled Plugin Boundary</h3>
                 <p className="text-sm leading-6">
-                  The canonical backend only exposes bundled plugin inventory plus enable, disable, and upgrade-intent endpoints.
-                  Marketplace browsing, runtime installation, and custom uploads are intentionally unavailable in this launcher.
+                  {PLUGINS_CATALOG_BOUNDARY_DETAIL}
                 </p>
               </div>
             </div>
@@ -359,14 +368,14 @@ export function PluginsPage(): React.ReactElement {
         )}
 
         {activeTab === 'delivery' && (
-          <div className="max-w-3xl mx-auto rounded-xl border border-blue-200 bg-blue-50 p-6 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100">
+          <div className="max-w-3xl mx-auto rounded-xl border border-blue-200 bg-blue-50 p-6 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100" data-testid="plugins-delivery-guidance">
             <div className="flex items-start gap-3">
               <RefreshCw className="mt-0.5 h-5 w-5 flex-shrink-0" />
               <div>
                 <h3 className={cn(textStyles.h3, 'mb-2')}>How Plugin Changes Ship</h3>
                 <p className="text-sm leading-6">
-                  To add or upgrade a plugin, publish a new Data Cloud server build that includes the updated bundled plugin artifact.
-                  Runtime upload and hot-swap flows were removed here to match the actual launcher capability boundary.
+                  {PLUGIN_DELIVERY_BOUNDARY_DETAIL}
+                  {PLUGIN_DELIVERY_BOUNDARY_CONTINUATION}
                 </p>
               </div>
             </div>

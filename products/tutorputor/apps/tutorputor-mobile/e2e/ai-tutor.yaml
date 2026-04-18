@@ -1,0 +1,41 @@
+appId: com.tutorputor.mobile
+---
+# AI Tutor Flow
+# Tests chat interface: input, send, response rendering, follow-up questions
+- launchApp
+
+# Navigate to AI Tutor via tab or from Dashboard
+- tapOn: "Explore"
+- tapOn: "Learn"
+
+# Open AI Tutor from quick action or AIHelpButton
+- waitForAnimationToEnd
+- tapOn:
+    id: "ai-help-button"
+
+# AI Tutor screen visible
+- assertVisible: "AI Tutor"
+
+# Input field visible
+- assertVisible:
+    id: "chat-input"
+
+# Type a question
+- tapOn:
+    id: "chat-input"
+- inputText: "What is photosynthesis?"
+
+# Send message
+- tapOn:
+    id: "send-button"
+
+# Wait for response (up to 10s for network)
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# User message visible
+- assertVisible: "What is photosynthesis?"
+
+# Clear input is empty after send
+- assertNotVisible: "Send"
+  optional: true

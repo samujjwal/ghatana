@@ -15,6 +15,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
 import { VoiceInput } from '../voice/VoiceInput';
 import { ConsentManager, useConsent } from '../privacy/ConsentManager';
+import { parseNlQuery, type NlqParseResult } from '@/api/aep.api';
 
 /**
  * NLP parse response schema
@@ -83,37 +84,15 @@ export const NLQInput: React.FC<NLQInputProps> = ({
   const { consentGranted } = useConsent('ai_suggestions');
   
   const { mutate: parseIntent, isPending } = useMutation({
-    mutationFn: async (text: string): Promise<NLPParseResponse> => {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`NLP parse failed: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      // Validate response structure
-      if (!data.intent || typeof data.confidence !== 'number') {
-        throw new Error('Invalid NLP response format');
-      }
-
-      return data as NLPParseResponse;
-    },
+    mutationFn: (text: string): Promise<NlqParseResult> => parseNlQuery(text),
     onSuccess: (data) => {
-      // Only use parsed intent if confidence is above threshold
       if (data.confidence >= confidenceThreshold) {
-        onQuery(query, data.intent, data.entities);
+        onQuery(query, data.intent, data.entities as Array<{ type: string; value: string; confidence: number }>);
       } else {
-        // Fall back to raw query if confidence is low
         onQuery(query);
       }
     },
     onError: (error) => {
-      // On error, fall back to raw query
       onQuery(query);
       if (onParseError) {
         onParseError(error instanceof Error ? error : new Error('NLP parse failed'));
@@ -187,22 +166,9 @@ export const NLQInput: React.FC<NLQInputProps> = ({
 /**
  * Hook for using NLQ parsing directly
  */
-export function useNLQParse(endpoint = '/api/v1/nlp/parse') {
+export function useNLQParse() {
   const { mutateAsync: parseIntent, isPending } = useMutation({
-    mutationFn: async (text: string): Promise<NLPParseResponse> => {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`NLP parse failed: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data as NLPParseResponse;
-    },
+    mutationFn: (text: string): Promise<NlqParseResult> => parseNlQuery(text),
   });
 
   return {

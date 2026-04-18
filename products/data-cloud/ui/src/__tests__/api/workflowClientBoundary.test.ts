@@ -14,22 +14,28 @@ vi.mock('../../lib/api/client', () => ({
 }));
 
 import {
+  WORKFLOW_CONTEXT_BOUNDARY_MESSAGE,
   WORKFLOW_CLIENT_BOUNDARY_MESSAGE,
   workflowClient,
 } from '../../lib/api/workflow-client';
+import SessionBootstrap from '../../lib/auth/session';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 describe('workflowClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+    SessionBootstrap.setTenantId(TEST_TENANT_ID);
   });
 
   it('maps canonical pipeline list payloads into workflow definitions', async () => {
     mockApiClient.get.mockResolvedValueOnce({
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       pipelines: [
         {
           id: 'wf-1',
-          tenantId: 'tenant-a',
+          tenantId: TEST_TENANT_ID,
           collectionId: 'orders',
           name: 'Orders Workflow',
           description: 'Canonical pipeline payload',
@@ -63,7 +69,7 @@ describe('workflowClient', () => {
       workflows: [
         {
           id: 'wf-1',
-          tenantId: 'tenant-a',
+          tenantId: TEST_TENANT_ID,
           collectionId: 'orders',
           status: 'PUBLISHED',
           active: true,
@@ -76,7 +82,7 @@ describe('workflowClient', () => {
   it('maps canonical pipeline detail payloads into workflow definitions', async () => {
     mockApiClient.get.mockResolvedValueOnce({
       id: 'wf-2',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       collectionId: 'returns',
       name: 'Returns Workflow',
       description: 'Pipeline detail',
@@ -104,7 +110,7 @@ describe('workflowClient', () => {
   it('maps canonical create and update pipeline payloads into workflow definitions', async () => {
     mockApiClient.post.mockResolvedValueOnce({
       id: 'wf-3',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       collectionId: 'orders',
       name: 'Created Workflow',
       description: 'Created from pipeline response',
@@ -117,7 +123,7 @@ describe('workflowClient', () => {
     });
     mockApiClient.put.mockResolvedValueOnce({
       id: 'wf-3',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       collectionId: 'orders',
       name: 'Updated Workflow',
       description: 'Updated from pipeline response',
@@ -225,5 +231,21 @@ describe('workflowClient', () => {
     expect(mockApiClient.post).toHaveBeenCalledWith('/executions/exec-1/cancel', {}, {
       headers: expect.any(Object),
     });
+  });
+
+  it('fails explicitly when workflow payloads do not include collection context', async () => {
+    mockApiClient.get.mockResolvedValueOnce({
+      id: 'wf-missing',
+      tenantId: TEST_TENANT_ID,
+      name: 'Missing Collection Workflow',
+      status: 'draft',
+      nodes: [],
+      edges: [],
+      createdAt: '2026-04-15T12:10:00Z',
+      updatedAt: '2026-04-15T12:11:00Z',
+      createdBy: 'builder',
+    });
+
+    await expect(workflowClient.getWorkflow('wf-missing')).rejects.toThrow(WORKFLOW_CONTEXT_BOUNDARY_MESSAGE);
   });
 });

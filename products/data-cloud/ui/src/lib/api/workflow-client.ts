@@ -1,8 +1,8 @@
 /**
- * Workflow API client wrapper.
+ * Pipeline API client wrapper.
  *
  * <p><b>Purpose</b><br>
- * Provides type-safe API client for workflow operations.
+ * Provides type-safe API client for pipeline operations.
  * Wraps auto-generated OpenAPI client with error handling and retry logic.
  *
  * <p><b>Architecture</b><br>
@@ -12,12 +12,14 @@
  * - Tenant context management
  *
  * @doc.type service
- * @doc.purpose Workflow API client
+ * @doc.purpose Pipeline API client
  * @doc.layer frontend
  * @doc.pattern API Client
  */
 
 import { apiClient } from './client';
+import SessionBootstrap from '../auth/session';
+import { WORKFLOW_CLIENT_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 import {
   PipelineListResponseSchema,
   PipelineSchema,
@@ -38,8 +40,9 @@ import type {
 } from '../../features/workflow/types/workflow.types';
 
 export const WORKFLOW_EXECUTION_SUPPORTED = true;
-export const WORKFLOW_CLIENT_BOUNDARY_MESSAGE =
-  'Workflow execution detail, template browsing, workflow suggestions, and remote validation are not exposed by the current Data Cloud launcher API.';
+export { WORKFLOW_CLIENT_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+export const WORKFLOW_CONTEXT_BOUNDARY_MESSAGE =
+  'Workflow requests require explicit tenant and collection context from the current session or launcher payload.';
 
 /**
  * API client configuration.
@@ -57,9 +60,9 @@ export interface ApiClientConfig {
 export type { ApiError } from './client';
 
 /**
- * Workflow API client.
+ * Pipeline API client.
  *
- * Provides methods for workflow CRUD operations, execution, and AI features.
+ * Provides methods for pipeline CRUD operations, execution, and AI features.
  * Delegates HTTP calls to the shared apiClient.
  *
  * @doc.type class
@@ -74,13 +77,24 @@ export class WorkflowApiClient {
    * @param config the client configuration
    */
   constructor(config: ApiClientConfig = {}) {
-    this.tenantId = config.tenantId || 'default';
+    this.tenantId = config.tenantId ?? SessionBootstrap.getTenantId() ?? '';
     this.userId = config.userId || 'anonymous';
+  }
+
+  private resolveTenantId(): string {
+    const explicitTenantId = this.tenantId.trim();
+    if (explicitTenantId) {
+      return explicitTenantId;
+    }
+
+    const sessionTenantId = SessionBootstrap.requireTenantId();
+    this.tenantId = sessionTenantId;
+    return sessionTenantId;
   }
 
   private getHeaders(): Record<string, string> {
     return {
-      'X-Tenant-ID': this.tenantId,
+      'X-Tenant-ID': this.resolveTenantId(),
       'X-User-ID': this.userId,
     };
   }
@@ -101,7 +115,12 @@ export class WorkflowApiClient {
 
   private pipelineToWorkflowDefinition(pipeline: Pipeline, fallbackCollectionId?: string): WorkflowDefinition {
     const extras = pipeline as Record<string, unknown>;
-    const collectionId = typeof extras.collectionId === 'string' ? extras.collectionId : (fallbackCollectionId ?? 'default');
+    const rawCollectionId = typeof extras.collectionId === 'string' ? extras.collectionId.trim() : '';
+    const normalizedFallbackCollectionId = fallbackCollectionId?.trim() ?? '';
+    const collectionId = rawCollectionId || normalizedFallbackCollectionId;
+    if (!collectionId) {
+      throw new Error(WORKFLOW_CONTEXT_BOUNDARY_MESSAGE);
+    }
     const variables = extras.variables;
     const triggers = extras.triggers;
     const version = extras.version;
@@ -111,7 +130,7 @@ export class WorkflowApiClient {
 
     return {
       id: pipeline.id,
-      tenantId: pipeline.tenantId ?? this.tenantId,
+      tenantId: pipeline.tenantId ?? this.resolveTenantId(),
       collectionId,
       name: pipeline.name ?? 'Untitled workflow',
       description: pipeline.description,
@@ -151,12 +170,12 @@ export class WorkflowApiClient {
   }
 
   /**
-   * Lists all workflows.
+    * Lists all pipeline entries for the workflow UI.
    *
    * @param collectionId the collection ID to filter by
    * @param page the page number (0-based)
    * @param pageSize the page size
-   * @returns the workflow list response
+    * @returns the pipeline list response for the workflow UI
    */
   async listWorkflows(
     collectionId: string,
@@ -193,7 +212,7 @@ export class WorkflowApiClient {
   /**
    * Creates a new workflow.
    *
-   * @param request the create workflow request
+  * @param request the create pipeline request
    * @returns the created workflow
    */
   async createWorkflow(request: CreateWorkflowRequest): Promise<WorkflowDefinition> {
@@ -269,7 +288,7 @@ export class WorkflowApiClient {
     return {
       id: String(response.id ?? executionId),
       workflowId: String(response.pipelineId ?? ''),
-      tenantId: this.tenantId,
+      tenantId: this.resolveTenantId(),
       status: String(response.status ?? 'PENDING') as WorkflowExecution['status'],
       progress: totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 100,
       startedAt: String(response.startTime ?? new Date().toISOString()),
@@ -305,7 +324,7 @@ export class WorkflowApiClient {
   }
 
   /**
-   * Gets AI workflow suggestions.
+  * Gets AI pipeline suggestions.
    *
    * @param collectionId the collection ID
    * @returns the suggestions response
@@ -316,7 +335,10 @@ export class WorkflowApiClient {
   }
 
   /**
-   * Gets workflow templates.
+  * Gets pipeline templates.
+  *
+  * Launcher boundary note: canonical template-browsing routes are not
+  * exposed yet, so this method currently fails explicitly.
    *
    * @param category optional category filter
    * @returns the templates response
@@ -327,7 +349,7 @@ export class WorkflowApiClient {
   }
 
   /**
-   * Validates a workflow.
+  * Validates a pipeline definition.
    *
    * @param workflow the workflow to validate
    * @returns the validation result
@@ -347,12 +369,12 @@ export class WorkflowApiClient {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-    return `${protocol}//${host}${baseURL}/events/${executionId}/stream?tenantId=${this.tenantId}&userId=${this.userId}`;
+    return `${protocol}//${host}${baseURL}/events/${executionId}/stream?tenantId=${this.resolveTenantId()}&userId=${this.userId}`;
   }
 }
 
 /**
- * Singleton instance of the workflow API client.
+ * Singleton instance of the pipeline API client.
  *
  * @doc.type variable
  */

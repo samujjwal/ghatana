@@ -67,9 +67,9 @@ export function useWorkflow() {
   const canRedo = useAtomValue(canRedoAtom);
 
   /**
-   * Creates a new workflow.
+   * Creates a new pipeline.
    * @param collectionId the collection ID
-   * @param request the create workflow request
+   * @param request the create pipeline request
    * @returns the created workflow
    */
   const createWorkflow = useCallback(
@@ -83,7 +83,7 @@ export function useWorkflow() {
         loadWorkflow(created);
         return created;
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to create workflow';
+        const message = error instanceof Error ? error.message : 'Failed to create pipeline';
         setState({ loading: false, error: message });
         throw error;
       } finally {

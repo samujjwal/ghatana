@@ -1,10 +1,10 @@
 /**
  * Insights Page
  *
- * Unified analytics dashboard combining:
- * - Brain Dashboard (AI system consciousness)
- * - Custom Dashboards (user-created analytics)
- * - Cost Optimization (spend analysis)
+ * Unified operator insights surface combining:
+ * - AI brain status and heuristics
+ * - Analytics summaries and assisted query flows
+ * - Cost optimization review
  *
  * @doc.type page
  * @doc.purpose Unified analytics and AI insights
@@ -14,6 +14,11 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import SessionBootstrap, { type SessionSnapshot } from '../lib/auth/session';
+import {
+  INSIGHTS_CAPABILITY_SNAPSHOT_NOTE,
+  INSIGHTS_REGISTRY_REQUEST_NOTE,
+} from '../lib/runtime-boundaries';
 import {
   getCapabilitySignal,
   useCapabilityRegistry,
@@ -28,7 +33,11 @@ import {
   useAnalyticsAiSuggestions,
   type AnalyticsAiSuggestion,
 } from '../api/analytics.service';
-import { dataCloudApi } from '../lib/api/data-cloud-api';
+import {
+  useAiQualitySummary,
+  type AiQualitySummaryResult,
+} from '../api/ai-observability.service';
+import { collectionsApi } from '../lib/api/collections';
 import {
   Brain,
   BarChart3,
@@ -122,12 +131,15 @@ function describeSuggestionType(type: AnalyticsAiSuggestion['type']): 'optimizat
 }
 
 function normalizeCollectionsResponse(
-  response: { data: CollectionSummary[] } | CollectionSummary[] | undefined,
+  response: { data: CollectionSummary[] } | { items: CollectionSummary[] } | CollectionSummary[] | undefined,
 ): CollectionSummary[] {
   if (!response) {
     return [];
   }
-  return Array.isArray(response) ? response : response.data;
+  if (Array.isArray(response)) {
+    return response;
+  }
+  return 'items' in response ? response.items : response.data;
 }
 
 function formatInsightTimestamp(timestamp?: string): string | null {
@@ -144,6 +156,166 @@ function formatInsightTimestamp(timestamp?: string): string | null {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+}
+
+function OperatorDiagnosticsPanel({
+  sessionSnapshot,
+  capabilityRegistry,
+}: {
+  sessionSnapshot: SessionSnapshot;
+  capabilityRegistry?: {
+    requestId: string;
+    generatedAt: string;
+    capabilities: CapabilitySignal[];
+  };
+}) {
+  const degradedCount = capabilityRegistry?.capabilities.filter((capability) => capability.status === 'degraded').length ?? 0;
+  const unavailableCount = capabilityRegistry?.capabilities.filter((capability) => capability.status === 'unavailable').length ?? 0;
+  const generatedAt = formatInsightTimestamp(capabilityRegistry?.generatedAt);
+
+  return (
+    <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Operator Diagnostics</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            One place to confirm tenant bootstrap, auth session state, and capability boundary truth before investigating deeper product behavior.
+          </p>
+        </div>
+        {generatedAt && <span className="text-xs text-gray-400 whitespace-nowrap">Snapshot {generatedAt}</span>}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Tenant Context</div>
+          <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+            {sessionSnapshot.tenantId ?? 'Missing tenant context'}
+          </div>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {sessionSnapshot.requiresTenantBootstrap ? 'Tenant selection required before runtime-backed flows.' : 'Tenant session is explicitly resolved.'}
+          </p>
+        </article>
+
+        <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Auth Bootstrap</div>
+          <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+            {sessionSnapshot.isAuthenticated ? 'Authenticated session present' : 'No auth token detected'}
+          </div>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Token bootstrap uses secure client storage instead of per-page local storage reads.
+          </p>
+        </article>
+
+        <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Capability Boundaries</div>
+          <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+            {unavailableCount} unavailable / {degradedCount} degraded
+          </div>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {INSIGHTS_CAPABILITY_SNAPSHOT_NOTE}
+          </p>
+        </article>
+
+        <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+          <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Registry Request</div>
+          <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+            {capabilityRegistry?.requestId ?? 'Unavailable'}
+          </div>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {INSIGHTS_REGISTRY_REQUEST_NOTE}
+          </p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function AiTruthPanel({
+  qualitySummary,
+}: {
+  qualitySummary?: AiQualitySummaryResult;
+}) {
+  const topTypes = qualitySummary?.types
+    .slice()
+    .sort((left, right) => {
+      if (right.requestCount !== left.requestCount) {
+        return right.requestCount - left.requestCount;
+      }
+      return right.fallbackRate - left.fallbackRate;
+    })
+    .slice(0, 4) ?? [];
+
+  return (
+    <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4" data-testid="insights-ai-truth-panel">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">AI Truth Snapshot</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Launcher-process fallback and confidence telemetry for the AI routes behind query suggestions, workflow drafting, and explanation flows.
+          </p>
+        </div>
+        {qualitySummary && (
+          <span className="text-xs text-gray-400 whitespace-nowrap">
+            {qualitySummary.summary.fallbackCount}/{qualitySummary.summary.requestCount} fallbacks
+          </span>
+        )}
+      </div>
+
+      {!qualitySummary ? (
+        <p className="text-sm text-gray-500 dark:text-gray-400">AI quality telemetry is not available yet for this launcher session.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">AI Requests</div>
+              <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{qualitySummary.summary.requestCount}</div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Observed by the current launcher process since startup.</p>
+            </article>
+
+            <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Fallback Rate</div>
+              <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{Math.round(qualitySummary.summary.fallbackRate * 100)}%</div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Heuristic responses versus live model-backed completions.</p>
+            </article>
+
+            <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">LLM Wiring</div>
+              <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{qualitySummary.summary.llmConfigured ? 'Configured' : 'Heuristic only'}</div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Workflow drafts still expose provenance even when the handler falls back.</p>
+            </article>
+          </div>
+
+          <div className="space-y-3">
+            {topTypes.map((entry) => (
+              <article key={entry.type} className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3" data-testid={`insights-ai-type-${entry.type}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{entry.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{entry.route} • {entry.provenanceMode}</div>
+                  </div>
+                  <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+                    <div>{entry.requestCount} requests</div>
+                    <div>{Math.round(entry.fallbackRate * 100)}% fallback</div>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                    Mean confidence {Math.round(entry.meanConfidence * 100)}%
+                  </span>
+                  <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                    {entry.fallbackCount} fallback responses
+                  </span>
+                </div>
+
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{entry.reviewGuidance}</p>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
 }
 
 // =============================================================================
@@ -187,6 +359,9 @@ function OverviewTab({
   aiSuggestions,
   capabilities,
   insightTimestamp,
+  sessionSnapshot,
+  capabilityRegistry,
+  aiQualitySummary,
 }: {
   brainStats?: BrainStats;
   activePipelines?: number;
@@ -195,6 +370,13 @@ function OverviewTab({
   aiSuggestions: AnalyticsAiSuggestion[];
   capabilities: CapabilitySignal[];
   insightTimestamp: string | null;
+  sessionSnapshot: SessionSnapshot;
+  capabilityRegistry?: {
+    requestId: string;
+    generatedAt: string;
+    capabilities: CapabilitySignal[];
+  };
+  aiQualitySummary?: AiQualitySummaryResult;
 }) {
   const spotlightItems = toSpotlightItems(aiSuggestions);
   const overviewActivities = toOverviewActivities(costBreakdown);
@@ -202,6 +384,13 @@ function OverviewTab({
 
   return (
     <div className="space-y-6">
+      <OperatorDiagnosticsPanel
+        sessionSnapshot={sessionSnapshot}
+        capabilityRegistry={capabilityRegistry}
+      />
+
+      <AiTruthPanel qualitySummary={aiQualitySummary} />
+
       <CapabilityTruthPanel
         title="Runtime Capability Truth"
         description="Live capability registration from the launcher. Operators can confirm which optional subsystems are active, degraded, or unavailable without inferring from UI behavior."
@@ -326,7 +515,7 @@ function OverviewTab({
               <p className="text-sm text-green-700 dark:text-green-300">
                 {topDataset
                   ? `${Math.round(topDataset.percentage)}% of tenant spend is currently attributed to this dataset.`
-                  : 'Create or hydrate collections so the insights dashboard can compute dataset-level spend.'}
+                  : 'Create or hydrate collections so the insights surface can compute dataset-level spend.'}
               </p>
             </div>
           </div>
@@ -481,7 +670,7 @@ function QuickQueryConsole() {
  *
  * Fetches entity counts per collection via POST /api/v1/analytics/query and
  * renders a distribution chart alongside summary metrics and an interactive
- * SQL console. Replaces the previous static placeholder dashboard cards.
+ * SQL console. Replaces the previous static placeholder analytics cards.
  *
  * Also renders an AI anomaly hints panel (E3: Pervasive AI/ML) driven by the
  * same {@link useAnalyticsAiSuggestions} hook used by the sidebar — no extra
@@ -818,7 +1007,7 @@ function ActivityItem({
   );
 }
 
-function DashboardCard({
+function InsightSummaryCard({
   title,
   description,
   status,
@@ -938,6 +1127,7 @@ function AiSuggestionIcon({ type }: { type: AnalyticsAiSuggestion['type'] }) {
 export function InsightsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const navigate = useNavigate();
+  const sessionSnapshot = SessionBootstrap.bootstrap();
 
   /**
    * Handle AI suggestion action with deep-link routing
@@ -979,13 +1169,14 @@ export function InsightsPage() {
   // Fetch collections for analytics tab
   const { data: collectionsData } = useQuery({
     queryKey: ['collections-for-analytics'],
-    queryFn: () => dataCloudApi.getCollections(),
+    queryFn: () => collectionsApi.list(),
     staleTime: 300_000,
   });
   const collectionNames = normalizeCollectionsResponse(collectionsData)
     .map((collection) => collection.name ?? collection.id)
     .filter((name) => name.length > 0);
   const { data: capabilityRegistry, isLoading: capabilitiesLoading } = useCapabilityRegistry();
+  const { data: aiQualitySummary } = useAiQualitySummary();
   const analyticsCapability = getCapabilitySignal(
     capabilityRegistry?.capabilities,
     ['analytics', 'trino', 'federated_query', 'federatedQuery'],
@@ -1004,7 +1195,7 @@ export function InsightsPage() {
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Activity className="h-4 w-4" /> },
     { id: 'brain', label: 'AI Brain', icon: <Brain className="h-4 w-4" /> },
-    { id: 'analytics', label: 'Dashboards', icon: <BarChart3 className="h-4 w-4" /> },
+    { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="h-4 w-4" /> },
     { id: 'cost', label: 'Cost', icon: <DollarSign className="h-4 w-4" /> },
   ];
 
@@ -1061,7 +1252,7 @@ export function InsightsPage() {
     <div className="flex flex-col h-full">
       <PageHeader
         title="Insights"
-        subtitle="AI-powered analytics, system intelligence, and cost optimization"
+        subtitle="AI-assisted operational analytics, system intelligence, and cost optimization"
         icon={<BarChart3 className="h-6 w-6 text-primary-600" />}
         aiPowered
         actions={
@@ -1098,6 +1289,13 @@ export function InsightsPage() {
             aiSuggestions={aiSuggestions ?? []}
             capabilities={capabilityRegistry?.capabilities ?? []}
             insightTimestamp={insightTimestamp}
+            sessionSnapshot={sessionSnapshot}
+            aiQualitySummary={aiQualitySummary}
+            capabilityRegistry={capabilityRegistry ? {
+              requestId: capabilityRegistry.requestId,
+              generatedAt: capabilityRegistry.generatedAt,
+              capabilities: capabilityRegistry.capabilities,
+            } : undefined}
           />
         )}
         {activeTab === 'brain' && <BrainTab />}
@@ -1105,12 +1303,12 @@ export function InsightsPage() {
           capabilitiesLoading && !capabilityRegistry ? (
             <CapabilityLoadingState
               title="Loading runtime capabilities"
-              message="Confirming analytics and federated query dependencies before enabling live dashboards."
+              message="Confirming analytics and federated query dependencies before enabling live analytics views."
             />
           ) : analyticsUnavailable ? (
             <CapabilityUnavailableState
               title="Analytics unavailable"
-              message={analyticsCapability?.detail ?? 'Configure analytics connectors such as Trino or ClickHouse to enable live dashboard queries.'}
+              message={analyticsCapability?.detail ?? 'Configure analytics connectors such as Trino or ClickHouse to enable live analytics queries.'}
             />
           ) : (
             <AnalyticsTab collections={collectionNames} />

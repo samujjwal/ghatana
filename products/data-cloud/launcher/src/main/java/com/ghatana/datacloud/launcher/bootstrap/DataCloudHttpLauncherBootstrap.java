@@ -197,6 +197,26 @@ public final class DataCloudHttpLauncherBootstrap {
                     httpServer.withJwtProvider(jwtProvider)
                             .withJwtTenantClaim(jwtTenantClaim);
                 }
+
+                // Security check: enforce authentication by default in production
+                boolean insecureMode = Boolean.parseBoolean(env.getOrDefault("DATACLOUD_INSECURE_MODE", "false"));
+                boolean hasAuthConfigured = apiKeyResolver != null || jwtProvider != null;
+                
+                if (!insecureMode && !hasAuthConfigured && !embeddedProfile) {
+                    throw new IllegalStateException(
+                        "SECURITY ERROR: No authentication configured for Data-Cloud HTTP server. " +
+                        "Authentication is required by default in production environments. " +
+                        "Configure either DATACLOUD_API_KEYS for API key authentication " +
+                        "or DATACLOUD_JWT_SECRET / DATACLOUD_JWT_JWKS_URL for JWT authentication. " +
+                        "To disable this check (NOT recommended for production), set DATACLOUD_INSECURE_MODE=true.");
+                }
+                
+                if (!insecureMode && !hasAuthConfigured && embeddedProfile) {
+                    log.warn("[DC-E2] No authentication configured in embedded/local profile. " +
+                        "Set DATACLOUD_API_KEYS or DATACLOUD_JWT_SECRET to enable authentication. " +
+                        "To allow insecure mode, set DATACLOUD_INSECURE_MODE=true.");
+                }
+
             startTransport(
                     httpServer,
                     port,

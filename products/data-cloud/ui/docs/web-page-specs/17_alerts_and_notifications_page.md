@@ -1,6 +1,6 @@
 # 17. Alerts & Notifications Page – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec corresponds to the Notifications & Alerts section in `frontend_todo (1).md`.
+> **Status:** Partially implemented. The current `/alerts` route is a live launcher-backed operator triage surface for list, acknowledge, resolve, grouping, suggestions, rules, and stream health, while broader channel-management and incident workflows remain future work.
 
 ---
 
@@ -8,13 +8,12 @@
 
 **One-sentence intent:**
 
-> Provide a **central view and configuration UI for alerts and notifications**, allowing users to see active alerts, configure alert rules, and manage delivery channels.
+> Provide the **alerts and notifications operating model** through a live operator triage surface without pretending the broader incident-management roadmap is already complete.
 
 **Primary goals:**
 
-- Show current and historical alerts across the Data Cloud.
-- Allow users to define and manage alert rules (conditions, thresholds, and destinations).
-- Integrate with external channels (Slack, email, webhooks).
+- Support live alert triage, acknowledge, resolve, grouping, rule visibility, and route/stream truth from the launcher.
+- Keep channel management, saved views, and broader incident workflows explicitly future-scoped.
 
 **Non-goals:**
 
@@ -34,19 +33,19 @@
 **Key scenarios:**
 
 1. **Monitoring active alerts**
-   - User opens Alerts page and sees current open alerts grouped by severity.
+   - User opens Alerts and sees current incidents, grouped alert clusters, suggestions, and route/stream truth for the current deployment.
 
-2. **Configuring an alert rule**
-   - User defines a rule: "Alert if success rate of workflow `nightly_etl` drops below 95% for 3 runs".
+2. **Managing alert rules**
+   - User reviews or edits launcher-backed alert rules while calmer disclosure keeps active incidents primary.
 
 3. **Subscribing a channel**
-   - User adds a Slack channel and email list as destinations for a set of alerts.
+   - Future state: user adds a Slack channel and email list after delivery-channel integrations are productized.
 
 ---
 
 ## 3. Content & Layout Overview
 
-Proposed layout:
+Current shipped layout:
 
 1. **Alerts overview section**
    - Summary cards: total open alerts, critical/high/medium counts.
@@ -69,8 +68,7 @@ Proposed layout:
      - Destination configuration (Slack, email, webhook callbacks).
 
 5. **Channel management**
-   - Settings for Slack/webhook/email integration:
-     - Test buttons and health indicators.
+   - Future state only: settings for Slack/webhook/email integration.
 
 ---
 
@@ -93,18 +91,18 @@ In a mature system, the Alerts & Notifications UI should:
 2. Support correlation of related alerts into incidents (even if incident management UI is external).
 3. Reflect alert state transitions (open → acknowledged → resolved).
 4. Provide an audit trail of rule changes.
-5. Integrate with dashboard metrics (e.g., link from Dashboard anomalies to alerts).
+5. Integrate with operator insights and query/runtime anomalies once those alert contracts are live.
 
 ---
 
 ## 6. Modern UI/UX Nuances and Features
 
 - **Real-time updates:**
-  - Use websockets/EventSource to push new alerts without page reload.
+   - Future-state only: use websockets/EventSource to push new alerts without page reload once canonical stream contracts exist.
 - **Saved views:**
-  - Allow users to save filters as named views (e.g., "My team’s alerts").
+   - Future-state only: allow users to save filters as named views (e.g., "My team’s alerts").
 - **Keyboard and accessibility:**
-  - Support navigation, filtering, and acknowledgments via keyboard.
+   - Support navigation, filtering, and acknowledgments via keyboard once the page is backed by live contracts.
 
 ---
 
@@ -118,7 +116,7 @@ In a mature system, the Alerts & Notifications UI should:
 
 ## 8. Links to More Detail & Working Entry Points
 
-- Dashboard: `01_dashboard_page.md` (which surfaces high-level anomalies).
+- Intelligent Hub and insights surfaces: `01_dashboard_page.md` plus operator-only pages that would hand off into alerts when the runtime supports it.
 - Workflow-related specs: `05_workflows_page.md`, `06_workflow_designer_canvas.md`.
 - Dataset-related specs: `11_dataset_explorer_list_page.md`, `12_dataset_detail_insights_page.md`.
 - Governance hub: `16_governance_and_security_hub_page.md`.

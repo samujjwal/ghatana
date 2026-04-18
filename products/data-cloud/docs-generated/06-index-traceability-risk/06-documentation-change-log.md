@@ -71,6 +71,13 @@ This documentation change log captures the comprehensive evidence-driven refresh
 | DC-023    | Stale UI inventory       | Updated to 38 pages                | Accurate frontend documentation |
 | DC-024    | Missing test coverage    | Documented 230 test files          | Complete test inventory         |
 | DC-025    | Unclear maturity status  | Evidence-based maturity assessment | Clear production readiness      |
+| DC-026    | Route truth drift        | Canonical `/data` and `/pipelines` flows reconciled in product/UI manuals  | Discovery guidance matches app  |
+| DC-027    | Shell disclosure drift   | Role-aware operator/admin surfaces documented explicitly                    | Fewer false-positive UI claims  |
+| DC-028    | Alert/settings overclaim | Boundary-only operator/admin surfaces called out as unsupported or partial  | Readiness wording tightened     |
+| DC-029    | Legacy route and dashboard drift | Compatibility-only aliases plus entity-backed collection APIs reconciled across specs and generated docs | Current product truth is easier to verify |
+| DC-030    | Operator analytics wording drift | Residual dashboard-first labels in specs, tests, shortcuts, and positioning docs tightened toward operator insights and analytics language | Lower long-tail terminology drift |
+| DC-031    | Dead facade and deprecated CRUD drift | Removed the unused `data-cloud-api` umbrella facade and rewrote docs, mocks, and contract labels so deprecated collection CRUD aliases are explicit while canonical adapters stay primary | Lower adapter ambiguity and cleaner compatibility evidence |
+| DC-032    | Bundled-plugin and pipeline terminology drift | Removed marketplace, hot-swap, template, and workflow-first overclaims across plugin docs, generated readiness artifacts, and workflow support comments | Readiness language now matches launcher-backed plugin and pipeline boundaries |
 
 ---
 

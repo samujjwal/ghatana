@@ -75,26 +75,37 @@ pnpm --dir products/data-cloud/ui dev
 
 The current primary route model is defined in `ui/src/routes.tsx`.
 
+### Role-aware shell disclosure
+
+The UI now changes navigation density by shell role.
+
+- `primary-user`: Home, Data, Pipelines, Query
+- `operator`: adds Insights, Trust, and Events
+- `admin`: adds Settings on top of the operator set
+
+This mode changes discovery and emphasis only. It does not replace backend authorization.
+
 ### Intelligent Hub
 
 Routes:
 
 - `/`
-- `/dashboard`
-- `/hub`
+- compatibility aliases: `/dashboard`, `/hub`
 
-Use this as the home screen for a high-level operational overview.
+Use this as the home screen for outcome-first launchers, continue-working links, and role-aware operator disclosure.
 
 ### Data Explorer
 
 Routes:
 
 - `/data`
+- `/data/new`
 - `/data/:id`
+- `/data/:id/edit`
 - `/data/:id/:view`
-- legacy: `/collections`, `/datasets`, `/lineage`, `/quality`
+- compatibility aliases: `/collections`, `/collections/new`, `/collections/:id`, `/collections/:id/edit`
 
-Use this area to browse datasets or collections and move into more detailed views.
+Use this area to browse collection-backed datasets and move into detail, quality, or lineage-preview views from the canonical `/data` surface.
 
 ### Pipelines
 
@@ -104,36 +115,39 @@ Routes:
 - `/pipelines/new`
 - `/pipelines/:id`
 - `/pipelines/:id/edit`
-- legacy: `/workflows`, `/workflows/new`, `/workflows/:id`
+- compatibility aliases: `/workflows`, `/workflows/new`, `/workflows/:id`
 
-Use this area to create, edit, and monitor workflow pipelines.
+Use this area to create, edit, and monitor pipelines. The advanced editor is the canonical detailed pipeline surface.
 
 ### SQL Workspace
 
 Routes:
 
 - `/query`
-- legacy: `/sql`
+- compatibility alias: `/sql`
 
-Use this area to author and run query workflows.
+Use this area to author and run analytical queries.
+The current shipped surface also supports explain-before-run review, showing the planned query type, data sources, estimated cost, and guardrails before optional federated execution is chosen.
 
 ### Trust Center
 
 Routes:
 
 - `/trust`
-- legacy: `/governance`
+- compatibility alias: `/governance`
 
-Use this for governance, compliance, and privacy-oriented views.
+Use this for governance, compliance, and privacy-oriented views. It is disclosed in operator mode because the current surface centers on guided live actions such as retention classification, purge preview, redaction, compliance refresh, and audit review instead of a general policy CRUD console.
+Trust Center now also derives operator recommendations from live compliance summary, PII registry, and audit posture data so teams can prefill retention or redaction actions without navigating the raw policy list first. The page also exposes governance lifecycle-truth cards so operators can immediately see which areas are live action-backed, which remain derived read-only, and which policy lifecycle mutations are still unavailable in the launcher.
 
 ### Insights
 
 Routes:
 
 - `/insights`
-- legacy: `/brain`, `/dashboards`, `/cost`
+- compatibility aliases: `/brain`, `/dashboards`, `/cost`
 
-Use this for analytics and higher-level operational insights.
+Use this for operator-facing analytics, runtime diagnostics, and cost review. It is disclosed in operator mode rather than promoted as a full BI-style dashboard suite.
+Insights now also includes an AI Truth Snapshot that reports launcher-process request volume, fallback rate, and per-route confidence telemetry for analytics suggestions, workflow draft generation, and other AI assist routes so operators can tell when the product is using live model-backed assistance versus heuristic fallback.
 
 ### Additional operational pages
 
@@ -142,10 +156,11 @@ Routes:
 - `/events` for event exploration
 - `/entities` for entity browsing
 - `/memory` for memory-plane inspection
-- `/fabric` for data-fabric views
-- `/agents` for agent and plugin management surfaces
+- `/fabric` for preview-only data-fabric views
+- `/agents` for read-oriented agent and plugin management surfaces
 - `/plugins` and `/plugins/:id` for plugin lifecycle pages
-- `/alerts` and `/settings`
+- `/alerts` as an operator-facing live triage surface that remains hidden from primary-user discovery
+- `/settings` as an admin-only boundary page
 
 ## 5. Common User Workflows
 
@@ -279,7 +294,7 @@ Some features exist but depend on optional or stronger runtime backing services:
 - advanced analytics and reports
 - AI model routes
 - feature-store-backed workflows
-- AI assist quality and plugin hot-swap behavior
+- AI assist quality and bundled-plugin upgrade behavior
 
 Some UI page specs in `ui/docs/web-page-specs/` are design targets rather than fully wired pages. When in doubt, trust the actual routes in `ui/src/routes.tsx` and the live API contract.
 

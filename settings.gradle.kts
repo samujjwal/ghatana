@@ -168,6 +168,7 @@ include(":products:data-cloud:launcher")
 include(":products:data-cloud:sdk")
 include(":products:data-cloud:agent-registry")
 include(":products:data-cloud:feature-store-ingest")
+include(":products:data-cloud:integration-tests")
 
 // =============================================================================
 // Product: YAPPC

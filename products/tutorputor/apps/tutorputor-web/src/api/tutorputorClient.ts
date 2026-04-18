@@ -680,6 +680,51 @@ export class TutorPutorApiClient {
     return result.data;
   }
 
+  async getPersonalizedRecommendations(limit: number = 6): Promise<{
+    modules: Array<{
+      id: string;
+      title: string;
+      slug: string;
+      description?: string;
+      domain?: string;
+      difficultyLevel?: string;
+      estimatedTimeMinutes?: number;
+      tags: string[];
+      isAiRecommended: boolean;
+      recommendationReason?: string;
+      matchScore: number;
+    }>;
+    reasoning: {
+      basedOn: string;
+      userLevel: string;
+      suggestedDomains: string[];
+    };
+  }> {
+    const result = await this.request<{
+      data: {
+        modules: Array<{
+          id: string;
+          title: string;
+          slug: string;
+          description?: string;
+          domain?: string;
+          difficultyLevel?: string;
+          estimatedTimeMinutes?: number;
+          tags: string[];
+          isAiRecommended: boolean;
+          recommendationReason?: string;
+          matchScore: number;
+        }>;
+        reasoning: {
+          basedOn: string;
+          userLevel: string;
+          suggestedDomains: string[];
+        };
+      };
+    }>(`/v1/recommendations/personalized?limit=${limit}`);
+    return result.data;
+  }
+
   async trackExplorerEvent(input: TrackExplorerEventInput): Promise<void> {
     await this.request("/telemetry/events", {
       method: "POST",

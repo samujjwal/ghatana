@@ -71,10 +71,19 @@ public class OpenAIService implements LLMService {
     }
 
     @Override
-    public Promise<String> generateStructured(String prompt) {
+    public <T> Promise<T> generateStructured(String prompt, Class<T> schemaClass) {
         // For structured output, request JSON mode by appending an instruction.
         // The OpenAI JSON mode guarantees the response is valid JSON when enabled.
-        return Promise.ofBlocking(executor, () -> callChatCompletions(prompt, true));
+        return Promise.ofBlocking(executor, () -> {
+            String jsonResponse = callChatCompletions(prompt, true);
+            try {
+                return mapper.readValue(jsonResponse, schemaClass);
+            } catch (Exception e) {
+                logger.error("Failed to parse structured output as {}: {}", schemaClass.getSimpleName(), e.getMessage());
+                throw new RuntimeException(
+                    "Failed to parse LLM response as " + schemaClass.getSimpleName() + ": " + e.getMessage(), e);
+            }
+        });
     }
 
     // -------------------------------------------------------------------------

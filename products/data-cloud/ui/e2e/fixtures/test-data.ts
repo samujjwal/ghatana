@@ -95,33 +95,93 @@ export const mockExecutions = [
 export const mockAlerts = [
   {
     id: 'alert-1',
-    name: 'High Error Rate',
+    title: 'High Error Rate',
+    description: 'Error rate exceeded 5% threshold in wf-1 (Data Export)',
     severity: 'critical',
-    status: 'firing',
+    status: 'active',
     source: 'workflow-monitor',
-    message: 'Error rate exceeded 5% threshold in wf-1 (Data Export)',
-    triggeredAt: new Date('2024-01-21T08:00:00').toISOString(),
-    resolvedAt: null,
+    createdAt: new Date('2024-01-21T08:00:00').toISOString(),
   },
   {
     id: 'alert-2',
-    name: 'Storage Capacity Warning',
+    title: 'Storage Capacity Warning',
+    description: 'Storage utilisation at 82% — consider scaling or archiving',
     severity: 'warning',
-    status: 'firing',
+    status: 'active',
     source: 'infrastructure',
-    message: 'Storage utilisation at 82% — consider scaling or archiving',
-    triggeredAt: new Date('2024-01-20T16:45:00').toISOString(),
-    resolvedAt: null,
+    createdAt: new Date('2024-01-20T16:45:00').toISOString(),
   },
   {
     id: 'alert-3',
-    name: 'Schema Drift Detected',
+    title: 'Schema Drift Detected',
+    description: 'Collection col-2 schema diverged from registered contract; auto-resolved',
     severity: 'info',
     status: 'resolved',
     source: 'governance',
-    message: 'Collection col-2 schema diverged from registered contract; auto-resolved',
-    triggeredAt: new Date('2024-01-19T12:00:00').toISOString(),
+    createdAt: new Date('2024-01-19T12:00:00').toISOString(),
     resolvedAt: new Date('2024-01-19T12:05:00').toISOString(),
+  },
+];
+
+export const mockAlertGroups = [
+  {
+    id: 'group-1',
+    title: 'Workflow Reliability Cluster',
+    rootCause: 'Data Export pipeline retries spiked after source timeout errors.',
+    alertIds: ['alert-1', 'alert-2'],
+    aiConfidence: 0.94,
+    suggestedAction: 'Pause downstream retries and investigate the source connector timeout.',
+    suggestedActionType: 'manual',
+  },
+];
+
+export const mockAlertSuggestions = [
+  {
+    id: 'suggestion-1',
+    alertId: 'alert-1',
+    suggestion: 'Temporarily widen the retry backoff and page the workflow owner.',
+    confidence: 0.91,
+    canAutoResolve: false,
+    steps: ['Increase retry backoff to 5m', 'Notify workflow owner in Slack'],
+  },
+  {
+    id: 'suggestion-2',
+    alertId: 'alert-2',
+    suggestion: 'Archive stale parquet partitions to recover storage headroom.',
+    confidence: 0.82,
+    canAutoResolve: true,
+    steps: ['Archive partitions older than 30 days', 'Re-run storage capacity check'],
+  },
+];
+
+export const mockAlertRules = [
+  {
+    id: 'rule-1',
+    name: 'High Workflow Error Rate',
+    description: 'Trigger when workflow failure rate exceeds the operational SLO.',
+    enabled: true,
+    severity: 'critical',
+    conditionType: 'threshold',
+    metric: 'workflow.error_rate',
+    operator: 'gt',
+    threshold: 5,
+    duration: 15,
+    channels: ['slack', 'pagerduty'],
+    recipients: ['oncall@datacloud.example'],
+  },
+  {
+    id: 'rule-2',
+    name: 'Storage Capacity Warning',
+    description: 'Warn when storage utilisation approaches archival thresholds.',
+    enabled: true,
+    severity: 'warning',
+    conditionType: 'threshold',
+    metric: 'storage.capacity_used_percent',
+    operator: 'gte',
+    threshold: 80,
+    duration: 30,
+    channels: ['email'],
+    recipients: ['platform@datacloud.example'],
   },
 ];
 

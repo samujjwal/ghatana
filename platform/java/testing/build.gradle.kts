@@ -17,6 +17,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:runtime"))
     api(project(":platform:java:database"))
+    api(project(":platform:java:audit"))
 
     // ArchUnit for architecture validation tests
     testImplementation("com.tngtech.archunit:archunit:1.2.1")

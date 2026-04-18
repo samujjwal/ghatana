@@ -35,6 +35,7 @@ import {
 interface ExecutionState {
   id: string | null;
   workflowId: string | null;
+  tenantId: string;
   status: ExecutionStatus;
   progress: number;
   startedAt: string | null;
@@ -49,6 +50,7 @@ interface ExecutionState {
 const initialExecutionState: ExecutionState = {
   id: null,
   workflowId: null,
+  tenantId: '',
   status: ExecutionStatus.PENDING,
   progress: 0,
   startedAt: null,
@@ -185,6 +187,7 @@ export const startExecutionAtom = atom(
     const state: ExecutionState = {
       id: execution.id,
       workflowId: execution.workflowId,
+      tenantId: execution.tenantId,
       status: normalizeExecutionStatus(execution.status),
       progress: execution.progress,
       startedAt: execution.startedAt,
@@ -222,6 +225,7 @@ export const updateExecutionAtom = atom(
 
     const updatedExecution: ExecutionState = {
       ...execution,
+      tenantId: update.tenantId !== undefined ? update.tenantId : execution.tenantId,
       status: update.status || execution.status,
       progress: update.progress !== undefined ? update.progress : execution.progress,
       error: update.error || execution.error,

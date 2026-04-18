@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 const { mockApiClient } = vi.hoisted(() => ({
     mockApiClient: {
@@ -30,11 +31,11 @@ describe('WorkflowPage — WorkflowsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockApiClient.get.mockResolvedValue({
-            tenantId: 'default',
+            tenantId: TEST_TENANT_ID,
             pipelines: [
                 {
                     id: 'wf-contract-1',
-                    tenantId: 'default',
+                    tenantId: TEST_TENANT_ID,
                     name: 'Contract Pipeline',
                     description: 'Canonical launcher-backed workflow payload',
                     status: 'active',

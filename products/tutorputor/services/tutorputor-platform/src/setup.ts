@@ -39,6 +39,7 @@ import { notificationRoutes } from "./modules/notifications/index.js";
 import { paymentRoutes } from "./modules/payments/routes.js";
 import { SubscriptionServiceImpl } from "./modules/payments/service.js";
 import { featureFlagsModule } from "./modules/feature-flags/index.js";
+import { registerObservabilityRoutes } from "./modules/observability/routes.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
@@ -417,6 +418,10 @@ export async function setupPlatform(
   // Feature flags: /api/v1/admin/feature-flags
   await app.register(featureFlagsModule, { prefix: "/api/v1/admin" });
   app.log.info("✅ Feature flags module registered");
+
+  // Observability: /api/v1/admin/observability/metrics, /api/v1/admin/observability/alerts
+  registerObservabilityRoutes(app, { prisma });
+  app.log.info("✅ Observability routes registered");
 
   const shouldStartContentWorker =
     options.startContentWorker ??

@@ -254,7 +254,9 @@ public class EntityCrudHandler {
                     "id", e.id(),
                     "collection", e.collection(),
                     "data", e.data(),
-                    "version", e.version()
+                    "version", e.version(),
+                    "createdAt", e.createdAt() != null ? e.createdAt().toString() : null,
+                    "updatedAt", e.updatedAt() != null ? e.updatedAt().toString() : null
                 )).toList(),
                 "count", entities.size(),
                 "timestamp", Instant.now().toString()

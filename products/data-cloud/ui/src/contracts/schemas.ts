@@ -205,6 +205,32 @@ export const PipelineOptimisationHintsResponseSchema = z.object({
   modelVersion: z.string().optional(),
 });
 
+export const WorkflowDraftStepSchema = z.object({
+  id: z.string(),
+  type: z.enum(['source', 'transform', 'destination', 'condition']),
+  name: z.string(),
+  description: z.string(),
+  confidence: z.number(),
+  config: z.record(z.string(), z.unknown()),
+});
+
+export const WorkflowDraftProvenanceSchema = z.object({
+  generatedAt: z.string(),
+  strategy: z.string(),
+  promptSummary: z.string(),
+});
+
+export const WorkflowDraftSchema = z.object({
+  workflowId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  reviewRequired: z.boolean(),
+  provenance: WorkflowDraftProvenanceSchema,
+  steps: z.array(WorkflowDraftStepSchema),
+});
+
+export const WorkflowDraftEnvelopeSchema = apiEnvelopeSchema(WorkflowDraftSchema);
+
 export const WorkflowSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -604,11 +630,34 @@ export const AnalyticsSuggestResponseSchema = z.object({
   data: z.object({
     queries: z.array(AnalyticsSuggestQuerySchema),
   }),
-  ai: z.object({
-    confidence: z.number().optional(),
-    fallback: z.boolean().optional(),
-  }).optional(),
+  ai: ApiAiMetaSchema.partial().optional(),
 });
+
+export const AiQualityTypeSummarySchema = z.object({
+  type: z.string(),
+  label: z.string(),
+  route: z.string(),
+  requestCount: z.number(),
+  fallbackCount: z.number(),
+  fallbackRate: z.number(),
+  meanConfidence: z.number(),
+  provenanceMode: z.string(),
+  reviewGuidance: z.string(),
+});
+
+export const AiQualitySummarySchema = z.object({
+  generatedAt: z.string(),
+  scope: z.enum(['launcher-process']),
+  summary: z.object({
+    requestCount: z.number(),
+    fallbackCount: z.number(),
+    fallbackRate: z.number(),
+    llmConfigured: z.boolean(),
+  }),
+  types: z.array(AiQualityTypeSummarySchema),
+});
+
+export const AiQualitySummaryResponseSchema = apiEnvelopeSchema(AiQualitySummarySchema);
 
 export const AnomalyDetectionRequestSchema = z.object({
   collectionName: z.string().min(1),
@@ -1300,6 +1349,9 @@ export type PipelineListResponse = z.infer<typeof PipelineListResponseSchema>;
 export type PipelineMutationRequest = z.infer<typeof PipelineMutationRequestSchema>;
 export type PipelineOptimisationHint = z.infer<typeof PipelineOptimisationHintSchema>;
 export type PipelineOptimisationHintsResponse = z.infer<typeof PipelineOptimisationHintsResponseSchema>;
+export type WorkflowDraft = z.infer<typeof WorkflowDraftSchema>;
+export type WorkflowDraftStep = z.infer<typeof WorkflowDraftStepSchema>;
+export type WorkflowDraftProvenance = z.infer<typeof WorkflowDraftProvenanceSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
 export type PaginatedWorkflowResponse = z.infer<typeof PaginatedWorkflowResponseSchema>;
 export type Execution = z.infer<typeof ExecutionSchema>;

@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  PLUGIN_BUNDLE_UPDATE_DOC_COMMENT,
+  PLUGIN_RUNTIME_TOGGLE_DOC_COMMENT,
+} from '@/lib/runtime-boundaries';
 
 import { TestWrapper } from '../test-utils/wrapper';
+import { pluginDependencyBoundary } from '@/components/common/unsupportedSurfaceRegistry';
 import { PluginDetailsPage } from '../../pages/PluginDetailsPage';
 import { pluginService, type Plugin } from '../../api/plugin.service';
 
@@ -83,8 +88,9 @@ describe('PluginDetailsPage', () => {
     expect(screen.getAllByText('Bundled connector for canonical plugin detail coverage')).toHaveLength(2);
     expect(screen.getByText('Capabilities')).toBeInTheDocument();
     expect(screen.getAllByText('entity sync').length).toBeGreaterThan(0);
-    expect(screen.getByText(/bundled plugins can only be toggled at runtime/i)).toBeInTheDocument();
-    expect(screen.getByText(/deploy a new launcher build/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(PLUGIN_RUNTIME_TOGGLE_DOC_COMMENT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(PLUGIN_BUNDLE_UPDATE_DOC_COMMENT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'))).toBeInTheDocument();
+    expect(screen.getByText(pluginDependencyBoundary.summary)).toBeInTheDocument();
   });
 
   it('navigates back to the canonical plugins inventory', async () => {

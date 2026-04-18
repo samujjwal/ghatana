@@ -9,9 +9,12 @@
  */
 
 import { useMutation } from '@tanstack/react-query';
+import {
+  SCHEMA_SUGGESTION_BOUNDARY_MESSAGE,
+  createRuntimeBoundaryError,
+} from '@/lib/runtime-boundaries';
 
-export const SCHEMA_SUGGESTION_BOUNDARY_MESSAGE =
-  'Schema suggestion requires a collection-scoped canonical route and is not exposed by the current Data Cloud launcher through this hook.';
+export { SCHEMA_SUGGESTION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 /**
  * Schema suggestion request
@@ -43,7 +46,7 @@ export function useSchemaSuggestion() {
   return useMutation({
     mutationFn: async (data: SchemaSuggestionRequest): Promise<SchemaSuggestionResponse> => {
       void data;
-      throw new Error(SCHEMA_SUGGESTION_BOUNDARY_MESSAGE);
+      throw createRuntimeBoundaryError(SCHEMA_SUGGESTION_BOUNDARY_MESSAGE);
     },
   });
 }

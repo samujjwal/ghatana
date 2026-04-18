@@ -3,6 +3,10 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
+  EXECUTION_MONITOR_GUIDANCE_NOTE,
+  EXECUTION_MONITOR_UNAVAILABLE_TITLE,
+} from '@/lib/runtime-boundaries';
+import {
   EXECUTION_MONITOR_BOUNDARY_NOTE,
   ExecutionMonitor,
 } from '../ExecutionMonitor';
@@ -21,10 +25,8 @@ describe('ExecutionMonitor', () => {
   it('renders an explicit launcher boundary instead of calling unsupported execution detail APIs', () => {
     render(<ExecutionMonitor executionId="exec-123" />, { wrapper: Wrapper });
 
-    expect(screen.getByText(/Execution Monitoring Unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(EXECUTION_MONITOR_UNAVAILABLE_TITLE)).toBeInTheDocument();
     expect(screen.getByText(EXECUTION_MONITOR_BOUNDARY_NOTE)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Use pipeline execution summaries and launcher-supported workflow pages instead of per-execution live monitoring/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(EXECUTION_MONITOR_GUIDANCE_NOTE)).toBeInTheDocument();
   });
 });

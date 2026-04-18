@@ -9,6 +9,40 @@
  * @doc.pattern Types
  */
 
+// Tab Navigator Param List
+export type TabParamList = {
+  Learn: undefined;
+  Explore: undefined;
+  Profile: undefined;
+};
+
+// Learn Stack Param List
+export type LearnStackParamList = {
+  Dashboard: undefined;
+  Enrollments: undefined;
+  Modules: { category?: string } | undefined;
+  ModuleDetail: { moduleId: string };
+  Lesson: { moduleId: string; lessonId: string };
+  Quiz: { moduleId: string; quizId: string };
+  AITutor: { moduleId?: string; context?: string } | undefined;
+};
+
+// Explore Stack Param List
+export type ExploreStackParamList = {
+  Search: undefined;
+  Marketplace: undefined;
+  ModuleDetail: { moduleId: string };
+};
+
+// Profile Stack Param List
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  Downloads: undefined;
+  Settings: undefined;
+  Achievements: undefined;
+};
+
+// Legacy Root Stack (for backward compatibility)
 export type RootStackParamList = {
   Home: undefined;
   Modules: { category?: string };

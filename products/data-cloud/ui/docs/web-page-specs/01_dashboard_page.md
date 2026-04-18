@@ -1,11 +1,11 @@
-# 1. Dashboard Page – Data Cloud Overview – Deep-Dive Spec
+# 1. Intelligent Hub – Home Surface – Deep-Dive Spec
 
 Related routes & files:
 
-- Routes: `/` and `/dashboard`
-- Page: `src/pages/DashboardPage.tsx`
-- Mock API: `src/lib/mock-api-client.ts`, `src/lib/mock-data.ts`
-- Cards: `src/components/cards/DashboardCard.tsx`, `DashboardKPI`
+- Routes: `/`, `/dashboard`, and `/hub`
+- Page: `src/pages/IntelligentHub.tsx`
+
+_Reality note: this spec previously described the old dashboard concept. The current shipped home surface is the Intelligent Hub with outcome-first launchers and shell-role disclosure._
 
 ---
 
@@ -13,15 +13,14 @@ Related routes & files:
 
 **One-sentence intent:**
 
-> Give operators a **control-tower style overview** of collections, workflows, executions, audit logs, and compliance status, with quick actions into deeper Data Cloud functionality.
+> Give users an **outcome-first home surface** for getting to Data Explorer, Pipelines, Query, and operator workflows without forcing them through a control-tower summary page first.
 
 **Primary goals:**
 
-- Show key metrics: total/active workflows, executions, success rate, average execution time.
-- Surface recent collections and workflows.
-- Display high-level **audit log activity** and **compliance** status.
-- Offer quick navigation to creating workflows, viewing executions, and exploring API docs.
- - Act as the **home dashboard** for Data Cloud’s Data Cloud slice, and a foundation for richer storage/query/optimizer/cost/health views described in the frontend TODOs.
+- Launch users quickly into Data, Pipelines, Query, and operator workflows.
+- Surface enough recent activity and health context to resume work without forcing a control-tower-first mental model.
+- Offer quick navigation to creating workflows, exploring data, querying, and opening operator-only diagnostics when relevant.
+- Act as the **home surface** for Data Cloud rather than a standalone control-tower surface.
 
 **Non-goals:**
 
@@ -41,14 +40,14 @@ Related routes & files:
 **Key scenarios:**
 
 1. **Health check at a glance**
-   - User opens dashboard to see counts of workflows, executions, success rate, and compliance score.
-   - If success rate drops or compliance warnings appear, they click through to details.
+   - User opens the Intelligent Hub to see lightweight summaries, continue-working links, and the next recommended actions.
+   - If trust warnings or runtime issues appear, they click through to operator views rather than staying on a KPI wall.
 
 2. **Resuming recent work**
    - User sees recent collections and workflows, resumes work via deep-link.
 
 3. **Investigating activity**
-   - User scans recent audit log entries and compliance statuses for anomalies.
+   - User scans recent activity, lightweight summaries, and role-gated follow-up links for anomalies.
 
 4. **Starting new workflows**
    - Quick actions to create a new workflow or jump to executions list.
@@ -57,40 +56,28 @@ Related routes & files:
 
 ## 3. Content & Layout Overview
 
-From `DashboardPage.tsx`:
+From `IntelligentHub.tsx`:
 
-- State:
-  - Collections, workflows, executions (mock data).
-  - `stats`: totalWorkflows, activeWorkflows, totalExecutions, successRate, avgExecutionTime, auditEvents24h, complianceScore.
-  - `auditLogs`, `complianceStatuses`, `recentActivity`.
+- State and content are intentionally outcome-oriented:
+   - recent activity and continue-working suggestions
+   - quick launch cards for data, pipelines, query, trust, and operator diagnostics
+   - operator diagnostics should route investigation to Insights, including AI fallback/confidence telemetry when runtime review is needed
+   - lightweight summaries rather than a full KPI wall
 
 **Layout:**
 
-1. **Header bar**
-   - Title `Dashboard` and subtitle.
-   - Primary action: `New Workflow` → `/workflows/new`.
+1. **Header and role-aware context**
+   - Intelligent Hub title and supporting copy.
+   - Outcome-first guidance rather than control-tower-heavy chrome.
 
-2. **Stats grid (KPI cards)**
-   - Total Workflows.
-   - Active Workflows.
-   - Total Executions.
-   - Success Rate.
-   - Avg Execution Time.
+2. **Quick launch and continue-working sections**
+   - Data, Pipelines, Query, and role-gated operator actions.
+   - Recent activity and continue-working links into canonical routes.
 
-3. **Collections & Workflows sections**
-   - Left: Collections overview (total count + recent collections list).
-   - Right: Workflows overview (active vs total, recent workflows, recent executions table).
+3. **Lightweight operational summaries**
+   - Enough recent state to orient users without claiming a full metrics console.
 
-4. **Audit & Compliance overview**
-   - Audit Logs: last 24h count + recent events with icons/status and deep-links.
-   - Compliance: overall score + small status list with badges.
-
-5. **Quick actions**
-   - Create New Workflow.
-   - View All Executions.
-   - Explore API Docs.
-
-6. **Planned expansion – Data Cloud dashboards alignment**
+4. **Planned expansion – higher-fidelity operator insights**
    - Storage Usage: high-level storage consumption by tier (Bronze/Silver/Gold/Cold) and by key collections/datasets.
    - Query Performance: overview of query latency/throughput, top slow queries, and hotspots.
    - Optimizer Actions: feed of recent Data Brain actions (promotions, compactions, tiering changes).
@@ -101,12 +88,12 @@ From `DashboardPage.tsx`:
 
 ## 4. UX Requirements – User-Friendly and Valuable
 
-- **Clear labels and statuses:**
-  - Use plain language for metrics (e.g., "Total Workflows", "Success Rate").
-- **Clickable cards:**
-  - KPI cards link to relevant pages (e.g., `/workflows`, `/executions`).
+- **Clear next actions:**
+   - The most important affordances should move users into canonical `/data`, `/pipelines`, and `/query` flows quickly.
+- **Role-aware disclosure:**
+   - Operator-only diagnostics and trust actions should appear only when shell role calls for them.
 - **Error feedback:**
-  - If dashboard data load fails, show a red alert banner with a readable error message.
+   - If home-surface data load fails, show a readable alert banner with an actionable recovery path.
 - **Loading state:**
   - Centered spinner and loading text while data is being fetched.
 
@@ -114,23 +101,21 @@ From `DashboardPage.tsx`:
 
 ## 5. Completeness and Real-World Coverage
 
-A full production dashboard should:
+A fuller production home surface should:
 
-1. Use **real backend APIs**, not mock data.
-2. Support **filtering by tenant/project/time range** (future work).
-3. Allow direct drill-down from KPIs to filtered history views.
-4. Align metrics with observability surfaces (AEP, Software Org dashboards).
-5. Include dedicated **panels or tabs** for storage usage, query performance, optimizer actions, cost explorer, and dataset health scoring, powered by backend metrics and telemetry.
-6. Offer clear navigation from these high-level panels into specialized pages (e.g., Storage Usage dashboard, Query Performance dashboard) if/when those are broken out.
+1. Keep using **real backend APIs** for recent activity and live launch points.
+2. Preserve the simpler intent-first model instead of regressing into a control-tower-first shell.
+3. Add richer operator summaries only where launcher-backed telemetry exists.
+4. Offer clear navigation into specialized views such as Insights, Query, or Trust instead of inventing new top-level summary pages prematurely.
 
 ---
 
 ## 6. Modern UI/UX Nuances and Features
 
 - **Responsive layout:**
-  - KPIs and cards rearrange well on tablet/mobile.
+   - Summary cards and quick actions rearrange well on tablet/mobile.
 - **Visual hierarchy:**
-  - KPIs at the top, then collections/workflows, then audit/compliance, then quick actions.
+   - Outcome launchers and summaries come first, then continue-working and recent activity, then operator follow-up paths.
 - **Status colors:**
   - Use consistent color semantics for success/warning/error/compliant/non-compliant.
 
@@ -139,9 +124,9 @@ A full production dashboard should:
 ## 7. Coherence with App Creator / Canvas & Platform
 
 - Workflows and executions resemble **runtime plans** that could be edited in a canvas:
-  - Dashboard metrics should map to plan nodes/edges and run history visible in the Workflow Designer.
-- This dashboard is conceptually parallel to control-tower pages in App Creator and AEP.
-- In the broader Data Cloud context, this page should aggregate metrics from **storage fabric, compute engine, AI Optimizer, and workflow engine**, providing a single-glance view before users dive into specialized dashboards or canvases.
+   - Summary signals should still map to plan nodes/edges and run history visible in the Workflow Designer.
+- This home surface is conceptually parallel to outcome-first launchers in adjacent Ghatana products.
+- In the broader Data Cloud context, this page should summarize **storage fabric, compute engine, AI optimizer, and workflow engine** health without pretending to be a full BI or control-tower product.
 
 ---
 
@@ -149,20 +134,20 @@ A full production dashboard should:
 
 - Workflow list: `src/pages/WorkflowsPage.tsx`
 - Workflow designer canvas: `src/components/workflow/WorkflowCanvas.tsx`, `src/pages/WorkflowDesigner/index.tsx`
-- Collections views: `src/pages/CollectionsPage.tsx`, `src/pages/CreateCollectionPage.tsx`, `src/pages/EditCollectionPage.tsx`
+- Data explorer views: `src/pages/DataExplorer.tsx`, `src/pages/CreateCollectionPage.tsx`, `src/pages/EditCollectionPage.tsx`
 
 ---
 
 ## 9. Gaps & Enhancement Plan
 
 1. **Real data integration:**
-   - Replace `mockApiClient` with real Data Cloud API integration via `@ghatana/api`.
+   - Continue moving all remaining summary cards and quick actions onto canonical launcher-backed adapters.
 
 2. **Time-range and tenant filters:**
-   - Top-level filters to scope dashboard metrics.
+   - Add scoping controls only when launcher-backed summary data genuinely needs them.
 
 3. **Alerting hooks:**
-   - Integrate with observability (alerts/logs) and data-fabric status to show ingestion issues.
+   - Keep alert entry points role-gated and secondary to the primary outcome launchers even though a live operator alerts surface now exists.
 
 4. **Storage usage & cost surfaces:**
    - Add tiles/sections for storage by tier and by dataset, plus estimated storage cost, with links into a dedicated cost explorer.
@@ -183,30 +168,20 @@ A full production dashboard should:
 ```text
 Header
 -------------------------------------------------------------------------------
-Dashboard                              [ New Workflow ]
-"Overview of your workflows and executions"
+Intelligent Hub                         [ Explore Data ] [ Create Pipeline ]
+"Start from the outcome you need, then drill into operator views only when necessary"
 
-KPI Row
+Primary Launchers
 -------------------------------------------------------------------------------
-| Total Workflows: 12 | Active Workflows: 8 | Total Executions: 3,452 |
-| Success Rate: 97.5% | Avg. Execution Time: 2.3s                     |
+[ Data ] [ Pipelines ] [ Query ]
 
-Collections & Workflows
+Operator Launchers (role-gated)
 -------------------------------------------------------------------------------
-[ Collections card ]                         [ Workflows card ]
-- Total Collections: 7                       - Active Workflows: 5 / 12
-- Recent Collections:                        - Recent Activities:
-  • "Orders" – 1,234 entities, Active         • "Nightly ETL" – last run today, completed
-  • "Customers" – 542 entities, Active        • "User Sync" – last run yesterday, failed
+[ Insights ] [ Trust ] [ Events ]
 
-Audit & Compliance
+Recent Activity / Continue Working
 -------------------------------------------------------------------------------
-Audit Logs (Last 24h: 37)                   Compliance (Score: 92%)
-- "Created workflow Data Export" (success)  - Data Retention – Compliant
-- "Updated collection Products" (success)   - Access Control – Compliant
-- "Failed login" (failed)                   - Audit Logging – Warning
-
-Quick Actions
--------------------------------------------------------------------------------
-[ Create New Workflow ]  [ View All Executions ]  [ Explore API Docs ]
+- "Customer Events" → `/data/col-001`
+- "Nightly ETL" → `/pipelines/wf-123?mode=advanced`
+- "Recent data quality review" → `/data?view=quality`
 ```

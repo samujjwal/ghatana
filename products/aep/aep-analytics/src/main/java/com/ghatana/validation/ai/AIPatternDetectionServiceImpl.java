@@ -1,5 +1,6 @@
 package com.ghatana.validation.ai;
 
+import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.observability.Metrics;
 import com.ghatana.validation.ai.AIPatternDetectionService.ValidationAnomalyDetectionConfig;
@@ -18,6 +19,7 @@ import com.ghatana.validation.ai.detectors.FrequencyPatternDetector;
 import com.ghatana.validation.ai.detectors.PatternDetector;
 import com.ghatana.validation.ai.detectors.SequencePatternDetector;
 import com.ghatana.validation.ai.detectors.TemporalPatternDetector;
+import com.ghatana.pattern.api.model.OperatorSpec;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,20 +28,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Default implementation of AI pattern detection service composed from detector modules.
-
+ * Default implementation of AI pattern detection service using ML-based operator generation.
  *
  * @doc.type class
- * @doc.purpose Aipattern detection service implementation
+ * @doc.purpose AI pattern detection service implementation with ML
  * @doc.layer core
  * @doc.pattern Service
-*/
+ */
 public class AIPatternDetectionServiceImpl implements AIPatternDetectionService {
 
     private static final Logger logger = LoggerFactory.getLogger(AIPatternDetectionServiceImpl.class);
@@ -48,12 +50,31 @@ public class AIPatternDetectionServiceImpl implements AIPatternDetectionService 
     private final Map<String, PatternDetector> detectors;
     private final AnomalyDetector anomalyDetector;
     private final ExecutorService blockingExecutor;
+    private final Optional<MLOperatorGenerator> mlOperatorGenerator;
 
+    /**
+     * Creates an AI pattern detection service with heuristic detectors only.
+     *
+     * @param metrics metrics collector
+     */
     public AIPatternDetectionServiceImpl(Metrics metrics) {
+        this(metrics, null);
+    }
+
+    /**
+     * Creates an AI pattern detection service with ML-based operator generation.
+     *
+     * @param metrics metrics collector
+     * @param llmGateway LLM gateway for ML inference (null to disable ML)
+     */
+    public AIPatternDetectionServiceImpl(Metrics metrics, LLMGateway llmGateway) {
         this.metrics = metrics;
         this.detectors = initializeDetectors();
         this.anomalyDetector = new DefaultAnomalyDetector();
         this.blockingExecutor = Executors.newFixedThreadPool(4);
+        this.mlOperatorGenerator = llmGateway != null 
+            ? Optional.of(new MLOperatorGenerator(llmGateway, metrics))
+            : Optional.empty();
     }
 
     @Override
@@ -63,14 +84,36 @@ public class AIPatternDetectionServiceImpl implements AIPatternDetectionService 
 
             try {
                 List<DetectedPattern> allPatterns = new ArrayList<>();
-                for (Map.Entry<String, PatternDetector> entry : detectors.entrySet()) {
-                    PatternDetector detector = entry.getValue();
-                    logger.debug("Running {} pattern detector on {} events", entry.getKey(), events.size());
 
-                    List<DetectedPattern> detected = detector.detect(events, analysisConfig).stream()
-                            .filter(pattern -> pattern.confidence() >= analysisConfig.confidenceThreshold())
-                            .collect(Collectors.toList());
-                    allPatterns.addAll(detected);
+                // Use ML-based operator generation if available
+                if (mlOperatorGenerator.isPresent() && analysisConfig.useML()) {
+                    logger.info("Using ML-based operator generation for {} events", events.size());
+                    MLOperatorGenerator.GenerationConfig mlConfig = MLOperatorGenerator.GenerationConfig.builder()
+                        .temperature(analysisConfig.temperature() != null ? analysisConfig.temperature() : 0.7)
+                        .maxTokens(2000)
+                        .confidenceThreshold(analysisConfig.confidenceThreshold())
+                        .build();
+
+                    List<OperatorSpec> operators = mlOperatorGenerator.get()
+                        .generateOperators(events, mlConfig)
+                        .getResult();
+
+                    // Convert OperatorSpec to DetectedPattern
+                    for (OperatorSpec operator : operators) {
+                        allPatterns.add(convertOperatorToPattern(operator, analysisConfig));
+                    }
+                } else {
+                    // Fall back to heuristic detectors
+                    logger.debug("Using heuristic pattern detectors on {} events", events.size());
+                    for (Map.Entry<String, PatternDetector> entry : detectors.entrySet()) {
+                        PatternDetector detector = entry.getValue();
+                        logger.debug("Running {} pattern detector on {} events", entry.getKey(), events.size());
+
+                        List<DetectedPattern> detected = detector.detect(events, analysisConfig).stream()
+                                .filter(pattern -> pattern.confidence() >= analysisConfig.confidenceThreshold())
+                                .collect(Collectors.toList());
+                        allPatterns.addAll(detected);
+                    }
                 }
 
                 List<DetectedPattern> merged = mergeSimilarPatterns(allPatterns);
@@ -87,6 +130,80 @@ public class AIPatternDetectionServiceImpl implements AIPatternDetectionService 
                 throw new RuntimeException("Pattern detection failed", e);
             }
         });
+    }
+
+    /**
+     * Converts an OperatorSpec to a DetectedPattern.
+     *
+     * @param operator the operator spec
+     * @param config the analysis config
+     * @return the detected pattern
+     */
+    private DetectedPattern convertOperatorToPattern(OperatorSpec operator, PatternAnalysisConfig config) {
+        // Map operator type to pattern type
+        PatternType patternType = mapOperatorTypeToPatternType(operator.getType());
+        
+        // Extract event types from operands
+        List<String> eventTypes = extractEventTypes(operator);
+        
+        // Build description from operator structure
+        String description = buildOperatorDescription(operator);
+
+        return new DetectedPattern(
+            operator.getId(),
+            patternType,
+            operator.getType(),
+            0.85, // Default confidence from ML
+            description,
+            eventTypes,
+            operator.getParameters(),
+            List.of() // No matching events at compilation time
+        );
+    }
+
+    /**
+     * Maps operator type to pattern type.
+     */
+    private PatternType mapOperatorTypeToPatternType(String operatorType) {
+        return switch (operatorType) {
+            case "SEQ" -> PatternType.SEQUENCE;
+            case "AND", "OR" -> PatternType.CORRELATION;
+            case "FREQUENCY" -> PatternType.FREQUENCY;
+            case "TEMPORAL", "WITHIN", "UNTIL" -> PatternType.TEMPORAL;
+            default -> PatternType.ANOMALY;
+        };
+    }
+
+    /**
+     * Extracts event types from operator operands.
+     */
+    private List<String> extractEventTypes(OperatorSpec operator) {
+        List<String> eventTypes = new ArrayList<>();
+        if (operator.getOperands() != null) {
+            for (OperatorSpec operand : operator.getOperands()) {
+                Object eventType = operand.getParameter("eventType");
+                if (eventType != null) {
+                    eventTypes.add(eventType.toString());
+                }
+                // Recursively extract from nested operands
+                eventTypes.addAll(extractEventTypes(operand));
+            }
+        }
+        return eventTypes;
+    }
+
+    /**
+     * Builds a human-readable description from operator structure.
+     */
+    private String buildOperatorDescription(OperatorSpec operator) {
+        StringBuilder desc = new StringBuilder();
+        desc.append("ML-generated pattern: ").append(operator.getType());
+        
+        if (operator.getParameters() != null && !operator.getParameters().isEmpty()) {
+            desc.append(" with parameters ").append(operator.getParameters());
+        }
+        
+        return desc.toString();
     }
 
     @Override

@@ -446,6 +446,195 @@ export class RecommendationService {
   }
 
   /**
+   * Get AI-powered personalized recommendations for dashboard.
+   * Infers recommendations from user progress and tenant context.
+   */
+  async getPersonalizedRecommendations(
+    tenantId: string,
+    userId: string,
+    options: { limit?: number; excludeEnrolled?: boolean } = {},
+  ): Promise<{
+    modules: Array<{
+      id: string;
+      title: string;
+      slug: string;
+      description?: string;
+      domain?: string;
+      difficultyLevel?: string;
+      estimatedTimeMinutes?: number;
+      tags: string[];
+      isAiRecommended: boolean;
+      recommendationReason?: string;
+      matchScore: number;
+    }>;
+    reasoning: {
+      basedOn: string;
+      userLevel: string;
+      suggestedDomains: string[];
+    };
+  }> {
+    const limit = options.limit ?? 6;
+
+    // Get user's enrollments and progress
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId, tenantId },
+      include: { module: true },
+    });
+
+    const enrolledModuleIds = new Set(enrollments.map((e) => e.moduleId));
+    const completedModules = enrollments.filter((e) => e.status === "completed");
+    const inProgressModules = enrollments.filter((e) => e.status === "active");
+
+    // Calculate user learning profile
+    const userDomains = new Map<string, number>();
+    const userProgressSum = enrollments.reduce((sum, e) => sum + (e.progressPercent ?? 0), 0);
+    const averageProgress = enrollments.length > 0 ? userProgressSum / enrollments.length : 0;
+
+    for (const enrollment of enrollments) {
+      if (enrollment.module?.domain) {
+        const current = userDomains.get(enrollment.module.domain) ?? 0;
+        userDomains.set(enrollment.module.domain, current + 1);
+      }
+    }
+
+    // Determine user level based on progress and completed modules
+    const userLevel =
+      completedModules.length >= 5 || averageProgress > 75
+        ? "advanced"
+        : completedModules.length >= 2 || averageProgress > 40
+          ? "intermediate"
+          : "beginner";
+
+    // Get candidate modules based on user's context
+    const candidateWhere: Record<string, unknown> = {
+      tenantId,
+      status: "PUBLISHED",
+    };
+
+    if (options.excludeEnrolled !== false) {
+      candidateWhere.id = { notIn: Array.from(enrolledModuleIds) };
+    }
+
+    // Prioritize modules from user's domains of interest
+    const preferredDomains = Array.from(userDomains.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([domain]) => domain);
+
+    if (preferredDomains.length > 0) {
+      candidateWhere.OR = [
+        { domain: { in: preferredDomains } },
+        { difficultyLevel: userLevel },
+      ];
+    } else {
+      // For new users, get popular modules from tenant
+      candidateWhere.difficultyLevel = { in: ["beginner", "elementary", "intermediate"] };
+    }
+
+    const candidates = await this.prisma.contentAsset.findMany({
+      where: candidateWhere,
+      take: limit * 2,
+      orderBy: [{ qualityScore: "desc" }, { updatedAt: "desc" }],
+    });
+
+    // Score and rank candidates using AI-inspired algorithm
+    const scoredModules = candidates.map((module) => {
+      let score = 0;
+      const reasons: string[] = [];
+
+      // Base quality score
+      score += normalizeQualityScore(module.qualityScore) * 0.25;
+
+      // Domain match boost
+      if (preferredDomains.includes(module.domain ?? "")) {
+        score += 0.3;
+        reasons.push(`Popular in ${module.domain}`);
+      }
+
+      // Difficulty level fit
+      const difficultyFit = this.scoreDifficultyFit(
+        module.difficultyLevel,
+        averageProgress / 100,
+      );
+      score += difficultyFit * 0.25;
+
+      if (difficultyFit > 0.8) {
+        reasons.push("Matches your skill level");
+      }
+
+      // Trending/popularity boost for new users
+      if (preferredDomains.length === 0 && module.qualityScore && module.qualityScore > 70) {
+        score += 0.15;
+        reasons.push("Trending now");
+      }
+
+      // Generate recommendation reason
+      let recommendationReason: string | undefined;
+      if (reasons.length > 0) {
+        recommendationReason = reasons[0];
+      } else if (module.difficultyLevel === userLevel) {
+        recommendationReason = `Great for ${userLevel} learners`;
+      }
+
+      return {
+        module: this.mapAsset(module),
+        score,
+        recommendationReason,
+        isAiRecommended: score > 0.6,
+      };
+    });
+
+    // Sort by score and take top N
+    const topModules = scoredModules
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(({ module, score, recommendationReason, isAiRecommended }) => ({
+        ...module,
+        slug: module.legacyModuleId ?? module.id,
+        tags: module.tags ?? [],
+        estimatedTimeMinutes: module.estimatedMinutes,
+        isAiRecommended,
+        recommendationReason,
+        matchScore: score,
+      }));
+
+    return {
+      modules: topModules,
+      reasoning: {
+        basedOn:
+          preferredDomains.length > 0
+            ? "your learning history"
+            : "popular modules for new learners",
+        userLevel,
+        suggestedDomains: preferredDomains.length > 0 ? preferredDomains : ["general"],
+      },
+    };
+  }
+
+  private scoreDifficultyFit(
+    difficultyLevel: string | null | undefined,
+    averageProgress: number,
+  ): number {
+    const level = difficultyLevel?.toLowerCase() ?? "intermediate";
+
+    if (averageProgress >= 0.75) {
+      if (level === "advanced" || level === "expert") return 1;
+      if (level === "intermediate") return 0.75;
+      return 0.4;
+    }
+
+    if (averageProgress <= 0.35) {
+      if (level === "beginner" || level === "elementary") return 1;
+      if (level === "intermediate") return 0.65;
+      return 0.25;
+    }
+
+    if (level === "intermediate") return 1;
+    if (level === "advanced" || level === "beginner") return 0.7;
+    return 0.55;
+  }
+
+  /**
    * Bootstrap recommendation edges for an asset using rule-based strategies.
    */
   async bootstrapEdges(

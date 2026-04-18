@@ -28,7 +28,7 @@ export interface Artifact {
   createdBy: string;
   projectId: string;
   phase: LifecyclePhase;
-  fowStage: FOWStage;
+  flowStage: FOWStage;
   content?: unknown;
   linkedArtifacts?: string[];
   version: number;
@@ -41,7 +41,7 @@ export interface Evidence {
   description?: string;
   timestamp: Date;
   phase: LifecyclePhase;
-  fowStage: FOWStage;
+  flowStage: FOWStage;
   status?: 'draft' | 'review' | 'approved';
   artifactId?: string;
   metadata?: Record<string, unknown>;
@@ -52,7 +52,7 @@ export interface Task {
   title: string;
   description: string;
   phase: LifecyclePhase;
-  fowStage: FOWStage;
+  flowStage: FOWStage;
   persona: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
   estimatedEffort?: number;
@@ -82,7 +82,7 @@ export interface AuditEvent {
   userId: string;
   projectId: string;
   artifactId?: string;
-  fowStage: FOWStage;
+  flowStage: FOWStage;
   phase: LifecyclePhase;
   metadata?: Record<string, unknown>;
   description: string;
@@ -95,7 +95,7 @@ export interface AIRecommendation {
   description: string;
   confidence: number;
   phase: LifecyclePhase;
-  fowStage: FOWStage;
+  flowStage: FOWStage;
   persona: string;
   priority: 'low' | 'medium' | 'high';
   actionable: boolean;
@@ -314,7 +314,7 @@ export const artifactAPI = {
     stage: FOWStage
   ): Promise<Artifact[]> => {
     return fetchAPI<Artifact[]>(
-      `/projects/${projectId}/artifacts?fowStage=${stage}`
+      `/projects/${projectId}/artifacts?flowStage=${stage}`
     );
   },
 };
@@ -407,10 +407,12 @@ export const taskAPI = {
     input: Record<string, unknown>
   ): Promise<{
     taskId: string;
-    status: 'completed' | 'failed';
-    steps: Array<{ id: string; status: string; output?: string }>;
-    artifacts: Artifact[];
-    logs: string[];
+    status: 'completed' | 'failed' | 'queued';
+    message?: string;
+    recommendation?: string;
+    steps?: Array<{ id: string; status: string; output?: string }>;
+    artifacts?: Artifact[];
+    logs?: string[];
   }> => {
     return fetchAPI(`/tasks/${taskId}/execute`, {
       method: 'POST',
@@ -468,7 +470,7 @@ export const aiAPI = {
     projectId: string,
     context: {
       phase: LifecyclePhase;
-      fowStage: FOWStage;
+      flowStage: FOWStage;
       persona?: string;
       recentActivity?: string[];
     }
@@ -516,15 +518,15 @@ export const auditAPI = {
   getAuditEvents: async (
     projectId: string,
     filters?: {
-      fowStage?: FOWStage;
+      flowStage?: FOWStage;
       phase?: LifecyclePhase;
       startDate?: Date;
       endDate?: Date;
     }
   ): Promise<AuditEvent[]> => {
     const params = new URLSearchParams();
-    if (filters?.fowStage !== undefined)
-      params.append('fowStage', filters.fowStage.toString());
+    if (filters?.flowStage !== undefined)
+      params.append('flowStage', filters.flowStage.toString());
     if (filters?.phase) params.append('phase', filters.phase);
     if (filters?.startDate)
       params.append('startDate', filters.startDate.toISOString());
@@ -561,7 +563,7 @@ export const personaAPI = {
   derivePersona: async (context: {
     projectId: string;
     phase: LifecyclePhase;
-    fowStage: FOWStage;
+    flowStage: FOWStage;
     recentTasks?: string[];
     recentArtifacts?: ArtifactType[];
   }): Promise<{

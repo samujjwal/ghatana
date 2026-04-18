@@ -7,7 +7,7 @@
  * Aligned with yappc_unified_ux_and_execution_spec.md Section 5.
  *
  * @doc.type types
- * @doc.purpose FOW stage definitions and mappings
+ * @doc.purpose FOW Stage definitions and mappings
  * @doc.layer product
  * @doc.pattern Type System
  */
@@ -114,7 +114,7 @@ export interface GateResult {
 }
 
 /**
- * Complete FOW stage configuration
+ * Complete FOW Stage configuration
  */
 export interface FOWStageConfig {
   /** Stage ID */
@@ -177,7 +177,7 @@ export const FOW_STAGE_DESCRIPTIONS: Record<FOWStage, string> = {
 };
 
 /**
- * Complete FOW stage configurations
+ * Complete FOW Stage configurations
  */
 export const FOW_STAGE_CONFIGS: Record<FOWStage, FOWStageConfig> = {
   [FOWStage.FOUNDATION]: {
@@ -405,7 +405,7 @@ export const FOW_STAGE_ORDER: FOWStage[] = [
 // ============================================================================
 
 /**
- * Get FOW stage for a given canvas phase
+ * Get FOW Stage for a given canvas phase
  */
 export function getFOWStageForPhase(
   phase: LifecyclePhase,
@@ -431,7 +431,7 @@ export function getFOWStageForPhase(
 }
 
 /**
- * Get next FOW stage
+ * Get next FOW Stage
  */
 export function getNextFOWStage(currentStage: FOWStage): FOWStage | null {
   const currentIndex = FOW_STAGE_ORDER.indexOf(currentStage);
@@ -442,7 +442,7 @@ export function getNextFOWStage(currentStage: FOWStage): FOWStage | null {
 }
 
 /**
- * Get previous FOW stage
+ * Get previous FOW Stage
  */
 export function getPreviousFOWStage(currentStage: FOWStage): FOWStage | null {
   const currentIndex = FOW_STAGE_ORDER.indexOf(currentStage);
@@ -453,7 +453,7 @@ export function getPreviousFOWStage(currentStage: FOWStage): FOWStage | null {
 }
 
 /**
- * Check if phase is available in current FOW stage
+ * Check if phase is available in current FOW Stage
  */
 export function isPhaseAvailableInStage(
   phase: LifecyclePhase,

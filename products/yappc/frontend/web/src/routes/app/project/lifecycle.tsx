@@ -114,7 +114,7 @@ export default function Component() {
 
     const { data: recommendations = [] } = useAIRecommendations(resolvedProjectId, {
         phase: currentPhase,
-        fowStage: currentStage,
+        flowStage: currentStage,
         recentActivity: ['lifecycle-route'],
     });
     const { data: insights = [] } = useAIInsights(resolvedProjectId);
@@ -167,7 +167,7 @@ export default function Component() {
 
         void (async () => {
             try {
-                await executeTask.mutateAsync({
+                const result = await executeTask.mutateAsync({
                     taskId: nextTask.id,
                     input: {
                         projectId: resolvedProjectId,
@@ -175,7 +175,16 @@ export default function Component() {
                         phase: currentPhase,
                     },
                 });
-                setAutomationFeedback(`Automation started for ${nextTask.title}.`);
+
+                // Handle queued status when CI/CD adapter is not connected
+                if (result && typeof result === 'object' && 'status' in result && result.status === 'queued') {
+                    const message = 'message' in result && typeof result.message === 'string'
+                        ? result.message
+                        : 'Task queued for execution. CI/CD adapter not yet connected.';
+                    setAutomationFeedback(message);
+                } else {
+                    setAutomationFeedback(`Automation started for ${nextTask.title}.`);
+                }
             } catch (error) {
                 setAutomationFeedback(
                     error instanceof Error
@@ -383,7 +392,7 @@ export default function Component() {
                                         'div',
                                         { className: 'mt-3 flex flex-wrap gap-3 text-xs text-text-secondary' },
                                         createElement('span', null, insight.type),
-                                        createElement('span', null, FOW_STAGE_LABELS[insight.fowStage]),
+                                        createElement('span', null, FOW_STAGE_LABELS[insight.flowStage]),
                                         createElement('span', null, String(insight.timestamp))
                                     )
                                 )

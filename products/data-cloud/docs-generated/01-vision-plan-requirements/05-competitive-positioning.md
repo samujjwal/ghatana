@@ -96,6 +96,7 @@ Reference vendors include Feast or Tecton-style feature infrastructure.
 | Ecosystem maturity is unclear                    | Plugin model exists, but partner and adoption story does not                           |
 | Warehouse-replacement story is not strong enough | The platform is broader than a warehouse but not yet proven as a replacement narrative |
 | Enterprise trust language is inconsistent        | Contradictory isolation and readiness statements will slow enterprise adoption         |
+| Operator console story is stronger than full BI/reporting polish | Current product truth favors `/query`, `/data`, `/pipelines`, and operator insights over a full BI-style surface |
 
 ---
 

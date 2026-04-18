@@ -69,7 +69,7 @@ import { CanvasOverlays } from './CanvasOverlays';
 export interface CanvasWorkspaceProps {
     projectId: string;
     currentPhase: LifecyclePhase;
-    fowStage: FOWStage;
+    flowStage: FOWStage;
 }
 
 // ============================================================================
@@ -86,7 +86,7 @@ export interface CanvasWorkspaceProps {
 export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     projectId,
     currentPhase,
-    fowStage,
+    flowStage,
 }) => {
     // ── Jotai atoms (UI state only – no domain logic) ──────────────────
     const [activePersona, setActivePersona] = useAtom(activePersonaAtom);
@@ -220,9 +220,9 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const commandRegistry = useAtomValue(sortedCommandsAtom);
 
     // Server data
-    const { data: gateStatus } = useGateStatus(projectId, fowStage);
+    const { data: gateStatus } = useGateStatus(projectId, flowStage);
     const { data: nextTask } = useNextBestTask(projectId, currentPhase);
-    const { data: personaData } = useDerivedPersona({ projectId, phase: currentPhase, fowStage });
+    const { data: personaData } = useDerivedPersona({ projectId, phase: currentPhase, flowStage });
     const { data: artifacts } = useArtifacts(projectId);
     const userRole = useAtomValue(userRoleAtom);
     const userId = useAtomValue(userIdAtom);
@@ -231,7 +231,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const handlers = useCanvasHandlers({
         projectId,
         currentPhase,
-        fowStage,
+        flowStage,
         personaName: personaData?.persona,
         artifacts,
         userId,
@@ -513,7 +513,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         async (query: string): Promise<AISuggestion[]> => {
             try {
                 const recs = await lifecycleAPI.ai.getRecommendations(projectId, {
-                    phase: currentPhase, fowStage,
+                    phase: currentPhase, flowStage,
                     persona: activePersona || personaData?.persona,
                     recentActivity: [query],
                 });
@@ -529,7 +529,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 return [];
             }
         },
-        [projectId, currentPhase, fowStage, activePersona, personaData],
+        [projectId, currentPhase, flowStage, activePersona, personaData],
     );
 
     // ── Workspace Panels ───────────────────────────────────────────────
@@ -547,7 +547,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     // ── Render ─────────────────────────────────────────────────────────
     // Loading guard — placed after all hooks to comply with Rules of Hooks
-    if (fowStage === undefined) {
+    if (flowStage === undefined) {
         return (
             <Box className="w-full h-full flex items-center justify-center flex-col">
                 <CircularProgress />

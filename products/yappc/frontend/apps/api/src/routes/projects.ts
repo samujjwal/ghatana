@@ -132,8 +132,13 @@ function generateNextActions(project: {
 
 /**
  * Calculate rule-based health score based on project metrics.
+ * Returns a labeled estimate with score and qualitative label.
  */
-async function calculateHealthScore(projectId: string): Promise<number> {
+async function calculateHealthScore(projectId: string): Promise<{
+  score: number;
+  label: 'Excellent' | 'Good' | 'Fair' | 'Poor' | 'Critical';
+  factors: string[];
+}> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
@@ -142,28 +147,65 @@ async function calculateHealthScore(projectId: string): Promise<number> {
     },
   });
 
-  if (!project) return 0;
+  if (!project) {
+    return { score: 0, label: 'Critical', factors: ['Project not found'] };
+  }
 
   let score = 50; // Base score
+  const factors: string[] = [];
 
   // Has description: +10
-  if (project.description) score += 10;
+  if (project.description) {
+    score += 10;
+    factors.push('Has description');
+  }
 
   // Has documents: +20
-  if (project.documents.length > 0) score += 20;
+  if (project.documents.length > 0) {
+    score += 20;
+    factors.push(`Has ${project.documents.length} document(s)`);
+  }
 
   // Has pages: +10
-  if (project.pages.length > 0) score += 10;
+  if (project.pages.length > 0) {
+    score += 10;
+    factors.push(`Has ${project.pages.length} page(s)`);
+  }
 
   // Active status: +10
-  if (project.status === 'ACTIVE') score += 10;
+  if (project.status === 'ACTIVE') {
+    score += 10;
+    factors.push('Project is active');
+  }
 
   // Recently updated: +10 (within 7 days)
   const daysSinceUpdate =
     (Date.now() - project.updatedAt.getTime()) / (1000 * 60 * 60 * 24);
-  if (daysSinceUpdate < 7) score += 10;
+  if (daysSinceUpdate < 7) {
+    score += 10;
+    factors.push('Recently updated');
+  } else if (daysSinceUpdate > 30) {
+    score -= 10;
+    factors.push('Stale (not updated in 30+ days)');
+  }
 
-  return Math.min(100, score);
+  score = Math.min(100, Math.max(0, score));
+
+  // Determine label based on score
+  let label: 'Excellent' | 'Good' | 'Fair' | 'Poor' | 'Critical';
+  if (score >= 85) {
+    label = 'Excellent';
+  } else if (score >= 70) {
+    label = 'Good';
+  } else if (score >= 50) {
+    label = 'Fair';
+  } else if (score >= 30) {
+    label = 'Poor';
+  } else {
+    label = 'Critical';
+  }
+
+  return { score, label, factors };
 }
 
 /**
@@ -530,10 +572,10 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       });
 
       // Calculate initial health score
-      const aiHealthScore = await calculateHealthScore(project.id);
+      const healthResult = await calculateHealthScore(project.id);
       await prisma.project.update({
         where: { id: project.id },
-        data: { aiHealthScore },
+        data: { aiHealthScore: healthResult.score },
       });
 
       await logProjectCreatedAuditEvent({
@@ -605,14 +647,14 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       });
 
       // Recalculate health score
-      const aiHealthScore = await calculateHealthScore(project.id);
+      const healthResult = await calculateHealthScore(project.id);
       await prisma.project.update({
         where: { id: project.id },
-        data: { aiHealthScore },
+        data: { aiHealthScore: healthResult.score },
       });
 
       return reply.send({
-        project: { ...project, aiHealthScore, isOwned: true },
+        project: { ...project, aiHealthScore: healthResult.score, isOwned: true },
       });
     }
   );
@@ -793,8 +835,6 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         projects: projects.map((p: { ownerWorkspace: { name: string } }) => ({
           ...p,
           ownerWorkspaceName: p.ownerWorkspace.name,
-          // Simple AI compatibility score based on type match
-          aiCompatibilityScore: Math.floor(60 + Math.random() * 35),
         })),
       });
     }
@@ -866,14 +906,14 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Project not found' });
       }
 
-      const [aiNextActions, aiHealthScore] = await Promise.all([
+      const [aiNextActions, healthResult] = await Promise.all([
         Promise.resolve(generateNextActions(project)),
         calculateHealthScore(projectId),
       ]);
 
       const updated = await prisma.project.update({
         where: { id: projectId },
-        data: { aiNextActions, aiHealthScore },
+        data: { aiNextActions, aiHealthScore: healthResult.score },
       });
 
       return reply.send({ project: updated });

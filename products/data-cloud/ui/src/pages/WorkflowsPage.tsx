@@ -32,8 +32,18 @@ import {
     Zap,
     Shield,
     BarChart2,
+    ChevronDown,
+    ChevronRight,
+    CheckCircle2,
+    ArrowRight,
 } from 'lucide-react';
 import { getPipelineOptimisationHints, aiQueryKeys, type PipelineOptimisationHint } from '../lib/api/ai';
+import {
+    WORKFLOW_HINTS_DEGRADED_DETAIL,
+    WORKFLOW_HINTS_DEGRADED_TITLE,
+    WORKFLOW_HINTS_UNAVAILABLE_DETAIL,
+    WORKFLOW_HINTS_UNAVAILABLE_TITLE,
+} from '../lib/runtime-boundaries';
 import { cn } from '../lib/theme';
 import { workflowsApi, type Workflow } from '../lib/api/workflows';
 
@@ -99,6 +109,78 @@ function WorkflowActions({ workflow }: { workflow: Workflow }) {
     );
 }
 
+function formatRunTime(timestamp?: string): string {
+    if (!timestamp) {
+        return 'No runs yet';
+    }
+
+    return new Date(timestamp).toLocaleString();
+}
+
+function getWorkflowFocusLabel(workflow: Workflow): {
+    title: string;
+    description: string;
+    tone: 'attention' | 'healthy' | 'draft';
+} {
+    if (workflow.status === 'paused') {
+        return {
+            title: 'Resume or archive',
+            description: 'This pipeline is paused. Decide whether it should resume or leave the active queue.',
+            tone: 'attention',
+        };
+    }
+
+    if (workflow.status === 'draft') {
+        return {
+            title: 'Finish the first run',
+            description: workflow.lastExecutedAt
+                ? 'Review the draft and promote it when the current flow is ready.'
+                : 'This draft has not been run yet. Validate the outcome and schedule before promotion.',
+            tone: 'draft',
+        };
+    }
+
+    if (workflow.status === 'archived') {
+        return {
+            title: 'Reference only',
+            description: 'Keep this pipeline archived unless a previous flow needs to be restored or compared.',
+            tone: 'healthy',
+        };
+    }
+
+    return {
+        title: workflow.lastExecutedAt ? 'Check the latest outcome' : 'Run the first execution',
+        description: workflow.lastExecutedAt
+            ? 'Active pipeline. Confirm the most recent run completed the intended outcome.'
+            : 'Active pipeline with no recorded execution yet. Trigger an initial run before broad rollout.',
+        tone: workflow.lastExecutedAt ? 'healthy' : 'attention',
+    };
+}
+
+function getWorkflowToneClass(tone: 'attention' | 'healthy' | 'draft'): string {
+    if (tone === 'attention') {
+        return 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30';
+    }
+
+    if (tone === 'draft') {
+        return 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30';
+    }
+
+    return 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30';
+}
+
+function getWorkflowToneIcon(tone: 'attention' | 'healthy' | 'draft'): React.ReactElement {
+    if (tone === 'attention') {
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+    }
+
+    if (tone === 'draft') {
+        return <Clock className="h-4 w-4 text-blue-500" />;
+    }
+
+    return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+}
+
 // ── Hint type icon mapping ─────────────────────────────────────────────────
 function HintTypeIcon({ type }: { type: PipelineOptimisationHint['type'] }) {
     switch (type) {
@@ -138,10 +220,10 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <div className="flex items-center gap-2 font-medium">
                     <AlertTriangle className="h-4 w-4" />
-                    AI optimisation hints unavailable
+                    {WORKFLOW_HINTS_UNAVAILABLE_TITLE}
                 </div>
                 <p className="mt-1">
-                    Runtime capability truth reports AI assist as unavailable in this deployment. Workflow monitoring remains available without generated hints.
+                    {WORKFLOW_HINTS_UNAVAILABLE_DETAIL}
                 </p>
             </div>
         );
@@ -152,10 +234,10 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <div className="flex items-center gap-2 font-medium">
                     <AlertTriangle className="h-4 w-4" />
-                    AI optimisation hints degraded
+                    {WORKFLOW_HINTS_DEGRADED_TITLE}
                 </div>
                 <p className="mt-1">
-                    {aiAssistCapability.detail ?? 'AI assist is degraded. Any generated hints should be treated as advisory.'}
+                    {aiAssistCapability.detail ?? WORKFLOW_HINTS_DEGRADED_DETAIL}
                 </p>
             </div>
         );
@@ -180,7 +262,7 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
         <div>
             <h3 className="flex items-center gap-1.5 text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">
                 <Sparkles className="h-4 w-4" />
-                AI Optimisation Hints
+                Inline AI Recommendations
                 {data?.data?.hints.some(h => h.fallback) && (
                     <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded ml-1">
                         estimated
@@ -231,6 +313,7 @@ export function WorkflowsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+    const [showAdvancedDetails, setShowAdvancedDetails] = useState(false);
 
     const { data: workflowsPage, isLoading, refetch } = useQuery({
         queryKey: ['workflows', searchQuery, statusFilter],
@@ -243,6 +326,10 @@ export function WorkflowsPage() {
     });
 
     const workflows = workflowsPage?.items ?? [];
+    const visibleWorkflows = workflows.slice(0, 12);
+    const workflowsNeedingAttention = workflows.filter((workflow) => workflow.status === 'paused' || (workflow.status === 'draft' && !workflow.lastExecutedAt)).length;
+    const workflowsScheduled = workflows.filter((workflow) => workflow.schedule != null && workflow.schedule !== '').length;
+    const workflowsRecentlyRun = workflows.filter((workflow) => workflow.lastExecutedAt != null).length;
 
     const stats = useMemo(() => ({
         total: workflowsPage?.total ?? workflows.length,
@@ -261,7 +348,7 @@ export function WorkflowsPage() {
     ];
 
     return (
-        <div className="p-6">
+        <div className="p-6" data-testid="workflows-page">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
@@ -269,7 +356,7 @@ export function WorkflowsPage() {
                         Workflows
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">
-                        Monitor and manage your automated workflows
+                        Focus on what needs a run, what is stalled, and what should happen next.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -282,11 +369,32 @@ export function WorkflowsPage() {
                     </button>
                     <Link
                         to="/pipelines/new"
+                        data-testid="create-pipeline-button"
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         <Plus className="h-4 w-4" />
-                        New Workflow
+                        New Pipeline
                     </Link>
+                </div>
+            </div>
+
+            <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30" data-testid="workflow-outcome-banner">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Outcome-First View</p>
+                        <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">Keep the list about outcomes, not pipeline internals</h2>
+                        <p className="mt-1 text-sm text-blue-900/80 dark:text-blue-100/80">
+                            Review the most important next action for each workflow here, then open the advanced editor only when the flow itself needs deeper changes.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/pipelines/new')}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                        Start a new pipeline
+                        <ArrowRight className="h-4 w-4" />
+                    </button>
                 </div>
             </div>
 
@@ -305,12 +413,23 @@ export function WorkflowsPage() {
                 </div>
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                     <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Needs Attention</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">{workflowsNeedingAttention}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
                         <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
                             <Play className="h-5 w-5 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Recently Run</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">{workflowsRecentlyRun}</p>
                         </div>
                     </div>
                 </div>
@@ -320,8 +439,8 @@ export function WorkflowsPage() {
                             <Pause className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Paused</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.paused}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Scheduled</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">{workflowsScheduled}</p>
                         </div>
                     </div>
                 </div>
@@ -331,19 +450,8 @@ export function WorkflowsPage() {
                             <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Draft</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.draft}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                            <Square className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Archived</p>
-                            <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.archived}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Draft / Archived</p>
+                            <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.draft + stats.archived}</p>
                         </div>
                     </div>
                 </div>
@@ -355,7 +463,7 @@ export function WorkflowsPage() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <input
                         type="text"
-                        placeholder="Search workflows..."
+                        placeholder="Search workflows by outcome, schedule, or owner..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -364,6 +472,7 @@ export function WorkflowsPage() {
                 <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-gray-500" />
                     <select
+                        data-testid="workflow-status-filter"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
@@ -377,13 +486,13 @@ export function WorkflowsPage() {
                 </div>
             </div>
 
-            {/* Workflows List */}
+            {/* Pipelines list */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
                 {isLoading ? (
                     <div className="flex items-center justify-center p-8">
                         <div className="flex items-center gap-2 text-gray-500">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-sm">Loading workflows...</span>
+                            <span className="text-sm">Loading pipelines...</span>
                         </div>
                     </div>
                 ) : workflows.length === 0 ? (
@@ -399,86 +508,115 @@ export function WorkflowsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Workflow
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Last Executed
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Schedule
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                {workflows.map((workflow) => (
-                                    <tr
-                                        key={workflow.id}
-                                        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                                        onClick={() => setSelectedWorkflow(workflow)}
-                                    >
-                                        <td className="px-6 py-4">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {visibleWorkflows.map((workflow) => {
+                            const focus = getWorkflowFocusLabel(workflow);
+
+                            return (
+                                <div
+                                    key={workflow.id}
+                                    className="p-5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40"
+                                >
+                                    <div className="flex items-start justify-between gap-4">
+                                        <button
+                                            type="button"
+                                            data-testid="workflow-item"
+                                            onClick={() => {
+                                                setSelectedWorkflow(workflow);
+                                                setShowAdvancedDetails(false);
+                                            }}
+                                            className="flex-1 text-left"
+                                        >
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg shrink-0">
-                                                    <WorkflowIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900 shrink-0">
+                                                    <WorkflowIcon className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">{workflow.name}</h3>
+                                                        <span className={cn('px-2 py-1 rounded-full text-xs font-medium capitalize', getStatusColor(workflow.status))}>
+                                                            {workflow.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                                                        {workflow.description || 'No pipeline summary provided yet.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <div onClick={(e) => e.stopPropagation()}>
+                                            <WorkflowActions workflow={workflow} />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                                        <div className={cn('rounded-xl border px-4 py-3', getWorkflowToneClass(focus.tone))}>
+                                            <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                                                {getWorkflowToneIcon(focus.tone)}
+                                                {focus.title}
+                                            </div>
+                                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{focus.description}</p>
+                                        </div>
+
+                                        <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/40">
+                                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Last run</p>
+                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{formatRunTime(workflow.lastExecutedAt)}</p>
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                                        {workflow.name}
-                                                    </div>
-                                                    {workflow.description && (
-                                                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                                                            {workflow.description}
-                                                        </div>
-                                                    )}
-                                                    {workflow.tags && workflow.tags.length > 0 && (
-                                                        <div className="flex gap-1 mt-1">
-                                                            {workflow.tags.slice(0, 2).map((tag: string) => (
-                                                                <span key={tag} className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 px-2 py-0.5 rounded">
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
-                                                            {workflow.tags.length > 2 && (
-                                                                <span className="text-xs text-gray-400">+{workflow.tags.length - 2}</span>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Schedule</p>
+                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{workflow.schedule ?? 'Manual'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Flow size</p>
+                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{workflow.nodes.length} steps / {workflow.edges.length} links</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Owner</p>
+                                                    <p className="mt-1 font-medium text-gray-900 dark:text-white">{workflow.createdBy}</p>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
-                                                {getStatusIcon(workflow.status)}
-                                                <span className={cn('px-2 py-1 rounded-full text-xs font-medium capitalize', getStatusColor(workflow.status))}>
-                                                    {workflow.status}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                                        <div className="flex flex-wrap gap-2">
+                                            {workflow.tags.slice(0, 3).map((tag) => (
+                                                <span key={tag} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                                    {tag}
                                                 </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                            {workflow.lastExecutedAt
-                                                ? new Date(workflow.lastExecutedAt).toLocaleString()
-                                                : '—'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                            {workflow.schedule ?? '—'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                                            <WorkflowActions workflow={workflow} />
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                            ))}
+                                            {workflow.tags.length === 0 && (
+                                                <span className="text-xs text-gray-400">No tags yet</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                data-testid={`advanced-editor-${workflow.id}`}
+                                                onClick={() => navigate(`/pipelines/${workflow.id}`)}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                            >
+                                                Advanced editor
+                                                <ArrowRight className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                data-testid={`review-pipeline-${workflow.id}`}
+                                                onClick={() => {
+                                                    setSelectedWorkflow(workflow);
+                                                    setShowAdvancedDetails(false);
+                                                }}
+                                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                                            >
+                                                Review pipeline
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -486,7 +624,7 @@ export function WorkflowsPage() {
             {/* Workflow Detail Modal */}
             {selectedWorkflow && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4" data-testid="workflow-review-modal">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                                 {selectedWorkflow.name}
@@ -500,9 +638,19 @@ export function WorkflowsPage() {
                         </div>
 
                         <div className="space-y-4">
+                            <div className={cn('rounded-xl border px-4 py-3', getWorkflowToneClass(getWorkflowFocusLabel(selectedWorkflow).tone))}>
+                                <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                                    {getWorkflowToneIcon(getWorkflowFocusLabel(selectedWorkflow).tone)}
+                                    {getWorkflowFocusLabel(selectedWorkflow).title}
+                                </div>
+                                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                    {getWorkflowFocusLabel(selectedWorkflow).description}
+                                </p>
+                            </div>
+
                             {selectedWorkflow.description && (
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Description</h3>
+                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Outcome summary</h3>
                                     <p className="text-gray-900 dark:text-white">{selectedWorkflow.description}</p>
                                 </div>
                             )}
@@ -518,40 +666,62 @@ export function WorkflowsPage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Last Executed</h3>
-                                    <p className="text-gray-900 dark:text-white text-sm">
-                                        {selectedWorkflow.lastExecutedAt
-                                            ? new Date(selectedWorkflow.lastExecutedAt).toLocaleString()
-                                            : '—'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Schedule</h3>
-                                    <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.schedule ?? 'Manual'}</p>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Created</h3>
-                                    <p className="text-gray-900 dark:text-white text-sm">
-                                        {new Date(selectedWorkflow.createdAt).toLocaleDateString()}
-                                    </p>
+                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Latest run</h3>
+                                    <p className="text-gray-900 dark:text-white text-sm">{formatRunTime(selectedWorkflow.lastExecutedAt)}</p>
                                 </div>
                             </div>
 
-            {selectedWorkflow.tags && selectedWorkflow.tags.length > 0 && (
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Tags</h3>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {selectedWorkflow.tags.map((tag: string) => (
-                                            <span key={tag} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm">
-                                                {tag}
-                                            </span>
-                                        ))}
+                            <button
+                                type="button"
+                                data-testid="workflow-advanced-toggle"
+                                onClick={() => setShowAdvancedDetails((current) => !current)}
+                                className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                                {showAdvancedDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                {showAdvancedDetails ? 'Hide pipeline details' : 'Show pipeline details'}
+                            </button>
+
+                            {showAdvancedDetails && (
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Schedule</h3>
+                                            <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.schedule ?? 'Manual'}</p>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Created</h3>
+                                            <p className="text-gray-900 dark:text-white text-sm">
+                                                {new Date(selectedWorkflow.createdAt).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Flow size</h3>
+                                            <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.nodes.length} steps / {selectedWorkflow.edges.length} links</p>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Owner</h3>
+                                            <p className="text-gray-900 dark:text-white text-sm">{selectedWorkflow.createdBy}</p>
+                                        </div>
+                                    </div>
+
+                                    {selectedWorkflow.tags && selectedWorkflow.tags.length > 0 && (
+                                        <div className="mt-4">
+                                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Tags</h3>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {selectedWorkflow.tags.map((tag: string) => (
+                                                    <span key={tag} className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm">
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4">
+                                        <PipelineAiHintsPanel pipelineId={selectedWorkflow.id} />
                                     </div>
                                 </div>
                             )}
-
-                            {/* AI Pipeline Optimisation Hints — DC-E5-S1 (AI Journey #4) */}
-                            <PipelineAiHintsPanel pipelineId={selectedWorkflow.id} />
 
                             <div className="flex gap-2 pt-4">
                                 <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
@@ -566,7 +736,7 @@ export function WorkflowsPage() {
                                     onClick={() => navigate(`/pipelines/${selectedWorkflow.id}`)}
                                     className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                                 >
-                                    Edit
+                                    Advanced editor
                                 </button>
                             </div>
                         </div>

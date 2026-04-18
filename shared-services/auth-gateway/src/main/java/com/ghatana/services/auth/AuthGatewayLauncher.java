@@ -3,18 +3,22 @@
  */
 package com.ghatana.services.auth;
 
+import com.ghatana.core.activej.launcher.ServiceLauncher;
+import com.ghatana.core.activej.launcher.ServiceCommonModule;
 import com.ghatana.platform.config.ConfigManager;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.servlet.HealthCheckServlet;
+import com.ghatana.platform.observability.ObservabilityModule;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.observability.TracingConfiguration;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
@@ -23,11 +27,10 @@ import io.activej.http.HttpServer;
 import io.activej.http.RoutingServlet;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.Module;
-import io.activej.launcher.Launcher;
+import io.activej.inject.module.ModuleBuilder;
 import io.activej.promise.Promise;
 import io.activej.service.ServiceGraphModule;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,37 +49,16 @@ import static io.activej.http.HttpMethod.POST;
  * <li>Rate limiting per tenant (via RateLimiter)</li>
  * </ul>
  *
- * <p><b>Migration TODO (SHA-007)</b><br>
- * This launcher extends {@link io.activej.launcher.Launcher} directly and
- * manually provides its own {@code Eventloop}, {@code MeterRegistry}, and
- * {@code MetricsCollector} bindings, which duplicates the same boilerplate
- * in every shared service.
- *
- * <p>Migrate to the canonical pattern:
- * <ol>
- *   <li>Extend {@code com.ghatana.core.activej.launcher.ServiceLauncher}
- *       (from {@code platform:java:runtime}) instead of
- *       {@link io.activej.launcher.Launcher}.</li>
- *   <li>Return bindings from {@code createModule()} using
- *       {@code com.ghatana.core.activej.launcher.ServiceCommonModule} for the
- *       {@code Eventloop} and
- *       {@code com.ghatana.platform.observability.ObservabilityModule} for
- *       {@code MeterRegistry} / {@code MetricsCollector}.</li>
- *   <li>Replace the inline {@code /health} and {@code /readiness} route
- *       snippets with
- *       {@code com.ghatana.platform.http.server.servlet.HealthCheckServlet
- *       .addHealthEndpoints(builder, "auth-gateway", VERSION)}.</li>
- * </ol>
- *
  * @doc.type class
  * @doc.purpose Authentication gateway HTTP service
  * @doc.layer product
  * @doc.pattern Service Launcher
  */
-public class AuthGatewayLauncher extends Launcher {
+public class AuthGatewayLauncher extends ServiceLauncher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthGatewayLauncher.class);
     private static final int DEFAULT_PORT = 8081;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String DEFAULT_PLATFORM_JWT_SECRET = "dev-platform-jwt-secret-change-me-in-prod!";
 
     // Constants for duplicate literals
@@ -84,6 +66,7 @@ public class AuthGatewayLauncher extends Launcher {
     private static final String EMAIL = "email";
     private static final String TENANT_ID = "tenantId";
     private static final String TOKEN_TYPE = "tokenType";
+    private static final String JTI = "jti";
     private static final String UNAUTHORIZED = "UNAUTHORIZED";
 
     static String resolvePlatformJwtSecret(String deploymentEnv, String configuredSecret) {
@@ -123,23 +106,6 @@ public class AuthGatewayLauncher extends Launcher {
     }
 
     @Provides
-    Eventloop eventloop() {
-        return Eventloop.builder()
-                .withThreadName(AUTH_GATEWAY)
-                .build();
-    }
-
-    @Provides
-    MeterRegistry meterRegistry() {
-        return new SimpleMeterRegistry();
-    }
-
-    @Provides
-    MetricsCollector metricsCollector(MeterRegistry registry) {
-        return MetricsCollectorFactory.create(registry);
-    }
-
-    @Provides
     io.opentelemetry.api.OpenTelemetry openTelemetry(ConfigManager config) {
         String env = config.getString("DEPLOYMENT_ENV").orElse("development");
         boolean enabled = config.getBoolean("TRACING_ENABLED").orElse(true);
@@ -170,7 +136,19 @@ public class AuthGatewayLauncher extends Launcher {
 
     @Provides
     CredentialStore credentialStore(ConfigManager config) {
-        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(false);
+        // Default to true for production safety
+        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(true);
+        
+        // Production environment check: fail if JDBC not configured in production
+        String deploymentEnv = config.getString("DEPLOYMENT_ENV").orElse("local");
+        boolean isProduction = !deploymentEnv.matches("local|dev|test|development");
+        
+        if (isProduction && !useJdbc) {
+            throw new IllegalStateException(
+                "SECURITY ERROR: USE_JDBC_CREDENTIALS must be true in production environment '" + deploymentEnv + "'. " +
+                "In-memory credential store is not safe for production deployments. " +
+                "Set USE_JDBC_CREDENTIALS=true and configure AUTH_DB_URL.");
+        }
 
         if (useJdbc) {
             // Production path: JDBC-backed store requires AUTH_DB_URL
@@ -209,6 +187,36 @@ public class AuthGatewayLauncher extends Launcher {
     }
 
     @Provides
+    TokenBlocklist tokenBlocklist(ConfigManager config, CredentialStore credentialStore) {
+        // Use JDBC blocklist if credential store is JDBC-backed
+        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(true);
+        
+        if (useJdbc && credentialStore instanceof JdbcCredentialStore) {
+            // Reuse the same DataSource from JdbcCredentialStore
+            // Note: This requires JdbcCredentialStore to expose its DataSource
+            // For now, we'll create a new connection pool for the blocklist
+            String jdbcUrl = config.getString("AUTH_DB_URL").orElse(null);
+            if (jdbcUrl != null && !jdbcUrl.isBlank()) {
+                com.zaxxer.hikari.HikariConfig cfg = new com.zaxxer.hikari.HikariConfig();
+                cfg.setJdbcUrl(jdbcUrl);
+                cfg.setUsername(config.getString("AUTH_DB_USER").orElse(""));
+                cfg.setPassword(config.getString("AUTH_DB_PASSWORD").orElse(""));
+                cfg.setPoolName("auth-blocklist-pool");
+                cfg.setMinimumIdle(1);
+                cfg.setMaximumPoolSize(5);
+                JdbcTokenBlocklist blocklist = new JdbcTokenBlocklist(new com.zaxxer.hikari.HikariDataSource(cfg));
+                blocklist.ensureSchema();
+                LOGGER.info("Using JdbcTokenBlocklist (AUTH_DB_URL configured)");
+                return blocklist;
+            }
+        }
+
+        // Development path: in-memory blocklist
+        LOGGER.warn("Using InMemoryTokenBlocklist (NOT for production)");
+        return new InMemoryTokenBlocklist();
+    }
+
+    @Provides
     TenantExtractor tenantExtractor() {
         return new TenantExtractor();
     }
@@ -236,7 +244,8 @@ public class AuthGatewayLauncher extends Launcher {
             TenantExtractor tenantExtractor,
             RateLimiter rateLimiter,
             MetricsCollector metrics,
-            CredentialStore credentialStore) {
+            CredentialStore credentialStore,
+            TokenBlocklist tokenBlocklist) {
 
         // Platform JWT for cross-product token exchange.
         // Products forward their own JWT here; we validate it and return a
@@ -305,6 +314,9 @@ public class AuthGatewayLauncher extends Launcher {
                                         }
 
                                         // Credentials valid — issue tokens
+                                        String jti = java.util.UUID.randomUUID().toString();
+                                        long refreshTokenExpiryMs = System.currentTimeMillis() + (7L * 24 * 60 * 60 * 1000); // 7 days
+                                        
                                         String accessToken = tokenProvider.createToken(
                                                 user.username(), user.roles(),
                                                 java.util.Map.of(
@@ -316,7 +328,8 @@ public class AuthGatewayLauncher extends Launcher {
                                                 java.util.Map.of(
                                                         EMAIL, user.email(),
                                                         TENANT_ID, user.tenantId(),
-                                                        TOKEN_TYPE, "REFRESH"));
+                                                        TOKEN_TYPE, "REFRESH",
+                                                        JTI, jti));
                                         String response = String.format(
                                                 "{\"accessToken\":\"%s\",\"refreshToken\":\"%s\",\"expiresIn\":%d}",
                                                 accessToken, refreshToken, 3600);
@@ -385,6 +398,63 @@ public class AuthGatewayLauncher extends Launcher {
                                 .toPromise();
                     }
                 })
+                // Logout - revoke refresh token
+                .with(POST, "/auth/logout", request -> {
+                    metrics.incrementCounter("auth.gateway.logout.count");
+                    HttpResponse rateLimitError = rateLimitResponse(request, rateLimiter, metrics, "auth.gateway.logout.rate_limited");
+                    if (rateLimitError != null) {
+                        return Promise.of(rateLimitError);
+                    }
+                    String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+                    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        return ResponseBuilder.status(401)
+                                .json(ErrorResponse.of(401, UNAUTHORIZED, "Missing refresh token in Authorization header"))
+                                .build()
+                                .toPromise();
+                    }
+                    return request.loadBody()
+                        .then(byteBuf -> {
+                            String body = byteBuf.getString(java.nio.charset.StandardCharsets.UTF_8);
+                            String refreshToken = authHeader.substring(7);
+
+                            // Validate the refresh token
+                            if (!tokenProvider.validateToken(refreshToken)) {
+                                metrics.incrementCounter("auth.gateway.logout.invalid");
+                                return Promise.of(ResponseBuilder.status(401)
+                                        .json(ErrorResponse.of(401, UNAUTHORIZED, "Invalid or expired refresh token"))
+                                        .build());
+                            }
+
+                            // Extract jti claim and add to blocklist
+                            java.util.Map<String, Object> claims = tokenProvider.extractClaims(refreshToken).orElse(java.util.Map.of());
+                            String jti = String.valueOf(claims.getOrDefault(JTI, ""));
+                            
+                            if (jti == null || jti.isEmpty() || "null".equals(jti)) {
+                                LOGGER.warn("Logout attempted but refresh token has no jti claim");
+                                metrics.incrementCounter("auth.gateway.logout.no_jti");
+                                return Promise.of(ResponseBuilder.status(400)
+                                        .json(ErrorResponse.of(400, "INVALID_TOKEN", "Refresh token missing jti claim"))
+                                        .build());
+                            }
+
+                            long tokenExpiry = System.currentTimeMillis() + (7L * 24 * 60 * 60 * 1000); // Default to 7 days from now
+                            return tokenBlocklist.block(jti, tokenExpiry)
+                                .then(() -> {
+                                    LOGGER.info("Refresh token revoked (jti={})", jti);
+                                    metrics.incrementCounter("auth.gateway.logout.success");
+                                    return Promise.of(HttpResponse.ok200()
+                                            .withJson("{\"message\":\"Refresh token revoked\"}")
+                                            .build());
+                                });
+                        })
+                        .then(Promise::of, ex -> {
+                            LOGGER.error("Logout failed", ex);
+                            metrics.incrementCounter("auth.gateway.logout.errors");
+                            return Promise.of(ResponseBuilder.status(500)
+                                    .json(ErrorResponse.of(500, "INTERNAL_SERVER_ERROR", "Logout failed"))
+                                    .build());
+                        });
+                })
                 // Refresh - refresh JWT token
                 .with(POST, "/auth/refresh", request -> {
                     metrics.incrementCounter("auth.gateway.refresh.count");
@@ -409,6 +479,36 @@ public class AuthGatewayLauncher extends Launcher {
                                     .toPromise();
                         }
 
+                        // Check if refresh token is blocked
+                        java.util.Map<String, Object> claims = tokenProvider.extractClaims(refreshToken).orElse(java.util.Map.of());
+                        String jti = String.valueOf(claims.getOrDefault(JTI, ""));
+                        
+                        if (jti != null && !jti.isEmpty() && !"null".equals(jti)) {
+                            return tokenBlocklist.isBlocked(jti)
+                                .then(blocked -> {
+                                    if (blocked) {
+                                        LOGGER.warn("Refresh token blocked (jti={})", jti);
+                                        metrics.incrementCounter("auth.gateway.refresh.blocked");
+                                        return Promise.of(ResponseBuilder.status(401)
+                                                .json(ErrorResponse.of(401, UNAUTHORIZED, "Refresh token has been revoked"))
+                                                .build());
+                                    }
+                                    
+                                    // Token not blocked, proceed with refresh
+                                    String userId = tokenProvider.getUserIdFromToken(refreshToken).orElse("unknown");
+                                    java.util.List<String> roles = tokenProvider.getRolesFromToken(refreshToken);
+                                    String newAccessToken = tokenProvider.createToken(userId, roles,
+                                            java.util.Map.of(TOKEN_TYPE, "ACCESS"));
+                                    String response = String.format(
+                                            "{\"accessToken\":\"%s\",\"expiresIn\":%d}",
+                                            newAccessToken, 3600);
+                                    return Promise.of(HttpResponse.ok200()
+                                            .withJson(response)
+                                            .build());
+                                });
+                        }
+                        
+                        // No jti claim, proceed with refresh (backward compatibility)
                         String userId = tokenProvider.getUserIdFromToken(refreshToken).orElse("unknown");
                         java.util.List<String> roles = tokenProvider.getRolesFromToken(refreshToken);
                         String newAccessToken = tokenProvider.createToken(userId, roles,
@@ -519,15 +619,18 @@ public class AuthGatewayLauncher extends Launcher {
     }
 
     @Override
-    protected Module getModule() {
-        return ServiceGraphModule.create();
+    protected Module createModule() {
+        return ModuleBuilder.create()
+                .install(new ServiceCommonModule(AUTH_GATEWAY))
+                .install(new ObservabilityModule())
+                .install(ServiceGraphModule.create())
+                .build();
     }
 
     @Override
-    protected void run() throws Exception {
+    protected void onServiceStarted() {
         int port = ConfigManager.createDefault("auth-gateway").getInt("PORT").orElse(DEFAULT_PORT);
-        LOGGER.info("Starting Auth Gateway Service on port {}...", port);
-        awaitShutdown();
+        LOGGER.info("Auth Gateway Service started on port {}", port);
     }
 
     public static void main(String[] args) throws Exception {
@@ -537,21 +640,20 @@ public class AuthGatewayLauncher extends Launcher {
     }
 
     /**
-     * Simple JSON field extractor (avoids adding a JSON library dependency).
-     * Handles fields with string values in flat JSON objects.
+     * Extract JSON field using Jackson ObjectMapper.
+     * Handles fields with string values, escaped quotes, and nested objects.
      */
     private static String extractJsonField(String json, String field) {
         if (json == null) return null;
-        String key = "\"" + field + "\"";
-        int idx = json.indexOf(key);
-        if (idx < 0) return null;
-        int colon = json.indexOf(':', idx + key.length());
-        if (colon < 0) return null;
-        int start = json.indexOf('"', colon + 1);
-        if (start < 0) return null;
-        int end = json.indexOf('"', start + 1);
-        if (end < 0) return null;
-        return json.substring(start + 1, end);
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(json);
+            JsonNode fieldNode = root.get(field);
+            if (fieldNode == null) return null;
+            return fieldNode.isTextual() ? fieldNode.asText() : fieldNode.toString();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to extract JSON field '{}': {}", field, e.getMessage());
+            return null;
+        }
     }
 
     private static HttpResponse rateLimitResponse(

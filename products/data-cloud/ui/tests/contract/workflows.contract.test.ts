@@ -9,19 +9,19 @@ import {
 } from '../../src/contracts/schemas';
 
 /**
- * Workflows API Contract Tests
- * 
- * Validates workflow API responses match expected schema.
+ * Pipelines API Contract Tests
+ *
+ * Validates pipeline API responses match expected schema.
  * Schemas are imported from the shared contracts module.
- * 
+ *
  * @doc.type test
- * @doc.purpose API contract validation for workflows
+ * @doc.purpose API contract validation for pipelines
  * @doc.layer testing
  */
 
-describe('Workflows API Contract', () => {
-  describe('GET /api/v1/workflows', () => {
-    it('should return paginated workflows matching schema', () => {
+describe('Pipelines API Contract', () => {
+  describe('GET /api/v1/pipelines', () => {
+    it('should return paginated pipelines matching schema', () => {
       const mockResponse = {
         items: [
           {
@@ -46,7 +46,7 @@ describe('Workflows API Contract', () => {
     });
   });
 
-  describe('POST /api/v1/workflows', () => {
+  describe('POST /api/v1/pipelines', () => {
     it('should accept valid create request', () => {
       const validRequest = {
         name: 'New Workflow',
@@ -59,7 +59,7 @@ describe('Workflows API Contract', () => {
     });
   });
 
-  describe('GET /api/v1/workflows/:id/executions', () => {
+  describe('GET /api/v1/pipelines/:id/executions', () => {
     it('should return executions matching schema', () => {
       const mockResponse = {
         items: [

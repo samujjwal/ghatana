@@ -121,7 +121,7 @@ Data-Cloud presents a unified, AI/ML-native data platform that:
 **Product Managers & Analysts**
 
 - Responsibilities: Data-driven decisions, reporting, insights
-- Needs: Self-service analytics, real-time dashboards, data exploration
+- Needs: Self-service analytics, operator insights, and data exploration
 - Pain Points: IT bottlenecks, stale data, limited query capabilities
 
 **Application Developers**
@@ -164,7 +164,7 @@ Data-Cloud presents a unified, AI/ML-native data platform that:
 
 ### For Product Managers & Analysts
 
-- **Self-Service Analytics**: Natural language queries and interactive dashboards
+- **Self-Service Analytics**: Natural language queries, canonical query workflows, and operator insight surfaces
 - **Real-time Insights**: Live data streaming and change notifications
 - **Data Exploration**: Unified interface across all data types
 - **Collaboration**: Shared workspaces and curated datasets

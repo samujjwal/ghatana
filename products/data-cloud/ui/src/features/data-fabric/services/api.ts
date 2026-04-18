@@ -109,7 +109,7 @@ function mapStorageProfile(profile: ContractStorageProfile): StorageProfile {
     isActive: toStorageProfileStatus(profile),
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
-    tenantId: readString(config, 'tenantId') ?? 'default',
+    tenantId: readString(config, 'tenantId') ?? '',
   };
 }
 
@@ -142,7 +142,7 @@ function mapConnector(connector: Connector): DataConnector {
     isEnabled: readBoolean(config, 'isEnabled') ?? connector.status.toLowerCase() !== 'inactive',
     createdAt: connector.createdAt,
     updatedAt: connector.updatedAt,
-    tenantId: readString(config, 'tenantId') ?? 'default',
+    tenantId: readString(config, 'tenantId') ?? '',
   };
 }
 

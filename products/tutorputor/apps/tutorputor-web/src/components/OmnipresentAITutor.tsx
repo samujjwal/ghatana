@@ -7,17 +7,19 @@
  * Features:
  * - Floating button always visible (except on AI Tutor page)
  * - Slide-out panel with chat interface
- * - Context-aware responses based on current page
+ * - Context-aware responses based on current page/module/lesson
+ * - Proactive help detection
  * - Quick action suggestions
  *
  * @doc.type component
- * @doc.purpose Omnipresent AI assistant for students
+ * @doc.purpose Omnipresent AI assistant for students with context awareness
  * @doc.layer product
  * @doc.pattern Component
  */
 import React, { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
+import { useProactiveHelp } from "../hooks/useProactiveHelp";
 import { createLogger } from '../utils/logger.js';
 const logger = createLogger('OmnipresentAITutor');
 
@@ -104,7 +106,9 @@ const MinimizeIcon = () => (
 
 export function OmnipresentAITutor() {
   const location = useLocation();
+  const params = useParams<{ slug?: string; assessmentId?: string }>();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -118,8 +122,28 @@ export function OmnipresentAITutor() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Check if we're on the AI Tutor page (used later for conditional rendering)
+  // Determine current context from router
   const isAITutorPage = location.pathname === "/ai-tutor";
+  const isModulePage = location.pathname.includes("/modules/");
+  const isAssessmentPage = location.pathname.includes("/assessments/");
+  const isPathwaysPage = location.pathname.includes("/pathways");
+  const isDashboardPage = location.pathname === "/" || location.pathname === "/dashboard";
+
+  // Get task type for proactive help
+  const getTaskType = (): "lesson" | "quiz" | "exercise" | "general" => {
+    if (isAssessmentPage) return "quiz";
+    if (isModulePage) return "lesson";
+    if (isPathwaysPage) return "exercise";
+    return "general";
+  };
+
+  // Initialize proactive help detection
+  const proactiveHelp = useProactiveHelp({
+    enabled: !isOpen && !isAITutorPage, // Only detect when panel is closed
+    taskType: getTaskType(),
+    moduleId: isModulePage ? params.slug : undefined,
+    lessonId: isAssessmentPage ? params.assessmentId : undefined,
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -132,21 +156,89 @@ export function OmnipresentAITutor() {
     }
   }, [isOpen, messages]);
 
-  // Get context hint based on current page
+  // Handle proactive help trigger
+  useEffect(() => {
+    if (proactiveHelp.shouldShowHelp && !hasUserInteracted) {
+      // Open the AI tutor with a proactive message
+      setIsOpen(true);
+      setHasUserInteracted(true);
+
+      const proactiveMessage: Message = {
+        id: `proactive-${Date.now()}`,
+        role: "assistant",
+        content: proactiveHelp.suggestedAction,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, proactiveMessage]);
+      proactiveHelp.acceptHelp();
+
+      logger.info("Proactive help triggered", { pattern: proactiveHelp.pattern });
+    }
+  }, [proactiveHelp.shouldShowHelp, proactiveHelp.suggestedAction, hasUserInteracted]);
+
+  // Enhanced context detection
   const getContextHint = () => {
-    if (location.pathname.includes("/pathways")) {
-      return "learning paths";
+    const contexts: string[] = [];
+
+    // Page type context
+    if (isModulePage) {
+      contexts.push(`module "${params.slug || "unknown"}"`);
+    } else if (isAssessmentPage) {
+      contexts.push(`assessment "${params.assessmentId || "unknown"}"`);
+    } else if (isPathwaysPage) {
+      contexts.push("learning pathways");
+    } else if (isDashboardPage) {
+      contexts.push("dashboard");
+    } else if (location.pathname.includes("/search")) {
+      contexts.push("content search");
+    } else if (location.pathname.includes("/teacher")) {
+      contexts.push("teacher console");
+    } else if (location.pathname.includes("/analytics")) {
+      contexts.push("learning analytics");
     }
-    if (location.pathname.includes("/search")) {
-      return "content browsing";
+
+    // Add proactive pattern context if available
+    if (proactiveHelp.pattern) {
+      contexts.push(`showing signs of ${proactiveHelp.pattern.type.replace(/_/g, " ")}`);
     }
-    if (location.pathname.includes("/teacher")) {
-      return "teaching tools";
+
+    return contexts.length > 0
+      ? `User is currently on ${contexts.join(", ")}`
+      : "User is browsing the learning platform";
+  };
+
+  // Get contextual quick actions based on current page
+  const getQuickActions = () => {
+    if (isModulePage) {
+      return [
+        "Explain this concept",
+        "Give me an example",
+        "What are the key takeaways?",
+        "Help me understand this topic",
+      ];
     }
-    if (location.pathname.includes("/analytics")) {
-      return "learning analytics";
+    if (isAssessmentPage) {
+      return [
+        "Help me with this question",
+        "Give me a hint",
+        "Explain the concept being tested",
+        "Walk me through the solution",
+      ];
     }
-    return "your learning journey";
+    if (isPathwaysPage) {
+      return [
+        "What should I learn next?",
+        "Suggest a learning path",
+        "How do I reach my goal?",
+        "What topics am I missing?",
+      ];
+    }
+    return [
+      "Explain this concept",
+      "Give me an example",
+      "What should I learn next?",
+    ];
   };
 
   const askTutorMutation = useMutation<TutorResponse, Error, string>({
@@ -208,11 +300,19 @@ export function OmnipresentAITutor() {
     setInput("");
   };
 
-  const quickActions = [
-    "Explain this concept",
-    "Give me an example",
-    "What should I learn next?",
-  ];
+  const quickActions = getQuickActions();
+
+  // Handle manual open to mark user interaction
+  const handleOpen = () => {
+    setIsOpen(true);
+    setHasUserInteracted(true);
+  };
+
+  // Handle close
+  const handleClose = () => {
+    setIsOpen(false);
+    proactiveHelp.dismissHelp();
+  };
 
   // Don't render on the dedicated AI Tutor page
   if (isAITutorPage) {
@@ -223,15 +323,19 @@ export function OmnipresentAITutor() {
     <>
       {/* Floating Button */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className={`fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-full shadow-lg shadow-purple-500/30 flex items-center justify-center hover:scale-110 transition-all duration-200 ${
           isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100"
         }`}
         title="Ask AI Tutor"
       >
         <SparklesIcon />
-        {/* Pulsing indicator */}
-        <span className="absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse" />
+        {/* Pulsing indicator - show when proactive help is available */}
+        {proactiveHelp.shouldShowHelp && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-ping" />
+        )}
+        {/* Online indicator */}
+        <span className="absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
       </button>
 
       {/* Slide-out Panel */}
@@ -250,14 +354,14 @@ export function OmnipresentAITutor() {
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white"
               title="Minimize"
             >
               <MinimizeIcon />
             </button>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white"
               title="Close"
             >
@@ -357,7 +461,7 @@ export function OmnipresentAITutor() {
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/30 sm:hidden"
-          onClick={() => setIsOpen(false)}
+          onClick={handleClose}
         />
       )}
     </>

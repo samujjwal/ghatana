@@ -26,6 +26,7 @@ import { brainService } from '../api/brain.service';
 import { collectionsApi } from '../lib/api/collections';
 import { workflowsApi } from '../lib/api/workflows';
 import { getRecentActivity, logActivity } from '../lib/api/user-activity';
+import SessionBootstrap, { type ShellRole, canAccessShellRole } from '../lib/auth/session';
 import {
   Database,
   Workflow,
@@ -43,6 +44,7 @@ import {
   Play,
   FileText,
   Table2,
+  Layers,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import { CommandBar, CommandBarTrigger, BrainSidebar, AmbientIntelligenceBar } from '../components/core';
@@ -199,9 +201,54 @@ interface ActivityItem {
 interface ContinueWorkingItem {
   id: string;
   name: string;
-  type: 'collection' | 'workflow' | 'query' | 'dashboard';
+  type: 'collection' | 'workflow' | 'query' | 'insight';
   lastAccessed: string;
   path: string;
+}
+
+export interface OutcomeIntent {
+  kind: 'query' | 'workflow' | 'governance' | 'operations';
+  label: string;
+  destination: string;
+  state?: Record<string, string>;
+}
+
+export function classifyOutcomeIntent(query: string): OutcomeIntent {
+  const normalized = query.toLowerCase();
+
+  if (/(workflow|pipeline|automate|sync|ingest|etl|approval)/.test(normalized)) {
+    return {
+      kind: 'workflow',
+      label: 'Build an automated flow',
+      destination: '/pipelines/new',
+      state: { intent: query },
+    };
+  }
+
+  if (/(trust|policy|retention|pii|privacy|redact|purge|governance|compliance|audit)/.test(normalized)) {
+    return {
+      kind: 'governance',
+      label: 'Review trust issues',
+      destination: '/trust',
+      state: { intent: query },
+    };
+  }
+
+  if (/(failure|failed|incident|alert|outage|latency|degraded|broken)/.test(normalized)) {
+    return {
+      kind: 'operations',
+      label: 'Inspect recent failures',
+      destination: '/insights',
+      state: { focus: 'operations', query },
+    };
+  }
+
+  return {
+    kind: 'query',
+    label: 'Ask a question',
+    destination: '/query',
+    state: { query },
+  };
 }
 
 function ContinueWorkingCard({ item, onClick }: { item: ContinueWorkingItem; onClick: () => void }) {
@@ -209,7 +256,7 @@ function ContinueWorkingCard({ item, onClick }: { item: ContinueWorkingItem; onC
     collection: <Database className="h-4 w-4 text-blue-500" />,
     workflow: <Workflow className="h-4 w-4 text-purple-500" />,
     query: <FileText className="h-4 w-4 text-green-500" />,
-    dashboard: <BarChart3 className="h-4 w-4 text-amber-500" />,
+    insight: <BarChart3 className="h-4 w-4 text-amber-500" />,
   };
 
   return (
@@ -238,6 +285,123 @@ function ContinueWorkingCard({ item, onClick }: { item: ContinueWorkingItem; onC
       <Play className="h-4 w-4 text-gray-300 group-hover:text-primary-500 transition-colors" />
     </button>
   );
+}
+
+interface OutcomeAction {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  supportingText: string;
+  onClick: () => void;
+}
+
+function OutcomeActionCard({ action }: { action: OutcomeAction }) {
+  return (
+    <button
+      onClick={action.onClick}
+      className={cn(
+        'flex flex-col items-start gap-3 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all duration-200 hover:border-primary-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-primary-700'
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <div className="rounded-xl bg-gray-100 p-2 dark:bg-gray-700">{action.icon}</div>
+        <div>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{action.title}</h3>
+          <p className="text-sm text-gray-500">{action.description}</p>
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-300">{action.supportingText}</p>
+      <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400">
+        Open
+        <ArrowRight className="h-4 w-4" />
+      </span>
+    </button>
+  );
+}
+
+function buildQuickActions(
+  navigate: ReturnType<typeof useNavigate>,
+  logActivityMutation: { mutate: typeof logActivity },
+  shellRole: ShellRole,
+): QuickAction[] {
+  const actions: QuickAction[] = [
+    {
+      id: 'explore-data',
+      title: 'Explore Data',
+      description: 'Browse collections and datasets',
+      icon: <Database className="h-5 w-5 text-white" />,
+      color: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      action: () => {
+        logActivityMutation.mutate({
+          action: 'navigate',
+          target: 'Explore Data',
+          type: 'query',
+          resourceType: 'navigation',
+          resourceId: '/data',
+        });
+        navigate('/data');
+      },
+    },
+    {
+      id: 'create-workflow',
+      title: 'Build Pipeline',
+      description: 'Create a new data workflow',
+      icon: <Workflow className="h-5 w-5 text-white" />,
+      color: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      action: () => {
+        logActivityMutation.mutate({
+          action: 'navigate',
+          target: 'Build Pipeline',
+          type: 'create',
+          resourceType: 'navigation',
+          resourceId: '/pipelines/new',
+        });
+        navigate('/pipelines/new');
+      },
+    },
+  ];
+
+  if (canAccessShellRole(shellRole, 'operator')) {
+    actions.push(
+      {
+        id: 'check-quality',
+        title: 'Data Quality',
+        description: 'Review quality issues',
+        icon: <Activity className="h-5 w-5 text-white" />,
+        color: 'bg-gradient-to-br from-green-500 to-green-600',
+        action: () => {
+          logActivityMutation.mutate({
+            action: 'navigate',
+            target: 'Data Quality',
+            type: 'query',
+            resourceType: 'navigation',
+            resourceId: '/data?view=quality',
+          });
+          navigate('/data?view=quality');
+        },
+      },
+      {
+        id: 'governance',
+        title: 'Trust Center',
+        description: 'Governance & compliance',
+        icon: <Shield className="h-5 w-5 text-white" />,
+        color: 'bg-gradient-to-br from-amber-500 to-amber-600',
+        action: () => {
+          logActivityMutation.mutate({
+            action: 'navigate',
+            target: 'Trust Center',
+            type: 'query',
+            resourceType: 'navigation',
+            resourceId: '/trust',
+          });
+          navigate('/trust');
+        },
+      },
+    );
+  }
+
+  return actions;
 }
 
 /**
@@ -269,7 +433,7 @@ function AskAnythingInput({ onSubmit }: { onSubmit: (query: string) => void }) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ask anything... e.g., 'Show me orders from last week' or 'Create a pipeline for...'"
+          placeholder="What do you need to do? Ask a question, build a flow, or review trust issues"
           className={cn(
             'flex-1 bg-transparent border-none outline-none',
             'text-sm text-gray-900 dark:text-gray-100',
@@ -278,6 +442,7 @@ function AskAnythingInput({ onSubmit }: { onSubmit: (query: string) => void }) {
         />
         <button
           type="submit"
+          aria-label="Send"
           disabled={!query.trim()}
           className={cn(
             'p-2 rounded-lg',
@@ -322,9 +487,10 @@ function RecentActivityItem({ item }: { item: ActivityItem }) {
 /**
  * Intelligent Hub Page
  */
-export function IntelligentHub() {
+export function IntelligentHub(): React.ReactElement {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const shellRole = SessionBootstrap.getShellRole();
 
   // Fetch brain stats
   const { data: brainStats } = useQuery({
@@ -359,77 +525,10 @@ export function IntelligentHub() {
     mutationFn: logActivity,
   });
 
-  // Quick actions with audit logging
-  const quickActions: QuickAction[] = [
-    {
-      id: 'explore-data',
-      title: 'Explore Data',
-      description: 'Browse collections and datasets',
-      icon: <Database className="h-5 w-5 text-white" />,
-      color: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      action: () => {
-        logActivityMutation.mutate({
-          action: 'navigate',
-          target: 'Explore Data',
-          type: 'query',
-          resourceType: 'navigation',
-          resourceId: '/data',
-        });
-        navigate('/data');
-      },
-    },
-    {
-      id: 'create-workflow',
-      title: 'Build Pipeline',
-      description: 'Create a new data workflow',
-      icon: <Workflow className="h-5 w-5 text-white" />,
-      color: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      action: () => {
-        logActivityMutation.mutate({
-          action: 'navigate',
-          target: 'Build Pipeline',
-          type: 'create',
-          resourceType: 'navigation',
-          resourceId: '/pipelines/new',
-        });
-        navigate('/pipelines/new');
-      },
-    },
-    {
-      id: 'check-quality',
-      title: 'Data Quality',
-      description: 'Review quality issues',
-      icon: <Activity className="h-5 w-5 text-white" />,
-      color: 'bg-gradient-to-br from-green-500 to-green-600',
-      action: () => {
-        logActivityMutation.mutate({
-          action: 'navigate',
-          target: 'Data Quality',
-          type: 'query',
-          resourceType: 'navigation',
-          resourceId: '/data?view=quality',
-        });
-        navigate('/data?view=quality');
-      },
-    },
-    {
-      id: 'governance',
-      title: 'Trust Center',
-      description: 'Governance & compliance',
-      icon: <Shield className="h-5 w-5 text-white" />,
-      color: 'bg-gradient-to-br from-amber-500 to-amber-600',
-      action: () => {
-        logActivityMutation.mutate({
-          action: 'navigate',
-          target: 'Trust Center',
-          type: 'query',
-          resourceType: 'navigation',
-          resourceId: '/trust',
-        });
-        navigate('/trust');
-      },
-    },
-  ];
+  const quickActions = useMemo(
+    () => buildQuickActions(navigate, logActivityMutation, shellRole),
+    [logActivityMutation, navigate, shellRole],
+  );
 
   // Insights — using real data wherever available
   const insights: Insight[] = [
@@ -463,19 +562,106 @@ export function IntelligentHub() {
   const recentActivity: ActivityItem[] = activityData?.activities ?? [];
   const continueWorking: ContinueWorkingItem[] = activityData?.continueWorking ?? [];
 
+  const outcomeActions: OutcomeAction[] = useMemo(() => {
+    const actions: OutcomeAction[] = [
+      {
+        id: 'ask-question',
+        title: 'Ask a question',
+        description: 'Start from natural language and land in the SQL workspace.',
+        icon: <Search className="h-5 w-5 text-blue-500" />,
+        supportingText: collectionsPage?.total
+          ? `${collectionsPage.total} collections are ready for exploration.`
+          : 'Use the live SQL workspace instead of navigating raw modules first.',
+        onClick: () => navigate('/query'),
+      },
+      {
+        id: 'build-flow',
+        title: 'Build an automated flow',
+        description: 'Create or refine a pipeline from one place.',
+        icon: <Workflow className="h-5 w-5 text-purple-500" />,
+        supportingText: workflowsPage?.total
+          ? `${workflowsPage.total} active pipelines are already running.`
+          : 'Start a new workflow without leaving the launcher page.',
+        onClick: () => navigate('/pipelines/new'),
+      },
+    ];
+
+    if (canAccessShellRole(shellRole, 'operator')) {
+      actions.push(
+        {
+          id: 'review-trust',
+          title: 'Review trust issues',
+          description: 'Jump straight to retention, privacy, and audit actions.',
+          icon: <Shield className="h-5 w-5 text-amber-500" />,
+          supportingText: 'Trust Center is the canonical place for policy actions and audit visibility.',
+          onClick: () => navigate('/trust'),
+        },
+        {
+          id: 'inspect-failures',
+          title: 'Inspect recent failures',
+          description: 'Open the operator view for degraded runtime paths.',
+          icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
+          supportingText: recentActivity.length > 0
+            ? `${recentActivity.length} recent activity items are available for investigation.`
+            : 'Use Insights for runtime truth when something looks degraded.',
+          onClick: () => navigate('/insights'),
+        },
+      );
+    }
+
+    return actions;
+  }, [collectionsPage?.total, navigate, recentActivity.length, shellRole, workflowsPage?.total]);
+
+  const recommendationCards = useMemo(
+    () => [
+      {
+        id: 'query',
+        title: 'Ask a live data question',
+        description: 'Route intent into the SQL workspace instead of starting from a module picker.',
+        icon: <TrendingUp className="h-4 w-4 text-purple-600" />,
+        iconClassName: 'bg-purple-100 dark:bg-purple-900/50',
+      },
+      ...(canAccessShellRole(shellRole, 'operator')
+        ? [
+            {
+              id: 'trust',
+              title: 'Review trust and retention actions',
+              description: 'Trust Center remains the canonical place for purge, redaction, and audit review.',
+              icon: <AlertTriangle className="h-4 w-4 text-amber-600" />,
+              iconClassName: 'bg-amber-100 dark:bg-amber-900/50',
+            },
+            {
+              id: 'ops',
+              title: 'Inspect runtime health before acting on failures',
+              description: 'Use Insights for operator diagnostics instead of the unsupported alerts surface.',
+              icon: <Clock className="h-4 w-4 text-green-600" />,
+              iconClassName: 'bg-green-100 dark:bg-green-900/50',
+            },
+          ]
+        : [
+            {
+              id: 'mode',
+              title: 'Stay in primary mode until you need deeper controls',
+              description: 'Switch the workspace mode in the header to reveal operator and admin surfaces progressively.',
+              icon: <Layers className="h-4 w-4 text-green-600" />,
+              iconClassName: 'bg-green-100 dark:bg-green-900/50',
+            },
+          ]),
+    ],
+    [shellRole],
+  );
+
   // Handle ask anything
   const handleAskAnything = useCallback((query: string) => {
+    const intent = classifyOutcomeIntent(query);
     logActivityMutation.mutate({
-      action: 'query',
+      action: intent.kind,
       target: query,
       type: 'query',
-      resourceType: 'search',
-      resourceId: query,
+      resourceType: 'outcome-intent',
+      resourceId: intent.destination,
     });
-    // In a real implementation, this would trigger the command bar or AI
-    console.log('Ask:', query);
-    // For now, navigate to search
-    navigate(`/data?search=${encodeURIComponent(query)}`);
+    navigate(intent.destination, intent.state ? { state: intent.state } : undefined);
   }, [navigate, logActivityMutation]);
 
   // Get personalized greeting
@@ -483,7 +669,7 @@ export function IntelligentHub() {
   const formattedDate = useMemo(() => getFormattedDate(), []);
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-testid="intelligent-hub-page">
       {/* Brain Sidebar */}
       <BrainSidebar
         collapsed={sidebarCollapsed}
@@ -493,7 +679,7 @@ export function IntelligentHub() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header with Command Bar */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700" data-testid="intelligent-hub-header">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {greeting}
@@ -507,14 +693,33 @@ export function IntelligentHub() {
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-6">
+          <section className="mb-8" data-testid="intelligent-hub-outcome-section">
+            <div className="mb-4">
+              <p className="text-sm font-medium uppercase tracking-wide text-gray-500">Start with an outcome</p>
+              <h2 className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                Launch the next action without choosing the architecture first
+              </h2>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {canAccessShellRole(shellRole, 'operator')
+                  ? 'Operator and admin modes expose diagnostics, trust workflows, and runtime investigation paths inline.'
+                  : 'Primary mode keeps the launcher focused on query and workflow outcomes while deeper controls stay out of the default shell.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
+              {outcomeActions.map((action) => (
+                <OutcomeActionCard key={action.id} action={action} />
+              ))}
+            </div>
+          </section>
+
           {/* Ask Anything */}
-          <section className="mb-8">
+          <section className="mb-8" data-testid="intelligent-hub-intent-input">
             <AskAnythingInput onSubmit={handleAskAnything} />
           </section>
 
           {/* Continue Working */}
           {continueWorking.length > 0 && (
-            <section className="mb-8">
+            <section className="mb-8" data-testid="intelligent-hub-continue-working">
               <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
                 Continue Working
               </h2>
@@ -531,7 +736,7 @@ export function IntelligentHub() {
           )}
 
           {/* Quick Actions */}
-          <section className="mb-8">
+          <section className="mb-8" data-testid="intelligent-hub-quick-actions">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
               Quick Actions
             </h2>
@@ -543,7 +748,7 @@ export function IntelligentHub() {
           </section>
 
           {/* Insights */}
-          <section className="mb-8">
+          <section className="mb-8" data-testid="intelligent-hub-insights">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
               Insights
             </h2>
@@ -557,7 +762,7 @@ export function IntelligentHub() {
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Activity */}
-            <section>
+            <section data-testid="intelligent-hub-recent-activity">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
                   Recent Activity
@@ -575,58 +780,30 @@ export function IntelligentHub() {
               </div>
             </section>
 
-            {/* AI Recommendations */}
-            <section>
+            {/* Recommended Next Steps */}
+            <section data-testid="intelligent-hub-recommendations">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                  AI Recommendations
+                  Recommended Next Steps
                 </h2>
-                <span className="inline-flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
-                  <Sparkles className="h-3 w-3" />
-                  Powered by Brain
-                </span>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
                 <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg">
-                    <div className="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded">
-                      <TrendingUp className="h-4 w-4 text-purple-600" />
+                  {recommendationCards.map((card) => (
+                    <div key={card.id} className="flex items-start gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg">
+                      <div className={cn('p-1.5 rounded', card.iconClassName)}>
+                        {card.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {card.title}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {card.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        Optimize query performance
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        3 queries could save ~$45/month with suggested rewrites
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg">
-                    <div className="p-1.5 bg-amber-100 dark:bg-amber-900/50 rounded">
-                      <AlertTriangle className="h-4 w-4 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        Data freshness alert
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        'orders' table hasn't been updated in 6 hours
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg">
-                    <div className="p-1.5 bg-green-100 dark:bg-green-900/50 rounded">
-                      <Clock className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        Pattern detected
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Weekly sales spike pattern can be pre-cached
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </section>

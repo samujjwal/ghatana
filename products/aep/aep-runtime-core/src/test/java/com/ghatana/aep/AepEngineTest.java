@@ -199,7 +199,7 @@ class AepEngineTest extends EventloopTestBase {
             AepEngine.Pipeline pipeline = new AepEngine.Pipeline(
                     "pipe-1", "Test Pipeline",
                     List.of(new AepEngine.PipelineStep(
-                            "filter",
+                            "step-1", "filter",
                             Map.of("type", "sensor.temperature"))));
 
             engine.submitPipeline(TENANT, pipeline);

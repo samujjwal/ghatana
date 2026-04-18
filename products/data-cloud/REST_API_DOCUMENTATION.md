@@ -11,6 +11,13 @@ This document is the human-readable companion to the canonical contract in `prod
 - Content type: write routes expect `application/json`
 - Rate limiting: enforced in the launcher via configurable sliding-window limits
 
+## UI Surface Truth Notes
+
+- The current primary UI flows map to `/`, `/data`, `/pipelines`, and `/query`.
+- `/trust`, `/insights`, `/events`, and `/settings` are disclosed by shell role rather than promoted to every user by default.
+- `/alerts` remains an explicit unsupported operator surface until live alert list, acknowledge, resolve, and stream routes exist in the launcher.
+- Collection CRUD in the current UI is backed by entity endpoints such as `/api/v1/entities/dc_collections`; older `/api/v1/collections` CRUD examples should be treated as deprecated compatibility routes, not the primary runtime contract.
+
 ## Core Examples
 
 Create an entity:
@@ -200,7 +207,7 @@ POST /api/v1/context/tickets/rag
 | GET | `/api/v1/plugins/:id` | Get plugin details |
 | POST | `/api/v1/plugins/:id/enable` | Enable plugin |
 | POST | `/api/v1/plugins/:id/disable` | Disable plugin |
-| POST | `/api/v1/plugins/:id/upgrade` | Hot-swap or reload plugin |
+| POST | `/api/v1/plugins/:id/upgrade` | Record bundled-plugin upgrade intent |
 
 ### Operations And Streaming
 
@@ -218,7 +225,7 @@ POST /api/v1/context/tickets/rag
 | POST | `/api/v1/voice/intent` | Resolve voice intent |
 | POST | `/api/v1/voice/intent/classify` | Classify voice input only |
 | GET | `/api/v1/queries/estimate` | Estimate storage cost for a query |
-| GET | `/api/v1/collections/:id/cost-report` | Collection cost report |
+| GET | `/api/v1/collections/:id/cost-report` | Collection cost report for operator review |
 | POST | `/api/v1/queries/federated` | Federated query execution |
 | POST | `/api/v1/collections/:id/migrate` | Manual tier migration |
 | WS | `/ws` | WebSocket change notifications |

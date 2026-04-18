@@ -113,6 +113,7 @@ public enum EndpointSensitivity {
     public static final Set<String> SENSITIVE_PATH_PREFIXES = Set.of(
         "/api/v1/entities/",
         "/api/v1/events",
+        "/api/v1/alerts",
         "/api/v1/pipelines",
         "/api/v1/checkpoints",
         "/api/v1/analytics/",

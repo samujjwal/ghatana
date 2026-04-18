@@ -1,11 +1,11 @@
 /**
- * AI Integration - Compatibility Layer (DEPRECATED)
+ * AI Integration - Unified AI platform module.
  *
- * This module is deprecated. Use:
- * - `:platform:java:ai-api` for stable interfaces
- * - `:platform:java:ai-experimental` for implementations
+ * Provides LLM clients, embeddings, prompts, and vector store integration.
+ * Includes model registry, observability, and feature store capabilities.
  *
- * @deprecated Use the `:platform:java:ai-api` and `:platform:java:ai-experimental`
- * modules instead of `:platform:java:ai-integration`.
+ * @doc.type package
+ * @doc.purpose AI integration platform
+ * @doc.layer platform
  */
 package com.ghatana.ai;

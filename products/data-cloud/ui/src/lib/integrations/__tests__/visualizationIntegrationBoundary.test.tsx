@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 import {
-  VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE,
   useDashboards,
   useDataCloudMetrics,
   useRecentEvents,

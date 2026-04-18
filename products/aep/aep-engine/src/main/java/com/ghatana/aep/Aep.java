@@ -3,6 +3,7 @@ package com.ghatana.aep;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.analytics.AepAnomalyDetector;
+import com.ghatana.aep.audit.EventProcessingAuditService;
 import com.ghatana.aep.async.AepAsyncUtils;
 import com.ghatana.aep.cache.AepConsentCache;
 import com.ghatana.aep.cache.AepPatternCache;
@@ -453,6 +454,7 @@ public final class Aep {
         private final ForecastingEngine forecastingEngine;
         private final ConsentService consentService;
         private final EventDeliveryService deliveryService;
+        private final EventProcessingAuditService auditService;
         private final EventSchemaValidator schemaValidator = new EventSchemaValidator();
         private final AepMetricsCollector metrics;
         private final EventVersionCompatibility versionCompatibility;
@@ -477,6 +479,7 @@ public final class Aep {
             new ConcurrentHashMap<>();
         private final Map<String, Map<String, Instant>> seenIdempotencyKeysByTenant = new ConcurrentHashMap<>();
         private final Map<String, Map<String, Long>> subscriberFailureCountByTenant = new ConcurrentHashMap<>();
+        private final Map<String, List<AepEngine.PatternDetector>> patternDetectorsByTenant = new ConcurrentHashMap<>();
 
         private volatile boolean closed = false;
 
@@ -484,11 +487,20 @@ public final class Aep {
                          ForecastingEngine forecastingEngine,
                          ConsentService consentService,
                          EventDeliveryService deliveryService) {
+            this(eventCloud, config, forecastingEngine, consentService, deliveryService, null);
+        }
+
+        DefaultAepEngine(EventCloud eventCloud, AepConfig config,
+                         ForecastingEngine forecastingEngine,
+                         ConsentService consentService,
+                         EventDeliveryService deliveryService,
+                         EventProcessingAuditService auditService) {
             this.eventCloud = Objects.requireNonNull(eventCloud, "eventCloud required");
             this.config = Objects.requireNonNull(config, "config required");
             this.forecastingEngine = Objects.requireNonNull(forecastingEngine, "forecastingEngine required");
             this.consentService = Objects.requireNonNull(consentService, "consentService required");
             this.deliveryService = Objects.requireNonNull(deliveryService, "deliveryService required");
+            this.auditService = auditService != null ? auditService : new EventProcessingAuditService();
             this.metrics = config.enableMetrics() ? AepMetricsCollector.create() : AepMetricsCollector.noop();
             this.versionCompatibility = EventVersionCompatibility.builder()
                 .currentVersion(config.currentEventVersion())
@@ -566,17 +578,196 @@ public final class Aep {
             checkNotClosed();
             requireTenantId(tenantId);
             Objects.requireNonNull(pipeline, "pipeline must not be null");
+            
+            // Validate DAG structure
+            if (!pipeline.isValidDAG()) {
+                throw new IllegalArgumentException("Pipeline contains cycles and is not a valid DAG");
+            }
+            
             logger.info("Submitting pipeline id={} name='{}' with {} steps for tenant={}",
                 pipeline.id(), pipeline.name(), pipeline.steps().size(), tenantId);
 
-            for (AepEngine.PipelineStep step : pipeline.steps()) {
-                try {
-                    executePipelineStep(tenantId, pipeline.id(), step);
-                } catch (Exception e) {
-                    logger.error("Pipeline step type={} failed in pipeline={} for tenant={}: {}",
-                        step.type(), pipeline.id(), tenantId, e.getMessage(), e);
+            // Execute steps in DAG order (topological sort) using Promise chain
+            executePipelineDAG(tenantId, pipeline)
+                .whenComplete(() -> logger.info("Pipeline {} execution completed", pipeline.id()))
+                .whenException(ex -> logger.error("Pipeline {} execution failed: {}", pipeline.id(), ex.getMessage()));
+        }
+
+        private Promise<Void> executePipelineDAG(String tenantId, AepEngine.Pipeline pipeline) {
+            Map<String, AepEngine.PipelineStep> stepsById = pipeline.steps().stream()
+                .collect(Collectors.toMap(AepEngine.PipelineStep::id, s -> s));
+            
+            Map<String, Boolean> completedSteps = new ConcurrentHashMap<>();
+            List<Exception> errors = new CopyOnWriteArrayList<>();
+
+            // Execute steps in topological order, grouping independent steps for parallel execution
+            List<String> executionOrder = topologicalSort(pipeline);
+            
+            // Group steps by dependency level for parallel execution
+            Map<String, List<String>> stepsByLevel = new LinkedHashMap<>();
+            for (String stepId : executionOrder) {
+                AepEngine.PipelineStep step = stepsById.get(stepId);
+                if (step == null) continue;
+                
+                // Determine level based on dependencies
+                int level = 0;
+                for (String dep : step.dependsOn()) {
+                    if (stepsById.containsKey(dep)) {
+                        level = Math.max(level, getStepLevel(dep, stepsByLevel) + 1);
+                    }
+                }
+                
+                String levelKey = "level_" + level;
+                stepsByLevel.computeIfAbsent(levelKey, k -> new ArrayList<>()).add(stepId);
+            }
+            
+            // Execute each level in sequence, with parallel execution within each level
+            Promise<Void> executionPromise = Promise.complete();
+            
+            for (List<String> levelSteps : stepsByLevel.values()) {
+                final List<String> currentLevelSteps = levelSteps;
+                executionPromise = executionPromise.then(() -> {
+                    // Execute all steps in this level in parallel using Promises.all()
+                    List<Promise<Void>> stepPromises = currentLevelSteps.stream()
+                        .map(stepId -> {
+                            AepEngine.PipelineStep step = stepsById.get(stepId);
+                            if (step == null) return Promise.complete();
+                            
+                            return waitForDependenciesAsync(step.dependsOn(), completedSteps)
+                                .then(() -> Promise.ofBlocking(() -> {
+                                    try {
+                                        executePipelineStep(tenantId, pipeline.id(), step);
+                                        completedSteps.put(stepId, true);
+                                        logger.debug("Completed step {} in pipeline {}", stepId, pipeline.id());
+                                    } catch (Exception e) {
+                                        logger.error("Failed to execute step {} in pipeline {}: {}", stepId, pipeline.id(), e.getMessage(), e);
+                                        errors.add(e);
+                                        completedSteps.put(stepId, false);
+                                    }
+                                }));
+                        })
+                        .collect(Collectors.toList());
+                    
+                    return Promises.all(stepPromises).toVoid();
+                });
+            }
+            
+            return executionPromise.then(() -> {
+                if (!errors.isEmpty()) {
+                    // Collect all errors in the exception message
+                    String allErrors = errors.stream()
+                        .map(e -> e.getMessage())
+                        .collect(Collectors.joining("; "));
+                    throw new RuntimeException("Pipeline execution failed with " + errors.size() + " errors: " + allErrors, 
+                        errors.get(0));
+                }
+            });
+        }
+
+        private int getStepLevel(String stepId, Map<String, List<String>> stepsByLevel) {
+            for (Map.Entry<String, List<String>> entry : stepsByLevel.entrySet()) {
+                if (entry.getValue().contains(stepId)) {
+                    return Integer.parseInt(entry.getKey().substring(6)); // Extract level from "level_X"
                 }
             }
+            return 0;
+        }
+
+        private List<String> topologicalSort(AepEngine.Pipeline pipeline) {
+            Map<String, Integer> inDegree = new HashMap<>();
+            Map<String, List<String>> adjacency = new HashMap<>();
+            
+            // Initialize
+            for (AepEngine.PipelineStep step : pipeline.steps()) {
+                inDegree.put(step.id(), 0);
+                adjacency.put(step.id(), new ArrayList<>());
+            }
+            
+            // Build graph
+            for (AepEngine.PipelineStep step : pipeline.steps()) {
+                for (String dep : step.dependsOn()) {
+                    if (inDegree.containsKey(dep)) {
+                        adjacency.get(dep).add(step.id());
+                        inDegree.merge(step.id(), 1, Integer::sum);
+                    }
+                }
+            }
+            
+            // Kahn's algorithm
+            Queue<String> queue = new LinkedList<>();
+            for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
+                if (entry.getValue() == 0) {
+                    queue.add(entry.getKey());
+                }
+            }
+            
+            List<String> result = new ArrayList<>();
+            while (!queue.isEmpty()) {
+                String stepId = queue.poll();
+                result.add(stepId);
+                
+                for (String neighbor : adjacency.getOrDefault(stepId, List.of())) {
+                    inDegree.merge(neighbor, -1, Integer::sum);
+                    if (inDegree.get(neighbor) == 0) {
+                        queue.add(neighbor);
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        private void waitForDependencies(List<String> dependencies, Map<String, Boolean> completedSteps) {
+            if (dependencies.isEmpty()) return;
+            
+            // Poll for completion (simple implementation)
+            // In production, this should use proper async coordination
+            int maxWait = 10000; // 10 seconds
+            int waited = 0;
+            while (waited < maxWait) {
+                boolean allComplete = dependencies.stream()
+                    .allMatch(dep -> completedSteps.containsKey(dep) && completedSteps.get(dep));
+                
+                if (allComplete) return;
+                
+                try {
+                    Thread.sleep(50);
+                    waited += 50;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while waiting for dependencies", e);
+                }
+            }
+            
+            throw new RuntimeException("Timeout waiting for dependencies: " + dependencies);
+        }
+
+        private Promise<Void> waitForDependenciesAsync(List<String> dependencies, Map<String, Boolean> completedSteps) {
+            if (dependencies.isEmpty()) {
+                return Promise.complete();
+            }
+            
+            // Async check for dependency completion
+            return Promise.ofBlocking(() -> {
+                int maxWait = 10000; // 10 seconds
+                int waited = 0;
+                while (waited < maxWait) {
+                    boolean allComplete = dependencies.stream()
+                        .allMatch(dep -> completedSteps.containsKey(dep) && completedSteps.get(dep));
+                    
+                    if (allComplete) return;
+                    
+                    try {
+                        Thread.sleep(50);
+                        waited += 50;
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Interrupted while waiting for dependencies", e);
+                    }
+                }
+                
+                throw new RuntimeException("Timeout waiting for dependencies: " + dependencies);
+            });
         }
 
         @Override
@@ -646,20 +837,41 @@ public final class Aep {
         public Promise<List<AepEngine.Pattern>> listPatterns(String tenantId) {
             checkNotClosed();
             requireTenantId(tenantId);
-            return Promise.of(patternCache.get(tenantId,
-                () -> new ArrayList<>(patternsByTenant.getOrDefault(tenantId, Map.of()).values())));
+            return Promise.of(new ArrayList<>(patternsByTenant.getOrDefault(tenantId, Map.of()).values()));
+        }
+
+        @Override
+        public void registerPatternDetector(String tenantId, AepEngine.PatternDetector detector) {
+            checkNotClosed();
+            requireTenantId(tenantId);
+            Objects.requireNonNull(detector, "detector must not be null");
+            patternDetectorsByTenant.computeIfAbsent(tenantId, ignored -> new CopyOnWriteArrayList()).add(detector);
+            logger.info("Registered pattern detector for tenant={}", tenantId);
+        }
+
+        @Override
+        public void unregisterPatternDetector(String tenantId, AepEngine.PatternDetector detector) {
+            checkNotClosed();
+            requireTenantId(tenantId);
+            Objects.requireNonNull(detector, "detector must not be null");
+            List<AepEngine.PatternDetector> detectors = patternDetectorsByTenant.get(tenantId);
+            if (detectors != null) {
+                detectors.remove(detector);
+                logger.info("Unregistered pattern detector for tenant={}", tenantId);
+            }
         }
 
         @Override
         public Promise<Void> deletePattern(String tenantId, String patternId) {
             checkNotClosed();
             requireTenantId(tenantId);
-            validatePatternAccess(tenantId, patternId, false);
+            Objects.requireNonNull(patternId, "patternId must not be null");
+            validatePatternAccess(tenantId, patternId, true);
 
             Map<String, AepEngine.Pattern> patterns = patternsByTenant.get(tenantId);
             if (patterns != null) {
                 patterns.remove(patternId);
-                patternCache.put(tenantId, patterns.values());
+                patternCache.put(tenantId, new ArrayList<>(patterns.values()));
                 metrics.gaugeActivePatterns(tenantId, patterns.size());
             }
 
@@ -766,6 +978,9 @@ public final class Aep {
                 AepRateLimiter.RateLimitDecision rateLimitDecision = rateLimiter.get().tryAcquire(tenantId);
                 if (!rateLimitDecision.allowed()) {
                     metrics.incrementRateLimited(tenantId);
+                    auditService.logDecision(tenantId, fallbackEventId, "RATE_LIMIT", "DENIED",
+                        "Rate limited; retry after " + rateLimitDecision.retryAfterSeconds() + "s",
+                        Map.of("retryAfterSeconds", rateLimitDecision.retryAfterSeconds()));
                     return Promise.of(AepEngine.ProcessingResult.skipped(
                         fallbackEventId,
                         "Rate limited; retry after " + rateLimitDecision.retryAfterSeconds() + "s"
@@ -775,6 +990,8 @@ public final class Aep {
                 Optional<AepEngine.ProcessingResult> duplicateResult = duplicateEventResult(tenantId, event, fallbackEventId);
                 if (duplicateResult.isPresent()) {
                     metrics.incrementIdempotencyHits(tenantId);
+                    auditService.logDecision(tenantId, fallbackEventId, "IDEMPOTENCY", "SKIPPED",
+                        "Duplicate event detected", Map.of());
                     return Promise.of(duplicateResult.get());
                 }
 
@@ -782,16 +999,25 @@ public final class Aep {
                 try {
                     compatibleEvent = versionCompatibility.migrate(tenantId, event);
                 } catch (RuntimeException exception) {
+                    auditService.logDecision(tenantId, fallbackEventId, "VERSION_MIGRATION", "FAILED",
+                        "Version migration failed: " + exception.getMessage(),
+                        Map.of("fromVersion", event.version(), "error", exception.getMessage()));
                     return Promise.of(AepEngine.ProcessingResult.failed(fallbackEventId, exception.getMessage()));
                 }
 
                 if (!Objects.equals(event.version(), compatibleEvent.version())) {
                     metrics.incrementVersionMigrations(tenantId, event.version());
+                    auditService.logDecision(tenantId, fallbackEventId, "VERSION_MIGRATION", "ALLOWED",
+                        "Event migrated from version " + event.version() + " to " + compatibleEvent.version(),
+                        Map.of("fromVersion", event.version(), "toVersion", compatibleEvent.version()));
                 }
 
                 EventSchemaValidator.ValidationResult schemaResult = schemaValidator.validate(compatibleEvent);
                 if (!schemaResult.isValid()) {
                     metrics.incrementSchemaViolations(tenantId);
+                    auditService.logDecision(tenantId, fallbackEventId, "SCHEMA_VALIDATION", "FAILED",
+                        "Schema validation failed: " + schemaResult.summary(),
+                        Map.of("summary", schemaResult.summary()));
                     return Promise.of(AepEngine.ProcessingResult.failed(
                         fallbackEventId,
                         "Schema validation failed: " + schemaResult.summary()
@@ -807,6 +1033,9 @@ public final class Aep {
                         metrics.recordConsentEvalTime(tenantId, elapsedMs(consentStartedAt));
                         if (!decision.allowed()) {
                             metrics.incrementConsentDenied(tenantId);
+                            auditService.logDecision(tenantId, eventId, "CONSENT", "DENIED",
+                                "Event rejected by consent policy: " + decision.reason(),
+                                Map.of("reason", decision.reason()));
                             return Promise.of(AepEngine.ProcessingResult.skipped(
                                 eventId,
                                 "Event rejected by consent policy"
@@ -814,10 +1043,16 @@ public final class Aep {
                         }
 
                         metrics.incrementConsentAllowed(tenantId);
+                        auditService.logDecision(tenantId, eventId, "CONSENT", "ALLOWED",
+                            "Event allowed by consent policy",
+                            Map.of("reason", decision.reason()));
+
                         Instant patternStartedAt = Instant.now();
                         List<AepEngine.Detection> detections = new ArrayList<>();
                         List<AepEngine.Pattern> patterns = patternCache.get(tenantId,
                             () -> new ArrayList<>(patternsByTenant.getOrDefault(tenantId, Map.of()).values()));
+
+                        // First, run built-in pattern matching
                         for (AepEngine.Pattern pattern : patterns) {
                             Optional<AepEngine.Detection> detection = matchPattern(tenantId, pattern, normalizedEvent);
                             detection.ifPresent(found -> {
@@ -825,6 +1060,65 @@ public final class Aep {
                                 metrics.incrementPatternsMatched(tenantId, found.patternId());
                             });
                         }
+
+                        // Then, run registered custom pattern detectors (e.g., PatternDetectionAgent)
+                        List<AepEngine.PatternDetector> detectors = patternDetectorsByTenant.getOrDefault(tenantId, List.of());
+                        if (!detectors.isEmpty()) {
+                            List<Promise<List<AepEngine.Detection>>> detectorPromises = detectors.stream()
+                                .map(detector -> detector.detect(tenantId, normalizedEvent, patterns)
+                                    .then(detectedDetections -> {
+                                        metrics.incrementPatternsMatched(tenantId, "custom-detector");
+                                        return detectedDetections;
+                                    })
+                                    .whenException(e -> {
+                                        logger.warn("Pattern detector failed for tenant={}: {}", tenantId, e.getMessage());
+                                        return Promise.of(List.of());
+                                    }))
+                                .toList();
+                            
+                            // Wait for all detectors to complete and collect their detections
+                            return Promises.toList(detectorPromises)
+                                .map(allDetections -> {
+                                    for (List<AepEngine.Detection> detectorDetections : allDetections) {
+                                        detections.addAll(detectorDetections);
+                                    }
+                                    metrics.recordPatternMatchTime(tenantId, elapsedMs(patternStartedAt));
+                                    notifySubscribers(tenantId, detections);
+
+                                    Instant deliveryStartedAt = Instant.now();
+                                    return AepAsyncUtils.withTimeout(
+                                            deliveryService.deliver(tenantId, normalizedEvent, detections),
+                                            asyncTimeout.get(),
+                                            "delivery")
+                                        .map(deliveryResult -> {
+                                            metrics.recordDeliveryTime(tenantId, elapsedMs(deliveryStartedAt));
+                                            if (deliveryResult.hasFailures()) {
+                                                metrics.incrementDeliveryFailed(tenantId);
+                                            } else {
+                                                metrics.incrementDeliverySuccess(tenantId);
+                                            }
+
+                                            Map<String, Object> metadata = new LinkedHashMap<>();
+                                            metadata.put("processed", true);
+                                            metadata.put("correlationId", normalizedEvent.correlationId());
+                                            metadata.put("consentStatus", normalizedEvent.consentContext().status().name());
+                                            metadata.put("eventVersion", normalizedEvent.version());
+                                            normalizedEvent.identityContext().stitchedId()
+                                                .ifPresent(stitchedId -> metadata.put("stitchedId", stitchedId));
+                                            if (deliveryResult.hasFailures()) {
+                                                metadata.put("deliveryFailures", deliveryResult.failed());
+                                                metadata.put("deliveryFailureCategories", deliveryResult.failureDetails().entrySet().stream()
+                                                    .collect(java.util.stream.Collectors.toMap(
+                                                        Map.Entry::getKey,
+                                                        entry -> entry.getValue().category().name())));
+                                            }
+                                            return new AepEngine.ProcessingResult(eventId, true, detections, metadata);
+                                        });
+                                })
+                                .mapException(e -> new RuntimeException("Pattern detection failed: " + e.getMessage(), e))
+                                .then(Promise::of, e -> Promise.of(AepEngine.ProcessingResult.failed(eventId, e.getMessage())));
+                        }
+
                         metrics.recordPatternMatchTime(tenantId, elapsedMs(patternStartedAt));
 
                         notifySubscribers(tenantId, detections);

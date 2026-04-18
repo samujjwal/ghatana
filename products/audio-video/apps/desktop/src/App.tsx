@@ -78,7 +78,7 @@ function App() {
     { id: 'multimodal' as const, label: 'Multimodal', content: <MultimodalPanel /> },
     { id: 'workflows' as const, label: 'Workflows', content: <WorkflowPanel /> },
     { id: 'monitoring' as const, label: 'Monitoring', content: <AdvancedMonitoringDashboard /> },
-    { id: 'tests' as const, label: 'Tests', content: <TestSuite /> },
+    ...(import.meta.env.DEV ? [{ id: 'tests' as const, label: 'Tests', content: <TestSuite /> }] : []),
     { id: 'settings' as const, label: 'Settings', content: <SettingsPanel /> },
   ];
 

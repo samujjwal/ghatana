@@ -54,10 +54,25 @@ vi.mock('react-router', async (importOriginal) => {
     };
 });
 
-vi.mock('../../lib/api/data-cloud-api', () => ({
-    dataCloudApi: {
-        getCollectionById: vi.fn().mockResolvedValue({ data: { id: 'journey-col-1', name: 'Test' } }),
-        updateCollection: vi.fn().mockResolvedValue({}),
+vi.mock('../../lib/api/collections', () => ({
+    collectionsApi: {
+        list: vi.fn().mockResolvedValue({
+            items: [
+                {
+                    id: 'journey-col-1',
+                    name: 'Test',
+                    description: 'Journey test collection',
+                    schemaType: 'entity',
+                    status: 'active',
+                    entityCount: 10,
+                    updatedAt: '2026-04-18T12:00:00Z',
+                    schema: { fields: [] },
+                },
+            ],
+        }),
+        create: vi.fn().mockResolvedValue({ id: 'journey-col-1' }),
+        get: vi.fn().mockResolvedValue({ id: 'journey-col-1', name: 'Test', description: 'Journey test collection', schema: { fields: [] } }),
+        update: vi.fn().mockResolvedValue({}),
     },
 }));
 

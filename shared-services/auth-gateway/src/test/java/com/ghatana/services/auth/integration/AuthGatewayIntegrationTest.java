@@ -247,4 +247,52 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
         assertThat(hasMfa).isTrue();
         assertThat(hasLogout).isTrue();
     }
+
+    @Test
+    @Order(9)
+    @DisplayName("Integration: Should parse login request with complex JSON using Jackson")
+    void testLoginRequestParsingWithComplexJson() throws Exception {
+        // Test with complex JSON including escaped quotes, nested objects, and special characters
+        String complexJson = """
+            {
+                "username": "test\\\"user\\\"",
+                "password": "p@$$w0rd!@#",
+                "metadata": {
+                    "ip": "192.168.1.1",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                },
+                "rememberMe": true
+            }
+            """;
+
+        // Use reflection to invoke extractJsonField
+        java.lang.reflect.Method method = com.ghatana.services.auth.AuthGatewayLauncher.class
+            .getDeclaredMethod("extractJsonField", String.class, String.class);
+        method.setAccessible(true);
+
+        // Extract username with escaped quotes
+        String username = (String) method.invoke(null, complexJson, "username");
+        assertThat(username).isEqualTo("test\"user\"");
+
+        // Extract password with special characters
+        String password = (String) method.invoke(null, complexJson, "password");
+        assertThat(password).isEqualTo("p@$$w0rd!@#");
+
+        // Extract nested object as string
+        String metadata = (String) method.invoke(null, complexJson, "metadata");
+        assertThat(metadata).isNotNull();
+        assertThat(metadata).contains("192.168.1.1");
+
+        // Extract boolean field
+        String rememberMe = (String) method.invoke(null, complexJson, "rememberMe");
+        assertThat(rememberMe).isEqualTo("true");
+
+        // Log successful parsing
+        runPromise(() -> auditLogger.logLoginSuccess(username, TEST_TENANT, "192.168.1.1", "Mozilla/5.0"));
+
+        // Verify audit event was logged
+        AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10);
+        assertThat(events).isNotEmpty();
+        assertThat(events[0].eventType()).isEqualTo(AuditLogger.AuditEventType.AUTH_LOGIN_SUCCESS);
+    }
 }

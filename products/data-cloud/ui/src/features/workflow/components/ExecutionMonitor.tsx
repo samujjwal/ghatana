@@ -31,6 +31,12 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@ghatana/design-system';
 import { cn } from '../../../lib/theme';
+import SessionBootstrap from '../../../lib/auth/session';
+import {
+  EXECUTION_MONITOR_BOUNDARY_MESSAGE,
+  EXECUTION_MONITOR_GUIDANCE_NOTE,
+  EXECUTION_MONITOR_UNAVAILABLE_TITLE,
+} from '../../../lib/runtime-boundaries';
 
 // ============================================================================
 // Types
@@ -83,11 +89,10 @@ export interface ExecutionMonitorProps {
   className?: string;
 }
 
-export const EXECUTION_MONITOR_BOUNDARY_NOTE =
-  'Execution detail and log streaming are not exposed by the current Data Cloud launcher API.';
+export const EXECUTION_MONITOR_BOUNDARY_NOTE = EXECUTION_MONITOR_BOUNDARY_MESSAGE;
 
 function getTenantId(): string {
-  return localStorage.getItem('tenantId') || 'default-tenant';
+  return SessionBootstrap.requireTenantId();
 }
 
 async function fetchExecutionState(executionId: string): Promise<ExecutionState> {
@@ -116,11 +121,11 @@ function ExecutionMonitorUnavailable({ className }: { className?: string }) {
     >
       <div className="flex items-center gap-2 text-sm font-medium">
         <AlertTriangle className="h-4 w-4" />
-        Execution Monitoring Unavailable
+        {EXECUTION_MONITOR_UNAVAILABLE_TITLE}
       </div>
       <p className="text-sm leading-6">{EXECUTION_MONITOR_BOUNDARY_NOTE}</p>
       <p className="text-xs text-amber-700 dark:text-amber-300">
-        Use pipeline execution summaries and launcher-supported workflow pages instead of per-execution live monitoring.
+        {EXECUTION_MONITOR_GUIDANCE_NOTE}
       </p>
     </div>
   );

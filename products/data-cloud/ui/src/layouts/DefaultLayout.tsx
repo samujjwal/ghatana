@@ -32,8 +32,15 @@ import {
     Box,
     Network,
     Bot,
+    ChevronDown,
 } from 'lucide-react';
 import { cn, bgStyles, borderStyles, textStyles } from '../lib/theme';
+import SessionBootstrap, {
+    type ShellRole,
+    SHELL_ROLE_LABELS,
+    SHELL_ROLES,
+    canAccessShellRole,
+} from '../lib/auth/session';
 import { GlobalSearch, useGlobalSearch } from '../components/common/GlobalSearch';
 import { KeyboardShortcuts, useKeyboardShortcuts } from '../components/common/KeyboardShortcuts';
 import { AiAssistant, useAiAssistant, AiAssistantTrigger } from '../components/ai/AiAssistant';
@@ -53,6 +60,7 @@ interface NavItem {
     label: string;
     icon: React.ReactNode;
     exact?: boolean;
+    minimumShellRole?: ShellRole;
 }
 
 /**
@@ -72,18 +80,27 @@ const navSections: NavSection[] = [
     {
         title: 'Intelligence',
         items: [
-            { to: '/insights', label: 'Insights', icon: <Brain className="h-4 w-4" /> },
-            { to: '/trust', label: 'Trust', icon: <Shield className="h-4 w-4" /> },
+            { to: '/insights', label: 'Insights', icon: <Brain className="h-4 w-4" />, minimumShellRole: 'operator' },
+            { to: '/trust', label: 'Trust', icon: <Shield className="h-4 w-4" />, minimumShellRole: 'operator' },
         ],
     },
     {
         title: 'System',
         items: [
-            { to: '/events', label: 'Events', icon: <Activity className="h-4 w-4" /> },
-            { to: '/settings', label: 'Settings', icon: <Settings className="h-4 w-4" /> },
+            { to: '/events', label: 'Events', icon: <Activity className="h-4 w-4" />, minimumShellRole: 'operator' },
+            { to: '/settings', label: 'Settings', icon: <Settings className="h-4 w-4" />, minimumShellRole: 'admin' },
         ],
     },
 ];
+
+export function getNavigationSectionsForShellRole(shellRole: ShellRole): NavSection[] {
+    return navSections
+        .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => canAccessShellRole(shellRole, item.minimumShellRole ?? 'primary-user')),
+        }))
+        .filter((section) => section.items.length > 0);
+}
 
 /**
  * Sidebar component
@@ -93,12 +110,16 @@ function Sidebar({
     onToggle,
     isMobileOpen,
     onMobileClose,
+    shellRole,
 }: {
     isCollapsed: boolean;
     onToggle: () => void;
     isMobileOpen: boolean;
     onMobileClose: () => void;
+    shellRole: ShellRole;
 }) {
+    const visibleSections = getNavigationSectionsForShellRole(shellRole);
+
     return (
         <>
             {/* Mobile overlay */}
@@ -151,7 +172,7 @@ function Sidebar({
 
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto py-4 px-2">
-                    {navSections.map((section) => (
+                    {visibleSections.map((section) => (
                         <div key={section.title} className="mb-6">
                             {!isCollapsed && (
                                 <h3 className={cn(textStyles.xs, 'px-3 mb-2 font-semibold uppercase tracking-wider')}>
@@ -217,11 +238,17 @@ function Header({
     onMenuClick,
     onSearchClick,
     notificationCenter,
+    shellRole,
+    onShellRoleChange,
 }: {
     onMenuClick: () => void;
     onSearchClick: () => void;
     notificationCenter: ReturnType<typeof useNotificationCenter>;
+    shellRole: ShellRole;
+    onShellRoleChange: (role: ShellRole) => void;
 }) {
+    const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+
     return (
         <header className={cn('h-16 sticky top-0 z-30 border-b', bgStyles.surface, borderStyles.divider)}>
             <div className="h-full px-4 flex items-center justify-between">
@@ -281,13 +308,60 @@ function Header({
                     </div>
 
                     {/* User menu */}
-                    <button
-                        type="button"
-                        className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                        aria-label="User menu"
-                    >
-                        <span className="text-sm font-medium">U</span>
-                    </button>
+                    <div className="relative">
+                        <button
+                            type="button"
+                            className="flex h-8 items-center gap-2 rounded-full bg-gray-200 px-3 text-gray-600 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                            aria-label="Workspace mode menu"
+                            onClick={() => setIsRoleMenuOpen((current) => !current)}
+                        >
+                            <span className="text-sm font-medium">{SHELL_ROLE_LABELS[shellRole]}</span>
+                            <ChevronDown className="h-4 w-4" />
+                        </button>
+
+                        {isRoleMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                                <div className="px-2 pb-2 pt-1">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                        Workspace Mode
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Progressive disclosure changes the shell density without changing backend permissions.
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    {SHELL_ROLES.map((role) => {
+                                        const isSelected = role === shellRole;
+                                        return (
+                                            <button
+                                                key={role}
+                                                type="button"
+                                                onClick={() => {
+                                                    onShellRoleChange(role);
+                                                    setIsRoleMenuOpen(false);
+                                                }}
+                                                className={cn(
+                                                    'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                    isSelected
+                                                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                                                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
+                                                )}
+                                            >
+                                                <div className="font-medium">{SHELL_ROLE_LABELS[role]}</div>
+                                                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                                    {role === 'primary-user'
+                                                        ? 'Focus on asking questions, exploring data, and launching flows.'
+                                                        : role === 'operator'
+                                                            ? 'Reveal runtime diagnostics, trust, and operational investigation surfaces.'
+                                                            : 'Include administrative settings and full shell access.'}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </header>
@@ -306,6 +380,7 @@ function Header({
 export default function DefaultLayout(): React.ReactElement {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [shellRole, setShellRole] = useState<ShellRole>(() => SessionBootstrap.getShellRole());
 
     const globalSearch = useGlobalSearch();
     const keyboardShortcuts = useKeyboardShortcuts();
@@ -326,6 +401,7 @@ export default function DefaultLayout(): React.ReactElement {
                 onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
                 isMobileOpen={mobileMenuOpen}
                 onMobileClose={() => setMobileMenuOpen(false)}
+                shellRole={shellRole}
             />
 
             {/* Main area */}
@@ -340,6 +416,11 @@ export default function DefaultLayout(): React.ReactElement {
                     onMenuClick={() => setMobileMenuOpen(true)}
                     onSearchClick={globalSearch.open}
                     notificationCenter={notificationCenter}
+                    shellRole={shellRole}
+                    onShellRoleChange={(role) => {
+                        SessionBootstrap.setShellRole(role);
+                        setShellRole(role);
+                    }}
                 />
 
                 {/* Main content */}

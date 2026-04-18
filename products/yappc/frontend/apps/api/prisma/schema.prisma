@@ -189,10 +189,11 @@ model Project {
   pages     Page[]
 
   // Lifecycle Hub (project-scoped)
-  lifecycleArtifacts    LifecycleArtifact[]
-  lifecycleItems        LifecycleItem[]
-  lifecycleAIInsights   LifecycleAIInsight[]
-  lifecycleActivityLogs LifecycleActivityLog[]
+  lifecycleArtifacts      LifecycleArtifact[]
+  lifecycleItems          LifecycleItem[]
+  lifecycleAIInsights     LifecycleAIInsight[]
+  lifecycleActivityLogs   LifecycleActivityLog[]
+  lifecycleExecutionResults LifecycleExecutionResult[]
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -1452,7 +1453,7 @@ model LifecycleArtifact {
   content         String?
   status          String         @default("draft")
   phase           LifecyclePhase @default(SHAPE)
-  fowStage        Int            @default(1)
+  flowStage       Int            @default(1)
   createdBy       String         @default("system")
   linkedArtifacts String[]       @default([])
 
@@ -1465,7 +1466,7 @@ model LifecycleArtifact {
 
   @@index([projectId])
   @@index([phase])
-  @@index([fowStage])
+  @@index([flowStage])
   @@index([status])
 }
 
@@ -1486,7 +1487,7 @@ model LifecycleItem {
   priority        String         @default("MEDIUM")
   estimatedEffort Int?
   phase           LifecyclePhase @default(SHAPE)
-  fowStage        Int            @default(1)
+  flowStage       Int            @default(1)
   assignedPersona String?
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -1517,7 +1518,7 @@ model LifecycleAIInsight {
   severity    String         @default("INFO")
   status      String         @default("PENDING")
   phase       LifecyclePhase @default(SHAPE)
-  fowStage    Int            @default(1)
+  flowStage   Int            @default(1)
   agentName   String         @default("AI Assistant")
   metadata    Json           @default("{}")
 
@@ -1840,4 +1841,62 @@ model FlowState {
 
   @@index([flowId])
   @@index([currentState])
+}
+
+// ============================================================================
+// LIFECYCLE EXECUTION RESULTS
+// ============================================================================
+
+///
+/// LifecycleExecutionResult entity for persisting AI lifecycle execution results.
+/// @doc.type model
+/// @doc.purpose Persist lifecycle execution results from Java backend
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model LifecycleExecutionResult {
+  id                String   @id @default(cuid())
+  projectId         String
+  executionId       String   @unique
+  status            ExecutionStatus @default(RUNNING)
+  
+  // Execution metadata
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  totalDurationMs   Int?
+  
+  // Phase execution details
+  executedPhases    Json     @default("[]") // Array of phase names
+  phaseDurationsMs  Json     @default("{}") // Map of phase -> duration
+  
+  // Results per phase (JSON to accommodate different phase result types)
+  intentResult      Json?
+  shapeResult       Json?
+  validationResult  Json?
+  generationResult  Json?
+  runResult         Json?
+  observationResult Json?
+  learningResult    Json?
+  evolutionResult   Json?
+  
+  // Overall execution outcome
+  success           Boolean  @default(false)
+  errorMessage      String?
+  errorPhase        String?
+  
+  // AI quality metrics
+  aiConfidence      Float?
+  tokenUsage        Json?    // Map of phase -> token count
+  fallbacksUsed     Json?    // Array of phases that used fallbacks
+  
+  // Relations
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([executionId])
+  @@index([status])
+  @@index([startedAt])
 }

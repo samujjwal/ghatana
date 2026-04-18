@@ -1,6 +1,6 @@
 /**
  * @doc.type hook
- * @doc.purpose Jotai atoms for audio-video application state
+ * @doc.purpose Jotai atoms for audio-video application state with Tauri config store integration
  * @doc.layer application
  * @doc.pattern state management
  */
@@ -26,39 +26,53 @@ interface AudioVideoStore {
   setError: (error: string | null) => void;
 }
 
+/**
+ * Load service endpoint from environment variable or use default
+ * Environment variables: AV_STT_ENDPOINT, AV_TTS_ENDPOINT, AV_AI_VOICE_ENDPOINT, AV_VISION_ENDPOINT, AV_MULTIMODAL_ENDPOINT
+ */
+function getServiceEndpoint(serviceName: string, defaultPort: number): string {
+  const envVarName = `AV_${serviceName.toUpperCase().replace('-', '_')}_ENDPOINT`;
+  if (typeof window !== 'undefined' && window.__TAURI__) {
+    // In Tauri environment, try to read from environment or config
+    return import.meta.env.VITE_${envVarName} || `http://localhost:${defaultPort}`;
+  }
+  // Fallback for web/dev environment
+  return (import.meta.env as any)[`VITE_${envVarName}`] || `http://localhost:${defaultPort}`;
+}
+
 const defaultSettings: AudioVideoSettings = {
   services: {
     stt: {
       enabled: true,
-      endpoint: 'http://localhost:50051',
+      endpoint: getServiceEndpoint('stt', 50051),
       timeout: 30000,
       retries: 3,
       customSettings: {}
     },
     tts: {
       enabled: true,
-      endpoint: 'http://localhost:50052',
+      endpoint: getServiceEndpoint('tts', 50052),
       timeout: 30000,
       retries: 3,
       customSettings: {}
     },
     'ai-voice': {
       enabled: true,
-      endpoint: 'http://localhost:50053',
+      endpoint: getServiceEndpoint('ai-voice', 50053),
       timeout: 30000,
       retries: 3,
       customSettings: {}
     },
     vision: {
       enabled: true,
-      endpoint: 'http://localhost:50054',
+      endpoint: getServiceEndpoint('vision', 50054),
       timeout: 30000,
       retries: 3,
       customSettings: {}
     },
     multimodal: {
       enabled: true,
-      endpoint: 'http://localhost:50055',
+      endpoint: getServiceEndpoint('multimodal', 50055),
       timeout: 60000,
       retries: 3,
       customSettings: {}

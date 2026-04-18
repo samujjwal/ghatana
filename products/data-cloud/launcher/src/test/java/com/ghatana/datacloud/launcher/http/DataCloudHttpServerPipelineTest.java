@@ -143,7 +143,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
                 void createPipeline_missingTenant_returns400() throws Exception {
                         startServer();
 
-                        HttpResponse<String> resp = postJson(
+                        HttpResponse<String> resp = postJsonWithoutTenant(
                                         "/api/v1/pipelines",
                                         Map.of("name", TestConstants.PIPELINE_NAME_DEFAULT));
 
@@ -266,7 +266,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
                 void listPipelines_missingTenant_returns400() throws Exception {
                         startServer();
 
-                        HttpResponse<String> resp = get("/api/v1/pipelines");
+                        HttpResponse<String> resp = getWithoutTenant("/api/v1/pipelines");
 
                         assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST);
                         Map<String, Object> body = parseJsonResponse(resp);

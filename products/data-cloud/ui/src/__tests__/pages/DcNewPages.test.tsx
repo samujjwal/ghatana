@@ -473,7 +473,7 @@ describe('EntityBrowserPage', () => {
 // =============================================================================
 
 import { DataFabricPage } from '../../pages/DataFabricPage';
-import { FABRIC_METRICS_BOUNDARY_MESSAGE } from '../../pages/DataFabricPage';
+import { dataFabricMetricsBoundary } from '@/components/common/unsupportedSurfaceRegistry';
 
 const SAMPLE_FABRIC_METRICS = {
   tiers: [
@@ -532,7 +532,7 @@ describe('DataFabricPage', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Data Fabric')).toBeDefined();
     expect(screen.getByText(/four-tier event cloud topology/i)).toBeDefined();
-    expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeDefined();
+    expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeDefined();
   });
 
   it('renders the flow canvas placeholder', () => {
@@ -553,7 +553,7 @@ describe('DataFabricPage', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeDefined();
+      expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeDefined();
       expect(screen.getByRole('button', { name: /Migrate Tier/i })).toBeDefined();
       expect(screen.getByText(/Total throughput:/i)).toBeDefined();
       expect(screen.getByText(/Total storage:/i)).toBeDefined();

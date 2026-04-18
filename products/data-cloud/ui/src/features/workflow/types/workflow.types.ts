@@ -418,7 +418,7 @@ export interface ValidationResult {
 }
 
 /**
- * API request: Create workflow.
+ * API request: Create pipeline.
  *
  * @doc.type interface
  */
@@ -456,7 +456,7 @@ export interface ExecuteWorkflowRequest {
 }
 
 /**
- * API response: Workflow list.
+ * API response: Pipeline list for the workflow UI.
  *
  * @doc.type interface
  */

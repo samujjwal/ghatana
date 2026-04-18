@@ -19,6 +19,14 @@ import {
   type CollectionEntityListResponse as BackendCollectionListResponse,
   type Feature as SharedFeature,
 } from '../contracts/schemas';
+import {
+  DATASET_CATALOG_BOUNDARY_MESSAGE,
+  DATASET_DETAIL_BOUNDARY_MESSAGE,
+  GLOBAL_SEARCH_BOUNDARY_MESSAGE,
+  IMPACT_ANALYSIS_BOUNDARY_MESSAGE,
+  LINEAGE_GRAPH_BOUNDARY_MESSAGE,
+  QUERY_VALIDATION_BOUNDARY_MESSAGE,
+} from '../lib/runtime-boundaries';
 
 // ============================================================================
 // Schemas
@@ -327,9 +335,7 @@ export class DataCloudApiClient {
   async getDatasets(collectionId: string, params?: SearchParams): Promise<Dataset[]> {
     void collectionId;
     void params;
-    return this.unsupportedOperation(
-      'Collection-scoped dataset catalog routes are not exposed by the current Data Cloud launcher API.',
-    );
+    return this.unsupportedOperation(DATASET_CATALOG_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -339,9 +345,7 @@ export class DataCloudApiClient {
   async getDataset(collectionId: string, datasetId: string): Promise<Dataset> {
     void collectionId;
     void datasetId;
-    return this.unsupportedOperation(
-      'Collection-scoped dataset detail routes are not exposed by the current Data Cloud launcher API.',
-    );
+    return this.unsupportedOperation(DATASET_DETAIL_BOUNDARY_MESSAGE);
   }
 
   // ==========================================================================
@@ -355,9 +359,7 @@ export class DataCloudApiClient {
   async getLineage(datasetId: string, depth: number = 3): Promise<LineageGraph> {
     void datasetId;
     void depth;
-    throw new Error(
-      'Lineage graph APIs are not exposed by the current Data Cloud launcher. Use the Data Explorer lineage preview instead.',
-    );
+    throw new Error(LINEAGE_GRAPH_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -366,7 +368,7 @@ export class DataCloudApiClient {
    */
   async getImpactAnalysis(datasetId: string): Promise<LineageGraph> {
     void datasetId;
-    throw new Error('Impact analysis APIs are not exposed by the current Data Cloud launcher.');
+    throw new Error(IMPACT_ANALYSIS_BOUNDARY_MESSAGE);
   }
 
   // ==========================================================================
@@ -395,9 +397,7 @@ export class DataCloudApiClient {
    */
   async validateQuery(sql: string): Promise<{ valid: boolean; errors?: string[] }> {
     void sql;
-    return this.unsupportedOperation(
-      'Standalone query validation is not exposed by the current Data Cloud launcher API.',
-    );
+    return this.unsupportedOperation(QUERY_VALIDATION_BOUNDARY_MESSAGE);
   }
 
   // ==========================================================================
@@ -459,9 +459,7 @@ export class DataCloudApiClient {
   }> {
     void query;
     void params;
-    return this.unsupportedOperation(
-      'Global cross-catalog search is not exposed by the current Data Cloud launcher API.',
-    );
+    return this.unsupportedOperation(GLOBAL_SEARCH_BOUNDARY_MESSAGE);
   }
 }
 

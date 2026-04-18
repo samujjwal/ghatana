@@ -18,6 +18,7 @@ import {
   CollectionCostReportSchema,
   MigrateCollectionResultSchema,
 } from '../contracts/schemas';
+import { COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING } from '../lib/runtime-boundaries';
 
 export interface CostBreakdown {
   total: number;
@@ -170,7 +171,7 @@ export class CostService {
       estimatedLatency: 0,
       recommendedTier: (tier as QueryPrediction['recommendedTier'] | undefined) ?? 'WARM',
       confidence: 0,
-      warnings: ['Predictive query routing is not exposed by the current Data Cloud API.'],
+      warnings: [COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING],
     };
   }
 

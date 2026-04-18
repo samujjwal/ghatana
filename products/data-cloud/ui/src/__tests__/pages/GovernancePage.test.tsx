@@ -16,6 +16,8 @@ const { mockGovernanceService } = vi.hoisted(() => ({
         getPolicies: vi.fn(),
         getAuditLogs: vi.fn(),
         getComplianceReport: vi.fn(),
+        getLifecycleSurfaces: vi.fn(),
+        generateComplianceReport: vi.fn(),
     },
 }));
 
@@ -94,6 +96,25 @@ describe('GovernancePage — TrustCenter', () => {
                 },
             },
         });
+        mockGovernanceService.generateComplianceReport.mockResolvedValue({ reportId: 'report-1', status: 'ready' });
+        mockGovernanceService.getLifecycleSurfaces.mockResolvedValue([
+            {
+                id: 'retention-operations',
+                title: 'Retention Operations',
+                status: 'live-action',
+                summary: 'Retention classification is live and current collections already carry a reviewed retention posture.',
+                evidence: ['12 collections already classified'],
+                action: 'classify-retention',
+                actionLabel: 'Classify retention',
+            },
+            {
+                id: 'policy-lifecycle',
+                title: 'Policy Lifecycle',
+                status: 'unavailable',
+                summary: 'General policy create, update, toggle, and delete flows are still outside the current launcher-backed governance contract.',
+                evidence: ['Policy creation is not exposed by the current Data Cloud governance API.'],
+            },
+        ]);
     });
 
     it('shows an honest empty-state message when no policies match the governance query', async () => {
@@ -101,7 +122,7 @@ describe('GovernancePage — TrustCenter', () => {
 
         render(<TrustCenter />, { wrapper: TestWrapper });
 
-        expect(await screen.findByText(/No policies found/i)).toBeInTheDocument();
+        expect(await screen.findByText(/No derived policy coverage is available/i)).toBeInTheDocument();
         expect(screen.getByText(/Overall Compliance Score/i)).toBeInTheDocument();
     });
 
@@ -111,16 +132,20 @@ describe('GovernancePage — TrustCenter', () => {
         expect(await screen.findByText(/overall compliance score/i)).toBeInTheDocument();
         await waitFor(() => {
             expect(document.body.textContent).toContain('96%');
+            expect(screen.getByText('Governance Lifecycle Truth')).toBeInTheDocument();
             expect(screen.getByText('PII Registry Coverage')).toBeInTheDocument();
             expect(screen.getByText('Security Audit Posture')).toBeInTheDocument();
-            expect(screen.getByText('Applied GDPR policy')).toBeInTheDocument();
-            expect(screen.getByText(/policy:policy-1/i)).toBeInTheDocument();
+            expect(screen.getAllByText('Applied GDPR policy').length).toBeGreaterThan(0);
+            expect(screen.getAllByText(/policy:policy-1/i).length).toBeGreaterThan(0);
+            expect(screen.getByText(/1 event/i)).toBeInTheDocument();
+            expect(screen.getByText(/Last updated by Jane Doe/i)).toBeInTheDocument();
         });
 
         await waitFor(() => {
             expect(mockGovernanceService.getPolicies).toHaveBeenCalledTimes(1);
             expect(mockGovernanceService.getAuditLogs).toHaveBeenCalledWith(undefined, undefined, 10);
             expect(mockGovernanceService.getComplianceReport).toHaveBeenCalledWith('30d');
+            expect(mockGovernanceService.getLifecycleSurfaces).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -129,7 +154,7 @@ describe('GovernancePage — TrustCenter', () => {
         await screen.findByText('PII Registry Coverage');
 
         fireEvent.change(
-            screen.getByPlaceholderText(/search policies or try/i),
+            screen.getByPlaceholderText(/search live safeguards/i),
             { target: { value: 'security' } },
         );
 
@@ -141,10 +166,22 @@ describe('GovernancePage — TrustCenter', () => {
         render(<TrustCenter />, { wrapper: TestWrapper });
         await screen.findByText('PII Registry Coverage');
 
-        fireEvent.click(screen.getAllByLabelText('Refresh')[0]);
+        fireEvent.click(screen.getByTestId('trust-refresh-policies'));
 
         await waitFor(() => {
             expect(mockGovernanceService.getPolicies).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    it('refreshes the compliance summary through the operator quick action', async () => {
+        render(<TrustCenter />, { wrapper: TestWrapper });
+        await screen.findByText('PII Registry Coverage');
+
+        fireEvent.click(screen.getByTestId('trust-quick-action-refresh-compliance'));
+
+        await waitFor(() => {
+            expect(mockGovernanceService.generateComplianceReport).toHaveBeenCalledWith('30d');
+            expect(screen.getByTestId('trust-action-summary')).toHaveTextContent(/Compliance summary refreshed/i);
         });
     });
 });

@@ -84,7 +84,7 @@ The right metrics for Data Cloud should measure four things together:
 
 ## 5. Quality Gates for Product Readiness
 
-These are not KPIs for marketing dashboards. They are release and credibility gates.
+These are not KPIs for marketing-facing BI dashboards. They are release and credibility gates.
 
 | Gate                                       | Suggested Threshold                            |
 | ------------------------------------------ | ---------------------------------------------- |
@@ -109,23 +109,23 @@ To support this metric framework, the product should emit:
 
 ---
 
-## 7. Dashboard Structure
+## 7. Operating Review Structure
 
-### Product Dashboard
+### Product Review
 
 - time to first workload
 - active workloads
 - adoption by platform surface
 - expansion by account
 
-### Platform Dashboard
+### Platform Review
 
 - API latency
 - event lag
 - workload success rate
 - incident rate
 
-### Commercial Dashboard
+### Commercial Review
 
 - evaluation to production conversion
 - expansion rate

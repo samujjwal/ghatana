@@ -18,6 +18,8 @@ These recipes define realistic first workloads for Data Cloud based on the curre
 2. **Event-backed activity stream and notifications**
 3. **Real-time operational insights view**
 
+These recipes intentionally describe backend and integration-first adoption. They do not imply that the Data Cloud UI already ships a fully supported alert-management console; current alert UI remains a boundary-only operator surface.
+
 These recipes align with the recommended ICP of engineering-led SaaS teams replacing a fragmented internal data-serving stack.
 
 ---
@@ -57,7 +59,7 @@ Use this recipe when a team has a product domain such as accounts, projects, cas
 2. Route application writes and reads through the entity APIs.
 3. Use tenant headers consistently in every request path.
 4. Validate query, pagination, and lifecycle expectations for one product surface.
-5. Add one downstream consumer, report, or dashboard only after the core entity path is stable.
+5. Add one downstream consumer, query workflow, or operator insight handoff only after the core entity path is stable.
 
 ### Success Criteria
 
@@ -130,14 +132,14 @@ Use this recipe when a team needs fast operational visibility for a live workflo
 
 - Query and analytics APIs
 - Real-time interfaces
-- Dashboard or reporting hooks
+- Query or operator-insight hooks
 - Event-fed or entity-fed operational data
 
 ### Minimal Adoption Path
 
 1. Define one operational metric view tied to a live workflow.
 2. Source data from one entity domain and, if relevant, one event stream.
-3. Expose the view through a query surface and optionally a dashboard.
+3. Expose the view through the canonical query surface and only later decide whether an operator insight view is justified.
 4. Add real-time refresh or subscription behavior.
 5. Validate the usefulness of the view with one internal operator or product team.
 

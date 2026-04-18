@@ -1,7 +1,7 @@
 /**
  * Plugin API Service
  *
- * Provides API client for plugin management operations.
+ * Provides API client for bundled plugin inventory and lifecycle operations.
  * Handles the bundled plugin lifecycle exposed by the Data Cloud launcher.
  *
  * @doc.type service
@@ -18,6 +18,14 @@ import {
 } from '../contracts/schemas';
 import type { LogEntry } from '../components/plugins/PluginLogsViewer';
 import type { PluginPerformanceMetrics } from '../components/plugins/PluginPerformanceMetrics';
+import {
+  PLUGIN_COMPATIBILITY_BOUNDARY_WARNING,
+  PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE,
+  PLUGIN_INSTALL_BOUNDARY_MESSAGE,
+  PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE,
+  PLUGIN_UNINSTALL_BOUNDARY_MESSAGE,
+  PLUGIN_UPLOAD_BOUNDARY_MESSAGE,
+} from '../lib/runtime-boundaries';
 
 export type PluginStatus = 'active' | 'inactive' | 'error' | 'installing' | 'uninstalling';
 export type PluginCategory = 'connector' | 'transformer' | 'quality' | 'governance' | 'visualization' | 'integration' | 'ai';
@@ -192,16 +200,12 @@ export class PluginService {
   ): Promise<Plugin> {
     void pluginId;
     void configuration;
-    return unsupportedOperation<Plugin>(
-      'Plugin configuration is not exposed by the bundled Data Cloud launcher API.',
-    );
+    return unsupportedOperation<Plugin>(PLUGIN_CONFIGURATION_BOUNDARY_MESSAGE);
   }
 
   async uninstallPlugin(pluginId: string): Promise<void> {
     void pluginId;
-    return unsupportedOperation<void>(
-      'Bundled plugins cannot be uninstalled at runtime. Disable the plugin instead.',
-    );
+    return unsupportedOperation<void>(PLUGIN_UNINSTALL_BOUNDARY_MESSAGE);
   }
 
   async getPluginHealth(pluginId: string): Promise<Plugin['health']> {
@@ -220,16 +224,12 @@ export class PluginService {
 
   async getMarketplacePlugin(pluginId: string): Promise<PluginMarketplaceItem> {
     void pluginId;
-    return unsupportedOperation<PluginMarketplaceItem>(
-      'Marketplace metadata is not exposed by the bundled Data Cloud launcher API.',
-    );
+    return unsupportedOperation<PluginMarketplaceItem>(PLUGIN_MARKETPLACE_BOUNDARY_MESSAGE);
   }
 
   async installPlugin(request: PluginInstallRequest): Promise<Plugin> {
     void request;
-    return unsupportedOperation<Plugin>(
-      'Runtime plugin installation is not supported. Plugins are bundled at build time.',
-    );
+    return unsupportedOperation<Plugin>(PLUGIN_INSTALL_BOUNDARY_MESSAGE);
   }
 
   async updatePlugin(
@@ -243,9 +243,7 @@ export class PluginService {
   async uploadPlugin(file: File, configuration?: PluginConfiguration): Promise<Plugin> {
     void file;
     void configuration;
-    return unsupportedOperation<Plugin>(
-      'Runtime plugin upload is not supported. Deploy a new launcher build with the bundled plugin.',
-    );
+    return unsupportedOperation<Plugin>(PLUGIN_UPLOAD_BOUNDARY_MESSAGE);
   }
 
   async refreshRegistry(): Promise<void> {
@@ -262,7 +260,7 @@ export class PluginService {
     return {
       compatible: true,
       issues: [],
-      warnings: ['Compatibility checks are limited to bundled plugins already present in the launcher build.'],
+      warnings: [PLUGIN_COMPATIBILITY_BOUNDARY_WARNING],
     };
   }
 

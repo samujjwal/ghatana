@@ -1,3 +1,5 @@
+import { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+
 /**
  * Suggestion service for AI-powered workflow recommendations.
  *
@@ -56,8 +58,7 @@ export interface SuggestionFeedback {
   timestamp: number;
 }
 
-export const SUGGESTION_SERVICE_BOUNDARY_MESSAGE =
-  'Workflow suggestion feedback APIs are not exposed by the current Data Cloud launcher API.';
+export { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 

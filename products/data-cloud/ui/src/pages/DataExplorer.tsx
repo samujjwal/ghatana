@@ -106,6 +106,7 @@ function CollectionRow({
 
     return (
         <div
+            data-testid="collection-item"
             className={cn(
                 'flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg',
                 'hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer'
@@ -250,7 +251,7 @@ export function DataExplorer() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-6" data-testid="data-explorer-page">
             {/* Header */}
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -266,6 +267,7 @@ export function DataExplorer() {
                 <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <input
+                        data-testid="collection-search-input"
                         type="text"
                         placeholder="Search collections..."
                         value={searchQuery}
@@ -279,6 +281,7 @@ export function DataExplorer() {
                     </button>
                     <button
                         onClick={() => navigate('/data/new')}
+                        data-testid="create-collection-button"
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         <Plus className="h-4 w-4" />
@@ -288,13 +291,14 @@ export function DataExplorer() {
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-6" data-testid="data-explorer-view-toggle">
                 <span className="text-sm text-gray-600 dark:text-gray-400">View:</span>
                 <div className="flex gap-1">
                     {viewModes.map((mode) => (
                         <button
                             key={mode.id}
                             onClick={() => handleViewModeChange(mode.id)}
+                            data-testid={`collection-view-${mode.id}`}
                             className={cn(
                                 'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors',
                                 viewMode === mode.id
@@ -338,7 +342,7 @@ export function DataExplorer() {
 
             {/* Detail View */}
             {selectedCollection && (
-                <div className="mt-8 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <div className="mt-8 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" data-testid="collection-detail-panel">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         {selectedCollection.name} — {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View
                     </h2>
@@ -371,10 +375,10 @@ export function DataExplorer() {
                         )}
 
                         {viewMode === 'lineage' && (
-                            <div className="space-y-4">
+                            <div className="space-y-4" data-testid="data-explorer-lineage-panel">
                                 <div className="flex items-center justify-between gap-4">
                                     <div>
-                                        <p className="font-medium text-gray-700 dark:text-gray-300">Lineage preview</p>
+                                        <p className="font-medium text-gray-700 dark:text-gray-300" data-testid="lineage-preview-title">Lineage preview</p>
                                         <p className="text-sm mt-2 text-gray-500">
                                             Live upstream and downstream lineage from the canonical launcher route.
                                         </p>
@@ -403,7 +407,7 @@ export function DataExplorer() {
                                         />
 
                                         {impactAnalysis && impactAnalysis.details.length > 0 && (
-                                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/30">
+                                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/30" data-testid="lineage-impact-panel">
                                                 <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Downstream impact</p>
                                                 <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
                                                     {impactAnalysis.details.map((detail) => (

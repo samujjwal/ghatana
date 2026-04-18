@@ -63,6 +63,7 @@ export interface AuthSession {
     refreshToken: string;
     expiresAt: string;
     permissions: string[];
+    platformToken?: string;
 }
 
 export interface LoginCredentials {
@@ -180,6 +181,9 @@ export class AuthService {
             this.currentSession = session;
             this.saveSession(session);
             this.setupSessionRefresh();
+
+            // Exchange product token for platform token
+            await this.exchangePlatformToken();
 
             logger.info('Login successful', 'auth', {
                 userId: session.user.id,
@@ -342,6 +346,57 @@ export class AuthService {
      */
     public getAuthToken(): string | null {
         return this.currentSession?.token || null;
+    }
+
+    /**
+     * Get platform token for cross-product API calls
+     */
+    public getPlatformToken(): string | null {
+        return this.currentSession?.platformToken || null;
+    }
+
+    /**
+     * Exchange product token for platform token
+     */
+    public async exchangePlatformToken(): Promise<boolean> {
+        try {
+            if (!this.currentSession) {
+                return false;
+            }
+
+            const authGatewayUrl = import.meta.env.VITE_AUTH_GATEWAY_URL || 'http://localhost:8081';
+            const response = await fetch(`${authGatewayUrl}/auth/exchange`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.currentSession.token}`,
+                },
+            });
+
+            if (!response.ok) {
+                logger.warn('Platform token exchange failed', 'auth', {
+                    status: response.status,
+                });
+                return false;
+            }
+
+            const data = await parseJsonResponse<{ platformToken: string; expiresIn: number }>(
+                response,
+                'auth platform token exchange'
+            );
+
+            this.currentSession.platformToken = data.platformToken;
+            this.saveSession(this.currentSession);
+
+            logger.info('Platform token obtained successfully', 'auth', { userId: this.currentSession.user.id });
+            return true;
+
+        } catch (error) {
+            logger.error('Platform token exchange error', 'auth', {
+                error: error instanceof Error ? error.message : String(error)
+            });
+            return false;
+        }
     }
 
     /**

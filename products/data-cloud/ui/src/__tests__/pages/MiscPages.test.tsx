@@ -3,15 +3,41 @@
  * PluginDetailsPage, SmartWorkflowBuilder, IntelligentHub,
  * DataExplorer, CreateCollectionPage
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
+import { smartWorkflowGenerationBoundary } from '@/components/common/unsupportedSurfaceRegistry';
 import { PluginDetailsPage } from '../../pages/PluginDetailsPage';
 import { SmartWorkflowBuilder } from '../../pages/SmartWorkflowBuilder';
 import { IntelligentHub } from '../../pages/IntelligentHub';
 import { DataExplorer } from '../../pages/DataExplorer';
 import { CreateCollectionPage } from '../../pages/CreateCollectionPage';
+
+vi.mock('../../api/capabilities.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../api/capabilities.service')>();
+  return {
+    ...actual,
+    useCapabilityRegistry: () => ({
+      data: {
+        generatedAt: '2026-04-17T12:00:00Z',
+        requestId: 'req-misc-pages',
+        tenantId: TEST_TENANT_ID,
+        capabilities: [
+          {
+            key: 'ai_assist',
+            label: 'AI Assist',
+            status: 'unavailable',
+            summary: 'UNAVAILABLE',
+            detail: smartWorkflowGenerationBoundary.details[1],
+            rawValue: 'UNAVAILABLE',
+          },
+        ],
+      },
+    }),
+  };
+});
 
 
 // ── PluginDetailsPage ─────────────────────────────────────────────────────────
@@ -34,7 +60,7 @@ describe('SmartWorkflowBuilder', () => {
     expect(screen.getByRole('heading', { name: 'Smart Workflow Builder' })).toBeInTheDocument();
     expect(screen.getAllByText(/Describe your pipeline/i).length).toBeGreaterThan(0);
     expect(screen.getByPlaceholderText(/Load data from S3/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Check AI Builder Availability/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Generate Draft/i })).toBeDisabled();
     expect(screen.getByText(/Try an example:/i)).toBeInTheDocument();
   });
 
@@ -47,11 +73,11 @@ describe('SmartWorkflowBuilder', () => {
       screen.getByPlaceholderText(/Load data from S3/i),
       'Load data from S3, clean email addresses, save to PostgreSQL',
     );
-    await user.click(screen.getByRole('button', { name: /Check AI Builder Availability/i }));
+    await user.click(screen.getByRole('button', { name: /Generate Draft/i }));
 
-    expect(await screen.findByText(/AI pipeline builder unavailable/i)).toBeInTheDocument();
-    expect(screen.getByText(/Natural-language pipeline generation is not exposed/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Generated Pipeline/i)).not.toBeInTheDocument();
+    expect(await screen.findByText(smartWorkflowGenerationBoundary.title)).toBeInTheDocument();
+    expect(screen.getByText(smartWorkflowGenerationBoundary.summary)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Generated Pipeline/i })).not.toBeInTheDocument();
   });
 });
 
@@ -61,10 +87,10 @@ describe('IntelligentHub', () => {
   it('renders the unified workspace shell with ask-anything and quick actions', () => {
     render(<IntelligentHub />, { wrapper: TestWrapper });
 
-    expect(screen.getByPlaceholderText(/Ask anything/i)).toBeInTheDocument();
-    expect(screen.getByText('Quick Actions')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/What do you need to do/i)).toBeInTheDocument();
+    expect(screen.getByText('Start with an outcome')).toBeInTheDocument();
     expect(screen.getByText('Insights')).toBeInTheDocument();
-    expect(screen.getByText('AI Recommendations')).toBeInTheDocument();
+    expect(screen.getByText('Recommended Next Steps')).toBeInTheDocument();
   });
 });
 

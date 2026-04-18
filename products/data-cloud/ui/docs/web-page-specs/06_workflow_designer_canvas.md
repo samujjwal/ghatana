@@ -1,11 +1,12 @@
-# 6. Workflow Designer Page – Canvas – Deep-Dive Spec
+# 6. Pipeline Designer Page – Canvas – Deep-Dive Spec
 
 Related routes & files:
 
 - Routes:
-  - `/workflows/new`
-  - `/workflows/:id`
-- Page: `src/pages/WorkflowDesigner/index.tsx`
+  - `/pipelines/new` for Smart Workflow Builder intent capture
+  - `/pipelines/:id?mode=advanced` for advanced workflow editing
+  - compatibility aliases: `/workflows/new`, `/workflows/:id`
+- Pages: `src/pages/SmartWorkflowBuilder.tsx`, `src/pages/WorkflowDesigner/index.tsx`
 - Canvas component: `src/components/workflow/WorkflowCanvas.tsx`
 
 ---
@@ -14,7 +15,7 @@ Related routes & files:
 
 **One-sentence intent:**
 
-> Provide a **visual canvas** for creating and editing workflows as node-and-edge diagrams.
+> Provide a **visual canvas** for creating and editing pipelines as node-and-edge diagrams.
 
 **Primary goals:**
 
@@ -40,11 +41,11 @@ Related routes & files:
 **Key scenarios:**
 
 1. **Creating a new workflow**
-   - User opens `/workflows/new`.
-   - Canvas shows an empty or template workflow with a `workflowId` like `current`.
+  - User opens `/pipelines/new`.
+  - Smart Workflow Builder captures intent, then hands off into the advanced editor when needed.
 
 2. **Editing an existing workflow**
-   - User navigates from Workflows page or Dashboard into `/workflows/:id`.
+  - User navigates from Pipelines or Intelligent Hub into `/pipelines/:id?mode=advanced`.
    - Canvas loads that workflow’s nodes and edges.
 
 ---
@@ -131,7 +132,7 @@ For production use, the canvas should:
 ## 8. Links to More Detail & Working Entry Points
 
 - Workflow list: `src/pages/WorkflowsPage.tsx`
-- Dashboard: `src/pages/DashboardPage.tsx`
+- Intelligent Hub: `src/pages/IntelligentHub.tsx`
 - Canvas implementation: `src/components/workflow/WorkflowCanvas.tsx`
 
 ---

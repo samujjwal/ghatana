@@ -25,6 +25,8 @@ Data Cloud shows broad platform capability coverage, but readiness is uneven. Th
 | Tenant-isolation trust | Red        | Contradictory claims across docs                                           |
 | GTM readiness          | Red        | ICP, pricing, positioning, and KPI docs were previously absent             |
 
+Recent truth-reconciliation work has improved the UI-facing documentation story: canonical `/data`, `/pipelines`, entity-backed collection APIs, shell-role disclosure, and the operator-facing live alerts surface are now documented more consistently across product and generated manuals. The remaining red/yellow items below are now concentrated in runtime proof, calmer workflow UX, alert quality instrumentation, and broader build-graph or E2E evidence rather than basic UI route-truth drift.
+
 ---
 
 ## 1. Domain-by-Domain Assessment

@@ -20,6 +20,7 @@ env:
     :products:data-cloud:launcher
     :products:data-cloud:sdk
     :products:data-cloud:agent-registry
+    :products:data-cloud:integration-tests
 
 jobs:
   build-and-test:
@@ -56,6 +57,7 @@ jobs:
             :products:data-cloud:platform-launcher:compileJava \
             :products:data-cloud:launcher:compileJava \
             :products:data-cloud:agent-registry:compileJava \
+            :products:data-cloud:integration-tests:testClasses \
             --no-daemon
 
       # Backend: Static analysis
@@ -80,9 +82,28 @@ jobs:
             :products:data-cloud:agent-registry:test \
             --no-daemon
 
+      - name: Run cross-module integration test suite
+        run: |
+          ./gradlew \
+            :products:data-cloud:integration-tests:test \
+            --no-daemon
+
       # Frontend: Vitest
       - name: Run frontend tests
         run: pnpm run test -- --run
+        working-directory: products/data-cloud/ui
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: products/data-cloud/ui
+
+      - name: Run focused browser evidence
+        run: |
+          pnpm exec playwright test \
+            --project=chromium \
+            e2e/query.spec.ts \
+            e2e/governance.spec.ts \
+            e2e/insights.spec.ts
         working-directory: products/data-cloud/ui
 
       # Backend: Integration Tests (with Testcontainers)
@@ -134,6 +155,7 @@ jobs:
             :products:data-cloud:platform-launcher:build \
             :products:data-cloud:launcher:build \
             :products:data-cloud:agent-registry:build \
+            :products:data-cloud:integration-tests:build \
             --no-daemon
 
       # Publish test results

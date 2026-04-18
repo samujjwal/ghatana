@@ -142,6 +142,18 @@ pnpm --dir products/data-cloud/ui test
 pnpm --dir products/data-cloud/ui test:ui
 ```
 
+### Focused route-truth, adapter, and shell-disclosure regressions
+
+```bash
+pnpm --dir products/data-cloud/ui vitest run \
+	src/__tests__/lib/session.test.ts \
+	src/__tests__/routes/routeTruthMatrix.test.ts \
+	src/__tests__/components/GlobalSearch.test.tsx \
+	src/__tests__/pages/CollectionPage.test.tsx \
+	src/__tests__/pages/InsightsPage.test.tsx \
+	src/__tests__/pages/AnalyticsPage.test.tsx
+```
+
 ### Contract tests
 
 ```bash

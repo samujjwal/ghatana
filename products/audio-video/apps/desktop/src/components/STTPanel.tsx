@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Card, Button, Input, Loading } from '@audio-video/ui';
+import { Card, Button, Input } from '@audio-video/ui';
 import { AudioVideoClient, defaultConfigs } from '@audio-video/client';
 import type { STTRequest } from '@audio-video/types';
 
@@ -30,6 +30,7 @@ const STTPanel: React.FC = () => {
   const [language, setLanguage] = React.useState('en-US');
   const [model, setModel] = React.useState('whisper-tiny');
   const [visualizerData, setVisualizerData] = React.useState<number[]>([]);
+  const [sttMode, setSttMode] = React.useState<'grpc' | 'llm-fallback' | 'nop'>('llm-fallback');
   
   const recorderRef = React.useRef<AudioRecorderState>({
     mediaRecorder: null,
@@ -295,6 +296,17 @@ const STTPanel: React.FC = () => {
     <div className="space-y-6">
       <Card title="Speech to Text" subtitle="Convert speech to text using AI">
         <div className="space-y-6">
+          {/* STT Mode Badge */}
+          {sttMode === 'llm-fallback' && (
+            <div className="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <span className="px-2 py-1 bg-yellow-200 text-yellow-800 text-xs font-medium rounded">
+                LLM Fallback Mode
+              </span>
+              <span className="text-sm text-yellow-800">
+                Using AI-based transcription (not a real acoustic model). Accuracy may be limited.
+              </span>
+            </div>
+          )}
           {/* Recording Controls */}
           <div className="flex flex-col items-center space-y-4">
             <div className="audio-visualizer h-16 flex items-end justify-center space-x-1 bg-gray-100 rounded-lg px-4 py-2">
@@ -325,7 +337,7 @@ const STTPanel: React.FC = () => {
               disabled={isProcessing}
             >
               {isProcessing ? (
-                <Loading size="sm" text="Processing..." />
+                'Processing...'
               ) : isRecording ? (
                 'Stop Recording'
               ) : (
@@ -356,13 +368,13 @@ const STTPanel: React.FC = () => {
                 label="Language"
                 placeholder="e.g., en-US"
                 value={language}
-                onChange={setLanguage}
+                onChange={(e) => setLanguage(e.target.value)}
               />
               <Input
                 label="Model"
                 placeholder="e.g., whisper-tiny"
                 value={model}
-                onChange={setModel}
+                onChange={(e) => setModel(e.target.value)}
               />
             </div>
           </div>

@@ -849,3 +849,53 @@ export async function instantiateTemplate(
   );
   return data;
 }
+
+// ─── NLQ (Natural Language Query) ─────────────────────────────────────────────
+
+export type NlqIntent =
+  | "list_runs"
+  | "list_pipelines"
+  | "list_agents"
+  | "list_anomalies"
+  | "filter_failed"
+  | "filter_running"
+  | "filter_success"
+  | "time_window"
+  | "trigger_reflect"
+  | "kill_switch"
+  | "status_query"
+  | "unknown";
+
+export interface NlqEntity {
+  type: "time_window" | "pipeline_name" | "status";
+  value?: string;
+  amount?: number;
+  unit?: string;
+  iso8601?: string;
+}
+
+export interface NlqParseResult {
+  intent: NlqIntent;
+  confidence: number;
+  entities: NlqEntity[];
+  query: string;
+  tenantId: string;
+  timestamp: string;
+}
+
+/**
+ * Parses a natural-language query into a structured intent and entity set.
+ *
+ * @param query    free-text operator query (e.g. "show me failing pipelines last hour")
+ * @param tenantId tenant context for the query
+ */
+export async function parseNlQuery(
+  query: string,
+  tenantId = "default",
+): Promise<NlqParseResult> {
+  const { data } = await client.post<NlqParseResult>(
+    "/api/v1/nlp/parse",
+    { query, tenantId },
+  );
+  return data;
+}

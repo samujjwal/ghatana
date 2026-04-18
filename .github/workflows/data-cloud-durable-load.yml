@@ -35,6 +35,26 @@ on:
         required: false
         default: '0'
         type: string
+      min_event_burst_throughput_ops_per_second:
+        description: 'Minimum acceptable Kafka burst event throughput'
+        required: false
+        default: '10000'
+        type: string
+      event_burst_batch_size:
+        description: 'Kafka burst batch size used for throughput validation'
+        required: false
+        default: '10000'
+        type: string
+      max_p99_entity_save_ms:
+        description: 'Maximum allowed entity save P99 latency'
+        required: false
+        default: '200'
+        type: string
+      max_p99_query_ms:
+        description: 'Maximum allowed query P99 latency'
+        required: false
+        default: '200'
+        type: string
 
 permissions:
   contents: read
@@ -52,6 +72,10 @@ jobs:
       DATACLOUD_LOAD_ITERATIONS: ${{ inputs.iterations || '1' }}
       DATACLOUD_LOAD_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds || '1800' }}
       DATACLOUD_LOAD_MIN_THROUGHPUT_OPS_PER_SECOND: ${{ inputs.min_throughput_ops_per_second || '0' }}
+      DATACLOUD_LOAD_MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND: ${{ inputs.min_event_burst_throughput_ops_per_second || '10000' }}
+      DATACLOUD_LOAD_EVENT_BURST_BATCH_SIZE: ${{ inputs.event_burst_batch_size || '10000' }}
+      DATACLOUD_LOAD_MAX_P99_ENTITY_SAVE_MS: ${{ inputs.max_p99_entity_save_ms || '200' }}
+      DATACLOUD_LOAD_MAX_P99_QUERY_MS: ${{ inputs.max_p99_query_ms || '200' }}
 
     steps:
       - name: Checkout repository
@@ -74,6 +98,47 @@ jobs:
           files: |
             products/data-cloud/platform-plugins/build/test-results/test/*.xml
           check_name: Data Cloud Durable Load Test Results
+
+      - name: Enforce durable load thresholds from metrics artifact
+        if: always()
+        run: |
+          METRICS_FILE="products/data-cloud/build/reports/load-tests/durable-multi-tenant-load.json"
+          if [[ ! -f "$METRICS_FILE" ]]; then
+            echo "Metrics file not produced; durable load run did not complete." >&2
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          report = json.loads(Path('products/data-cloud/build/reports/load-tests/durable-multi-tenant-load.json').read_text())
+          iterations = report.get('iterationsSummary', [])
+          if not iterations:
+              raise SystemExit('No iteration metrics were captured in the durable load report.')
+
+          best = max(iterations, key=lambda item: item.get('throughputOpsPerSecond', 0))
+          failures: list[str] = []
+
+          def require_at_most(metric_name: str, actual: float, limit: float) -> None:
+              if actual > limit:
+                  failures.append(f'{metric_name}: {actual} > {limit}')
+
+          def require_at_least(metric_name: str, actual: float, minimum: float) -> None:
+              if actual < minimum:
+                  failures.append(f'{metric_name}: {actual} < {minimum}')
+
+            if best.get('entitySaveP99Evaluated', True):
+              require_at_most('entitySaveP99Ms', float(best.get('entitySaveP99Ms', math.inf)), float(os.environ['DATACLOUD_LOAD_MAX_P99_ENTITY_SAVE_MS']))
+            if best.get('queryP99Evaluated', True):
+              require_at_most('queryP99Ms', float(best.get('queryP99Ms', math.inf)), float(os.environ['DATACLOUD_LOAD_MAX_P99_QUERY_MS']))
+          require_at_least('eventBurstThroughputOpsPerSecond', float(best.get('eventBurstThroughputOpsPerSecond', 0.0)), float(os.environ['DATACLOUD_LOAD_MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND']))
+
+          if failures:
+              raise SystemExit('Durable load threshold failures: ' + '; '.join(failures))
+          PY
 
       - name: Write durable load summary
         if: always()
@@ -106,7 +171,9 @@ jobs:
               f"| Aggregate event appends | {report.get('aggregateEventAppends', 'n/a')} |",
               f"| Aggregate queries | {report.get('aggregateQueries', 'n/a')} |",
               f"| Best throughput ops/sec | {report.get('bestThroughputOpsPerSecond', 'n/a')} |",
+              f"| Best burst event throughput ops/sec | {report.get('bestEventBurstThroughputOpsPerSecond', 'n/a')} |",
               f"| Minimum throughput threshold | {report.get('minThroughputOpsPerSecond', 'n/a')} |",
+              f"| Minimum burst throughput threshold | {report.get('minEventBurstThroughputOpsPerSecond', 'n/a')} |",
             ]
 
             if best_iteration:
@@ -119,8 +186,14 @@ jobs:
                 f"| Iteration | {best_iteration.get('iteration', 'n/a')} |",
                 f"| Duration seconds | {best_iteration.get('durationSeconds', 'n/a')} |",
                 f"| Entity save P95 ms | {best_iteration.get('entitySaveP95Ms', 'n/a')} |",
+                f"| Entity save P99 ms | {best_iteration.get('entitySaveP99Ms', 'n/a')} |",
+                f"| Entity save P99 evaluated | {best_iteration.get('entitySaveP99Evaluated', 'n/a')} |",
                 f"| Event append P95 ms | {best_iteration.get('eventAppendP95Ms', 'n/a')} |",
                 f"| Query P95 ms | {best_iteration.get('queryP95Ms', 'n/a')} |",
+                f"| Query P99 ms | {best_iteration.get('queryP99Ms', 'n/a')} |",
+                f"| Query P99 evaluated | {best_iteration.get('queryP99Evaluated', 'n/a')} |",
+                f"| Burst event throughput ops/sec | {best_iteration.get('eventBurstThroughputOpsPerSecond', 'n/a')} |",
+                f"| Burst batch size | {best_iteration.get('eventBurstBatchSize', 'n/a')} |",
                 f"| Heap delta MB | {best_iteration.get('heapDeltaMb', 'n/a')} |",
               ])
 

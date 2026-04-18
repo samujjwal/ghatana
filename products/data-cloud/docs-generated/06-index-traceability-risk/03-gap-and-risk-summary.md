@@ -733,7 +733,7 @@ USING (tenant_id = current_setting('app.current_tenant_id')::text);
 4. **Cost Optimization**
    - Implement cost monitoring
    - Add resource optimization
-   - Create cost alerts
+   - Create cost alerts only after a real launcher-backed alert surface exists
    - Implement cost analysis
 
 **Success Criteria:**
@@ -841,7 +841,7 @@ USING (tenant_id = current_setting('app.current_tenant_id')::text);
 
 ## Risk Monitoring and Reporting
 
-### Risk Dashboard Metrics
+### Risk Monitoring Signals
 
 **Critical Risk Indicators:**
 

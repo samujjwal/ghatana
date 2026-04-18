@@ -12,7 +12,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
+import { getTenantId, getUserId, roleGuard } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { RecommendationService } from "./recommendation-service.js";
 import { RecommendationEngine } from "./recommendation-engine.js";
@@ -112,6 +112,35 @@ export function registerRecommendationRoutes(
     "student",
   ]);
   const adminGuard = roleGuard(["admin", "content_creator", "superadmin"]);
+
+  // ---------------------------------------------------------------------------
+  // GET /recommendations/personalized — AI-powered personalized recommendations
+  // ---------------------------------------------------------------------------
+  fastify.get<{ Querystring: { limit?: string } }>(
+    "/recommendations/personalized",
+    { preHandler: [readGuard] },
+    async (request, reply) => {
+      const queryResult = limitQuerySchema.safeParse(request.query ?? {});
+      if (!queryResult.success) {
+        return sendValidationError(reply, queryResult.error, "Invalid limit query");
+      }
+
+      const tenantId = getTenantId(request);
+      const userId = getUserId(request);
+
+      if (!userId) {
+        return reply.status(401).send({ error: "Authentication required" });
+      }
+
+      const limit = queryResult.data.limit ?? 6;
+
+      const result = await service.getPersonalizedRecommendations(tenantId, userId, {
+        limit,
+        excludeEnrolled: true,
+      });
+      return reply.send({ data: result });
+    },
+  );
 
   // ---------------------------------------------------------------------------
   // GET /assets/:assetId/recommendations — All related assets grouped by type

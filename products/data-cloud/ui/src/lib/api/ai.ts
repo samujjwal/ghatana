@@ -15,18 +15,29 @@
 
 import { apiClient, type ApiResponse } from './client';
 import {
+    AI_DATA_QUALITY_ASSESSMENT_BOUNDARY_MESSAGE,
+    AI_ENRICHMENT_SUGGESTION_BOUNDARY_MESSAGE,
+    AI_LINEAGE_EXPLANATION_BOUNDARY_MESSAGE,
+    AI_QUERY_RECOMMENDATIONS_BOUNDARY_MESSAGE,
+    AI_RELATED_ENTITY_DISCOVERY_BOUNDARY_MESSAGE,
+    AI_SEMANTIC_SEARCH_BOUNDARY_MESSAGE,
+} from '../runtime-boundaries';
+import {
     AnomalyDetectionRequestSchema,
     DetectedAnomalySchema,
     type AnomalyDetectionRequest,
     type DetectedAnomaly,
     PipelineOptimisationHintsResponseSchema,
+    WorkflowDraftEnvelopeSchema,
     type PipelineOptimisationHint,
     type PipelineOptimisationHintsResponse,
+    type WorkflowDraft,
 } from '../../contracts/schemas';
 
 export type {
     PipelineOptimisationHint,
     PipelineOptimisationHintsResponse,
+    WorkflowDraft,
 } from '../../contracts/schemas';
 
 function withTenantParams(tenantId: string): { params: { tenantId: string } } {
@@ -198,6 +209,13 @@ export interface DataQualityAssessment {
     }[];
 }
 
+export interface WorkflowDraftGenerationResult {
+    draft: WorkflowDraft;
+    confidence: number;
+    fallback: boolean;
+    model: string;
+}
+
 // ============================================================================
 // API Functions
 // ============================================================================
@@ -248,9 +266,7 @@ export async function getEnrichmentSuggestions(
 ): Promise<ApiResponse<EnrichmentSuggestion[]>> {
     void tenantId;
     void request;
-    return unsupportedAiOperation<EnrichmentSuggestion[]>(
-        'Entity enrichment suggestions are not exposed by the current Data Cloud launcher API.',
-    );
+    return unsupportedAiOperation<EnrichmentSuggestion[]>(AI_ENRICHMENT_SUGGESTION_BOUNDARY_MESSAGE);
 }
 
 /**
@@ -262,9 +278,7 @@ export async function semanticSearch(
 ): Promise<ApiResponse<SemanticSearchResult[]>> {
     void tenantId;
     void request;
-    return unsupportedAiOperation<SemanticSearchResult[]>(
-        'Semantic search is not exposed by the current Data Cloud launcher API through this helper.',
-    );
+    return unsupportedAiOperation<SemanticSearchResult[]>(AI_SEMANTIC_SEARCH_BOUNDARY_MESSAGE);
 }
 
 /**
@@ -278,9 +292,7 @@ export async function getQueryRecommendations(
     void tenantId;
     void collectionName;
     void partialQuery;
-    return unsupportedAiOperation<QueryRecommendation[]>(
-        'Query recommendations are not exposed by the current Data Cloud launcher API through this helper.',
-    );
+    return unsupportedAiOperation<QueryRecommendation[]>(AI_QUERY_RECOMMENDATIONS_BOUNDARY_MESSAGE);
 }
 
 /**
@@ -292,7 +304,7 @@ export async function explainLineage(
 ): Promise<ApiResponse<LineageExplanation>> {
     void tenantId;
     void request;
-    throw new Error('Lineage explanation is not exposed by the current Data Cloud launcher API.');
+    throw new Error(AI_LINEAGE_EXPLANATION_BOUNDARY_MESSAGE);
 }
 
 /**
@@ -321,9 +333,7 @@ export async function assessDataQuality(
 ): Promise<ApiResponse<DataQualityAssessment>> {
     void tenantId;
     void collectionName;
-    return unsupportedAiOperation<DataQualityAssessment>(
-        'AI-backed data quality assessment is not exposed by the current Data Cloud launcher API through this helper.',
-    );
+    return unsupportedAiOperation<DataQualityAssessment>(AI_DATA_QUALITY_ASSESSMENT_BOUNDARY_MESSAGE);
 }
 
 /**
@@ -355,9 +365,7 @@ export async function findRelatedEntities(
     void collectionName;
     void entityId;
     void limit;
-    return unsupportedAiOperation<SemanticSearchResult[]>(
-        'Related-entity discovery is not exposed by the current Data Cloud launcher API through this helper.',
-    );
+    return unsupportedAiOperation<SemanticSearchResult[]>(AI_RELATED_ENTITY_DISCOVERY_BOUNDARY_MESSAGE);
 }
 
 // ============================================================================
@@ -379,6 +387,27 @@ export async function getPipelineOptimisationHints(
     return wrapResponse(data);
 }
 
+/**
+ * Generate an editable workflow draft from a natural-language prompt.
+ */
+export async function generateWorkflowDraft(
+    tenantId: string,
+    prompt: string,
+): Promise<ApiResponse<WorkflowDraftGenerationResult>> {
+    const rawResponse = await apiClient.post<unknown>(
+        '/pipelines/draft',
+        { prompt },
+        { headers: { 'X-Tenant-ID': tenantId } },
+    );
+    const envelope = WorkflowDraftEnvelopeSchema.parse(rawResponse);
+    return wrapResponse({
+        draft: envelope.data,
+        confidence: envelope.ai?.confidence ?? 0,
+        fallback: envelope.ai?.fallback ?? false,
+        model: envelope.ai?.model ?? 'unknown',
+    });
+}
+
 // ============================================================================
 // React Query Hooks
 // ============================================================================
@@ -391,6 +420,7 @@ export const aiQueryKeys = {
     quality: (tenantId: string, collection: string) => ['ai', 'quality', tenantId, collection] as const,
     search: (tenantId: string, query: string) => ['ai', 'search', tenantId, query] as const,
     pipelineHints: (pipelineId: string) => ['ai', 'pipeline-hints', pipelineId] as const,
+    workflowDraft: (tenantId: string, prompt: string) => ['ai', 'workflow-draft', tenantId, prompt] as const,
 };
 
 export default {
@@ -405,4 +435,5 @@ export default {
     suggestEntity,
     findRelatedEntities,
     getPipelineOptimisationHints,
+    generateWorkflowDraft,
 };

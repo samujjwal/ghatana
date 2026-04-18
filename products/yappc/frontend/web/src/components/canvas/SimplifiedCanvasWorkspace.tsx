@@ -39,7 +39,7 @@ import { UnifiedPlaygroundToolbar } from './UnifiedPlaygroundToolbar';
 export interface SimplifiedCanvasWorkspaceProps {
     projectId: string;
     currentPhase: LifecyclePhase;
-    fowStage: FOWStage;
+    flowStage: FOWStage;
 }
 
 /**
@@ -50,7 +50,7 @@ export interface SimplifiedCanvasWorkspaceProps {
 export const SimplifiedCanvasWorkspace: React.FC<SimplifiedCanvasWorkspaceProps> = ({
     projectId,
     currentPhase,
-    fowStage
+    flowStage
 }) => {
     // State management for canvas atoms
     const setNodesAtom = useSetAtom(nodesAtom);
@@ -66,14 +66,14 @@ export const SimplifiedCanvasWorkspace: React.FC<SimplifiedCanvasWorkspaceProps>
     const suppressGeneratedSync = useAtomValue(suppressGeneratedSyncAtom);
 
     // Data hooks
-    const { data: gateStatus } = useGateStatus(projectId, fowStage);
+    const { data: gateStatus } = useGateStatus(projectId, flowStage);
     const { data: nextTask } = useNextBestTask(projectId, currentPhase);
-    const { data: personaData } = useDerivedPersona({ projectId, phase: currentPhase, fowStage });
+    const { data: personaData } = useDerivedPersona({ projectId, phase: currentPhase, flowStage });
     const { data: artifacts } = useArtifacts(projectId);
     const { mutateAsync: createArtifact } = useCreateArtifact();
 
     // Show loading fallback while FOW stage is not available
-    if (fowStage === undefined) {
+    if (flowStage === undefined) {
         return (
             <Box className="w-full h-full flex items-center justify-center flex-col">
                 <CircularProgress />

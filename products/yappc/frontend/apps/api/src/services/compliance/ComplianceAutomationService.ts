@@ -281,7 +281,7 @@ export class ComplianceAutomationService {
 
     for (const gap of asGapRecords(assessment.gaps)) {
       const recommendation: ComplianceRecommendation = {
-        id: `rec-${Date.now()}-${Math.random()}`,
+        id: `rec-${Date.now()}-${crypto.randomUUID()}`,
         type: this.inferRecommendationType(gap),
         title: `Implement ${gap.controlId ?? 'unknown'} control`,
         description: gap.description ?? '',
@@ -446,7 +446,7 @@ export class ComplianceAutomationService {
 
       const priority = this.calculatePriority(findings);
       const step: RemediationStep = {
-        id: `step-${Date.now()}-${Math.random()}`,
+        id: `step-${Date.now()}-${crypto.randomUUID()}`,
         controlId,
         title: `Remediate ${control.name ?? controlId} control`,
         description: `Address ${findings.length} findings for control ${controlId}`,
@@ -576,12 +576,31 @@ export class ComplianceAutomationService {
   }
 
   /**
-   * Estimates implementation cost
+   * Estimates implementation cost using deterministic rules
+   *
+   * <p><b>Purpose</b><br>
+   * Calculates implementation cost based on gap severity and framework weight.
+   * Uses a rules table instead of random values for predictable estimates.
    *
    * @private
    */
-  private estimateImplementationCost(_gap: AssessmentGapRecord): number {
-    return 5000 + Math.random() * 15000;
+  private estimateImplementationCost(gap: AssessmentGapRecord): number {
+    // Rules table: base cost + (severity * framework weight multiplier)
+    const frameworkWeightMap: Record<string, number> = {
+      'SOC2': 1.5,
+      'ISO27001': 1.4,
+      'HIPAA': 1.6,
+      'GDPR': 1.3,
+      'PCI-DSS': 1.5,
+      'default': 1.0
+    };
+
+    const severity = gap.severity || 5;
+    const framework = gap.framework || 'default';
+    const frameworkWeight = frameworkWeightMap[framework] || frameworkWeightMap['default'];
+    const baseCost = 2000;
+
+    return baseCost + (severity * 1000 * frameworkWeight);
   }
 
   /**

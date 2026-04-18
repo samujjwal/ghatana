@@ -5,6 +5,7 @@ import fastify from 'fastify';
 import { randomUUID } from 'node:crypto';
 import cors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
+import { apiRateLimitMiddleware, aiRateLimitMiddleware } from './middleware/RateLimitMiddleware.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -31,6 +32,7 @@ import projectRoutes from './routes/projects';
 import devsecopsRoutes from './routes/devsecops';
 import canvasRoutes from './routes/canvas';
 import lifecycleRoutes from './routes/lifecycle';
+import lifecycleExecutionRoutes from './routes/lifecycle-execution';
 import telemetryRoutes from './routes/telemetry';
 import aiRoutes from './routes/ai';
 import { devAuthBypass } from './middleware/devAuth';
@@ -115,6 +117,15 @@ function registerApiPrefixes(
 export async function createApp(
   options: CreateAppOptions = {}
 ): Promise<FastifyInstance> {
+  // Validate required environment variables before initialization
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is required but not set. Aborting startup.');
+  }
+
+  if (!process.env.JWT_ACCESS_SECRET) {
+    throw new Error('JWT_ACCESS_SECRET environment variable is required but not set. Aborting startup.');
+  }
+
   if (options.jwtSecret) {
     process.env.JWT_ACCESS_SECRET = options.jwtSecret;
   }
@@ -135,12 +146,39 @@ export async function createApp(
   });
 
   // @ts-ignore - CORS plugin type issue
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim());
+
   app.register(cors, {
-    origin: '*',
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'), false);
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
   });
 
   await app.register(fastifyWebsocket);
+
+  // Register rate limit middleware
+  app.addHook('onRequest', (request, reply, done) => {
+    // Skip rate limiting for health and metrics endpoints
+    if (request.url === '/health' || request.url === '/metrics') {
+      done();
+      return;
+    }
+
+    // Apply AI-specific rate limiting to AI endpoints
+    if (request.url.startsWith('/api/v1/ai') || request.url.startsWith('/api/v1/copilot')) {
+      aiRateLimitMiddleware(request as any, reply as any, done);
+    } else {
+      apiRateLimitMiddleware(request as any, reply as any, done);
+    }
+  });
 
   app.addHook('onRequest', async (request) => {
     const headerValue = request.headers['x-correlation-id'];
@@ -186,13 +224,37 @@ export async function createApp(
     httpRequestTotal.labels(method, route, statusCode).inc();
   });
 
-  app.get('/health', async () => {
-    return {
-      status: 'healthy',
+  app.get('/health', async (request, reply) => {
+    const checks: Record<string, 'ok' | 'degraded' | 'down'> = {};
+
+    // Check database connectivity
+    try {
+      const prisma = await import('./database/client.js').then(m => m.getPrismaClient());
+      await prisma.$queryRaw`SELECT 1`;
+      checks.database = 'ok';
+    } catch {
+      checks.database = 'down';
+    }
+
+    // Check Java backend reachability
+    const javaBackendUrl = process.env.JAVA_BACKEND_URL ?? 'http://localhost:7003';
+    try {
+      const res = await fetch(`${javaBackendUrl}/health`, { signal: AbortSignal.timeout(2000) });
+      checks.javaBackend = res.ok ? 'ok' : 'degraded';
+    } catch {
+      checks.javaBackend = 'down';
+    }
+
+    const overallStatus = Object.values(checks).every((v) => v === 'ok') ? 'healthy' : 'degraded';
+    const httpStatus = checks.database === 'down' ? 503 : 200;
+
+    return reply.status(httpStatus).send({
+      status: overallStatus,
+      checks,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-    };
+      environment: process.env.NODE_ENV ?? 'development',
+    });
   });
 
   app.get('/metrics', async (_request, reply) => {
@@ -218,6 +280,7 @@ export async function createApp(
   registerApiPrefixes(app, devsecopsRoutes);
   registerApiPrefixes(app, canvasRoutes);
   registerApiPrefixes(app, lifecycleRoutes);
+  registerApiPrefixes(app, lifecycleExecutionRoutes);
   registerApiPrefixes(app, telemetryRoutes);
   registerApiPrefixes(app, aiRoutes);
 
@@ -243,6 +306,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
+          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY || 'service-to-service-token'}`,
         },
         body:
           request.method !== 'GET' && request.method !== 'HEAD'
@@ -280,6 +344,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
+          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY || 'service-to-service-token'}`,
         },
         body:
           request.method !== 'GET' && request.method !== 'HEAD'
@@ -317,6 +382,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
+          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY || 'service-to-service-token'}`,
         },
         body:
           request.method !== 'GET' && request.method !== 'HEAD'

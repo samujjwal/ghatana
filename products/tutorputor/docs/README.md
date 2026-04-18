@@ -1,10 +1,37 @@
 # TutorPutor Documentation
 
+TutorPutor is an AI-powered adaptive learning platform built as a monorepo with a Fastify/Node.js backend, React 19 web applications, and comprehensive simulation and content generation capabilities.
+
 ## Quick Start
 
 - **Development**: Run `ttr dev` (see [../bin/README.md](../bin/README.md))
 - **Architecture**: [architecture/README.md](architecture/README.md)
 - **Product Spec**: [architecture/specs/PRODUCT_SPEC.md](architecture/specs/PRODUCT_SPEC.md)
+
+## Overview
+
+TutorPutor provides:
+
+- **AI-Powered Tutoring**: Adaptive learning pathways with Ollama-based AI integration
+- **Simulation Engine**: Interactive physics simulations with Matter.js
+- **Content Generation**: Autonomous content creation with gRPC services
+- **Multi-Tenant Architecture**: Scalable multi-tenant support with proper isolation
+- **Real-time Collaboration**: WebSocket-based multiplayer learning experiences with Redis pub/sub
+- **Mobile Support**: React Native mobile apps in development with offline-first architecture (SQLite + MMKV + background sync)
+
+## Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Fastify, TypeScript, Prisma, Java 21 |
+| Frontend | React 19, TypeScript |
+| Mobile | React Native 0.85 |
+| Database | PostgreSQL 15 |
+| Cache | Redis 7 |
+| Queue | BullMQ |
+| gRPC | Connect, Protobuf |
+| AI | Ollama, LangChain |
+| Testing | Vitest, Playwright |
 
 ## Structure
 
@@ -28,8 +55,14 @@ docs/
 │       └── AUTONOMOUS_CONTENT_GENERATION_ROADMAP.md  # 30/60/90 day plan
 ├── guides/                # Developer guides
 │   ├── DEVELOPMENT_SETUP.md            # Quick setup guide
+│   ├── ONBOARDING.md                   # Developer onboarding guide
+│   ├── DEPLOYMENT.md                   # Deployment guide
 │   ├── content-studio/                 # Content authoring
 │   ├── ai/                             # AI integration
+│   ├── assessment/                     # Assessment guides
+│   ├── analytics/                      # Analytics guides
+│   ├── mobile/                         # Mobile app guides
+│   ├── personalization/                # Personalization guides
 │   └── simulation/                     # Simulation authoring
 ├── guidelines/            # Coding standards
 │   └── CODING.md
@@ -42,6 +75,7 @@ docs/
 | Topic | Document |
 |-------|----------|
 | **Getting Started** | [guides/DEVELOPMENT_SETUP.md](guides/DEVELOPMENT_SETUP.md) |
+| **Onboarding** | [guides/ONBOARDING.md](guides/ONBOARDING.md) |
 | **Architecture** | [architecture/README.md](architecture/README.md) |
 | **Current State** | [architecture/CURRENT_STATE.md](architecture/CURRENT_STATE.md) |
 | **Implementation** | [architecture/IMPLEMENTATION_PLAN.md](architecture/IMPLEMENTATION_PLAN.md) |
@@ -49,6 +83,8 @@ docs/
 | **Commands** | [bin/README.md](../bin/README.md) |
 | **Coding Standards** | [guidelines/CODING.md](guidelines/CODING.md) |
 | **Operations** | [operations/OPERATIONS.md](operations/OPERATIONS.md) |
+| **API Documentation** | [api/README.md](api/README.md) |
+| **Deployment Guide** | [guides/DEPLOYMENT.md](guides/DEPLOYMENT.md) |
 | **At-Rest Encryption Audit** | [operations/AT_REST_ENCRYPTION_AUDIT_2026-04-16.md](operations/AT_REST_ENCRYPTION_AUDIT_2026-04-16.md) |
 | **Critical Journey E2E Evidence** | [operations/CRITICAL_JOURNEY_E2E_EVIDENCE_2026-04-16.md](operations/CRITICAL_JOURNEY_E2E_EVIDENCE_2026-04-16.md) |
 | **GDPR Deletion Flow Runbook** | [operations/GDPR_DELETION_FLOW_RUNBOOK.md](operations/GDPR_DELETION_FLOW_RUNBOOK.md) |

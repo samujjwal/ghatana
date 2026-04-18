@@ -1,6 +1,6 @@
 # 11. Dataset Explorer – List View – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec translates the Dataset Explorer list requirements from `frontend_todo (1).md` into a concrete future page.
+> **Status:** Planned expansion. The current shipped collection-centric explorer is the canonical `/data` Data Explorer; this spec describes the broader cross-dataset catalog that does not yet exist as a distinct page.
 
 ---
 
@@ -15,7 +15,7 @@
 - Show all relevant datasets across the Data Cloud (collections, external tables, virtual datasets).
 - Allow users to **search, filter, and sort** datasets by multiple criteria.
 - Expose key dataset signals at a glance: type, owner, tags, usage, health.
-- Provide clear navigation into dataset detail, lineage explorer, and SQL workspace.
+- Provide clear navigation into dataset detail, lineage preview, and the canonical SQL workspace.
 
 **Non-goals:**
 
@@ -150,6 +150,8 @@ A production-ready Dataset Explorer list should:
 
 4. **Governance overlays:**
    - Highlight policy violations or pending approvals.
+5. **Current-handoff alignment:**
+  - Until a distinct dataset catalog exists, future entry points should hand off into canonical `/data`, `/data/:id`, `/data?view=lineage`, and `/query` routes instead of inventing parallel navigation.
 
 ---
 

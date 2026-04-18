@@ -7,8 +7,7 @@
  * @doc.pattern Data Hook
  */
 import { useState, useEffect } from 'react';
-import { dataCloudApi } from '../lib/api/data-cloud-api';
-import type { Collection } from '../lib/api/collections';
+import { collectionsApi, type Collection } from '../lib/api/collections';
 
 export function useCollectionData(collectionId?: string) {
   const [data, setData] = useState<Collection | Collection[] | null>(null);
@@ -19,10 +18,13 @@ export function useCollectionData(collectionId?: string) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = collectionId 
-          ? await dataCloudApi.getCollectionById(collectionId)
-          : await dataCloudApi.getCollections();
-        setData(response.data);
+        if (collectionId) {
+          const collection = await collectionsApi.get(collectionId);
+          setData(collection);
+        } else {
+          const response = await collectionsApi.list();
+          setData(response.items);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {

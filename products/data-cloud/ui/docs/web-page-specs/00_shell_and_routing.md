@@ -15,7 +15,7 @@ Related docs:
 
 **One-sentence intent:**
 
-> Provide the **root React shell and route configuration** so all Data Cloud pages (Dashboard, Collections, Workflows, Designer) run inside a consistent, provider-wrapped app.
+> Provide the **root React shell and route configuration** so the Intelligent Hub, Data Explorer, Pipelines, Query, and operator/admin-only surfaces run inside a consistent, provider-wrapped app.
 
 **Primary goals:**
 
@@ -36,16 +36,18 @@ Related docs:
 
 **Personas:**
 
-- **Data engineer / platform operator** using Data Cloud dashboard and workflows.
+- **Primary user** using Data Cloud for data, pipelines, and query flows.
+- **Operator/admin** using diagnostic and governance surfaces with progressive disclosure.
 - **Implementer / integrator** wiring Data Cloud UI into a larger app.
 
 **Key scenarios:**
 
 1. **Opening Data Cloud UI**
-   - User hits `/` and is routed to `DashboardPage`.
+  - User hits `/` and is routed to `IntelligentHub`.
 
 2. **Navigating between core pages**
-   - User navigates to `/collections`, `/workflows`, `/workflows/new`, etc., via links/buttons.
+  - Primary users navigate to `/data`, `/pipelines`, and `/query` via links/buttons.
+  - Operators switch shell role to reveal `/insights`, `/trust`, and `/events`.
    - Router mounts the appropriate page component.
 
 3. **Handling unknown routes**
@@ -58,12 +60,15 @@ Related docs:
 From `src/App.tsx`:
 
 - Lazy-loaded pages:
-  - `DashboardPage` – `/`, `/dashboard`
-  - `CollectionsPage` – `/collections` and `/collections/:id`
-  - `CreateCollectionPage` – `/collections/new`
-  - `EditCollectionPage` – `/collections/:id/edit`
-  - `WorkflowsPage` – `/workflows`
-  - `WorkflowDesigner` – `/workflows/new`, `/workflows/:id`
+  - `IntelligentHub` – `/`, compatibility aliases `/dashboard`, `/hub`
+  - `DataExplorer` – `/data`, `/data/:id`, `/data/:id/:view`, compatibility alias `/collections`
+  - `CreateCollectionPage` – `/data/new`, compatibility alias `/collections/new`
+  - `EditCollectionPage` – `/data/:id/edit`, compatibility alias `/collections/:id/edit`
+  - `WorkflowsPage` – `/pipelines`, compatibility alias `/workflows`
+  - `SmartWorkflowBuilder` – `/pipelines/new`, compatibility alias `/workflows/new`
+  - `WorkflowDesigner` – `/pipelines/:id`, `/pipelines/:id/edit`, compatibility alias `/workflows/:id`
+  - `SqlWorkspacePage` – `/query`, compatibility alias `/sql`
+  - Explicit compatibility handoffs: `/lineage` → `/data?view=lineage`, `/quality` → `/data?view=quality`
   - `NotFound` – `*`
 
 - Providers:
@@ -80,7 +85,9 @@ From `src/App.tsx`:
 - **Smooth loading:**
   - `LoadingScreen` should present a clear loading indicator and short message.
 - **Predictable navigation:**
-  - `/` and `/dashboard` behave identically.
+  - `/` is the canonical home route and `/dashboard` is a compatibility alias.
+  - `/query` is the canonical SQL route and `/sql` is a compatibility alias.
+  - `/lineage` and `/quality` are compatibility handoffs into Data Explorer preview modes rather than standalone workspaces.
   - Unknown routes reliably hit `NotFound`.
 - **Future shell alignment:**
   - As shells evolve (shared headers/layouts), they should integrate consistently across pages without changing route intent.
@@ -108,7 +115,7 @@ This shell should support:
 - **Provider layering:**
   - Keep providers close to the root so all pages share theme/state.
 - **Realtime-ready provider stack (future):**
-  - The root shell is the right place to mount shared realtime clients (e.g., WebSocket/EventSource via `@ghatana/realtime`) once live dashboards, alerts, and workflow status streams are implemented.
+  - The root shell is the right place to mount shared realtime clients (e.g., WebSocket/EventSource via `@ghatana/realtime`) once live insight summaries, alerts, and workflow status streams are implemented.
 
 ---
 
@@ -117,7 +124,7 @@ This shell should support:
 - Like App Creator and AEP shells, Data Cloud uses:
   - A slim App component as a **routing + provider shell**.
   - Pages responsible for their own content and local layout.
-- `WorkflowDesigner` is the bridge into **canvas-based editing**; the shell must support mounting such experiences under `/workflows/...`.
+- `WorkflowDesigner` is the bridge into **canvas-based editing**; the shell must support mounting such experiences under canonical `/pipelines/...` routes while preserving compatibility aliases only for deep-link continuity.
 - Within the broader Data Cloud product, this App can be treated as the **"Data Cloud workspace module"**, alongside other workspaces (Dataset Explorer, SQL Workspace, Governance), each mounted by a higher-level host shell.
 
 ---
@@ -142,7 +149,7 @@ This shell should support:
    - Integrate auth/tenant providers consistent with other products.
 
 4. **Realtime event channels:**
-   - Add a shared realtime client/provider (WebSockets or EventSource, likely via `@ghatana/realtime`) at the shell or host level so dashboards, workflows, and alerts can update live without manual refresh.
+  - Add a shared realtime client/provider (WebSockets or EventSource, likely via `@ghatana/realtime`) at the shell or host level so insight summaries, workflows, and alerts can update live without manual refresh.
 
 5. **Tauri desktop host integration:**
    - Document and standardize how this App is embedded in a Tauri shell (window chrome, deep linking, file/protocol handlers) while keeping route definitions unchanged.
@@ -161,15 +168,17 @@ Providers
   [ThemeProvider]
     [RouterProvider]
       Routes:
-      - /                → DashboardPage
-      - /dashboard       → DashboardPage
-      - /collections     → CollectionsPage (list)
-      - /collections/new → CreateCollectionPage
-      - /collections/:id → CollectionsPage (detail)
-      - /collections/:id/edit → EditCollectionPage
-      - /workflows       → WorkflowsPage
-      - /workflows/new   → WorkflowDesigner (canvas)
-      - /workflows/:id   → WorkflowDesigner (canvas for existing)
+      - /                → IntelligentHub
+      - /data            → DataExplorer
+      - /data/new        → CreateCollectionPage
+      - /data/:id        → DataExplorer (detail)
+      - /data/:id/edit   → EditCollectionPage
+      - /pipelines       → WorkflowsPage
+      - /pipelines/new   → SmartWorkflowBuilder
+      - /pipelines/:id   → WorkflowDesigner
+      - /query           → SqlWorkspacePage
+      - /lineage         → Navigate(/data?view=lineage)
+      - /quality         → Navigate(/data?view=quality)
       - *                → NotFound
 
 All route elements are wrapped in Suspense with a shared LoadingScreen.

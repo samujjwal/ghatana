@@ -18,19 +18,19 @@ export const featureFlags = {
   AGENT_DECISIONS: import.meta.env.VITE_FEATURE_AGENT_DECISIONS === 'true',
   POLICY_REFERENCES: import.meta.env.VITE_FEATURE_POLICY_REFERENCES === 'true',
   
-  // Governance sections
-  COMPLIANCE_REPORTS: import.meta.env.VITE_FEATURE_COMPLIANCE_REPORTS === 'true',
-  TENANT_MANAGEMENT: import.meta.env.VITE_FEATURE_TENANT_MANAGEMENT === 'true',
-  AUDIT_LOG: import.meta.env.VITE_FEATURE_AUDIT_LOG === 'true',
-  
-  // Voice/NLP features
+  // Governance sections — enabled by default so operators can access safety controls
+  COMPLIANCE_REPORTS: import.meta.env.VITE_FEATURE_COMPLIANCE_REPORTS !== 'false',
+  TENANT_MANAGEMENT: import.meta.env.VITE_FEATURE_TENANT_MANAGEMENT !== 'false',
+  AUDIT_LOG: import.meta.env.VITE_FEATURE_AUDIT_LOG !== 'false',
+
+  // Voice/NLP features — NLQ enabled by default (backend route now wired)
   VOICE_COMMANDS: import.meta.env.VITE_FEATURE_VOICE_COMMANDS === 'true',
-  NLQ: import.meta.env.VITE_FEATURE_NLQ === 'true',
-  
-  // AI features
-  AI_SUGGESTIONS: import.meta.env.VITE_FEATURE_AI_SUGGESTIONS === 'true',
+  NLQ: import.meta.env.VITE_FEATURE_NLQ !== 'false',
+
+  // AI features — AI_SUGGESTIONS and ANOMALY_DETECTION enabled by default (routes now wired)
+  AI_SUGGESTIONS: import.meta.env.VITE_FEATURE_AI_SUGGESTIONS !== 'false',
   SMART_PRIORITIZATION: import.meta.env.VITE_FEATURE_SMART_PRIORITIZATION === 'true',
-  ANOMALY_DETECTION: import.meta.env.VITE_FEATURE_ANOMALY_DETECTION === 'true',
+  ANOMALY_DETECTION: import.meta.env.VITE_FEATURE_ANOMALY_DETECTION !== 'false',
   
   // Bulk operations
   BULK_OPERATIONS: import.meta.env.VITE_FEATURE_BULK_OPERATIONS === 'true',

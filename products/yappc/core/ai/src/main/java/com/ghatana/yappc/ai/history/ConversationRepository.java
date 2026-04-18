@@ -190,18 +190,48 @@ public final class ConversationRepository {
         String tenantId = TenantContext.getCurrentTenantId();
         log.info("Purging AI conversation records before {} for tenant {}", before, tenantId);
         
-        // Note: YappcDataCloudRepository doesn't support lt filters in findByFilter
-        // We'll need to load all and filter in memory for now, or add support for comparison filters
-        return repository.findAll()
+        // Memory-safe implementation: process records in batches to avoid loading all into memory
+        final int BATCH_SIZE = 100;
+        return deleteOlderThanBatched(before, 0, BATCH_SIZE, 0);
+    }
+    
+    /**
+     * Recursive batched deletion to avoid memory issues with large datasets.
+     * Processes records in batches and recursively continues until no more records match.
+     */
+    private Promise<Integer> deleteOlderThanBatched(@NotNull Instant before, int offset, int batchSize, int deletedSoFar) {
+        // Use findByFilter with pagination to get a batch of records
+        return repository.findByFilter(java.util.Map.of(), "updatedAt", batchSize, offset)
                 .then(conversations -> {
-                    List<Promise<Void>> deletes = conversations.stream()
+                    if (conversations.isEmpty()) {
+                        // No more records to process
+                        return Promise.of(deletedSoFar);
+                    }
+                    
+                    // Filter current batch for records to delete
+                    List<Conversation> toDelete = conversations.stream()
                             .filter(c -> c.updatedAt().isBefore(before))
+                            .collect(java.util.stream.Collectors.toList());
+                    
+                    if (toDelete.isEmpty()) {
+                        // No records in this batch need deletion, try next batch
+                        return deleteOlderThanBatched(before, offset + batchSize, batchSize, deletedSoFar);
+                    }
+                    
+                    // Delete matching records in this batch
+                    List<Promise<Void>> deletes = toDelete.stream()
                             .map(c -> repository.deleteById(c.conversationId()))
                             .collect(java.util.stream.Collectors.toList());
+                    
                     return io.activej.promise.Promises.all(deletes)
-                            .map(ignored -> (int) conversations.stream()
-                                    .filter(c -> c.updatedAt().isBefore(before))
-                                    .count());
+                            .then(ignored -> {
+                                int newDeletedCount = deletedSoFar + toDelete.size();
+                                log.debug("Deleted batch of {} conversation records, total deleted: {}", 
+                                         toDelete.size(), newDeletedCount);
+                                
+                                // Continue with next batch
+                                return deleteOlderThanBatched(before, offset + batchSize, batchSize, newDeletedCount);
+                            });
                 });
     }
 }

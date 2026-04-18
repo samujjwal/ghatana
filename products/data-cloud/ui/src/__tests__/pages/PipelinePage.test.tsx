@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 import React from 'react';
+import { dataFabricMetricsBoundary } from '@/components/common/unsupportedSurfaceRegistry';
 
 const { mockApiClient } = vi.hoisted(() => ({
     mockApiClient: {
@@ -49,7 +50,6 @@ vi.mock('reactflow', async () => ({
 }));
 
 import { DataFabricPage } from '../../pages/DataFabricPage';
-import { FABRIC_METRICS_BOUNDARY_MESSAGE } from '../../pages/DataFabricPage';
 
 describe('PipelinePage — DataFabricPage', () => {
     beforeEach(() => {
@@ -69,13 +69,13 @@ describe('PipelinePage — DataFabricPage', () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
         expect(screen.getByRole('heading', { name: /Data Fabric/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Migrate Tier/i })).toBeInTheDocument();
-        expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeInTheDocument();
+        expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeInTheDocument();
     });
 
     it('surfaces the preview boundary and static topology labels', () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
 
-        expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeInTheDocument();
+        expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeInTheDocument();
         expect(screen.getByText(/HOT \(Redis\)/i)).toBeInTheDocument();
         expect(screen.getByText(/WARM \(PostgreSQL\)/i)).toBeInTheDocument();
         expect(screen.getByText(/COOL \(Iceberg\)/i)).toBeInTheDocument();

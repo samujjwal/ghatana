@@ -37,12 +37,14 @@ vi.mock('../../lib/api/workflows', () => ({
 
 vi.mock('../../api/analytics.service', () => analyticsMocks);
 
-vi.mock('../../lib/api/data-cloud-api', () => ({
-    dataCloudApi: {
-        getCollections: vi.fn().mockResolvedValue([
-            { id: 'orders', name: 'orders' },
-            { id: 'customers', name: 'customers' },
-        ]),
+vi.mock('../../lib/api/collections', () => ({
+    collectionsApi: {
+        list: vi.fn().mockResolvedValue({
+            items: [
+                { id: 'orders', name: 'orders' },
+                { id: 'customers', name: 'customers' },
+            ],
+        }),
     },
 }));
 
@@ -95,7 +97,7 @@ describe('AnalyticsPage — InsightsPage', () => {
     it('renders canonical analytics collection summaries and anomaly hints', async () => {
         render(<InsightsPage />, { wrapper: TestWrapper });
 
-        fireEvent.click(screen.getByRole('button', { name: /dashboards/i }));
+        fireEvent.click(screen.getByRole('button', { name: /analytics/i }));
 
         expect(await screen.findByText('Entity Distribution by Collection')).toBeInTheDocument();
 
@@ -120,7 +122,7 @@ describe('AnalyticsPage — InsightsPage', () => {
 
         render(<InsightsPage />, { wrapper: TestWrapper });
 
-        fireEvent.click(screen.getByRole('button', { name: /dashboards/i }));
+        fireEvent.click(screen.getByRole('button', { name: /analytics/i }));
 
         const editor = await screen.findByPlaceholderText(/select count\(\*\) as total/i);
         fireEvent.change(editor, { target: { value: '  SELECT id FROM orders  ' } });

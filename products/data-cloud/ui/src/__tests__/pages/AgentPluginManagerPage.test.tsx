@@ -16,14 +16,15 @@ import { BrowserRouter } from 'react-router';
 import { Provider } from 'jotai';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
+import { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 // =============================================================================
 // Module mocks
 // =============================================================================
 
 vi.mock('../../api/agent-registry.service', () => ({
-  AGENT_REGISTRY_BOUNDARY_MESSAGE:
-    'Agent registration, deregistration, execution history, and live registry events are not exposed by the current Data Cloud launcher API.',
+  AGENT_REGISTRY_BOUNDARY_MESSAGE,
   agentRegistryService: {
     listAgents: vi.fn(),
     registerAgent: vi.fn(),
@@ -44,7 +45,7 @@ const SAMPLE_AGENTS: AgentDefinition[] = [
     name: 'Planning Agent',
     description: 'Handles task planning and decomposition',
     version: '1.2.0',
-    tenantId: 'tenant-a',
+    tenantId: TEST_TENANT_ID,
     status: 'ACTIVE',
     capabilities: [
       {
@@ -63,7 +64,7 @@ const SAMPLE_AGENTS: AgentDefinition[] = [
     name: 'Execution Agent',
     description: 'Executes pipeline steps',
     version: '2.0.0',
-    tenantId: 'tenant-a',
+    tenantId: TEST_TENANT_ID,
     status: 'ERROR',
     capabilities: [],
     registeredAt: '2026-02-01T12:00:00Z',
@@ -76,7 +77,7 @@ const SAMPLE_REGISTRY_EVENT: RegistryEvent = {
   id: 'evt-reg-001',
   eventType: 'AGENT_REGISTERED',
   agentId: 'agent-001',
-  tenantId: 'tenant-a',
+  tenantId: TEST_TENANT_ID,
   timestamp: new Date().toISOString(),
   payload: {},
 };
@@ -151,10 +152,10 @@ describe('AgentPluginManagerPage', () => {
 
     // Default: successful data load
     vi.mocked(agentRegistryService.listAgents).mockResolvedValue(SAMPLE_AGENTS);
-    vi.mocked(agentRegistryService.registerAgent).mockRejectedValue(new Error('unsupported'));
-    vi.mocked(agentRegistryService.deregisterAgent).mockRejectedValue(new Error('unsupported'));
+    vi.mocked(agentRegistryService.registerAgent).mockRejectedValue(new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE));
+    vi.mocked(agentRegistryService.deregisterAgent).mockRejectedValue(new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE));
     vi.mocked(agentRegistryService.streamRegistryEvents).mockImplementation(() => {
-      throw new Error('unsupported');
+      throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
     });
   });
 

@@ -125,15 +125,15 @@ Test Distribution:
 
 | Test File | Purpose | Test Type | Coverage | Evidence |
 |----------|---------|-----------|----------|----------|
-| `IntelligentHub.test.tsx` | Intelligent hub page functionality | Component | High | ✅ Command bar, brain sidebar, ambient intelligence |
+| `IntelligentHub.test.tsx` | Intelligent hub page functionality | Component | High | ✅ Outcome launcher, role-aware quick actions, canonical navigation |
 | `DataExplorer.test.tsx` | Data explorer page functionality | Component | High | ✅ Data browsing, filtering, visualization |
-| `WorkflowDesigner.test.tsx` | Workflow designer functionality | Component | Medium | ✅ Drag-and-drop, workflow building |
-| `SqlWorkspacePage.test.tsx` | SQL workspace functionality | Component | High | ✅ Query editor, results display |
-| `InsightsPage.test.tsx` | Insights dashboard functionality | Component | Medium | ✅ Charts, analytics, reporting |
+| `WorkflowDesigner.test.tsx` | Workflow designer functionality | Component | Medium | ✅ Drag-and-drop and advanced-editor canvas behavior |
+| `SqlWorkspacePage.test.tsx` | SQL workspace functionality | Component | High | ✅ Query editor, results display, canonical `/query` flow |
+| `InsightsPage.test.tsx` | Insights operator surface functionality | Component | Medium | ✅ Charts, analytics, runtime diagnostics |
 | `TrustCenter.test.tsx` | Trust center functionality | Component | Medium | ✅ Governance, compliance, audit |
 | `PluginsPage.test.tsx` | Plugin management functionality | Component | Medium | ✅ Plugin discovery, installation |
-| `SettingsPage.test.tsx` | Settings page functionality | Component | High | ✅ Configuration, preferences |
-| `AlertsPage.test.tsx` | Alerts management functionality | Component | Medium | ✅ Alert configuration, notifications |
+| `SettingsPage.test.tsx` | Settings boundary functionality | Component | High | ✅ Admin-only unsupported boundary messaging |
+| `AlertsPage.test.tsx` | Alerts operator triage functionality | Component | Medium | ✅ Live service mocks plus unsupported fallback state |
 | `AgentPluginManagerPage.test.tsx` | Agent plugin management | Component | Medium | ✅ Agent plugins, configuration |
 
 #### 2.2 Core Component Tests
@@ -164,7 +164,7 @@ Test Distribution:
 
 | Test File | Purpose | Test Type | Coverage | Evidence |
 |----------|---------|-----------|----------|----------|
-| `workflow.lifecycle.test.ts` | Workflow lifecycle management | Integration | Medium | ✅ Workflow creation, execution, completion |
+| `workflow.lifecycle.test.ts` | Pipeline lifecycle management | Integration | Medium | ✅ Pipeline creation, execution, completion |
 
 ### 3. Architecture Tests
 
@@ -490,7 +490,7 @@ Test Automation:
    - Add test optimization
 
 3. **Test Analytics**
-   - Add test analytics dashboard
+   - Add test analytics and insights reporting
    - Implement test trend analysis
    - Add test predictive analytics
 

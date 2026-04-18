@@ -20,6 +20,7 @@
 import { useCallback, useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import { workflowClient } from '../../../lib/api/workflow-client';
+import SessionBootstrap from '../../../lib/auth/session';
 import {
   executionAtom,
   startExecutionAtom,
@@ -40,7 +41,7 @@ function createPendingExecution(
     progress: 0,
     startedAt: new Date().toISOString(),
     nodeStatuses: [],
-    tenantId: 'default',
+    tenantId: SessionBootstrap.getTenantId() ?? '',
   };
 }
 

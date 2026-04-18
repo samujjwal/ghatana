@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -137,6 +138,35 @@ class PostgresEntityStoreIntegrationTest extends EventloopTestBase {
         } catch (Exception exception) {
             throw new AssertionError("Direct database inspection failed", exception);
         }
+    }
+
+    @Test
+    @DisplayName("deleteBatch soft-deletes 1000+ entities")
+    void deleteBatchSoftDeletesLargeBatch() {
+        entityStore = store();
+        TenantContext tenant = TenantContext.of("tenant-batch");
+
+        List<EntityStore.Entity> entities = IntStream.range(0, 1_001)
+            .mapToObj(index -> EntityStore.Entity.builder()
+                .collection("orders")
+                .id("batch-order-" + index)
+                .data(Map.of("index", index, "status", "expired"))
+                .build())
+            .toList();
+        List<EntityStore.EntityId> ids = entities.stream().map(EntityStore.Entity::id).toList();
+
+        BatchResult<String> saveResult = runPromise(() -> entityStore.saveBatch(tenant, entities));
+        assertThat(saveResult.isFullySuccessful()).isTrue();
+
+        BatchResult<String> deleteResult = runPromise(() -> entityStore.deleteBatch(tenant, ids));
+
+        assertThat(deleteResult.totalCount()).isEqualTo(1_001);
+        assertThat(deleteResult.successCount()).isEqualTo(1_001);
+        assertThat(deleteResult.failureCount()).isZero();
+        assertThat(runPromise(() -> entityStore.count(tenant, EntityStore.QuerySpec.builder()
+            .collection("orders")
+            .build()))).isZero();
+        assertThat(runPromise(() -> entityStore.findById(tenant, EntityStore.EntityId.of("batch-order-0")))).isEmpty();
     }
 
     private PostgresEntityStore store() {

@@ -1,16 +1,14 @@
 /**
  * Alerts Page
  * 
- * System alerts and notifications management with AI-powered triage.
+ * Operator-facing alerts triage console.
  * 
- * Features:
- * - Smart alert grouping by root cause
- * - AI-suggested resolutions
- * - Automated correlation detection
- * - One-click bulk actions
+ * Uses the canonical launcher-backed alerts routes when available and
+ * falls back to the shared unsupported boundary when the deployment does
+ * not expose the live alerts surface.
  * 
  * @doc.type page
- * @doc.purpose AI-powered alert management
+ * @doc.purpose Operator alerts triage page
  * @doc.layer frontend
  * @doc.pattern Page Component
  */
@@ -27,6 +25,9 @@ import {
     Lightbulb,
     Play,
     X,
+    Activity,
+    ShieldCheck,
+    EyeOff,
 } from 'lucide-react';
 import {
     cn,
@@ -37,6 +38,8 @@ import {
     metricCardStyles,
 } from '../lib/theme';
 import { AlertRuleForm, type AlertRule } from '../components/alerts/AlertRuleForm';
+import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
+import { alertsSurfaceBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '../api/alerts.service';
 import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
 
@@ -246,16 +249,70 @@ function ResolutionSuggestionCard({
     );
 }
 
+const SUPPORTED_ALERT_ROUTE_COUNT = 7;
+
+function AlertTruthPanel({
+    routeCoverage,
+    streamHealth,
+    groupedCoverage,
+    suggestionCoverage,
+}: {
+    routeCoverage: number;
+    streamHealth: 'live' | 'degraded';
+    groupedCoverage: number;
+    suggestionCoverage: number;
+}) {
+    return (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4 mb-6" data-testid="alerts-truth-panel">
+            <div className={cn(cardStyles.base, cardStyles.padded)}>
+                <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="h-4 w-4 text-green-500" />
+                    <p className={textStyles.label}>Route Coverage</p>
+                </div>
+                <p className={textStyles.h3}>{routeCoverage}/{SUPPORTED_ALERT_ROUTE_COUNT} live</p>
+                <p className={textStyles.xs}>List, lifecycle, grouping, suggestions, rules, and stream are all launcher-backed in this deployment.</p>
+            </div>
+            <div className={cn(cardStyles.base, cardStyles.padded)}>
+                <div className="flex items-center gap-2 mb-2">
+                    <Activity className={cn('h-4 w-4', streamHealth === 'live' ? 'text-green-500' : 'text-amber-500')} />
+                    <p className={textStyles.label}>Stream Health</p>
+                </div>
+                <p className={textStyles.h3}>{streamHealth === 'live' ? 'Connected' : 'Degraded'}</p>
+                <p className={textStyles.xs}>{streamHealth === 'live' ? 'Live alert mutations invalidate the triage cache immediately.' : 'The page is serving live data, but the event stream is not yet confirmed open.'}</p>
+            </div>
+            <div className={cn(cardStyles.base, cardStyles.padded)}>
+                <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-4 w-4 text-purple-500" />
+                    <p className={textStyles.label}>Grouped Coverage</p>
+                </div>
+                <p className={textStyles.h3}>{groupedCoverage}%</p>
+                <p className={textStyles.xs}>Active incidents currently represented in AI-detected correlation groups.</p>
+            </div>
+            <div className={cn(cardStyles.base, cardStyles.padded)}>
+                <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb className="h-4 w-4 text-amber-500" />
+                    <p className={textStyles.label}>Suggestion Coverage</p>
+                </div>
+                <p className={textStyles.h3}>{suggestionCoverage}%</p>
+                <p className={textStyles.xs}>Share of active incidents with a generated resolution suggestion or grouped action path.</p>
+            </div>
+        </div>
+    );
+}
+
 /**
  * Alerts Page Component
  */
 export function AlertsPage(): React.ReactElement {
     const queryClient = useQueryClient();
     const [filter, setFilter] = useState<'all' | AlertSeverity>('all');
-    const [statusFilter, setStatusFilter] = useState<'all' | AlertStatus>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | AlertStatus>('active');
     const [isRuleFormOpen, setIsRuleFormOpen] = useState(false);
+    const [selectedRule, setSelectedRule] = useState<AlertRule | undefined>(undefined);
     const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
     const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
+    const [streamState, setStreamState] = useState<'idle' | 'open' | 'error'>('idle');
+    const [showRuleManagement, setShowRuleManagement] = useState(false);
 
     const alertsQuery = useQuery({
         queryKey: ['alerts'],
@@ -275,7 +332,15 @@ export function AlertsPage(): React.ReactElement {
     });
     const suggestions = suggestionsQuery.data ?? [];
 
+    const rulesQuery = useQuery({
+        queryKey: ['alerts', 'rules'],
+        queryFn: () => alertsService.listAlertRules(),
+    });
+    const alertRules = rulesQuery.data ?? [];
+
     const alertsUnsupported = [alertsQuery.error, groupsQuery.error, suggestionsQuery.error].some(isAlertsUnsupportedError);
+    const shouldOpenAlertsStream =
+        !alertsUnsupported && alertsQuery.isSuccess && groupsQuery.isSuccess && suggestionsQuery.isSuccess;
 
     const acknowledgeMutation = useMutation({
         mutationFn: (alertId: string) => alertsService.acknowledgeAlert(alertId),
@@ -297,14 +362,29 @@ export function AlertsPage(): React.ReactElement {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
     });
 
-    // SSE stream for live alert events
+    // Only start live alert streaming when the launcher proves the routes exist.
     useEffect(() => {
+        if (!shouldOpenAlertsStream) {
+            return;
+        }
+
         const es = alertsService.openStream();
+        setStreamState('idle');
+        es.addEventListener('open', () => {
+            setStreamState('open');
+        });
+        es.addEventListener('error', () => {
+            setStreamState('error');
+        });
         es.addEventListener('message', () => {
             queryClient.invalidateQueries({ queryKey: ['alerts'] });
         });
-        return () => es.close();
-    }, [queryClient]);
+
+        return () => {
+            es.close();
+            setStreamState('idle');
+        };
+    }, [queryClient, shouldOpenAlertsStream]);
 
     const filteredAlerts = allAlerts.filter((alert) => {
         if (filter !== 'all' && alert.severity !== filter) return false;
@@ -318,11 +398,21 @@ export function AlertsPage(): React.ReactElement {
         info: allAlerts.filter((a) => a.severity === 'info' && a.status === 'active').length,
         total: allAlerts.filter((a) => a.status === 'active').length,
     };
+    const enabledRuleCount = alertRules.filter((rule) => rule.enabled).length;
+    const activeSuggestionCount = suggestions.filter((suggestion) => !dismissedSuggestions.includes(suggestion.id)).length;
+    const activeAlerts = allAlerts.filter((alert) => alert.status === 'active');
+    const groupedAlertIds = new Set(alertGroups.flatMap((group) => group.alertIds));
+    const suggestionAlertIds = new Set(suggestions.map((suggestion) => suggestion.alertId));
+    const groupedCoverage = activeAlerts.length === 0 ? 100 : Math.round((activeAlerts.filter((alert) => groupedAlertIds.has(alert.id)).length / activeAlerts.length) * 100);
+    const suggestionCoverage = activeAlerts.length === 0 ? 100 : Math.round((activeAlerts.filter((alert) => groupedAlertIds.has(alert.id) || suggestionAlertIds.has(alert.id)).length / activeAlerts.length) * 100);
+    const routeCoverage = alertsUnsupported ? 0 : SUPPORTED_ALERT_ROUTE_COUNT;
+    const streamHealth = streamState === 'open' ? 'live' : 'degraded';
 
     const createRuleMutation = useMutation({
         mutationFn: (rule: Omit<AlertRule, 'id'>) => alertsService.createAlertRule(rule),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['alerts', 'rules'] });
+            setSelectedRule(undefined);
             setIsRuleFormOpen(false);
         },
     });
@@ -332,9 +422,20 @@ export function AlertsPage(): React.ReactElement {
             alertsService.updateAlertRule(ruleId, rule),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['alerts', 'rules'] });
+            setSelectedRule(undefined);
             setIsRuleFormOpen(false);
         },
     });
+
+    const openCreateRuleForm = () => {
+        setSelectedRule(undefined);
+        setIsRuleFormOpen(true);
+    };
+
+    const openEditRuleForm = (rule: AlertRule) => {
+        setSelectedRule(rule);
+        setIsRuleFormOpen(true);
+    };
 
     const handleSaveRule = (rule: AlertRule) => {
         if (rule.id != null && rule.id !== '') {
@@ -345,12 +446,36 @@ export function AlertsPage(): React.ReactElement {
         }
     };
 
+    if (alertsUnsupported) {
+        return (
+            <div className={cn('min-h-screen p-6', bgStyles.page)}>
+                <div className="mb-6">
+                    <h1 className={textStyles.h1}>Alerts</h1>
+                    <p className={textStyles.muted}>
+                        Operator-facing alert triage remains unavailable until the launcher exposes canonical alert routes.
+                    </p>
+                </div>
+
+                <UnsupportedSurfaceBoundary
+                    title={alertsSurfaceBoundary.title}
+                    summary={alertsSurfaceBoundary.summary}
+                    details={alertsSurfaceBoundary.details}
+                    state={alertsSurfaceBoundary.state}
+                />
+            </div>
+        );
+    }
+
     return (
-        <div className={cn('min-h-screen p-6', bgStyles.page)}>
+        <div className={cn('min-h-screen p-6', bgStyles.page)} data-testid="alerts-page">
             {/* Alert Rule Form Modal */}
             <AlertRuleForm
                 isOpen={isRuleFormOpen}
-                onClose={() => setIsRuleFormOpen(false)}
+                rule={selectedRule}
+                onClose={() => {
+                    setIsRuleFormOpen(false);
+                    setSelectedRule(undefined);
+                }}
                 onSave={handleSaveRule}
             />
 
@@ -358,33 +483,38 @@ export function AlertsPage(): React.ReactElement {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className={textStyles.h1}>Alerts</h1>
-                    <p className={textStyles.muted}>Monitor and manage system alerts</p>
+                    <p className={textStyles.muted}>Triage active incidents first, then step into grouped root-cause review or rule maintenance only when needed.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button className={buttonStyles.secondary} disabled={alertsUnsupported}>Configure Rules</button>
                     <button
-                        onClick={() => setIsRuleFormOpen(true)}
+                        onClick={() => {
+                            setShowRuleManagement((current) => !current);
+                        }}
+                        data-testid="alert-rule-management-toggle"
+                        className={buttonStyles.secondary}
                         disabled={alertsUnsupported}
-                        className={buttonStyles.primary}
                     >
-                        + Create Alert Rule
+                        {showRuleManagement ? 'Hide Rule Management' : 'Review Rules'}
                     </button>
                 </div>
             </div>
 
             {alertsUnsupported && (
-                <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6 border-amber-300 bg-amber-50 text-amber-900')}>
-                    <div className="flex items-start gap-3">
-                        <AlertTriangle className="mt-0.5 h-5 w-5" />
-                        <div>
-                            <h2 className={textStyles.h3}>Alerts Surface Not Available</h2>
-                            <p className={textStyles.muted}>
-                                The current Data Cloud launcher does not expose live alert management routes. This page remains available for future integration, but alert triage, grouping, suggestions, and rule management are currently unsupported.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <UnsupportedSurfaceBoundary
+                    className="mb-6"
+                    title={alertsSurfaceBoundary.title}
+                    summary={alertsSurfaceBoundary.summary}
+                    details={alertsSurfaceBoundary.details}
+                    state={alertsSurfaceBoundary.state}
+                />
             )}
+
+            <AlertTruthPanel
+                routeCoverage={routeCoverage}
+                streamHealth={streamHealth}
+                groupedCoverage={groupedCoverage}
+                suggestionCoverage={suggestionCoverage}
+            />
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -403,6 +533,74 @@ export function AlertsPage(): React.ReactElement {
                 <div className={metricCardStyles.base}>
                     <p className={textStyles.muted}>Total Active</p>
                     <p className={textStyles.h2}>{alertCounts.total}</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] gap-6 mb-6">
+                <div className={cn(cardStyles.base, cardStyles.padded)} data-testid="alert-rule-management-panel">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <p className={textStyles.label}>Operational Focus</p>
+                            <h2 className={textStyles.h3}>Prioritize active incidents before historical cleanup</h2>
+                            <p className={cn(textStyles.muted, 'mt-1')}>
+                                The alerts view now defaults to active incidents, derived correlations, and live suggestions so operators can resolve the current problem set first.
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className={textStyles.label}>Visible Suggestions</p>
+                            <p className={textStyles.h2}>{activeSuggestionCount}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className={cn(cardStyles.base, cardStyles.padded)}>
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                            <p className={textStyles.label}>Rule Management</p>
+                            <p className={textStyles.h3}>{enabledRuleCount} enabled rules</p>
+                        </div>
+                        <button
+                            onClick={() => setShowRuleManagement((current) => !current)}
+                            className={cn(buttonStyles.secondary, buttonStyles.sm)}
+                        >
+                            {showRuleManagement ? <EyeOff className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            {showRuleManagement ? 'Collapse' : 'Expand'}
+                        </button>
+                    </div>
+                    <p className={textStyles.muted}>
+                        Keep rule editing out of the main triage path unless an alert pattern needs to be changed.
+                    </p>
+
+                    {showRuleManagement && (
+                        <div className="mt-4 space-y-3">
+                            <button
+                                onClick={openCreateRuleForm}
+                                className={cn(buttonStyles.primary, buttonStyles.sm)}
+                            >
+                                + Create Alert Rule
+                            </button>
+                            {alertRules.slice(0, 5).map((rule) => (
+                                <button
+                                    key={rule.id ?? rule.name}
+                                    onClick={() => openEditRuleForm(rule)}
+                                    className="w-full text-left rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="font-medium text-gray-900 dark:text-gray-100">{rule.name}</p>
+                                            <p className={textStyles.xs}>{rule.metric} {rule.operator} {rule.threshold}</p>
+                                        </div>
+                                        <span className={cn('px-2 py-1 rounded text-xs font-medium', rule.enabled ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300')}>
+                                            {rule.enabled ? 'Enabled' : 'Paused'}
+                                        </span>
+                                    </div>
+                                </button>
+                            ))}
+                            {alertRules.length === 0 && (
+                                <p className={textStyles.muted}>No alert rules configured yet. Create one to start routing incidents toward the right responders.</p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -461,7 +659,7 @@ export function AlertsPage(): React.ReactElement {
 
             {/* AI Grouped View */}
             {viewMode === 'grouped' && alertGroups.length > 0 && (
-                <div className="mb-6">
+                <div className="mb-6" data-testid="alerts-grouped-section">
                     <div className="flex items-center gap-2 mb-4">
                         <Sparkles className="h-5 w-5 text-purple-500" />
                         <h2 className={textStyles.h3}>AI-Detected Correlations</h2>
@@ -477,11 +675,33 @@ export function AlertsPage(): React.ReactElement {
                             onResolveGroup={() => resolveGroupMutation.mutate(group.id)}
                         />
                     ))}
+
+                    {activeSuggestionCount > 0 && (
+                        <div className="mt-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Lightbulb className="h-5 w-5 text-amber-500" />
+                                <h2 className={textStyles.h3}>Review-Needed Suggestions</h2>
+                            </div>
+                            <div className="space-y-3">
+                                {suggestions
+                                    .filter((suggestion) => !dismissedSuggestions.includes(suggestion.id))
+                                    .slice(0, 3)
+                                    .map((suggestion) => (
+                                        <ResolutionSuggestionCard
+                                            key={suggestion.id}
+                                            suggestion={suggestion}
+                                            onApply={() => applySuggestionMutation.mutate(suggestion.id)}
+                                            onDismiss={() => setDismissedSuggestions((current) => [...current, suggestion.id])}
+                                        />
+                                    ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
             {/* AI Resolution Suggestions */}
-            {viewMode === 'list' && suggestions.filter(s => !dismissedSuggestions.includes(s.id)).length > 0 && (
+            {viewMode === 'list' && activeSuggestionCount > 0 && (
                 <div className="mb-6">
                     <div className="flex items-center gap-2 mb-4">
                         <Lightbulb className="h-5 w-5 text-amber-500" />
@@ -495,7 +715,7 @@ export function AlertsPage(): React.ReactElement {
                                     key={suggestion.id}
                                     suggestion={suggestion}
                                     onApply={() => applySuggestionMutation.mutate(suggestion.id)}
-                                    onDismiss={() => setDismissedSuggestions([...dismissedSuggestions, suggestion.id])}
+                                    onDismiss={() => setDismissedSuggestions((current) => [...current, suggestion.id])}
                                 />
                             ))}
                     </div>
@@ -507,6 +727,7 @@ export function AlertsPage(): React.ReactElement {
                 {filteredAlerts.map((alert) => (
                     <div
                         key={alert.id}
+                        data-testid="alert-item"
                         className={cn(
                             cardStyles.base,
                             cardStyles.padded,

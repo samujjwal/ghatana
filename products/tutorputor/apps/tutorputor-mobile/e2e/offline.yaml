@@ -1,0 +1,26 @@
+appId: com.tutorputor.mobile
+---
+# Offline Indicator Flow
+# Tests that offline status is surfaced when network is unavailable
+- launchApp
+
+# Start with normal state
+- assertVisible: "Learn"
+
+# Simulate offline by disabling network (Maestro supports this on Android)
+- setAirplaneMode: true
+
+- waitForAnimationToEnd
+
+# Offline indicator should appear
+- assertVisible: "Offline"
+
+# Re-enable network
+- setAirplaneMode: false
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Offline indicator should disappear
+- assertNotVisible: "No internet connection"
+  optional: true

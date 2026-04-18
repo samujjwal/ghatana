@@ -1,6 +1,6 @@
 # 12. Dataset Detail & Insights Page – Deep-Dive Spec
 
-> **Status:** Planned page – no concrete implementation in Data Cloud UI yet. This spec refines the Dataset Detail view described in `frontend_todo (1).md`.
+> **Status:** Planned expansion. The current shipped detail surface is `/data/:id`; this spec describes a richer dataset-detail page that goes beyond the current collection-centric detail view while still handing off to `/query` and `/data?view=lineage` for deeper exploration.
 
 ---
 
@@ -131,7 +131,7 @@ A robust Dataset Detail page should:
 ## 8. Links to More Detail & Working Entry Points
 
 - Lineage Explorer (planned): `13_lineage_explorer_page.md`.
-- SQL Workspace (planned): `14_sql_workspace_page.md`.
+- SQL Workspace (current canonical route): `14_sql_workspace_page.md`.
 - Governance UI (future): role/policy/PII viewers.
 - Backend: profiling, quality, and optimizer services as defined in `backend_todo (1).md`.
 

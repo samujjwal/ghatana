@@ -10,6 +10,16 @@ TutorPutor is an AI-powered adaptive learning platform built as a monorepo with:
 - **Core**: Shared Prisma schema and generated client
 - **Simulation**: Simulation engine library
 
+## Architecture Principles
+
+TutorPutor follows these key architectural principles:
+
+- **Domain-Driven Design (DDD)**: Clear domain boundaries with bounded contexts for Content, Learning, User, AI, Simulation, and Integration modules
+- **Layered Architecture**: Separation of concerns with distinct layers for presentation, application, domain, and infrastructure
+- **Event-Driven Architecture**: Asynchronous communication using BullMQ for content generation and background processing
+- **Microservices Pattern**: Service-oriented architecture with gRPC for inter-service communication
+- **Separation of Concerns**: Clear boundaries between transport, domain logic, persistence, and infrastructure
+
 ## System Architecture
 
 ### High-Level Flow
@@ -87,6 +97,20 @@ flowchart TB
 | AI | `services/tutorputor-platform/src/modules/ai` | AI orchestration, Ollama integration |
 | Simulation | `services/tutorputor-platform/src/modules/simulation` | Simulation engine integration |
 | Integration | `services/tutorputor-platform/src/modules/integration` | LTI, SSO, webhooks |
+
+## Platform Status Notes
+
+### Mobile App
+The mobile application (`apps/tutorputor-mobile/`) is currently in development with offline-first architecture using React Native 0.85, SQLite, MMKV, and background sync services. Core screens and navigation are implemented, but full production deployment to app stores is pending.
+
+### Offline Mode
+Offline capabilities are specified in `architecture/specs/OFFLINE_MODE.md` but full implementation (IndexedDB, ServiceWorker, delta sync logic) is not yet complete. The current mobile app includes offline support with SQLite and background sync.
+
+### Real-Time Collaboration
+Real-time collaboration features are implemented using:
+- **WebSockets** for real-time cursor tracking and presence
+- **Redis pub/sub** for chat messaging (not Redis streams as previously documented)
+- **Prisma/database** for Q&A threads, shared notes, and discussion boards
 
 ## Key Technologies
 

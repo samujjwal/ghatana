@@ -1,0 +1,26 @@
+appId: com.tutorputor.mobile
+---
+# Modules Flow
+# Tests module browsing, filtering by domain/difficulty, and opening a module
+- launchApp
+
+# Tap on Explore tab to browse modules
+- tapOn: "Explore"
+- waitForAnimationToEnd
+
+# Modules screen visible
+- assertVisible: "Explore"
+
+# Return to Learn and navigate to modules from there
+- tapOn: "Learn"
+
+# If there's a "Browse Modules" button
+- tapOn:
+    text: "Browse"
+    optional: true
+
+- waitForAnimationToEnd
+
+# Assert content visible
+- assertVisible: "Modules"
+  optional: true

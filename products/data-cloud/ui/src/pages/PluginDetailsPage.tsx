@@ -24,35 +24,21 @@ import {
   Layers,
 } from 'lucide-react';
 import { cn, buttonStyles, textStyles, bgStyles, cardStyles } from '../lib/theme';
+import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
+import { pluginDependencyBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import { pluginService } from '../api/plugin.service';
+import {
+  PLUGIN_BUNDLE_UPDATE_DOC_COMMENT,
+  PLUGIN_BUNDLE_UPDATE_DOC_CONTINUATION,
+  PLUGIN_HOT_SWAP_BOUNDARY_CHANGELOG,
+  PLUGIN_RELEASE_NOTES_CHANGELOG,
+  PLUGIN_RUNTIME_TOGGLE_DOC_COMMENT,
+  PLUGIN_UPGRADE_BOUNDARY_CHANGELOG,
+} from '../lib/runtime-boundaries';
 import { PluginHealthMonitor } from '../components/plugins/PluginHealthMonitor';
 import { PluginVersionCompare } from '../components/plugins/PluginVersionCompare';
 import { PluginPerformanceMetrics } from '../components/plugins/PluginPerformanceMetrics';
 import { PluginLogsViewer } from '../components/plugins/PluginLogsViewer';
-
-function BoundaryNotice({
-  title,
-  summary,
-  bullets,
-}: {
-  title: string;
-  summary: string;
-  bullets: string[];
-}): React.ReactElement {
-  return (
-    <div className={cardStyles.base}>
-      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-        <p className="font-medium">{title}</p>
-        <p className="mt-1">{summary}</p>
-      </div>
-      <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300">
-        {bullets.map((bullet) => (
-          <li key={bullet}>{bullet}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 /**
  * Plugin Details Page Component
@@ -187,9 +173,9 @@ export function PluginDetailsPage(): React.ReactElement {
             <PluginVersionCompare
               currentVersion={plugin.metadata.version}
               changelog={[
-                'Bundled plugin upgrades require deploying a new launcher build.',
-                'Use the server release notes to review included plugin changes.',
-                'Runtime hot-swap is intentionally unavailable in the standalone launcher.',
+                PLUGIN_UPGRADE_BOUNDARY_CHANGELOG,
+                PLUGIN_RELEASE_NOTES_CHANGELOG,
+                PLUGIN_HOT_SWAP_BOUNDARY_CHANGELOG,
               ]}
             />
 
@@ -225,11 +211,11 @@ export function PluginDetailsPage(): React.ReactElement {
                   <h4 className="font-medium text-sm mb-2">Getting Started</h4>
                   <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                     <code className="text-xs">
-                      {`// Bundled plugins can only be toggled at runtime
+                      {`${PLUGIN_RUNTIME_TOGGLE_DOC_COMMENT}
 await pluginService.enablePlugin('${plugin.id}');
 
-// To change plugin contents or version, deploy a new launcher build
-// that bundles the updated plugin artifact.`}
+${PLUGIN_BUNDLE_UPDATE_DOC_COMMENT}
+${PLUGIN_BUNDLE_UPDATE_DOC_CONTINUATION}`}
                     </code>
                   </div>
                 </div>
@@ -270,14 +256,13 @@ const result = await plugin.execute({
               </div>
             </div>
 
-            <BoundaryNotice
-              title="Dependency graph unavailable"
-              summary="The bundled launcher API exposes plugin runtime facts, but it does not publish a plugin-to-plugin dependency graph."
-              bullets={[
-                'This page no longer renders a fabricated dependency topology.',
-                'Capability and health sections above reflect the live plugin payload returned by the launcher.',
-                'Use release notes or source-level bundle definitions when dependency review is required.',
-              ]}
+            <UnsupportedSurfaceBoundary
+              className={cardStyles.base}
+              title={pluginDependencyBoundary.title}
+              summary={pluginDependencyBoundary.summary}
+              details={pluginDependencyBoundary.details}
+              state={pluginDependencyBoundary.state}
+              showTitle={false}
             />
 
             {/* Performance Metrics */}

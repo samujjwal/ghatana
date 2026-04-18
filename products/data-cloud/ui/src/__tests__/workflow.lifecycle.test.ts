@@ -9,22 +9,22 @@ import {
 import type { WorkflowDefinition, WorkflowNode, WorkflowEdge, WorkflowTrigger } from '@/types/workflow.types';
 
 /**
- * Workflow lifecycle E2E tests.
+ * Pipeline lifecycle integration tests.
  *
  * <p><b>Purpose</b><br>
- * Tests complete workflow lifecycle from creation to execution.
- * Validates workflow creation, validation, modification, and execution.
+ * Tests complete pipeline lifecycle from creation to execution.
+ * Validates pipeline creation, validation, modification, and execution.
  *
  * <p><b>Test Coverage</b><br>
- * - Workflow creation with valid configuration
- * - Workflow validation with errors and warnings
+ * - Pipeline creation with valid configuration
+ * - Pipeline validation with errors and warnings
  * - Node addition and removal
  * - Edge creation and validation
- * - Workflow modification and updates
+ * - Pipeline modification and updates
  * - Trigger configuration
  *
  * @doc.type test
- * @doc.purpose Workflow lifecycle E2E tests
+ * @doc.purpose Pipeline lifecycle integration tests
  * @doc.layer frontend
  */
 
@@ -98,22 +98,22 @@ const createWorkflow = (overrides: Partial<WorkflowDefinition> = {}): WorkflowDe
   return workflow;
 };
 
-describe('Workflow Lifecycle', () => {
+describe('Pipeline Lifecycle', () => {
   let workflow: WorkflowDefinition;
 
   beforeEach(() => {
     workflow = createWorkflow();
   });
 
-  describe('Workflow Creation', () => {
+  describe('Pipeline Creation', () => {
     /**
-     * Test: Create workflow with valid configuration.
+    * Test: Create pipeline with valid configuration.
      *
-     * GIVEN: Valid workflow definition
-     * WHEN: Workflow is created
-     * THEN: Workflow is stored with correct properties
+    * GIVEN: Valid workflow definition
+    * WHEN: Pipeline is created
+    * THEN: Pipeline metadata is stored with correct properties
      */
-    it('should create workflow with valid configuration', () => {
+      it('should create pipeline with valid configuration', () => {
       expect(workflow.id).toBe('workflow-test-1');
       expect(workflow.name).toBe('Test Workflow');
       expect(workflow.status).toBe('DRAFT');

@@ -19,6 +19,46 @@ import { useHitlQueue, useApproveItem, useRejectItem } from '@/hooks/useHitlQueu
 import { ReviewCard } from '@/components/hitl/ReviewCard';
 import type { ReviewItem } from '@/api/aep.api';
 
+// ─── PolicyDiff ──────────────────────────────────────────────────────
+
+/** Renders a proposed policy object as a structured key-value diff table. */
+function PolicyDiff({ policy }: { policy: Record<string, unknown> }) {
+  const entries = Object.entries(policy);
+
+  if (entries.length === 0) {
+    return (
+      <p className="text-xs italic text-gray-400 dark:text-gray-600">No policy fields</p>
+    );
+  }
+
+  return (
+    <div className="rounded border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+      {entries.map(([key, value]) => {
+        const isNested = value !== null && typeof value === 'object' && !Array.isArray(value);
+        const display = isNested
+          ? JSON.stringify(value, null, 2)
+          : Array.isArray(value)
+            ? value.join(', ')
+            : String(value ?? '—');
+        return (
+          <div key={key} className="flex items-start gap-2 px-3 py-1.5 bg-white dark:bg-gray-900">
+            <span className="flex-shrink-0 w-32 text-xs font-mono text-gray-500 dark:text-gray-400 truncate pt-0.5">
+              {key}
+            </span>
+            {isNested ? (
+              <pre className="flex-1 text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap overflow-auto max-h-24">
+                {display}
+              </pre>
+            ) : (
+              <span className="flex-1 text-xs text-gray-800 dark:text-gray-200 break-all">{display}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Detail / Action Panel ───────────────────────────────────────────
 
 function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () => void }) {
@@ -76,14 +116,12 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
         </div>
       </div>
 
-      {/* Proposed policy JSON */}
+      {/* Proposed policy — human-readable diff */}
       <div className="px-4 py-3 flex-1">
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
           Proposed policy
         </p>
-        <pre className="text-xs bg-gray-50 dark:bg-gray-900 rounded p-3 overflow-auto max-h-48 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 whitespace-pre-wrap">
-          {JSON.stringify(item.proposedVersion, null, 2)}
-        </pre>
+        <PolicyDiff policy={item.proposedVersion} />
       </div>
 
       {/* Actions */}

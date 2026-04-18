@@ -2,7 +2,8 @@
  * Plugin Framework Integration for Data-Cloud
  *
  * Bridges @ghatana/plugin-framework with Data-Cloud's plugin system.
- * Provides hooks and providers for plugin marketplace and management.
+ * Provides hooks and providers for bundled plugin inventory and
+ * boundary-aware management.
  *
  * @doc.type module
  * @doc.purpose Plugin framework integration for Data-Cloud
@@ -12,12 +13,15 @@
 
 import * as React from 'react';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import {
+    PLUGIN_INTEGRATION_BOUNDARY_MESSAGE,
+    createRuntimeBoundaryError,
+} from '@/lib/runtime-boundaries';
 
-export const PLUGIN_INTEGRATION_BOUNDARY_MESSAGE =
-    'Plugin marketplace, health, installation, and configuration integration APIs are not exposed by the current Data Cloud launcher API.';
+export { PLUGIN_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 function createPluginBoundaryError(): Error {
-    return new Error(PLUGIN_INTEGRATION_BOUNDARY_MESSAGE);
+    return createRuntimeBoundaryError(PLUGIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 // ============================================
@@ -220,11 +224,7 @@ export const DATA_CLOUD_PLUGIN_CATEGORIES: Array<{
  * ```tsx
  * const { installed, marketplace, isLoading } = useDataCloudPlugins();
  *
- * <PluginMarketplace
- *   plugins={marketplace}
- *   installedPlugins={installed}
- *   onInstall={(id) => installPlugin(id)}
- * />
+ * // marketplace remains empty until launcher-backed catalog routes exist
  * ```
  */
 export function useDataCloudPlugins(options?: {

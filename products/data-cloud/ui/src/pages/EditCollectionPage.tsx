@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { dataCloudApi } from '../lib/api/data-cloud-api';
-import type { Collection } from '../lib/api/collections';
+import { collectionsApi, type Collection } from '../lib/api/collections';
 import { CollectionForm } from '../features/collection/components/CollectionForm';
 import type { CollectionFormData } from '../features/collection/components/CollectionForm';
 import { toast } from 'sonner';
@@ -18,12 +17,12 @@ function EditCollectionPage() {
       if (!id) return;
 
       try {
-        const response = await dataCloudApi.getCollectionById(id);
-        setCollection(response.data);
+        const response = await collectionsApi.get(id);
+        setCollection(response);
       } catch (error) {
         console.error('Error loading collection:', error);
         toast.error('Failed to load collection');
-        navigate('/collections');
+        navigate('/data');
       } finally {
         setIsLoading(false);
       }
@@ -53,15 +52,14 @@ function EditCollectionPage() {
         },
       };
 
-      // Update via API
-      await dataCloudApi.updateCollection(id, {
+      await collectionsApi.update(id, {
         name: updatedCollection.name,
         description: updatedCollection.description,
         schema: updatedCollection.schema,
       });
 
       toast.success('Collection updated successfully');
-      navigate(`/collections/${id}`);
+      navigate(`/data/${id}`);
     } catch (error) {
       console.error('Error updating collection:', error);
       toast.error('Failed to update collection');
@@ -72,9 +70,9 @@ function EditCollectionPage() {
 
   const handleCancel = () => {
     if (id) {
-      navigate(`/collections/${id}`);
+      navigate(`/data/${id}`);
     } else {
-      navigate('/collections');
+      navigate('/data');
     }
   };
 
@@ -92,7 +90,7 @@ function EditCollectionPage() {
         <h2 className="text-xl font-medium text-gray-900">Collection not found</h2>
         <p className="mt-2 text-gray-600">The requested collection could not be found.</p>
         <button
-          onClick={() => navigate('/collections')}
+          onClick={() => navigate('/data')}
           className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
         >
           Back to Collections

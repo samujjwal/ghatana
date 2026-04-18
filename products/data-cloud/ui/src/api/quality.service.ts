@@ -14,6 +14,13 @@ import {
   PiiFieldRegistryEnvelopeSchema,
   type PiiFieldRegistryData as PiiFieldRegistry,
 } from '../contracts/schemas';
+import {
+  createQualityCorrelationBoundaryMessage,
+  QUALITY_PII_MASK_BOUNDARY_MESSAGE,
+  QUALITY_VALIDATION_RULE_CREATE_BOUNDARY_MESSAGE,
+  QUALITY_VALIDATION_RULE_DELETE_BOUNDARY_MESSAGE,
+  QUALITY_VALIDATION_RULE_UPDATE_BOUNDARY_MESSAGE,
+} from '../lib/runtime-boundaries';
 
 export interface QualityMetric {
   datasetId: string;
@@ -219,7 +226,7 @@ export class QualityService {
   async maskPII(datasetId: string, fields: string[]): Promise<void> {
     void datasetId;
     void fields;
-    throw new Error('Bulk field masking is not exposed by the current Data Cloud API.');
+    throw new Error(QUALITY_PII_MASK_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -234,7 +241,8 @@ export class QualityService {
    * Create validation rule
    */
   async createValidationRule(rule: Partial<ValidationRule>): Promise<ValidationRule> {
-    throw new Error(`Validation rule creation is not exposed by the current Data Cloud API: ${JSON.stringify(rule)}`);
+    void rule;
+    throw new Error(QUALITY_VALIDATION_RULE_CREATE_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -244,7 +252,9 @@ export class QualityService {
     ruleId: string,
     rule: Partial<ValidationRule>
   ): Promise<ValidationRule> {
-    throw new Error(`Validation rule updates are not exposed by the current Data Cloud API: ${ruleId} ${JSON.stringify(rule)}`);
+    void ruleId;
+    void rule;
+    throw new Error(QUALITY_VALIDATION_RULE_UPDATE_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -252,7 +262,7 @@ export class QualityService {
    */
   async deleteValidationRule(ruleId: string): Promise<void> {
     void ruleId;
-    throw new Error('Validation rule deletion is not exposed by the current Data Cloud API.');
+    throw new Error(QUALITY_VALIDATION_RULE_DELETE_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -286,7 +296,7 @@ export class QualityService {
   ): Promise<{ events: Array<Record<string, unknown>>; rootCause?: string }> {
     return {
       events: [],
-      rootCause: `Quality correlation is not exposed by the current Data Cloud API for ${datasetId} at ${timestamp}.`,
+      rootCause: createQualityCorrelationBoundaryMessage(datasetId, timestamp),
     };
   }
 }

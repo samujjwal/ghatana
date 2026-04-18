@@ -30,7 +30,7 @@ describe('Workflows Page with Mock Data', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading workflows...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
     const workflows = getMockWorkflows();
@@ -44,7 +44,7 @@ describe('Workflows Page with Mock Data', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading workflows...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
     // Verify workflow count stats are displayed (total, active, paused, draft)
@@ -58,7 +58,7 @@ describe('Workflows Page with Mock Data', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading workflows...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
     const workflows = getMockWorkflows();
@@ -74,7 +74,7 @@ describe('Workflows Page with Mock Data', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading workflows...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
     const workflows = getMockWorkflows();
@@ -90,7 +90,7 @@ describe('Workflows Page with Mock Data', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading workflows...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
     // WorkflowsPage shows 'Last Executed' column header and execution date/time per row
@@ -101,7 +101,7 @@ describe('Workflows Page with Mock Data', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading workflows...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
     // WorkflowsPage renders workflows in a table (no anchor wrapper per row).
@@ -190,7 +190,7 @@ describe('UI Interactions with Mock Data', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading workflows...')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
     const workflows = getMockWorkflows();

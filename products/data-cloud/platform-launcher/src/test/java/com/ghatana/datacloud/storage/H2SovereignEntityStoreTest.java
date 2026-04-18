@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,6 +49,37 @@ class H2SovereignEntityStoreTest extends EventloopTestBase {
             assertThat(removed).isEqualTo(1);
             assertThat(runPromise(store::countTombstones)).doesNotContainKey("tenant-a");
             assertThat(runPromise(() -> store.findById(tenant, EntityStore.EntityId.of("entity-1")))).isEmpty();
+        } finally {
+            store.close();
+        }
+    }
+
+    @Test
+    @DisplayName("deleteBatch soft-deletes a small batch of entities")
+    void deleteBatchSoftDeletesSmallBatch() throws Exception {
+        H2SovereignEntityStore store = new H2SovereignEntityStore(tempDir);
+        TenantContext tenant = TenantContext.of("tenant-a", Map.of());
+
+        try {
+            List<EntityStore.Entity> entities = IntStream.range(0, 10)
+                .mapToObj(index -> EntityStore.Entity.builder()
+                    .id("entity-" + index)
+                    .collection("documents")
+                    .data(Map.of("index", index))
+                    .build())
+                .toList();
+            List<EntityStore.EntityId> ids = entities.stream().map(EntityStore.Entity::id).toList();
+
+            runPromise(() -> store.saveBatch(tenant, entities));
+
+            var result = runPromise(() -> store.deleteBatch(tenant, ids));
+
+            assertThat(result.totalCount()).isEqualTo(10);
+            assertThat(result.successCount()).isEqualTo(10);
+            assertThat(result.failureCount()).isZero();
+            assertThat(runPromise(() -> store.count(tenant, EntityStore.QuerySpec.builder().collection("documents").build())))
+                .isZero();
+            assertThat(runPromise(store::countTombstones)).containsEntry("tenant-a", 10L);
         } finally {
             store.close();
         }

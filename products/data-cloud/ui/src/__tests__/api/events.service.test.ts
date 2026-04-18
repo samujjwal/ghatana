@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
@@ -26,12 +27,12 @@ describe('eventsService', () => {
       count: 0,
       fromOffset: 10,
       nextOffset: 10,
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       timestamp: '2026-04-14T12:00:00Z',
     });
 
     await eventsService.listEvents({
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       eventType: 'entity.created',
       from: '10',
       limit: 50,
@@ -40,7 +41,7 @@ describe('eventsService', () => {
 
     expect(mockApiClient.get).toHaveBeenCalledWith('/events', {
       params: {
-        tenantId: 'tenant-a',
+        tenantId: TEST_TENANT_ID,
         type: 'entity.created',
         from: '10',
         limit: 50,
@@ -58,13 +59,13 @@ describe('eventsService', () => {
       count: 3,
       fromOffset: 0,
       nextOffset: 3,
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       timestamp: '2026-04-14T12:03:00Z',
     });
 
     const stats = await eventsService.getStats('tenant-a');
 
-    expect(mockApiClient.get).toHaveBeenCalledWith('/events', { params: { tenantId: 'tenant-a', limit: 1000 } });
+    expect(mockApiClient.get).toHaveBeenCalledWith('/events', { params: { tenantId: TEST_TENANT_ID, limit: 1000 } });
     expect(stats.total).toBe(3);
     expect(stats.byTier.HOT).toBe(2);
     expect(stats.byTier.COLD).toBe(1);
@@ -88,17 +89,17 @@ describe('eventsService', () => {
       count: 1,
       fromOffset: 42,
       nextOffset: 43,
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       timestamp: '2026-04-14T12:05:01Z',
     });
 
-    const response = await eventsService.listEvents({ tenantId: 'tenant-a', limit: 50 });
+    const response = await eventsService.listEvents({ tenantId: TEST_TENANT_ID, limit: 50 });
 
     expect(response.total).toBe(1);
     expect(response.hasMore).toBe(false);
     expect(response.events[0]).toMatchObject({
       id: 'event-42',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       eventType: 'pipeline.failed',
       tier: 'HOT',
       source: 'pipeline-engine',
@@ -120,7 +121,7 @@ describe('eventsService', () => {
 
     vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource);
 
-    eventsService.openStream({ tenantId: 'tenant-a', eventType: 'alert.triggered', tier: 'HOT' });
+    eventsService.openStream({ tenantId: TEST_TENANT_ID, eventType: 'alert.triggered', tier: 'HOT' });
 
     expect(eventSourceMock).toHaveBeenCalledWith('/api/v1/events/stream?tenantId=tenant-a&types=alert.triggered');
 

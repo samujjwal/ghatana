@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { dataCloudApi } from '@/lib/api/data-cloud-api';
-import type { CollectionRecord } from '@/lib/api/collection-data-client';
+import SessionBootstrap from '@/lib/auth/session';
+import { collectionDataClient, type CollectionRecord } from '@/lib/api/collection-data-client';
 
 /**
  * Collection data hook for fetching entity records.
@@ -21,22 +21,23 @@ export function useCollectionData(collectionId?: string, tenantId?: string, page
     staleTime: 30_000,
     queryFn: async () => {
       if (!collectionId) return { records: [] as CollectionRecord[], total: 0 };
-      if (tenantId) {
-        dataCloudApi.setTenantId(tenantId);
-      }
-      const res = await dataCloudApi.getCollectionEntities(collectionId, 0, pageSize);
-      const records: CollectionRecord[] = (res.data.items ?? []).map((item) => ({
+      const resolvedTenantId = tenantId ?? SessionBootstrap.requireTenantId();
+      const res = await collectionDataClient.listRecords(resolvedTenantId, collectionId, {
+        offset: 0,
+        limit: pageSize,
+      });
+      const records: CollectionRecord[] = (res.items ?? []).map((item) => ({
         id: item.id,
         collectionId: item.collectionId,
-        tenantId: item.tenantId ?? tenantId ?? 'default',
+        tenantId: item.tenantId,
         data: item.data,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
-        createdBy: item.createdBy ?? 'system',
-        updatedBy: item.updatedBy ?? 'system',
-        version: item.version ?? 1,
+        createdBy: item.createdBy,
+        updatedBy: item.updatedBy,
+        version: item.version,
       }));
-      return { records, total: res.data.total ?? 0 };
+      return { records, total: res.total ?? 0 };
     },
   });
 

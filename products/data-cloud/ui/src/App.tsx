@@ -22,6 +22,7 @@ import {
   DataCloudOnboardingWizard,
   isOnboardingComplete,
 } from './features/onboarding/DataCloudOnboardingWizard';
+import SessionBootstrap from './lib/auth/session';
 import './styles/globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,7 +87,9 @@ const router = createBrowserRouter(routes);
  */
 export function App(): React.ReactElement {
   // B15: Show first-run onboarding wizard when the user has never completed it
-  const [showOnboarding, setShowOnboarding] = React.useState(() => !isOnboardingComplete());
+  const [showOnboarding, setShowOnboarding] = React.useState(
+    () => !isOnboardingComplete(),
+  );
 
   return (
     <AppErrorBoundary>
@@ -107,7 +110,11 @@ export function App(): React.ReactElement {
             <ToastProvider />
             {/* B15: First-run onboarding wizard — rendered above all other content */}
             {showOnboarding && (
-              <DataCloudOnboardingWizard onComplete={() => setShowOnboarding(false)} />
+              <DataCloudOnboardingWizard
+                onComplete={() => {
+                  setShowOnboarding(false);
+                }}
+              />
             )}
           </ThemeProvider>
         </Provider>

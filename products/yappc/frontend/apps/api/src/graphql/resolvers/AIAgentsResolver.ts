@@ -25,6 +25,12 @@ import {
 // Initialize Prisma client
 import { getPrismaClient, type PrismaClient } from '../../database/client';
 
+interface GraphQLContext {
+  userId?: string;
+  workspaceId?: string;
+  permissions?: string[];
+}
+
 const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, property) {
     return (getPrismaClient() as unknown)[property];
@@ -257,10 +263,29 @@ export const AIAgentsResolver = {
     /**
      * Get a specific copilot session
      */
-    async copilotSession(_: unknown, { id }: { id: string }) {
-      return prisma.copilotSession.findUnique({
+    async copilotSession(
+      _: unknown,
+      { id }: { id: string },
+      context: GraphQLContext
+    ) {
+      if (!context.userId) {
+        throw new Error('Unauthorized');
+      }
+
+      const session = await prisma.copilotSession.findUnique({
         where: { id },
       });
+
+      // Verify session belongs to user
+      if (session && session.userId !== context.userId) {
+        // Log security event
+        console.error(
+          `SECURITY: Unauthorized copilot session access attempt - User: ${context.userId}, Session: ${id}, Owner: ${session.userId}`
+        );
+        throw new Error('Forbidden: Session does not belong to you');
+      }
+
+      return session;
     },
 
     /**
@@ -539,7 +564,28 @@ export const AIAgentsResolver = {
     /**
      * End a copilot session
      */
-    async endCopilotSession(_: unknown, { id }: { id: string }) {
+    async endCopilotSession(
+      _: unknown,
+      { id }: { id: string },
+      context: GraphQLContext
+    ) {
+      if (!context.userId) {
+        throw new Error('Unauthorized');
+      }
+
+      const session = await prisma.copilotSession.findUnique({
+        where: { id },
+      });
+
+      // Verify session belongs to user
+      if (session && session.userId !== context.userId) {
+        // Log security event
+        console.error(
+          `SECURITY: Unauthorized copilot session end attempt - User: ${context.userId}, Session: ${id}, Owner: ${session.userId}`
+        );
+        throw new Error('Forbidden: Session does not belong to you');
+      }
+
       return prisma.copilotSession.update({
         where: { id },
         data: {
@@ -554,8 +600,26 @@ export const AIAgentsResolver = {
      */
     async feedbackCopilotSession(
       _: unknown,
-      { id, feedback }: { id: string; feedback: string }
+      { id, feedback }: { id: string; feedback: string },
+      context: GraphQLContext
     ) {
+      if (!context.userId) {
+        throw new Error('Unauthorized');
+      }
+
+      const session = await prisma.copilotSession.findUnique({
+        where: { id },
+      });
+
+      // Verify session belongs to user
+      if (session && session.userId !== context.userId) {
+        // Log security event
+        console.error(
+          `SECURITY: Unauthorized copilot session feedback attempt - User: ${context.userId}, Session: ${id}, Owner: ${session.userId}`
+        );
+        throw new Error('Forbidden: Session does not belong to you');
+      }
+
       return prisma.copilotSession.update({
         where: { id },
         data: {

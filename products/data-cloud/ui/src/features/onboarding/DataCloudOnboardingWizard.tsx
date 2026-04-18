@@ -10,7 +10,7 @@
  *   2. Connect          — supply API base URL / tenant ID
  *   3. First Collection — create or name the first data collection
  *   4. Enable AI Assist — optional AI / LLM integration toggle
- *   5. Done             — summary and "Go to Dashboard" CTA
+ *   5. Done             — summary and "Go to Home" CTA
  *
  * @doc.type component
  * @doc.purpose First-run onboarding for Data Cloud (B15)
@@ -19,6 +19,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import { Wizard, type WizardStep } from '@ghatana/wizard';
+import SessionBootstrap from '../../lib/auth/session';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // localStorage key used to persist completion state
@@ -157,13 +158,16 @@ function ConnectStep({ state, onChange }: ConnectStepProps): React.ReactElement 
         <input
           id="ob-tenant"
           type="text"
-          placeholder="default"
+          placeholder="tenant-acme-prod"
           value={state.tenantId}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             onChange({ ...state, tenantId: e.target.value })
           }
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
+        <p className="text-xs text-gray-400 mt-1">
+          Tenant context is required for runtime-backed Data Cloud workflows. Reserved defaults are rejected.
+        </p>
       </div>
     </div>
   );
@@ -258,7 +262,7 @@ function DoneStep(): React.ReactElement {
       <div className="text-4xl">🎉</div>
       <p className="text-gray-700 font-medium">Data Cloud is ready.</p>
       <p className="text-sm text-gray-500">
-        Click <strong>Finish</strong> to go to the dashboard. You can revisit this guide anytime
+        Click <strong>Finish</strong> to go to the Intelligent Hub. You can revisit this guide anytime
         from <strong>Help → Onboarding</strong>.
       </p>
     </div>
@@ -283,15 +287,23 @@ export function DataCloudOnboardingWizard({
   onComplete,
 }: DataCloudOnboardingWizardProps): React.ReactElement {
   const [state, setState] = useState<OnboardingState>({
-    connect: { apiBaseUrl: '', tenantId: 'default' },
+    connect: { apiBaseUrl: SessionBootstrap.getApiBaseUrl() ?? '', tenantId: SessionBootstrap.getTenantId() ?? '' },
     collection: { collectionName: '' },
     ai: { enableAi: false, provider: 'none' },
   });
 
   const handleComplete = useCallback(() => {
+    if (state.connect.apiBaseUrl.trim()) {
+      SessionBootstrap.setApiBaseUrl(state.connect.apiBaseUrl);
+    }
+
+    if (state.connect.tenantId.trim()) {
+      SessionBootstrap.setTenantId(state.connect.tenantId);
+    }
+
     markOnboardingComplete();
     onComplete();
-  }, [onComplete]);
+  }, [onComplete, state.connect.apiBaseUrl, state.connect.tenantId]);
 
   const renderStep = useCallback(
     (stepId: string, _index: number): React.ReactNode => {
@@ -347,7 +359,7 @@ export function DataCloudOnboardingWizard({
           renderStep={(stepId: string, index: number) => renderStep(stepId, index)}
           onComplete={handleComplete}
           onCancel={handleComplete}
-          completedText="Go to Dashboard"
+          completedText="Go to Home"
           cancelText="Skip Setup"
         />
       </div>

@@ -2,17 +2,17 @@
  * Template library component.
  *
  * <p><b>Purpose</b><br>
- * Displays workflow templates for quick workflow creation.
- * Provides search, filtering, and template instantiation.
+ * Boundary-aware shell for future pipeline template browsing.
+ * Today it surfaces launcher truth when template routes are unavailable.
  *
  * <p><b>Architecture</b><br>
- * - Template browsing
- * - Search and filtering
- * - Template instantiation
+ * - Future template browsing
+ * - Search and filtering shell
+ * - Explicit launcher-boundary handling
  * - Category organization
  *
  * @doc.type component
- * @doc.purpose Workflow template library
+ * @doc.purpose Pipeline template boundary shell
  * @doc.layer frontend
  * @doc.pattern React Component
  */
@@ -36,7 +36,7 @@ export interface TemplateLibraryProps {
 /**
  * TemplateLibrary component.
  *
- * Displays workflow templates for quick creation.
+ * Displays pipeline template placeholders for future launcher support.
  *
  * @param props component props
  * @returns JSX element

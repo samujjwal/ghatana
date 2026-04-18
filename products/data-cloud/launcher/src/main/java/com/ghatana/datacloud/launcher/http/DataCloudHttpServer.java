@@ -3,6 +3,8 @@ package com.ghatana.datacloud.launcher.http;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.brain.DataCloudBrain;
+import com.ghatana.platform.config.ConfigManager;
+import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.launcher.anomaly.AnomalyDetectionTask;
 import com.ghatana.datacloud.launcher.compaction.StorageCompactionTask;
@@ -64,6 +66,7 @@ import com.ghatana.datacloud.launcher.http.handlers.VoiceGatewayHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataLifecycleHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AutonomyHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AgentCatalogHandler;
+import com.ghatana.datacloud.launcher.http.handlers.AlertingHandler;
 import com.ghatana.datacloud.launcher.http.handlers.PluginInstallHandler;
 import com.ghatana.datacloud.launcher.http.handlers.StorageCostHandler;
 import com.ghatana.datacloud.launcher.http.handlers.FederatedQueryHandler;
@@ -85,9 +88,11 @@ import com.ghatana.datacloud.plugins.vector.VectorMemoryPlugin;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.launcher.http.voice.HttpWhisperSttAdapter;
+import com.ghatana.datacloud.launcher.http.voice.HttpSpeechTtsAdapter;
 import com.ghatana.datacloud.launcher.http.voice.NopVoiceSttAdapter;
 import com.ghatana.datacloud.launcher.http.voice.NopVoiceTtsAdapter;
 import com.ghatana.datacloud.launcher.http.voice.VoiceSttPort;
+import com.ghatana.datacloud.launcher.http.voice.VoiceTtsConfig;
 import com.ghatana.datacloud.launcher.http.voice.WhisperSttConfig;
 
 import static java.util.Objects.requireNonNull;
@@ -142,6 +147,7 @@ public class DataCloudHttpServer {
     private final DataCloudClient client;
     private final int port;
     private final ObjectMapper objectMapper;
+    private final ConfigManager config;
     private HttpServer server;
     private Eventloop eventloop;
     private AutonomyController autonomyController;
@@ -304,6 +310,7 @@ public class DataCloudHttpServer {
     private EntityValidationHandler validationHandler;
     private EventHandler eventHandler;
     private PipelineCheckpointHandler pipelineCheckpointHandler;
+    private AlertingHandler alertingHandler;
     private WorkflowExecutionHandler workflowExecutionHandler;
     private MemoryPlaneHandler memoryHandler;
     private BrainHandler brainHandler;
@@ -379,6 +386,7 @@ public class DataCloudHttpServer {
         this.learningBridge  = learningBridge;
         this.analyticsEngine = analyticsEngine;
         this.objectMapper    = JsonUtils.getDefaultMapper();
+        this.config          = ConfigManager.createDefault("data-cloud");
     }
 
     /**
@@ -874,14 +882,25 @@ public class DataCloudHttpServer {
         sseHandler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, httpSupport);
         if (openSearchConnector != null) sseHandler.withOpenSearchConnector(openSearchConnector);
 
+        // Configure embedding mode (DETERMINISTIC_HASH or REAL_EMBEDDING)
+        SemanticSearchHandler.EmbeddingMode embeddingMode = SemanticSearchHandler.EmbeddingMode.valueOf(
+            config.getString("EMBEDDING_MODE").orElse("DETERMINISTIC_HASH")
+        );
+        String aiInferenceServiceUrl = config.getString("AI_INFERENCE_SERVICE_URL")
+            .orElse("http://localhost:8083");
+        String internalApiKey = config.getString("INTERNAL_API_KEY").orElse("");
+
         VectorMemoryPlugin vectorMemoryPlugin = VectorMemoryPlugin.builder()
             .dimension(128)
-            .embeddingModel("deterministic-hash")
+            .embeddingModel(embeddingMode.name())
             .embeddingFunction(SemanticSearchHandler::embedText)
             .build();
         vectorMemoryPlugin.initialize(Map.of());
 
-        semanticSearchHandler = new SemanticSearchHandler(vectorMemoryPlugin, client, httpSupport, objectMapper);
+        semanticSearchHandler = new SemanticSearchHandler(
+            vectorMemoryPlugin, client, httpSupport, objectMapper, 
+            embeddingMode, aiInferenceServiceUrl, internalApiKey
+        );
         dataProductHandler = new DataProductHandler(client, httpSupport, objectMapper, lineagePlugin);
 
         entityHandler = new EntityCrudHandler(client, httpSupport, sseHandler.broadcastFunction());
@@ -897,6 +916,7 @@ public class DataCloudHttpServer {
         eventHandler = new EventHandler(client, httpSupport);
         eventHandler.withTraceSupport(traceSpanSupport);
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
+        alertingHandler = new AlertingHandler(client, httpSupport);
         runtimePluginManager = new DataCloudRuntimePluginManager();
         runtimePluginManager.registerWorkflowPlugin(client);
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
@@ -920,19 +940,26 @@ public class DataCloudHttpServer {
         healthHandler = new HealthHandler(httpSupport, healthSubsystemSuppliers, metricsCollector);
 
         // DC-E3: AI assist handler — nullable completionService enables graceful degradation
-        aiAssistHandler = new AiAssistHandler(completionService, objectMapper, httpSupport, blockingExecutor);
+        aiAssistHandler = new AiAssistHandler(
+            completionService,
+            objectMapper,
+            httpSupport,
+            blockingExecutor,
+            new AiRecommendationMetrics(metricsCollector));
 
         // DC-E4: Voice gateway handler — wire Whisper STT adapter if DC_STT_URL is configured
         WhisperSttConfig sttConfig = WhisperSttConfig.fromEnv();
         VoiceSttPort sttPort = sttConfig.enabled()
             ? new HttpWhisperSttAdapter(sttConfig, objectMapper, blockingExecutor)
             : NopVoiceSttAdapter.INSTANCE;
+        VoiceTtsConfig ttsConfig = VoiceTtsConfig.fromEnv();
 
-        if (completionService != null || sttConfig.enabled()) {
+        if (completionService != null || sttConfig.enabled() || ttsConfig.enabled()) {
             healthSubsystemSuppliers.putIfAbsent("voice_gateway", () -> {
                 Map<String, Object> snapshot = new LinkedHashMap<>();
                 snapshot.put("status", "UP");
                 snapshot.put("stt", sttConfig.enabled() ? "UP" : "NOT_CONFIGURED");
+                snapshot.put("tts", ttsConfig.enabled() ? "UP" : "NOT_CONFIGURED");
                 snapshot.put("llm", completionService != null ? "UP" : "NOT_CONFIGURED");
                 return snapshot;
             });
@@ -943,15 +970,25 @@ public class DataCloudHttpServer {
         if (policyEngine != null) {
             healthSubsystemSuppliers.putIfAbsent("policy_engine", () -> Map.of("status", "UP", "mode", "in-process"));
         }
+        
+        // P2-001: Add health indicator for embedding mode
+        healthSubsystemSuppliers.putIfAbsent("semantic_search", () -> Map.of(
+            "status", "UP",
+            "embeddingMode", semanticSearchHandler.getEmbeddingMode().name(),
+            "aiInferenceServiceUrl", aiInferenceServiceUrl
+        ));
 
         voiceHandler = new VoiceGatewayHandler(
+            client,
             completionService,
             auditService,
             objectMapper,
             httpSupport,
             blockingExecutor,
             sttPort,
-            NopVoiceTtsAdapter.INSTANCE);
+            ttsConfig.enabled()
+                ? new HttpSpeechTtsAdapter(ttsConfig, objectMapper, blockingExecutor)
+                : NopVoiceTtsAdapter.INSTANCE);
 
         // DC-E5: Data lifecycle and governance handler
         dataLifecycleHandler = new DataLifecycleHandler(client, objectMapper, httpSupport, auditService);
@@ -1003,203 +1040,36 @@ public class DataCloudHttpServer {
 
         log.info("[DC-CAP] Runtime capability summary {}", buildCapabilitySummaryLog());
 
-        RoutingServlet router = RoutingServlet.builder(eventloop)
-            // Health endpoints — delegated to HealthHandler (P7-2b)
-            .with(HttpMethod.GET, "/health", healthHandler::handleHealth)
-            .with(HttpMethod.GET, "/health/detail", healthHandler::handleHealthDetail)
-            .with(HttpMethod.GET, "/health/deep", healthHandler::handleHealthDeep)
-            .with(HttpMethod.GET, "/ready", healthHandler::handleReady)
-            .with(HttpMethod.GET, "/live", healthHandler::handleLive)
-
-            // Info endpoints — delegated to HealthHandler (P7-2b)
-            .with(HttpMethod.GET, "/info", healthHandler::handleInfo)
-            .with(HttpMethod.GET, "/metrics", healthHandler::handleMetrics)
-
-            // Entity endpoints — delegated to EntityCrudHandler
-            .with(HttpMethod.POST, "/api/v1/entities/:collection", entityHandler::handleSaveEntity)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/stream", sseHandler::handleEntityCdcStream)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/search", entityHandler::handleFullTextSearch)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/similar", semanticSearchHandler::handleSimilarEntities)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/query/stream", sseHandler::handleStreamingQuerySse)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/:id", entityHandler::handleGetEntity)
-            // Point-in-time entity snapshot — GET /api/v1/entities/:collection/:id/history?asOf= (B14)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/:id/history", entityHandler::handleGetEntityAsOf)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection", entityHandler::handleQueryEntities)
-            .with(HttpMethod.DELETE, "/api/v1/entities/:collection/:id", entityHandler::handleDeleteEntity)
-            // Bulk entity endpoints — upsert/delete multiple entities in a single request
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/batch", entityHandler::handleBatchSaveEntities)
-            .with(HttpMethod.DELETE, "/api/v1/entities/:collection/batch", entityHandler::handleBatchDeleteEntities)
-            // Bulk export and anomaly detection endpoints — delegated to dedicated handlers (DC-004)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/export", exportHandler::handleExportEntities)
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
-            .with(HttpMethod.GET,  "/api/v1/anomalies", anomalyHandler::handleQueryAnomalies)
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/validate", validationHandler::handleValidateEntity)
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/validate/batch", validationHandler::handleBatchValidateEntities)
-
-            // Event endpoints — delegated to EventHandler
-            .with(HttpMethod.POST, "/api/v1/events", eventHandler::handleAppendEvent)
-            .with(HttpMethod.GET, "/api/v1/events", eventHandler::handleQueryEvents)
-            .with(HttpMethod.GET, "/api/v1/events/:offset", eventHandler::handleGetEventByOffset)
-
-            // Pipeline registry endpoints — delegated to PipelineCheckpointHandler
-            .with(HttpMethod.GET,    "/api/v1/pipelines",                pipelineCheckpointHandler::handleListPipelines)
-            .with(HttpMethod.POST,   "/api/v1/pipelines",                pipelineCheckpointHandler::handleSavePipeline)
-            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleGetPipeline)
-            .with(HttpMethod.PUT,    "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleUpdatePipeline)
-            .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleDeletePipeline)
-            .with(HttpMethod.POST,   "/api/v1/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
-            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListExecutions)
-            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetWorkflowExecution)
-            .with(HttpMethod.POST,   "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution)
-
-            // Checkpoint management endpoints (DC-3) — delegated to PipelineCheckpointHandler
-            .with(HttpMethod.GET, "/api/v1/checkpoints", pipelineCheckpointHandler::handleListCheckpoints)
-            .with(HttpMethod.POST, "/api/v1/checkpoints", pipelineCheckpointHandler::handleSaveCheckpoint)
-            .with(HttpMethod.GET, "/api/v1/checkpoints/:checkpointId", pipelineCheckpointHandler::handleGetCheckpoint)
-            .with(HttpMethod.DELETE, "/api/v1/checkpoints/:checkpointId", pipelineCheckpointHandler::handleDeleteCheckpoint)
-
-            // Agent memory plane endpoints (P4.6.1) — delegated to MemoryPlaneHandler
-            .with(HttpMethod.GET,    "/api/v1/memory",                           memoryHandler::handleListMemory)
-            .with(HttpMethod.POST,   "/api/v1/memory/:agentId",                  memoryHandler::handleStoreMemory)
-            .with(HttpMethod.GET,    "/api/v1/memory/:agentId",                  memoryHandler::handleGetAgentMemory)
-            .with(HttpMethod.GET,    "/api/v1/memory/:agentId/:tier",            memoryHandler::handleGetAgentMemoryByTier)
-            .with(HttpMethod.POST,   "/api/v1/memory/:agentId/search",           memoryHandler::handleSearchAgentMemory)
-            .with(HttpMethod.DELETE, "/api/v1/memory/:agentId/:memoryId",        memoryHandler::handleDeleteMemory)
-            .with(HttpMethod.PUT,    "/api/v1/memory/:agentId/:memoryId/retain", memoryHandler::handleRetainMemory)
-
-            // Brain routes (DC-6) — non-streaming delegated to BrainHandler
-            .with(HttpMethod.GET,  "/api/v1/brain/health",                brainHandler::handleBrainHealth)
-            .with(HttpMethod.GET,  "/api/v1/brain/config",                brainHandler::handleBrainConfig)
-            .with(HttpMethod.GET,  "/api/v1/brain/stats",                 brainHandler::handleBrainStats)
-            .with(HttpMethod.GET,  "/api/v1/brain/workspace",             brainHandler::handleBrainWorkspace)
-            .with(HttpMethod.GET,  "/api/v1/brain/workspace/stream",      sseHandler::handleBrainWorkspaceStream)
-            .with(HttpMethod.POST, "/api/v1/brain/attention/elevate",     brainHandler::handleBrainAttentionElevate)
-            .with(HttpMethod.GET,  "/api/v1/brain/attention/thresholds",  brainHandler::handleBrainAttentionThresholds)
-            .with(HttpMethod.PUT,  "/api/v1/brain/attention/thresholds",  brainHandler::handleBrainAttentionThresholdsUpdate)
-            .with(HttpMethod.GET,  "/api/v1/brain/patterns",              brainHandler::handleBrainPatterns)
-            .with(HttpMethod.POST, "/api/v1/brain/patterns/match",        brainHandler::handleBrainPatternsMatch)
-            .with(HttpMethod.GET,  "/api/v1/brain/salience/:itemId",      brainHandler::handleBrainSalience)
-
-            // Learning routes (DC-8) — non-streaming delegated to LearningHandler
-            .with(HttpMethod.POST, "/api/v1/learning/trigger",                    learningHandler::handleLearningTrigger)
-            .with(HttpMethod.GET,  "/api/v1/learning/status",                     learningHandler::handleLearningStatus)
-            .with(HttpMethod.GET,  "/api/v1/learning/review",                     learningHandler::handleLearningReviewQueue)
-            .with(HttpMethod.POST,   "/api/v1/learning/review/:reviewId/approve",   learningHandler::handleLearningReviewApprove)
-            .with(HttpMethod.POST,   "/api/v1/learning/review/:reviewId/reject",    learningHandler::handleLearningReviewReject)
-            .with(HttpMethod.DELETE, "/api/v1/learning/review/completed",           learningHandler::handlePurgeCompletedReviews)
-
-            // Analytics routes (DC-9) — delegated to AnalyticsHandler
-            .with(HttpMethod.POST, "/api/v1/analytics/query",                     analyticsHandler::handleAnalyticsQuery)
-            .with(HttpMethod.GET,  "/api/v1/analytics/query/:queryId",            analyticsHandler::handleAnalyticsGetResult)
-            .with(HttpMethod.GET,  "/api/v1/analytics/query/:queryId/plan",       analyticsHandler::handleAnalyticsGetPlan)
-            .with(HttpMethod.POST, "/api/v1/analytics/aggregate",                 analyticsHandler::handleAnalyticsAggregate)
-            .with(HttpMethod.POST, "/api/v1/analytics/explain",                   analyticsHandler::handleAnalyticsExplain)
-
-            // Reporting routes (DC-10) — delegated to AnalyticsHandler
-            .with(HttpMethod.POST, "/api/v1/reports",             analyticsHandler::handleCreateReport)
-            .with(HttpMethod.GET,  "/api/v1/reports",             analyticsHandler::handleListReports)
-            .with(HttpMethod.GET,  "/api/v1/reports/:reportId",   analyticsHandler::handleGetReport)
-            .with(HttpMethod.GET,  "/api/v1/executions/:executionId", workflowExecutionHandler::handleGetExecution)
-            .with(HttpMethod.GET,  "/api/v1/executions/:executionId/logs", workflowExecutionHandler::handleExecutionLogs)
-            .with(HttpMethod.POST, "/api/v1/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution)
-
-            // AI/ML — Model Registry routes (DC-11) — delegated to AiModelHandler
-            .with(HttpMethod.GET,  "/api/v1/models",                          aiModelHandler::handleListAiModels)
-            .with(HttpMethod.POST, "/api/v1/models",                          aiModelHandler::handleRegisterAiModel)
-            .with(HttpMethod.GET,  "/api/v1/models/:modelName",               aiModelHandler::handleGetAiModel)
-            .with(HttpMethod.POST, "/api/v1/models/:modelName/promote",       aiModelHandler::handlePromoteAiModel)
-
-            // AI/ML — Feature Store routes (DC-11) — delegated to AiModelHandler
-            .with(HttpMethod.POST, "/api/v1/features",                        aiModelHandler::handleIngestFeature)
-            .with(HttpMethod.GET,  "/api/v1/features/:entityId",              aiModelHandler::handleGetFeatures)
-
-            // Server-Sent Events for real-time UI updates (DC-3, DC-9)
-            .with(HttpMethod.GET, "/events/stream",              sseHandler::handleSseStream)
-            .with(HttpMethod.GET, "/api/v1/learning/stream",      sseHandler::handleLearningStream)
-
-            // WebSocket endpoint for real-time collection change notifications (DC-12)
-            .withWebSocket("/ws", sseHandler::handleWebSocketConnection)
-
-            // AI Assist routes (DC-E3) — gracefully degrade to heuristics when LLM unavailable
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/suggest",    aiAssistHandler::handleEntitySuggest)
-            .with(HttpMethod.POST, "/api/v1/analytics/suggest",               aiAssistHandler::handleAnalyticsSuggest)
-            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
-            .with(HttpMethod.POST, "/api/v1/brain/explain",                   aiAssistHandler::handleBrainExplain)
-
-            // Voice gateway routes (DC-E4)
-            .with(HttpMethod.POST, "/api/v1/voice/intent",          voiceHandler::handleVoiceIntent)
-            .with(HttpMethod.GET,  "/api/v1/voice/intents",         voiceHandler::handleListIntents)
-            .with(HttpMethod.POST, "/api/v1/voice/intent/classify",  voiceHandler::handleClassifyOnly)
-
-            // Governance / data-lifecycle routes (DC-E5)
-            .with(HttpMethod.POST, "/api/v1/governance/retention/classify", dataLifecycleHandler::handleClassifyRetention)
-            .with(HttpMethod.GET,  "/api/v1/governance/retention/policy",   dataLifecycleHandler::handleGetRetentionPolicy)
-            .with(HttpMethod.POST, "/api/v1/governance/retention/purge",    dataLifecycleHandler::handlePurge)
-            .with(HttpMethod.POST, "/api/v1/governance/privacy/redact",     dataLifecycleHandler::handleRedact)
-            .with(HttpMethod.GET,  "/api/v1/governance/privacy/pii-fields", dataLifecycleHandler::handleListPiiFields)
-            .with(HttpMethod.GET,  "/api/v1/governance/privacy/verify",     dataLifecycleHandler::handleVerifyRedaction)
-            .with(HttpMethod.GET,  "/api/v1/governance/compliance/summary", dataLifecycleHandler::handleComplianceSummary)
-
-            // Runtime capability registry (P2.7)
-            .with(HttpMethod.GET,  "/api/v1/capabilities",                  capabilityRegistryHandler::handleCapabilities)
-
-            // Entity lineage graph and impact analysis (P3.9.1)
-            .with(HttpMethod.GET, "/api/v1/lineage/:collection",        lineageHandler::handleGetLineage)
-            .with(HttpMethod.GET, "/api/v1/lineage/:collection/impact",  lineageHandler::handleGetImpact)
-
-            // Tenant-scoped context layer (P3.1) — lightweight runtime key-value store
-            .with(HttpMethod.GET,    "/api/v1/context",                     contextLayerHandler::handleGetContext)
-            .with(HttpMethod.GET,    "/api/v1/context/:collection",         collectionContextHandler::handleGetCollectionContext)
-            .with(HttpMethod.PUT,    "/api/v1/context",                     contextLayerHandler::handlePutContext)
-            .with(HttpMethod.DELETE, "/api/v1/context/keys/:key",           contextLayerHandler::handleDeleteContextKey)
-            .with(HttpMethod.GET,    "/api/v1/context/snapshot",            contextLayerHandler::handleGetSnapshot)
-            .with(HttpMethod.POST,   "/api/v1/context/:collection/rag",     semanticSearchHandler::handleCollectionRag)
-
-            // MCP tool discovery and invocation (P3.1.2)
-            .with(HttpMethod.GET,    "/mcp/v1/tools",                       mcpToolsHandler::handleListTools)
-            .with(HttpMethod.POST,   "/mcp/v1/tools",                       mcpToolsHandler::handleToolCall)
-
-            // Data product catalog routes (P4.4.1)
-            .with(HttpMethod.GET,    "/api/v1/data-products",               dataProductHandler::handleListDataProducts)
-            .with(HttpMethod.POST,   "/api/v1/data-products",               dataProductHandler::handlePublishDataProduct)
-            .with(HttpMethod.POST,   "/api/v1/data-products/:productId/subscribe", dataProductHandler::handleSubscribe)
-
-            // Autonomy management routes (B9) — emergency global shutoff and domain-level controls
-            .with(HttpMethod.PUT, "/api/v1/autonomy/level",              autonomyHandler::handleSetGlobalLevel)
-            .with(HttpMethod.GET, "/api/v1/autonomy/level",              autonomyHandler::handleGetGlobalLevel)
-            .with(HttpMethod.GET, "/api/v1/autonomy/domains",            autonomyHandler::handleListDomains)
-            .with(HttpMethod.GET, "/api/v1/autonomy/domains/:domain",    autonomyHandler::handleGetDomain)
-            .with(HttpMethod.GET, "/api/v1/autonomy/logs",               autonomyHandler::handleGetLogs)
-
-            // Agent catalog runtime API (B3) — YAML-backed catalog served as JSON
-            .with(HttpMethod.GET, "/api/v1/agents/catalog",              agentCatalogHandler::handleListCatalog)
-            .with(HttpMethod.GET, "/api/v1/agents/catalog/:id",          agentCatalogHandler::handleGetAgent)
-
-            // Plugin lifecycle management API (B6) — install, enable/disable, upgrade
-            .with(HttpMethod.GET,  "/api/v1/plugins",                    pluginInstallHandler::handleListPlugins)
-            .with(HttpMethod.GET,  "/api/v1/plugins/:id",                pluginInstallHandler::handleGetPlugin)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/enable",         pluginInstallHandler::handleEnablePlugin)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/disable",        pluginInstallHandler::handleDisablePlugin)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/upgrade",        pluginInstallHandler::handleUpgradePlugin)
-
-            // Storage cost estimate + per-collection cost report (B11)
-            .with(HttpMethod.GET,  "/api/v1/queries/estimate",
-                    storageCostHandler != null ? storageCostHandler::handleEstimateQuery
-                            : req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")))
-            .with(HttpMethod.GET,  "/api/v1/collections/:id/cost-report",
-                    storageCostHandler != null ? storageCostHandler::handleCollectionCostReport
-                            : req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")))
-
-            // Federated Trino query endpoint (B13)
-            .with(HttpMethod.POST, "/api/v1/queries/federated",
-                    federatedQueryHandler != null ? federatedQueryHandler::handleFederatedQuery
-                            : req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")))
-
-            // Manual storage-tier migration (B10)
-            .with(HttpMethod.POST, "/api/v1/collections/:id/migrate",
-                    tierMigrationHandler != null ? tierMigrationHandler::handleMigrateCollection
-                            : req -> Promise.of(httpSupport.errorResponse(503, "Tier migration schedulers are not configured")))
-
+        RoutingServlet router = new DataCloudRouterBuilder(eventloop)
+            .withHealthRoutes(healthHandler)
+            .withEntityRoutes(entityHandler, sseHandler, semanticSearchHandler, exportHandler, anomalyHandler, validationHandler)
+            .withEventRoutes(eventHandler)
+            .withPipelineRoutes(pipelineCheckpointHandler, workflowExecutionHandler)
+            .withCheckpointRoutes(pipelineCheckpointHandler)
+            .withAlertRoutes(alertingHandler, sseHandler)
+            .withMemoryRoutes(memoryHandler)
+            .withBrainRoutes(brainHandler, sseHandler)
+            .withLearningRoutes(learningHandler)
+            .withAnalyticsRoutes(analyticsHandler)
+            .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
+            .withModelRoutes(aiModelHandler)
+            .withFeatureRoutes(aiModelHandler)
+            .withSseRoutes(sseHandler)
+            .withWebSocketRoutes(sseHandler)
+            .withAiAssistRoutes(aiAssistHandler)
+            .withVoiceRoutes(voiceHandler)
+            .withGovernanceRoutes(dataLifecycleHandler)
+            .withCapabilityRoutes(capabilityRegistryHandler)
+            .withLineageRoutes(lineageHandler)
+            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
+            .withMcpRoutes(mcpToolsHandler)
+            .withDataProductRoutes(dataProductHandler)
+            .withAutonomyRoutes(autonomyHandler)
+            .withAgentCatalogRoutes(agentCatalogHandler)
+            .withPluginRoutes(pluginInstallHandler)
+            .withStorageCostRoutes(storageCostHandler, httpSupport)
+            .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
+            .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
             .build();
 
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));

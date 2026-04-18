@@ -85,7 +85,7 @@ test.describe('Voice Intent – Complete Flow', () => {
 
   test('voice intent response is application/json', async ({ request }) => {
     const response = await request.post('/api/v1/voice/intent', {
-      data: { utterance: 'show dashboard' },
+      data: { utterance: 'show insights' },
       headers: { 'Content-Type': 'application/json' },
     });
 

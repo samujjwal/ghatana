@@ -14,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,8 +33,10 @@ import java.util.concurrent.Executor;
  * <pre>
  *   POST /api/v1/entities/:collection/suggest       — entity exploration suggestions
  *   POST /api/v1/analytics/suggest                   — analytics query suggestions
+ *   POST /api/v1/pipelines/draft                     — intent-to-pipeline draft generation
  *   POST /api/v1/pipelines/:pipelineId/optimise-hint — pipeline optimisation hints
  *   POST /api/v1/brain/explain                       — anomaly/salience explanation
+ *   GET  /api/v1/ai/quality-summary                  — operator AI quality telemetry summary
  * </pre>
  *
  * <h2>Response Shape</h2>
@@ -232,6 +237,117 @@ public class AiAssistHandler {
     }
 
     /**
+     * {@code POST /api/v1/pipelines/draft}
+     *
+     * <p>Generates a reviewable pipeline draft from natural-language intent.
+     * The response contains ordered workflow steps plus provenance metadata so
+     * the UI can render an editable draft before persistence.
+     *
+     * @param request HTTP request; body must contain {@code {"prompt":"..."}}
+     * @return 200 with draft payload and AI confidence metadata
+     */
+    public Promise<HttpResponse> handlePipelineDraft(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String requestId = resolveRequestId(request);
+        long startMs = System.currentTimeMillis();
+
+        return request.loadBody(MAX_PROMPT_TOKENS * 4)
+            .then(body -> {
+                Map<String, Object> input = parseBody(body.getString(StandardCharsets.UTF_8));
+                String prompt = String.valueOf(input.getOrDefault("prompt", "")).trim();
+
+                if (prompt.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "prompt is required"));
+                }
+
+                if (completionService == null) {
+                    HttpResponse resp = heuristicPipelineDraftResponse(prompt, tenantId, requestId);
+                    recommendationMetrics.recordRecommendation(
+                        AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
+                        tenantId,
+                        HEURISTIC_CONFIDENCE,
+                        true,
+                        System.currentTimeMillis() - startMs);
+                    return Promise.of(resp);
+                }
+
+                String aiPrompt = buildPipelineDraftPrompt(prompt, tenantId);
+                return callAi(aiPrompt)
+                    .map(result -> {
+                        HttpResponse resp = buildPipelineDraftHttpResponse(result, prompt, tenantId, requestId);
+                        double conf = estimateConfidence(result);
+                        recommendationMetrics.recordRecommendation(
+                            AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
+                            tenantId,
+                            conf,
+                            conf < FALLBACK_CONFIDENCE_THRESHOLD,
+                            System.currentTimeMillis() - startMs);
+                        return resp;
+                    })
+                    .then(Promise::of,
+                        e -> {
+                            log.warn("[DC-E3] pipeline draft AI call failed tenant={}: {}", tenantId, e.getMessage());
+                            recommendationMetrics.recordError(
+                                AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
+                                tenantId,
+                                e);
+                            return Promise.of(heuristicPipelineDraftResponse(prompt, tenantId, requestId));
+                        });
+            });
+    }
+
+    /**
+     * {@code GET /api/v1/ai/quality-summary}
+     *
+     * <p>Returns process-local AI quality telemetry so operator views can distinguish true model
+     * completions from heuristic fallback behavior without scraping raw metrics endpoints.
+     */
+    public Promise<HttpResponse> handleAiQualitySummary(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        String requestId = resolveRequestId(request);
+        List<AiRecommendationMetrics.AiQualitySnapshot> snapshots = recommendationMetrics.snapshot();
+        long totalRequests = snapshots.stream()
+            .mapToLong(AiRecommendationMetrics.AiQualitySnapshot::requestCount)
+            .sum();
+        long totalFallbacks = snapshots.stream()
+            .mapToLong(AiRecommendationMetrics.AiQualitySnapshot::fallbackCount)
+            .sum();
+
+        Map<String, Object> payload = Map.of(
+            "generatedAt", Instant.now().truncatedTo(ChronoUnit.SECONDS).toString(),
+            "scope", "launcher-process",
+            "summary", Map.of(
+                "requestCount", totalRequests,
+                "fallbackCount", totalFallbacks,
+                "fallbackRate", totalRequests == 0 ? 0.0 : (double) totalFallbacks / (double) totalRequests,
+                "llmConfigured", completionService != null
+            ),
+            "types", snapshots.stream().map(snapshot -> Map.<String, Object>of(
+                "type", snapshot.type(),
+                "label", qualityLabel(snapshot.type()),
+                "route", qualityRoute(snapshot.type()),
+                "requestCount", snapshot.requestCount(),
+                "fallbackCount", snapshot.fallbackCount(),
+                "fallbackRate", snapshot.fallbackRate(),
+                "meanConfidence", Double.isNaN(snapshot.meanConfidence()) ? 0.0 : snapshot.meanConfidence(),
+                "provenanceMode", qualityProvenanceMode(snapshot.type()),
+                "reviewGuidance", qualityReviewGuidance(snapshot.type())
+            )).toList()
+        );
+
+        return Promise.of(http.envelopeResponse(
+            ApiResponse.success(payload, tenantId, requestId),
+            objectMapper));
+    }
+
+    /**
      * {@code POST /api/v1/pipelines/:pipelineId/optimise-hint}
      *
      * <p>Provides structural optimisation hints for a pipeline: redundant steps,
@@ -352,6 +468,48 @@ public class AiAssistHandler {
             completionService.complete(req).getResult());
     }
 
+    private static String qualityLabel(String type) {
+        return switch (type) {
+            case AiRecommendationMetrics.TYPE_ENTITY_SUGGEST -> "Entity suggestions";
+            case AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST -> "Analytics suggestions";
+            case AiRecommendationMetrics.TYPE_PIPELINE_DRAFT -> "Workflow draft generation";
+            case AiRecommendationMetrics.TYPE_PIPELINE_HINT -> "Workflow optimization hints";
+            case AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN -> "Brain explanations";
+            case AiRecommendationMetrics.TYPE_VOICE_INTENT -> "Voice intent resolution";
+            default -> type;
+        };
+    }
+
+    private static String qualityRoute(String type) {
+        return switch (type) {
+            case AiRecommendationMetrics.TYPE_ENTITY_SUGGEST -> "/api/v1/entities/:collection/suggest";
+            case AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST -> "/api/v1/analytics/suggest";
+            case AiRecommendationMetrics.TYPE_PIPELINE_DRAFT -> "/api/v1/pipelines/draft";
+            case AiRecommendationMetrics.TYPE_PIPELINE_HINT -> "/api/v1/pipelines/:pipelineId/optimise-hint";
+            case AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN -> "/api/v1/brain/explain";
+            case AiRecommendationMetrics.TYPE_VOICE_INTENT -> "/api/v1/voice/intent";
+            default -> "unknown";
+        };
+    }
+
+    private static String qualityProvenanceMode(String type) {
+        return switch (type) {
+            case AiRecommendationMetrics.TYPE_PIPELINE_DRAFT -> "ai-envelope-and-draft-provenance";
+            default -> "ai-envelope";
+        };
+    }
+
+    private static String qualityReviewGuidance(String type) {
+        return switch (type) {
+            case AiRecommendationMetrics.TYPE_PIPELINE_DRAFT -> "Review low-confidence drafts or any fallback-generated workflow before saving.";
+            case AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST -> "Fallback-heavy analytics suggestions should trigger manual SQL review before execution.";
+            case AiRecommendationMetrics.TYPE_ENTITY_SUGGEST -> "Treat heuristic entity hints as advisory until confirmed against collection metadata.";
+            case AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN -> "Fallback explanations remain descriptive only and should not drive automated escalation.";
+            case AiRecommendationMetrics.TYPE_VOICE_INTENT -> "Low-confidence voice intents require explicit confirmation before acting.";
+            default -> "Review fallback-heavy AI responses before acting automatically.";
+        };
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Prompt builders (privacy-safe — no raw entity data in prompts)
     // ─────────────────────────────────────────────────────────────────────────
@@ -380,6 +538,39 @@ public class AiAssistHandler {
             sanitise(intent), sanitise(schema.length() > 500 ? schema.substring(0, 500) + "..." : schema),
             sanitise(tenantId));
     }
+
+        private String buildPipelineDraftPrompt(String prompt, String tenantId) {
+                return String.format(
+                        """
+                        Tenant scope: %s
+                        User intent: %s
+                        Instructions: Generate a concise data pipeline draft.
+                        Return JSON only with this shape:
+                        {
+                            "name": "...",
+                            "description": "...",
+                            "reviewRequired": true|false,
+                            "provenance": {
+                                "strategy": "llm",
+                                "promptSummary": "..."
+                            },
+                            "steps": [
+                                {
+                                    "id": "step-1",
+                                    "type": "source|transform|destination|condition",
+                                    "name": "...",
+                                    "description": "...",
+                                    "confidence": 0.0,
+                                    "config": {}
+                                }
+                            ]
+                        }
+                        Keep the step list ordered and practical. Set reviewRequired=true when intent is ambiguous,
+                        destructive, or lacks clear source/destination detail.
+                        """,
+                        sanitise(tenantId),
+                        sanitise(prompt));
+        }
 
     private String buildPipelineOptimisePrompt(String pipelineId, String pipelineJson, String tenantId) {
         String safe = pipelineJson.length() > 800 ? pipelineJson.substring(0, 800) + "..." : pipelineJson;
@@ -456,6 +647,29 @@ public class AiAssistHandler {
         return http.envelopeResponse(envelope, objectMapper);
     }
 
+    private HttpResponse buildPipelineDraftHttpResponse(
+            CompletionResult result, String prompt, String tenantId, String requestId) {
+        double confidence = estimateConfidence(result);
+        boolean fallback = confidence < FALLBACK_CONFIDENCE_THRESHOLD;
+
+        Map<String, Object> draft = tryParseAiJson(result.getText(),
+            createHeuristicDraftData(prompt, true, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL));
+
+        Map<String, Object> normalizedDraft = normalizeDraftPayload(
+            draft,
+            prompt,
+            result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
+            fallback,
+            confidence);
+
+        ApiResponse envelope = ApiResponse.success(normalizedDraft, tenantId, requestId)
+            .withAiMeta(confidence,
+                result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
+                List.of("llm", "pipeline-draft"),
+                fallback);
+        return http.envelopeResponse(envelope, objectMapper);
+    }
+
     private HttpResponse buildBrainExplainHttpResponse(
             CompletionResult result, String itemId, String tenantId, String requestId) {
         double confidence = estimateConfidence(result);
@@ -524,6 +738,14 @@ public class AiAssistHandler {
         return http.envelopeResponse(envelope, objectMapper);
     }
 
+    private HttpResponse heuristicPipelineDraftResponse(
+            String prompt, String tenantId, String requestId) {
+        Map<String, Object> data = createHeuristicDraftData(prompt, true, "static-heuristic");
+        ApiResponse envelope = ApiResponse.success(data, tenantId, requestId)
+            .withAiMeta(HEURISTIC_CONFIDENCE, "static-heuristic", List.of("fallback", "ruleset"), true);
+        return http.envelopeResponse(envelope, objectMapper);
+    }
+
     private HttpResponse heuristicBrainExplainResponse(
             String itemId, String tenantId, String requestId) {
         Map<String, Object> data = Map.of(
@@ -586,6 +808,209 @@ public class AiAssistHandler {
         if (input == null) return "";
         // Remove backticks, template delimiters, and control chars — OWASP injection prevention
         return input.replaceAll("[`\\\\\\x00-\\x1F]", "").stripLeading().stripTrailing();
+    }
+
+    private Map<String, Object> createHeuristicDraftData(String prompt, boolean fallback, String strategy) {
+        List<String> fragments = splitPromptIntoFragments(prompt);
+        List<Map<String, Object>> steps = fragments.isEmpty()
+            ? List.of(defaultDraftStep("step-1", "source", "Load source data", "Select the system or dataset that starts this workflow."))
+            : buildHeuristicSteps(fragments);
+
+        String summary = prompt.length() > 140 ? prompt.substring(0, 140) + "..." : prompt;
+
+        return Map.of(
+            "workflowId", "draft-" + UUID.randomUUID(),
+            "name", inferDraftName(prompt),
+            "description", "Generated from workflow intent: " + summary,
+            "reviewRequired", fallback || steps.size() < 3,
+            "provenance", Map.of(
+                "generatedAt", Instant.now().toString(),
+                "strategy", strategy,
+                "promptSummary", summary
+            ),
+            "steps", steps
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> normalizeDraftPayload(
+            Map<String, Object> raw,
+            String prompt,
+            String strategy,
+            boolean fallback,
+            double confidence) {
+        Map<String, Object> heuristic = createHeuristicDraftData(prompt, fallback, strategy);
+
+        Object rawSteps = raw.get("steps");
+        List<Map<String, Object>> steps = rawSteps instanceof List<?> list
+            ? list.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .map(step -> normalizeDraftStep((Map<String, Object>) step))
+                .toList()
+            : (List<Map<String, Object>>) heuristic.get("steps");
+
+        Object rawProvenance = raw.get("provenance");
+        Map<String, Object> provenance = rawProvenance instanceof Map<?, ?> provenanceMap
+            ? Map.of(
+                "generatedAt", String.valueOf(provenanceMap.containsKey("generatedAt") ? provenanceMap.get("generatedAt") : Instant.now().toString()),
+                "strategy", String.valueOf(provenanceMap.containsKey("strategy") ? provenanceMap.get("strategy") : strategy),
+                "promptSummary", String.valueOf(provenanceMap.containsKey("promptSummary") ? provenanceMap.get("promptSummary") : summarisePrompt(prompt)))
+            : (Map<String, Object>) heuristic.get("provenance");
+
+        boolean reviewRequired = readBoolean(raw.get("reviewRequired"), fallback || confidence < 0.75 || steps.size() < 3);
+
+        return Map.of(
+            "workflowId", String.valueOf(raw.getOrDefault("workflowId", heuristic.get("workflowId"))),
+            "name", String.valueOf(raw.getOrDefault("name", heuristic.get("name"))),
+            "description", String.valueOf(raw.getOrDefault("description", heuristic.get("description"))),
+            "reviewRequired", reviewRequired,
+            "provenance", provenance,
+            "steps", steps
+        );
+    }
+
+    private Map<String, Object> normalizeDraftStep(Map<String, Object> step) {
+        String id = String.valueOf(step.getOrDefault("id", "step-" + UUID.randomUUID()));
+        String type = normalizeStepType(step.get("type"));
+        String name = String.valueOf(step.getOrDefault("name", type.substring(0, 1).toUpperCase() + type.substring(1) + " step"));
+        String description = String.valueOf(step.getOrDefault("description", name));
+        double stepConfidence = readDouble(step.get("confidence"), 0.75);
+        Object config = step.get("config");
+        Map<String, Object> normalizedConfig = config instanceof Map<?, ?> configMap
+            ? toStringObjectMap(configMap)
+            : Map.of();
+
+        return Map.of(
+            "id", id,
+            "type", type,
+            "name", name,
+            "description", description,
+            "confidence", stepConfidence,
+            "config", normalizedConfig
+        );
+    }
+
+    private static String inferDraftName(String prompt) {
+        List<String> fragments = splitPromptIntoFragments(prompt);
+        if (fragments.isEmpty()) {
+            return "Generated workflow draft";
+        }
+        String first = fragments.get(0);
+        return first.length() > 48 ? first.substring(0, 48) + "..." : Character.toUpperCase(first.charAt(0)) + first.substring(1);
+    }
+
+    private static List<Map<String, Object>> buildHeuristicSteps(List<String> fragments) {
+        java.util.ArrayList<Map<String, Object>> steps = new java.util.ArrayList<>();
+        for (int index = 0; index < fragments.size(); index++) {
+            String fragment = fragments.get(index);
+            String type = inferStepType(fragment, index, fragments.size());
+            steps.add(defaultDraftStep(
+                "step-" + (index + 1),
+                type,
+                buildStepName(fragment, type),
+                Character.toUpperCase(fragment.charAt(0)) + fragment.substring(1)
+            ));
+        }
+        return List.copyOf(steps);
+    }
+
+    private static Map<String, Object> defaultDraftStep(String id, String type, String name, String description) {
+        return Map.of(
+            "id", id,
+            "type", type,
+            "name", name,
+            "description", description,
+            "confidence", 0.72,
+            "config", Map.of()
+        );
+    }
+
+    private static List<String> splitPromptIntoFragments(String prompt) {
+        String[] parts = sanitise(prompt)
+            .replace(" then ", ",")
+            .replace(" and then ", ",")
+            .split(",");
+        java.util.ArrayList<String> fragments = new java.util.ArrayList<>();
+        for (String part : parts) {
+            String normalized = part.trim();
+            if (!normalized.isEmpty()) {
+                fragments.add(normalized);
+            }
+        }
+        return List.copyOf(fragments);
+    }
+
+    private static String inferStepType(String fragment, int index, int total) {
+        String normalized = fragment.toLowerCase();
+        if (normalized.matches(".*(filter|if |when |where |unless).*")) {
+            return "condition";
+        }
+        if (normalized.matches(".*(save|write|store|export|publish|send).*")) {
+            return "destination";
+        }
+        if (normalized.matches(".*(clean|transform|aggregate|join|validate|normalize|enrich|dedupe|deduplicate).*")) {
+            return "transform";
+        }
+        if (index == 0 || normalized.matches(".*(load|read|ingest|import|collect|consume).*")) {
+            return "source";
+        }
+        if (index == total - 1) {
+            return "destination";
+        }
+        return "transform";
+    }
+
+    private static String buildStepName(String fragment, String type) {
+        String normalized = fragment.trim();
+        if (normalized.isEmpty()) {
+            return type.substring(0, 1).toUpperCase() + type.substring(1) + " step";
+        }
+        return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+    }
+
+    private static boolean readBoolean(Object value, boolean defaultValue) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String str) {
+            return Boolean.parseBoolean(str);
+        }
+        return defaultValue;
+    }
+
+    private static double readDouble(Object value, double defaultValue) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (value instanceof String str) {
+            try {
+                return Double.parseDouble(str);
+            } catch (NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
+    }
+
+    private static String normalizeStepType(Object rawType) {
+        String type = String.valueOf(rawType == null ? "transform" : rawType).toLowerCase();
+        return switch (type) {
+            case "source", "transform", "destination", "condition" -> type;
+            default -> "transform";
+        };
+    }
+
+    private static String summarisePrompt(String prompt) {
+        return prompt.length() > 140 ? prompt.substring(0, 140) + "..." : prompt;
+    }
+
+    private static Map<String, Object> toStringObjectMap(Map<?, ?> source) {
+        LinkedHashMap<String, Object> normalized = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            normalized.put(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        return Map.copyOf(normalized);
     }
 
     private static String resolveRequestId(HttpRequest request) {

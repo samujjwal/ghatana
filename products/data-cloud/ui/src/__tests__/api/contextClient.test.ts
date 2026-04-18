@@ -23,6 +23,7 @@ import {
   type UpsertContextResponse,
   type ContextSnapshot,
 } from '../../lib/api/context';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 describe('context layer API client (P3.1.2)', () => {
   beforeEach(() => {
@@ -33,7 +34,7 @@ describe('context layer API client (P3.1.2)', () => {
 
   it('calls GET /context and returns the response', async () => {
     const mockResponse: ContextResponse = {
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       entries: { locale: 'en-US', 'feature.dark-mode': true },
       count: 2,
       version: 3,

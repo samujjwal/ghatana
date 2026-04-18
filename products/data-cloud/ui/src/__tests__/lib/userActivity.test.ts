@@ -35,9 +35,9 @@ describe('user-activity api', () => {
         {
           id: 'workflow-1',
           name: 'Daily Sync',
-          type: 'workflow',
+          type: 'dashboard',
           lastAccessed: '2026-04-15T12:55:00Z',
-          path: '/pipelines/wf-1',
+          path: '/insights',
         },
       ],
     });
@@ -47,6 +47,7 @@ describe('user-activity api', () => {
     expect(mockApiClient.get).toHaveBeenCalledWith('/user-activity/recent');
     expect(response.activities).toHaveLength(1);
     expect(response.continueWorking).toHaveLength(1);
+    expect(response.continueWorking[0].type).toBe('insight');
   });
 
   it('validates log activity requests before posting', async () => {

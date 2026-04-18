@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DataCloudApiClient } from '@/api/client';
+import {
+  DATASET_CATALOG_BOUNDARY_MESSAGE,
+  DATASET_DETAIL_BOUNDARY_MESSAGE,
+  GLOBAL_SEARCH_BOUNDARY_MESSAGE,
+  QUERY_VALIDATION_BOUNDARY_MESSAGE,
+} from '@/lib/runtime-boundaries';
 
 interface MockResponseInit {
   ok?: boolean;
@@ -115,10 +121,10 @@ describe('DataCloudApiClient contract mapping', () => {
   });
 
   it('fails explicitly for stale unsupported dataset, validation, and search helpers', async () => {
-    await expect(client.getDatasets('orders')).rejects.toThrow(/dataset catalog routes are not exposed/i);
-    await expect(client.getDataset('orders', 'dataset-1')).rejects.toThrow(/dataset detail routes are not exposed/i);
-    await expect(client.validateQuery('select 1')).rejects.toThrow(/Standalone query validation is not exposed/i);
-    await expect(client.search('orders')).rejects.toThrow(/Global cross-catalog search is not exposed/i);
+    await expect(client.getDatasets('orders')).rejects.toThrow(DATASET_CATALOG_BOUNDARY_MESSAGE);
+    await expect(client.getDataset('orders', 'dataset-1')).rejects.toThrow(DATASET_DETAIL_BOUNDARY_MESSAGE);
+    await expect(client.validateQuery('select 1')).rejects.toThrow(QUERY_VALIDATION_BOUNDARY_MESSAGE);
+    await expect(client.search('orders')).rejects.toThrow(GLOBAL_SEARCH_BOUNDARY_MESSAGE);
   });
 
   it('maps canonical feature-store list and detail payloads into typed feature models', async () => {

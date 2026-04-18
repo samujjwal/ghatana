@@ -1,19 +1,19 @@
 /**
- * End-to-end tests for workflow platform.
+ * End-to-end tests for the pipeline platform.
  *
  * <p><b>Purpose</b><br>
- * Comprehensive E2E test suite covering workflow lifecycle,
+ * Comprehensive E2E test suite covering pipeline lifecycle,
  * execution, validation, and AI features.
  *
  * <p><b>Architecture</b><br>
- * - Workflow creation and management
+ * - Pipeline creation and management
  * - Node configuration
  * - Execution flow
  * - Validation and auto-fix
  * - AI suggestions and templates
  *
  * @doc.type test
- * @doc.purpose End-to-end workflow tests
+ * @doc.purpose End-to-end pipeline tests
  * @doc.layer frontend
  * @doc.pattern Vitest
  */
@@ -109,8 +109,8 @@ const createWorkflow = (overrides: Partial<WorkflowDefinition> = {}): WorkflowDe
 
 const mockWorkflow = createWorkflow();
 
-describe('Workflow E2E Tests', () => {
-  describe('Workflow Creation', () => {
+describe('Pipeline E2E Tests', () => {
+  describe('Pipeline Creation', () => {
     it('should create a blank workflow', async () => {
       const { result } = renderHook(() => useWorkflow());
 
@@ -136,7 +136,7 @@ describe('Workflow E2E Tests', () => {
       expect(result.current.workflow.edges).toHaveLength(2);
     });
 
-    it('should handle workflow creation errors', async () => {
+    it('should handle pipeline creation errors', async () => {
       const { result } = renderHook(() => useWorkflow());
 
       // Mock API error
@@ -204,8 +204,8 @@ describe('Workflow E2E Tests', () => {
     });
   });
 
-  describe('Workflow Execution', () => {
-    it('should execute a workflow', async () => {
+  describe('Pipeline Execution', () => {
+    it('should execute a pipeline', async () => {
       const { result } = renderHook(() => useWorkflowExecution());
 
       await act(async () => {
@@ -406,12 +406,12 @@ describe('Workflow E2E Tests', () => {
     });
   });
 
-  describe('Workflow Lifecycle', () => {
-    it('should complete full workflow lifecycle', async () => {
+  describe('Pipeline Lifecycle', () => {
+    it('should complete full pipeline lifecycle', async () => {
       const { result: workflowResult } = renderHook(() => useWorkflow());
       const { result: executionResult } = renderHook(() => useWorkflowExecution());
 
-      // 1. Create workflow
+      // 1. Create pipeline
       await act(async () => {
         workflowResult.current.loadWorkflow(mockWorkflow);
       });

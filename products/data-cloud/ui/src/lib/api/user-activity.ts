@@ -12,6 +12,10 @@
 import { apiClient } from './client';
 import { z } from 'zod';
 
+const ContinueWorkingItemTypeSchema = z
+  .enum(['collection', 'workflow', 'query', 'insight', 'dashboard'])
+  .transform((type) => (type === 'dashboard' ? 'insight' : type));
+
 const UserActivityItemSchema = z.object({
   id: z.string(),
   action: z.string(),
@@ -25,7 +29,7 @@ const UserActivityItemSchema = z.object({
 const ContinueWorkingItemSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.enum(['collection', 'workflow', 'query', 'dashboard']),
+  type: ContinueWorkingItemTypeSchema,
   lastAccessed: z.string(),
   path: z.string(),
 });
@@ -62,7 +66,7 @@ export interface UserActivityItem {
 export interface ContinueWorkingItem {
   id: string;
   name: string;
-  type: 'collection' | 'workflow' | 'query' | 'dashboard';
+  type: 'collection' | 'workflow' | 'query' | 'insight';
   lastAccessed: string;
   path: string;
 }

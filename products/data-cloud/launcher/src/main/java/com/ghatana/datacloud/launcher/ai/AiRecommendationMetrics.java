@@ -4,6 +4,7 @@ import com.ghatana.platform.observability.MetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,9 +65,19 @@ public final class AiRecommendationMetrics {
     /** Declared recommendation types — used for validation and Prometheus cardinality control. */
     public static final String TYPE_ENTITY_SUGGEST    = "entity_suggest";
     public static final String TYPE_ANALYTICS_SUGGEST = "analytics_suggest";
+    public static final String TYPE_PIPELINE_DRAFT    = "pipeline_draft";
     public static final String TYPE_PIPELINE_HINT     = "pipeline_hint";
     public static final String TYPE_BRAIN_EXPLAIN     = "brain_explain";
     public static final String TYPE_VOICE_INTENT      = "voice_intent";
+
+    public static final List<String> KNOWN_TYPES = List.of(
+        TYPE_ENTITY_SUGGEST,
+        TYPE_ANALYTICS_SUGGEST,
+        TYPE_PIPELINE_DRAFT,
+        TYPE_PIPELINE_HINT,
+        TYPE_BRAIN_EXPLAIN,
+        TYPE_VOICE_INTENT
+    );
 
     private static final String METRIC_REQUESTS    = "dc.ai.recommendation.requests";
     private static final String METRIC_LATENCY     = "dc.ai.recommendation.latency_ms";
@@ -83,6 +94,7 @@ public final class AiRecommendationMetrics {
      * to a full distribution summary when the registry does not support histograms.
      */
     private final ConcurrentHashMap<String, RunningMean> confidenceWindows = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, LongAdder> fallbackCounts = new ConcurrentHashMap<>();
 
     /**
      * Creates a metrics instance backed by the supplied collector.
@@ -121,6 +133,9 @@ public final class AiRecommendationMetrics {
 
             // Update in-process mean confidence window
             confidenceWindows.computeIfAbsent(type, k -> new RunningMean()).add(confidence);
+            if (fallback) {
+                fallbackCounts.computeIfAbsent(type, k -> new LongAdder()).increment();
+            }
 
             // Record confidence as a distribution summary via MeterRegistry for histogram buckets
             try {
@@ -200,6 +215,50 @@ public final class AiRecommendationMetrics {
         RunningMean window = confidenceWindows.get(type);
         return window == null ? 0L : window.count();
     }
+
+    /**
+     * Returns the total heuristic-fallback count for a recommendation type.
+     */
+    public long getFallbackCount(String type) {
+        LongAdder counter = fallbackCounts.get(type);
+        return counter == null ? 0L : counter.sum();
+    }
+
+    /**
+     * Returns the current heuristic fallback rate for a recommendation type.
+     */
+    public double getFallbackRate(String type) {
+        long requests = getRequestCount(type);
+        if (requests == 0) {
+            return 0.0;
+        }
+        return (double) getFallbackCount(type) / (double) requests;
+    }
+
+    /**
+     * Returns a lightweight process-local snapshot for each known recommendation type.
+     */
+    public List<AiQualitySnapshot> snapshot() {
+        return KNOWN_TYPES.stream()
+            .map(type -> new AiQualitySnapshot(
+                type,
+                getRequestCount(type),
+                getFallbackCount(type),
+                getFallbackRate(type),
+                getMeanConfidence(type)))
+            .toList();
+    }
+
+    /**
+     * Immutable AI quality summary for a single recommendation type.
+     */
+    public record AiQualitySnapshot(
+        String type,
+        long requestCount,
+        long fallbackCount,
+        double fallbackRate,
+        double meanConfidence
+    ) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers

@@ -73,6 +73,7 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
            SET deleted = TRUE, updated_at = ?, version = version + 1
          WHERE tenant_id = ? AND entity_id = ? AND deleted = FALSE
         """;
+        private static final int DELETE_BATCH_CHUNK_SIZE = 250;
 
     private static final String TOMBSTONE_COUNTS_SQL = """
         SELECT tenant_id, COUNT(*)
@@ -174,11 +175,46 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
     @Override
     public Promise<BatchResult<String>> deleteBatch(TenantContext tenant, List<EntityId> ids) {
         return Promise.ofBlocking(executor, () -> {
-            for (EntityId id : ids) {
-                deleteSync(tenant.tenantId(), id.value());
+            List<com.ghatana.datacloud.spi.BatchError<String>> errors = new ArrayList<>();
+            int successCount = 0;
+            try (Connection connection = dataSource.getConnection()) {
+                boolean originalAutoCommit = connection.getAutoCommit();
+                connection.setAutoCommit(false);
+                try {
+                    for (int offset = 0; offset < ids.size(); offset += DELETE_BATCH_CHUNK_SIZE) {
+                        List<EntityId> chunk = ids.subList(offset, Math.min(offset + DELETE_BATCH_CHUNK_SIZE, ids.size()));
+                        successCount += executeDeleteChunk(connection, tenant.tenantId(), chunk);
+                    }
+                    connection.commit();
+                } catch (Exception exception) {
+                    connection.rollback();
+                    throw exception;
+                } finally {
+                    connection.setAutoCommit(originalAutoCommit);
+                }
             }
-            return BatchResult.success(ids.size());
+            return new BatchResult<>(ids.size(), successCount, errors.size(), errors);
         });
+    }
+
+    private int executeDeleteChunk(Connection connection, String tenantId, List<EntityId> ids) throws Exception {
+        StringBuilder sql = new StringBuilder("""
+            UPDATE dc_entities
+               SET deleted = TRUE, updated_at = ?, version = version + 1
+             WHERE tenant_id = ? AND deleted = FALSE AND entity_id IN (
+            """);
+        appendPlaceholders(sql, ids.size());
+        sql.append(')');
+
+        try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+            statement.setTimestamp(1, Timestamp.from(Instant.now()));
+            statement.setString(2, tenantId);
+            for (int index = 0; index < ids.size(); index++) {
+                statement.setString(index + 3, ids.get(index).value());
+            }
+            statement.executeUpdate();
+        }
+        return ids.size();
     }
 
     @Override
@@ -370,6 +406,15 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
             connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_dc_entities_collection ON dc_entities(tenant_id, collection_name, deleted)");
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to initialize sovereign entity store schema", exception);
+        }
+    }
+
+    private static void appendPlaceholders(StringBuilder sql, int count) {
+        for (int index = 0; index < count; index++) {
+            if (index > 0) {
+                sql.append(',');
+            }
+            sql.append('?');
         }
     }
 }

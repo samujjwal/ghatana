@@ -10,7 +10,7 @@
  * @doc.pattern Form Component
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Plus, Trash2, Bell, Mail, MessageSquare } from 'lucide-react';
 import {
     cn,
@@ -121,6 +121,14 @@ export function AlertRuleForm({
     const [newRecipient, setNewRecipient] = useState('');
 
     const isEditing = !!rule?.id;
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+        setFormData(rule ?? defaultRule);
+        setNewRecipient('');
+    }, [isOpen, rule]);
 
     const handleChange = (field: keyof AlertRule, value: unknown) => {
         setFormData((prev) => ({ ...prev, [field]: value }));

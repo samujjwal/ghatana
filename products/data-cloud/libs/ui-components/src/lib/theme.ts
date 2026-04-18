@@ -27,7 +27,7 @@ export {
   buttonStyles,
   tableStyles,
   statusStyles,
-  // Keep the legacy alias for downstream compatibility.
+  // Keep the compatibility alias for downstream consumers.
   metricCardStyles,
   metricCardStyles as metricStyles,
   badgeStyles,

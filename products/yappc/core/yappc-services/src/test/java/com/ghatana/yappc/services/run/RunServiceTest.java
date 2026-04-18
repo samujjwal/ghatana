@@ -37,7 +37,7 @@ class RunServiceTest extends EventloopTestBase {
         auditLogger = mock(AuditLogger.class);
         metrics = mock(MetricsCollector.class);
         when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
-        service = new RunServiceImpl(auditLogger, metrics);
+        service = new RunServiceImpl(auditLogger, metrics, new NoOpCiCdAdapter());
     }
 
     @Test
@@ -65,8 +65,8 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute: build task type → task result has SUCCESS status")
-    void shouldExecuteBuildTask() {
+    @DisplayName("execute: build task type with no-op adapter → task result has NOT_READY status")
+    void shouldExecuteBuildTaskWithNoOpAdapter() {
         RunTask buildTask = RunTask.builder()
                 .id("task-build-1")
                 .type("build")
@@ -83,14 +83,15 @@ class RunServiceTest extends EventloopTestBase {
 
         RunResult result = runPromise(() -> service.execute(spec));
 
-        assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.status()).isEqualTo(RunStatus.NOT_READY);
         assertThat(result.taskResults()).hasSize(1);
-        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.NOT_READY);
+        assertThat(result.taskResults().get(0).output()).contains("[NOT_READY]");
     }
 
     @Test
-    @DisplayName("execute: test task type → task result has SUCCESS status")
-    void shouldExecuteTestTask() {
+    @DisplayName("execute: test task type with no-op adapter → task result has NOT_READY status")
+    void shouldExecuteTestTaskWithNoOpAdapter() {
         RunTask testTask = RunTask.builder()
                 .id("task-test-1")
                 .type("test")
@@ -107,14 +108,14 @@ class RunServiceTest extends EventloopTestBase {
 
         RunResult result = runPromise(() -> service.execute(spec));
 
-        assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
-        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.SUCCESS);
-        assertThat(result.taskResults().get(0).output()).contains("passed");
+        assertThat(result.status()).isEqualTo(RunStatus.NOT_READY);
+        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.NOT_READY);
+        assertThat(result.taskResults().get(0).output()).contains("[NOT_READY]");
     }
 
     @Test
-    @DisplayName("execute: deploy task type → task result has SUCCESS status")
-    void shouldExecuteDeployTask() {
+    @DisplayName("execute: deploy task type with no-op adapter → task result has NOT_READY status")
+    void shouldExecuteDeployTaskWithNoOpAdapter() {
         RunTask deployTask = RunTask.builder()
                 .id("task-deploy-1")
                 .type("deploy")
@@ -131,8 +132,9 @@ class RunServiceTest extends EventloopTestBase {
 
         RunResult result = runPromise(() -> service.execute(spec));
 
-        assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
-        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.status()).isEqualTo(RunStatus.NOT_READY);
+        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.NOT_READY);
+        assertThat(result.taskResults().get(0).output()).contains("[NOT_READY]");
     }
 
     @Test
@@ -190,30 +192,30 @@ class RunServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("rollback: returns success result with rollback metadata")
-    void shouldRollbackDeployment() {
+    @DisplayName("rollback: with no-op adapter returns NOT_READY status with rollback metadata")
+    void shouldRollbackDeploymentWithNoOpAdapter() {
         RunResult result = runPromise(() -> service.rollback("deploy-123", "v1.0.0"));
 
         assertThat(result).isNotNull();
-        assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.status()).isEqualTo(RunStatus.NOT_READY);
         assertThat(result.metadata()).containsEntry("rollback_to", "v1.0.0");
         verify(auditLogger, times(1)).log(any(Map.class));
     }
 
     @Test
-    @DisplayName("promote: returns success result with target environment in metadata")
-    void shouldPromoteDeployment() {
+    @DisplayName("promote: with no-op adapter returns NOT_READY status with target environment in metadata")
+    void shouldPromoteDeploymentWithNoOpAdapter() {
         RunResult result = runPromise(() -> service.promote("deploy-123", "production"));
 
         assertThat(result).isNotNull();
-        assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.status()).isEqualTo(RunStatus.NOT_READY);
         assertThat(result.metadata()).containsEntry("promoted_to", "production");
         verify(auditLogger, times(1)).log(any(Map.class));
     }
 
     @Test
-    @DisplayName("execute: migrate task type → task result has SUCCESS status")
-    void shouldExecuteMigrateTask() {
+    @DisplayName("execute: migrate task type with no-op adapter → task result has NOT_READY status")
+    void shouldExecuteMigrateTaskWithNoOpAdapter() {
         RunTask migrateTask = RunTask.builder()
                 .id("task-migrate-1")
                 .type("migrate")
@@ -230,7 +232,109 @@ class RunServiceTest extends EventloopTestBase {
 
         RunResult result = runPromise(() -> service.execute(spec));
 
+        assertThat(result.status()).isEqualTo(RunStatus.NOT_READY);
+        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.NOT_READY);
+        assertThat(result.taskResults().get(0).output()).contains("[NOT_READY]");
+    }
+
+    @Test
+    @DisplayName("execute: null spec id → exception propagated")
+    void shouldFailForNullSpecId() {
+        RunSpec spec = RunSpec.builder()
+                .id(null)
+                .artifactsRef("artifacts-1")
+                .environment("staging")
+                .tasks(List.of())
+                .config(Map.of())
+                .build();
+
+        try {
+            runPromise(() -> service.execute(spec));
+            fail("Expected exception for null spec id");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).contains("RunSpec.id is required");
+        }
+    }
+
+    @Test
+    @DisplayName("execute: blank spec id → exception propagated")
+    void shouldFailForBlankSpecId() {
+        RunSpec spec = RunSpec.builder()
+                .id("")
+                .artifactsRef("artifacts-1")
+                .environment("staging")
+                .tasks(List.of())
+                .config(Map.of())
+                .build();
+
+        try {
+            runPromise(() -> service.execute(spec));
+            fail("Expected exception for blank spec id");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).contains("RunSpec.id is required");
+        }
+    }
+
+    @Test
+    @DisplayName("execute: task with shouldFail: true config → FAILED status")
+    void shouldFailForInjectedFailure() {
+        RunTask buildTask = RunTask.builder()
+                .id("task-build-1")
+                .type("build")
+                .name("Build")
+                .config(Map.of("shouldFail", true))
+                .build();
+        RunSpec spec = RunSpec.builder()
+                .id("run-fail")
+                .artifactsRef("artifacts-1")
+                .environment("ci")
+                .tasks(List.of(buildTask))
+                .config(Map.of())
+                .build();
+
+        RunResult result = runPromise(() -> service.execute(spec));
+
+        assertThat(result.status()).isEqualTo(RunStatus.FAILED);
+        assertThat(result.taskResults()).hasSize(1);
+        assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.FAILED);
+        assertThat(result.taskResults().get(0).error()).contains("injected failure");
+    }
+
+    @Test
+    @DisplayName("execute: with real adapter injection → adapter is used and returns meaningful results")
+    void shouldUseRealAdapterWhenInjected() {
+        // Create a mock real adapter that returns SUCCESS
+        CiCdPort mockAdapter = mock(CiCdPort.class);
+        when(mockAdapter.build(any())).thenReturn(Promise.of(com.ghatana.yappc.domain.run.TaskResult.builder()
+                .taskId("task-build-1")
+                .status(RunStatus.SUCCESS)
+                .output("Build completed successfully")
+                .durationMs(1000L)
+                .build()));
+        when(mockAdapter.isReady()).thenReturn(true);
+
+        RunService serviceWithRealAdapter = new RunServiceImpl(auditLogger, metrics, mockAdapter);
+
+        RunTask buildTask = RunTask.builder()
+                .id("task-build-1")
+                .type("build")
+                .name("Build")
+                .config(Map.of())
+                .build();
+        RunSpec spec = RunSpec.builder()
+                .id("run-build")
+                .artifactsRef("artifacts-1")
+                .environment("ci")
+                .tasks(List.of(buildTask))
+                .config(Map.of())
+                .build();
+
+        RunResult result = runPromise(() -> serviceWithRealAdapter.execute(spec));
+
         assertThat(result.status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.taskResults()).hasSize(1);
         assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.SUCCESS);
+        assertThat(result.taskResults().get(0).output()).contains("Build completed successfully");
+        verify(mockAdapter).build(any());
     }
 }

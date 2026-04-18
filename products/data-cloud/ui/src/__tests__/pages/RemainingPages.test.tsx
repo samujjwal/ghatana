@@ -23,9 +23,9 @@ describe('WorkflowsPage', () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
 
     expect(screen.getByRole('heading', { name: 'Workflows' })).toBeInTheDocument();
-    expect(screen.getByText(/Monitor and manage your automated workflows/i)).toBeInTheDocument();
+    expect(screen.getByText(/Focus on what needs a run/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Search workflows/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /New Workflow/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /New Pipeline/i })).toBeInTheDocument();
   });
 });
 
@@ -35,6 +35,7 @@ describe('WorkflowDesigner', () => {
   it('delegates rendering to the workflow canvas component', () => {
     render(<WorkflowDesigner />, { wrapper: TestWrapper });
 
+    expect(screen.getByText(/Advanced Pipeline Editor/i)).toBeInTheDocument();
     expect(screen.getByTestId('workflow-canvas')).toBeInTheDocument();
   });
 });
@@ -42,11 +43,11 @@ describe('WorkflowDesigner', () => {
 // ── WorkflowList ──────────────────────────────────────────────────────────────
 
 describe('WorkflowList', () => {
-  it('renders the workflow list heading and placeholder copy', () => {
+  it('renders the legacy workflow-list stub and redirection copy', () => {
     render(<WorkflowList />, { wrapper: TestWrapper });
 
-    expect(screen.getByRole('heading', { name: 'Workflows' })).toBeInTheDocument();
-    expect(screen.getByText(/Workflow list will be displayed here/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Legacy Workflow List' })).toBeInTheDocument();
+    expect(screen.getByText(/not the canonical pipelines list/i)).toBeInTheDocument();
   });
 });
 

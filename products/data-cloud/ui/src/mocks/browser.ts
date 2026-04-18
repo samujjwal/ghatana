@@ -12,6 +12,7 @@
 
 import { setupWorker } from 'msw/browser';
 import { handlers } from './handlers';
+import { isRecoverableMswStartupError } from './mswRecovery';
 
 /**
  * MSW service worker instance configured with all application handlers.
@@ -23,19 +24,29 @@ export const worker = setupWorker(...handlers);
  * Starts the MSW service worker in the browser.
  * No-op (and logs a warning) if called outside a browser context.
  */
-export async function startMswBrowser(): Promise<void> {
-  await worker.start({
-    // Suppress "unhandled request" warnings for static assets and HMR
-    onUnhandledRequest(request, print) {
-      const url = new URL(request.url);
-      // Ignore non-API requests and Vite HMR traffic
-      if (!url.pathname.startsWith('/api/')) {
-        return;
-      }
-      print.warning();
-    },
-    serviceWorker: {
-      url: '/mockServiceWorker.js',
-    },
-  });
+export async function startMswBrowser(): Promise<boolean> {
+  try {
+    await worker.start({
+      // Suppress "unhandled request" warnings for static assets and HMR
+      onUnhandledRequest(request, print) {
+        const url = new URL(request.url);
+        // Ignore non-API requests and Vite HMR traffic
+        if (!url.pathname.startsWith('/api/')) {
+          return;
+        }
+        print.warning();
+      },
+      serviceWorker: {
+        url: '/mockServiceWorker.js',
+      },
+    });
+    return true;
+  } catch (error) {
+    if (isRecoverableMswStartupError(error)) {
+      console.warn('[msw] Browser worker unavailable, continuing without MSW.', error);
+      return false;
+    }
+
+    throw error;
+  }
 }

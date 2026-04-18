@@ -6,8 +6,8 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SCHEMA_SUGGESTION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 import {
-  SCHEMA_SUGGESTION_BOUNDARY_MESSAGE,
   useSchemaSuggestion,
 } from '../useSchemaSuggestion';
 

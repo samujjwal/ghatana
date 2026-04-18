@@ -18,11 +18,29 @@ public interface LLMService {
     Promise<String> generate(String prompt);
 
     /**
-     * Generates a structural response based on a prompt (mocked as string for now).
-     * @param prompt
-     * @return
+     * Generates a structural response based on a prompt with schema validation.
+     * The LLM response is parsed and validated against the provided schema class using Jackson.
+     * @param prompt The input prompt.
+     * @param schemaClass The Java class to parse and validate the response against.
+     * @param <T> The type of the structured output.
+     * @return A Promise resolving to the parsed and validated structured output.
+     * @throws RuntimeException if the LLM response is invalid JSON or does not match the schema.
      */
-    Promise<String> generateStructured(String prompt);
+    <T> Promise<T> generateStructured(String prompt, Class<T> schemaClass);
+
+    /**
+     * Generates a structural response based on a prompt without schema validation.
+     * This method returns the raw JSON string from the LLM.
+     * Use {@link #generateStructured(String, Class)} for type-safe structured output with validation.
+     *
+     * @param prompt The input prompt.
+     * @return A Promise resolving to the raw JSON string from the LLM.
+     * @deprecated Use {@link #generateStructured(String, Class)} for type-safe structured output.
+     */
+    @Deprecated
+    default Promise<String> generateStructured(String prompt) {
+        return generate(prompt);
+    }
 
     /**
      * Chat with system prompt and user message.

@@ -13,9 +13,16 @@
 import * as React from 'react';
 import { createContext, useContext, useMemo, useCallback, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+    BRAIN_INTEGRATION_BOUNDARY_MESSAGE,
+    createRuntimeBoundaryError,
+} from '@/lib/runtime-boundaries';
 
-export const BRAIN_INTEGRATION_BOUNDARY_MESSAGE =
-    'Brain agent management and intervention APIs are not exposed by the current Data Cloud launcher API.';
+export { BRAIN_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+
+function createBrainIntegrationBoundaryError(): Error {
+    return createRuntimeBoundaryError(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+}
 
 // ============================================
 // BASE TYPES (Local definitions to avoid import issues)
@@ -173,12 +180,12 @@ export interface BrainIntervention extends InterventionRequest {
 // ============================================
 
 async function fetchBrainAgents(): Promise<BrainAgent[]> {
-    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+    throw createBrainIntegrationBoundaryError();
 }
 
 async function fetchBrainAgent(agentId: string): Promise<BrainAgent> {
     void agentId;
-    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+    throw createBrainIntegrationBoundaryError();
 }
 
 async function updateAgentState(
@@ -187,11 +194,11 @@ async function updateAgentState(
 ): Promise<BrainAgent> {
     void agentId;
     void action;
-    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+    throw createBrainIntegrationBoundaryError();
 }
 
 async function fetchInterventions(): Promise<BrainIntervention[]> {
-    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+    throw createBrainIntegrationBoundaryError();
 }
 
 async function resolveIntervention(
@@ -202,16 +209,16 @@ async function resolveIntervention(
     void interventionId;
     void decision;
     void feedback;
-    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+    throw createBrainIntegrationBoundaryError();
 }
 
 async function fetchAgentMemory(agentId: string): Promise<AgentMemory> {
     void agentId;
-    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+    throw createBrainIntegrationBoundaryError();
 }
 
 async function fetchAgentInteractions(): Promise<AgentInteraction[]> {
-    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
+    throw createBrainIntegrationBoundaryError();
 }
 
 // ============================================

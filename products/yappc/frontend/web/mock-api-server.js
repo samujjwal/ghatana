@@ -51,7 +51,7 @@ const seedData = () => {
             type: 'Idea Brief',
             content: 'We need to build a lifecycle management system...',
             status: 'approved',
-            fowStage: 1,
+            flowStage: 1,
             phase: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -77,7 +77,7 @@ const seedData = () => {
             action: 'ARTIFACT_CREATED',
             userId: 'user-1',
             timestamp: new Date(),
-            fowStage: 1,
+            flowStage: 1,
             phase: 0,
             metadata: { artifactId: `${pid}-art-1` },
         });
@@ -192,7 +192,7 @@ app.get('/api/projects/:projectId/gates/:stage', (req, res) => {
 
     // Calculate gate readiness based on artifacts
     const artifacts = Array.from(db.artifacts.values())
-        .filter(a => a.projectId === projectId && a.fowStage === parseInt(stage));
+        .filter(a => a.projectId === projectId && a.flowStage === parseInt(stage));
 
     const requiredArtifacts = ['Idea Brief', 'Problem Statement', 'Requirements'];
     const completedArtifacts = artifacts.filter(a => a.status === 'approved').length;
@@ -220,7 +220,7 @@ app.post('/api/projects/:projectId/gates/transition', (req, res) => {
         action: 'STAGE_TRANSITIONED',
         userId,
         timestamp: new Date(),
-        fowStage: toStage,
+        flowStage: toStage,
         phase: req.body.phase || 0,
         metadata: { fromStage, toStage, reason },
     });
@@ -344,7 +344,7 @@ app.post('/api/projects/:projectId/audit', (req, res) => {
 // ============================================================================
 
 app.post('/api/projects/:projectId/persona/derive', (req, res) => {
-    const { phase, fowStage } = req.body;
+    const { phase, flowStage } = req.body;
 
     // Return mock persona
     const personas = {

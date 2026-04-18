@@ -23,6 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { server } from '../../mocks/server';
 import { TestWrapper } from '../test-utils/wrapper';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 import {
   AiModelListSchema,
   AiModelSchema,
@@ -191,7 +192,7 @@ describe('Contract-Backed Route Tests', () => {
               },
             ],
             count: 1,
-            tenantId: 'default',
+            tenantId: TEST_TENANT_ID,
             timestamp: new Date().toISOString(),
           })
         )
@@ -730,7 +731,7 @@ describe('Contract-Backed Route Tests', () => {
       const query = AnalyticsQuerySchema.parse({
         metric: 'entity_count',
         dimensions: ['collection', 'tenant'],
-        filters: { tenantId: 'default', status: 'active' },
+        filters: { tenantId: TEST_TENANT_ID, status: 'active' },
         startTime: '2026-04-01T00:00:00Z',
         endTime: '2026-04-14T23:59:59Z',
         granularity: 'day',
@@ -1336,7 +1337,7 @@ describe('Contract-Backed Route Tests', () => {
           {
             id: 'wf-contract-2',
             name: 'Contract Workflow 2',
-            description: 'Workflow list payload',
+            description: 'Pipeline list payload',
             status: 'draft',
             executionCount: 0,
             createdAt: '2026-04-10T00:00:00Z',
@@ -1552,7 +1553,18 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/entities/{collection}/suggest',
         '/api/v1/entities/{collection}/anomalies',
         '/api/v1/anomalies',
+        '/api/v1/alerts',
+        '/api/v1/alerts/{alertId}/acknowledge',
+        '/api/v1/alerts/{alertId}/resolve',
+        '/api/v1/alerts/groups',
+        '/api/v1/alerts/groups/{groupId}/resolve',
+        '/api/v1/alerts/suggestions',
+        '/api/v1/alerts/suggestions/{suggestionId}/apply',
+        '/api/v1/alerts/rules',
+        '/api/v1/alerts/rules/{ruleId}',
+        '/api/v1/alerts/stream',
         '/api/v1/pipelines',
+        '/api/v1/pipelines/draft',
         '/api/v1/pipelines/{pipelineId}',
         '/api/v1/pipelines/{pipelineId}/optimise-hint',
         '/api/v1/analytics/query',

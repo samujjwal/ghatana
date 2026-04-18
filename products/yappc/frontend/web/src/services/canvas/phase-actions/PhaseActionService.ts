@@ -316,14 +316,15 @@ export async function handleDeployService(ctx: ActionContext): Promise<void> {
   const { projectId } = ctx;
   if (!projectId) throw new Error('Project ID required');
 
-  // Deployment operations - for now, create an artifact
+  // Records a deployment artifact to track deployment intent.
+  // Actual CI/CD execution is handled by the Java RunService via the lifecycle execution endpoint.
   await fetchAPI('/artifacts', {
     method: 'POST',
     body: JSON.stringify({
       projectId,
       type: 'deployment-script',
       title: 'Service Deployment',
-      description: 'Deploy service to environment',
+      description: 'Deployment artifact tracked. Execution requires CI/CD integration via the lifecycle execution endpoint.',
       phase: 'RUN',
       status: 'draft',
     }),
@@ -334,14 +335,15 @@ export async function handleExecuteTests(ctx: ActionContext): Promise<void> {
   const { projectId } = ctx;
   if (!projectId) throw new Error('Project ID required');
 
-  // Test execution - for now, create an artifact
+  // Records a test-results artifact to track test execution intent.
+  // Actual test execution is handled by the Java RunService via the lifecycle execution endpoint.
   await fetchAPI('/artifacts', {
     method: 'POST',
     body: JSON.stringify({
       projectId,
       type: 'test-results',
       title: 'Test Execution',
-      description: 'Execute test suite',
+      description: 'Test execution artifact tracked. Execution requires CI/CD integration via the lifecycle execution endpoint.',
       phase: 'RUN',
       status: 'draft',
     }),
@@ -352,14 +354,15 @@ export async function handleMonitorLogs(ctx: ActionContext): Promise<void> {
   const { projectId } = ctx;
   if (!projectId) throw new Error('Project ID required');
 
-  // Log monitoring - for now, create an artifact
+  // Records a log-monitoring artifact to track observability intent.
+  // Actual log monitoring setup is handled by the Java ObserveService via the lifecycle execution endpoint.
   await fetchAPI('/artifacts', {
     method: 'POST',
     body: JSON.stringify({
       projectId,
       type: 'log-monitoring',
       title: 'Log Monitoring',
-      description: 'Monitor application logs',
+      description: 'Log monitoring artifact tracked. Setup requires observability integration via the lifecycle execution endpoint.',
       phase: 'RUN',
       status: 'draft',
     }),

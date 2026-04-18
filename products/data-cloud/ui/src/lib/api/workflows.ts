@@ -1,5 +1,5 @@
 /**
- * Workflows API
+ * Pipelines API
  *
  * Routes backed by /api/v1/pipelines (Option A,
  * DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2).
@@ -8,7 +8,7 @@
  * {@link pipelineToWorkflow}.
  *
  * @doc.type service
- * @doc.purpose Workflows API endpoints
+ * @doc.purpose Pipeline API endpoints for the workflow UI
  * @doc.layer frontend
  * @doc.pattern Repository Pattern
  */
@@ -125,7 +125,7 @@ export interface WorkflowExecution {
 }
 
 /**
- * Create workflow DTO
+ * Create pipeline DTO for the workflow UI
  */
 export interface CreateWorkflowDto {
     name: string;
@@ -134,6 +134,7 @@ export interface CreateWorkflowDto {
     edges: WorkflowEdge[];
     schedule?: string;
     tags?: string[];
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -146,6 +147,7 @@ export interface UpdateWorkflowDto {
     edges?: WorkflowEdge[];
     schedule?: string;
     tags?: string[];
+    metadata?: Record<string, unknown>;
     status?: Workflow['status'];
 }
 
@@ -162,7 +164,7 @@ export interface WorkflowQueryParams {
 }
 
 /**
- * Workflows API
+ * Pipelines API
  *
  * All CRUD routes delegate to /api/v1/pipelines (the real backend pipeline
  * registry). Execution and reporting now flow through Data Cloud runtime
@@ -202,7 +204,7 @@ export const workflowsApi = {
     },
 
     /**
-     * Create new workflow (pipeline).
+     * Create new pipeline.
      * POST /api/v1/pipelines
      */
     create: async (data: CreateWorkflowDto): Promise<Workflow> => {

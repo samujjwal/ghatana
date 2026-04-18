@@ -100,6 +100,29 @@ tasks.test {
         "TESTCONTAINERS_HOST_OVERRIDE",
         System.getenv("TESTCONTAINERS_HOST_OVERRIDE") ?: "host.docker.internal"
     )
+
+    listOf(
+        "datacloud.load.tenants",
+        "datacloud.load.entityOpsPerTenant",
+        "datacloud.load.eventOpsPerTenant",
+        "datacloud.load.eventBurstBatchSize",
+        "datacloud.load.timeoutSeconds",
+        "datacloud.load.maxHeapDeltaMb",
+        "datacloud.load.maxP95EntitySaveMs",
+        "datacloud.load.maxP95EventAppendMs",
+        "datacloud.load.maxP95QueryMs",
+        "datacloud.load.maxP99EntitySaveMs",
+        "datacloud.load.maxP99QueryMs",
+        "datacloud.load.minP99SampleSize",
+        "datacloud.load.iterations",
+        "datacloud.load.minThroughputOpsPerSecond",
+        "datacloud.load.minEventBurstThroughputOpsPerSecond",
+        "datacloud.load.metricsOutput"
+    ).forEach { propertyName ->
+        System.getProperty(propertyName)?.let { propertyValue ->
+            systemProperty(propertyName, propertyValue)
+        }
+    }
 }
 
 jacoco {

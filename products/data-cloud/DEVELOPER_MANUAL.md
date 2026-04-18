@@ -176,15 +176,12 @@ Relevant sources:
 - `ui/src/features/` for feature-local state, services, and components
 - `ui/docs/web-page-specs/` for intended UX and IA
 
-Current primary routes include:
+Current primary and role-aware routes include:
 
-- `/` and `/dashboard` for the Intelligent Hub
-- `/data` for the unified data explorer
-- `/pipelines` for workflow management
-- `/query` for the SQL workspace
-- `/trust` for governance and compliance
-- `/insights` for analytics
-- `/events`, `/entities`, `/memory`, `/fabric`, `/agents`, `/plugins`, `/alerts`, `/settings`
+- Primary-user disclosure: `/`, `/data`, `/data/new`, `/data/:id`, `/data/:id/edit`, `/pipelines`, `/pipelines/new`, `/query`
+- Operator disclosure: adds `/insights`, `/trust`, `/events`, `/entities`, `/memory`, `/context`, `/agents`, and `/plugins`
+- Admin disclosure: adds `/settings`
+- Operator-only direct links: `/alerts` is now a launcher-backed triage surface with list, acknowledge, resolve, grouping, suggestion, rule, and stream contracts; `/fabric` remains preview-only
 
 ### Work on plugins
 
@@ -204,6 +201,8 @@ The Data Fabric admin feature already has focused docs under:
 - `ui/src/features/data-fabric/TESTING_GUIDE.md`
 
 Use those as the feature-local source of truth. Keep the product-level manuals high signal and cross-feature.
+
+For normal UI page work, prefer the canonical launcher-backed adapters in `ui/src/lib/api/collections.ts`, `ui/src/lib/api/workflows.ts`, and `ui/src/api/*`. Preserve deprecated-route behavior in the mock/helpers layer only when you need explicit compatibility coverage.
 
 ## 7. Local API Usage Recipes
 

@@ -67,7 +67,7 @@ class EntityEventWorkflowTest {
         String[] states = {"CREATED", "PROCESSING", "COMPLETED", "FAILED"};
         String currentState = "PROCESSING";
         
-        assertThat(currentState).isIn(states);
+        assertThat(currentState).isIn((Object[]) states);
     }
 
     @Test

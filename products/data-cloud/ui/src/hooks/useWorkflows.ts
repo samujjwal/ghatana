@@ -161,7 +161,7 @@ export function useDeleteWorkflow() {
 }
 
 /**
- * Hook to execute a workflow
+ * Hook to execute a pipeline
  * 
  * @example
  * ```tsx

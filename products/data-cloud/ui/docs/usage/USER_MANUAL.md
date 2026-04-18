@@ -12,17 +12,30 @@ This guide is for users and operators working in the Data Cloud web UI.
 
 The current route map is defined in `ui/src/routes.tsx`.
 
-Primary routes:
+Primary-user routes:
 
 - `/` for the Intelligent Hub home page
 - `/data` for the unified data explorer
+- `/data/new` for collection creation
 - `/pipelines` for workflow and pipeline management
 - `/query` for the SQL workspace
-- `/trust` for governance and compliance
-- `/insights` for analytics and operational insight views
-- `/events`, `/entities`, `/memory`, `/fabric`, `/agents`, `/plugins`, `/alerts`, `/settings`
 
-Legacy compatibility routes still exist for older entry patterns such as `/dashboard`, `/collections`, `/datasets`, `/workflows`, `/sql`, `/governance`, and `/dashboards`.
+Operator disclosure adds:
+
+- `/insights` for analytics and operational insight views
+- `/trust` for governance and compliance
+- `/events`, `/entities`, `/memory`, `/context`, `/agents`, `/plugins`
+
+Admin disclosure adds:
+
+- `/settings`
+
+Direct-link-only boundaries:
+
+- `/alerts` remains an explicit unsupported operator surface
+- `/fabric` remains a preview-only operator surface
+
+Compatibility routes still exist for older deep links such as `/dashboard`, `/collections`, `/datasets`, `/workflows`, `/sql`, `/governance`, and `/dashboards`, but they should not be treated as the primary navigation model.
 
 ## 3. Typical UI Workflows
 
@@ -35,14 +48,20 @@ Legacy compatibility routes still exist for older entry patterns such as `/dashb
 ### Manage pipelines
 
 1. Open `/pipelines`.
-2. Review existing workflows.
+2. Review existing pipelines.
 3. Use `/pipelines/new` to create a new flow.
 4. Open a specific pipeline to inspect or edit it.
+
+### Create or edit a collection
+
+1. Open `/data`.
+2. Use `/data/new` to create a collection.
+3. Use `/data/:id/edit` to edit an existing collection.
 
 ### Query data
 
 1. Open `/query`.
-2. Author and run the query in SQL Workspace.
+2. Author and run the query in the canonical query workspace.
 3. Use the surrounding data and lineage views when you need more context.
 
 ### Inspect operations
@@ -59,9 +78,9 @@ Use:
 
 Use:
 
-- `/trust` for governance and compliance views
-- `/insights` for analytical and operational summary views
-- `/alerts` for notifications and issue-focused review
+- `/trust` for governance and compliance views in operator mode
+- `/insights` for operator-facing analytical and runtime summary views in operator mode
+- `/alerts` only when validating the shared unsupported boundary state
 
 ## 4. Important Caveat
 

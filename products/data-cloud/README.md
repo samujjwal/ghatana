@@ -47,6 +47,61 @@ Operational guidance for validated deployment paths lives in `RUNBOOK.md`.
 | Runtime execution | Implemented | Verified in integration | `POST /api/v1/pipelines/:id/execute` persists execution snapshots and logs so detail and history survive process restarts when the selected Data Cloud storage is durable |
 | Durable orchestration | Limited | Not deployment-validated | The launcher currently runs a single-process workflow plugin; it is not advertised as a distributed scheduler or multi-worker orchestration plane |
 
+## UI Surface Truth
+
+The Data Cloud UI is intentionally narrower than the full backend contract set. Treat the launcher-backed routes below as the source of truth when evaluating product readiness.
+
+| Surface | Runtime truth | Notes |
+| --- | --- | --- |
+| Intelligent Hub | Live primary launcher | Outcome-first entry point for query, workflow, trust, and operator journeys |
+| SQL Workspace | Live primary launcher | Uses `/api/v1/analytics/suggest`, `/analytics/query`, `/analytics/explain`, and optional federated execution when capability registry marks it active |
+| Smart Workflow Builder | Live with governed review | Intent-to-draft generation, confidence/fallback metadata, review messaging, and persistence into the canonical pipelines surface are launcher-backed |
+| Workflows | Live for CRUD and execution visibility | Pipeline CRUD, execution history, and optimisation hints are launcher-backed; distributed orchestration is still out of scope |
+| Trust Center | Partial but action-backed | Retention classification, purge preview, redaction, compliance refresh, audit visibility, derived operator recommendations, and explicit lifecycle-truth cards are wired; broader policy CRUD lifecycle remains incomplete |
+| Alerts | Live operator triage surface | Alert list, acknowledge, resolve, grouping, suggestions, rules, and SSE stream are launcher-backed; the route remains operator-facing rather than primary-user-facing |
+
+## Role-Aware Shell Disclosure
+
+The UI now supports progressive disclosure through an explicit shell-role mode in the header.
+
+| Shell role | Default emphasis | Revealed surfaces |
+| --- | --- | --- |
+| Primary user | Query, data exploration, and workflow launchers | Home, Data, Pipelines, Query |
+| Operator | Runtime investigation and trust workflows | Adds Insights, Trust, and Events |
+| Admin | Full shell for operational and configuration work | Adds Settings on top of operator surfaces |
+
+This mode controls shell density and launcher emphasis only. It does not replace backend authorization.
+
+The broad `ui/src/api/client.ts` surface and deprecated-route mocks are compatibility boundaries only. New page and test work should bind to canonical launcher-backed adapters first.
+
+## Validated Product Journeys
+
+Use this section as the current reality map for what works today.
+
+### Working journeys
+
+- Create and manage collections through the launcher-backed entity APIs.
+- Run direct analytics queries from the SQL Workspace and receive live NLQ suggestion templates.
+- Execute federated queries when the capability registry reports Trino-backed execution as active.
+- Create, inspect, and execute pipelines with persisted execution snapshots and launcher-backed optimisation hints.
+- Review retention classification, purge previews, PII redaction, compliance posture, lifecycle truth, and audit activity in Trust Center.
+
+### Partial journeys
+
+- Smart Workflow Builder now generates launcher-backed pipeline drafts with confidence and fallback metadata, then persists accepted drafts through the canonical pipelines API.
+- SQL natural-language assistance now infers likely scope, recommends an execution path, and exposes explain-plan guardrails before execution, but clarification prompts for low-confidence intents are still limited.
+- The home launcher routes intent into query, workflow, trust, and operator flows, and progressive disclosure is now enforced across the sidebar, header mode switcher, and global search.
+
+### Operator-only journeys
+
+- Capability truth, runtime diagnostics, degraded optional dependencies, and launcher-process AI fallback/confidence telemetry are surfaced in Insights for operators.
+- Operator-focused surfaces such as Alerts remain intentionally disclosed outside the default primary-user navigation even though the alert lifecycle is now live.
+
+### Roadmap journeys
+
+- Broader build-graph and browser-level evidence hardening for the now-live workflow-draft and alerts journeys.
+- Broader policy CRUD lifecycle beyond the currently wired governance actions.
+
 ## Manuals
 
 Use the manual set below depending on your goal:

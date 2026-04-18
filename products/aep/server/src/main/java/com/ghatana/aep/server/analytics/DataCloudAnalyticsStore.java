@@ -4,6 +4,8 @@
  */
 package com.ghatana.aep.server.analytics;
 
+import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.consent.ConsentService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Entity;
 import com.ghatana.datacloud.DataCloudClient.Filter;
@@ -72,6 +74,7 @@ public final class DataCloudAnalyticsStore {
     public static final String METRICS_COLLECTION = "aep_metrics";
 
     private final DataCloudClient client;
+    private final Optional<ConsentService> consentService;
 
     /**
      * Constructs a store backed by the given Data-Cloud client.
@@ -79,7 +82,18 @@ public final class DataCloudAnalyticsStore {
      * @param client the Data-Cloud client; must not be {@code null}
      */
     public DataCloudAnalyticsStore(DataCloudClient client) {
+        this(client, null);
+    }
+
+    /**
+     * Constructs a store backed by the given Data-Cloud client with optional consent service.
+     *
+     * @param client the Data-Cloud client; must not be {@code null}
+     * @param consentService optional consent service for data operation checks
+     */
+    public DataCloudAnalyticsStore(DataCloudClient client, ConsentService consentService) {
         this.client = Objects.requireNonNull(client, "DataCloudClient must not be null");
+        this.consentService = Optional.ofNullable(consentService);
     }
 
     // =========================================================================
@@ -97,6 +111,30 @@ public final class DataCloudAnalyticsStore {
         Objects.requireNonNull(tenantId, "tenantId");
         Objects.requireNonNull(snapshot, "snapshot");
         String id = snapshot.id() != null ? snapshot.id() : UUID.randomUUID().toString();
+        
+        // Check consent before saving
+        if (consentService.isPresent()) {
+            AepEngine.Event consentEvent = new AepEngine.Event(
+                "analytics.save_kpi",
+                Map.of("kpiName", snapshot.kpiName(), "value", snapshot.value()),
+                Map.of("tenantId", tenantId),
+                Instant.now()
+            );
+            return consentService.get().evaluateConsent(tenantId, consentEvent)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        log.warn("[analytics-store] saveKpiSnapshot denied by consent: {} for tenant={} kpi={}", 
+                            decision.reason(), tenantId, snapshot.kpiName());
+                        throw new IllegalStateException("Consent denied: " + decision.reason());
+                    }
+                    return performSaveKpiSnapshot(id, tenantId, snapshot);
+                });
+        }
+        
+        return performSaveKpiSnapshot(id, tenantId, snapshot);
+    }
+
+    private Promise<KpiSnapshot> performSaveKpiSnapshot(String id, String tenantId, KpiSnapshot snapshot) {
         Map<String, Object> data = kpiToData(id, tenantId, snapshot);
         return client.save(tenantId, KPI_COLLECTION, data)
                 .map(entity -> toKpiSnapshot(entity))
@@ -163,6 +201,30 @@ public final class DataCloudAnalyticsStore {
     public Promise<Integer> purgeOldKpiSnapshots(String tenantId, Instant olderThan) {
         Objects.requireNonNull(tenantId, "tenantId");
         Objects.requireNonNull(olderThan, "olderThan");
+        
+        // Check consent before purging
+        if (consentService.isPresent()) {
+            AepEngine.Event consentEvent = new AepEngine.Event(
+                "analytics.purge_kpi",
+                Map.of("olderThan", olderThan.toString()),
+                Map.of("tenantId", tenantId),
+                Instant.now()
+            );
+            return consentService.get().evaluateConsent(tenantId, consentEvent)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        log.warn("[analytics-store] purgeOldKpiSnapshots denied by consent: {} for tenant={}", 
+                            decision.reason(), tenantId);
+                        throw new IllegalStateException("Consent denied: " + decision.reason());
+                    }
+                    return performPurgeOldKpiSnapshots(tenantId, olderThan);
+                });
+        }
+        
+        return performPurgeOldKpiSnapshots(tenantId, olderThan);
+    }
+
+    private Promise<Integer> performPurgeOldKpiSnapshots(String tenantId, Instant olderThan) {
         Query query = Query.builder()
                 .filter(Filter.lt("capturedAt", olderThan.toString()))
                 .limit(10_000)
@@ -197,6 +259,30 @@ public final class DataCloudAnalyticsStore {
         Objects.requireNonNull(tenantId, "tenantId");
         Objects.requireNonNull(anomaly, "anomaly");
         String id = anomaly.id() != null ? anomaly.id() : UUID.randomUUID().toString();
+        
+        // Check consent before saving
+        if (consentService.isPresent()) {
+            AepEngine.Event consentEvent = new AepEngine.Event(
+                "analytics.save_anomaly",
+                Map.of("anomalyType", anomaly.anomalyType(), "severity", anomaly.severity()),
+                Map.of("tenantId", tenantId),
+                Instant.now()
+            );
+            return consentService.get().evaluateConsent(tenantId, consentEvent)
+                .then(decision -> {
+                    if (!decision.allowed()) {
+                        log.warn("[analytics-store] saveAnomaly denied by consent: {} for tenant={}", 
+                            decision.reason(), tenantId);
+                        throw new IllegalStateException("Consent denied: " + decision.reason());
+                    }
+                    return performSaveAnomaly(id, tenantId, anomaly);
+                });
+        }
+        
+        return performSaveAnomaly(id, tenantId, anomaly);
+    }
+
+    private Promise<AnomalyRecord> performSaveAnomaly(String id, String tenantId, AnomalyRecord anomaly) {
         Map<String, Object> data = anomalyToData(id, tenantId, anomaly);
         return client.save(tenantId, ANOMALY_COLLECTION, data)
                 .map(entity -> toAnomalyRecord(entity))

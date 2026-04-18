@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 const { apiClientGet } = vi.hoisted(() => ({
   apiClientGet: vi.fn(),
@@ -32,7 +33,7 @@ describe('capabilities.service', () => {
       },
       meta: {
         requestId: 'req-capabilities',
-        tenantId: 'tenant-alpha',
+        tenantId: TEST_TENANT_ID,
         timestamp: '2026-04-17T10:00:00Z',
         apiVersion: 'v1',
       },

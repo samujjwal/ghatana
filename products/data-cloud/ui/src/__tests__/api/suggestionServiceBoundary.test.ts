@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
-import {
-  SUGGESTION_SERVICE_BOUNDARY_MESSAGE,
-  suggestionService,
-} from '../../api/suggestion.service';
+import { suggestionService } from '../../api/suggestion.service';
 
 describe('suggestionService', () => {
   it('fails explicitly for unsupported workflow suggestion endpoints', async () => {

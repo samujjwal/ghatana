@@ -14,12 +14,16 @@ import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
+import com.ghatana.yappc.services.run.CiCdPort;
+import com.ghatana.yappc.services.run.NoOpCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
 import com.ghatana.yappc.services.run.RunServiceImpl;
 import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
+import io.activej.eventloop.Eventloop;
+import io.activej.http.AsyncHttpClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 
@@ -64,10 +68,16 @@ public class YappcApiModule extends AbstractModule {
     }
 
     @Provides
+    CiCdPort ciCdPort() {
+        return new NoOpCiCdAdapter();
+    }
+
+    @Provides
     RunService runService(
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
-        return new RunServiceImpl(auditLogger, metrics);
+            MetricsCollector metrics,
+            CiCdPort ciCdPort) {
+        return new RunServiceImpl(auditLogger, metrics, ciCdPort);
     }
 
     @Provides
@@ -122,7 +132,9 @@ public class YappcApiModule extends AbstractModule {
             RunService runService,
             ObserveService observeService,
             LearningService learningService,
-            EvolutionService evolutionService) {
+            EvolutionService evolutionService,
+            Eventloop eventloop,
+            AsyncHttpClient httpClient) {
         return new LifecycleApiController(
             intentService,
             shapeService,
@@ -131,7 +143,9 @@ public class YappcApiModule extends AbstractModule {
             runService,
             observeService,
             learningService,
-            evolutionService
+            evolutionService,
+            eventloop,
+            httpClient
         );
     }
 }

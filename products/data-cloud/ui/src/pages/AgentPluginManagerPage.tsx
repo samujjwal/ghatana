@@ -166,8 +166,8 @@ function SurfaceStatusPanel(): React.ReactElement {
         <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
           <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Unavailable here</div>
           <ul className="space-y-2 text-sm text-gray-700">
-            <li>Agent registration and deregistration</li>
-            <li>Execution history and runtime event streaming</li>
+            <li>AEP-owned agent registration and deregistration</li>
+            <li>AEP-owned execution history and runtime event streaming</li>
             <li>Capability mutation and control-plane ownership</li>
           </ul>
         </div>

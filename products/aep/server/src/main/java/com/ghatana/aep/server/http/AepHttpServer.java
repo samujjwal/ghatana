@@ -41,6 +41,9 @@ import com.ghatana.platform.security.analytics.DefaultEgressMonitor;
 import com.ghatana.platform.security.analytics.RegexPromptInjectionDetector;
 import com.ghatana.aep.server.http.controllers.PatternController;
 import com.ghatana.aep.server.http.controllers.PipelineController;
+import com.ghatana.aep.server.learning.LearningScheduler;
+import com.ghatana.aep.server.http.controllers.AiSuggestionsController;
+import com.ghatana.aep.server.http.controllers.NlpController;
 import com.ghatana.aep.server.http.controllers.SseController;
 import com.ghatana.agent.learning.evaluation.CompositeEvaluationGate;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
@@ -137,6 +140,16 @@ public class AepHttpServer {
     private final GovernanceController governanceController;
     /** Lifecycle (change approval + recertification) endpoints controller. */
     private final LifecycleController lifecycleController;
+    /** AI suggestions controller — surfaces anomaly-scored suggestions to the UI. */
+    private final AiSuggestionsController aiSuggestionsController;
+    /** NLQ controller — parses natural-language queries into structured intent + entities. */
+    private final NlpController nlpController;
+    /**
+     * Optional periodic learning scheduler; non-null only when a DataCloud-backed
+     * {@link EpisodeLearningPipeline} is available.
+     */
+    @Nullable
+    private final LearningScheduler learningScheduler;
 
     /** Compliance services — non-null when agentDataCloud is configured. */
     @Nullable
@@ -443,6 +456,9 @@ public class AepHttpServer {
         this.lifecycleController = new LifecycleController(
             changeApprovalWorkflow  != null ? changeApprovalWorkflow  : new com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow(),
             recertificationPipeline != null ? recertificationPipeline : new com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline());
+        this.aiSuggestionsController = new AiSuggestionsController(this.analyticsStore, this.sloMetrics);
+        this.nlpController = new NlpController();
+        this.learningScheduler = learningPipeline != null ? new LearningScheduler(learningPipeline) : null;
     }
 
     private Promise<String> dataCloudConnectivityStatus() {
@@ -561,6 +577,12 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/learning/policies/:policyId/reject", learningController::handleRejectPolicy)
             .with(HttpMethod.POST, "/api/v1/learning/reflect", learningController::handleTriggerReflection)
 
+            // AI suggestions endpoint (delegated to AiSuggestionsController)
+            .with(HttpMethod.GET, "/api/v1/ai/suggestions", aiSuggestionsController::handleGetSuggestions)
+
+            // NLQ (Natural Language Query) endpoint (delegated to NlpController)
+            .with(HttpMethod.POST, "/api/v1/nlp/parse", nlpController::handleParseQuery)
+
             // Server-Sent Events endpoints (delegated to SseController)
             .with(HttpMethod.GET, "/events/stream", sseController::handleSseStream)
 
@@ -617,6 +639,10 @@ public class AepHttpServer {
 
         // Initialize SSE heartbeat via SseController before the event loop starts.
         sseController.init(eventloop);
+        // Start periodic learning reflection (no-op when DataCloud is not configured).
+        if (learningScheduler != null) {
+            learningScheduler.init(eventloop);
+        }
         serverThread = new Thread(() -> {
             try {
                 server.listen();
@@ -633,6 +659,9 @@ public class AepHttpServer {
      * Stops the HTTP server.
      */
     public void stop() {
+        if (learningScheduler != null) {
+            learningScheduler.stop();
+        }
         sseController.shutdown();
         if (eventloop != null) {
             CountDownLatch shutdownLatch = new CountDownLatch(1);

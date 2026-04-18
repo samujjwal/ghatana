@@ -61,6 +61,7 @@ Data-Cloud provides **32 major capabilities** organized into **8 capability area
 - `Production Ready` in the table rows is a **historical generated label**, not a validated certification of performance, security, isolation, or external deployment readiness.
 - It does **not** mean every aspect is equally tested, load-validated, security-validated, or ready for external production claims.
 - Operational proof points should be read from the test inventory, caveat documents, audit report, and readiness scorecard.
+- UI discovery truth is narrower than the broad capability inventory: the primary user shell currently centers on `/`, `/data`, `/pipelines`, and `/query`, while alerts now operate as an operator-facing live surface and settings remains an admin-only boundary surface.
 
 ---
 
@@ -76,15 +77,15 @@ Data-Cloud provides **32 major capabilities** organized into **8 capability area
 | **Multi-Backend Storage** | • PostgreSQL<br>• ClickHouse<br>• Redis<br>• RocksDB<br>• S3/Glacier<br>• Ceph               | ✅ **Complete** | 9 storage connectors in platform-launcher<br>StorageProvider SPI implementations<br>Configuration-driven selection | ✅ **Production Ready** |
 | **Data Lifecycle**        | • Hot/warm/cold tiers<br>• TTL policies<br>• Automatic archival<br>• Data retention          | ✅ **Complete** | Tiered storage implementation<br>TTL enforcement<br>ColdTierArchivePlugin<br>Retention policy service              | ✅ **Production Ready** |
 | **Bulk Operations**       | • Batch import<br>• Bulk export<br>• Bulk delete<br>• Bulk updates                           | ✅ **Complete** | BatchResult SPI<br>Bulk operation endpoints<br>Import/export workflows<br>Performance optimizations                | ✅ **Production Ready** |
-| **Data Quality**          | • Validation rules<br>• Anomaly detection<br>• Data profiling<br>• Quality metrics           | ✅ **Complete** | Quality service<br>Anomaly detection API<br>Data profiling workflows<br>Quality dashboard UI                       | ✅ **Production Ready** |
-| **Data Lineage**          | • Dependency tracking<br>• Impact analysis<br>• Lineage visualization<br>• Data flow mapping | ✅ **Complete** | Lineage service<br>Graph database integration<br>Lineage visualization UI<br>Impact analysis API                   | ✅ **Production Ready** |
+| **Data Quality**          | • Validation rules<br>• Anomaly detection<br>• Data profiling<br>• Quality metrics           | ⚠️ **Partial** | Quality service<br>Anomaly detection API<br>Collection-centric quality views in `/data`                            | ⚠️ **Shipped, not exhaustive** |
+| **Data Lineage**          | • Dependency tracking<br>• Impact analysis<br>• Lineage visualization<br>• Data flow mapping | ⚠️ **Partial** | Lineage service<br>Impact analysis API<br>`/data?view=lineage` preview rather than a standalone explorer           | ⚠️ **Preview / expansion** |
 
 ### 2. Event Streaming & Processing
 
 | Capability           | Sub-Capabilities                                                                     | Implementation  | Evidence Location                                                                                      | Status                  |
 | -------------------- | ------------------------------------------------------------------------------------ | --------------- | ------------------------------------------------------------------------------------------------------ | ----------------------- |
 | **Event Sourcing**   | • Append-only log<br>• Immutable events<br>• Event versioning<br>• Replay capability | ✅ **Complete** | EventLogStore SPI<br>Kafka implementation<br>V001\_\_create_events_table.sql<br>Event replay endpoints | ✅ **Production Ready** |
-| **Event Streaming**  | • Real-time publishing<br>• Topic management<br>• Partitioning<br>• Consumer groups  | ✅ **Complete** | KafkaStreamingPlugin<br>Event publisher service<br>Topic management UI<br>Consumer group monitoring    | ✅ **Production Ready** |
+| **Event Streaming**  | • Real-time publishing<br>• Topic management<br>• Partitioning<br>• Consumer groups  | ✅ **Complete** | KafkaStreamingPlugin<br>Event publisher service<br>Event exploration UI<br>Operator diagnostics         | ✅ **Production Ready** |
 | **Event Processing** | • Filtering<br>• Transformation<br>• Routing<br>• Aggregation                        | ✅ **Complete** | Event processing pipeline<br>Stream processing engine<br>Event routing rules<br>Aggregation functions  | ✅ **Production Ready** |
 | **Event Store**      | • Persistence<br>• Indexing<br>• Querying<br>• Retention                             | ✅ **Complete** | EventStore implementation<br>Event indexing<br>Time-range queries<br>Retention policies                | ✅ **Production Ready** |
 
@@ -92,9 +93,9 @@ Data-Cloud provides **32 major capabilities** organized into **8 capability area
 
 | Capability                | Sub-Capabilities                                                                 | Implementation  | Evidence Location                                                                          | Status                  |
 | ------------------------- | -------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------ | ----------------------- |
-| **Ad-hoc Analytics**      | • SQL queries<br>• Natural language<br>• Visual query builder<br>• Query caching | ✅ **Complete** | AnalyticsHandler<br>SQL workspace UI<br>Natural language processing<br>Query cache service | ✅ **Production Ready** |
-| **Reporting**             | • Report generation<br>• Scheduled reports<br>• Distribution<br>• Templates      | ✅ **Complete** | Report service<br>Report scheduler<br>Report templates<br>Report distribution UI           | ✅ **Production Ready** |
-| **Dashboards**            | • Real-time dashboards<br>• Interactive charts<br>• Custom widgets<br>• Sharing  | ✅ **Complete** | Dashboard service<br>Chart components<br>Widget framework<br>Dashboard sharing UI          | ✅ **Production Ready** |
+| **Ad-hoc Analytics**      | • SQL queries<br>• Natural language<br>• Visual query builder<br>• Query caching | ⚠️ **Partial** | AnalyticsHandler<br>Canonical `/query` workspace<br>Natural language suggestion path<br>Query cache service | ⚠️ **Shipped with UX gaps** |
+| **Reporting**             | • Report generation<br>• Scheduled reports<br>• Distribution<br>• Templates      | ⚠️ **Partial** | Backend reporting capabilities are documented, but no primary end-user reporting workflow is promoted in the current UI | ⚠️ **Documented more broadly than surfaced** |
+| **Interactive Analytics** | • Operator insight views<br>• Interactive charts<br>• Summary widgets<br>• Sharing gaps | ⚠️ **Partial** | Operator insights surface<br>Chart components<br>Historical dashboard aliases retained only for compatibility | ⚠️ **Operator-facing, not a full dashboard product** |
 | **Data Visualization**    | • Charts<br>• Graphs<br>• Maps<br>• Custom visualizations                        | ✅ **Complete** | Visualization library<br>Chart components<br>Map integration<br>Custom viz framework       | ✅ **Production Ready** |
 | **Business Intelligence** | • OLAP queries<br>• Cubes<br>• Dimensions<br>• Measures                          | ✅ **Complete** | OLAP engine<br>Cube definitions<br>Dimension management<br>Measure calculations            | ✅ **Production Ready** |
 | **Predictive Analytics**  | • Forecasting<br>• Trend analysis<br>• Anomaly detection<br>• Recommendations    | ✅ **Complete** | Prediction service<br>Trend analysis<br>Anomaly detection<br>Recommendation engine         | ✅ **Production Ready** |
@@ -122,21 +123,21 @@ Data-Cloud provides **32 major capabilities** organized into **8 capability area
 | Capability           | Sub-Capabilities                                                                         | Implementation  | Evidence Location                                                                | Status                  |
 | -------------------- | ---------------------------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------- | ----------------------- |
 | **Plugin Framework** | • Plugin discovery<br>• Plugin lifecycle<br>• Plugin communication<br>• Plugin isolation | ✅ **Complete** | Plugin framework<br>Plugin discovery<br>Plugin lifecycle<br>Plugin communication | ✅ **Production Ready** |
-| **Plugin Store**     | • Plugin registry<br>• Plugin distribution<br>• Plugin updates<br>• Plugin ratings       | ✅ **Complete** | Plugin registry<br>Plugin distribution<br>Plugin updates<br>Plugin ratings       | ✅ **Production Ready** |
+| **Plugin Store**     | • Bundled plugin inventory<br>• Toggle and upgrade intent<br>• Distribution boundaries<br>• Compatibility signals | ⚠️ **Partial** | Bundled plugin inventory<br>Enable/disable routes<br>Upgrade-intent route<br>Boundary-guarded marketplace helpers | ⚠️ **Operator-facing, not a full marketplace** |
 
 ### 7. Real-time & Notifications
 
 | Capability             | Sub-Capabilities                                                                                     | Implementation  | Evidence Location                                                                   | Status                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------- | ----------------------- |
-| **WebSocket API**      | • Real-time updates<br>• Bidirectional communication<br>• Connection management<br>• Message routing | ✅ **Complete** | WebSocket endpoint<br>Real-time updates<br>Connection management<br>Message routing | ✅ **Production Ready** |
-| **Server-Sent Events** | • Event streaming<br>• Automatic reconnection<br>• Event filtering<br>• Event aggregation            | ✅ **Complete** | SSE implementation<br>Auto-reconnection<br>Event filtering<br>Event aggregation     | ✅ **Production Ready** |
+| **WebSocket API**      | • Real-time updates<br>• Bidirectional communication<br>• Connection management<br>• Message routing | ✅ **Complete** | WebSocket endpoint<br>Real-time updates<br>Connection management<br>Message routing | ✅ **Runtime-backed** |
+| **Server-Sent Events** | • Event streaming<br>• Automatic reconnection<br>• Event filtering<br>• Event aggregation            | ✅ **Complete** | SSE implementation<br>Auto-reconnection<br>Event filtering<br>Event aggregation     | ✅ **Runtime-backed** |
 
 ### 8. Operations & Deployment
 
 | Capability                     | Sub-Capabilities                                                              | Implementation  | Evidence Location                                                                 | Status                  |
 | ------------------------------ | ----------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------- | ----------------------- |
 | **Container Deployment**       | • Docker images<br>• Kubernetes manifests<br>• Helm charts<br>• Health checks | ✅ **Complete** | Dockerfile<br>K8s manifests<br>Helm charts<br>Health checks                       | ✅ **Production Ready** |
-| **Monitoring & Observability** | • Metrics collection<br>• Distributed tracing<br>• Logging<br>• Alerting      | ✅ **Complete** | Metrics collection<br>Distributed tracing<br>Logging framework<br>Alerting system | ✅ **Production Ready** |
+| **Monitoring & Observability** | • Metrics collection<br>• Distributed tracing<br>• Logging<br>• Operator diagnostics<br>• Live operator alert triage | ⚠️ **Partial** | Metrics collection<br>Distributed tracing<br>Logging framework<br>Insights operator diagnostics<br>Launcher-backed Alerts page | ⚠️ **Metrics, diagnostics, and alert lifecycle are now live; remaining work is alert quality instrumentation and calmer triage UX** |
 
 ---
 

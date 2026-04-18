@@ -34,13 +34,13 @@ const nodeTypes = {
 interface UnifiedCanvasDemoProps {
     projectId: string;
     currentPhase: unknown;
-    fowStage: unknown;
+    flowStage: unknown;
 }
 
 export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
     projectId,
     currentPhase,
-    fowStage
+    flowStage
 }) => {
     const [nodes, setNodes] = useAtom(nodesAtom);
     const [edges, setEdges] = useAtom(edgesAtom);
@@ -169,7 +169,7 @@ export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
                 <CanvasWorkspace
                     projectId={projectId}
                     currentPhase={currentPhase}
-                    fowStage={fowStage}
+                    flowStage={flowStage}
                 />
             )}
 

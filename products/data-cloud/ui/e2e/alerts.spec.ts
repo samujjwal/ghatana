@@ -1,50 +1,37 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Alerts Page E2E Tests
+ * Alerts page E2E tests
  */
 test.describe('Alerts', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/alerts');
   });
 
-  test('should display alerts page', async ({ page }) => {
-    await expect(page.locator('h1, h2, [data-testid="alerts-title"]').first()).toBeVisible();
+  test('should display the live alerts triage shell', async ({ page }) => {
+    await expect(page.getByTestId('alerts-page')).toBeVisible();
+    await expect(page.locator('h1')).toContainText(/Alerts/i);
   });
 
-  test('should show alert summary metrics', async ({ page }) => {
-    const body = page.locator('body');
-    await expect(body).toContainText(/critical|warning|alert/i);
+  test('should show the alerts truth panel', async ({ page }) => {
+    await expect(page.getByTestId('alerts-truth-panel')).toBeVisible();
+    await expect(page.locator('body')).toContainText(/Route Coverage|Stream Health|Grouped Coverage|Suggestion Coverage/i);
   });
 
-  test('should display alert groups or list', async ({ page }) => {
-    const alertItems = page.locator('[data-testid="alert-item"], .alert-item, [class*="alert"]');
-    const count = await alertItems.count();
-    expect(count).toBeGreaterThanOrEqual(0);
+  test('should keep rule management collapsed until requested', async ({ page }) => {
+    await expect(page.getByRole('button', { name: /create alert rule/i })).toHaveCount(0);
+    await page.getByTestId('alert-rule-management-toggle').click();
+    await expect(page.getByTestId('alert-rule-management-panel')).toContainText(/Create Alert Rule/i);
   });
 
-  test('should open create alert rule form', async ({ page }) => {
-    const createBtn = page.getByRole('button', { name: /create|new|add/i }).first();
-    if (await createBtn.isVisible()) {
-      await createBtn.click();
-      await expect(page.locator('form, [role="dialog"], [data-testid="alert-form"]').first()).toBeVisible();
-    }
+  test('should expose grouped triage and list-view controls', async ({ page }) => {
+    await expect(page.locator('body')).toContainText(/AI Grouped|List View/i);
   });
 
-  test('should allow filtering alerts', async ({ page }) => {
-    const filterInput = page.getByRole('combobox').or(page.getByPlaceholder(/filter|search/i)).first();
-    if (await filterInput.isVisible()) {
-      await filterInput.click();
-      await expect(page.locator('body')).toBeVisible();
-    }
-  });
-
-  test('should navigate to alerts from sidebar', async ({ page }) => {
-    await page.goto('/');
-    const alertsLink = page.getByRole('link', { name: /alerts/i }).first();
-    if (await alertsLink.isVisible()) {
-      await alertsLink.click();
-      await expect(page).toHaveURL(/\/alerts/);
+  test('should render alert list cards when incidents are present', async ({ page }) => {
+    const alertItems = page.getByTestId('alert-item');
+    if (await alertItems.count()) {
+      await expect(alertItems.first()).toBeVisible();
     }
   });
 });

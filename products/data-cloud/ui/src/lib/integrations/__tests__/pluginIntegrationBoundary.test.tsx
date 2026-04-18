@@ -1,15 +1,15 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { PLUGIN_INTEGRATION_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 import {
-  PLUGIN_INTEGRATION_BOUNDARY_MESSAGE,
   useDataCloudPlugins,
   usePluginConfiguration,
   usePluginInstallation,
 } from '../plugin-integration';
 
 describe('plugin integration launcher boundaries', () => {
-  it('returns boundary errors and rejects unsupported plugin operations', async () => {
+  it('returns boundary errors and leaves future marketplace state empty', async () => {
     const { result: pluginsResult } = renderHook(() =>
       useDataCloudPlugins({ includeMarketplace: true }),
     );

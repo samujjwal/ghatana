@@ -1,4 +1,4 @@
-# 7. Workflow List Page – Legacy Stub – Deep-Dive Spec
+# 7. Workflow List Page – Legacy Workflow Stub – Deep-Dive Spec
 
 Related routes & files:
 
@@ -10,12 +10,13 @@ Related routes & files:
 
 **One-sentence intent:**
 
-> Provide a simple **list view placeholder** for workflows; likely a legacy or experimental page superseded by `WorkflowsPage`.
+> Document a simple **legacy list-view placeholder** for workflows that has been superseded by the canonical Pipelines surface.
 
 **Current state:**
 
-- The component renders a header `Workflows` and a white card with the message "Workflow list will be displayed here".
+- The component renders a header `Legacy Workflow List` and a white card explaining that the canonical surface is `/pipelines`.
 - It is not currently connected to any route in `App.tsx`.
+- The production route is `/pipelines`, with legacy `/workflows` aliases mapped to `WorkflowsPage` instead of this stub.
 
 ---
 
@@ -32,8 +33,8 @@ Related routes & files:
 From `WorkflowList/index.tsx`:
 
 - Simple layout:
-  - H1 `Workflows`.
-  - Card with placeholder text.
+  - H1 `Legacy Workflow List`.
+  - Card with redirect-style stub text.
 
 ---
 
@@ -46,7 +47,7 @@ From `WorkflowList/index.tsx`:
 
 ## 5. Completeness and Real-World Coverage
 
-- This page is not a complete workflows view; see `05_workflows_page.md` for the real workflows list spec.
+- This page is not a complete pipelines view; see `05_workflows_page.md` for the canonical pipelines list spec.
 
 ---
 
@@ -58,14 +59,14 @@ From `WorkflowList/index.tsx`:
 
 ## 7. Coherence with App Creator / Canvas & Platform
 
-- If used again, it should be aligned or merged with the primary Workflows page and canvas.
+- If used again, it should be aligned or merged with the primary pipelines page and canvas.
 
 ---
 
 ## 8. Links to More Detail & Working Entry Points
 
-- Preferred workflows list: `src/pages/WorkflowsPage.tsx`.
-- Canvas: `src/pages/WorkflowDesigner/index.tsx`.
+- Preferred pipelines list: `src/pages/WorkflowsPage.tsx`.
+- Advanced editor: `src/pages/WorkflowDesigner/index.tsx`.
 
 ---
 
@@ -75,17 +76,17 @@ From `WorkflowList/index.tsx`:
    - Decide whether to remove this page or wire it to share implementation with `WorkflowsPage`.
 
 2. **Avoid confusion:**
-   - Ensure only one workflows list page is routed in production.
+  - Ensure only one pipelines list page is routed in production.
 
 ---
 
 ## 10. Mockup / Expected Layout & Content (Current Stub)
 
 ```text
-H1: Workflows
+H1: Legacy Workflow List
 
 [Card]
 -------------------------------------------------------------------------------
-"Workflow list will be displayed here"
+"This legacy stub is not the canonical pipelines list. Use the Pipelines surface instead."
 -------------------------------------------------------------------------------
 ```

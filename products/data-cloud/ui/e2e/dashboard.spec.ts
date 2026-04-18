@@ -1,76 +1,67 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Dashboard E2E Tests
+ * Intelligent Hub E2E Tests
  * 
- * Tests the main dashboard functionality including:
- * - Loading dashboard with stats
- * - Navigating to different sections
+ * Tests the main home-surface functionality including:
+ * - Loading the Intelligent Hub
+ * - Navigating to outcome-first actions
  * - Viewing recent activity
- * - Checking KPIs and metrics
+ * - Checking lightweight summaries and role-aware disclosure
  * 
  * @doc.type test
- * @doc.purpose E2E tests for dashboard functionality
+ * @doc.purpose E2E tests for Intelligent Hub functionality
  * @doc.layer testing
  */
 
-test.describe('Dashboard', () => {
+test.describe('Intelligent Hub', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
-  test('should display dashboard with key metrics', async ({ page }) => {
-    // Check for dashboard title
-    await expect(page.locator('h1')).toContainText('Dashboard');
-    
-    // Verify KPI cards are visible
-    await expect(page.locator('text=/Total Workflows/i')).toBeVisible();
-    await expect(page.locator('text=/Active Workflows/i')).toBeVisible();
-    await expect(page.locator('text=/Total Executions/i')).toBeVisible();
-    await expect(page.locator('text=/Success Rate/i')).toBeVisible();
+  test('should display the outcome-first home surface', async ({ page }) => {
+    await expect(page.getByTestId('intelligent-hub-page')).toBeVisible();
+    await expect(page.getByTestId('intelligent-hub-outcome-section')).toBeVisible();
+    await expect(page.locator('text=/Start with an outcome/i')).toBeVisible();
+    await expect(page.locator('text=/Launch the next action without choosing the architecture first/i')).toBeVisible();
+    await expect(page.getByRole('button', { name: /explore data/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /build pipeline/i })).toBeVisible();
   });
 
-  test('should navigate to collections from dashboard', async ({ page }) => {
-    const collectionsLink = page.getByRole('link', { name: /collections/i }).first();
-    await collectionsLink.click();
-    await expect(page).toHaveURL(/\/collections/);
+  test('should navigate to data explorer from the home surface', async ({ page }) => {
+    await page.getByRole('button', { name: /explore data/i }).click();
+    await expect(page).toHaveURL(/\/data/);
   });
 
-  test('should navigate to workflows from dashboard', async ({ page }) => {
-    const workflowsLink = page.getByRole('link', { name: /workflows/i }).first();
-    await workflowsLink.click();
-    await expect(page).toHaveURL(/\/workflows/);
+  test('should navigate to pipeline creation from the home surface', async ({ page }) => {
+    await page.getByRole('button', { name: /build pipeline/i }).click();
+    await expect(page).toHaveURL(/\/pipelines\/new/);
   });
 
   test('should display recent activity', async ({ page }) => {
-    const recentActivity = page.locator('text=/Recent Activities|Recent Collections/i');
-    await expect(recentActivity.first()).toBeVisible();
+    await expect(page.getByTestId('intelligent-hub-recent-activity')).toBeVisible();
+    await expect(page.locator('text=/Recent Activity/i')).toBeVisible();
   });
 
-  test('should show audit logs summary', async ({ page }) => {
-    const auditSection = page.locator('text=/Audit Logs/i');
-    if (await auditSection.isVisible()) {
-      await expect(auditSection).toBeVisible();
-    }
+  test('should show quick actions and recommendations instead of legacy dashboard panels', async ({ page }) => {
+    await expect(page.getByTestId('intelligent-hub-quick-actions')).toBeVisible();
+    await expect(page.getByTestId('intelligent-hub-recommendations')).toBeVisible();
+    await expect(page.locator('text=/Recommended Next Steps/i')).toBeVisible();
   });
 
-  test('should show compliance status', async ({ page }) => {
-    const complianceSection = page.locator('text=/Compliance/i');
-    if (await complianceSection.isVisible()) {
-      await expect(complianceSection).toBeVisible();
-    }
+  test('should show the lightweight insights summary cards', async ({ page }) => {
+    await expect(page.getByTestId('intelligent-hub-insights')).toBeVisible();
+    await expect(page.locator('text=/Active Pipelines|Total Collections/i')).toBeVisible();
   });
 
   test('should handle loading state', async ({ page }) => {
-    // Intercept API calls to delay response
     await page.route('**/api/v1/**', async (route) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       await route.continue();
     });
-    
+
     await page.reload();
-    
-    // Check for loading indicator
-    await expect(page.locator('text=/Loading Dashboard|Gathering your data/i')).toBeVisible();
+
+    await expect(page.locator('text=/Loading|Gathering your data/i')).toBeVisible();
   });
 });

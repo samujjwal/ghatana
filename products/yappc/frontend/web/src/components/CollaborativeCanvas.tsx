@@ -49,7 +49,7 @@ export interface CollaborativeCanvasProps {
   currentPhase?: LifecyclePhase;
 
   /** Current FOW stage for gate status queries */
-  fowStage?: FOWStage;
+  flowStage?: FOWStage;
 }
 
 /**
@@ -61,7 +61,7 @@ const CollaborativeCanvasInner: React.FC<Omit<CollaborativeCanvasProps, 'canvasI
   onNodeSelect,
   onArchitectureChange,
   currentPhase = LifecyclePhase.SHAPE,
-  fowStage = FOWStage.FOUNDATION,
+  flowStage = FOWStage.FOUNDATION,
 }) => {
   const {
     currentUser,
@@ -115,7 +115,7 @@ const CollaborativeCanvasInner: React.FC<Omit<CollaborativeCanvasProps, 'canvasI
       <SimplifiedCanvasWorkspace
         projectId={projectId || 'default'}
         currentPhase={currentPhase}
-        fowStage={fowStage}
+        flowStage={flowStage}
       />
 
       {/* Remote Cursors */}
@@ -156,7 +156,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
   wsEndpoint = process.env.REACT_APP_WS_ENDPOINT || 'ws://localhost:7002/ws',
   debug = false,
   currentPhase = LifecyclePhase.SHAPE,
-  fowStage = FOWStage.FOUNDATION,
+  flowStage = FOWStage.FOUNDATION,
 }) => {
   const { isAuthenticated, currentUser, getToken } = useAuth();
   
@@ -191,7 +191,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
           onNodeSelect={onNodeSelect}
           onArchitectureChange={onArchitectureChange}
           currentPhase={currentPhase}
-          fowStage={fowStage}
+          flowStage={flowStage}
         />
       </CanvasCollaborationProvider>
     </ReactFlowProvider>

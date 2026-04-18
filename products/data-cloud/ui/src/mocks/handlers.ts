@@ -21,6 +21,7 @@
 
 import { http, HttpResponse, delay } from 'msw';
 import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from '../lib/mock-data';
+import { buildDeprecatedRouteHeaders, warnDeprecatedRoute } from './deprecatedRoutes';
 import {
   StorageProfileSchema,
   ConnectorSchema,
@@ -35,6 +36,7 @@ import type { z } from 'zod';
 
 const BASE = '/api/v1';
 const SIMULATED_DELAY_MS = 80;
+const MOCK_TENANT_ID = 'tenant-alpha';
 
 // ---------------------------------------------------------------------------
 // Contract validation helper — validates MSW mock responses against schemas
@@ -201,7 +203,7 @@ function buildCollectionCostReport(collection: (typeof collections)[0]) {
   const totalCostDccPerDay = Number((totalSizeGb * 1.75).toFixed(2));
   return {
     collectionId: collection.id,
-    tenantId: 'default',
+    tenantId: MOCK_TENANT_ID,
     totalSizeGb,
     totalCostDccPerDay,
     currency: 'DCC',
@@ -267,7 +269,7 @@ const collectionHandlers = [
     return HttpResponse.json({
       entities: slice.map(collectionToEntity),
       count: filtered.length,
-      tenantId: 'default',
+      tenantId: MOCK_TENANT_ID,
       timestamp: new Date().toISOString(),
     });
   }),
@@ -326,7 +328,67 @@ const collectionHandlers = [
     return HttpResponse.json(collectionToEntity(col));
   }),
 
-  // GET /api/v1/collections/:id/cost-report
+  // Deprecated CRUD alias: GET /api/v1/collections
+  http.get(`${BASE}/collections`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    const legacyPath = `${BASE}/collections`;
+    const canonicalPath = `${BASE}/entities/dc_collections`;
+    warnDeprecatedRoute(legacyPath, canonicalPath);
+    return new HttpResponse(null, {
+      status: 308,
+      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
+    });
+  }),
+
+  // Deprecated CRUD alias: POST /api/v1/collections
+  http.post(`${BASE}/collections`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    const legacyPath = `${BASE}/collections`;
+    const canonicalPath = `${BASE}/entities/dc_collections`;
+    warnDeprecatedRoute(legacyPath, canonicalPath);
+    return new HttpResponse(null, {
+      status: 308,
+      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
+    });
+  }),
+
+  // Deprecated CRUD alias: GET /api/v1/collections/:id
+  http.get(`${BASE}/collections/:id`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const legacyPath = `${BASE}/collections/${params.id}`;
+    const canonicalPath = `${BASE}/entities/dc_collections/${params.id}`;
+    warnDeprecatedRoute(legacyPath, canonicalPath);
+    return new HttpResponse(null, {
+      status: 308,
+      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
+    });
+  }),
+
+  // Deprecated CRUD alias: PUT /api/v1/collections/:id
+  http.put(`${BASE}/collections/:id`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const legacyPath = `${BASE}/collections/${params.id}`;
+    const canonicalPath = `${BASE}/entities/dc_collections/${params.id}`;
+    warnDeprecatedRoute(legacyPath, canonicalPath);
+    return new HttpResponse(null, {
+      status: 308,
+      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
+    });
+  }),
+
+  // Deprecated CRUD alias: DELETE /api/v1/collections/:id
+  http.delete(`${BASE}/collections/:id`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const legacyPath = `${BASE}/collections/${params.id}`;
+    const canonicalPath = `${BASE}/entities/dc_collections/${params.id}`;
+    warnDeprecatedRoute(legacyPath, canonicalPath);
+    return new HttpResponse(null, {
+      status: 308,
+      headers: buildDeprecatedRouteHeaders(legacyPath, canonicalPath, canonicalPath),
+    });
+  }),
+
+  // Canonical operator route: GET /api/v1/collections/:id/cost-report
   http.get(`${BASE}/collections/:id/cost-report`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
     const col = collections.find((c) => c.id === params.id);
@@ -355,7 +417,7 @@ const collectionHandlers = [
 
     return contractJson(LineageDagResponseSchema, {
       collection,
-      tenantId: 'default',
+      tenantId: MOCK_TENANT_ID,
       direction,
       timestamp: new Date().toISOString(),
       dag: {
@@ -381,7 +443,7 @@ const collectionHandlers = [
 
     return contractJson(LineageImpactResponseSchema, {
       collection,
-      tenantId: 'default',
+      tenantId: MOCK_TENANT_ID,
       impactLevel: 'MEDIUM',
       affectedCount: 1,
       affectedCollections: [`${collection}-consumer`],
@@ -403,7 +465,7 @@ const collectionHandlers = [
 function workflowToPipeline(w: (typeof workflows)[0]) {
   return {
     id: w.id,
-    tenantId: 'default',
+    tenantId: MOCK_TENANT_ID,
     name: w.name,
     description: w.description,
     status: w.status,
@@ -424,7 +486,7 @@ const workflowHandlers = [
     const url = new URL(request.url);
     const limit = Number(url.searchParams.get('limit') ?? 500);
     return HttpResponse.json({
-      tenantId: 'default',
+      tenantId: MOCK_TENANT_ID,
       pipelines: workflows.slice(0, limit).map(workflowToPipeline),
       count: workflows.length,
       timestamp: new Date().toISOString(),
@@ -487,7 +549,7 @@ const workflowHandlers = [
     return HttpResponse.json({
       deleted: true,
       pipelineId: params.pipelineId,
-      tenantId: 'default',
+      tenantId: MOCK_TENANT_ID,
       timestamp: new Date().toISOString(),
     });
   }),
@@ -797,7 +859,7 @@ const supportHandlers = [
       warmTierRecords: 128,
       avgProcessingTimeMs: 18.4,
       uptimeSeconds: 86400,
-      tenantId: 'default',
+      tenantId: MOCK_TENANT_ID,
       timestamp: new Date().toISOString(),
     });
   }),
@@ -809,7 +871,7 @@ const supportHandlers = [
     const logs = Array.from({ length: Math.min(limit, 2) }, (_, index) => ({
       id: `autonomy-${index + 1}`,
       actionType: index === 0 ? 'quality' : 'optimization',
-      tenantId: 'default',
+      tenantId: MOCK_TENANT_ID,
       level: index === 0 ? 'SUGGEST' : 'NOTIFY',
       decision: index === 0 ? 'ADVISORY' : 'ALLOWED',
       confidence: 0.84,
@@ -832,7 +894,7 @@ const supportHandlers = [
       domain,
       state: {
         actionType: domain,
-        tenantId: 'default',
+        tenantId: MOCK_TENANT_ID,
         currentLevel: domain === 'security' ? 'SUGGEST' : 'NOTIFY',
         effectiveMaxLevel: 'AUTONOMOUS',
         confidence: 0.78,
@@ -854,7 +916,7 @@ const supportHandlers = [
       pendingReviews: 2,
       lastResult: {
         status: 'COMPLETED',
-        tenantId: tenantId ?? 'default',
+        tenantId: tenantId ?? MOCK_TENANT_ID,
         manual: false,
         durationMs: 1200,
         patternsDiscovered: 3,
@@ -886,7 +948,7 @@ const supportHandlers = [
           name: 'Customer Events',
           type: 'collection',
           lastAccessed: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          path: '/collections/col-001',
+          path: '/data/col-001',
         },
       ],
     });

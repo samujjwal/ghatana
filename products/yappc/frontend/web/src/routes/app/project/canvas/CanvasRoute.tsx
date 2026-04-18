@@ -15,13 +15,13 @@ export const CanvasRoute: React.FC = () => {
 
   // Get lifecycle state
   const { currentPhase } = useCanvasLifecycle();
-  const fowStage = getFOWStageForPhase(currentPhase);
+  const flowStage = getFOWStageForPhase(currentPhase);
 
   return (
     <CanvasWorkspaceProvider
       projectId={projectId}
       currentPhase={currentPhase}
-      fowStage={fowStage}
+      flowStage={flowStage}
     />
   );
 };

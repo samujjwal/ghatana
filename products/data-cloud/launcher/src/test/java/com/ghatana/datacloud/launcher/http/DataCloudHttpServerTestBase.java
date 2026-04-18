@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,6 +64,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern TestBase
  */
 public abstract class DataCloudHttpServerTestBase {
+
+    protected static final String DEFAULT_TEST_TENANT = TestConstants.TENANT_DEFAULT;
 
     protected int port;
     protected DataCloudHttpServer server;
@@ -156,7 +159,22 @@ public abstract class DataCloudHttpServerTestBase {
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .uri(URI.create("http://127.0.0.1:" + port + path))
                 .header("Content-Type", "application/json");
-        headers.forEach(builder::header);
+        mergeTenantHeaders(headers).forEach(builder::header);
+        return httpClient.send(builder.build(), BodyHandlers.ofString());
+    }
+
+    protected java.net.http.HttpResponse<String> postJsonWithoutTenant(String path, Map<String, ?> body)
+            throws Exception {
+        String json = body != null ? mapper.writeValueAsString(body) : "{}";
+        return postRawWithoutTenant(path, json);
+    }
+
+    protected java.net.http.HttpResponse<String> postRawWithoutTenant(String path, String body)
+            throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .uri(URI.create("http://127.0.0.1:" + port + path))
+                .header("Content-Type", "application/json");
         return httpClient.send(builder.build(), BodyHandlers.ofString());
     }
 
@@ -172,7 +190,7 @@ public abstract class DataCloudHttpServerTestBase {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .GET()
                 .uri(URI.create("http://127.0.0.1:" + port + path));
-        headers.forEach(builder::header);
+        mergeTenantHeaders(headers).forEach(builder::header);
         return httpClient.send(builder.build(), BodyHandlers.ofString());
     }
 
@@ -199,6 +217,13 @@ public abstract class DataCloudHttpServerTestBase {
         return get(path, Map.of());
     }
 
+    protected java.net.http.HttpResponse<String> getWithoutTenant(String path) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://127.0.0.1:" + port + path));
+        return httpClient.send(builder.build(), BodyHandlers.ofString());
+    }
+
     /**
      * PUT JSON request.
      *
@@ -212,6 +237,12 @@ public abstract class DataCloudHttpServerTestBase {
         return putRaw(path, json);
     }
 
+    protected java.net.http.HttpResponse<String> putJsonWithoutTenant(String path, Map<String, ?> body)
+            throws Exception {
+        String json = body != null ? mapper.writeValueAsString(body) : "{}";
+        return putRawWithoutTenant(path, json);
+    }
+
     /**
      * PUT raw request.
      *
@@ -220,6 +251,21 @@ public abstract class DataCloudHttpServerTestBase {
      * @return HTTP response
      */
     protected java.net.http.HttpResponse<String> putRaw(String path, String body)
+            throws Exception {
+        return putRaw(path, body, Map.of());
+    }
+
+    protected java.net.http.HttpResponse<String> putRaw(String path, String body, Map<String, String> headers)
+            throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .PUT(HttpRequest.BodyPublishers.ofString(body))
+                .uri(URI.create("http://127.0.0.1:" + port + path))
+                .header("Content-Type", "application/json");
+        mergeTenantHeaders(headers).forEach(builder::header);
+        return httpClient.send(builder.build(), BodyHandlers.ofString());
+    }
+
+    protected java.net.http.HttpResponse<String> putRawWithoutTenant(String path, String body)
             throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .PUT(HttpRequest.BodyPublishers.ofString(body))
@@ -236,6 +282,18 @@ public abstract class DataCloudHttpServerTestBase {
      * @return HTTP response
      */
     protected java.net.http.HttpResponse<String> delete(String path) throws Exception {
+        return delete(path, Map.of());
+    }
+
+    protected java.net.http.HttpResponse<String> delete(String path, Map<String, String> headers) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .DELETE()
+                .uri(URI.create("http://127.0.0.1:" + port + path));
+        mergeTenantHeaders(headers).forEach(builder::header);
+        return httpClient.send(builder.build(), BodyHandlers.ofString());
+    }
+
+    protected java.net.http.HttpResponse<String> deleteWithoutTenant(String path) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .DELETE()
                 .uri(URI.create("http://127.0.0.1:" + port + path))
@@ -307,6 +365,20 @@ public abstract class DataCloudHttpServerTestBase {
                 "Authorization", "Bearer " + token,
                 "X-Tenant-ID", tenantId
         );
+    }
+
+    private Map<String, String> mergeTenantHeaders(Map<String, String> headers) {
+        LinkedHashMap<String, String> merged = new LinkedHashMap<>();
+        merged.put("X-Tenant-ID", DEFAULT_TEST_TENANT);
+        headers.forEach(merged::put);
+        for (String headerName : headers.keySet()) {
+            if ("X-Tenant-ID".equalsIgnoreCase(headerName) || "X-Tenant-Id".equalsIgnoreCase(headerName)) {
+                merged.remove("X-Tenant-ID");
+                break;
+            }
+        }
+        headers.forEach(merged::put);
+        return merged;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

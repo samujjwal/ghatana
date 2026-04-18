@@ -1,14 +1,16 @@
 /**
- * PatternStudioPage — manage AEP event-detection patterns.
+ * PatternStudioPage — manage AEP event-detection patterns and learning.
  *
  * Features:
+ *   - Tab navigation between Patterns and Learning
  *   - List patterns with type, status, confidence score
  *   - Filter by type (ALL / ANOMALY / THRESHOLD / SEQUENCE / CORRELATION / CUSTOM)
  *   - Add new pattern (type + name + threshold)
  *   - Delete pattern
+ *   - View learning episodes and policies
  *
  * @doc.type page
- * @doc.purpose AEP pattern catalog management
+ * @doc.purpose AEP pattern catalog and learning management
  * @doc.layer frontend
  */
 import React, { useState } from 'react';
@@ -23,6 +25,14 @@ import {
   type PatternSummary,
 } from '@/api/pipeline.api';
 import type { PatternType } from '@/types/pipeline.types';
+import {
+  approvePolicy,
+  rejectPolicy,
+  triggerReflection,
+} from '@/api/aep.api';
+import { useAllEpisodes, usePolicies, POLICIES_QUERY_KEY } from '@/hooks/useAgentMemory';
+import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
+import { PolicyCard } from '@/components/memory/PolicyCard';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -172,17 +182,88 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
   );
 }
 
+// ─── Learning Tab ──────────────────────────────────────────────────────
+
+function EpisodesTab() {
+  const { data: episodes = [], isLoading } = useAllEpisodes(50);
+
+  return (
+    <div>
+      {isLoading && <p className="text-center text-gray-400 py-12">Loading episodes…</p>}
+      {!isLoading && <EpisodeTimeline episodes={episodes} />}
+    </div>
+  );
+}
+
+function PoliciesTab() {
+  const tenantId = useAtomValue(tenantIdAtom);
+  const queryClient = useQueryClient();
+
+  const { data: policies = [], isLoading } = usePolicies();
+
+  const approveMut = useMutation({
+    mutationFn: (id: string) => approvePolicy(id, tenantId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [POLICIES_QUERY_KEY] }),
+  });
+
+  const rejectMut = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      rejectPolicy(id, reason, tenantId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [POLICIES_QUERY_KEY] }),
+  });
+
+  const reflectMut = useMutation({
+    mutationFn: () => triggerReflection(tenantId),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <button
+          onClick={() => reflectMut.mutate()}
+          disabled={reflectMut.isPending}
+          className="px-4 py-2 text-sm rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+        >
+          {reflectMut.isPending ? 'Running…' : '▶ Trigger reflection'}
+        </button>
+      </div>
+
+      {isLoading && <p className="text-center text-gray-400 py-12">Loading policies…</p>}
+      {!isLoading && (
+        <div className="space-y-2">
+          {policies.length === 0 && (
+            <p className="text-center text-gray-400 italic py-12">No policies extracted yet</p>
+          )}
+          {policies.map((policy) => (
+            <PolicyCard
+              key={policy.id}
+              policy={policy}
+              isSubmitting={approveMut.isPending || rejectMut.isPending}
+              onApprove={(id) => approveMut.mutate(id)}
+              onReject={(id, reason) => rejectMut.mutate({ id, reason })}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────
 
 const ALL_TYPES: Array<PatternType | 'ALL'> = [
   'ALL', 'ANOMALY', 'THRESHOLD', 'SEQUENCE', 'CORRELATION', 'CUSTOM',
 ];
 
+type MainTab = 'patterns' | 'learning';
+
 export function PatternStudioPage() {
   const tenantId = useAtomValue(tenantIdAtom);
   const queryClient = useQueryClient();
+  const [mainTab, setMainTab] = useState<MainTab>('patterns');
   const [filterType, setFilterType] = useState<PatternType | 'ALL'>('ALL');
   const [showCreate, setShowCreate] = useState(false);
+  const [learningSubTab, setLearningSubTab] = useState<'episodes' | 'policies'>('episodes');
 
   const { data: patterns = [], isLoading } = useQuery({
     queryKey: ['aep', 'patterns', tenantId],
@@ -203,67 +284,111 @@ export function PatternStudioPage() {
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center gap-4">
         <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Pattern Studio</h1>
         <div className="flex gap-1 ml-2">
-          {ALL_TYPES.map((t) => (
+          {(['patterns', 'learning'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setFilterType(t)}
+              onClick={() => setMainTab(t)}
               className={[
-                'px-3 py-1 rounded-full text-xs font-medium transition-colors',
-                filterType === t
-                  ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300'
-                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
+                'px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors',
+                mainTab === t
+                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
               ].join(' ')}
             >
               {t}
             </button>
           ))}
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="ml-auto px-3 py-1.5 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-700 text-white"
-        >
-          + New pattern
-        </button>
-      </div>
-
-      {/* List */}
-      <div className="flex-1 overflow-auto px-6 py-4">
-        {isLoading && <p className="text-center text-gray-400 py-12">Loading patterns…</p>}
-        {!isLoading && (
-          <div className="space-y-2">
-            {filtered.length === 0 && (
-              <p className="text-center text-gray-400 italic py-12">No patterns found</p>
-            )}
-            {filtered.map((pattern) => (
-              <div
-                key={pattern.id}
-                className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-white truncate">{pattern.name}</p>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5">{pattern.id}</p>
-                </div>
-                <PatternTypeBadge type={pattern.type} />
-                <span
+        {mainTab === 'patterns' && (
+          <>
+            <div className="flex gap-1 ml-4">
+              {ALL_TYPES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setFilterType(t)}
                   className={[
-                    'px-2 py-0.5 rounded-full text-xs font-medium',
-                    STATUS_COLORS[pattern.status] ?? STATUS_COLORS.DISABLED,
+                    'px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                    filterType === t
+                      ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300'
+                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
                   ].join(' ')}
                 >
-                  {pattern.status}
-                </span>
-                <button
-                  onClick={() => deleteMut.mutate(pattern.id)}
-                  aria-label={`Delete pattern ${pattern.name}`}
-                  className="text-gray-400 hover:text-red-500 transition-colors text-sm ml-2"
-                >
-                  🗑
+                  {t}
                 </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="ml-auto px-3 py-1.5 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              + New pattern
+            </button>
+          </>
         )}
       </div>
+
+      {/* Content */}
+      {mainTab === 'patterns' ? (
+        <>
+          <div className="flex-1 overflow-auto px-6 py-4">
+            {isLoading && <p className="text-center text-gray-400 py-12">Loading patterns…</p>}
+            {!isLoading && (
+              <div className="space-y-2">
+                {filtered.length === 0 && (
+                  <p className="text-center text-gray-400 italic py-12">No patterns found</p>
+                )}
+                {filtered.map((pattern) => (
+                  <div
+                    key={pattern.id}
+                    className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{pattern.name}</p>
+                      <p className="text-xs text-gray-400 font-mono mt-0.5">{pattern.id}</p>
+                    </div>
+                    <PatternTypeBadge type={pattern.type} />
+                    <span
+                      className={[
+                        'px-2 py-0.5 rounded-full text-xs font-medium',
+                        STATUS_COLORS[pattern.status] ?? STATUS_COLORS.DISABLED,
+                      ].join(' ')}
+                    >
+                      {pattern.status}
+                    </span>
+                    <button
+                      onClick={() => deleteMut.mutate(pattern.id)}
+                      aria-label={`Delete pattern ${pattern.name}`}
+                      className="text-gray-400 hover:text-red-500 transition-colors text-sm ml-2"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-auto px-6 py-4">
+          <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800 -mb-4 mb-4">
+            {(['episodes', 'policies'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setLearningSubTab(t)}
+                className={[
+                  'px-4 py-2 text-sm font-medium -mb-px border-b-2 capitalize transition-colors',
+                  learningSubTab === t
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700',
+                ].join(' ')}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          {learningSubTab === 'episodes' ? <EpisodesTab /> : <PoliciesTab />}
+        </div>
+      )}
 
       {showCreate && (
         <CreatePatternForm

@@ -16,7 +16,7 @@ Related routes & files:
 **Primary goals:**
 
 - Clearly indicate that the page does not exist.
-- Offer a straightforward way to return to the home/dashboard.
+- Offer a straightforward way to return to the Intelligent Hub or another canonical route.
 
 ---
 
@@ -51,7 +51,7 @@ From `NotFound/index.tsx`:
 
 Optionally, a richer 404 page could:
 
-1. Show useful links to key Data Cloud areas (Dashboard, Collections, Workflows).
+1. Show useful links to key Data Cloud areas (Home, Data, Pipelines, Query).
 2. Provide a search box.
 
 ---

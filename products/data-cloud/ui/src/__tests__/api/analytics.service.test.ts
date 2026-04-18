@@ -15,16 +15,18 @@ vi.mock('../../lib/api/client', () => ({
 
 import {
   executeAnalyticsQuery,
+  explainAnalyticsQuery,
   executeFederatedQuery,
   useAnalyticsAiSuggestions,
 } from '../../api/analytics.service';
+import SessionBootstrap from '../../lib/auth/session';
 import { renderHook, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 
 describe('analytics.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.localStorage.setItem('tenantId', 'tenant-a');
+    SessionBootstrap.setTenantId('tenant-a');
   });
 
   it('executes direct analytics queries against the canonical route', async () => {
@@ -77,6 +79,35 @@ describe('analytics.service', () => {
       { headers: { 'X-Tenant-ID': 'tenant-a' } },
     );
     expect(result.queryType).toBe('FEDERATED_FALLBACK');
+  });
+
+  it('explains analytics queries against the canonical explain route', async () => {
+    mockApiClient.post.mockResolvedValue({
+      queryId: 'query-plan-1',
+      queryType: 'AGGREGATE',
+      dataSources: ['products'],
+      estimatedCost: 128,
+      optimized: true,
+      explain: true,
+      timestamp: '2026-04-14T13:02:00Z',
+    });
+
+    const result = await explainAnalyticsQuery('SELECT COUNT(*) FROM products WHERE created_at > NOW() - INTERVAL 7 DAY');
+
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      '/analytics/explain',
+      {
+        query: 'SELECT COUNT(*) FROM products WHERE created_at > NOW() - INTERVAL 7 DAY',
+        parameters: {},
+      },
+      { headers: { 'X-Tenant-ID': 'tenant-a' } },
+    );
+    expect(result).toMatchObject({
+      queryId: 'query-plan-1',
+      queryType: 'AGGREGATE',
+      dataSources: ['products'],
+      explain: true,
+    });
   });
 
   it('maps canonical analytics suggestions from data.queries', async () => {

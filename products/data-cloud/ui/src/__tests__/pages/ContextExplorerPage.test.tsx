@@ -13,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import React from 'react';
 import { TestWrapper } from '../test-utils/wrapper';
+import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
 vi.mock('../../lib/api/collections', () => ({
   collectionsApi: {
@@ -88,7 +89,7 @@ describe('ContextExplorerPage', () => {
 
     vi.mocked(getCollectionContext).mockResolvedValue({
       collection: 'orders',
-      tenantId: 'tenant-a',
+      tenantId: TEST_TENANT_ID,
       requestId: 'req-context-page',
       generatedAt: '2026-04-18T09:00:00Z',
       generationTimeMs: 17,

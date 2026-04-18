@@ -11,7 +11,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -19,19 +18,9 @@ import { database } from './storage/SQLiteStorage';
 import { syncService } from './services/BackgroundSyncService';
 import { useNetworkStatus } from './hooks/useOffline';
 
-import { HomeScreen } from './screens/HomeScreen';
-import { ModulesScreen } from './screens/ModulesScreen';
-import { ModuleDetailScreen } from './screens/ModuleDetailScreen';
-import { LessonScreen } from './screens/LessonScreen';
-import { QuizScreen } from './screens/QuizScreen';
-import { ProfileScreen } from './screens/ProfileScreen';
-import { DownloadsScreen } from './screens/DownloadsScreen';
+import { TabNavigator } from './navigation/TabNavigator';
 import { OfflineBanner } from './components/OfflineBanner';
 import { SyncStatusBar } from './components/SyncStatusBar';
-
-import { RootStackParamList } from './navigation/types';
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -108,55 +97,7 @@ export function App(): JSX.Element {
         <NavigationContainer>
           <OfflineBanner isOffline={!isConnected} />
           <SyncStatusBar />
-          
-          <Stack.Navigator
-            initialRouteName="Home"
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: '#4F46E5',
-              },
-              headerTintColor: '#fff',
-              headerTitleStyle: {
-                fontWeight: '600',
-              },
-            }}
-          >
-            <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{ title: 'TutorPutor' }}
-            />
-            <Stack.Screen
-              name="Modules"
-              component={ModulesScreen}
-              options={{ title: 'Learning Modules' }}
-            />
-            <Stack.Screen
-              name="ModuleDetail"
-              component={ModuleDetailScreen}
-              options={{ title: 'Module' }}
-            />
-            <Stack.Screen
-              name="Lesson"
-              component={LessonScreen}
-              options={{ title: 'Lesson' }}
-            />
-            <Stack.Screen
-              name="Quiz"
-              component={QuizScreen}
-              options={{ title: 'Quiz' }}
-            />
-            <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{ title: 'My Profile' }}
-            />
-            <Stack.Screen
-              name="Downloads"
-              component={DownloadsScreen}
-              options={{ title: 'Downloads' }}
-            />
-          </Stack.Navigator>
+          <TabNavigator />
         </NavigationContainer>
       </QueryClientProvider>
     </SafeAreaProvider>

@@ -269,7 +269,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
 
             engine.submitPipeline(TENANT_A, new AepEngine.Pipeline(
                 "pipe-2", "setup-pipeline",
-                List.of(new AepEngine.PipelineStep("register_pattern", Map.of(
+                List.of(new AepEngine.PipelineStep("step-1", "register_pattern", Map.of(
                     "name", "pipeline-threshold",
                     "patternType", "THRESHOLD",
                     "field", "score",
@@ -291,8 +291,8 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
             engine.submitPipeline(TENANT_A, new AepEngine.Pipeline(
                 "pipe-3", "mixed-pipeline",
                 List.of(
-                    new AepEngine.PipelineStep("custom_unknown_step", Map.of("key", "val")),
-                    new AepEngine.PipelineStep("register_pattern", Map.of(
+                    new AepEngine.PipelineStep("step-1", "custom_unknown_step", Map.of("key", "val")),
+                    new AepEngine.PipelineStep("step-2", "register_pattern", Map.of(
                         "name", "after-unknown", "patternType", "CUSTOM"))
                 )
             ));

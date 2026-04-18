@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
 const { mockApiClient } = vi.hoisted(() => ({
   mockApiClient: {
@@ -13,10 +14,7 @@ vi.mock('../../lib/api/client', () => ({
   apiClient: mockApiClient,
 }));
 
-import {
-  AGENT_REGISTRY_BOUNDARY_MESSAGE,
-  agentRegistryService,
-} from '../../api/agent-registry.service';
+import { agentRegistryService } from '../../api/agent-registry.service';
 
 describe('agentRegistryService', () => {
   beforeEach(() => {
