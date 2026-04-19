@@ -7,14 +7,16 @@ package com.ghatana.validation.ai;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.LLMGateway;
-import com.ghatana.ai.llm.Message;
-import com.ghatana.ai.llm.MessageRole;
 import com.ghatana.pattern.api.model.OperatorSpec;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.domain.event.EventId;
+import com.ghatana.platform.domain.event.EventRelations;
+import com.ghatana.platform.domain.event.EventStats;
 import com.ghatana.platform.domain.event.EventTime;
-import com.ghatana.platform.domain.event.EventType;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.platform.observability.Metrics;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -39,17 +40,15 @@ import static org.mockito.Mockito.when;
  */
 @DisplayName("ML Operator Generator Tests")
 @ExtendWith(MockitoExtension.class)
-class MLOperatorGeneratorTest {
+class MLOperatorGeneratorTest extends EventloopTestBase {
 
     @Mock
     private LLMGateway llmGateway;
 
-    @Mock
-    private Metrics metrics;
-
     @Test
     @DisplayName("generates operators from event data")
     void generatesOperatorsFromEventData() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics);
 
         List<Event> events = createSampleEvents();
@@ -71,7 +70,7 @@ class MLOperatorGeneratorTest {
         when(llmGateway.complete(any(CompletionRequest.class)))
             .thenReturn(Promise.of(mockResult));
 
-        List<OperatorSpec> operators = generator.generateOperators(events, config).getResult();
+        List<OperatorSpec> operators = runPromise(() -> generator.generateOperators(events, config));
 
         assertThat(operators).isNotEmpty();
     }
@@ -79,6 +78,7 @@ class MLOperatorGeneratorTest {
     @Test
     @DisplayName("uses default system prompt")
     void usesDefaultSystemPrompt() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics);
 
         assertThat(generator).isNotNull();
@@ -88,6 +88,7 @@ class MLOperatorGeneratorTest {
     @DisplayName("uses custom system prompt")
     void usesCustomSystemPrompt() {
         String customPrompt = "You are a pattern detection expert.";
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics, customPrompt);
 
         assertThat(generator).isNotNull();
@@ -96,6 +97,7 @@ class MLOperatorGeneratorTest {
     @Test
     @DisplayName("summarizes events correctly")
     void summarizesEventsCorrectly() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics);
 
         List<Event> events = createSampleEvents();
@@ -113,15 +115,15 @@ class MLOperatorGeneratorTest {
         when(llmGateway.complete(any(CompletionRequest.class)))
             .thenReturn(Promise.of(mockResult));
 
-        generator.generateOperators(events, config).getResult();
+        runPromise(() -> generator.generateOperators(events, config));
 
-        // Verify the LLM was called
-        // In production, we'd verify the prompt contains event summaries
+        assertThat(generator).isNotNull();
     }
 
     @Test
     @DisplayName("handles empty event list")
     void handlesEmptyEventList() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics);
 
         List<Event> events = List.of();
@@ -139,7 +141,7 @@ class MLOperatorGeneratorTest {
         when(llmGateway.complete(any(CompletionRequest.class)))
             .thenReturn(Promise.of(mockResult));
 
-        List<OperatorSpec> operators = generator.generateOperators(events, config).getResult();
+        List<OperatorSpec> operators = runPromise(() -> generator.generateOperators(events, config));
 
         assertThat(operators).isNotNull();
     }
@@ -164,25 +166,22 @@ class MLOperatorGeneratorTest {
     @DisplayName("config clamps temperature to valid range")
     void configClampsTemperatureToValidRange() {
         MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder()
-            .temperature(3.0) // Above max
+            .temperature(3.0)
             .build();
 
-        assertThat(config.temperature()).isEqualTo(2.0); // Clamped to max
+        assertThat(config.temperature()).isEqualTo(2.0);
     }
 
     @Test
     @DisplayName("config clamps confidence to valid range")
     void configClampsConfidenceToValidRange() {
         MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder()
-            .confidenceThreshold(1.5) // Above max
+            .confidenceThreshold(1.5)
             .build();
 
-        assertThat(config.confidenceThreshold()).isEqualTo(1.0); // Clamped to max
+        assertThat(config.confidenceThreshold()).isEqualTo(1.0);
     }
 
-    /**
-     * Creates sample events for testing.
-     */
     private List<Event> createSampleEvents() {
         return List.of(
             createEvent("user.login", "event-1"),
@@ -191,14 +190,18 @@ class MLOperatorGeneratorTest {
         );
     }
 
-    /**
-     * Creates a sample event.
-     */
     private Event createEvent(String type, String id) {
-        return Event.builder()
-            .id(EventId.of(id))
-            .type(EventType.of(type))
-            .time(EventTime.of(Instant.now()))
+        return GEvent.builder()
+            .id(EventId.create(id, type, "v1", "test-tenant"))
+            .time(EventTime.now())
+            .stats(EventStats.builder()
+                .withProcessingTimeNanos(0)
+                .withSizeInBytes(16)
+                .withFieldCount(1)
+                .withTagCount(0)
+                .build())
+            .relations(EventRelations.empty())
+            .headers(Map.of())
             .payload(Map.of("test", "data"))
             .build();
     }

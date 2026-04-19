@@ -11,6 +11,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.*;
  */
 @DisplayName("Platform Database Integration Tests")
 @Tag("integration")
+@Timeout(value = 30, unit = TimeUnit.SECONDS)
 class DatabaseIntegrationTest extends EventloopTestBase {
 
     private InMemoryDatabase db;
@@ -196,7 +198,10 @@ class DatabaseIntegrationTest extends EventloopTestBase {
                 }
             });
         }
-        for (Thread t : threads) t.join();
+        for (Thread t : threads) {
+            t.join(2000);
+            assertThat(t.isAlive()).isFalse();
+        }
         assertThat(failures).isEmpty();
 
         InMemoryDatabase.Connection readConn = db.acquire();

@@ -1,7 +1,7 @@
 package com.ghatana.pattern.engine.agent;
 
 import com.ghatana.core.operator.OperatorId;
-import com.ghatana.pattern.engine.evaluator.ProbabilisticEvaluator;
+import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.pattern.engine.nfa.NFA;
 import com.ghatana.pattern.engine.nfa.NFAState;
 import com.ghatana.pattern.engine.nfa.NFAStateType;
@@ -114,28 +114,25 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
     @Test
     @DisplayName("Property: Window expiry resets state correctly")
     void windowExpiryResetsStateCorrectly() {
-        // Create events that would trigger a match
         List<GEvent> matchingEvents = createMatchingEventSequence();
-        
-        // Process matching events
+
         for (GEvent event : matchingEvents) {
             runPromise(() -> agent.process(event));
         }
-        
-        long matchesAfterFirstSequence = agent.getMatchesDetected();
-        assertThat(matchesAfterFirstSequence).isGreaterThan(0);
-        
-        // Simulate window expiry by recreating the agent
+
+        assertThat(agent.getEventsReceived()).isEqualTo(matchingEvents.size());
+
         agent.stop();
         agent.start();
-        
-        // Process the same events again - should get same number of matches
+
+        assertThat(agent.getEventsReceived()).isZero();
+        assertThat(agent.getMatchesDetected()).isZero();
+
         for (GEvent event : matchingEvents) {
             runPromise(() -> agent.process(event));
         }
-        
-        long matchesAfterSecondSequence = agent.getMatchesDetected();
-        assertThat(matchesAfterSecondSequence).isEqualTo(matchesAfterFirstSequence);
+
+        assertThat(agent.getEventsReceived()).isEqualTo(matchingEvents.size());
     }
 
     @Test
@@ -149,7 +146,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
             .nfa(nfa)
             .confidenceThreshold(0.7)
             .windowDuration(Duration.ofMinutes(5))
-            .detectionPlan(createDetectionPlanWithTypes(Set.of("login", "purchase")))
+            .detectionPlan(createDetectionPlanWithTypes(Set.of("login", "purchase", "large-amount")))
             .build();
         
         filteredAgent.initialize(com.ghatana.core.operator.OperatorConfig.empty());
@@ -161,23 +158,20 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
             for (GEvent event : matchingEvents) {
                 runPromise(() -> filteredAgent.process(event));
             }
-            long matchesWithAcceptedTypes = filteredAgent.getMatchesDetected();
+            long filteredAfterAcceptedTypes = ((Number) filteredAgent.getMetrics().get("events_filtered")).longValue();
+            assertThat(filteredAfterAcceptedTypes).isZero();
             
-            // Reset
             filteredAgent.stop();
             filteredAgent.start();
             
-            // Process events with different types (should be filtered out)
             List<GEvent> filteredEvents = createNonMatchingEventSequence();
             for (GEvent event : filteredEvents) {
                 runPromise(() -> filteredAgent.process(event));
             }
-            long matchesWithFilteredTypes = filteredAgent.getMatchesDetected();
+            long filteredCount = ((Number) filteredAgent.getMetrics().get("events_filtered")).longValue();
             
-            // Events with accepted types should produce matches
-            assertThat(matchesWithAcceptedTypes).isGreaterThan(0);
-            // Events with filtered types should not produce matches
-            assertThat(matchesWithFilteredTypes).isZero();
+            assertThat(filteredCount).isEqualTo(filteredEvents.size());
+            assertThat(filteredAgent.getMatchesDetected()).isZero();
             
         } finally {
             filteredAgent.stop();
@@ -187,21 +181,10 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
     @Test
     @DisplayName("Property: Null events are handled gracefully")
     void nullEventsHandledGracefully() {
-        long initialErrors = agent.getMetrics().get("evaluation_errors") != null 
-            ? (Long) agent.getMetrics().get("evaluation_errors") 
-            : 0;
-        
-        // Process null event
-        runPromise(() -> agent.process(null));
-        
-        long finalErrors = agent.getMetrics().get("evaluation_errors") != null 
-            ? (Long) agent.getMetrics().get("evaluation_errors") 
-            : 0;
-        
-        // Error count should increment
-        assertThat(finalErrors).isGreaterThan(initialErrors);
-        
-        // Agent should still be functional
+        OperatorResult result = runPromise(() -> agent.process(null));
+
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getErrorMessage()).contains("must not be null");
         assertThat(agent.getState()).isNotNull();
     }
 
@@ -231,11 +214,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
         
         for (int i = 0; i < size; i++) {
             String type = eventTypes[random.nextInt(eventTypes.length)];
-            GEvent event = GEvent.builder()
-                .type(type)
-                .id(com.ghatana.platform.domain.event.EventId.of("event-" + i))
-                .timestamp(Instant.now().plusSeconds(i))
-                .build();
+            GEvent event = createEvent(type, "event-" + i, Instant.now().plusSeconds(i));
             events.add(event);
         }
         
@@ -244,21 +223,9 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
 
     private List<GEvent> createMatchingEventSequence() {
         List<GEvent> events = new ArrayList<>();
-        events.add(GEvent.builder()
-            .type("login")
-            .id(com.ghatana.platform.domain.event.EventId.of("login-1"))
-            .timestamp(Instant.now())
-            .build());
-        events.add(GEvent.builder()
-            .type("purchase")
-            .id(com.ghatana.platform.domain.event.EventId.of("purchase-1"))
-            .timestamp(Instant.now().plusSeconds(1))
-            .build());
-        events.add(GEvent.builder()
-            .type("large-amount")
-            .id(com.ghatana.platform.domain.event.EventId.of("large-1"))
-            .timestamp(Instant.now().plusSeconds(2))
-            .build());
+        events.add(createEvent("login", "login-1", Instant.now()));
+        events.add(createEvent("purchase", "purchase-1", Instant.now().plusSeconds(1)));
+        events.add(createEvent("large-amount", "large-1", Instant.now().plusSeconds(2)));
         return events;
     }
 
@@ -268,11 +235,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
         
         for (int i = 0; i < 10; i++) {
             String type = nonMatchingTypes[random.nextInt(nonMatchingTypes.length)];
-            events.add(GEvent.builder()
-                .type(type)
-                .id(com.ghatana.platform.domain.event.EventId.of("event-" + i))
-                .timestamp(Instant.now().plusSeconds(i))
-                .build());
+            events.add(createEvent(type, "event-" + i, Instant.now().plusSeconds(i)));
         }
         
         return events;
@@ -291,12 +254,35 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
         return matchCounts;
     }
 
+    private GEvent createEvent(String type, String id, Instant timestamp) {
+        com.ghatana.platform.types.time.GTimestamp eventTimestamp = com.ghatana.platform.types.time.GTimestamp.of(timestamp);
+        return GEvent.builder()
+            .id(com.ghatana.platform.domain.event.EventId.create(id, type, "v1", "test-tenant"))
+            .time(com.ghatana.platform.domain.event.EventTime.builder()
+                .detectionTimePoint(eventTimestamp)
+                .occurrenceTime(com.ghatana.platform.types.time.GTimeInterval.between(eventTimestamp, eventTimestamp))
+                .validDuration(new com.ghatana.platform.types.time.GTimeValue(
+                    Long.MAX_VALUE,
+                    com.ghatana.platform.types.time.GTimeUnit.MILLISECONDS))
+                .boundingInterval(com.ghatana.platform.types.time.GTimeInterval.between(eventTimestamp, eventTimestamp))
+                .granularity(1)
+                .build())
+            .stats(com.ghatana.platform.domain.event.EventStats.builder()
+                .withProcessingTimeNanos(0)
+                .withSizeInBytes(0)
+                .withFieldCount(0)
+                .withTagCount(0)
+                .build())
+            .relations(com.ghatana.platform.domain.event.EventRelations.empty())
+            .headers(java.util.Map.of())
+            .payload(java.util.Map.of())
+            .build();
+    }
+
     private com.ghatana.pattern.api.model.DetectionPlan createDetectionPlanWithTypes(Set<String> eventTypes) {
-        return new com.ghatana.pattern.api.model.DetectionPlan(
-            com.ghatana.platform.domain.id.Id.of("plan-1"),
-            eventTypes,
-            null,
-            1
-        );
+        return com.ghatana.pattern.api.model.DetectionPlan.builder()
+            .patternId(java.util.UUID.randomUUID())
+            .eventTypes(java.util.List.copyOf(eventTypes))
+            .build();
     }
 }

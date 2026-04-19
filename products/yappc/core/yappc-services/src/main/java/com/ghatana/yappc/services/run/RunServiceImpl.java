@@ -238,7 +238,7 @@ public class RunServiceImpl implements RunService {
 
     private Promise<RunResult> performRollback(String deploymentId, String targetVersion) {
         return ciCdAdapter.rollback(deploymentId, targetVersion)
-                .then(taskResult -> RunResult.builder()
+            .map(taskResult -> RunResult.builder()
                         .id(UUID.randomUUID().toString())
                         .runSpecRef(deploymentId)
                         .status(taskResult.status())
@@ -260,7 +260,7 @@ public class RunServiceImpl implements RunService {
                 .build();
 
         return ciCdAdapter.deploy(deployTask)
-                .then(taskResult -> RunResult.builder()
+            .map(taskResult -> RunResult.builder()
                         .id(UUID.randomUUID().toString())
                         .runSpecRef(deploymentId)
                         .status(taskResult.status())
@@ -272,14 +272,14 @@ public class RunServiceImpl implements RunService {
     }
 
     private RunStatus determineOverallStatus(List<TaskResult> taskResults) {
-        if (taskResults.stream().anyMatch(r -> r.status() == RunStatus.NOT_READY)) {
-            return RunStatus.NOT_READY;
-        } else if (taskResults.stream().allMatch(r -> r.status() == RunStatus.SUCCESS)) {
-            return RunStatus.SUCCESS;
-        } else if (taskResults.stream().anyMatch(r -> r.status() == RunStatus.FAILED)) {
+        if (taskResults.stream().anyMatch(r -> r.status() == RunStatus.FAILED)) {
             return RunStatus.FAILED;
         } else if (taskResults.stream().anyMatch(r -> r.status() == RunStatus.CANCELLED)) {
             return RunStatus.CANCELLED;
+        } else if (taskResults.stream().anyMatch(r -> r.status() == RunStatus.NOT_READY)) {
+            return RunStatus.NOT_READY;
+        } else if (taskResults.stream().allMatch(r -> r.status() == RunStatus.SUCCESS)) {
+            return RunStatus.SUCCESS;
         } else {
             return RunStatus.RUNNING;
         }

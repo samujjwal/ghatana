@@ -22,7 +22,7 @@ import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.validate.ValidationService;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.eventloop.Eventloop;
-import io.activej.http.AsyncHttpClient;
+import io.activej.http.HttpClient;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -82,7 +82,7 @@ class LifecycleApiControllerTest extends EventloopTestBase {
     private Eventloop eventloop;
 
     @Mock
-    private AsyncHttpClient httpClient;
+    private HttpClient httpClient;
 
     private LifecycleApiController controller;
 

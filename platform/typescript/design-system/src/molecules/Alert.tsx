@@ -10,6 +10,7 @@ import {
 } from '@ghatana/tokens';
 import { useTheme } from '@ghatana/theme';
 
+import { useComponentComposition } from '../core';
 import { IconButton } from '../atoms/IconButton';
 import { VisuallyHidden } from '../atoms/VisuallyHidden';
 import { sxToStyle, type SxProps } from '../utils/sx';
@@ -74,13 +75,29 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>((props, ref) =
   const contrast = paletteEntry.contrastText ?? (isDark ? surface.text.primary : '#ffffff');
   const soft = paletteEntry[100] ?? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)');
   const softBorder = paletteEntry[200] ?? paletteEntry[300] ?? palette.info[300];
-
-  return (
-    <div
-      ref={ref}
-      role="status"
-      className={cn('gh-alert', className)}
-      style={{
+  const composition = useComponentComposition({
+    metadata: {
+      component: 'alert',
+      tone,
+      state: onClose ? 'dismissible' : 'static',
+      privacy: 'public',
+    },
+    state: {
+      dismissible: Boolean(onClose),
+      actionable: Boolean(resolvedActions),
+      'has-description': Boolean(description),
+      'has-title': Boolean(title),
+      'has-icon': Boolean(icon),
+    },
+    features: [
+      'feedback',
+      onClose ? 'dismissible' : undefined,
+      resolvedActions ? 'actions' : undefined,
+    ],
+    rootProps: {
+      role: 'status',
+      className: cn('gh-alert', className),
+      style: {
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
@@ -92,47 +109,67 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>((props, ref) =
         backgroundColor: soft,
         color: surface.text.primary,
         ...sxToStyle(sx),
-      }}
-      data-tone={tone}
-      {...rest}
+      },
+      ...rest,
+    },
+  });
+
+  return (
+    <div
+      ref={ref}
+      {...composition.rootProps}
     >
       <div
-        className="gh-alert__header"
-        style={{
-          display: 'flex',
-          alignItems: title ? 'flex-start' : 'center',
-          gap: '12px',
-        }}
+        {...composition.getSlotProps(
+          'header',
+          {
+            className: 'gh-alert__header',
+            style: {
+              display: 'flex',
+              alignItems: title ? 'flex-start' : 'center',
+              gap: '12px',
+            },
+          },
+          { present: true }
+        )}
       >
         {icon ? (
           <div
-            className="gh-alert__icon"
-            style={{
-              flexShrink: 0,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              backgroundColor: main,
-              color: contrast,
-            }}
+            {...composition.getSlotProps(
+              'icon',
+              {
+                className: 'gh-alert__icon',
+                style: {
+                  flexShrink: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: main,
+                  color: contrast,
+                },
+              },
+              { present: true }
+            )}
           >
             {icon}
           </div>
         ) : null}
 
-        <div style={{ flex: '1 1 auto' }}>
+        <div {...composition.getSlotProps('body', { style: { flex: '1 1 auto' } }, { present: true })}>
           {title ? (
             <div
-              className="gh-alert__title"
-              style={{
-                fontSize: fontSize.base,
-                fontWeight: fontWeight.semibold,
-                marginBottom: description || children ? '4px' : 0,
-                color: surface.text.primary,
-              }}
+              {...composition.getSlotProps('title', {
+                className: 'gh-alert__title',
+                style: {
+                  fontSize: fontSize.base,
+                  fontWeight: fontWeight.semibold,
+                  marginBottom: description || children ? '4px' : 0,
+                  color: surface.text.primary,
+                },
+              })}
             >
               {title}
             </div>
@@ -140,11 +177,13 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>((props, ref) =
 
           {description ? (
             <div
-              className="gh-alert__description"
-              style={{
-                fontSize: fontSize.sm,
-                color: surface.text.secondary,
-              }}
+              {...composition.getSlotProps('description', {
+                className: 'gh-alert__description',
+                style: {
+                  fontSize: fontSize.sm,
+                  color: surface.text.secondary,
+                },
+              })}
             >
               {description}
             </div>
@@ -157,7 +196,10 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>((props, ref) =
           <IconButton
             icon={<span aria-hidden="true">&times;</span>}
             label={closeLabel}
-            onClick={onClose}
+            onClick={() => {
+              composition.telemetry('dismiss', { tone });
+              onClose();
+            }}
             tone="neutral"
             variant="ghost"
             size="sm"
@@ -167,12 +209,18 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>((props, ref) =
 
       {resolvedActions ? (
         <div
-          className="gh-alert__actions"
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px',
-          }}
+          {...composition.getSlotProps(
+            'actions',
+            {
+              className: 'gh-alert__actions',
+              style: {
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+              },
+            },
+            { present: true }
+          )}
         >
           {resolvedActions}
         </div>

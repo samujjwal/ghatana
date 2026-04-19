@@ -7,6 +7,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { serializeToHtml, mountToDOM } from '../renderer.js';
+import type { ComponentContract } from '@ghatana/ds-schema';
+import type { BuilderComponentManifest } from '@ghatana/ds-schema';
 import type { BuilderDocument, ComponentInstance, NodeId } from '../../core/types.js';
 import { createDocumentId, createNodeId } from '../../core/types.js';
 
@@ -55,6 +57,48 @@ function makeTextField(id: string, props: Record<string, unknown> = {}): Compone
   };
 }
 
+const buttonContract: ComponentContract = {
+  name: 'Button',
+  version: '1.0.0',
+  metadata: {
+    category: 'input',
+    status: 'stable',
+    platforms: ['web', 'android'],
+    a11y: {
+      role: 'button',
+      ariaSupported: true,
+      keyboardNavigation: true,
+      screenReader: 'supported',
+    },
+    dataClassification: 'internal',
+  },
+  props: [],
+  slots: [],
+  events: [{ name: 'onClick' }],
+};
+
+const buttonManifest: BuilderComponentManifest = {
+  name: 'Button',
+  version: '1.0.0',
+  targets: ['react', 'swiftui'],
+  features: ['manifest-driven'],
+  semantics: {
+    role: 'button',
+    eventNames: ['click'],
+  },
+  slots: [],
+  capabilities: {
+    interactive: true,
+    collection: false,
+    virtualizable: false,
+    async: false,
+    privacy: 'internal',
+    optimizedFor: ['builder-handoff'],
+  },
+  dataClassification: 'internal',
+  reviewRequired: false,
+};
+
 // ----------------------------------------------------------------------------
 // serializeToHtml tests
 // ----------------------------------------------------------------------------
@@ -76,7 +120,21 @@ describe('serializeToHtml', () => {
 
     const html = serializeToHtml(doc);
     expect(html).toContain('data-builder-contract="Button"');
+    expect(html).toContain('data-builder-platforms=');
+    expect(html).toContain('data-builder-signature=');
     expect(html).toContain('Click me');
+  });
+
+  it('serializes platform annotations from contracts', () => {
+    const nodes = new Map<NodeId, ComponentInstance>();
+    const btn = makeButton('btn-1');
+    btn.metadata = { dataClassification: 'internal' };
+    nodes.set(btn.id, btn);
+    const doc = makeDoc(nodes);
+
+    const html = serializeToHtml(doc, { contracts: [buttonContract], manifests: [buttonManifest] });
+    expect(html).toContain('data-builder-platforms="react swiftui"');
+    expect(html).toContain('data-builder-classification="internal"');
   });
 
   it('serializes multiple components', () => {
@@ -90,6 +148,29 @@ describe('serializeToHtml', () => {
     const html = serializeToHtml(doc);
     expect(html).toContain('data-builder-contract="Button"');
     expect(html).toContain('data-builder-contract="TextField"');
+  });
+
+  it('serializes named slot children with slot attributes', () => {
+    const header = makeButton('header-1', { children: 'Header action' });
+    const card: ComponentInstance = {
+      id: createNodeId('card-1'),
+      contractName: 'Card',
+      props: {},
+      slots: {
+        header: [header.id],
+      },
+      bindings: [],
+      metadata: {},
+    };
+
+    const nodes = new Map<NodeId, ComponentInstance>();
+    nodes.set(card.id, card);
+    nodes.set(header.id, header);
+    const doc = makeDoc(nodes);
+
+    const html = serializeToHtml(doc);
+    expect(html).toContain('slot="header"');
+    expect(html).toContain('data-builder-slot="header"');
   });
 
   it('respects emitDebugAttributes config', () => {
@@ -156,11 +237,12 @@ describe('mountToDOM', () => {
     nodes.set(btn.id as NodeId, btn);
     const doc = makeDoc(nodes as Map<NodeId, ComponentInstance>);
 
-    mountToDOM(doc, container);
+    mountToDOM(doc, container, { contracts: [buttonContract] });
 
     const mounted = container.querySelector('[data-builder-contract="Button"]');
     expect(mounted).not.toBeNull();
     expect(mounted?.textContent).toContain('Click me');
+    expect(mounted?.getAttribute('data-builder-platforms')).toContain('react');
   });
 
   it('mounts multiple components', () => {
@@ -177,6 +259,31 @@ describe('mountToDOM', () => {
     const inputs = container.querySelectorAll('[data-builder-contract="TextField"]');
     expect(buttons.length).toBe(1);
     expect(inputs.length).toBe(1);
+  });
+
+  it('mounts named slot children with slot metadata', () => {
+    const header = makeButton('header-1', { children: 'Header action' });
+    const card: ComponentInstance = {
+      id: createNodeId('card-1'),
+      contractName: 'Card',
+      props: {},
+      slots: {
+        header: [header.id],
+      },
+      bindings: [],
+      metadata: {},
+    };
+
+    const nodes = new Map<NodeId, ComponentInstance>();
+    nodes.set(card.id, card);
+    nodes.set(header.id, header);
+    const doc = makeDoc(nodes);
+
+    mountToDOM(doc, container);
+
+    const slottedChild = container.querySelector('[slot="header"]');
+    expect(slottedChild).not.toBeNull();
+    expect(slottedChild?.getAttribute('data-builder-slot')).toBe('header');
   });
 
   it('clears previous content when mounting', () => {

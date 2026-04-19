@@ -185,15 +185,18 @@ public final class WorkflowExecutionHandler {
         List<WorkflowExecutionCapability.NodeSnapshot> nodeStatuses = snapshot.nodeStatuses();
         response.put("completedNodes", nodeStatuses.stream().filter(node -> "COMPLETED".equals(node.state())).count());
         response.put("totalNodes", nodeStatuses.size());
-        response.put("nodes", nodeStatuses.stream().map(node -> Map.of(
+        response.put("nodes", nodeStatuses.stream().map(node -> {
+            Integer nodeDuration = java.util.Objects.requireNonNullElse(node.duration(), Integer.valueOf(0));
+            return Map.of(
             "id", node.nodeId(),
             "name", node.nodeName(),
             "status", node.state().toLowerCase(),
             "startTime", node.startedAt(),
             "endTime", node.completedAt(),
-            "duration", node.duration() == null ? 0 : node.duration(),
+            "duration", nodeDuration,
             "error", node.error() == null ? "" : node.error()
-        )).toList());
+            );
+        }).toList());
         if (snapshot.error() != null) {
             response.put("error", snapshot.error());
         }

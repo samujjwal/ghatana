@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,7 +71,7 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
         eventCloudPlugin = new EventCloudPlugin(eventLogStore, entityStore, EventCloudPluginConfig.embeddedMode());
         
         // Capture events appended to EventLogStore
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
+        lenient().when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
             .thenAnswer(invocation -> {
                 EventEntry entry = invocation.getArgument(1);
                 capturedEvents.add(entry);

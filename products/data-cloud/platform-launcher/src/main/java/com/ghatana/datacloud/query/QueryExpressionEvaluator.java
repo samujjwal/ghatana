@@ -382,6 +382,15 @@ public final class QueryExpressionEvaluator {
 
     @SuppressWarnings("unchecked")
     private static int compareNormalized(Object left, Object right) {
+        if (left == null && right == null) {
+            return 0;
+        }
+        if (left == null) {
+            return -1;
+        }
+        if (right == null) {
+            return 1;
+        }
         if (left instanceof Double leftDouble && right instanceof Double rightDouble) {
             return Double.compare(leftDouble, rightDouble);
         }

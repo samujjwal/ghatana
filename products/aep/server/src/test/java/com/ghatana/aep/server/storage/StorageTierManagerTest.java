@@ -92,7 +92,7 @@ class StorageTierManagerTest {
 
             mgr.save(TENANT, COLL, data).getResult();
 
-            var captor = org.mockito.ArgumentCaptor.forClass(Map.class);
+            var captor = mapCaptor();
             verify(client).save(anyString(), anyString(), captor.capture());
             assertThat(captor.getValue()).containsKey(TIER_FIELD);
             assertThat(captor.getValue().get(TIER_FIELD)).isEqualTo(StorageTier.HOT.name());
@@ -353,6 +353,11 @@ class StorageTierManagerTest {
     private static Entity entity(String id, Map<String, Object> data) {
         return new Entity(id, COLL, data, Instant.now(), Instant.now(), 1L);
     }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private static org.mockito.ArgumentCaptor<Map<String, Object>> mapCaptor() {
+                return (org.mockito.ArgumentCaptor) org.mockito.ArgumentCaptor.forClass(Map.class);
+        }
 
     private static Map<String, Object> entData(String id, StorageTier tier) {
         Map<String, Object> d = new HashMap<>();

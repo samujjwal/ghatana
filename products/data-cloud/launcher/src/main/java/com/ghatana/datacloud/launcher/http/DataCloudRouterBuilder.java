@@ -62,7 +62,6 @@ public class DataCloudRouterBuilder {
 
     private static final Logger log = LoggerFactory.getLogger(DataCloudRouterBuilder.class);
 
-    private final Eventloop eventloop;
     private RoutingServlet.Builder builder;
 
     /**
@@ -71,7 +70,6 @@ public class DataCloudRouterBuilder {
      * @param eventloop the eventloop for the routing servlet
      */
     public DataCloudRouterBuilder(Eventloop eventloop) {
-        this.eventloop = eventloop;
         this.builder = RoutingServlet.builder(eventloop);
     }
 

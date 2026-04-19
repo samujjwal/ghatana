@@ -4,11 +4,9 @@
  */
 package com.ghatana.validation.ai;
 
+import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.ai.llm.CompletionRequest;
-import com.ghatana.ai.llm.CompletionResult;
-import com.ghatana.ai.llm.Message;
-import com.ghatana.ai.llm.MessageRole;
 import com.ghatana.pattern.api.model.OperatorSpec;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.observability.Metrics;
@@ -17,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +39,6 @@ public class MLOperatorGenerator {
     private final LLMGateway llmGateway;
     private final Metrics metrics;
     private final String systemPrompt;
-
     /**
      * Creates an ML operator generator with default system prompt.
      *
@@ -74,23 +70,22 @@ public class MLOperatorGenerator {
      * @return promise resolving to list of generated operator specs
      */
     public Promise<List<OperatorSpec>> generateOperators(List<Event> events, GenerationConfig config) {
-        return Promise.ofBlocking(() -> {
-            long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
+        String eventSummary = summarizeEvents(events);
+        String userPrompt = buildUserPrompt(eventSummary, config);
 
-            try {
-                String eventSummary = summarizeEvents(events);
-                String userPrompt = buildUserPrompt(eventSummary, config);
+        CompletionRequest request = CompletionRequest.builder()
+            .messages(List.of(
+                ChatMessage.system(systemPrompt),
+                ChatMessage.user(userPrompt)
+            ))
+            .model(config.model() != null ? config.model() : "gpt-4")
+            .temperature(config.temperature())
+            .maxTokens(config.maxTokens())
+            .build();
 
-                CompletionRequest request = CompletionRequest.builder()
-                    .addMessage(Message.of(MessageRole.SYSTEM, systemPrompt))
-                    .addMessage(Message.of(MessageRole.USER, userPrompt))
-                    .model(config.model() != null ? config.model() : "gpt-4")
-                    .temperature(config.temperature())
-                    .maxTokens(config.maxTokens())
-                    .build();
-
-                CompletionResult result = llmGateway.complete(request).getResult();
-
+        return llmGateway.complete(request)
+            .map(result -> {
                 List<OperatorSpec> operators = parseOperatorSpecs(result.getText());
 
                 metrics.timer("ml.operator.generation.duration")
@@ -99,14 +94,13 @@ public class MLOperatorGenerator {
 
                 log.info("Generated {} operators from {} events", operators.size(), events.size());
                 return operators;
-            } catch (Exception e) {
+            })
+            .whenException(exception -> {
                 metrics.timer("ml.operator.generation.duration")
                     .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
                 metrics.counter("ml.operator.generation.failed").increment();
-                log.error("ML operator generation failed", e);
-                throw new RuntimeException("ML operator generation failed", e);
-            }
-        });
+                log.error("ML operator generation failed", exception);
+            });
     }
 
     /**
@@ -190,18 +184,17 @@ public class MLOperatorGenerator {
      */
     private List<OperatorSpec> parseOperatorSpecs(String response) {
         // Extract JSON from response (handle markdown code blocks)
-        String jsonText = response;
         if (response.contains("```json")) {
             int start = response.indexOf("```json") + 7;
             int end = response.indexOf("```", start);
             if (end > start) {
-                jsonText = response.substring(start, end).trim();
+                response = response.substring(start, end).trim();
             }
         } else if (response.contains("```")) {
             int start = response.indexOf("```") + 3;
             int end = response.indexOf("```", start);
             if (end > start) {
-                jsonText = response.substring(start, end).trim();
+                response = response.substring(start, end).trim();
             }
         }
 

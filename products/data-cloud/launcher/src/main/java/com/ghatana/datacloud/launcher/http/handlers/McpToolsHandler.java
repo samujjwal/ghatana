@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import io.activej.http.HttpRequest;
@@ -29,18 +30,20 @@ public final class McpToolsHandler {
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
     private final ObjectMapper objectMapper;
-    private final CollectionContextHandler collectionContextHandler;
+    private final CollectionContextDocumentLoader collectionContextDocumentLoader;
 
     public McpToolsHandler(
         DataCloudClient client,
         HttpHandlerSupport http,
         ObjectMapper objectMapper,
-        CollectionContextHandler collectionContextHandler
+        CollectionContextDocumentLoader collectionContextDocumentLoader
     ) {
         this.client = Objects.requireNonNull(client, "client");
         this.http = Objects.requireNonNull(http, "http");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
-        this.collectionContextHandler = Objects.requireNonNull(collectionContextHandler, "collectionContextHandler");
+        this.collectionContextDocumentLoader = Objects.requireNonNull(
+            collectionContextDocumentLoader,
+            "collectionContextDocumentLoader");
     }
 
     public Promise<HttpResponse> handleListTools(HttpRequest request) {
@@ -90,7 +93,7 @@ public final class McpToolsHandler {
                             requestId,
                             -32603,
                             error.getMessage() != null ? error.getMessage() : "Internal MCP execution failure")));
-                } catch (Exception error) {
+                } catch (JsonProcessingException error) {
                     return Promise.of(jsonRpcError(requestId, -32700, "Invalid MCP JSON payload"));
                 }
             });
@@ -117,8 +120,13 @@ public final class McpToolsHandler {
             return Promise.ofException(new IllegalArgumentException("collection is required"));
         }
 
-        return collectionContextHandler.getCollectionContextDocument(tenantId, collection, requestId)
+        return collectionContextDocumentLoader.load(tenantId, collection, requestId)
             .map(result -> result.orElseThrow(() -> new IllegalArgumentException("Collection not found: " + collection)));
+    }
+
+    @FunctionalInterface
+    public interface CollectionContextDocumentLoader {
+        Promise<Optional<Map<String, Object>>> load(String tenantId, String collection, String requestId);
     }
 
     private Promise<Map<String, Object>> invokeQueryEntities(String tenantId, Map<String, Object> arguments) {

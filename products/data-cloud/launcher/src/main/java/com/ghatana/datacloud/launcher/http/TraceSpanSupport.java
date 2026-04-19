@@ -92,6 +92,11 @@ public final class TraceSpanSupport {
             finish(spanScope, null, error);
             throw error;
         }
+        if (promise == null) {
+            IllegalStateException error = new IllegalStateException("Traced work returned null Promise");
+            finish(spanScope, null, error);
+            return Promise.ofException(error);
+        }
         return promise.whenComplete((result, error) -> finish(spanScope, result, error));
     }
 

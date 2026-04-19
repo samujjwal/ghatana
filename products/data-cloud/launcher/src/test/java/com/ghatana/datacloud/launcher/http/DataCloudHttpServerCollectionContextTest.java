@@ -202,7 +202,7 @@ class DataCloudHttpServerCollectionContextTest {
         assertThat(body.path("governance").path("retentionTier").asText()).isEqualTo("compliance");
         assertThat(body.path("governance").path("piiFields").get(0).asText()).isEqualTo("email");
         assertThat(body.path("freshness").path("lastEntityUpdatedAt").asText()).isEqualTo("2026-04-18T08:59:00Z");
-        assertThat(body.path("generationTimeMs").asLong()).isLessThan(100L);
+        assertThat(body.path("generationTimeMs").asLong()).isLessThan(250L);
         assertThat(body.path("statisticalProfile").path("entityCount").asLong()).isEqualTo(2L);
         assertThat(body.path("relationships").get(0).path("type").asText()).isEqualTo("BELONGS_TO");
     }

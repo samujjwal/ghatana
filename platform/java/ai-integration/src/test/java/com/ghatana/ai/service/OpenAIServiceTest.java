@@ -1,11 +1,9 @@
 package com.ghatana.ai.service;
 
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * Unit tests for OpenAIService generateStructured with schema validation.
@@ -37,22 +35,9 @@ class OpenAIServiceTest {
 
     @Test
     @DisplayName("Should parse valid JSON response matching schema")
-    void shouldParseValidJsonResponse() throws Exception {
-        Eventloop eventloop = Eventloop.create();
-        eventloop.run(() -> {
-            // This test would require mocking the HTTP client to return a valid JSON response
-            // For now, we test the parsing logic directly
-            // In a real test, we would mock the HTTP call to return:
-            // {"name":"test","value":42,"active":true}
-            
-            // The implementation uses Jackson ObjectMapper which will:
-            // 1. Parse the JSON string
-            // 2. Validate against the schema class
-            // 3. Return the typed object if valid
-            // 4. Throw an exception if invalid
-            
-            // This is a placeholder test - actual implementation would mock HTTP client
-            return Promise.complete(null);
+    void shouldParseValidJsonResponse() {
+        assertDoesNotThrow(() -> {
+            // Placeholder until HTTP client mocking is added for structured output parsing.
         });
     }
 

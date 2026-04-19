@@ -11,6 +11,7 @@ import {
 } from '@ghatana/tokens';
 import { useTheme } from '@ghatana/theme';
 import { Box, type BoxProps } from '../layout/Box';
+import { createPressableBehavior, useComponentComposition } from '../core';
 import { sxToStyle } from '../utils/sx';
 
 export type CardVariant = 'elevated' | 'outlined' | 'subtle';
@@ -116,67 +117,124 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>((props, ref) => 
 
   const mergedStyle = style ? { ...baseStyle, ...sxToStyle(sx), ...style } : { ...baseStyle, ...sxToStyle(sx) };
 
+  const composition = useComponentComposition({
+    metadata: {
+      component: 'card',
+      variant,
+      state: interactive ? 'interactive' : hover && isHovered ? 'hovered' : 'idle',
+      privacy: 'public',
+    },
+    state: {
+      hovered: hover && isHovered,
+      interactive,
+      padded,
+      'has-header': Boolean(title || subtitle || headerActions),
+      'has-footer': Boolean(footer),
+      'has-media': Boolean(media),
+    },
+    features: [
+      'surface',
+      hover ? 'hoverable' : undefined,
+      interactive ? 'interactive' : undefined,
+    ],
+    behaviors: [
+      interactive
+        ? createPressableBehavior({
+          role: role ?? 'button',
+          tabIndex: tabIndex ?? 0,
+        })
+        : undefined,
+    ],
+    rootProps: {
+      className: cn('gh-card', className, hover && 'gh-card--hover'),
+      style: mergedStyle,
+      role: interactive ? 'button' : role,
+      tabIndex: interactive ? 0 : tabIndex,
+      onMouseEnter: (event) => {
+        if (hover) setIsHovered(true);
+        onMouseEnter?.(event as unknown as React.MouseEvent<HTMLDivElement>);
+      },
+      onMouseLeave: (event) => {
+        if (hover) setIsHovered(false);
+        onMouseLeave?.(event as unknown as React.MouseEvent<HTMLDivElement>);
+      },
+      ...rest,
+    },
+  });
+
   return (
     <div
       ref={ref}
-      className={cn('gh-card', className, hover && 'gh-card--hover')}
-      style={mergedStyle}
-      role={interactive ? 'button' : role}
-      tabIndex={interactive ? 0 : tabIndex}
-      onMouseEnter={(event) => {
-        if (hover) setIsHovered(true);
-        onMouseEnter?.(event);
-      }}
-      onMouseLeave={(event) => {
-        if (hover) setIsHovered(false);
-        onMouseLeave?.(event);
-      }}
-      {...rest}
+      {...composition.rootProps}
     >
       {media ? (
-        <div className="gh-card__media" style={{ display: 'block' }}>
+        <div
+          {...composition.getSlotProps(
+            'media',
+            {
+              className: 'gh-card__media',
+              style: { display: 'block' },
+            },
+            { present: true }
+          )}
+        >
           {media}
         </div>
       ) : null}
 
       {(title || subtitle || headerActions) && (
         <div
-          className="gh-card__header"
-          style={{
-            display: 'flex',
-            alignItems: subtitle ? 'flex-start' : 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            padding: padded ? '20px' : '16px',
-          }}
+          {...composition.getSlotProps(
+            'header',
+            {
+              className: 'gh-card__header',
+              style: {
+                display: 'flex',
+                alignItems: subtitle ? 'flex-start' : 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                padding: padded ? '20px' : '16px',
+              },
+            },
+            { present: true }
+          )}
         >
-          <div style={{ flex: '1 1 auto' }}>
+          <div {...composition.getSlotProps('header-content', { style: { flex: '1 1 auto' } })}>
             {title ? (
               <div
-                className="gh-card__title"
-                style={{
-                  fontSize: fontSize.lg,
-                  fontWeight: fontWeight.semibold,
-                  marginBottom: subtitle ? '4px' : 0,
-                }}
+                {...composition.getSlotProps('title', {
+                  className: 'gh-card__title',
+                  style: {
+                    fontSize: fontSize.lg,
+                    fontWeight: fontWeight.semibold,
+                    marginBottom: subtitle ? '4px' : 0,
+                  },
+                })}
               >
                 {title}
               </div>
             ) : null}
             {subtitle ? (
               <div
-                className="gh-card__subtitle"
-                style={{
-                  fontSize: fontSize.sm,
-                  color: surface.text.secondary,
-                }}
+                {...composition.getSlotProps('subtitle', {
+                  className: 'gh-card__subtitle',
+                  style: {
+                    fontSize: fontSize.sm,
+                    color: surface.text.secondary,
+                  },
+                })}
               >
                 {subtitle}
               </div>
             ) : null}
           </div>
           {headerActions ? (
-            <div className="gh-card__actions" style={{ display: 'inline-flex', gap: '8px' }}>
+            <div
+              {...composition.getSlotProps('header-actions', {
+                className: 'gh-card__actions',
+                style: { display: 'inline-flex', gap: '8px' },
+              })}
+            >
               {headerActions}
             </div>
           ) : null}
@@ -184,25 +242,37 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>((props, ref) => 
       )}
 
       <div
-        className="gh-card__body"
-        style={{
-          flex: '1 1 auto',
-          padding: padded ? '20px' : '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}
+        {...composition.getSlotProps(
+          'body',
+          {
+            className: 'gh-card__body',
+            style: {
+              flex: '1 1 auto',
+              padding: padded ? '20px' : '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            },
+          },
+          { present: true }
+        )}
       >
         {children}
       </div>
 
       {footer ? (
         <div
-          className="gh-card__footer"
-          style={{
-            padding: padded ? '20px' : '16px',
-            borderTop: `1px solid ${surface.border}`,
-          }}
+          {...composition.getSlotProps(
+            'footer',
+            {
+              className: 'gh-card__footer',
+              style: {
+                padding: padded ? '20px' : '16px',
+                borderTop: `1px solid ${surface.border}`,
+              },
+            },
+            { present: true }
+          )}
         >
           {footer}
         </div>

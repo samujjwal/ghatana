@@ -164,7 +164,7 @@ class StreamingAnalyticsEngineTest {
         @DisplayName("event with matching type is parsed and delivered to handler")
         void subscribe_matchingAnomalyEvent_deliveredToHandler() {
             // Capture the event handler installed on DataCloud
-            ArgumentCaptor<Consumer<Event>> handlerCaptor = ArgumentCaptor.forClass(Consumer.class);
+            ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor();
             AnomalyFilter filter = AnomalyFilter.allFor(TENANT);
 
             List<DataCloudAnalyticsStore.AnomalyRecord> received = new ArrayList<>();
@@ -192,7 +192,7 @@ class StreamingAnalyticsEngineTest {
         @Test
         @DisplayName("event with wrong type is silently ignored")
         void subscribe_wrongTypeEvent_ignored() {
-            ArgumentCaptor<Consumer<Event>> handlerCaptor = ArgumentCaptor.forClass(Consumer.class);
+            ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor();
             engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> fail("should not be called"));
 
             verify(dataCloud).tailEvents(any(), any(), handlerCaptor.capture());
@@ -206,7 +206,7 @@ class StreamingAnalyticsEngineTest {
         @Test
         @DisplayName("score filter drops events below minimum score")
         void scoreFilter_dropsLowScoreEvents() {
-            ArgumentCaptor<Consumer<Event>> handlerCaptor = ArgumentCaptor.forClass(Consumer.class);
+            ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor();
             AnomalyFilter filter = AnomalyFilter.of(TENANT, null, 0.8); // minimum score 0.8
 
             List<DataCloudAnalyticsStore.AnomalyRecord> received = new ArrayList<>();
@@ -227,7 +227,7 @@ class StreamingAnalyticsEngineTest {
         @Test
         @DisplayName("severity filter drops events below minimum severity")
         void severityFilter_dropsLowSeverityEvents() {
-            ArgumentCaptor<Consumer<Event>> handlerCaptor = ArgumentCaptor.forClass(Consumer.class);
+            ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor();
             AnomalyFilter filter = AnomalyFilter.of(TENANT, "HIGH", 0.0); // minimum severity HIGH
 
             List<DataCloudAnalyticsStore.AnomalyRecord> received = new ArrayList<>();
@@ -300,7 +300,7 @@ class StreamingAnalyticsEngineTest {
         @Test
         @DisplayName("KPI event is parsed and forwarded to handler")
         void kpiEvent_parsedAndDelivered() {
-            ArgumentCaptor<Consumer<Event>> handlerCaptor = ArgumentCaptor.forClass(Consumer.class);
+            ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor();
             List<DataCloudAnalyticsStore.KpiSnapshot> received = new ArrayList<>();
             engine.subscribeToKPIs(KpiFilter.allFor(TENANT), received::add);
 
@@ -322,7 +322,7 @@ class StreamingAnalyticsEngineTest {
         @Test
         @DisplayName("kpiName filter drops events for other KPIs")
         void kpiNameFilter_dropsNonMatchingKpis() {
-            ArgumentCaptor<Consumer<Event>> handlerCaptor = ArgumentCaptor.forClass(Consumer.class);
+            ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor();
             KpiFilter filter = KpiFilter.forKpi(TENANT, "cpu.usage");
             List<DataCloudAnalyticsStore.KpiSnapshot> received = new ArrayList<>();
             engine.subscribeToKPIs(filter, received::add);
@@ -341,7 +341,7 @@ class StreamingAnalyticsEngineTest {
         @Test
         @DisplayName("anomaly event is ignored by KPI subscriber")
         void anomalyEvent_ignoredByKpiSubscriber() {
-            ArgumentCaptor<Consumer<Event>> handlerCaptor = ArgumentCaptor.forClass(Consumer.class);
+            ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor();
             engine.subscribeToKPIs(KpiFilter.allFor(TENANT), s -> fail("should not be called"));
 
             verify(dataCloud).tailEvents(any(), any(), handlerCaptor.capture());
@@ -539,5 +539,10 @@ class StreamingAnalyticsEngineTest {
             assertThatThrownBy(() -> KpiFilter.allFor(null))
                     .isInstanceOf(NullPointerException.class);
         }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static ArgumentCaptor<Consumer<Event>> eventConsumerCaptor() {
+        return (ArgumentCaptor) ArgumentCaptor.forClass(Consumer.class);
     }
 }

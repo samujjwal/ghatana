@@ -79,7 +79,7 @@ class DataCloudPatternStoreTest {
 
             PatternMetadata result = store.save(spec).getResult();
 
-            ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> dataCaptor = mapCaptor();
             verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), dataCaptor.capture());
             assertThat(dataCaptor.getValue().get("id")).isNotNull();
             assertThat(result).isNotNull();
@@ -97,7 +97,7 @@ class DataCloudPatternStoreTest {
 
             store.save(spec).getResult();
 
-            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> captor = mapCaptor();
             verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), captor.capture());
             assertThat(captor.getValue().get("id")).isEqualTo(existingId.toString());
         }
@@ -210,7 +210,7 @@ class DataCloudPatternStoreTest {
 
             store.updateStatus(id, PatternStatus.INACTIVE).getResult();
 
-            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> captor = mapCaptor();
             verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), captor.capture());
             assertThat(captor.getValue().get("status")).isEqualTo("INACTIVE");
         }
@@ -319,6 +319,11 @@ class DataCloudPatternStoreTest {
                 .tenantId(TENANT)
                 .name(name)
                 .status(PatternStatus.ACTIVE);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static ArgumentCaptor<Map<String, Object>> mapCaptor() {
+        return (ArgumentCaptor) ArgumentCaptor.forClass(Map.class);
     }
 
     private static Entity entity(String id) {

@@ -4,10 +4,15 @@
  */
 package com.ghatana.ai.llm;
 
+import com.ghatana.ai.embedding.EmbeddingResult;
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.NoopMetricsCollector;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -191,7 +196,7 @@ class LLMAuditTrailServiceTest {
 
             @Override
             public Promise<EmbeddingResult> embed(String text) {
-                return Promise.of(new EmbeddingResult(new java.util.ArrayList<>(), "model"));
+                return Promise.of(new EmbeddingResult(text, new float[0], "model"));
             }
 
             @Override
@@ -206,7 +211,7 @@ class LLMAuditTrailServiceTest {
 
             @Override
             public MetricsCollector getMetrics() {
-                return com.ghatana.platform.observability.MetricsCollector.noop();
+                return NoopMetricsCollector.getInstance();
             }
 
             @Override

@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 /**
@@ -334,8 +335,8 @@ class DistributedCacheServiceIntegrationTest {
         void shouldHandleInvalidateError() {
             // Given
             String key = "invalidate-error";
-            when(backend.deleteKey("tenant:tenant-cache-test:invalidate-error"))
-                    .thenThrow(new RuntimeException("Delete failed"));
+            doThrow(new RuntimeException("Delete failed"))
+                .when(backend).deleteKey("tenant:tenant-cache-test:invalidate-error");
 
             // When + Then - should not throw
             cacheService.invalidate(key);
@@ -434,7 +435,7 @@ class DistributedCacheServiceIntegrationTest {
             }
 
             // Then - all operations complete
-            assertThat(threads).hasLength(3);
+            assertThat(threads).hasSize(3);
         }
     }
 

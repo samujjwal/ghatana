@@ -10,12 +10,19 @@
  */
 
 import React, { useMemo } from 'react';
+import type { ComponentContract } from '@ghatana/ds-schema';
 import type {
   ComponentInstance,
   BuilderDocument,
   NodeId,
   Binding,
 } from '../core/types';
+import {
+  type ManifestLookup,
+  projectInstanceToPlatformPlan,
+  type BuilderPlatformSlotPlan,
+  type ContractLookup,
+} from '../core/platform-plan';
 
 export interface ComponentRendererProps {
   /** The component instance to render */
@@ -28,6 +35,10 @@ export interface ComponentRendererProps {
   eventContext?: Record<string, (event: Event) => void>;
   /** Custom component registry mapping contract names to React components */
   componentRegistry?: Record<string, React.ComponentType<any>>;
+  /** Optional contract lookup for platform-aware rendering metadata */
+  contracts?: ContractLookup;
+  /** Optional component manifest lookup from design-system recipes */
+  manifests?: ManifestLookup;
   /** CSS class name to apply */
   className?: string;
 }
@@ -44,8 +55,23 @@ export function ComponentRenderer({
   bindingContext = {},
   eventContext = {},
   componentRegistry = {},
+  contracts,
+  manifests,
   className,
 }: ComponentRendererProps): React.ReactElement {
+  const contractMap = useMemo(() => {
+    if (!contracts) {
+      return new Map<string, ComponentContract>();
+    }
+    if (contracts instanceof Map) {
+      return contracts;
+    }
+    if (Array.isArray(contracts)) {
+      return new Map(contracts.map((contract) => [contract.name, contract]));
+    }
+    return new Map<string, ComponentContract>();
+  }, [contracts]);
+
   // Resolve props with data bindings
   const resolvedProps = useMemo(() => {
     const props: Record<string, unknown> = { ...instance.props };
@@ -84,13 +110,28 @@ export function ComponentRenderer({
 
   // Get the React component from registry
   const Component = componentRegistry[instance.contractName] || GenericComponent;
+  const platformPlan = useMemo(
+    () => {
+      const manifestMap = manifests instanceof Map
+        ? manifests
+        : Array.isArray(manifests)
+          ? new Map(manifests.map((manifest) => [manifest.name, manifest]))
+          : new Map();
+      return projectInstanceToPlatformPlan(
+        instance,
+        contractMap.get(instance.contractName),
+        manifestMap.get(instance.contractName),
+      );
+    },
+    [contractMap, instance, manifests]
+  );
 
   // Render slot children
   const slotChildren = useMemo(() => {
     const children: Record<string, React.ReactNode> = {};
 
-    for (const [slotName, childIds] of Object.entries(instance.slots)) {
-      children[slotName] = childIds.map((childId: NodeId) => {
+    for (const slotPlan of platformPlan.slots) {
+      const renderedChildren = slotPlan.childIds.map((childId: NodeId) => {
         const child = document.nodes.get(childId);
         if (!child) return null;
 
@@ -102,13 +143,31 @@ export function ComponentRenderer({
             bindingContext={bindingContext}
             eventContext={eventContext}
             componentRegistry={componentRegistry}
+            contracts={contracts}
+            manifests={manifests}
           />
         );
       });
+
+      assignSlotContent(
+        children,
+        slotPlan,
+        renderedChildren,
+        resolvedProps.children as React.ReactNode,
+      );
     }
 
     return children;
-  }, [instance.slots, document, bindingContext, eventContext, componentRegistry]);
+  }, [
+    bindingContext,
+    componentRegistry,
+    contracts,
+    document,
+    eventContext,
+    manifests,
+    platformPlan.slots,
+    resolvedProps.children,
+  ]);
 
   return (
     <Component
@@ -117,6 +176,11 @@ export function ComponentRenderer({
       {...slotChildren}
       data-builder-id={instance.id}
       data-builder-contract={instance.contractName}
+      data-builder-platforms={platformPlan.targets.join(' ')}
+      data-builder-signature={platformPlan.signature}
+      data-builder-features={platformPlan.features.join(' ')}
+      data-builder-classification={platformPlan.dataClassification}
+      data-builder-review-required={platformPlan.reviewRequired || undefined}
     />
   );
 }
@@ -160,4 +224,46 @@ function resolveDataBinding(
   }
 
   return value;
+}
+
+function assignSlotContent(
+  target: Record<string, React.ReactNode>,
+  slotPlan: BuilderPlatformSlotPlan,
+  children: React.ReactNode[],
+  existingChildren?: React.ReactNode,
+): void {
+  const slotContent = collapseSlotChildren(children);
+  if (slotPlan.exposure === 'children') {
+    target.children = mergeChildren(existingChildren, slotContent);
+    return;
+  }
+
+  if (slotContent !== undefined) {
+    target[slotPlan.name] = slotContent;
+  }
+}
+
+function collapseSlotChildren(children: React.ReactNode[]): React.ReactNode | undefined {
+  const filteredChildren = children.filter((child) => child !== null && child !== undefined);
+  if (filteredChildren.length === 0) return undefined;
+  if (filteredChildren.length === 1) return filteredChildren[0];
+  return <>{filteredChildren}</>;
+}
+
+function mergeChildren(
+  existingChildren: React.ReactNode,
+  slotChildren: React.ReactNode | undefined,
+): React.ReactNode | undefined {
+  if (existingChildren === undefined || existingChildren === null) {
+    return slotChildren;
+  }
+  if (slotChildren === undefined) {
+    return existingChildren;
+  }
+  return (
+    <>
+      {existingChildren}
+      {slotChildren}
+    </>
+  );
 }

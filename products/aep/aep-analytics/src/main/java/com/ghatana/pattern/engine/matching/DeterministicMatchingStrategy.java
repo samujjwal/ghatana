@@ -5,8 +5,12 @@
 package com.ghatana.pattern.engine.matching;
 
 import com.ghatana.pattern.engine.nfa.NFA;
+import com.ghatana.pattern.engine.nfa.NFAState;
+import com.ghatana.pattern.engine.nfa.NFATransition;
 import com.ghatana.platform.domain.event.GEvent;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -20,7 +24,7 @@ import java.util.Optional;
  */
 public final class DeterministicMatchingStrategy implements PatternMatchingStrategy {
 
-    private NFA.State currentState;
+    private NFAState currentState;
 
     public DeterministicMatchingStrategy() {
         this.currentState = null;
@@ -30,17 +34,17 @@ public final class DeterministicMatchingStrategy implements PatternMatchingStrat
     public Optional<PatternMatch> evaluate(GEvent event, NFA nfa, MatchingContext context) {
         // Initialize state if needed
         if (currentState == null) {
-            currentState = nfa.getInitialState();
+            currentState = nfa.getStartState();
         }
 
         // Find next state based on event
-        Optional<NFA.State> nextState = findNextState(currentState, event, nfa);
+        Optional<NFAState> nextState = findNextState(currentState, event, nfa);
 
         if (nextState.isPresent()) {
             currentState = nextState.get();
 
             // Check if we've reached an accepting state
-            if (currentState.isAccepting()) {
+            if (nfa.getAcceptingStates().contains(currentState)) {
                 PatternMatch match = new PatternMatch(
                     nfa.getPatternName(),
                     1.0, // Deterministic = 100% confidence
@@ -50,7 +54,7 @@ public final class DeterministicMatchingStrategy implements PatternMatchingStrat
                 );
 
                 // Reset for next pattern
-                currentState = nfa.getInitialState();
+                currentState = nfa.getStartState();
                 return Optional.of(match);
             }
 
@@ -58,7 +62,7 @@ public final class DeterministicMatchingStrategy implements PatternMatchingStrat
         }
 
         // No valid transition - reset to initial state
-        currentState = nfa.getInitialState();
+    currentState = nfa.getStartState();
         return Optional.empty();
     }
 
@@ -72,10 +76,11 @@ public final class DeterministicMatchingStrategy implements PatternMatchingStrat
         return StrategyType.DETERMINISTIC;
     }
 
-    private Optional<NFA.State> findNextState(NFA.State current, GEvent event, NFA nfa) {
-        return nfa.getTransitions(current).stream()
-            .filter(t -> t.matches(event))
-            .map(NFA.Transition::getTarget)
+    private Optional<NFAState> findNextState(NFAState current, GEvent event, NFA nfa) {
+        return current.getTransitions().stream()
+            .filter(t -> !t.isEpsilonTransition())
+            .filter(t -> Objects.equals(t.getEventType(), event.getType()))
+            .map(NFATransition::getToState)
             .findFirst();
     }
 }

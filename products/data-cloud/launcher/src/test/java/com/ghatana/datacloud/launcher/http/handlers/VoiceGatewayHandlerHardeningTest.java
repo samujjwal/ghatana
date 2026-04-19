@@ -5,8 +5,12 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.datacloud.launcher.http.VoiceIntentCatalog;
 import com.ghatana.datacloud.launcher.http.VoiceIntentCatalog.VoiceIntent;
+import com.ghatana.datacloud.launcher.http.voice.VoiceSttPort;
+import com.ghatana.datacloud.launcher.http.voice.VoiceTtsPort;
+import com.ghatana.platform.audit.AuditService;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,14 +47,19 @@ class VoiceGatewayHandlerHardeningTest {
     @BeforeEach
     void setUp() {
         http = mock(HttpHandlerSupport.class);
+        CompletionService completionService = null;
+        AuditService auditService = null;
+        VoiceSttPort sttPort = null;
+        VoiceTtsPort ttsPort = null;
+        Function<String, Map<String, Object>> contextEntriesProvider = null;
         // Minimal constructor — no LLM, no STT, no audit
         handler = new VoiceGatewayHandler(
-                null, null,
+            completionService, auditService,
                 new ObjectMapper(),
                 http,
                 Runnable::run,
-                null, null,
-                null);
+            sttPort, ttsPort,
+            contextEntriesProvider);
     }
 
     // ── Rate Limiter ──────────────────────────────────────────────────────────
@@ -121,12 +131,17 @@ class VoiceGatewayHandlerHardeningTest {
             when(ctxLayer.currentEntries("tenant-x"))
                     .thenReturn(Map.of("currentCollection", "orders", "preferredLanguage", "en"));
 
+            CompletionService completionService = null;
+            AuditService auditService = null;
+            VoiceSttPort sttPort = null;
+            VoiceTtsPort ttsPort = null;
+
             VoiceGatewayHandler handlerWithCtx = new VoiceGatewayHandler(
-                    null, null, new ObjectMapper(),
+                completionService, auditService, new ObjectMapper(),
                     mock(HttpHandlerSupport.class),
                     Runnable::run,
-                    null, null,
-                    ctxLayer);
+                sttPort, ttsPort,
+                    ctxLayer::currentEntries);
 
             // Verify handler is constructed and context is available
             assertThat(handlerWithCtx).isNotNull();

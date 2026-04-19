@@ -291,7 +291,7 @@ class AepComplianceServiceTest {
             assertThat(report.recordsAffected()).isEqualTo(1L);
 
             // Verify save was called with the correction applied
-            ArgumentCaptor<Map> dataCaptor = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> dataCaptor = mapCaptor();
             verify(client).save(eq(TENANT), eq("aep_patterns"), dataCaptor.capture());
             assertThat(dataCaptor.getValue()).containsEntry("name", "Alice Updated");
         }
@@ -327,7 +327,7 @@ class AepComplianceServiceTest {
         void correctedEntities_haveCorrectedAtField() {
             Entity e1 = entity("u1", Map.of("email", "a@b.com", "_subjectId", SUBJECT_ID));
             stubQuery(TENANT, "dc_memory", List.of(e1));
-            ArgumentCaptor<Map> dataCaptor = ArgumentCaptor.forClass(Map.class);
+            var dataCaptor = mapCaptor();
             when(client.save(eq(TENANT), eq("dc_memory"), dataCaptor.capture()))
                     .thenReturn(Promise.of(entity("u1")));
 
@@ -417,14 +417,13 @@ class AepComplianceServiceTest {
         @Test
         @DisplayName("opt-out record contains required fields")
         void optOutRecord_containsRequiredFields() {
-            ArgumentCaptor<Map> dataCaptor = ArgumentCaptor.forClass(Map.class);
+            var dataCaptor = mapCaptor();
             when(client.save(eq(TENANT), eq(AepComplianceService.OPT_OUT_COLLECTION), dataCaptor.capture()))
                     .thenReturn(Promise.of(entity(CONSUMER_ID)));
 
             service.ccpaOptOut(TENANT, CONSUMER_ID).getResult();
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> savedData = (Map<String, Object>) dataCaptor.getValue();
+            Map<String, Object> savedData = dataCaptor.getValue();
             assertThat(savedData)
                     .containsEntry("id",          CONSUMER_ID)
                     .containsEntry("_ccpaOptOut", true)
@@ -436,7 +435,7 @@ class AepComplianceServiceTest {
         @Test
         @DisplayName("ccpa opt-out uses consumerId as entity id for idempotent upsert")
         void optOut_usesConsumerIdAsEntityId() throws Exception {
-            ArgumentCaptor<Map> dataCaptor = ArgumentCaptor.forClass(Map.class);
+            var dataCaptor = mapCaptor();
             when(client.save(eq(TENANT), eq(AepComplianceService.OPT_OUT_COLLECTION), dataCaptor.capture()))
                     .thenReturn(Promise.of(entity(CONSUMER_ID)));
 
@@ -471,6 +470,15 @@ class AepComplianceServiceTest {
         Map<String, Object> merged = new java.util.HashMap<>(data);
         merged.put("id", id);
         return Entity.of(id, "test-collection", merged);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static <T> ArgumentCaptor<T> captorFor(Class<?> rawClass) {
+        return (ArgumentCaptor) ArgumentCaptor.forClass((Class) rawClass);
+    }
+
+    private static ArgumentCaptor<Map<String, Object>> mapCaptor() {
+        return captorFor(Map.class);
     }
 
     /** Stub {@code client.query(tenant, collection, *)} to return an empty list. */

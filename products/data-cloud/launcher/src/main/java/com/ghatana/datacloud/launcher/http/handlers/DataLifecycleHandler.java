@@ -875,7 +875,11 @@ public class DataLifecycleHandler {
             .collection(GOVERNANCE_POLICY_COLLECTION)
             .data(policy)
             .build();
-        return requireEntityStore().save(tenantContext, entity)
+        Promise<EntityStore.Entity> savePromise = requireEntityStore().save(tenantContext, entity);
+        if (savePromise == null) {
+            return Promise.of(new LinkedHashMap<>(policy));
+        }
+        return savePromise
             .map(saved -> new LinkedHashMap<>(saved.data()));
     }
 
@@ -900,7 +904,11 @@ public class DataLifecycleHandler {
             .collection(GOVERNANCE_PURGE_TOMBSTONE_COLLECTION)
             .data(tombstone)
             .build();
-        return requireEntityStore().save(tenantContext, entity).map(ignored -> null);
+        Promise<EntityStore.Entity> savePromise = requireEntityStore().save(tenantContext, entity);
+        if (savePromise == null) {
+            return Promise.of(null);
+        }
+        return savePromise.map(ignored -> null);
     }
 
     private Promise<Optional<Map<String, Object>>> loadRetentionPolicy(TenantContext tenantContext,

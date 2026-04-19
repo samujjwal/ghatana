@@ -28,6 +28,7 @@ public final class RequestObservationFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RequestObservationFilter.class);
     private static final String API_PREFIX = "/api/v1/";
+    private static final String DEFAULT_TENANT_ID = "default";
 
     private final HttpHandlerSupport httpSupport;
     private final DataCloudBusinessMetrics businessMetrics;
@@ -51,17 +52,22 @@ public final class RequestObservationFilter {
         return request -> {
             long startNanos = System.nanoTime();
             String requestId = httpSupport.resolveCorrelationId(request);
-            String tenantId = httpSupport.peekTenantId(request);
+            String method = request.getMethod().name();
+            String path = request.getPath();
+            String resolvedTenantId = httpSupport.peekTenantId(request);
+            String tenantId = resolvedTenantId;
+            if (tenantId == null && !httpSupport.isStrictTenantResolution() && usesDefaultTenant(path)) {
+                tenantId = DEFAULT_TENANT_ID;
+            }
+            final String effectiveTenantId = tenantId;
             TraceParent traceParent = parseTraceParent(request.getHeader(HttpHeaders.of("traceparent")));
             String traceId = traceParent != null ? traceParent.traceId() : requestId;
             String requestSpanId = UUID.randomUUID().toString();
             boolean sampled = traceParent != null ? traceParent.sampled() : shouldSample(requestId, samplingRate);
-            String method = request.getMethod().name();
-            String path = request.getPath();
 
             RequestMetadataAttachment metadata = new RequestMetadataAttachment(
                 requestId,
-                tenantId,
+                effectiveTenantId,
                 traceId,
                 requestSpanId,
                 traceParent != null ? traceParent.parentSpanId() : null,
@@ -76,22 +82,22 @@ public final class RequestObservationFilter {
                         "X-Tenant-Id header or tenantId parameter required",
                         requestId));
                 }
-                if (tenantId == null) {
+                if (effectiveTenantId == null) {
                     return Promise.of(httpSupport.errorResponse(400,
                         "Invalid tenant identifier format",
                         requestId));
                 }
             }
 
-            RequestContext context = tenantId == null || tenantId.isBlank()
+            RequestContext context = effectiveTenantId == null || effectiveTenantId.isBlank()
                     ? RequestContext.bindRequest(requestId, traceId, method, path)
-                    : RequestContext.bind(requestId, tenantId, traceId, method, path);
+                    : RequestContext.bind(requestId, effectiveTenantId, traceId, method, path);
 
             log.info("[DC-OBS] request started method={} path={} requestId={} tenantId={} traceId={}",
                     method,
                     path,
                     requestId,
-                    tenantId == null ? "unknown" : tenantId,
+                    effectiveTenantId == null ? "unknown" : effectiveTenantId,
                     traceId);
 
             Promise<HttpResponse> responsePromise;
@@ -111,7 +117,7 @@ public final class RequestObservationFilter {
                             method,
                             path,
                             requestId,
-                            tenantId == null ? "unknown" : tenantId,
+                            effectiveTenantId == null ? "unknown" : effectiveTenantId,
                             traceId,
                             statusCode,
                             durationNanos / 1_000_000L);
@@ -120,7 +126,7 @@ public final class RequestObservationFilter {
                             method,
                             path,
                             requestId,
-                            tenantId == null ? "unknown" : tenantId,
+                            effectiveTenantId == null ? "unknown" : effectiveTenantId,
                             traceId,
                             durationNanos / 1_000_000L,
                             error.getMessage(),
@@ -144,6 +150,21 @@ public final class RequestObservationFilter {
             && !path.equals("/api/v1/live")
             && !path.equals("/api/v1/metrics")
             && !path.equals("/api/v1/info");
+    }
+
+    private static boolean usesDefaultTenant(String path) {
+        if (path == null) {
+            return false;
+        }
+        return path.startsWith("/api/v1/entities")
+            || path.startsWith("/api/v1/events")
+            || path.startsWith("/api/v1/analytics")
+            || path.startsWith("/api/v1/brain")
+            || path.startsWith("/api/v1/memory")
+            || path.startsWith("/api/v1/learning")
+            || path.equals("/api/v1/pipelines/draft")
+            || path.matches("^/api/v1/pipelines/[^/]+/optimise-hint$")
+            || path.startsWith("/api/v1/voice");
     }
 
     private void recordBusinessMetrics(RequestMetadataAttachment metadata, int statusCode, long durationMs) {

@@ -8,12 +8,16 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.platform.domain.event.Event;
+import com.ghatana.platform.domain.event.EventRelations;
+import com.ghatana.platform.domain.event.EventStats;
 import com.ghatana.platform.domain.event.EventId;
 import com.ghatana.platform.domain.event.EventTime;
-import com.ghatana.platform.domain.event.EventType;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.platform.observability.Metrics;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.validation.ai.AIPatternDetectionService.DetectedPattern;
 import com.ghatana.validation.ai.AIPatternDetectionService.PatternAnalysisConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -38,24 +41,19 @@ import static org.mockito.Mockito.when;
  */
 @DisplayName("AI Pattern Detection Service ML Tests")
 @ExtendWith(MockitoExtension.class)
-class AIPatternDetectionServiceMLTest {
+class AIPatternDetectionServiceMLTest extends EventloopTestBase {
 
     @Mock
     private LLMGateway llmGateway;
 
-    @Mock
-    private Metrics metrics;
-
     @Test
     @DisplayName("uses ML when LLM gateway is provided and useML is true")
     void usesMLWhenGatewayProvided() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway);
 
         List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = PatternAnalysisConfig.builder()
-            .useML(true)
-            .confidenceThreshold(0.5)
-            .build();
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true));
 
         CompletionResult mockResult = CompletionResult.builder()
             .text("[]")
@@ -69,7 +67,7 @@ class AIPatternDetectionServiceMLTest {
         when(llmGateway.complete(any(CompletionRequest.class)))
             .thenReturn(Promise.of(mockResult));
 
-        List<DetectedPattern> patterns = service.detectPatterns(events, config).getResult();
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
 
         assertThat(patterns).isNotNull();
     }
@@ -77,15 +75,13 @@ class AIPatternDetectionServiceMLTest {
     @Test
     @DisplayName("falls back to heuristic when useML is false")
     void fallsBackToHeuristicWhenUseMLFalse() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway);
 
         List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = PatternAnalysisConfig.builder()
-            .useML(false)
-            .confidenceThreshold(0.5)
-            .build();
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", false));
 
-        List<DetectedPattern> patterns = service.detectPatterns(events, config).getResult();
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
 
         assertThat(patterns).isNotNull();
     }
@@ -93,15 +89,13 @@ class AIPatternDetectionServiceMLTest {
     @Test
     @DisplayName("falls back to heuristic when LLM gateway is null")
     void fallsBackToHeuristicWhenGatewayNull() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, null);
 
         List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = PatternAnalysisConfig.builder()
-            .useML(true)
-            .confidenceThreshold(0.5)
-            .build();
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true));
 
-        List<DetectedPattern> patterns = service.detectPatterns(events, config).getResult();
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
 
         assertThat(patterns).isNotNull();
     }
@@ -109,13 +103,11 @@ class AIPatternDetectionServiceMLTest {
     @Test
     @DisplayName("converts operator spec to detected pattern")
     void convertsOperatorSpecToDetectedPattern() {
+        Metrics metrics = new Metrics(new SimpleMeterRegistry());
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway);
 
         List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = PatternAnalysisConfig.builder()
-            .useML(true)
-            .confidenceThreshold(0.5)
-            .build();
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true));
 
         CompletionResult mockResult = CompletionResult.builder()
             .text("[]")
@@ -129,7 +121,7 @@ class AIPatternDetectionServiceMLTest {
         when(llmGateway.complete(any(CompletionRequest.class)))
             .thenReturn(Promise.of(mockResult));
 
-        List<DetectedPattern> patterns = service.detectPatterns(events, config).getResult();
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
 
         assertThat(patterns).isNotNull();
     }
@@ -149,10 +141,17 @@ class AIPatternDetectionServiceMLTest {
      * Creates a sample event.
      */
     private Event createEvent(String type, String id) {
-        return Event.builder()
-            .id(EventId.of(id))
-            .type(EventType.of(type))
-            .time(EventTime.of(Instant.now()))
+        return GEvent.builder()
+            .id(EventId.create(id, type, "v1", "test-tenant"))
+            .time(EventTime.now())
+            .stats(EventStats.builder()
+                .withProcessingTimeNanos(0)
+                .withSizeInBytes(16)
+                .withFieldCount(1)
+                .withTagCount(0)
+                .build())
+            .relations(EventRelations.empty())
+            .headers(Map.of())
             .payload(Map.of("test", "data"))
             .build();
     }

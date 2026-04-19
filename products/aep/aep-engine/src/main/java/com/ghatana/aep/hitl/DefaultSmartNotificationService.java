@@ -45,7 +45,7 @@ public class DefaultSmartNotificationService implements SmartNotificationService
     @Override
     public NotificationDecision shouldNotify(String itemId, Priority priority, Map<String, Object> context) {
         String tenantId = context != null ? (String) context.get("tenantId") : "default";
-        TenantNotificationStats stats = statsByTenant.computeIfAbsent(tenantId, TenantNotificationStats::new);
+        TenantNotificationStats stats = statsByTenant.computeIfAbsent(tenantId, ignored -> new TenantNotificationStats());
 
         NotificationRule rule = RULES.getOrDefault(priority, RULES.get(Priority.INFO));
 

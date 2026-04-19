@@ -46,6 +46,7 @@ dependencies {
     // Platform Libraries (legacy - will be migrated in future phases)
     // =================================================================
     api(project(":platform:java:security"))
+    api(project(":platform:java:governance"))
     api(project(":platform:java:database"))
     api(project(":platform:java:audit"))
 

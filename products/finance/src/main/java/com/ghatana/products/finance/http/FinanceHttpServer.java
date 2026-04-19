@@ -12,6 +12,7 @@ import com.ghatana.finance.service.TransactionService;
 import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.governance.security.TenantContext;
+import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -105,18 +106,19 @@ public final class FinanceHttpServer implements KernelLifecycleAware {
      *
      * <p>Mount this servlet into a parent router at the desired prefix, e.g.:
      * <pre>{@code
-     *   RoutingServlet router = RoutingServlet.create()
+    *   RoutingServlet router = RoutingServlet.builder(Eventloop.create())
      *       .map("/api/v1/finance/*", financeHttpServer.getServlet());
      * }</pre>
      *
      * @return routing servlet; never null
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.create()
-                .map(HttpMethod.POST, "/transactions", this::handlePostTransaction)
-                .map(HttpMethod.GET, "/transactions/:id", this::handleGetTransaction)
-                .map(HttpMethod.GET, "/health", this::handleHealth)
-                .map(HttpMethod.GET, "/ready", this::handleReady);
+        return RoutingServlet.builder(Eventloop.create())
+                .with(HttpMethod.POST, "/transactions", this::handlePostTransaction)
+                .with(HttpMethod.GET, "/transactions/:id", this::handleGetTransaction)
+                .with(HttpMethod.GET, "/health", this::handleHealth)
+            .with(HttpMethod.GET, "/ready", this::handleReady)
+                .build();
     }
 
     // -------------------------------------------------------------------------

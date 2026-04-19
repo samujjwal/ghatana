@@ -5,6 +5,7 @@
 package com.ghatana.aep.metrics;
 
 import com.ghatana.platform.observability.Metrics;
+import io.micrometer.core.instrument.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +42,9 @@ public class PolicyAccuracyMetrics {
      * @param decisionType type of decision (e.g., "block", "warn", "allow")
      */
     public void recordTruePositive(String policyId, String decisionType) {
-        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, PolicyStats::new);
+        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, ignored -> new PolicyStats());
         stats.incrementTruePositives();
-        metrics.counter("policy.true_positive", "policyId", policyId, "decision", decisionType).increment();
+        counter("policy.true_positive", "policyId", policyId, "decision", decisionType).increment();
         logger.debug("Policy true positive: policyId={}, decision={}", policyId, decisionType);
     }
 
@@ -54,9 +55,9 @@ public class PolicyAccuracyMetrics {
      * @param decisionType type of decision
      */
     public void recordFalsePositive(String policyId, String decisionType) {
-        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, PolicyStats::new);
+        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, ignored -> new PolicyStats());
         stats.incrementFalsePositives();
-        metrics.counter("policy.false_positive", "policyId", policyId, "decision", decisionType).increment();
+        counter("policy.false_positive", "policyId", policyId, "decision", decisionType).increment();
         logger.debug("Policy false positive: policyId={}, decision={}", policyId, decisionType);
     }
 
@@ -66,9 +67,9 @@ public class PolicyAccuracyMetrics {
      * @param policyId unique policy identifier
      */
     public void recordFalseNegative(String policyId) {
-        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, PolicyStats::new);
+        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, ignored -> new PolicyStats());
         stats.incrementFalseNegatives();
-        metrics.counter("policy.false_negative", "policyId", policyId).increment();
+        counter("policy.false_negative", "policyId", policyId).increment();
         logger.debug("Policy false negative: policyId={}", policyId);
     }
 
@@ -78,9 +79,9 @@ public class PolicyAccuracyMetrics {
      * @param policyId unique policy identifier
      */
     public void recordTrueNegative(String policyId) {
-        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, PolicyStats::new);
+        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, ignored -> new PolicyStats());
         stats.incrementTrueNegatives();
-        metrics.counter("policy.true_negative", "policyId", policyId).increment();
+        counter("policy.true_negative", "policyId", policyId).increment();
         logger.debug("Policy true negative: policyId={}", policyId);
     }
 
@@ -91,9 +92,9 @@ public class PolicyAccuracyMetrics {
      * @param source source of promotion (e.g., "auto", "manual")
      */
     public void recordPolicyPromotion(String policyId, String source) {
-        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, PolicyStats::new);
+        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, ignored -> new PolicyStats());
         stats.incrementPromotions();
-        metrics.counter("policy.promotion", "policyId", policyId, "source", source).increment();
+        counter("policy.promotion", "policyId", policyId, "source", source).increment();
         logger.debug("Policy promoted: policyId={}, source={}", policyId, source);
     }
 
@@ -104,10 +105,16 @@ public class PolicyAccuracyMetrics {
      * @param reason reason for demotion
      */
     public void recordPolicyDemotion(String policyId, String reason) {
-        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, PolicyStats::new);
+        PolicyStats stats = statsByPolicyId.computeIfAbsent(policyId, ignored -> new PolicyStats());
         stats.incrementDemotions();
-        metrics.counter("policy.demotion", "policyId", policyId, "reason", reason).increment();
+        counter("policy.demotion", "policyId", policyId, "reason", reason).increment();
         logger.debug("Policy demoted: policyId={}, reason={}", policyId, reason);
+    }
+
+    private Counter counter(String name, String... tags) {
+        return Counter.builder(name)
+            .tags(tags)
+            .register(metrics.getRegistry());
     }
 
     /**
@@ -151,6 +158,17 @@ public class PolicyAccuracyMetrics {
     public double getRecall(String policyId) {
         PolicyStats stats = statsByPolicyId.getOrDefault(policyId, new PolicyStats());
         return stats.recall();
+    }
+
+    /**
+     * Get F1 score for a policy.
+     *
+     * @param policyId unique policy identifier
+     * @return F1 score (0.0 to 1.0)
+     */
+    public double getF1Score(String policyId) {
+        PolicyStats stats = statsByPolicyId.getOrDefault(policyId, new PolicyStats());
+        return stats.f1Score();
     }
 
     /**

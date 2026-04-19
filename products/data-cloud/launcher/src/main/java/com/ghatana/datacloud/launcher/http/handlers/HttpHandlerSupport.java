@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
+import com.ghatana.platform.governance.security.Principal;
 import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
@@ -309,6 +310,10 @@ public class HttpHandlerSupport {
     }
 
     private String resolveTenantId(HttpRequest request) {
+        Principal principal = request.getAttachment(Principal.class);
+        if (principal != null && principal.getTenantId() != null && !principal.getTenantId().isBlank()) {
+            return sanitizeTenantId(principal.getTenantId());
+        }
         String candidate = findRawTenantCandidate(request);
         return candidate == null ? null : sanitizeTenantId(candidate);
     }

@@ -134,8 +134,9 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
 
     @Override
     public void close() throws Exception {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.createStatement().execute("SHUTDOWN");
+        try (Connection connection = dataSource.getConnection();
+             Statement shutdown = connection.createStatement()) {
+            shutdown.execute("SHUTDOWN");
         }
     }
 
@@ -209,8 +210,9 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
     }
 
     private void initializeSchema() {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.createStatement().execute("""
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute("""
                 CREATE TABLE IF NOT EXISTS dc_event_log (
                     offset_value BIGINT AUTO_INCREMENT PRIMARY KEY,
                     tenant_id VARCHAR(255) NOT NULL,
@@ -224,8 +226,8 @@ public final class H2SovereignEventLogStore implements EventLogStore, AutoClosea
                     created_at TIMESTAMP NOT NULL
                 )
                 """);
-            connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_offset ON dc_event_log(tenant_id, offset_value)");
-            connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_type ON dc_event_log(tenant_id, event_type, offset_value)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_offset ON dc_event_log(tenant_id, offset_value)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_event_log_tenant_type ON dc_event_log(tenant_id, event_type, offset_value)");
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to initialize sovereign event log schema", exception);
         }

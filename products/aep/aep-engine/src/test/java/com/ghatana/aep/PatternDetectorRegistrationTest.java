@@ -5,6 +5,7 @@
 package com.ghatana.aep;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

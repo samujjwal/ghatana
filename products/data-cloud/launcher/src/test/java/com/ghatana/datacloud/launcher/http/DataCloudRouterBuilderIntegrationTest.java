@@ -4,16 +4,16 @@
  */
 package com.ghatana.datacloud.launcher.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.launcher.http.handlers.*;
 import io.activej.eventloop.Eventloop;
-import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Integration tests for DataCloudRouterBuilder.
@@ -29,6 +29,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("DataCloudRouterBuilder Integration Tests")
 @Tag("integration")
 class DataCloudRouterBuilderIntegrationTest {
+
+    private static final HttpHandlerSupport HTTP_SUPPORT = new HttpHandlerSupport(
+            new ObjectMapper(),
+            "*",
+            "GET,POST,PUT,DELETE,OPTIONS",
+            "Content-Type,Authorization");
 
     /**
      * Test that verifies the router builder creates a valid RoutingServlet.
@@ -51,44 +57,7 @@ class DataCloudRouterBuilderIntegrationTest {
     @DisplayName("Health routes are registered")
     void healthRoutesAreRegistered() {
         Eventloop eventloop = Eventloop.create();
-        
-        // Create mock health handler
-        HealthHandler mockHealthHandler = new HealthHandler(null, null, null) {
-            @Override
-            public Promise<HttpResponse> handleHealth(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleHealthDetail(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleHealthDeep(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleReady(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleLive(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleInfo(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleMetrics(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-        };
+        HealthHandler mockHealthHandler = new HealthHandler(HTTP_SUPPORT);
         
         DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop);
         RoutingServlet servlet = builder.withHealthRoutes(mockHealthHandler).build();
@@ -137,75 +106,65 @@ class DataCloudRouterBuilderIntegrationTest {
     @DisplayName("Router builder registers all domain route groups")
     void routerBuilderRegistersAllDomainRouteGroups() {
         Eventloop eventloop = Eventloop.create();
-        
-        // Create minimal mock handlers
-        HealthHandler mockHealthHandler = new HealthHandler(null, null, null) {
-            @Override
-            public Promise<HttpResponse> handleHealth(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleHealthDetail(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleHealthDeep(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleReady(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleLive(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleInfo(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-            
-            @Override
-            public Promise<HttpResponse> handleMetrics(HttpRequest request) {
-                return Promise.of(HttpResponse.ok200());
-            }
-        };
+        HealthHandler mockHealthHandler = new HealthHandler(HTTP_SUPPORT);
+        EntityCrudHandler entityHandler = mock(EntityCrudHandler.class);
+        SseStreamingHandler sseHandler = mock(SseStreamingHandler.class);
+        SemanticSearchHandler semanticSearchHandler = mock(SemanticSearchHandler.class);
+        EntityExportHandler exportHandler = mock(EntityExportHandler.class);
+        EntityAnomalyHandler anomalyHandler = mock(EntityAnomalyHandler.class);
+        EntityValidationHandler validationHandler = mock(EntityValidationHandler.class);
+        EventHandler eventHandler = mock(EventHandler.class);
+        PipelineCheckpointHandler pipelineCheckpointHandler = mock(PipelineCheckpointHandler.class);
+        WorkflowExecutionHandler workflowExecutionHandler = mock(WorkflowExecutionHandler.class);
+        AlertingHandler alertingHandler = mock(AlertingHandler.class);
+        MemoryPlaneHandler memoryHandler = mock(MemoryPlaneHandler.class);
+        BrainHandler brainHandler = mock(BrainHandler.class);
+        LearningHandler learningHandler = mock(LearningHandler.class);
+        AnalyticsHandler analyticsHandler = mock(AnalyticsHandler.class);
+        AiModelHandler aiModelHandler = mock(AiModelHandler.class);
+        AiAssistHandler aiAssistHandler = mock(AiAssistHandler.class);
+        VoiceGatewayHandler voiceHandler = mock(VoiceGatewayHandler.class);
+        DataLifecycleHandler dataLifecycleHandler = mock(DataLifecycleHandler.class);
+        CapabilityRegistryHandler capabilityRegistryHandler = mock(CapabilityRegistryHandler.class);
+        LineageHandler lineageHandler = mock(LineageHandler.class);
+        ContextLayerHandler contextLayerHandler = mock(ContextLayerHandler.class);
+        CollectionContextHandler collectionContextHandler = mock(CollectionContextHandler.class);
+        McpToolsHandler mcpToolsHandler = mock(McpToolsHandler.class);
+        DataProductHandler dataProductHandler = mock(DataProductHandler.class);
+        AutonomyHandler autonomyHandler = mock(AutonomyHandler.class);
+        AgentCatalogHandler agentCatalogHandler = mock(AgentCatalogHandler.class);
+        PluginInstallHandler pluginInstallHandler = mock(PluginInstallHandler.class);
         
         DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop);
         
         // Verify that all domain route groups can be called without errors
         builder
             .withHealthRoutes(mockHealthHandler)
-            .withEntityRoutes(null, null, null, null, null, null)
-            .withEventRoutes(null)
-            .withPipelineRoutes(null, null)
-            .withCheckpointRoutes(null)
-            .withAlertRoutes(null, null)
-            .withMemoryRoutes(null)
-            .withBrainRoutes(null, null)
-            .withLearningRoutes(null)
-            .withAnalyticsRoutes(null)
-            .withReportingRoutes(null, null)
-            .withModelRoutes(null)
-            .withFeatureRoutes(null)
-            .withSseRoutes(null)
-            .withWebSocketRoutes(null)
-            .withAiAssistRoutes(null)
-            .withVoiceRoutes(null)
-            .withGovernanceRoutes(null)
-            .withCapabilityRoutes(null)
-            .withLineageRoutes(null)
-            .withContextRoutes(null, null, null)
-            .withMcpRoutes(null)
-            .withDataProductRoutes(null)
-            .withAutonomyRoutes(null)
-            .withAgentCatalogRoutes(null)
-            .withPluginRoutes(null)
+            .withEntityRoutes(entityHandler, sseHandler, semanticSearchHandler, exportHandler, anomalyHandler, validationHandler)
+            .withEventRoutes(eventHandler)
+            .withPipelineRoutes(pipelineCheckpointHandler, workflowExecutionHandler)
+            .withCheckpointRoutes(pipelineCheckpointHandler)
+            .withAlertRoutes(alertingHandler, sseHandler)
+            .withMemoryRoutes(memoryHandler)
+            .withBrainRoutes(brainHandler, sseHandler)
+            .withLearningRoutes(learningHandler)
+            .withAnalyticsRoutes(analyticsHandler)
+            .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
+            .withModelRoutes(aiModelHandler)
+            .withFeatureRoutes(aiModelHandler)
+            .withSseRoutes(sseHandler)
+            .withWebSocketRoutes(sseHandler)
+            .withAiAssistRoutes(aiAssistHandler)
+            .withVoiceRoutes(voiceHandler)
+            .withGovernanceRoutes(dataLifecycleHandler)
+            .withCapabilityRoutes(capabilityRegistryHandler)
+            .withLineageRoutes(lineageHandler)
+            .withContextRoutes(contextLayerHandler, collectionContextHandler, semanticSearchHandler)
+            .withMcpRoutes(mcpToolsHandler)
+            .withDataProductRoutes(dataProductHandler)
+            .withAutonomyRoutes(autonomyHandler)
+            .withAgentCatalogRoutes(agentCatalogHandler)
+            .withPluginRoutes(pluginInstallHandler)
             .withStorageCostRoutes(null, null)
             .withFederatedQueryRoutes(null, null)
             .withTierMigrationRoutes(null, null)

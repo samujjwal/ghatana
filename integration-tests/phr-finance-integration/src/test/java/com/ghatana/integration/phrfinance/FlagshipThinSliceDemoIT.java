@@ -10,6 +10,7 @@ import com.ghatana.plugin.approval.impl.StandardHumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.audit.impl.DurableAuditTrailPlugin;
 import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.plugin.billing.impl.DurableBillingLedgerPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
 import com.ghatana.plugin.consent.impl.DurableConsentPlugin;
@@ -173,39 +174,38 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         assertThat(pendingAfter).isEmpty();
 
         // ── Step 4: Export service fee posted to billing ledger ───────────────
-        BillingLedgerPlugin.LedgerPosting exportFee = BillingLedgerPlugin.LedgerPosting.builder()
+        BillingTransaction exportFee = BillingTransaction.builder()
                 .transactionId("tx-export-" + requestId)
+                .sourceProductId("phr")
                 .tenantId(TENANT)
                 .debitAccount("PHR:AR:" + PATIENT_ID)
                 .creditAccount("PHR:REVENUE:export-service")
                 .amount(new BigDecimal("250.00"))
                 .currency("NPR")
-                .type(BillingLedgerPlugin.TransactionType.CHARGE)
+                .type(BillingTransaction.TransactionType.CHARGE)
                 .description("Sensitive-data export fee — requestId=" + requestId)
                 .occurredAt(Instant.now())
                 .build();
 
-        BillingLedgerPlugin.PostingStatus postStatus =
-                runPromise(() -> billingPlugin.postTransaction(exportFee));
-        assertThat(postStatus).isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+        String entryId = runPromise(() -> billingPlugin.postTransaction(exportFee));
+        assertThat(entryId).isNotBlank();
+        assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-export-" + requestId)))
+                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
 
         logAuditEvent("finance.billing", PATIENT_ID, "EXPORT_FEE_POSTED",
                 "{\"txId\":\"tx-export-" + requestId + "\",\"amount\":\"250.00\"}");
 
         // ── Step 5: Cross-domain audit trail continuity verification ──────────
-        List<AuditTrailPlugin.AuditEvent> phrAudit = runPromise(
-                () -> auditPlugin.getAuditTrail(PATIENT_ID, "phr.consent"));
+        List<AuditTrailPlugin.AuditEntry> phrAudit = getAuditTrail(PATIENT_ID, "phr.consent");
         assertThat(phrAudit).hasSize(1);
         assertThat(phrAudit.get(0).action()).isEqualTo("CONSENT_GRANTED");
 
-        List<AuditTrailPlugin.AuditEvent> approvalAudit = runPromise(
-                () -> auditPlugin.getAuditTrail(PATIENT_ID, "phr.approval"));
+        List<AuditTrailPlugin.AuditEntry> approvalAudit = getAuditTrail(PATIENT_ID, "phr.approval");
         assertThat(approvalAudit).hasSize(2);
-        assertThat(approvalAudit).extracting(AuditTrailPlugin.AuditEvent::action)
+        assertThat(approvalAudit).extracting(AuditTrailPlugin.AuditEntry::action)
                 .containsExactlyInAnyOrder("EXPORT_APPROVAL_REQUESTED", "EXPORT_APPROVED");
 
-        List<AuditTrailPlugin.AuditEvent> billingAudit = runPromise(
-                () -> auditPlugin.getAuditTrail(PATIENT_ID, "finance.billing"));
+        List<AuditTrailPlugin.AuditEntry> billingAudit = getAuditTrail(PATIENT_ID, "finance.billing");
         assertThat(billingAudit).hasSize(1);
         assertThat(billingAudit.get(0).action()).isEqualTo("EXPORT_FEE_POSTED");
     }
@@ -276,10 +276,9 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         assertThat(missing).isEqualTo(BillingLedgerPlugin.PostingStatus.NOT_FOUND);
 
         // Billing events must not appear in PHR audit
-        List<AuditTrailPlugin.AuditEvent> phrEvents = runPromise(
-                () -> auditPlugin.getAuditTrail("patient-isolation-1", "phr.encounter"));
+        List<AuditTrailPlugin.AuditEntry> phrEvents = getAuditTrail("patient-isolation-1", "phr.encounter");
         assertThat(phrEvents).hasSize(1);
-        assertThat(phrEvents.get(0).entityType()).isEqualTo("phr.encounter");
+        assertThat(phrEvents.get(0).details()).containsEntry("entityType", "phr.encounter");
     }
 
     // =========================================================================
@@ -287,16 +286,12 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
     // =========================================================================
 
     private void logAuditEvent(String entityType, String entityId, String action, String data) {
-        AuditTrailPlugin.AuditEvent event = AuditTrailPlugin.AuditEvent.builder()
-                .entityId(entityId)
-                .entityType(entityType)
-                .tenantId(TENANT)
-                .action(action)
-                .userId(DOCTOR_ID)
-                .data(data)
-                .timestamp(Instant.now())
-                .build();
-        runPromise(() -> auditPlugin.logEvent(event));
+        runPromise(() -> auditPlugin.logEvent(entityId, action, Map.of(
+                "tenantId", TENANT,
+                "entityType", entityType,
+                "actorId", DOCTOR_ID,
+                "data", data
+        )));
     }
 
     private static JdbcDataSource h2ds(String dbName) {
@@ -304,4 +299,10 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         ds.setURL("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL");
         return ds;
     }
+
+        private List<AuditTrailPlugin.AuditEntry> getAuditTrail(String entityId, String entityType) {
+                return runPromise(() -> auditPlugin.getTrail(entityId)).stream()
+                                .filter(entry -> entityType.equals(String.valueOf(entry.details().get("entityType"))))
+                                .toList();
+        }
 }

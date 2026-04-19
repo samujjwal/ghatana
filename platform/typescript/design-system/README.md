@@ -61,6 +61,37 @@ import { Chip } from '@ghatana/design-system/atoms/Chip';
 import { Stack, Grid } from '@ghatana/design-system/layout';
 ```
 
+### Runtime composition primitives
+
+```tsx
+import {
+  createSlotProps,
+  useComponentTelemetry,
+  compileComponentRecipe,
+  useComponentRecipe,
+} from '@ghatana/design-system';
+```
+
+Use these helpers when building new extensible components from primitives:
+
+- `createSlotProps(...)` attaches normalized `data-*` metadata for slots, variants, tone, state, privacy, and observability.
+- `mergePrimitiveProps(...)` composes class names, styles, event handlers, and `aria-describedby` safely.
+- `useComponentTelemetry(...)` emits sanitized `ghatana:component-event` events so components remain observable without leaking arbitrary user data.
+
+### Composition model
+
+The preferred runtime model for new components is:
+
+- `useComponentComposition(...)` as the single handoff point for component metadata, state, features, slot props, and layered behaviors.
+- `createPressableBehavior(...)` or other behaviors to add keyboard-safe interaction without reimplementing role, tab order, and telemetry in every component.
+- `getSlotProps(slot, ...)` for every first-class slot so styles, state, observability, privacy annotations, and future behavior middleware can flow through the whole component tree consistently.
+- `compileComponentRecipe(...)` and `useComponentRecipe(...)` when the component should be declared as data first and later rendered, analyzed, or code-generated from a compiled render plan.
+- `createPlatformRenderPlan(...)` and `plan.platform` when the output needs to stay platform-neutral for future generators beyond React.
+
+This lets us synthesize richer components from primitives while keeping style precedence, state propagation, a11y metadata, o11y hooks, and privacy labeling aligned.
+
+See [docs/COMPOSITION_ARCHITECTURE.md](./docs/COMPOSITION_ARCHITECTURE.md) for the design rationale and future direction.
+
 ### Hooks
 
 ```tsx

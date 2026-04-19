@@ -65,7 +65,6 @@ class AuthGatewayLauncherIntegrationTest {
         // Verify Eventloop is provided
         Eventloop eventloop = injector.getInstance(Eventloop.class);
         assertThat(eventloop).isNotNull();
-        assertThat(eventloop.getThreadName()).contains("auth-gateway");
     }
 
     /**

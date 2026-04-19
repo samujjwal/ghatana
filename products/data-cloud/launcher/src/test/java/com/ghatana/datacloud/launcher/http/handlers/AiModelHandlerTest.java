@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,8 +52,8 @@ class AiModelHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         handler = new AiModelHandler(aiModelManager, featureStoreService, http);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
-        when(http.objectMapper()).thenReturn(objectMapper);
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+        lenient().when(http.objectMapper()).thenReturn(objectMapper);
     }
 
     @Test

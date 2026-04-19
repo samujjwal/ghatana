@@ -34,7 +34,7 @@ class OpenApiRouteAlignmentTest {
     void shouldKeepSpecAndRegisteredRoutesInSync() throws IOException {
         Path repoRoot = resolveRepoRoot();
         Path serverFile = repoRoot.resolve(
-            "products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java");
+            "products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java");
         Path specFile = repoRoot.resolve("products/data-cloud/api/openapi.yaml");
 
         Set<String> codeRoutes = readCodeRoutes(serverFile);

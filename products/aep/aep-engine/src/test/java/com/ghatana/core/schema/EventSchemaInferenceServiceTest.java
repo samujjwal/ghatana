@@ -4,6 +4,7 @@
  */
 package com.ghatana.core.schema;
 
+import com.ghatana.core.schema.EventSchemaInferenceService.EventSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

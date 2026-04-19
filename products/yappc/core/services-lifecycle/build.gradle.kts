@@ -43,6 +43,7 @@ dependencies {
     // YAPPC lifecycle module (full monorepo path)
     implementation(project(":products:yappc:core:yappc-services"))
     implementation(project(":products:yappc:core:yappc-infrastructure"))
+    implementation(project(":products:yappc:infrastructure:datacloud"))
 
     // Absorbed from services:ai (merged)
     implementation(project(":products:yappc:core:ai"))

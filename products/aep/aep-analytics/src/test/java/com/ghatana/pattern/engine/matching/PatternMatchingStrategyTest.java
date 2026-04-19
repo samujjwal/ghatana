@@ -5,6 +5,12 @@
 package com.ghatana.pattern.engine.matching;
 
 import com.ghatana.pattern.engine.nfa.NFA;
+import com.ghatana.pattern.engine.nfa.NFAState;
+import com.ghatana.pattern.engine.nfa.NFAStateType;
+import com.ghatana.platform.domain.event.EventRelations;
+import com.ghatana.platform.domain.event.EventStats;
+import com.ghatana.platform.domain.event.EventId;
+import com.ghatana.platform.domain.event.EventTime;
 import com.ghatana.platform.domain.event.GEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,7 +48,7 @@ class PatternMatchingStrategyTest {
         assertThat(strategy.evaluate(event1, nfa, context)).isEmpty();
         
         // Second event should match if sequence completes
-        Optional<PatternMatchingStrategy.PatternMatch> match = strategy.evaluate(event2, nfa, context);
+        strategy.evaluate(event2, nfa, context);
         // Note: Actual match behavior depends on NFA structure
         assertThat(strategy.getStrategyType()).isEqualTo(PatternMatchingStrategy.StrategyType.DETERMINISTIC);
     }
@@ -49,9 +57,6 @@ class PatternMatchingStrategyTest {
     @DisplayName("deterministic strategy resets after reset")
     void deterministicStrategy_resetsAfterReset() {
         DeterministicMatchingStrategy strategy = new DeterministicMatchingStrategy();
-        
-        NFA nfa = createSimpleNFA("test-pattern");
-        PatternMatchingStrategy.MatchingContext context = PatternMatchingStrategy.MatchingContext.empty();
         
         strategy.reset();
         assertThat(strategy.getStrategyType()).isEqualTo(PatternMatchingStrategy.StrategyType.DETERMINISTIC);
@@ -70,14 +75,14 @@ class PatternMatchingStrategyTest {
         PatternMatchingStrategy.MatchingContext context = PatternMatchingStrategy.MatchingContext.empty();
         
         GEvent event1 = createEvent("type1", Map.of("step", 1));
-        GEvent event2 = createEvent("type2", Map.of("value", "b"));
+        GEvent event2 = createEvent("type2", Map.of("step", 2));
         GEvent event3 = createEvent("type3", Map.of("value", "c"));
         
         // First event matches first rule
         assertThat(strategy.evaluate(event1, nfa, context)).isEmpty();
         assertThat(strategy.getRuleIndex()).isEqualTo(1);
         
-        // Second event doesn't match second rule (wrong type for value check)
+        // Second event doesn't match second rule because the payload lacks the required field
         strategy.evaluate(event2, nfa, context);
         assertThat(strategy.getRuleIndex()).isEqualTo(0); // Should reset
         
@@ -185,34 +190,25 @@ class PatternMatchingStrategyTest {
     // Helper methods
 
     private NFA createSimpleNFA(String patternName) {
-        // Create a minimal NFA for testing
-        NFA.State initialState = new NFA.State("initial", false);
-        NFA.State acceptingState = new NFA.State("accepting", true);
-        
-        return new NFA() {
-            @Override
-            public String getPatternName() {
-                return patternName;
-            }
-            
-            @Override
-            public NFA.State getInitialState() {
-                return initialState;
-            }
-            
-            @Override
-            public java.util.List<NFA.Transition> getTransitions(NFA.State state) {
-                if (state.equals(initialState)) {
-                    return List.of(new NFA.Transition(initialState, acceptingState, e -> true));
-                }
-                return List.of();
-            }
-        };
+        NFA nfa = new NFA(patternName);
+        NFAState acceptingState = new NFAState("accepting", NFAStateType.END);
+        nfa.addState(acceptingState);
+        nfa.addTransition(nfa.getStartState(), acceptingState, "type2");
+        return nfa;
     }
 
     private GEvent createEvent(String type, Map<String, Object> payload) {
         return GEvent.builder()
-            .type(type)
+            .id(EventId.create(UUID.randomUUID().toString(), type, "v1", "test-tenant"))
+            .time(EventTime.now())
+            .stats(EventStats.builder()
+                .withProcessingTimeNanos(0)
+                .withSizeInBytes(payload.size())
+                .withFieldCount(payload.size())
+                .withTagCount(0)
+                .build())
+            .relations(EventRelations.empty())
+            .headers(Map.of())
             .payload(payload)
             .build();
     }

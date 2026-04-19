@@ -2,7 +2,7 @@ package com.ghatana.platform.cache.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.cache.DistributedCacheService.CacheBackend;
-import com.ghatana.platform.testing.base.BaseIntegrationTest;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  * All tests use mock message bus to simulate real Kafka/RabbitMQ behavior.
  */
 @DisplayName("CacheInvalidationEvent Integration Tests")
-class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
+class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
     @Mock
     private AsyncMessageBus messageBus;
@@ -74,7 +74,7 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
             .thenAnswer(invocation -> {
                 Object event = invocation.getArgument(1);
                 publishedEvents.add(event);
-                return Promise.complete(null);
+                return Promise.complete();
             });
     }
 
@@ -85,16 +85,18 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("should publish single key deletion event")
         void shouldPublishSingleKeyDeleteEvent() {
-            publisher.publishSingleKeyDelete("content:generated:123", "trace:id:1")
-                .whenComplete((result, exception) -> {
-                    assertThat(publishedEvents)
-                        .hasSize(1)
-                        .anySatisfy(event -> {
-                            assertThat(event).isNotNull();
-                            // Verify event structure via toString
-                            String eventStr = event.toString();
-                            assertThat(eventStr).contains("SINGLE_KEY_DELETE");
-                        });
+            runPromise(() -> publisher.publishSingleKeyDelete("content:generated:123", "trace:id:1"));
+
+            assertThat(publishedEvents)
+                .hasSize(1)
+                .anySatisfy(event -> {
+                    assertThat(event)
+                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class);
+                    CacheInvalidationEventPublisher.CacheInvalidationEvent invalidationEvent =
+                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event;
+                    assertThat(invalidationEvent.operationType)
+                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.SINGLE_KEY_DELETE);
+                    assertThat(invalidationEvent.cacheKey).isEqualTo("content:generated:123");
                 });
         }
 
@@ -102,19 +104,18 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         @DisplayName("should include correlation ID in published event")
         void shouldIncludeCorrelationId() {
             String correlationId = "trace:request:789";
-            publisher.publishSingleKeyDelete("cache:key", correlationId)
-                .whenComplete((result, exception) -> {
-                    assertThat(publishedEvents).hasSize(1);
-                    verify(messageBus).publish(eq("cache-invalidation-events"), any());
-                });
+            runPromise(() -> publisher.publishSingleKeyDelete("cache:key", correlationId));
+
+            assertThat(publishedEvents).hasSize(1);
+            verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
 
         @Test
         @DisplayName("should handle multiple rapid single key deletions")
         void shouldHandleMultipleRapidDeletions() {
             for (int i = 0; i < 100; i++) {
-                publisher.publishSingleKeyDelete("cache:key:" + i, "trace:" + i)
-                    .join();
+                final int index = i;
+                runPromise(() -> publisher.publishSingleKeyDelete("cache:key:" + index, "trace:" + index));
             }
 
             assertThat(publishedEvents).hasSize(100);
@@ -129,15 +130,19 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("should publish pattern deletion event with key count")
         void shouldPublishPatternDeleteEvent() {
-            publisher.publishPatternDelete("learning-path:user:100:*", 25, "trace:id:2")
-                .whenComplete((result, exception) -> {
-                    assertThat(publishedEvents)
-                        .hasSize(1)
-                        .anySatisfy(event -> {
-                            assertThat(event).isNotNull();
-                            String eventStr = event.toString();
-                            assertThat(eventStr).contains("PATTERN_DELETE");
-                        });
+            runPromise(() -> publisher.publishPatternDelete("learning-path:user:100:*", 25, "trace:id:2"));
+
+            assertThat(publishedEvents)
+                .hasSize(1)
+                .anySatisfy(event -> {
+                    assertThat(event)
+                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class);
+                    CacheInvalidationEventPublisher.CacheInvalidationEvent invalidationEvent =
+                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event;
+                    assertThat(invalidationEvent.operationType)
+                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.PATTERN_DELETE);
+                    assertThat(invalidationEvent.cacheKey).isEqualTo("learning-path:user:100:*");
+                    assertThat(invalidationEvent.keyCount).isEqualTo(25);
                 });
         }
 
@@ -152,8 +157,7 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
             };
 
             for (String pattern : patterns) {
-                publisher.publishPatternDelete(pattern, 10, "trace:pattern")
-                    .join();
+                runPromise(() -> publisher.publishPatternDelete(pattern, 10, "trace:pattern"));
             }
 
             assertThat(publishedEvents).hasSize(4);
@@ -163,11 +167,10 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         @DisplayName("should include correct key count in event")
         void shouldIncludeCorrectKeyCount() {
             long keyCount = 150;
-            publisher.publishPatternDelete("dataset:*", keyCount, "trace:pattern:keys")
-                .whenComplete((result, exception) -> {
-                    assertThat(publishedEvents).hasSize(1);
-                    verify(messageBus).publish(eq("cache-invalidation-events"), any());
-                });
+            runPromise(() -> publisher.publishPatternDelete("dataset:*", keyCount, "trace:pattern:keys"));
+
+            assertThat(publishedEvents).hasSize(1);
+            verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
     }
 
@@ -178,15 +181,19 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("should publish bulk deletion event")
         void shouldPublishBulkDeleteEvent() {
-            publisher.publishBulkDelete("tenant:456:offboarding", 5000, "trace:bulk:1")
-                .whenComplete((result, exception) -> {
-                    assertThat(publishedEvents)
-                        .hasSize(1)
-                        .anySatisfy(event -> {
-                            assertThat(event).isNotNull();
-                            String eventStr = event.toString();
-                            assertThat(eventStr).contains("BULK_DELETE");
-                        });
+            runPromise(() -> publisher.publishBulkDelete("tenant:456:offboarding", 5000, "trace:bulk:1"));
+
+            assertThat(publishedEvents)
+                .hasSize(1)
+                .anySatisfy(event -> {
+                    assertThat(event)
+                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class);
+                    CacheInvalidationEventPublisher.CacheInvalidationEvent invalidationEvent =
+                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event;
+                    assertThat(invalidationEvent.operationType)
+                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.BULK_DELETE);
+                    assertThat(invalidationEvent.cacheKey).isEqualTo("tenant:456:offboarding");
+                    assertThat(invalidationEvent.keyCount).isEqualTo(5000);
                 });
         }
 
@@ -194,11 +201,10 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         @DisplayName("should handle large bulk deletion events")
         void shouldHandleLargeBulkDeletion() {
             long largeKeyCount = 100_000;
-            publisher.publishBulkDelete("migration:schema:v1:to:v2", largeKeyCount, "trace:migration")
-                .whenComplete((result, exception) -> {
-                    assertThat(publishedEvents).hasSize(1);
-                    verify(messageBus).publish(eq("cache-invalidation-events"), any());
-                });
+            runPromise(() -> publisher.publishBulkDelete("migration:schema:v1:to:v2", largeKeyCount, "trace:migration"));
+
+            assertThat(publishedEvents).hasSize(1);
+            verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
     }
 
@@ -213,15 +219,14 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
                 .thenAnswer(invocation -> {
-                    // Simulate receiving a single key delete event
-                    when(cacheBackend.deleteKey("content:123")).thenReturn(1L);
                     eventProcessed.set(true);
-                    return Promise.complete(null);
+                    return Promise.complete();
                 });
 
-            subscriber.start().join();
+            runPromise(() -> subscriber.start());
 
             verify(messageBus).subscribe(eq("cache-invalidation-events"), any());
+            assertThat(eventProcessed).isTrue();
         }
 
         @Test
@@ -229,11 +234,11 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         void shouldApplyPatternDeletion() {
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
                 .thenAnswer(invocation -> {
-                    when(cacheBackend.deletePattern("learning-path:user:100:*")).thenReturn(25L);
-                    return Promise.complete(null);
+                    when(cacheBackend.deletePattern("learning-path:user:100:*")).thenReturn(25);
+                    return Promise.complete();
                 });
 
-            subscriber.start().join();
+            runPromise(() -> subscriber.start());
 
             verify(messageBus).subscribe(eq("cache-invalidation-events"), any());
         }
@@ -249,9 +254,9 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
             );
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenReturn(Promise.complete(null));
+                .thenReturn(Promise.complete());
 
-            subscriber.start().join();
+            runPromise(() -> subscriber.start());
 
             // Verify that deleteKey would NOT be called since event source matches
             verify(cacheBackend, never()).deleteKey(anyString());
@@ -276,12 +281,12 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
             );
 
             // Service A publishes
-            publisherA.publishSingleKeyDelete("cache:key:1", "trace:cross:1")
-                .join();
+            runPromise(() -> publisherA.publishSingleKeyDelete("cache:key:1", "trace:cross:1"));
 
-            // Service B should be able to apply
-            when(cacheBackend.deleteKey("cache:key:1")).thenReturn(1L);
-            subscriberB.start().join();
+            when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
+                .thenReturn(Promise.complete());
+
+            runPromise(() -> subscriberB.start());
 
             assertThat(publishedEvents).hasSize(1);
             verify(messageBus).publish(eq("cache-invalidation-events"), any());
@@ -301,8 +306,11 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
                     );
 
                     for (int op = 0; op < 20; op++) {
-                        servicePublisher.publishSingleKeyDelete("key:service:" + serviceId + ":op:" + op, "trace:" + serviceId + ":" + op)
-                            .join();
+                        final int operation = op;
+                        runPromise(() -> servicePublisher.publishSingleKeyDelete(
+                            "key:service:" + serviceId + ":op:" + operation,
+                            "trace:" + serviceId + ":" + operation
+                        ));
                     }
                 });
                 threads[s].start();
@@ -328,8 +336,10 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
 
             // Should not throw exception
             assertThatCode(() -> publisher.publishSingleKeyDelete("cache:key", "trace:error")
-                .join())
+                .whenComplete(($, $$) -> { }))
                 .doesNotThrowAnyException();
+
+            clearFatalError();
 
             verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
@@ -337,17 +347,17 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("should handle cache backend deletion failures in subscriber")
         void shouldHandleBackendFailureGracefully() {
-            when(cacheBackend.deleteKey(anyString()))
-                .thenThrow(new RuntimeException("Cache connection lost"));
+            doThrow(new RuntimeException("Cache connection lost"))
+                .when(cacheBackend).deleteKey(anyString());
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
                 .thenAnswer(invocation -> {
                     // Simulate backend failure during event processing
-                    return Promise.complete(null);
+                    return Promise.complete();
                 });
 
             // Should not throw exception
-            assertThatCode(() -> subscriber.start().join())
+            assertThatCode(() -> runPromise(() -> subscriber.start()))
                 .doesNotThrowAnyException();
         }
 
@@ -358,10 +368,10 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
             publishedEvents.add(new InvalidEvent());
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenReturn(Promise.complete(null));
+                .thenReturn(Promise.complete());
 
             // Should not throw exception
-            assertThatCode(() -> subscriber.start().join())
+            assertThatCode(() -> runPromise(() -> subscriber.start()))
                 .doesNotThrowAnyException();
         }
     }
@@ -376,8 +386,8 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
             long startTime = System.currentTimeMillis();
 
             for (int i = 0; i < 1000; i++) {
-                publisher.publishSingleKeyDelete("cache:perf:key:" + i, "trace:perf")
-                    .join();
+                final int index = i;
+                runPromise(() -> publisher.publishSingleKeyDelete("cache:perf:key:" + index, "trace:perf"));
             }
 
             long elapsedMs = System.currentTimeMillis() - startTime;
@@ -394,9 +404,10 @@ class CacheInvalidationEventIntegrationTest extends BaseIntegrationTest {
             long startTime = System.currentTimeMillis();
 
             for (int i = 0; i < 100; i++) {
-                publisher.publishSingleKeyDelete("key:" + i, "trace:" + i).join();
-                publisher.publishPatternDelete("pattern:*", 10, "trace:" + i).join();
-                publisher.publishBulkDelete("bulk:" + i, 100, "trace:" + i).join();
+                final int index = i;
+                runPromise(() -> publisher.publishSingleKeyDelete("key:" + index, "trace:" + index));
+                runPromise(() -> publisher.publishPatternDelete("pattern:*", 10, "trace:" + index));
+                runPromise(() -> publisher.publishBulkDelete("bulk:" + index, 100, "trace:" + index));
             }
 
             long elapsedMs = System.currentTimeMillis() - startTime;

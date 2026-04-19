@@ -152,9 +152,11 @@ class AepGoldenPathSystemTest {
         HttpResponse<String> listResp = get("/api/v1/runs?tenantId=tenant-acme");
         assertThat(listResp.statusCode()).isEqualTo(200);
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> listBody = mapper.readValue(listResp.body(), Map.class);
-        List<Map<String, Object>> runs = (List<Map<String, Object>>) listBody.get("runs");
+        List<Map<String, Object>> runs = mapper.convertValue(
+            listBody.get("runs"),
+            new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {}
+        );
         assertThat(runs).isNotEmpty();
 
         String runId = String.valueOf(runs.get(runs.size() - 1).get("runId"));

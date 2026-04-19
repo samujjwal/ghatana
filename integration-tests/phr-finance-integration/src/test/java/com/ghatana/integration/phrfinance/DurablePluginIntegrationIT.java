@@ -5,6 +5,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.audit.impl.DurableAuditTrailPlugin;
 import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.plugin.billing.impl.DurableBillingLedgerPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
 import com.ghatana.plugin.consent.impl.DurableConsentPlugin;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -86,38 +88,32 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
     @DisplayName("PHR encounter is audit-logged and the linked billing charge is posted; ledger does not show PHR audit entries")
     void phrEncounterAuditAndBillingCharge_areIsolated() {
         // PHR operation is audit-logged
-        AuditTrailPlugin.AuditEvent encounter = AuditTrailPlugin.AuditEvent.builder()
-                .entityId("patient-001")
-                .entityType("phr.encounter")
-                .tenantId("tenant-nep")
-                .action("ENCOUNTER_CLOSED")
-                .userId("dr-paudel")
-                .data("{\"encounterId\":\"enc-99\"}")
-                .timestamp(Instant.now())
-                .build();
-
-        runPromise(() -> auditPlugin.logEvent(encounter));
+        runPromise(() -> auditPlugin.logEvent(
+                "patient-001",
+                "ENCOUNTER_CLOSED",
+                auditDetails("tenant-nep", "phr.encounter", "dr-paudel", "{\"encounterId\":\"enc-99\"}")));
 
         // Linked billing charge is posted to the ledger
-        BillingLedgerPlugin.LedgerPosting charge = BillingLedgerPlugin.LedgerPosting.builder()
+        BillingTransaction charge = BillingTransaction.builder()
                 .transactionId("tx-enc-99")
+                .sourceProductId("phr")
                 .tenantId("tenant-nep")
                 .debitAccount("PHR:AR:patient-001")
                 .creditAccount("PHR:REVENUE:provider-paudel")
                 .amount(new BigDecimal("1800.00"))
                 .currency("NPR")
-                .type(BillingLedgerPlugin.TransactionType.CHARGE)
+                .type(BillingTransaction.TransactionType.CHARGE)
                 .description("Encounter enc-99 closure charge")
                 .occurredAt(Instant.now())
                 .build();
 
-        BillingLedgerPlugin.PostingStatus postStatus =
-                runPromise(() -> billingPlugin.postTransaction(charge));
-        assertThat(postStatus).isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+        String entryId = runPromise(() -> billingPlugin.postTransaction(charge));
+        assertThat(entryId).isNotBlank();
+        assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-enc-99")))
+                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
 
         // Audit trail has 1 PHR entry
-        List<AuditTrailPlugin.AuditEvent> auditEntries =
-                runPromise(() -> auditPlugin.getAuditTrail("patient-001", "phr.encounter"));
+        List<AuditTrailPlugin.AuditEntry> auditEntries = getAuditTrail("patient-001", "phr.encounter");
         assertThat(auditEntries).hasSize(1);
         assertThat(auditEntries.get(0).action()).isEqualTo("ENCOUNTER_CLOSED");
 
@@ -151,21 +147,23 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         assertThat(consentAfterGrant).isTrue();
 
         // Finance product posts billing only after confirmed consent
-        BillingLedgerPlugin.LedgerPosting charge = BillingLedgerPlugin.LedgerPosting.builder()
+        BillingTransaction charge = BillingTransaction.builder()
                 .transactionId("tx-consent-guarded-1")
+                .sourceProductId("finance")
                 .tenantId("tenant-nep")
                 .debitAccount("FIN:AR:patient-002")
                 .creditAccount("FIN:REVENUE:billing-dept")
                 .amount(new BigDecimal("500.00"))
                 .currency("NPR")
-                .type(BillingLedgerPlugin.TransactionType.CHARGE)
+                .type(BillingTransaction.TransactionType.CHARGE)
                 .description("PHR-authorized finance charge")
                 .occurredAt(Instant.now())
                 .build();
 
-        BillingLedgerPlugin.PostingStatus status =
-                runPromise(() -> billingPlugin.postTransaction(charge));
-        assertThat(status).isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+        String entryId = runPromise(() -> billingPlugin.postTransaction(charge));
+        assertThat(entryId).isNotBlank();
+        assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-consent-guarded-1")))
+                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
     }
 
     // ── Scenario 3: Finance audit trail is isolated from PHR audit trail ─────
@@ -173,33 +171,17 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
     @Test
     @DisplayName("Finance audit entries logged in the same plugin store are isolated from PHR entries by tenantId/entityType")
     void financeAndPhrAuditTrails_areScopeIsolated() {
-        AuditTrailPlugin.AuditEvent phrEvent = AuditTrailPlugin.AuditEvent.builder()
-                .entityId("patient-003")
-                .entityType("phr.record")
-                .tenantId("tenant-nep")
-                .action("RECORD_ACCESSED")
-                .userId("nurse-k")
-                .data("{}")
-                .timestamp(Instant.now())
-                .build();
+        runPromise(() -> auditPlugin.logEvent(
+                "patient-003",
+                "RECORD_ACCESSED",
+                auditDetails("tenant-nep", "phr.record", "nurse-k", "{}")));
+        runPromise(() -> auditPlugin.logEvent(
+                "account-fin-7",
+                "STATEMENT_GENERATED",
+                auditDetails("tenant-nep", "finance.account", "finance-bot", "{}")));
 
-        AuditTrailPlugin.AuditEvent financeEvent = AuditTrailPlugin.AuditEvent.builder()
-                .entityId("account-fin-7")
-                .entityType("finance.account")
-                .tenantId("tenant-nep")
-                .action("STATEMENT_GENERATED")
-                .userId("finance-bot")
-                .data("{}")
-                .timestamp(Instant.now())
-                .build();
-
-        runPromise(() -> auditPlugin.logEvent(phrEvent));
-        runPromise(() -> auditPlugin.logEvent(financeEvent));
-
-        List<AuditTrailPlugin.AuditEvent> phrEntries =
-                runPromise(() -> auditPlugin.getAuditTrail("patient-003", "phr.record"));
-        List<AuditTrailPlugin.AuditEvent> financeEntries =
-                runPromise(() -> auditPlugin.getAuditTrail("account-fin-7", "finance.account"));
+        List<AuditTrailPlugin.AuditEntry> phrEntries = getAuditTrail("patient-003", "phr.record");
+        List<AuditTrailPlugin.AuditEntry> financeEntries = getAuditTrail("account-fin-7", "finance.account");
 
         assertThat(phrEntries).hasSize(1);
         assertThat(phrEntries.get(0).action()).isEqualTo("RECORD_ACCESSED");
@@ -217,39 +199,34 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
     @Test
     @DisplayName("Idempotent billing re-submission returns ALREADY_POSTED and audit has no duplicate entries")
     void idempotentBilling_noDoubleAuditEntry() {
-        BillingLedgerPlugin.LedgerPosting posting = BillingLedgerPlugin.LedgerPosting.builder()
+        BillingTransaction posting = BillingTransaction.builder()
                 .transactionId("tx-idempotent-99")
+                .sourceProductId("finance")
                 .tenantId("tenant-fin")
                 .debitAccount("FIN:AR:cust-1")
                 .creditAccount("FIN:REVENUE:dept-A")
                 .amount(new BigDecimal("250.00"))
                 .currency("NPR")
-                .type(BillingLedgerPlugin.TransactionType.CHARGE)
+                .type(BillingTransaction.TransactionType.CHARGE)
                 .description("Idempotency test charge")
                 .occurredAt(Instant.now())
                 .build();
 
-        BillingLedgerPlugin.PostingStatus first  = runPromise(() -> billingPlugin.postTransaction(posting));
-        BillingLedgerPlugin.PostingStatus second = runPromise(() -> billingPlugin.postTransaction(posting));
+        String firstEntryId = runPromise(() -> billingPlugin.postTransaction(posting));
+        String secondEntryId = runPromise(() -> billingPlugin.postTransaction(posting));
 
-        assertThat(first).isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
-        assertThat(second).isEqualTo(BillingLedgerPlugin.PostingStatus.ALREADY_POSTED);
+        assertThat(firstEntryId).isNotBlank();
+        assertThat(secondEntryId).isEqualTo(firstEntryId);
+        assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-idempotent-99")))
+                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
 
         // Only one audit event logged for the transaction (prevent double-audit on re-submit)
-        AuditTrailPlugin.AuditEvent auditForTx = AuditTrailPlugin.AuditEvent.builder()
-                .entityId("tx-idempotent-99")
-                .entityType("finance.transaction")
-                .tenantId("tenant-fin")
-                .action("TRANSACTION_POSTED")
-                .userId("system")
-                .data("{\"txId\":\"tx-idempotent-99\"}")
-                .timestamp(Instant.now())
-                .build();
+        runPromise(() -> auditPlugin.logEvent(
+                "tx-idempotent-99",
+                "TRANSACTION_POSTED",
+                auditDetails("tenant-fin", "finance.transaction", "system", "{\"txId\":\"tx-idempotent-99\"}")));
 
-        runPromise(() -> auditPlugin.logEvent(auditForTx)); // manually log audit (typical product call)
-
-        List<AuditTrailPlugin.AuditEvent> auditEntries =
-                runPromise(() -> auditPlugin.getAuditTrail("tx-idempotent-99", "finance.transaction"));
+        List<AuditTrailPlugin.AuditEntry> auditEntries = getAuditTrail("tx-idempotent-99", "finance.transaction");
 
         assertThat(auditEntries).hasSize(1); // Product only calls log once despite idempotent billing
     }
@@ -288,4 +265,19 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         ds.setURL("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL");
         return ds;
     }
+
+        private List<AuditTrailPlugin.AuditEntry> getAuditTrail(String entityId, String entityType) {
+                return runPromise(() -> auditPlugin.getTrail(entityId)).stream()
+                                .filter(entry -> entityType.equals(String.valueOf(entry.details().get("entityType"))))
+                                .toList();
+        }
+
+        private static Map<String, Object> auditDetails(String tenantId, String entityType, String actorId, String data) {
+                return Map.of(
+                                "tenantId", tenantId,
+                                "entityType", entityType,
+                                "actorId", actorId,
+                                "data", data
+                );
+        }
 }

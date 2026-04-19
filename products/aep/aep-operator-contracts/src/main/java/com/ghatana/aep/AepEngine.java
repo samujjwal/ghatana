@@ -49,6 +49,17 @@ public interface AepEngine extends AutoCloseable {
     Promise<ProcessingResult> process(String tenantId, Event event);
 
     /**
+     * Backward-compatible alias for event ingestion.
+     *
+     * @param tenantId tenant identifier
+     * @param event event to ingest
+     * @return promise of processing result
+     */
+    default Promise<ProcessingResult> ingestEvent(String tenantId, Event event) {
+        return process(tenantId, event);
+    }
+
+    /**
      * Submit a pipeline for execution.
      *
      * @param tenantId tenant identifier

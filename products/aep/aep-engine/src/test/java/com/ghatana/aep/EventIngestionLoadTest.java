@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Load tests for event ingestion.
@@ -81,7 +82,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Ingest events sequentially
             int eventCount = 1000;
@@ -102,7 +103,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
             double eventsPerSecond = (eventCount * 1000.0) / durationMs;
 
             // Baseline should handle at least 100 events/second single-threaded
-            assertThat(eventsPerSecond).isGreaterThan(100);
+            assertThat(eventsPerSecond).isGreaterThan(100.0);
         }
     }
 
@@ -129,7 +130,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Ingest events concurrently
             int eventsPerThread = 100;
@@ -142,9 +143,10 @@ class EventIngestionLoadTest extends EventloopTestBase {
             long startTime = System.nanoTime();
 
             for (int thread = 0; thread < CONCURRENT_THREADS; thread++) {
+                final int threadIndex = thread;
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     for (int i = 0; i < eventsPerThread; i++) {
-                        int eventId = thread * eventsPerThread + i;
+                        int eventId = threadIndex * eventsPerThread + i;
                         AepEngine.Event event = new AepEngine.Event(
                             "test.event",
                             Map.of("value", eventId % 100),
@@ -178,7 +180,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
             assertThat(eventsPerSecond).isGreaterThan(TARGET_THROUGHPUT_EVENTS_PER_SECOND * 0.5); // At least 50% of target
             assertThat(successCount.get()).isEqualTo(totalEvents);
             assertThat(errorCount.get()).isZero();
-            assertThat(avgLatencyMs).isLessThan(100); // Average latency under 100ms
+            assertThat(avgLatencyMs).isLessThan(100.0); // Average latency under 100ms
         }
 
         @Test
@@ -205,7 +207,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Ingest mixed event types concurrently
             String[] eventTypes = {"login", "purchase", "click", "view", "logout"};
@@ -215,9 +217,10 @@ class EventIngestionLoadTest extends EventloopTestBase {
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
             for (int thread = 0; thread < CONCURRENT_THREADS; thread++) {
+                final int threadIndex = thread;
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     for (int i = 0; i < eventsPerThread; i++) {
-                        int eventId = thread * eventsPerThread + i;
+                        int eventId = threadIndex * eventsPerThread + i;
                         String type = eventTypes[eventId % eventTypes.length];
                         AepEngine.Event event = new AepEngine.Event(
                             type,
@@ -240,7 +243,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
             int totalEvents = eventsPerThread * CONCURRENT_THREADS;
-            assertThat(successCount.get()).isGreaterThan(totalEvents * 0.9); // At least 90% success
+            assertThat(successCount.get()).isGreaterThan((int) (totalEvents * 0.9)); // At least 90% success
         }
     }
 
@@ -267,7 +270,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Sustained load for duration
             int eventsPerSecond = 100;
@@ -323,14 +326,14 @@ class EventIngestionLoadTest extends EventloopTestBase {
 
             // Verify sustained performance
             assertThat(actualEventsPerSecond).isGreaterThan(eventsPerSecond * 0.8); // At least 80% of target
-            assertThat(errorCount.get()).isLessThan(totalEvents * 0.01); // Less than 1% errors
+            assertThat(errorCount.get()).isLessThan((int) Math.ceil(totalEvents * 0.01)); // Less than 1% errors
             
             // Verify latency distribution (most events should be under 50ms)
             long fastEvents = latencyBuckets.entrySet().stream()
                 .filter(e -> e.getKey() < 50)
                 .mapToLong(Map.Entry::getValue)
                 .sum();
-            assertThat(fastEvents).isGreaterThan(successCount.get() * 0.9);
+            assertThat(fastEvents).isGreaterThan((long) (successCount.get() * 0.9));
         }
     }
 
@@ -357,7 +360,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Measure memory before load
             Runtime runtime = Runtime.getRuntime();
@@ -409,7 +412,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Ingest events and measure latency
             int eventCount = 1000;

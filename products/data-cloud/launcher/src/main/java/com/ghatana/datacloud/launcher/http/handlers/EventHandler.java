@@ -63,11 +63,26 @@ public class EventHandler {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> eventData = http.objectMapper().readValue(body, Map.class);
 
-                Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(eventData);
-                if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
+                Optional<String> requestErr = ApiInputValidator.validateEntityPayload(eventData);
+                if (requestErr.isPresent()) return Promise.of(http.errorResponse(400, requestErr.get()));
 
-                String eventType = (String) eventData.getOrDefault("type", "unknown");
-                Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
+                String eventType = (String) eventData.get("type");
+                if (eventType == null || eventType.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "type must not be null or blank"));
+                }
+
+                Object payloadCandidate = eventData.containsKey("payload")
+                    ? eventData.get("payload")
+                    : eventData.get("data");
+                if (!(payloadCandidate instanceof Map<?, ?> payloadMap)) {
+                    return Promise.of(http.errorResponse(400, "payload must be a JSON object"));
+                }
+
+                Map<String, Object> payload = (Map<String, Object>) payloadMap;
+                if (eventData.containsKey("data")) {
+                    Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(payload);
+                    if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
+                }
 
                 DataCloudClient.Event event = DataCloudClient.Event.of(eventType, payload);
 
@@ -81,6 +96,7 @@ public class EventHandler {
                     .map(offset -> http.jsonResponse(Map.of(
                         "offset", offset.value(),
                         "type", eventType,
+                        "eventType", eventType,
                         "timestamp", Instant.now().toString()
                     )));
             } catch (Exception e) {

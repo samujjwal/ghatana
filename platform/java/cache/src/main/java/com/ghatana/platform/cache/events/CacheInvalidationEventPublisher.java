@@ -86,20 +86,18 @@ public final class CacheInvalidationEventPublisher {
         );
 
         return messageBus.publish("cache-invalidation-events", event)
-            .thenApply(unused -> {
+            .whenResult(unused -> {
                 log.info("Published cache invalidation event",
                     "eventId", event.eventId,
                     "operationType", event.operationType,
                     "cacheKey", event.cacheKey,
                     "correlationId", event.correlationId);
-                return null;
             })
-            .exceptionally(exception -> {
+            .whenException(exception -> {
                 log.warn("Failed to publish cache invalidation event", exception,
                     "cacheKey", cacheKey,
                     "correlationId", correlationId,
                     "error", exception.getMessage());
-                return null;  // Non-blocking: don't throw
             });
     }
 
@@ -127,21 +125,19 @@ public final class CacheInvalidationEventPublisher {
         );
 
         return messageBus.publish("cache-invalidation-events", event)
-            .thenApply(unused -> {
+            .whenResult(unused -> {
                 log.info("Published pattern cache invalidation event",
                     "eventId", event.eventId,
                     "operationType", event.operationType,
                     "pattern", event.cacheKey,
                     "keyCount", event.keyCount,
                     "correlationId", event.correlationId);
-                return null;
             })
-            .exceptionally(exception -> {
+            .whenException(exception -> {
                 log.warn("Failed to publish pattern invalidation event", exception,
                     "pattern", pattern,
                     "keyCount", keyCount,
                     "error", exception.getMessage());
-                return null;  // Non-blocking: don't throw
             });
     }
 
@@ -168,21 +164,19 @@ public final class CacheInvalidationEventPublisher {
         );
 
         return messageBus.publish("cache-invalidation-events", event)
-            .thenApply(unused -> {
+            .whenResult(unused -> {
                 log.info("Published bulk cache invalidation event",
                     "eventId", event.eventId,
                     "operationType", event.operationType,
                     "bulkOperationKey", event.cacheKey,
                     "keyCount", event.keyCount,
                     "correlationId", event.correlationId);
-                return null;
             })
-            .exceptionally(exception -> {
+            .whenException(exception -> {
                 log.warn("Failed to publish bulk invalidation event", exception,
                     "bulkOperationKey", bulkOperationKey,
                     "keyCount", keyCount,
                     "error", exception.getMessage());
-                return null;  // Non-blocking: don't throw
             });
     }
 
@@ -342,7 +336,7 @@ class CacheInvalidationEventSubscriber {
     public Promise<Void> start() {
         return messageBus.subscribe("cache-invalidation-events", event -> {
             if (!(event instanceof CacheInvalidationEventPublisher.CacheInvalidationEvent)) {
-                return Promise.complete(null);
+                return Promise.complete();
             }
 
             CacheInvalidationEventPublisher.CacheInvalidationEvent invalidationEvent =
@@ -350,7 +344,7 @@ class CacheInvalidationEventSubscriber {
 
             // Avoid re-processing our own events
             if (serviceSource.equals(invalidationEvent.source)) {
-                return Promise.complete(null);
+                return Promise.complete();
             }
 
             return applyInvalidationEvent(invalidationEvent);
@@ -360,44 +354,40 @@ class CacheInvalidationEventSubscriber {
     private Promise<Void> applyInvalidationEvent(
             CacheInvalidationEventPublisher.CacheInvalidationEvent event
     ) {
-        return Promise.of(() -> {
-            try {
-                switch (event.operationType) {
-                    case SINGLE_KEY_DELETE:
-                        long deletedCount = cacheBackend.deleteKey(event.cacheKey);
-                        log.info("Applied single key invalidation from event",
-                            "eventId", event.eventId,
-                            "cacheKey", event.cacheKey,
-                            "source", event.source,
-                            "deleted", deletedCount);
-                        break;
+        try {
+            switch (event.operationType) {
+                case SINGLE_KEY_DELETE:
+                    cacheBackend.deleteKey(event.cacheKey);
+                    log.info("Applied single key invalidation from event",
+                        "eventId", event.eventId,
+                        "cacheKey", event.cacheKey,
+                        "source", event.source);
+                    break;
 
-                    case PATTERN_DELETE:
-                        long patternDeleteCount = cacheBackend.deletePattern(event.cacheKey);
-                        log.info("Applied pattern invalidation from event",
-                            "eventId", event.eventId,
-                            "pattern", event.cacheKey,
-                            "source", event.source,
-                            "deleted", patternDeleteCount);
-                        break;
+                case PATTERN_DELETE:
+                    int patternDeleteCount = cacheBackend.deletePattern(event.cacheKey);
+                    log.info("Applied pattern invalidation from event",
+                        "eventId", event.eventId,
+                        "pattern", event.cacheKey,
+                        "source", event.source,
+                        "deleted", patternDeleteCount);
+                    break;
 
-                    case BULK_DELETE:
-                        long bulkDeleteCount = cacheBackend.deletePattern(event.cacheKey);
-                        log.info("Applied bulk invalidation from event",
-                            "eventId", event.eventId,
-                            "bulkOperationKey", event.cacheKey,
-                            "source", event.source,
-                            "deleted", bulkDeleteCount);
-                        break;
-                }
-                return null;
-            } catch (Exception e) {
-                log.warn("Failed to apply cache invalidation event", e,
-                    "eventId", event.eventId,
-                    "operationType", event.operationType,
-                    "error", e.getMessage());
-                return null;  // Non-blocking: don't throw
+                case BULK_DELETE:
+                    int bulkDeleteCount = cacheBackend.deletePattern(event.cacheKey);
+                    log.info("Applied bulk invalidation from event",
+                        "eventId", event.eventId,
+                        "bulkOperationKey", event.cacheKey,
+                        "source", event.source,
+                        "deleted", bulkDeleteCount);
+                    break;
             }
-        });
+        } catch (Exception e) {
+            log.warn("Failed to apply cache invalidation event", e,
+                "eventId", event.eventId,
+                "operationType", event.operationType,
+                "error", e.getMessage());
+        }
+        return Promise.complete();
     }
 }

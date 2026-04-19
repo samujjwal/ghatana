@@ -155,9 +155,9 @@ class DataCloudArchitectureTest {
             ArchRule rule = noClasses()
                     .that().resideInAPackage("com.ghatana.datacloud.launcher.http.handlers")
                     .and().haveSimpleNameEndingWith("Handler")
+                    .and().doNotHaveSimpleName("HttpHandlerSupport")
                     .should().dependOnClassesThat()
-                    .resideInAPackage("com.ghatana.datacloud.launcher.http.handlers")
-                    .andShould().dependOnClassesThat().haveSimpleNameEndingWith("Handler")
+                    .haveSimpleNameEndingWith("Handler")
                     .because(
                         "Each handler must be independently composable. "
                         + "Cross-handler dependencies create tight coupling and cyclic dependencies.")

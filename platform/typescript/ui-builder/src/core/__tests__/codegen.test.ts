@@ -91,6 +91,7 @@ describe('@ghatana/ui-builder/core - Code Generation', () => {
       expect(result.files).toHaveLength(1);
       expect(result.files[0].path).toBe('TestComponent.tsx');
       expect(result.files[0].content).toContain('import * as React from');
+      expect(result.files[0].content).toContain('// Builder platform targets: react, html, web-components');
       expect(result.files[0].content).toContain('export interface TestComponentProps');
       expect(result.files[0].content).toContain('export const TestComponent');
       expect(result.files[0].content).toContain('Button');

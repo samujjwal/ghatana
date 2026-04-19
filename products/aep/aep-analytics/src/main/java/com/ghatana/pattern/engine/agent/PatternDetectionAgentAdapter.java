@@ -13,19 +13,22 @@ import com.ghatana.platform.domain.event.EventId;
 import com.ghatana.platform.domain.event.EventTime;
 import com.ghatana.platform.domain.event.EventStats;
 import com.ghatana.platform.domain.event.EventRelations;
+import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.core.operator.OperatorResult;
+import com.ghatana.platform.types.time.GTimeInterval;
+import com.ghatana.platform.types.time.GTimeUnit;
+import com.ghatana.platform.types.time.GTimeValue;
+import com.ghatana.platform.types.time.GTimestamp;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.LinkedHashMap;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Adapter that wraps {@link PatternDetectionAgent} to implement {@link AepEngine.PatternDetector}.
@@ -73,28 +76,33 @@ public class PatternDetectionAgentAdapter implements AepEngine.PatternDetector {
             return agent.process(platformEvent)
                 .map(result -> {
                     List<AepEngine.Detection> detections = new ArrayList<>();
-                    
-                    // Convert OperatorResult to AepEngine.Detection
-                    if (result.isSuccess() && result.hasOutput()) {
-                        Map<String, Object> output = result.getOutput();
-                        if (output != null && !output.isEmpty()) {
+
+                    if (result.isSuccess()) {
+                        for (Event outputEvent : result.getOutputEvents()) {
+                            Map<String, Object> output = outputEvent.toPayloadMap();
+                            if (!output.isEmpty()) {
+                                double confidence = confidenceFrom(output);
                             detections.add(new AepEngine.Detection(
                                 patternId,
                                 aepEvent.type(),
-                                result.getConfidence(),
+                                    confidence,
                                 output,
                                 Instant.now()
                             ));
                         }
+                        }
                     }
-                    
+
                     return detections;
                 })
-                .whenException(e -> {
+                .then(
+                    Promise::of,
+                    e -> {
                     logger.warn("PatternDetectionAgent failed for tenant={}, event={}: {}",
                         tenantId, aepEvent.type(), e.getMessage());
-                    return Promise.of(List.of());
-                });
+                        return Promise.of(List.of());
+                    }
+                );
         } catch (Exception e) {
             logger.error("Error in PatternDetectionAgentAdapter for tenant={}, event={}: {}",
                 tenantId, aepEvent.type(), e.getMessage(), e);
@@ -106,72 +114,41 @@ public class PatternDetectionAgentAdapter implements AepEngine.PatternDetector {
      * Converts AepEngine.Event to platform Event.
      */
     private Event convertToPlatformEvent(String tenantId, AepEngine.Event aepEvent) {
-        return new Event() {
-            @Override
-            public EventId getId() {
-                return new EventId(tenantId, aepEvent.type(), aepEvent.version(), UUID.randomUUID().toString());
-            }
+        GTimestamp timestamp = GTimestamp.of(aepEvent.timestamp());
+        EventTime eventTime = EventTime.builder()
+            .occurrenceTime(GTimeInterval.between(timestamp, timestamp))
+            .detectionTimePoint(timestamp)
+            .validDuration(new GTimeValue(Long.MAX_VALUE, GTimeUnit.MILLISECONDS))
+            .boundingInterval(GTimeInterval.between(timestamp, timestamp))
+            .granularity(1)
+            .build();
 
-            @Override
-            public EventTime getTime() {
-                return new EventTime() {
-                    @Override
-                    public Instant getDetectionTimePoint() {
-                        return aepEvent.timestamp();
-                    }
+        return GEvent.builder()
+            .id(EventId.create(
+                aepEvent.idempotencyKey().orElseGet(() -> UUID.randomUUID().toString()),
+                aepEvent.type(),
+                aepEvent.version(),
+                tenantId))
+            .time(eventTime)
+            .stats(EventStats.builder()
+                .withProcessingTimeNanos(0)
+                .withSizeInBytes(aepEvent.payload().toString().length())
+                .withFieldCount(aepEvent.payload().size())
+                .withTagCount(aepEvent.headers().size())
+                .build())
+            .relations(EventRelations.empty())
+            .headers(new LinkedHashMap<>(aepEvent.headers()))
+            .payload(new LinkedHashMap<>(aepEvent.payload()))
+            .intervalBased(false)
+            .build();
+    }
 
-                    @Override
-                    public Instant getOccurrenceTime() {
-                        return aepEvent.timestamp();
-                    }
-                };
-            }
-
-            @Override
-            public Location getLocation() {
-                return null;
-            }
-
-            @Override
-            public EventStats getStats() {
-                return new EventStats() {
-                    @Override
-                    public long getProcessingTimeMs() {
-                        return 0;
-                    }
-
-                    @Override
-                    public long getSizeBytes() {
-                        return 0;
-                    }
-                };
-            }
-
-            @Override
-            public EventRelations getRelations() {
-                return new EventRelations(List.of(), List.of(), Map.of());
-            }
-
-            @Override
-            public String getHeader(String name) {
-                return aepEvent.headers().get(name);
-            }
-
-            @Override
-            public Object getPayload(String name) {
-                return aepEvent.payload().get(name);
-            }
-
-            @Override
-            public Map<String, Object> toPayloadMap() {
-                return Map.copyOf(aepEvent.payload());
-            }
-
-            @Override
-            public boolean isIntervalBased() {
-                return false;
-            }
-        };
+    private double confidenceFrom(Map<String, Object> output) {
+        Object value = output.get("confidence");
+        if (value instanceof Number number) {
+            return Math.max(0.0, Math.min(1.0, number.doubleValue()));
+        }
+        return 1.0;
     }
 
     /**

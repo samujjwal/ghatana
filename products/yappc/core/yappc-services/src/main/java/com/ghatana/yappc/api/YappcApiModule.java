@@ -23,7 +23,7 @@ import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import io.activej.eventloop.Eventloop;
-import io.activej.http.AsyncHttpClient;
+import io.activej.http.HttpClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 
@@ -134,7 +134,7 @@ public class YappcApiModule extends AbstractModule {
             LearningService learningService,
             EvolutionService evolutionService,
             Eventloop eventloop,
-            AsyncHttpClient httpClient) {
+            HttpClient httpClient) {
         return new LifecycleApiController(
             intentService,
             shapeService,

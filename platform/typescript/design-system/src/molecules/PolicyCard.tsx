@@ -22,6 +22,7 @@ import { cn } from '@ghatana/platform-utils';
 import { palette, lightColors, darkColors, componentRadius, fontSize, fontWeight } from '@ghatana/tokens';
 import { useTheme } from '@ghatana/theme';
 import { Badge } from '../atoms/Badge';
+import { createPressableBehavior, useComponentComposition } from '../core';
 
 /**
  * Policy status type
@@ -136,6 +137,9 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
       compact = false,
       className,
       onClick,
+      role,
+      style,
+      tabIndex,
       ...props
     },
     ref
@@ -145,6 +149,10 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
     const surface = isDark ? darkColors : lightColors;
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      composition.telemetry('select', {
+        status: policy.status,
+        selected: isSelected,
+      });
       if (onSelect) {
         onSelect(policy);
       }
@@ -153,34 +161,75 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
 
     const handleActionClick = (action: 'edit' | 'toggle' | 'delete', e: React.MouseEvent) => {
       e.stopPropagation();
+      composition.telemetry('policy-action', { action, status: policy.status });
       onAction?.(action, policy);
     };
 
     const padding = compact ? '12px 16px' : '16px 20px';
-
-    return (
-      <div
-        ref={ref}
-        onClick={handleClick}
-        className={cn(
+    const composition = useComponentComposition({
+      metadata: {
+        component: 'policy-card',
+        tone: policy.status,
+        state: isSelected ? 'selected' : 'idle',
+        privacy: 'internal',
+      },
+      state: {
+        selected: isSelected,
+        compact,
+        actionable: showActions,
+        'has-priority': policy.priority !== undefined && policy.priority > 0,
+        'has-description': Boolean(policy.description),
+      },
+      features: [
+        'policy',
+        'selectable',
+        showActions ? 'actions' : undefined,
+        compact ? 'compact' : undefined,
+      ],
+      behaviors: [
+        createPressableBehavior({
+          role: role ?? 'button',
+          tabIndex: tabIndex ?? 0,
+        }),
+      ],
+      rootProps: {
+        onClick: handleClick,
+        'aria-pressed': isSelected,
+        role: role ?? 'button',
+        tabIndex: tabIndex ?? 0,
+        className: cn(
           'rounded-lg border p-4 transition-all cursor-pointer',
           'hover:shadow-md',
           isSelected && 'ring-2 ring-blue-400 shadow-md',
           className
-        )}
-        style={{
+        ),
+        style: {
           padding,
           backgroundColor: surface.background.elevated,
           borderColor: isSelected ? '#3b82f6' : surface.border,
           borderWidth: isSelected ? '2px' : '1px',
-        } as React.CSSProperties}
-        {...props}
+          ...(style ?? {}),
+        } as React.CSSProperties,
+        ...props,
+      },
+    });
+
+    return (
+      <div
+        ref={ref}
+        {...composition.rootProps}
       >
         {/* Header: Title and Status Badge */}
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1 min-w-0">
+        <div
+          {...composition.getSlotProps('header', {
+            className: 'flex items-start justify-between gap-3 mb-2',
+          }, { present: true })}
+        >
+          <div {...composition.getSlotProps('title-wrap', { className: 'flex-1 min-w-0' })}>
             <h3
-              className="font-semibold truncate"
+              {...composition.getSlotProps('title', {
+                className: 'font-semibold truncate',
+              })}
               style={{
                 color: surface.text.primary,
                 fontSize: '15px',
@@ -198,7 +247,9 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
         {/* Description */}
         {policy.description && (
           <p
-            className="text-sm line-clamp-2 mb-3"
+            {...composition.getSlotProps('description', {
+              className: 'text-sm line-clamp-2 mb-3',
+            }, { present: true })}
             style={{
               color: surface.text.secondary,
               fontSize: '13px',
@@ -211,8 +262,12 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
         )}
 
         {/* Stats Row: Apps and Rules Count */}
-        <div className="flex items-center gap-4 mb-3">
-          <div className="flex items-center gap-1">
+        <div
+          {...composition.getSlotProps('stats', {
+            className: 'flex items-center gap-4 mb-3',
+          }, { present: true })}
+        >
+          <div {...composition.getSlotProps('apps-stat', { className: 'flex items-center gap-1' })}>
             <span
               style={{
                 fontSize: '12px',
@@ -233,6 +288,7 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
             </span>
           </div>
           <div
+            {...composition.getSlotProps('stats-divider', {})}
             style={{
               width: '1px',
               height: '16px',
@@ -240,7 +296,7 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
               opacity: 0.5,
             }}
           />
-          <div className="flex items-center gap-1">
+          <div {...composition.getSlotProps('rules-stat', { className: 'flex items-center gap-1' })}>
             <span
               style={{
                 fontSize: '12px',
@@ -265,6 +321,7 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
           {policy.priority !== undefined && policy.priority > 0 && (
             <>
               <div
+                {...composition.getSlotProps('priority-divider', {})}
                 style={{
                   width: '1px',
                   height: '16px',
@@ -272,7 +329,7 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
                   opacity: 0.5,
                 }}
               />
-              <div className="flex items-center gap-1">
+              <div {...composition.getSlotProps('priority-stat', { className: 'flex items-center gap-1' })}>
                 <span
                   style={{
                     fontSize: '12px',
@@ -287,10 +344,16 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
         </div>
 
         {/* Footer: Last Modified + Actions */}
-        <div className="flex items-center justify-between gap-2 pt-3 border-t">
+        <div
+          {...composition.getSlotProps('footer', {
+            className: 'flex items-center justify-between gap-2 pt-3 border-t',
+          }, { present: true })}
+        >
           {policy.lastModified && (
             <p
-              className="text-xs"
+              {...composition.getSlotProps('timestamp', {
+                className: 'text-xs',
+              }, { present: true })}
               style={{
                 color: surface.text.primary,
                 fontSize: '11px',
@@ -302,7 +365,11 @@ export const PolicyCard = React.forwardRef<HTMLDivElement, PolicyCardProps>(
           )}
 
           {showActions && (
-            <div className="flex items-center gap-2 ml-auto">
+            <div
+              {...composition.getSlotProps('actions', {
+                className: 'flex items-center gap-2 ml-auto',
+              }, { present: true })}
+            >
               <button
                 onClick={(e) => handleActionClick('edit', e)}
                 className="px-2 py-1 text-xs rounded transition-colors hover:bg-blue-100 dark:hover:bg-blue-900"

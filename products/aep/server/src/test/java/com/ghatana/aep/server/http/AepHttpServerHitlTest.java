@@ -67,17 +67,19 @@ class AepHttpServerHitlTest {
     class ListPendingTests {
 
         @Test
-        @DisplayName("returns 501 when humanReviewQueue is not configured")
-        void listPending_whenQueueNull_returns501() throws Exception {
+        @DisplayName("returns 200 truthful unconfigured response when humanReviewQueue is not configured")
+        void listPending_whenQueueNull_returnsTruthfulUnconfiguredResponse() throws Exception {
             server = new AepHttpServer(engine, port);
             server.start();
             waitForServerReady(port);
 
             HttpResponse<String> resp = get("/api/v1/hitl/pending");
 
-            assertThat(resp.statusCode()).isEqualTo(501);
+            assertThat(resp.statusCode()).isEqualTo(200);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).contains("HITL queue not configured");
+            assertThat(body.get("configured")).isEqualTo(false);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("message").toString()).contains("HITL queue not configured");
         }
 
         @Test

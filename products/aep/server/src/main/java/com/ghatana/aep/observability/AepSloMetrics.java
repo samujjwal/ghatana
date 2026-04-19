@@ -250,6 +250,9 @@ public final class AepSloMetrics {
         long failed = failedRuns.get();
         double rate = total == 0 ? 0.0 : (double) failed / total;
         return Map.of(
+                                "total", total,
+                                "failed", failed,
+                                "failureRate", rate,
                 "totalRuns", total,
                 "failedRuns", failed,
                 "runFailureRate", rate);

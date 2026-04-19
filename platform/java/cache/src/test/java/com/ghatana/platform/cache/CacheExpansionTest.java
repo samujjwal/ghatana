@@ -48,8 +48,10 @@ class CacheExpansionTest {
     @BeforeEach
     void setUp() {
         lenient().when(backend.getValue(anyString())).thenReturn(null);
-        lenient().when(backend.deserialize(anyString(), org.mockito.ArgumentMatchers.any()))
-                .thenAnswer(invocation -> invocation.getArgument(1));
+        lenient().when(backend.serialize(org.mockito.ArgumentMatchers.any()))
+            .thenAnswer(invocation -> String.valueOf(invocation.getArgument(0)));
+        lenient().when(backend.deserialize(anyString(), org.mockito.ArgumentMatchers.eq(String.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
         cacheService = new DistributedCacheService(backend, "tenant-1");
     }
 
@@ -84,12 +86,12 @@ class CacheExpansionTest {
                 String key = "key-" + i;
                 String value = "value-" + i;
 
-                cacheService.put(key, value);
+                cacheService.put(key, value, 300);
             }
 
             // Verify backend was called
             org.mockito.Mockito.verify(backend, org.mockito.Mockito.atLeastOnce())
-                    .putValue(anyString(), anyString());
+                    .serialize(org.mockito.ArgumentMatchers.any());
         }
 
         @Test
@@ -174,21 +176,21 @@ class CacheExpansionTest {
 
             // Verify deletion calls
             org.mockito.Mockito.verify(backend, org.mockito.Mockito.atLeastOnce())
-                    .deleteValue(anyString());
+                    .deleteKey(anyString());
         }
 
         @Test
         @DisplayName("Invalidate all cache entries")
         void invalidateAll() {
             for (int i = 0; i < 50; i++) {
-                cacheService.put("key-" + i, "value-" + i);
+                cacheService.put("key-" + i, "value-" + i, 300);
             }
 
-            cacheService.invalidateAll();
+            cacheService.invalidatePattern("*");
 
-            // Verify flush was called
+            // Verify pattern invalidation was called
             org.mockito.Mockito.verify(backend, org.mockito.Mockito.atLeastOnce())
-                    .flush();
+                    .deletePattern(anyString());
         }
     }
 
@@ -232,7 +234,7 @@ class CacheExpansionTest {
 
                 Optional<String> result = cacheService.get(key, String.class);
                 assertThat(result).isPresent();
-                assertThat(result.get()).hasLength(100000);
+                assertThat(result.get()).hasSize(100000);
             }
         }
 
@@ -276,6 +278,9 @@ class CacheExpansionTest {
 
             ExecutorService exec = Executors.newFixedThreadPool(threadCount);
             try {
+                lenient().when(backend.getValue(anyString())).thenReturn("some-value");
+                lenient().when(backend.deserialize("some-value", String.class))
+                        .thenReturn("some-value");
                 for (int t = 0; t < threadCount; t++) {
                     final int threadIdx = t;
                     exec.submit(() -> {
@@ -286,12 +291,8 @@ class CacheExpansionTest {
                                 
                                 if (opIdx % 2 == 0) {
                                     // Write
-                                    cacheService.put(key, "value-" + threadIdx);
+                                    cacheService.put(key, "value-" + threadIdx, 300);
                                 } else {
-                                    // Read
-                                    when(backend.getValue(anyString())).thenReturn("some-value");
-                                    when(backend.deserialize("some-value", String.class))
-                                            .thenReturn("some-value");
                                     Optional<String> result = cacheService.get(key, String.class);
                                     if (result.isPresent()) {
                                         successCount.incrementAndGet();
@@ -316,7 +317,7 @@ class CacheExpansionTest {
         void concurrentInvalidation() throws Exception {
             // Pre-populate
             for (int i = 0; i < 300; i++) {
-                cacheService.put("key-" + i, "value-" + i);
+                cacheService.put("key-" + i, "value-" + i, 300);
             }
 
             int threadCount = 20;
@@ -360,11 +361,11 @@ class CacheExpansionTest {
             when(backend.getValue("tenant:tenant-1:" + longKey)).thenReturn(longValue);
             when(backend.deserialize(longValue, String.class)).thenReturn(longValue);
 
-            cacheService.put(longKey, longValue);
+            cacheService.put(longKey, longValue, 300);
             Optional<String> result = cacheService.get(longKey, String.class);
 
             assertThat(result).isPresent();
-            assertThat(result.get()).hasLength(100000);
+            assertThat(result.get()).hasSize(100000);
         }
     }
 }

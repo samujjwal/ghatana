@@ -6,7 +6,9 @@
  * email templates, static site generation, or non-React product surfaces.
  */
 
+import type { ComponentContract } from '@ghatana/ds-schema';
 import type { BuilderDocument, ComponentInstance, NodeId } from '../core/types.js';
+import { projectInstanceToPlatformPlan, type ContractLookup, type ManifestLookup } from '../core/platform-plan.js';
 
 // ============================================================================
 // Renderer Configuration
@@ -21,6 +23,10 @@ export interface WebRendererConfig {
   readonly debugAttributePrefix: string;
   /** Slot separator in multi-slot components. Default: '' */
   readonly slotSeparator: string;
+  /** Optional contract lookup for platform-aware annotations */
+  readonly contracts?: ContractLookup;
+  /** Optional manifest lookup from design-system recipes */
+  readonly manifests?: ManifestLookup;
 }
 
 const DEFAULT_CONFIG: WebRendererConfig = {
@@ -28,7 +34,18 @@ const DEFAULT_CONFIG: WebRendererConfig = {
   emitDebugAttributes: false,
   debugAttributePrefix: 'data-builder',
   slotSeparator: '',
+  contracts: undefined,
+  manifests: undefined,
 };
+
+function toContractMap(contracts?: ContractLookup): ReadonlyMap<string, ComponentContract> {
+  if (!contracts) return new Map();
+  if (contracts instanceof Map) return contracts;
+  if (Array.isArray(contracts)) {
+    return new Map(contracts.map((contract) => [contract.name, contract]));
+  }
+  return new Map();
+}
 
 // ============================================================================
 // Prop Serialization
@@ -99,17 +116,44 @@ function renderNodeHtml(
   document: BuilderDocument,
   cfg: WebRendererConfig,
   depth: number,
+  inheritedAttrs: Readonly<Record<string, string>> = {},
 ): string[] {
   const pad = ' '.repeat(cfg.indent * depth);
   const tagName = `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  const manifestMap = cfg.manifests instanceof Map
+    ? cfg.manifests
+    : Array.isArray(cfg.manifests)
+      ? new Map(cfg.manifests.map((manifest) => [manifest.name, manifest]))
+      : new Map();
+  const platformPlan = projectInstanceToPlatformPlan(
+    node,
+    toContractMap(cfg.contracts).get(node.contractName),
+    manifestMap.get(node.contractName),
+  );
 
   const attrs: string[] = [
     // Always emit data-builder-contract — it is a semantic attribute, not a debug attribute
     `${cfg.debugAttributePrefix}-contract="${escapeAttr(node.contractName)}"`,
+    `${cfg.debugAttributePrefix}-platforms="${escapeAttr(platformPlan.targets.join(' '))}"`,
+    `${cfg.debugAttributePrefix}-signature="${escapeAttr(platformPlan.signature)}"`,
   ];
+
+  if (platformPlan.features.length > 0) {
+    attrs.push(`${cfg.debugAttributePrefix}-features="${escapeAttr(platformPlan.features.join(' '))}"`);
+  }
+  if (platformPlan.dataClassification) {
+    attrs.push(`${cfg.debugAttributePrefix}-classification="${escapeAttr(platformPlan.dataClassification)}"`);
+  }
+  if (platformPlan.reviewRequired) {
+    attrs.push(`${cfg.debugAttributePrefix}-review-required="true"`);
+  }
 
   if (cfg.emitDebugAttributes) {
     attrs.push(`${cfg.debugAttributePrefix}-node-id="${node.id}"`);
+  }
+
+  for (const [key, value] of Object.entries(inheritedAttrs)) {
+    attrs.push(`${key}="${escapeAttr(value)}"`);
   }
 
   for (const [key, value] of Object.entries(node.props)) {
@@ -127,11 +171,14 @@ function renderNodeHtml(
   }
 
   // Render slot children
-  for (const [, slotChildren] of Object.entries(node.slots)) {
-    for (const childId of slotChildren) {
+  for (const slotPlan of platformPlan.slots) {
+    for (const childId of slotPlan.childIds) {
       const child = document.nodes.get(childId as NodeId);
       if (child) {
-        lines.push(...renderNodeHtml(child, document, cfg, depth + 1));
+        const childAttrs = slotPlan.name === 'default'
+          ? {}
+          : { slot: slotPlan.name, [`${cfg.debugAttributePrefix}-slot`]: slotPlan.name };
+        lines.push(...renderNodeHtml(child, document, cfg, depth + 1, childAttrs));
       }
     }
     if (cfg.slotSeparator) lines.push(`${pad}${cfg.slotSeparator}`);
@@ -204,8 +251,19 @@ function renderNodeDOM(
   node: ComponentInstance,
   document: BuilderDocument,
   cfg: WebRendererConfig,
+  inheritedAttrs: Readonly<Record<string, string>> = {},
 ): Element {
   const tagName = `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  const manifestMap = cfg.manifests instanceof Map
+    ? cfg.manifests
+    : Array.isArray(cfg.manifests)
+      ? new Map(cfg.manifests.map((manifest) => [manifest.name, manifest]))
+      : new Map();
+  const platformPlan = projectInstanceToPlatformPlan(
+    node,
+    toContractMap(cfg.contracts).get(node.contractName),
+    manifestMap.get(node.contractName),
+  );
 
   const el = globalThis.document?.createElement(tagName) ??
     ({
@@ -216,9 +274,24 @@ function renderNodeDOM(
 
   // Always emit data-builder-contract
   el.setAttribute(`${cfg.debugAttributePrefix}-contract`, node.contractName);
+  el.setAttribute(`${cfg.debugAttributePrefix}-platforms`, platformPlan.targets.join(' '));
+  el.setAttribute(`${cfg.debugAttributePrefix}-signature`, platformPlan.signature);
+  if (platformPlan.features.length > 0) {
+    el.setAttribute(`${cfg.debugAttributePrefix}-features`, platformPlan.features.join(' '));
+  }
+  if (platformPlan.dataClassification) {
+    el.setAttribute(`${cfg.debugAttributePrefix}-classification`, platformPlan.dataClassification);
+  }
+  if (platformPlan.reviewRequired) {
+    el.setAttribute(`${cfg.debugAttributePrefix}-review-required`, 'true');
+  }
 
   if (cfg.emitDebugAttributes) {
     el.setAttribute(`${cfg.debugAttributePrefix}-node-id`, node.id);
+  }
+
+  for (const [key, value] of Object.entries(inheritedAttrs)) {
+    el.setAttribute(key, value);
   }
 
   for (const [key, value] of Object.entries(node.props)) {
@@ -239,11 +312,14 @@ function renderNodeDOM(
     }
   }
 
-  for (const slotChildren of Object.values(node.slots)) {
-    for (const childId of slotChildren) {
+  for (const slotPlan of platformPlan.slots) {
+    for (const childId of slotPlan.childIds) {
       const child = document.nodes.get(childId as NodeId);
       if (child) {
-        el.appendChild(renderNodeDOM(child, document, cfg));
+        const childAttrs = slotPlan.name === 'default'
+          ? {}
+          : { slot: slotPlan.name, [`${cfg.debugAttributePrefix}-slot`]: slotPlan.name };
+        el.appendChild(renderNodeDOM(child, document, cfg, childAttrs));
       }
     }
   }

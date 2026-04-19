@@ -12,6 +12,7 @@ import com.ghatana.pattern.engine.evaluator.ProbabilisticEvaluator;
 import com.ghatana.pattern.engine.nfa.NFA;
 import com.ghatana.pattern.engine.nfa.NFAState;
 import com.ghatana.pattern.engine.nfa.NFATransition;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @DisplayName("End-to-End Event Processing Test")
-class EndToEndEventProcessingTest {
+class EndToEndEventProcessingTest extends EventloopTestBase {
 
     private AepEngine engine;
     private PatternDetectionAgent patternAgent;
@@ -95,7 +96,7 @@ class EndToEndEventProcessingTest {
         // WHEN
         AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), 
             java.time.Instant.now());
-        AepEngine.ProcessingResult result = engine.process(tenantId, event).blockingGet();
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
 
         // THEN
         assertThat(result.success()).isTrue();
@@ -113,7 +114,7 @@ class EndToEndEventProcessingTest {
             Map.of("userId", "user-456"), Map.of(), java.time.Instant.now());
 
         // WHEN
-        AepEngine.ProcessingResult result = engine.process(tenantId, event).blockingGet();
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
 
         // THEN
         assertThat(result.success()).isTrue();
@@ -135,7 +136,7 @@ class EndToEndEventProcessingTest {
 
         // WHEN
         List<AepEngine.ProcessingResult> results = events.stream()
-            .map(event -> engine.process(tenantId, event).blockingGet())
+            .map(event -> runPromise(() -> engine.process(tenantId, event)))
             .toList();
 
         // THEN
@@ -155,7 +156,7 @@ class EndToEndEventProcessingTest {
             Map.of("userId", "user-789"), Map.of(), java.time.Instant.now());
 
         // WHEN
-        AepEngine.ProcessingResult result = engine.process(tenantId, event).blockingGet();
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
 
         // THEN
         assertThat(result.success()).isTrue();
@@ -172,7 +173,7 @@ class EndToEndEventProcessingTest {
             Map.of("key", "value"), Map.of("correlationId", "corr-123"), java.time.Instant.now());
 
         // WHEN
-        AepEngine.ProcessingResult result = engine.process(tenantId, event).blockingGet();
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
 
         // THEN
         assertThat(result.success()).isTrue();

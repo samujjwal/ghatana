@@ -16,6 +16,7 @@ dependencies {
 
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform-kernel:kernel-testing"))
+    testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

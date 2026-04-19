@@ -29,8 +29,9 @@ import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import io.activej.bytebuf.ByteBuf;
+import io.activej.dns.DnsClient;
 import io.activej.eventloop.Eventloop;
-import io.activej.http.AsyncHttpClient;
+import io.activej.http.HttpClient;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +76,9 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
         EvolutionService evolutionService = new EvolutionServiceImpl(completionService, auditLogger, metrics);
 
         Eventloop testEventloop = Eventloop.builder().build();
-        AsyncHttpClient testHttpClient = AsyncHttpClient.builder(testEventloop).build();
+        HttpClient testHttpClient = HttpClient.create(
+          testEventloop,
+          DnsClient.builder(testEventloop, InetAddress.getLoopbackAddress()).build());
 
         controller = new LifecycleApiController(
                 intentService,

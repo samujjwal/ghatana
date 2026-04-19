@@ -907,7 +907,7 @@ public class DataCloudHttpServer {
         if (schemaValidator != null) entityHandler.withSchemaValidator(schemaValidator);
         if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
         entityHandler.withTraceSupport(traceSpanSupport);
-        entityHandler.withSemanticSearchHandler(semanticSearchHandler);
+        entityHandler.withSemanticSearchPorts(semanticSearchHandler::indexEntity, semanticSearchHandler::deleteEntity);
 
         exportHandler     = new EntityExportHandler(exportService, httpSupport);
         anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport, eventLogStore, objectMapper);
@@ -1013,7 +1013,11 @@ public class DataCloudHttpServer {
             objectMapper,
             lineagePlugin,
             knowledgeGraphPlugin);
-        mcpToolsHandler = new McpToolsHandler(client, httpSupport, objectMapper, collectionContextHandler);
+        mcpToolsHandler = new McpToolsHandler(
+            client,
+            httpSupport,
+            objectMapper,
+            collectionContextHandler::getCollectionContextDocument);
 
         // P3.9.1: Entity lineage tracking and visualization
         lineageHandler = new LineageHandler(httpSupport, objectMapper, lineagePlugin);
@@ -1107,7 +1111,10 @@ public class DataCloudHttpServer {
                 log.info("Data-Cloud HTTP Server started on port {}", port);
                 // Start background anomaly detection scanning (P3.6.1) if detector + event store are both available
                 if (anomalyDetector != null && eventLogStore != null) {
-                    anomalyDetectionTask = new AnomalyDetectionTask(anomalyDetector, anomalyHandler, eventloop);
+                    anomalyDetectionTask = new AnomalyDetectionTask(
+                        anomalyDetector,
+                        (tenantId, collection, anomalies) -> anomalyHandler.persistAnomalies(tenantId, collection, anomalies),
+                        eventloop);
                     anomalyDetectionTask.start();
                     log.info("[DC-P3.6] Continuous anomaly detection active — scan interval {} min",
                             AnomalyDetectionTask.SCAN_INTERVAL_MINUTES);

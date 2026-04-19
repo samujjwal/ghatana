@@ -2,17 +2,21 @@
  * @fileoverview React code generation from BuilderDocument.
  */
 
-import type { ComponentContract } from '@ghatana/ds-schema';
+import type { BuilderComponentManifest, ComponentContract } from '@ghatana/ds-schema';
 import type {
   BuilderDocument,
-  ComponentInstance,
   NodeId,
+  ComponentInstance,
   CodeProjection,
   CodeFile,
   CodeRegionOwnership,
   RoundTripFidelity,
   LossPoint,
 } from './types';
+import {
+  projectDocumentToPlatformPlan,
+  type BuilderPlatformNodePlan,
+} from './platform-plan';
 
 // ============================================================================
 // Code Generation
@@ -23,6 +27,7 @@ export interface GenerateOptions {
   readonly typescript: boolean;
   readonly importPath: string;
   readonly componentName: string;
+  readonly manifests?: ReadonlyMap<string, BuilderComponentManifest> | readonly BuilderComponentManifest[];
 }
 
 export function generateReactCode(
@@ -82,6 +87,10 @@ function generateComponentFile(
 
   // Imports
   lines.push("import * as React from 'react';");
+  const platformPlan = projectDocumentToPlatformPlan(document, contracts, options.manifests);
+  if (platformPlan.targets.length > 0) {
+    lines.push(`// Builder platform targets: ${platformPlan.targets.join(', ')}`);
+  }
   
   // Collect component imports
   const imports = new Set<string>();
@@ -113,7 +122,7 @@ function generateComponentFile(
   for (const rootId of document.rootNodes) {
     const rootInstance = document.nodes.get(rootId);
     if (rootInstance) {
-      const jsx = generateNodeJSX(rootInstance, document, contracts, 2);
+      const jsx = generateNodeJSX(rootInstance, document, contracts, platformPlan.nodes, 2);
       lines.push(...jsx.map((l) => '    ' + l));
     }
   }
@@ -140,6 +149,7 @@ function generateNodeJSX(
   instance: ComponentInstance,
   document: BuilderDocument,
   contracts: ReadonlyMap<string, ComponentContract>,
+  platformPlans: ReadonlyMap<NodeId, BuilderPlatformNodePlan>,
   indent: number,
   visited: Set<NodeId> = new Set(),
 ): string[] {
@@ -151,71 +161,158 @@ function generateNodeJSX(
   }
 
   const contract = contracts.get(instance.contractName);
+  const nodePlan = platformPlans.get(instance.id);
   const componentName = contract?.builder?.codegen?.componentName ?? instance.contractName;
-  
   const lines: string[] = [];
   const indentStr = '  '.repeat(indent);
-  
+
   // Mark this node as visited before descending into its children.
   const childVisited = new Set(visited);
   childVisited.add(instance.id);
-  
-  // Opening tag with props
-  const props = generatePropsString(instance, contract);
-  
-  // Check for children
-  const hasChildren = Object.values(instance.slots).some((s) => s.length > 0);
-  
-  if (hasChildren) {
-    lines.push(`${indentStr}<${componentName}${props}>`);
-    
-    // Render children from slots
-    for (const [slotName, childIds] of Object.entries(instance.slots)) {
-      if (childIds.length === 0) continue;
-      
-      // If slot has a wrapper or is default
-      if (slotName !== 'default') {
-        lines.push(`${indentStr}  {/* ${slotName} slot */}`);
-      }
-      
-      for (const childId of childIds) {
-        const child = document.nodes.get(childId);
-        if (child) {
-          const childJsx = generateNodeJSX(child, document, contracts, indent + 1, childVisited);
-          lines.push(...childJsx);
-        }
-      }
-    }
-    
-    lines.push(`${indentStr}</${componentName}>`);
-  } else {
+
+  const namedSlots = (nodePlan?.slots ?? []).filter(
+    (slot) => slot.exposure === 'prop' && slot.childIds.length > 0,
+  );
+  const defaultSlot = nodePlan?.slots.find((slot) => slot.exposure === 'children');
+  const bodyLines = generateDefaultSlotBody(
+    instance,
+    document,
+    contracts,
+    platformPlans,
+    defaultSlot?.childIds ?? [],
+    indent + 1,
+    childVisited,
+  );
+  const inlineProps = buildInlineProps(instance);
+
+  if (namedSlots.length === 0 && bodyLines.length === 0) {
+    const props = inlineProps.length > 0 ? ` ${inlineProps.join(' ')}` : '';
     lines.push(`${indentStr}<${componentName}${props} />`);
+    return lines;
   }
-  
+
+  lines.push(`${indentStr}<${componentName}`);
+  for (const prop of inlineProps) {
+    lines.push(`${indentStr}  ${prop}`);
+  }
+  for (const slotPlan of namedSlots) {
+    lines.push(...generateNamedSlotPropLines(
+      slotPlan,
+      document,
+      contracts,
+      platformPlans,
+      indent + 1,
+      childVisited,
+    ));
+  }
+
+  if (bodyLines.length === 0) {
+    lines.push(`${indentStr}/>` );
+    return lines;
+  }
+
+  lines.push(`${indentStr}>`);
+  lines.push(...bodyLines);
+  lines.push(`${indentStr}</${componentName}>`);
   return lines;
 }
 
-function generatePropsString(
-  instance: ComponentInstance,
-  contract: ComponentContract | undefined,
-): string {
+function buildInlineProps(instance: ComponentInstance): string[] {
   const props: string[] = [];
-  
+
   for (const [key, value] of Object.entries(instance.props)) {
+    if (key === 'children') continue;
     if (typeof value === 'string') {
-      props.push(`${key}="${value}"`);
+      props.push(`${key}=${JSON.stringify(value)}`);
     } else if (typeof value === 'number' || typeof value === 'boolean') {
       props.push(`${key}={${value}}`);
     } else {
       props.push(`${key}={${JSON.stringify(value)}}`);
     }
   }
-  
-  if (props.length === 0) return '';
-  return ' ' + props.join(' ');
+
+  return props;
 }
 
 function getComponentNameFromPath(path: string): string {
   const parts = path.split('/');
   return parts[parts.length - 1] ?? 'Component';
+}
+
+function generateNamedSlotPropLines(
+  slotPlan: BuilderPlatformNodePlan['slots'][number],
+  document: BuilderDocument,
+  contracts: ReadonlyMap<string, ComponentContract>,
+  platformPlans: ReadonlyMap<NodeId, BuilderPlatformNodePlan>,
+  indent: number,
+  visited: Set<NodeId>,
+): string[] {
+  const indentStr = '  '.repeat(indent);
+  const valueLines = generateSlotValueLines(
+    slotPlan.childIds,
+    document,
+    contracts,
+    platformPlans,
+    indent + 1,
+    visited,
+  );
+
+  return [
+    `${indentStr}${slotPlan.name}={`,
+    ...valueLines,
+    `${indentStr}}`,
+  ];
+}
+
+function generateSlotValueLines(
+  childIds: readonly NodeId[],
+  document: BuilderDocument,
+  contracts: ReadonlyMap<string, ComponentContract>,
+  platformPlans: ReadonlyMap<NodeId, BuilderPlatformNodePlan>,
+  indent: number,
+  visited: Set<NodeId>,
+): string[] {
+  if (childIds.length === 1) {
+    const child = document.nodes.get(childIds[0]);
+    return child
+      ? generateNodeJSX(child, document, contracts, platformPlans, indent, visited)
+      : [`${'  '.repeat(indent)}{null}`];
+  }
+
+  const indentStr = '  '.repeat(indent);
+  const lines = [`${indentStr}<>`];
+  for (const childId of childIds) {
+    const child = document.nodes.get(childId);
+    if (child) {
+      lines.push(...generateNodeJSX(child, document, contracts, platformPlans, indent + 1, visited));
+    }
+  }
+  lines.push(`${indentStr}</>`);
+  return lines;
+}
+
+function generateDefaultSlotBody(
+  instance: ComponentInstance,
+  document: BuilderDocument,
+  contracts: ReadonlyMap<string, ComponentContract>,
+  platformPlans: ReadonlyMap<NodeId, BuilderPlatformNodePlan>,
+  childIds: readonly NodeId[],
+  indent: number,
+  visited: Set<NodeId>,
+): string[] {
+  const lines: string[] = [];
+  const indentStr = '  '.repeat(indent);
+
+  if (typeof instance.props.children === 'string') {
+    lines.push(`${indentStr}{${JSON.stringify(instance.props.children)}}`);
+  }
+
+  for (const childId of childIds) {
+    const child = document.nodes.get(childId);
+    if (child) {
+      lines.push(...generateNodeJSX(child, document, contracts, platformPlans, indent, visited));
+    }
+  }
+
+  return lines;
 }

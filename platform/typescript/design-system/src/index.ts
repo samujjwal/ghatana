@@ -118,6 +118,9 @@ export * from './layout/Grid';
 export * from './layout/Surface';
 export * from './layout/Spacer';
 
+// Runtime composition primitives
+export * from './core';
+
 // Hooks
 export * from './hooks';
 

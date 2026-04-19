@@ -24,10 +24,12 @@ import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.run.RunService;
 import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.validate.ValidationService;
+import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpMethod;
-import io.activej.http.AsyncHttpClient;
+import io.activej.http.HttpClient;
+import io.activej.http.HttpHeaders;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -64,7 +66,7 @@ public class LifecycleApiController {
     private final LearningService learningService;
     private final EvolutionService evolutionService;
     private final Eventloop eventloop;
-    private final AsyncHttpClient httpClient;
+    private final HttpClient httpClient;
     private static final List<String> PIPELINE_DAG_ORDER = List.of(
         "INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"
     );
@@ -79,7 +81,7 @@ public class LifecycleApiController {
         LearningService learningService,
         EvolutionService evolutionService,
         Eventloop eventloop,
-        AsyncHttpClient httpClient
+        HttpClient httpClient
     ) {
         this.intentService = intentService;
         this.shapeService = shapeService;
@@ -243,69 +245,69 @@ public class LifecycleApiController {
     ) {
         try {
             // Prepare execution result for persistence
-            Map<String, Object> executionData = Map.of(
-                "projectId", payload.intentInput().projectId() != null ? payload.intentInput().projectId() : "default-project",
-                "executionId", UUID.randomUUID().toString(),
-                "status", result.metadata().getOrDefault("status", "SUCCESS"),
-                "startedAt", Instant.now().minusMillis(totalDurationMs).toString(),
-                "completedAt", Instant.now().toString(),
-                "totalDurationMs", totalDurationMs,
-                "executedPhases", executedPhases,
-                "phaseDurationsMs", phaseDurationsMs,
-                "intentResult", result.intent() != null ? Map.of(
-                    "id", result.intent().id(),
-                    "title", result.intent().title(),
-                    "description", result.intent().description(),
-                    "rawText", result.intent().rawText()
-                ) : null,
-                "shapeResult", result.shape() != null ? Map.of(
-                    "architecture", result.shape().architecture(),
-                    "components", result.shape().components(),
-                    "interfaces", result.shape().interfaces()
-                ) : null,
-                "validationResult", result.validation() != null ? Map.of(
-                    "passed", result.validation().passed(),
-                    "hasBlockingIssues", result.validation().hasBlockingIssues(),
-                    "issues", result.validation().issues()
-                ) : null,
-                "generationResult", result.artifacts() != null ? Map.of(
-                    "id", result.artifacts().id(),
-                    "specRef", result.artifacts().specRef(),
-                    "generatorVersion", result.artifacts().generatorVersion(),
-                    "artifacts", result.artifacts().artifacts()
-                ) : null,
-                "runResult", result.run() != null ? Map.of(
-                    "status", result.run().status().toString(),
-                    "taskResults", result.run().taskResults()
-                ) : null,
-                "observationResult", result.observation() != null ? Map.of(
-                    "metrics", result.observation().metrics(),
-                    "logs", result.observation().logs(),
-                    "traces", result.observation().traces()
-                ) : null,
-                "learningResult", result.insights() != null ? Map.of(
-                    "insights", result.insights().insights(),
-                    "recommendations", result.insights().recommendations()
-                ) : null,
-                "evolutionResult", result.evolution() != null ? Map.of(
-                    "plan", result.evolution().plan(),
-                    "priority", result.evolution().priority()
-                ) : null,
-                "success", "SUCCESS".equals(result.metadata().get("status")),
-                "errorMessage", (String) null,
-                "errorPhase", (String) null
-            );
+            Map<String, Object> executionData = new LinkedHashMap<>();
+            executionData.put("projectId", payload.intentInput().tenantId() != null ? payload.intentInput().tenantId() : "default-project");
+            executionData.put("executionId", UUID.randomUUID().toString());
+            executionData.put("status", result.metadata().getOrDefault("status", "SUCCESS"));
+            executionData.put("startedAt", Instant.now().minusMillis(totalDurationMs).toString());
+            executionData.put("completedAt", Instant.now().toString());
+            executionData.put("totalDurationMs", totalDurationMs);
+            executionData.put("executedPhases", executedPhases);
+            executionData.put("phaseDurationsMs", phaseDurationsMs);
+            executionData.put("intentResult", result.intent() != null ? Map.of(
+                "id", result.intent().id(),
+                "title", result.intent().productName(),
+                "description", result.intent().description(),
+                "rawText", payload.intentInput().rawText()
+            ) : null);
+            executionData.put("shapeResult", result.shape() != null ? Map.of(
+                "architecture", result.shape().architecture(),
+                "domainModel", result.shape().domainModel(),
+                "workflows", result.shape().workflows(),
+                "integrations", result.shape().integrations()
+            ) : null);
+            executionData.put("validationResult", result.validation() != null ? Map.of(
+                "passed", result.validation().passed(),
+                "hasBlockingIssues", result.validation().hasBlockingIssues(),
+                "issues", result.validation().issues()
+            ) : null);
+            executionData.put("generationResult", result.artifacts() != null ? Map.of(
+                "id", result.artifacts().id(),
+                "specRef", result.artifacts().specRef(),
+                "generatorVersion", result.artifacts().generatorVersion(),
+                "artifacts", result.artifacts().artifacts()
+            ) : null);
+            executionData.put("runResult", result.run() != null ? Map.of(
+                "status", result.run().status().toString(),
+                "taskResults", result.run().taskResults()
+            ) : null);
+            executionData.put("observationResult", result.observation() != null ? Map.of(
+                "metrics", result.observation().metrics(),
+                "logs", result.observation().logs(),
+                "traces", result.observation().traces()
+            ) : null);
+            executionData.put("learningResult", result.insights() != null ? Map.of(
+                "patterns", result.insights().patterns(),
+                "anomalies", result.insights().anomalies(),
+                "recommendations", result.insights().recommendations()
+            ) : null);
+            executionData.put("evolutionResult", result.evolution() != null ? Map.of(
+                "tasks", result.evolution().tasks(),
+                "newIntentRef", result.evolution().newIntentRef(),
+                "metadata", result.evolution().metadata()
+            ) : null);
+            executionData.put("success", "SUCCESS".equals(result.metadata().get("status")));
+            executionData.put("errorMessage", null);
+            executionData.put("errorPhase", null);
 
             // Send to Node.js API for persistence
             String nodeApiUrl = System.getenv().getOrDefault("NODE_API_URL", "http://localhost:7002");
             String persistUrl = nodeApiUrl + "/api/v1/lifecycle-execution/results";
             
-            HttpRequest persistRequest = HttpRequest.builder()
-                .method(HttpMethod.POST)
-                .url(persistUrl)
-                .body(JsonMapper.toJson(executionData))
-                .header("Content-Type", "application/json")
-                .header("X-API-Key", System.getenv().getOrDefault("YAPPC_API_KEY", ""))
+            HttpRequest persistRequest = HttpRequest.builder(HttpMethod.POST, persistUrl)
+                .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(executionData).getBytes(UTF_8)))
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .withHeader(HttpHeaders.of("X-API-Key"), System.getenv().getOrDefault("YAPPC_API_KEY", ""))
                 .build();
 
             // Fire and forget - don't block the response
@@ -313,8 +315,8 @@ public class LifecycleApiController {
                 try {
                     httpClient.request(persistRequest)
                         .whenResult(response -> {
-                            if (response.getStatusCode() >= 400) {
-                                log.warn("Failed to persist lifecycle execution result: HTTP {}", response.getStatusCode());
+                            if (response.getCode() >= 400) {
+                                log.warn("Failed to persist lifecycle execution result: HTTP {}", response.getCode());
                             } else {
                                 log.info("Successfully persisted lifecycle execution result");
                             }

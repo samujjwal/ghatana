@@ -1,10 +1,11 @@
 package com.ghatana.datacloud.launcher.anomaly;
 
 import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
-import com.ghatana.datacloud.launcher.http.handlers.EntityAnomalyHandler;
+import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.Anomaly;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.AnomalyContext;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.DetectionType;
 import io.activej.eventloop.Eventloop;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * unblocked and detection runs in the correct threading context.
  *
  * <p>Detected anomalies are persisted to the {@code __anomalies} event stream via
- * {@link EntityAnomalyHandler#persistAnomalies(String, String, java.util.List)}.
+ * the configured anomaly persistence port.
  *
  * <p>Collections are registered via {@link #registerCollection(String, String)} and
  * can be removed via {@link #deregisterCollection(String, String)}.
@@ -49,7 +50,7 @@ public final class AnomalyDetectionTask implements AutoCloseable {
     static final int MAX_ANOMALIES_PER_SCAN = 500;
 
     private final StatisticalAnomalyDetector anomalyDetector;
-    private final EntityAnomalyHandler anomalyHandler;
+    private final AnomalyPersistencePort anomalyPersistencePort;
     private final Eventloop eventloop;
     private final ScheduledExecutorService scheduler;
 
@@ -64,15 +65,15 @@ public final class AnomalyDetectionTask implements AutoCloseable {
      * Creates an anomaly detection task.
      *
      * @param anomalyDetector detector used for statistical analysis
-     * @param anomalyHandler  handler used for durable anomaly persistence
+     * @param anomalyPersistencePort persistence port used for durable anomaly persistence
      * @param eventloop       the ActiveJ eventloop — detection is submitted via execute()
      */
     public AnomalyDetectionTask(
             StatisticalAnomalyDetector anomalyDetector,
-            EntityAnomalyHandler anomalyHandler,
+            AnomalyPersistencePort anomalyPersistencePort,
             Eventloop eventloop) {
         this.anomalyDetector = Objects.requireNonNull(anomalyDetector, "anomalyDetector");
-        this.anomalyHandler = Objects.requireNonNull(anomalyHandler, "anomalyHandler");
+        this.anomalyPersistencePort = Objects.requireNonNull(anomalyPersistencePort, "anomalyPersistencePort");
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop");
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "dc-anomaly-scan");
@@ -180,7 +181,8 @@ public final class AnomalyDetectionTask implements AutoCloseable {
                         totalAnomaliesDetected.addAndGet(anomalies.size());
                         log.info("AnomalyDetectionTask: detected {} anomalies tenant={} collection={}",
                                 anomalies.size(), tenantId, collection);
-                        return anomalyHandler.persistAnomalies(tenantId, collection, anomalies);
+                        Promise<Void> persistence = anomalyPersistencePort.persist(tenantId, collection, anomalies);
+                        return persistence != null ? persistence : Promise.of(null);
                     }
                     return null;
                 })
@@ -205,5 +207,10 @@ public final class AnomalyDetectionTask implements AutoCloseable {
         status.put("registeredCollections", tenantCollections.values().stream().mapToInt(Set::size).sum());
         status.put("scanIntervalMinutes", SCAN_INTERVAL_MINUTES);
         return status;
+    }
+
+    @FunctionalInterface
+    public interface AnomalyPersistencePort {
+        Promise<Void> persist(String tenantId, String collection, java.util.List<Anomaly> anomalies);
     }
 }

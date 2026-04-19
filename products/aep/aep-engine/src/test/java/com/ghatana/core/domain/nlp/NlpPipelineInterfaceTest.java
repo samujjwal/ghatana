@@ -9,6 +9,8 @@ import com.ghatana.core.domain.pipeline.TemplateMarketplace;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +46,7 @@ class NlpPipelineInterfaceTest {
     void extractsDomainFromDescription() {
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface();
 
-        NlpPipelineInterface.PipelineIntent intent = nlpInterface.parseDescription("Process orders with fraud check");
+        NlpPipelineInterface.PipelineIntent intent = parseDescription(nlpInterface, "Process orders with fraud check");
 
         assertThat(intent.domain()).isEqualTo("ecommerce");
     }
@@ -54,7 +56,7 @@ class NlpPipelineInterfaceTest {
     void extractsOperationFromDescription() {
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface();
 
-        NlpPipelineInterface.PipelineIntent intent = nlpInterface.parseDescription("Process orders with fraud check");
+        NlpPipelineInterface.PipelineIntent intent = parseDescription(nlpInterface, "Process orders with fraud check");
 
         assertThat(intent.operation()).isEqualTo("detection");
     }
@@ -64,7 +66,8 @@ class NlpPipelineInterfaceTest {
     void extractsFeaturesFromDescription() {
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface();
 
-        NlpPipelineInterface.PipelineIntent intent = nlpInterface.parseDescription(
+        NlpPipelineInterface.PipelineIntent intent = parseDescription(
+            nlpInterface,
             "Process orders with real-time fraud detection and alerting"
         );
 
@@ -76,7 +79,8 @@ class NlpPipelineInterfaceTest {
     void extractsParametersFromDescription() {
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface();
 
-        NlpPipelineInterface.PipelineIntent intent = nlpInterface.parseDescription(
+        NlpPipelineInterface.PipelineIntent intent = parseDescription(
+            nlpInterface,
             "Process orders with fraud check for last 5 minutes"
         );
 
@@ -172,5 +176,20 @@ class NlpPipelineInterfaceTest {
         );
 
         assertThat(result).isNotNull();
+    }
+
+    private NlpPipelineInterface.PipelineIntent parseDescription(
+        NlpPipelineInterface nlpInterface,
+        String description
+    ) {
+        try {
+            Method parseDescription = NlpPipelineInterface.class.getDeclaredMethod("parseDescription", String.class);
+            parseDescription.setAccessible(true);
+            return (NlpPipelineInterface.PipelineIntent) parseDescription.invoke(nlpInterface, description);
+        } catch (NoSuchMethodException | IllegalAccessException exception) {
+            throw new AssertionError("Unable to access parseDescription", exception);
+        } catch (InvocationTargetException exception) {
+            throw new AssertionError("parseDescription threw unexpectedly", exception.getCause());
+        }
     }
 }

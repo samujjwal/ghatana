@@ -275,7 +275,7 @@ public final class PhrRetentionScheduler implements KernelLifecycleAware {
                         Instant.now(),
                         "Nepal Health Records Act 2081 §22");
 
-                deletionWorkflow.execute(request)
+                deletionWorkflow.execute(request, List.of())
                         .whenResult(report -> LOG.info(
                                 "PhrRetentionScheduler: deletion workflow complete [patient={} decisions={}]",
                                 patientId, report.decisions().size()))

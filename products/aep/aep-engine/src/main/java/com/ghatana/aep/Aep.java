@@ -27,6 +27,7 @@ import com.ghatana.aep.tracing.AepTraceContext;
 import com.ghatana.aep.version.EventVersionCompatibility;
 import com.ghatana.platform.observability.health.HealthCheckRegistry;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +37,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * AEP Entry Point - Factory for creating AEP engine instances.
@@ -66,6 +70,7 @@ public final class Aep {
 
     private static final Logger logger = LoggerFactory.getLogger(Aep.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final Executor PIPELINE_BLOCKING_EXECUTOR = ForkJoinPool.commonPool();
 
     private Aep() {
         // Utility class - no instantiation
@@ -626,7 +631,7 @@ public final class Aep {
             
             for (List<String> levelSteps : stepsByLevel.values()) {
                 final List<String> currentLevelSteps = levelSteps;
-                executionPromise = executionPromise.then(() -> {
+                executionPromise = executionPromise.then($ -> {
                     // Execute all steps in this level in parallel using Promises.all()
                     List<Promise<Void>> stepPromises = currentLevelSteps.stream()
                         .map(stepId -> {
@@ -634,7 +639,7 @@ public final class Aep {
                             if (step == null) return Promise.complete();
                             
                             return waitForDependenciesAsync(step.dependsOn(), completedSteps)
-                                .then(() -> Promise.ofBlocking(() -> {
+                                .then($ignored -> Promise.ofBlocking(PIPELINE_BLOCKING_EXECUTOR, () -> {
                                     try {
                                         executePipelineStep(tenantId, pipeline.id(), step);
                                         completedSteps.put(stepId, true);
@@ -644,6 +649,7 @@ public final class Aep {
                                         errors.add(e);
                                         completedSteps.put(stepId, false);
                                     }
+                                    return (Void) null;
                                 }));
                         })
                         .collect(Collectors.toList());
@@ -652,15 +658,17 @@ public final class Aep {
                 });
             }
             
-            return executionPromise.then(() -> {
+            return executionPromise.then($ -> {
                 if (!errors.isEmpty()) {
                     // Collect all errors in the exception message
                     String allErrors = errors.stream()
                         .map(e -> e.getMessage())
                         .collect(Collectors.joining("; "));
-                    throw new RuntimeException("Pipeline execution failed with " + errors.size() + " errors: " + allErrors, 
-                        errors.get(0));
+                    return Promise.ofException(new RuntimeException(
+                        "Pipeline execution failed with " + errors.size() + " errors: " + allErrors,
+                        errors.get(0)));
                 }
+                return Promise.complete();
             });
         }
 
@@ -748,7 +756,7 @@ public final class Aep {
             }
             
             // Async check for dependency completion
-            return Promise.ofBlocking(() -> {
+            return Promise.ofBlocking(PIPELINE_BLOCKING_EXECUTOR, () -> {
                 int maxWait = 10000; // 10 seconds
                 int waited = 0;
                 while (waited < maxWait) {
@@ -845,7 +853,9 @@ public final class Aep {
             checkNotClosed();
             requireTenantId(tenantId);
             Objects.requireNonNull(detector, "detector must not be null");
-            patternDetectorsByTenant.computeIfAbsent(tenantId, ignored -> new CopyOnWriteArrayList()).add(detector);
+            patternDetectorsByTenant
+                .computeIfAbsent(tenantId, ignored -> new CopyOnWriteArrayList<AepEngine.PatternDetector>())
+                .add(detector);
             logger.info("Registered pattern detector for tenant={}", tenantId);
         }
 
@@ -1066,19 +1076,22 @@ public final class Aep {
                         if (!detectors.isEmpty()) {
                             List<Promise<List<AepEngine.Detection>>> detectorPromises = detectors.stream()
                                 .map(detector -> detector.detect(tenantId, normalizedEvent, patterns)
-                                    .then(detectedDetections -> {
+                                    .map(detectedDetections -> {
                                         metrics.incrementPatternsMatched(tenantId, "custom-detector");
                                         return detectedDetections;
                                     })
-                                    .whenException(e -> {
+                                    .then(
+                                        Promise::of,
+                                        e -> {
                                         logger.warn("Pattern detector failed for tenant={}: {}", tenantId, e.getMessage());
-                                        return Promise.of(List.of());
-                                    }))
+                                        return Promise.of(List.<AepEngine.Detection>of());
+                                        }
+                                    ))
                                 .toList();
                             
                             // Wait for all detectors to complete and collect their detections
                             return Promises.toList(detectorPromises)
-                                .map(allDetections -> {
+                                .then(allDetections -> {
                                     for (List<AepEngine.Detection> detectorDetections : allDetections) {
                                         detections.addAll(detectorDetections);
                                     }

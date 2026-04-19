@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -115,6 +114,7 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
             this.async.ping()
                 .thenAccept(pong -> log.info("Redis connection established", 
                     "host", host, "port", port, "database", database, "response", pong))
+                .toCompletableFuture()
                 .join();
 
             log.info("RedisDistributedCacheBackend initialized successfully", 
@@ -139,29 +139,22 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
      * @return Optional containing deserialized value, or empty if missing/expired
      */
     @Override
-    public <T> Optional<T> getValue(String key, Class<T> valueType) {
+    public String getValue(String key) {
         try {
             CompletableFuture<String> future = async.get(key).toCompletableFuture();
             String value = future.get(timeoutMs, TimeUnit.MILLISECONDS);
 
             if (value == null) {
                 log.debug("Cache miss", "key", key);
-                return Optional.empty();
+                return null;
             }
 
-            try {
-                T deserialized = objectMapper.readValue(value, valueType);
-                log.debug("Cache hit", "key", key, "type", valueType.getSimpleName());
-                return Optional.of(deserialized);
-            } catch (IOException e) {
-                log.warn("Deserialization failed for cache value", e, 
-                    "key", key, "type", valueType.getSimpleName(), "error", e.getMessage());
-                return Optional.empty();
-            }
+            log.debug("Cache hit", "key", key);
+            return value;
         } catch (Exception e) {
             log.warn("Cache get operation failed", e, 
                 "key", key, "error", e.getMessage(), "retrying", "false");
-            return Optional.empty();
+            return null;
         }
     }
 
@@ -176,20 +169,14 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
      * @param ttlSeconds time-to-live in seconds
      */
     @Override
-    public void setValue(String key, Object value, long ttlSeconds) {
+    public void setValue(String key, String value, long ttlSeconds) {
         try {
-            String serialized = objectMapper.writeValueAsString(value);
-
             // Use SETEX for atomic key set + TTL
-            CompletableFuture<String> future = async.setex(key, ttlSeconds, serialized)
+            CompletableFuture<String> future = async.setex(key, ttlSeconds, value)
                 .toCompletableFuture();
             
             String result = future.get(timeoutMs, TimeUnit.MILLISECONDS);
             log.debug("Cache put", "key", key, "ttlSeconds", ttlSeconds, "response", result);
-        } catch (IOException e) {
-            log.error("Serialization failed for cache value", e, 
-                "key", key, "ttlSeconds", ttlSeconds, "error", e.getMessage());
-            throw new RuntimeException("Cache serialization failed", e);
         } catch (Exception e) {
             log.warn("Cache set operation failed", e, 
                 "key", key, "ttlSeconds", ttlSeconds, "error", e.getMessage(), "retrying", "false");
@@ -206,16 +193,14 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
      * @return number of keys deleted (0 or 1)
      */
     @Override
-    public long deleteKey(String key) {
+    public void deleteKey(String key) {
         try {
             CompletableFuture<Long> future = async.del(key).toCompletableFuture();
             long deleted = future.get(timeoutMs, TimeUnit.MILLISECONDS);
             log.debug("Cache delete", "key", key, "deleted", deleted);
-            return deleted;
         } catch (Exception e) {
             log.warn("Cache delete operation failed", e, 
                 "key", key, "error", e.getMessage(), "retrying", "false");
-            return 0;
         }
     }
 
@@ -234,16 +219,17 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
      * @return number of keys deleted
      */
     @Override
-    public long deletePattern(String pattern) {
+    public int deletePattern(String pattern) {
         try {
-            CompletableFuture<Long> future = async.eval(
+            CompletableFuture<Object> future = async.eval(
                     DELETE_PATTERN_SCRIPT,
                     ScriptOutputType.INTEGER,
                     new String[0],
                     pattern
                 ).toCompletableFuture();
 
-            long deleted = future.get(timeoutMs, TimeUnit.MILLISECONDS);
+            Object deletedValue = future.get(timeoutMs, TimeUnit.MILLISECONDS);
+            int deleted = deletedValue instanceof Number number ? number.intValue() : 0;
             log.debug("Cache pattern delete", "pattern", pattern, "deleted", deleted);
             return deleted;
         } catch (Exception e) {
@@ -265,13 +251,27 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
      * @return CacheStatistics with keyCount and totalSizeBytes
      */
     @Override
-    public CacheStatistics getStatistics(String pattern) {
+    public long getKeyCount(String pattern) {
+        try {
+            CompletableFuture<List<String>> keysFuture = async.keys(pattern).toCompletableFuture();
+            List<String> keys = keysFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+
+            return keys == null ? 0 : keys.size();
+        } catch (Exception e) {
+            log.warn("Cache key count retrieval failed", e, 
+                "pattern", pattern, "error", e.getMessage());
+            return 0;
+        }
+    }
+
+    @Override
+    public long getCacheSize(String pattern) {
         try {
             CompletableFuture<List<String>> keysFuture = async.keys(pattern).toCompletableFuture();
             List<String> keys = keysFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
 
             if (keys == null || keys.isEmpty()) {
-                return new CacheStatistics(0, 0);
+                return 0;
             }
 
             long totalSize = 0;
@@ -290,11 +290,29 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
             }
 
             log.debug("Cache statistics", "pattern", pattern, "keyCount", keys.size(), "totalSizeBytes", totalSize);
-            return new CacheStatistics(keys.size(), totalSize);
+            return totalSize;
         } catch (Exception e) {
-            log.warn("Cache statistics retrieval failed", e, 
+            log.warn("Cache size retrieval failed", e, 
                 "pattern", pattern, "error", e.getMessage());
-            return new CacheStatistics(0, 0);
+            return 0;
+        }
+    }
+
+    @Override
+    public <T> String serialize(T value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (IOException e) {
+            throw new RuntimeException("Cache serialization failed", e);
+        }
+    }
+
+    @Override
+    public <T> T deserialize(String value, Class<T> type) {
+        try {
+            return objectMapper.readValue(value, type);
+        } catch (IOException e) {
+            throw new RuntimeException("Cache deserialization failed", e);
         }
     }
 
@@ -303,7 +321,6 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
      *
      * Should be called during application shutdown (e.g., via @PreDestroy).
      */
-    @Override
     public void close() {
         try {
             connection.close();

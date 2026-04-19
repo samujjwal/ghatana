@@ -184,13 +184,17 @@ public final class DurableConsentPlugin implements ConsentPlugin {
                 action, consentId, subjectId, purpose);
 
         // Emit a revocation event for WITHDRAW so downstream consumers can invalidate caches
-        if (action == ConsentAction.WITHDRAW && pluginContext != null) {
-            ConsentRevocationEvent event = new ConsentRevocationEvent(
-                    consentId, subjectId, purpose,
-                    ConsentRevocationEvent.RevocationReason.WITHDRAWAL, now);
-            pluginContext.getInteractionBus().publish(ConsentRevocationEvent.TOPIC, event);
-            LOG.info("Emitted {} event for consent {} (withdrawal)",
-                    ConsentRevocationEvent.TOPIC, consentId);
+        if (action == ConsentAction.WITHDRAW) {
+            publishRevocationEvent(
+                new ConsentRevocationEvent(
+                    consentId,
+                    subjectId,
+                    purpose,
+                    ConsentRevocationEvent.RevocationReason.WITHDRAWAL,
+                    now
+                ),
+                "withdrawal"
+            );
         }
         return Promise.of(record);
     }
@@ -241,13 +245,17 @@ public final class DurableConsentPlugin implements ConsentPlugin {
         }
 
         // Emit revocation event so downstream consumers can propagate the change
-        if (subjectId != null && pluginContext != null) {
-            ConsentRevocationEvent event = new ConsentRevocationEvent(
-                    consentId, subjectId, purpose,
-                    ConsentRevocationEvent.RevocationReason.EXPLICIT_REVOCATION, now);
-            pluginContext.getInteractionBus().publish(ConsentRevocationEvent.TOPIC, event);
-            LOG.info("Emitted {} event for consent {} (explicit revocation of subject={})",
-                    ConsentRevocationEvent.TOPIC, consentId, subjectId);
+        if (subjectId != null) {
+            publishRevocationEvent(
+                new ConsentRevocationEvent(
+                    consentId,
+                    subjectId,
+                    purpose,
+                    ConsentRevocationEvent.RevocationReason.EXPLICIT_REVOCATION,
+                    now
+                ),
+                "explicit revocation of subject=" + subjectId
+            );
         }
         return Promise.complete();
     }
@@ -372,6 +380,22 @@ public final class DurableConsentPlugin implements ConsentPlugin {
                 expiresAt,
                 revokedAt,
                 rs.getString("metadata"));
+    }
+
+    private void publishRevocationEvent(ConsentRevocationEvent event, String reason) {
+        if (pluginContext == null) {
+            return;
+        }
+
+        var interactionBus = pluginContext.getInteractionBus();
+        if (interactionBus == null) {
+            LOG.debug("Skipping {} event publication because interaction bus is unavailable", ConsentRevocationEvent.TOPIC);
+            return;
+        }
+
+        interactionBus.publish(ConsentRevocationEvent.TOPIC, event);
+        LOG.info("Emitted {} event for consent {} ({})",
+            ConsentRevocationEvent.TOPIC, event.consentId(), reason);
     }
 
     private static ConsentStatus actionToStatus(ConsentAction action) {

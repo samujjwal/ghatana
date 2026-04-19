@@ -7,6 +7,7 @@ package com.ghatana.phr.api;
 import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.platform.core.util.JsonUtils;
+import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -107,14 +108,15 @@ public final class PhrHttpServer implements KernelLifecycleAware {
      * @return routing servlet; never null
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.create()
+        return RoutingServlet.builder(Eventloop.create())
                 // FHIR R4 resource endpoints
-                .map(HttpMethod.POST, "/fhir/:resourceType", this::handleCreateFhirResource)
-                .map(HttpMethod.GET, "/fhir/:resourceType/:id", this::handleGetFhirResource)
-                .map(HttpMethod.GET, "/fhir/:resourceType", this::handleSearchFhirResources)
+            .with(HttpMethod.POST, "/fhir/:resourceType", this::handleCreateFhirResource)
+            .with(HttpMethod.GET, "/fhir/:resourceType/:id", this::handleGetFhirResource)
+            .with(HttpMethod.GET, "/fhir/:resourceType", this::handleSearchFhirResources)
                 // Operational endpoints
-                .map(HttpMethod.GET, "/health", this::handleHealth)
-                .map(HttpMethod.GET, "/ready", this::handleReady);
+            .with(HttpMethod.GET, "/health", this::handleHealth)
+            .with(HttpMethod.GET, "/ready", this::handleReady)
+            .build();
     }
 
     // -------------------------------------------------------------------------

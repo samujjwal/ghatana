@@ -79,7 +79,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
 
             // Submit with timeout - should complete or fail gracefully
             try {
-                runPromise(() -> engine.submitPipeline(tenantId, pipeline), Duration.ofSeconds(10));
+                engine.submitPipeline(tenantId, pipeline);
                 // If it completes, verify it's registered
                 List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId));
                 assertThat(patterns).isNotEmpty();
@@ -118,8 +118,8 @@ class EventProcessingChaosTest extends EventloopTestBase {
             );
 
             // Submit both - should not deadlock or crash
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline1));
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline2));
+            engine.submitPipeline(tenantId, pipeline1);
+            engine.submitPipeline(tenantId, pipeline2);
 
             // Verify both are registered
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId));
@@ -136,7 +136,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
         void handlesNullPipelineGracefully() {
             String tenantId = "tenant-null";
 
-            assertThatThrownBy(() -> runPromise(() -> engine.submitPipeline(tenantId, null)))
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, null))
                 .isInstanceOf(CompletionException.class)
                 .hasMessageContaining("null");
         }
@@ -155,7 +155,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
             );
 
             // Should fail gracefully without crashing
-            assertThatThrownBy(() -> runPromise(() -> engine.submitPipeline(tenantId, pipeline)))
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline))
                 .isInstanceOf(CompletionException.class);
         }
 
@@ -184,7 +184,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
             );
 
             // Should detect and reject circular dependency
-            assertThatThrownBy(() -> runPromise(() -> engine.submitPipeline(tenantId, pipeline)))
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline))
                 .isInstanceOf(CompletionException.class);
         }
 
@@ -206,7 +206,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
             );
 
             // Should fail gracefully with validation error
-            assertThatThrownBy(() -> runPromise(() -> engine.submitPipeline(tenantId, pipeline)))
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline))
                 .isInstanceOf(CompletionException.class);
         }
     }
@@ -235,7 +235,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
                     )
                 );
 
-                runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+                engine.submitPipeline(tenantId, pipeline);
             }
 
             // Verify all patterns are registered
@@ -272,7 +272,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
             );
 
             // Should handle long chains without stack overflow
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Verify all patterns are registered
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId));
@@ -303,7 +303,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, goodPipeline));
+            engine.submitPipeline(tenantId, goodPipeline);
 
             // Second pipeline fails
             AepEngine.Pipeline badPipeline = new AepEngine.Pipeline(
@@ -314,7 +314,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            assertThatThrownBy(() -> runPromise(() -> engine.submitPipeline(tenantId, badPipeline)))
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, badPipeline))
                 .isInstanceOf(CompletionException.class);
 
             // Third pipeline should still work - system is not corrupted
@@ -331,7 +331,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, recoveryPipeline));
+            engine.submitPipeline(tenantId, recoveryPipeline);
 
             // Verify good patterns are still registered
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId));
@@ -357,7 +357,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Restart engine
             engine.close();
@@ -377,7 +377,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, newPipeline));
+            engine.submitPipeline(tenantId, newPipeline);
 
             // Verify new pattern is registered
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId));

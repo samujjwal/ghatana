@@ -8,7 +8,6 @@ import com.ghatana.aep.server.http.HttpHelper;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,8 +69,8 @@ public final class NlpController {
             Pattern.compile("(?i)pipeline\\s+['\"]?([\\w\\-]+)['\"]?");
 
     // Status words
-    private static final Pattern STATUS_PATTERN =
-            Pattern.compile("(?i)\\b(failed|running|succeeded|cancelled|pending)\\b");
+        private static final Pattern STATUS_PATTERN =
+            Pattern.compile("(?i)\\b(failed|failing|running|succeeded|cancelled|pending)\\b");
 
     /**
      * POST /api/v1/nlp/parse
@@ -129,6 +128,17 @@ public final class NlpController {
             primary = "list_runs";
         }
 
+        boolean hasFailedStatus = entities.stream()
+                .anyMatch(e -> "status".equals(e.get("type")) && "FAILED".equals(e.get("value")));
+        boolean hasRunningStatus = entities.stream()
+                .anyMatch(e -> "status".equals(e.get("type")) && "RUNNING".equals(e.get("value")));
+
+        if (hasFailedStatus && ("list_runs".equals(primary) || "list_pipelines".equals(primary))) {
+            primary = "filter_failed";
+        } else if (hasRunningStatus && ("list_runs".equals(primary) || "list_pipelines".equals(primary))) {
+            primary = "filter_running";
+        }
+
         return new ParseResult(primary, confidence, entities);
     }
 
@@ -159,11 +169,12 @@ public final class NlpController {
         if (twMatcher.find()) {
             int amount = Integer.parseInt(twMatcher.group(2));
             String unit = twMatcher.group(3).toLowerCase(Locale.ROOT);
+            String displayUnit = amount == 1 ? unit : unit + "s";
             String normalised = toIso8601Duration(amount, unit);
             entities.add(Map.of(
                     "type", "time_window",
                     "amount", amount,
-                    "unit", unit,
+                "unit", displayUnit,
                     "iso8601", normalised
             ));
         }
@@ -180,9 +191,11 @@ public final class NlpController {
         // Status entity
         var statusMatcher = STATUS_PATTERN.matcher(query);
         if (statusMatcher.find()) {
+            String rawStatus = statusMatcher.group(1).toUpperCase(Locale.ROOT);
+            String status = "FAILING".equals(rawStatus) ? "FAILED" : rawStatus;
             entities.add(Map.of(
                     "type", "status",
-                    "value", statusMatcher.group(1).toUpperCase(Locale.ROOT)
+                "value", status
             ));
         }
 

@@ -12,6 +12,15 @@ export {
   validateComponentContract,
   computeContractHash,
 } from './contract';
+export {
+  BuilderPlatformTargetSchema,
+  BuilderComponentCapabilitySchema,
+  BuilderComponentSemanticsSchema,
+  BuilderSlotExposureSchema,
+  BuilderComponentSlotManifestSchema,
+  BuilderComponentManifestSchema,
+  validateBuilderComponentManifest,
+} from './manifest';
 
 export type {
   PropType,
@@ -21,3 +30,11 @@ export type {
   ComponentStyle,
   ComponentContract,
 } from './contract';
+export type {
+  BuilderPlatformTarget,
+  BuilderComponentCapability,
+  BuilderComponentSemantics,
+  BuilderSlotExposure,
+  BuilderComponentSlotManifest,
+  BuilderComponentManifest,
+} from './manifest';

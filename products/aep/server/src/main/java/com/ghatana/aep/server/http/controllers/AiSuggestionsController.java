@@ -138,9 +138,7 @@ public final class AiSuggestionsController {
     private Map<String, Object> anomalyToSuggestion(DataCloudAnalyticsStore.AnomalyRecord anomaly) {
         String severity = mapAnomalySeverityToSuggestion(anomaly.severity());
         String type = "anomaly".equals(severity) ? "anomaly" : "warning";
-        double confidence = anomaly.score() != null
-                ? Math.min(1.0, anomaly.score())
-                : 0.75;
+        double confidence = Math.min(1.0, anomaly.score());
 
         Map<String, Object> suggestion = new java.util.LinkedHashMap<>();
         suggestion.put("id", UUID.randomUUID().toString());

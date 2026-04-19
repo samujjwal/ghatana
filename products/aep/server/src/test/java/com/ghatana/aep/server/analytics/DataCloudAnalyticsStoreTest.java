@@ -104,7 +104,7 @@ class DataCloudAnalyticsStoreTest {
 
             store.saveKpiSnapshot(TENANT, input).getResult();
 
-            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> captor = mapCaptor();
             verify(client).save(eq(TENANT), eq(DataCloudAnalyticsStore.KPI_COLLECTION), captor.capture());
             assertThat(captor.getValue().get("id")).isNotNull().asString().isNotBlank();
         }
@@ -218,7 +218,7 @@ class DataCloudAnalyticsStoreTest {
 
             store.saveAnomaly(TENANT, input).getResult();
 
-            ArgumentCaptor<Map<String, Object>> cap = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> cap = mapCaptor();
             verify(client).save(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), cap.capture());
             assertThat(cap.getValue().get("resolved")).isEqualTo(false);
         }
@@ -264,7 +264,7 @@ class DataCloudAnalyticsStoreTest {
 
             store.resolveAnomaly(TENANT, anomalyId, "ops-team").getResult();
 
-            ArgumentCaptor<Map<String, Object>> cap = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> cap = mapCaptor();
             verify(client).save(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), cap.capture());
             assertThat(cap.getValue().get("resolved")).isEqualTo(true);
             assertThat(cap.getValue().get("resolvedBy")).isEqualTo("ops-team");
@@ -364,6 +364,11 @@ class DataCloudAnalyticsStoreTest {
         return new Entity(id, "test-collection", data,
                 Instant.now(), Instant.now(), 1L);
     }
+
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        private static ArgumentCaptor<Map<String, Object>> mapCaptor() {
+                return (ArgumentCaptor) ArgumentCaptor.forClass(Map.class);
+        }
 
     private static Map<String, Object> kpiData(String id, String kpiName, double value) {
         return Map.of(

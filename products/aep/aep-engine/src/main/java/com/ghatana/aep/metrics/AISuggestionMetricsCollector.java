@@ -5,6 +5,7 @@
 package com.ghatana.aep.metrics;
 
 import com.ghatana.platform.observability.Metrics;
+import io.micrometer.core.instrument.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +44,9 @@ public class AISuggestionMetricsCollector {
      * @param context additional context (e.g., event types, use case)
      */
     public void recordSuggestionShown(String suggestionType, String suggestionId, Map<String, Object> context) {
-        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, SuggestionStats::new);
+        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, ignored -> new SuggestionStats());
         stats.incrementShown();
-        metrics.counter("ai.suggestion.shown", "type", suggestionType).increment();
+        counter("ai.suggestion.shown", "type", suggestionType).increment();
         logger.debug("Suggestion shown: type={}, id={}", suggestionType, suggestionId);
     }
 
@@ -56,9 +57,9 @@ public class AISuggestionMetricsCollector {
      * @param suggestionId unique identifier for the suggestion
      */
     public void recordSuggestionAccepted(String suggestionType, String suggestionId) {
-        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, SuggestionStats::new);
+        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, ignored -> new SuggestionStats());
         stats.incrementAccepted();
-        metrics.counter("ai.suggestion.accepted", "type", suggestionType).increment();
+        counter("ai.suggestion.accepted", "type", suggestionType).increment();
         logger.debug("Suggestion accepted: type={}, id={}", suggestionType, suggestionId);
     }
 
@@ -70,9 +71,9 @@ public class AISuggestionMetricsCollector {
      * @param reason reason for rejection (e.g., "not_relevant", "incorrect")
      */
     public void recordSuggestionRejected(String suggestionType, String suggestionId, String reason) {
-        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, SuggestionStats::new);
+        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, ignored -> new SuggestionStats());
         stats.incrementRejected();
-        metrics.counter("ai.suggestion.rejected", "type", suggestionType, "reason", reason).increment();
+        counter("ai.suggestion.rejected", "type", suggestionType, "reason", reason).increment();
         logger.debug("Suggestion rejected: type={}, id={}, reason={}", suggestionType, suggestionId, reason);
     }
 
@@ -83,9 +84,9 @@ public class AISuggestionMetricsCollector {
      * @param suggestionId unique identifier for the suggestion
      */
     public void recordSuggestionSuccess(String suggestionType, String suggestionId) {
-        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, SuggestionStats::new);
+        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, ignored -> new SuggestionStats());
         stats.incrementSuccess();
-        metrics.counter("ai.suggestion.success", "type", suggestionType).increment();
+        counter("ai.suggestion.success", "type", suggestionType).increment();
         logger.debug("Suggestion success: type={}, id={}", suggestionType, suggestionId);
     }
 
@@ -96,10 +97,16 @@ public class AISuggestionMetricsCollector {
      * @param suggestionId unique identifier for the suggestion
      */
     public void recordSuggestionFailure(String suggestionType, String suggestionId) {
-        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, SuggestionStats::new);
+        SuggestionStats stats = statsByType.computeIfAbsent(suggestionType, ignored -> new SuggestionStats());
         stats.incrementFailure();
-        metrics.counter("ai.suggestion.failure", "type", suggestionType).increment();
+        counter("ai.suggestion.failure", "type", suggestionType).increment();
         logger.debug("Suggestion failure: type={}, id={}", suggestionType, suggestionId);
+    }
+
+    private Counter counter(String name, String... tags) {
+        return Counter.builder(name)
+            .tags(tags)
+            .register(metrics.getRegistry());
     }
 
     /**

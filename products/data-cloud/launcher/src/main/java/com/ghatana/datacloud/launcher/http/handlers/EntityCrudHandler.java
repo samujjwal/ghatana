@@ -45,7 +45,8 @@ public class EntityCrudHandler {
     private final HttpHandlerSupport http;
     private final BiConsumer<String, Map<String, Object>> wsBroadcaster;
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
-    private SemanticSearchHandler semanticSearchHandler;
+    private SemanticIndexPort semanticIndexPort;
+    private SemanticDeletePort semanticDeletePort;
 
     private EntitySchemaValidator schemaValidator;
     private OpenSearchConnector openSearchConnector;
@@ -80,8 +81,11 @@ public class EntityCrudHandler {
         return this;
     }
 
-    public EntityCrudHandler withSemanticSearchHandler(SemanticSearchHandler semanticSearchHandler) {
-        this.semanticSearchHandler = semanticSearchHandler;
+    public EntityCrudHandler withSemanticSearchPorts(
+            SemanticIndexPort semanticIndexPort,
+            SemanticDeletePort semanticDeletePort) {
+        this.semanticIndexPort = semanticIndexPort;
+        this.semanticDeletePort = semanticDeletePort;
         return this;
     }
 
@@ -152,9 +156,9 @@ public class EntityCrudHandler {
                                 ));
                                 return entity;
                             })
-                            .then(savedEntity -> semanticSearchHandler == null
+                            .then(savedEntity -> semanticIndexPort == null
                                 ? Promise.of(savedEntity)
-                                : semanticSearchHandler.indexEntity(resolvedTenantId, collection, savedEntity)
+                                : semanticIndexPort.index(resolvedTenantId, collection, savedEntity)
                                     .map(ignored -> savedEntity));
                     })
                     .map(entity -> http.jsonResponse(Map.of(
@@ -325,9 +329,9 @@ public class EntityCrudHandler {
                                 ));
                                 return v;
                             })
-                            .then(deleted -> semanticSearchHandler == null
+                            .then(deleted -> semanticDeletePort == null
                                 ? Promise.of(deleted)
-                                : semanticSearchHandler.deleteEntity(resolvedTenantId, id)
+                                : semanticDeletePort.delete(resolvedTenantId, id)
                                     .map(ignored -> deleted));
                     })
                     .map(v -> http.jsonResponse(Map.of(
@@ -337,6 +341,16 @@ public class EntityCrudHandler {
                         "timestamp", Instant.now().toString()
                     )));
                     }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+    }
+
+    @FunctionalInterface
+    public interface SemanticIndexPort {
+        Promise<Void> index(String tenantId, String collection, DataCloudClient.Entity entity);
+    }
+
+    @FunctionalInterface
+    public interface SemanticDeletePort {
+        Promise<Void> delete(String tenantId, String entityId);
     }
 
     // ==================== Bulk Entity Endpoints ====================

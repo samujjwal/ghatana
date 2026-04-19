@@ -28,6 +28,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -277,10 +278,10 @@ class AepHttpServerHitlEscalationTest {
             queue.enqueue(item);
 
             // Simulate what the scheduler does: find overdue (0s threshold) and escalate each
-            List<ReviewItem>[] overdueHolder = new List[1];
-            queue.findOverdue(0L, null).whenComplete((list, e) -> overdueHolder[0] = list);
+            AtomicReference<List<ReviewItem>> overdueHolder = new AtomicReference<>(List.of());
+            queue.findOverdue(0L, null).whenComplete((list, e) -> overdueHolder.set(list));
 
-            for (ReviewItem overdueItem : overdueHolder[0]) {
+            for (ReviewItem overdueItem : overdueHolder.get()) {
                 queue.escalate(overdueItem.getReviewId())
                     .whenComplete((escalated, e) -> {
                         if (e == null) {

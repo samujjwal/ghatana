@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -82,7 +83,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .maxDelay(Duration.ofMillis(100))
                 .build();
 
-        Eventloop eventloop = getEventloop();
+        Eventloop eventloop = eventloop();
         TestEntity result = runPromise(() -> 
             retryPolicy.execute(eventloop, () -> mockClient.save(TENANT_ID, COLLECTION, Map.of()))
                 .then(entity -> Promise.of(mockMapper.fromEntity(entity, TestEntity.class)))
@@ -110,7 +111,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .maxDelay(Duration.ofMillis(50))
                 .build();
 
-        Eventloop eventloop = getEventloop();
+        Eventloop eventloop = eventloop();
         
         assertThatThrownBy(() -> runPromise(() -> 
             retryPolicy.execute(eventloop, () -> mockClient.save(TENANT_ID, COLLECTION, Map.of()))
@@ -133,7 +134,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .resetTimeout(Duration.ofSeconds(1))
                 .build();
 
-        Eventloop eventloop = getEventloop();
+        Eventloop eventloop = eventloop();
 
         // Execute failures until circuit opens
         for (int i = 0; i < 3; i++) {
@@ -173,7 +174,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .resetTimeout(Duration.ofMillis(100))
                 .build();
 
-        Eventloop eventloop = getEventloop();
+        Eventloop eventloop = eventloop();
 
         // Execute failures to open circuit
         for (int i = 0; i < 3; i++) {
@@ -236,9 +237,9 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .build();
 
         YappcDataCloudRepository<TestEntity> repository = new YappcDataCloudRepository<>(
-                mockClient, mockMapper, COLLECTION, TestEntity.class, null, retryPolicy, circuitBreaker);
+            mockClient, mockMapper, COLLECTION, TestEntity.class, null, null, retryPolicy, circuitBreaker);
 
-        Eventloop eventloop = getEventloop();
+        Eventloop eventloop = eventloop();
         Optional<TestEntity> result = runPromise(() -> repository.findById(testEntity.getId()));
 
         assertThat(result).isPresent();

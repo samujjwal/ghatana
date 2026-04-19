@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.observability.AepSloMetrics;
 import com.ghatana.aep.server.analytics.DataCloudAnalyticsStore;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -62,14 +61,12 @@ class AiSuggestionsControllerTest {
 
     private HttpRequest buildGetRequest(String tenantId) {
         HttpRequest request = mock(HttpRequest.class);
-        when(request.getMethod()).thenReturn(HttpMethod.GET);
         when(request.getHeader(any())).thenReturn(null);
         when(request.getQueryParameter("tenantId")).thenReturn(tenantId);
         when(request.getQueryParameter("limit")).thenReturn(null);
         return request;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> parseBody(HttpResponse response) throws Exception {
         String json = response.getBody().getString(StandardCharsets.UTF_8);
         return MAPPER.readValue(json, new TypeReference<>() {});
@@ -134,7 +131,7 @@ class AiSuggestionsControllerTest {
             Map<String, Object> first = suggestions.get(0);
             assertThat(first.get("severity")).isEqualTo("high");
             assertThat(first.get("resourceId")).isEqualTo("pipeline-abc");
-            assertThat(first.get("message").toString()).contains("FREQUENCY_SPIKE");
+            assertThat(first.get("message").toString()).contains("spiked beyond expected threshold");
         }
 
         @Test

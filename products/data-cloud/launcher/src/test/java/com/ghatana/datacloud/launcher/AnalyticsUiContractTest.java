@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @doc.type class
@@ -38,7 +39,7 @@ public class AnalyticsUiContractTest {
         @DisplayName("KPIs: revenue, users, queries, storage")
         void shouldHaveKpis() {
             Map<String, Object> response = getAnalyticsDashboard();
-            Map<String, ?> kpis = (Map<String, ?>) response.get("kpis");
+            Map<String, ?> kpis = requireMap(response, "kpis");
 
             assertThat(kpis).containsKeys("totalRevenue", "activeUsers", "queriesExecuted", "storageUsed");
         }
@@ -47,7 +48,7 @@ public class AnalyticsUiContractTest {
         @DisplayName("trends: growth metrics over time")
         void shouldHaveTrends() {
             Map<String, Object> response = getAnalyticsDashboard();
-            Map<String, ?> trends = (Map<String, ?>) response.get("trends");
+            Map<String, ?> trends = requireMap(response, "trends");
 
             assertThat(trends).isNotNull();
         }
@@ -77,10 +78,10 @@ public class AnalyticsUiContractTest {
         @DisplayName("metric comparison: current vs previous period")
         void shouldCompareMetrics() {
             Map<String, Object> response = getAnalyticsDashboard();
-            Map<String, ?> kpis = (Map<String, ?>) response.get("kpis");
+            Map<String, ?> kpis = requireMap(response, "kpis");
 
             if (kpis.containsKey("totalRevenue")) {
-                Map<String, ?> revenue = (Map<String, ?>) kpis.get("totalRevenue");
+                Map<String, ?> revenue = requireMap(kpis, "totalRevenue");
                 assertThat(revenue).containsKeys("current", "previous", "change");
             }
         }
@@ -117,7 +118,7 @@ public class AnalyticsUiContractTest {
         @DisplayName("metric breakdown: by category, user, collection")
         void shouldHaveBreakdown() {
             Map<String, Object> response = getAnalyticsDetail("queries_executed");
-            Map<String, ?> breakdown = (Map<String, ?>) response.get("breakdown");
+            Map<String, ?> breakdown = requireMap(response, "breakdown");
 
             assertThat(breakdown).isNotNull();
         }
@@ -237,5 +238,19 @@ public class AnalyticsUiContractTest {
         response.put("exportUrl", "/api/analytics/" + metric + "/export");
 
         return response;
+    }
+
+    private static Map<String, ?> requireMap(Map<String, ?> container, String key) {
+        Object value = container.get(key);
+        assertThat(value).as("Expected '%s' to be a map", key).isInstanceOf(Map.class);
+        if (value instanceof Map<?, ?> mapValue) {
+            Map<String, Object> typedMap = new HashMap<>();
+            for (Map.Entry<?, ?> entry : mapValue.entrySet()) {
+                typedMap.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            return typedMap;
+        }
+        fail("Expected '%s' to be a map", key);
+        return Map.of();
     }
 }

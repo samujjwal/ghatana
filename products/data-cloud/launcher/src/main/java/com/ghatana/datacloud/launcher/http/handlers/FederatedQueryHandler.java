@@ -6,6 +6,7 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -204,7 +205,7 @@ public final class FederatedQueryHandler {
                     return http.jsonResponse(200, result);
                 }
 
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 log.error("Trino federated query failed for tenant {}: {}", tenantId, e.getMessage(), e);
                 metrics.incrementCounter("query.federated.trino.error", "tenant", tenantId);
                 throw e;

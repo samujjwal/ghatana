@@ -4,6 +4,7 @@
  */
 package com.ghatana.core.pipeline;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,6 +39,14 @@ public interface ConfigurationPrefillService {
      * @return confidence score (0.0 to 1.0)
      */
     double getConfidence(String stageType, String eventType, String configKey);
+
+    /**
+     * Calculate how much of a generated pipeline configuration was automatically suggested.
+     *
+     * @param stages stage specifications to inspect
+     * @return percentage from 0.0 to 1.0
+     */
+    double calculateAutoConfigurationPercentage(List<NaturalLanguagePipelineService.StageSpec> stages);
 
     /**
      * Configuration suggestion with metadata.

@@ -7,6 +7,8 @@ package com.ghatana.pattern.engine.matching;
 import com.ghatana.pattern.engine.nfa.NFA;
 import com.ghatana.platform.domain.event.GEvent;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**

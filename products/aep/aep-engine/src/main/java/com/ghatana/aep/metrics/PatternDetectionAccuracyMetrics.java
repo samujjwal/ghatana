@@ -6,6 +6,7 @@ package com.ghatana.aep.metrics;
 
 import com.ghatana.aep.AepEngine;
 import com.ghatana.platform.observability.Metrics;
+import io.micrometer.core.instrument.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,9 +43,9 @@ public class PatternDetectionAccuracyMetrics {
      * @param patternId unique pattern identifier
      */
     public void recordTruePositive(String patternType, String patternId) {
-        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, PatternAccuracyStats::new);
+        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, ignored -> new PatternAccuracyStats());
         stats.incrementTruePositives();
-        metrics.counter("pattern.detection.true_positive", "type", patternType).increment();
+        counter("pattern.detection.true_positive", "type", patternType).increment();
         logger.debug("True positive: type={}, id={}", patternType, patternId);
     }
 
@@ -55,9 +56,9 @@ public class PatternDetectionAccuracyMetrics {
      * @param patternId unique pattern identifier
      */
     public void recordFalsePositive(String patternType, String patternId) {
-        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, PatternAccuracyStats::new);
+        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, ignored -> new PatternAccuracyStats());
         stats.incrementFalsePositives();
-        metrics.counter("pattern.detection.false_positive", "type", patternType).increment();
+        counter("pattern.detection.false_positive", "type", patternType).increment();
         logger.debug("False positive: type={}, id={}", patternType, patternId);
     }
 
@@ -68,9 +69,9 @@ public class PatternDetectionAccuracyMetrics {
      * @param patternId unique pattern identifier
      */
     public void recordFalseNegative(String patternType, String patternId) {
-        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, PatternAccuracyStats::new);
+        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, ignored -> new PatternAccuracyStats());
         stats.incrementFalseNegatives();
-        metrics.counter("pattern.detection.false_negative", "type", patternType).increment();
+        counter("pattern.detection.false_negative", "type", patternType).increment();
         logger.debug("False negative: type={}, id={}", patternType, patternId);
     }
 
@@ -81,10 +82,16 @@ public class PatternDetectionAccuracyMetrics {
      * @param patternId unique pattern identifier
      */
     public void recordTrueNegative(String patternType, String patternId) {
-        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, PatternAccuracyStats::new);
+        PatternAccuracyStats stats = statsByPatternType.computeIfAbsent(patternType, ignored -> new PatternAccuracyStats());
         stats.incrementTrueNegatives();
-        metrics.counter("pattern.detection.true_negative", "type", patternType).increment();
+        counter("pattern.detection.true_negative", "type", patternType).increment();
         logger.debug("True negative: type={}, id={}", patternType, patternId);
+    }
+
+    private Counter counter(String name, String... tags) {
+        return Counter.builder(name)
+            .tags(tags)
+            .register(metrics.getRegistry());
     }
 
     /**

@@ -107,15 +107,19 @@ class AepHttpServerLearningTest {
     class ListPoliciesTests {
 
         @Test
-        @DisplayName("returns 501 when HumanReviewQueue not configured")
-        void listPolicies_whenNoQueue_returns501() throws Exception {
+        @DisplayName("returns 200 truthful unconfigured response when HumanReviewQueue not configured")
+        void listPolicies_whenNoQueue_returnsTruthfulUnconfiguredResponse() throws Exception {
             server = new AepHttpServer(engine, port);
             server.start();
             waitForServerReady(port);
 
             HttpResponse<String> resp = get("/api/v1/learning/policies");
 
-            assertThat(resp.statusCode()).isEqualTo(501);
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("configured")).isEqualTo(false);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("message").toString()).contains("Policy store not available");
         }
 
         @Test

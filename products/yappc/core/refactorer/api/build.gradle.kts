@@ -17,8 +17,20 @@ java {
     // withJavadocJar()
 }
 
+sourceSets {
+    named("main") {
+        java.srcDir(layout.buildDirectory.dir("generated/source/proto/main/java"))
+        java.srcDir(layout.buildDirectory.dir("generated/source/proto/main/grpc"))
+    }
+    named("test") {
+        compileClasspath += sourceSets.named("main").get().output
+        runtimeClasspath += sourceSets.named("main").get().output
+    }
+}
+
 // Temporarily exclude OpenRewrite-dependent files from compilation
 tasks.named<JavaCompile>("compileJava") {
+    dependsOn(tasks.named("generateProto"))
     exclude("**/DebugCommand.java")
     exclude("**/PolyfixCommand.java")
     exclude("**/RunCommand.java")
@@ -29,6 +41,7 @@ tasks.named<JavaCompile>("compileJava") {
 
 // Temporarily exclude OpenRewrite-dependent test files from compilation
 tasks.named<JavaCompile>("compileTestJava") {
+    dependsOn(tasks.named("compileJava"))
     exclude("**/InteractiveCommandTest.java")
     exclude("**/RunCommandTest.java")
     exclude("**/DiagnoseCommandTest.java")

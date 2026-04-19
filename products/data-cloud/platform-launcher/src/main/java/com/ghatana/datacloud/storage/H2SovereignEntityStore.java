@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -257,7 +258,9 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
                  PreparedStatement statement = connection.prepareStatement(COMPACT_SQL)) {
                 statement.setString(1, tenantId);
                 int deletedRows = statement.executeUpdate();
-                connection.createStatement().execute("CHECKPOINT");
+                try (Statement checkpoint = connection.createStatement()) {
+                    checkpoint.execute("CHECKPOINT");
+                }
                 return deletedRows;
             }
         });
@@ -269,8 +272,9 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
 
     @Override
     public void close() throws Exception {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.createStatement().execute("SHUTDOWN");
+        try (Connection connection = dataSource.getConnection();
+             Statement shutdown = connection.createStatement()) {
+            shutdown.execute("SHUTDOWN");
         }
     }
 
@@ -389,8 +393,9 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
     }
 
     private void initializeSchema() {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.createStatement().execute("""
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            statement.execute("""
                 CREATE TABLE IF NOT EXISTS dc_entities (
                     tenant_id VARCHAR(255) NOT NULL,
                     entity_id VARCHAR(255) NOT NULL,
@@ -403,7 +408,7 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
                     PRIMARY KEY (tenant_id, entity_id)
                 )
                 """);
-            connection.createStatement().execute("CREATE INDEX IF NOT EXISTS idx_dc_entities_collection ON dc_entities(tenant_id, collection_name, deleted)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_dc_entities_collection ON dc_entities(tenant_id, collection_name, deleted)");
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to initialize sovereign entity store schema", exception);
         }

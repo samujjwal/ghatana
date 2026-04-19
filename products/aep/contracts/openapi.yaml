@@ -54,10 +54,14 @@ tags:
   - name: Governance
     description: Governance, audit, and compliance operator surfaces
 
+security:
+  - bearerAuth: []
+
 paths:
   # ========== Health Endpoints ==========
   /health:
     get:
+      security: []
       summary: Health check
       operationId: getHealth
       tags: [Health]
@@ -75,6 +79,7 @@ paths:
 
   /ready:
     get:
+      security: []
       summary: Readiness probe
       operationId: getReady
       tags: [Health]
@@ -91,6 +96,7 @@ paths:
 
   /live:
     get:
+      security: []
       summary: Liveness probe
       operationId: getLive
       tags: [Health]
@@ -107,6 +113,7 @@ paths:
 
   /info:
     get:
+      security: []
       summary: Service information
       operationId: getInfo
       tags: [Health]
@@ -125,6 +132,7 @@ paths:
 
   /metrics:
     get:
+      security: []
       summary: Runtime metrics
       operationId: getMetrics
       tags: [Health]
@@ -1831,6 +1839,11 @@ paths:
 # Components
 # ========================================================================
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     TenantIdHeader:
       name: X-Tenant-Id

@@ -392,19 +392,28 @@ public final class DurableBillingLedgerPlugin implements BillingLedgerPlugin {
     }
 
     private void adjustBalance(String accountId, BigDecimal delta, String currency) {
-        String sql = """
+        String updateSql = "UPDATE %s SET balance = balance + ? WHERE account_id = ?".formatted(ACCOUNTS_TABLE);
+        String insertSql = """
                 INSERT INTO %s (account_id, account_type, currency, balance, created_at)
                 VALUES (?, 'ASSET', ?, ?, ?)
-                ON CONFLICT (account_id) DO UPDATE
-                  SET balance = %s.balance + EXCLUDED.balance
-                """.formatted(ACCOUNTS_TABLE, ACCOUNTS_TABLE);
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, accountId);
-            ps.setString(2, currency);
-            ps.setBigDecimal(3, delta);
-            ps.setLong(4, Instant.now().toEpochMilli());
-            ps.executeUpdate();
+                """.formatted(ACCOUNTS_TABLE);
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement update = conn.prepareStatement(updateSql)) {
+                update.setBigDecimal(1, delta);
+                update.setString(2, accountId);
+                int updatedRows = update.executeUpdate();
+                if (updatedRows > 0) {
+                    return;
+                }
+            }
+
+            try (PreparedStatement insert = conn.prepareStatement(insertSql)) {
+                insert.setString(1, accountId);
+                insert.setString(2, currency);
+                insert.setBigDecimal(3, delta);
+                insert.setLong(4, Instant.now().toEpochMilli());
+                insert.executeUpdate();
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to adjust balance for account " + accountId, e);
         }

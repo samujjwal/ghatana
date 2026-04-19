@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 /**
  * HTTP handler for voice-first command execution (E4: Voice-First Experience).
@@ -44,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>Returns a machine result plus an optional speech-friendly summary.</li>
  * </ol>
  *
+import java.util.function.Function;
  * <h2>Routes</h2>
  * <pre>
  *   POST /api/v1/voice/intent                — resolve and execute a voice intent
@@ -105,7 +107,7 @@ public class VoiceGatewayHandler {
     private final AuditService auditService;              // nullable — audit skipped when absent
     private final VoiceSttPort sttPort;                   // nullable → use NopVoiceSttAdapter behaviour
     private final VoiceTtsPort ttsPort;                   // non-null — NopVoiceTtsAdapter when not configured
-    private final ContextLayerHandler contextLayer;       // nullable — grounding skipped when absent
+    private final Function<String, Map<String, Object>> contextEntriesProvider; // nullable — grounding skipped when absent
 
     /** Per-tenant per-minute request counters: key = "tenantId:bucketMinute". */
     private final ConcurrentHashMap<String, AtomicInteger> rateBuckets = new ConcurrentHashMap<>();
@@ -122,6 +124,18 @@ public class VoiceGatewayHandler {
     }
 
     public VoiceGatewayHandler(
+            CompletionService completionService,
+            AuditService auditService,
+            ObjectMapper objectMapper,
+            HttpHandlerSupport http,
+            Executor blockingExecutor,
+            VoiceSttPort sttPort,
+            VoiceTtsPort ttsPort,
+            Function<String, Map<String, Object>> contextEntriesProvider) {
+        this(null, completionService, auditService, objectMapper, http, blockingExecutor, sttPort, ttsPort, contextEntriesProvider);
+    }
+
+    public VoiceGatewayHandler(
             DataCloudClient dataCloudClient,
             CompletionService completionService,
             AuditService auditService,
@@ -134,18 +148,6 @@ public class VoiceGatewayHandler {
     }
 
     public VoiceGatewayHandler(
-            CompletionService completionService,
-            AuditService auditService,
-            ObjectMapper objectMapper,
-            HttpHandlerSupport http,
-            Executor blockingExecutor,
-            VoiceSttPort sttPort,
-            VoiceTtsPort ttsPort,
-            ContextLayerHandler contextLayer) {
-        this(null, completionService, auditService, objectMapper, http, blockingExecutor, sttPort, ttsPort, contextLayer);
-    }
-
-    public VoiceGatewayHandler(
             DataCloudClient dataCloudClient,
             CompletionService completionService,
             AuditService auditService,
@@ -154,7 +156,7 @@ public class VoiceGatewayHandler {
             Executor blockingExecutor,
             VoiceSttPort sttPort,
             VoiceTtsPort ttsPort,
-            ContextLayerHandler contextLayer) {
+            Function<String, Map<String, Object>> contextEntriesProvider) {
         this.dataCloudClient   = dataCloudClient;
         this.completionService = completionService;
         this.auditService      = auditService;
@@ -163,7 +165,7 @@ public class VoiceGatewayHandler {
         this.blockingExecutor  = blockingExecutor;
         this.sttPort           = sttPort;
         this.ttsPort           = ttsPort != null ? ttsPort : NopVoiceTtsAdapter.INSTANCE;
-        this.contextLayer      = contextLayer;
+        this.contextEntriesProvider = contextEntriesProvider;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -181,8 +183,8 @@ public class VoiceGatewayHandler {
      *   "parameters": { "tenantId": "acme" },   // optional
      *   "confirm":    false
      * }
-     * // Option B – raw audio bytes (requires STT provider configured via DC_STT_URL)
-     * {
+        if (contextEntriesProvider == null) return Map.of();
+        return contextEntriesProvider.apply(tenantId);
      *   "audioData":   "<base64-encoded PCM/WAV/MP3>",
      *   "audioFormat": "audio/wav",  // optional MIME hint
      *   "language":    "en",         // optional BCP-47 language code
@@ -835,8 +837,8 @@ public class VoiceGatewayHandler {
      * or an empty map when the Context Layer is not wired or has no entries.
      */
     private Map<String, Object> groundingContextFor(String tenantId) {
-        if (contextLayer == null) return Map.of();
-        return contextLayer.currentEntries(tenantId);
+        if (contextEntriesProvider == null) return Map.of();
+        return contextEntriesProvider.apply(tenantId);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

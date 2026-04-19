@@ -4,6 +4,8 @@
  */
 package com.ghatana.aep.discovery;
 
+import com.ghatana.aep.discovery.ServiceDiscoveryService.DiscoveredService;
+import com.ghatana.aep.discovery.ServiceDiscoveryService.ServiceHealth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -63,7 +65,7 @@ class ServiceDiscoveryServiceTest {
         @Test
         @DisplayName("registers service when auto-register is true")
         void registersServiceWhenAutoRegisterIsTrue() {
-            DiscoveredService service = new DiscoveredService(
+            DiscoveredService discoveredService = new DiscoveredService(
                 "service-1",
                 "Test Service",
                 "http",
@@ -72,7 +74,7 @@ class ServiceDiscoveryServiceTest {
                 ServiceHealth.HEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(service, true);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true);
 
             assertThat(result.registered()).isTrue();
             assertThat(result.agentId()).isNotNull();
@@ -82,7 +84,7 @@ class ServiceDiscoveryServiceTest {
         @Test
         @DisplayName("skips registration when auto-register is false")
         void skipsRegistrationWhenAutoRegisterIsFalse() {
-            DiscoveredService service = new DiscoveredService(
+            DiscoveredService discoveredService = new DiscoveredService(
                 "service-1",
                 "Test Service",
                 "http",
@@ -91,7 +93,7 @@ class ServiceDiscoveryServiceTest {
                 ServiceHealth.HEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(service, false);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, false);
 
             assertThat(result.registered()).isFalse();
             assertThat(result.reason()).isEqualTo("Auto-registration disabled");
@@ -100,7 +102,7 @@ class ServiceDiscoveryServiceTest {
         @Test
         @DisplayName("rejects unhealthy services")
         void rejectsUnhealthyServices() {
-            DiscoveredService service = new DiscoveredService(
+            DiscoveredService discoveredService = new DiscoveredService(
                 "service-1",
                 "Test Service",
                 "http",
@@ -109,7 +111,7 @@ class ServiceDiscoveryServiceTest {
                 ServiceHealth.UNHEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(service, true);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true);
 
             assertThat(result.registered()).isFalse();
             assertThat(result.reason()).isEqualTo("Service is unhealthy");
@@ -118,7 +120,7 @@ class ServiceDiscoveryServiceTest {
         @Test
         @DisplayName("adds warning for missing endpoint")
         void addsWarningForMissingEndpoint() {
-            DiscoveredService service = new DiscoveredService(
+            DiscoveredService discoveredService = new DiscoveredService(
                 "service-1",
                 "Test Service",
                 "http",
@@ -127,7 +129,7 @@ class ServiceDiscoveryServiceTest {
                 ServiceHealth.HEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(service, true);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true);
 
             assertThat(result.registered()).isTrue();
             assertThat(result.warnings()).anyMatch(w -> w.contains("No endpoint"));
@@ -141,7 +143,7 @@ class ServiceDiscoveryServiceTest {
         @Test
         @DisplayName("returns discovery statistics")
         void returnsDiscoveryStatistics() {
-            DiscoveredService service = new DiscoveredService(
+            DiscoveredService discoveredService = new DiscoveredService(
                 "service-1",
                 "Test Service",
                 "http",
@@ -151,7 +153,7 @@ class ServiceDiscoveryServiceTest {
             );
 
             service.discoverServices("all", Map.of());
-            service.registerService(service, true);
+            service.registerService(discoveredService, true);
 
             ServiceDiscoveryService.DiscoveryStats stats = service.getStats();
             assertThat(stats.totalDiscovered()).isGreaterThan(0);

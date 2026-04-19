@@ -169,22 +169,19 @@ class ObserveServiceTest extends EventloopTestBase {
         result.metrics().stream()
                 .filter(m -> m.name().equals("run.duration"))
                 .forEach(m -> {
-                    assertTrue(m.value() instanceof Long);
-                    assertTrue((Long) m.value() >= 0);
+                                        assertTrue(m.value() >= 0.0d);
                 });
         
         result.metrics().stream()
                 .filter(m -> m.name().equals("run.task_count"))
                 .forEach(m -> {
-                    assertTrue(m.value() instanceof Long);
-                    assertEquals(3L, m.value());
+                                        assertEquals(3.0d, m.value(), 0.001d);
                 });
         
         result.metrics().stream()
                 .filter(m -> m.name().equals("run.success_rate"))
                 .forEach(m -> {
-                    assertTrue(m.value() instanceof Double);
-                    assertEquals(66.66666666666666, (Double) m.value(), 0.001);
+                                        assertEquals(66.66666666666666d, m.value(), 0.001d);
                 });
     }
 }

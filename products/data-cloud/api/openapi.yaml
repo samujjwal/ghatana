@@ -3902,6 +3902,21 @@ paths:
         "200":
           { description: Human-readable explanation with remediation steps }
 
+  /api/v1/ai/quality-summary:
+    get:
+      summary: Process-local AI quality and fallback telemetry summary
+      operationId: apiV1AiQualitySummaryGet
+      tags: [ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Aggregated AI recommendation quality, fallback, and confidence telemetry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
   # ── AI/ML Model registry (DC-11) ────────────────────────────────────────
 
   /api/v1/models:

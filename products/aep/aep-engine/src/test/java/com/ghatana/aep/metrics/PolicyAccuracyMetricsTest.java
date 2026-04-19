@@ -5,13 +5,13 @@
 package com.ghatana.aep.metrics;
 
 import com.ghatana.platform.observability.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests for PolicyAccuracyMetrics.
@@ -29,7 +29,7 @@ class PolicyAccuracyMetricsTest {
 
     @BeforeEach
     void setUp() {
-        metrics = mock(Metrics.class);
+        metrics = new Metrics(new SimpleMeterRegistry());
         collector = new PolicyAccuracyMetrics(metrics);
     }
 
@@ -136,7 +136,7 @@ class PolicyAccuracyMetricsTest {
             collector.recordTruePositive("policy-1", "block");
             collector.recordTruePositive("policy-1", "block");
             collector.recordTrueNegative("policy-1");
-            collector.recordFalsePositive("policy-1");
+            collector.recordFalsePositive("policy-1", "block");
             
             double accuracy = collector.getAccuracy("policy-1");
             assertThat(accuracy).isEqualTo(0.75);
@@ -147,7 +147,7 @@ class PolicyAccuracyMetricsTest {
         void calculatesF1Score() {
             collector.recordTruePositive("policy-1", "block");
             collector.recordTruePositive("policy-1", "block");
-            collector.recordFalsePositive("policy-1");
+            collector.recordFalsePositive("policy-1", "block");
             collector.recordFalseNegative("policy-1");
             
             double f1 = collector.getF1Score("policy-1");

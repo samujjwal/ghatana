@@ -3,15 +3,6 @@ package com.ghatana.validation.ai;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.observability.Metrics;
-import com.ghatana.validation.ai.AIPatternDetectionService.ValidationAnomalyDetectionConfig;
-import com.ghatana.validation.ai.AIPatternDetectionService.DetectedPattern;
-import com.ghatana.validation.ai.AIPatternDetectionService.EventPattern;
-import com.ghatana.validation.ai.AIPatternDetectionService.ExplanationFactor;
-import com.ghatana.validation.ai.AIPatternDetectionService.PatternAnalysisConfig;
-import com.ghatana.validation.ai.AIPatternDetectionService.PatternExplanation;
-import com.ghatana.validation.ai.AIPatternDetectionService.PatternSuggestion;
-import com.ghatana.validation.ai.AIPatternDetectionService.PatternType;
-import com.ghatana.validation.ai.AIPatternDetectionService.PatternValidationResult;
 import com.ghatana.validation.ai.anomaly.AnomalyDetector;
 import com.ghatana.validation.ai.anomaly.DefaultAnomalyDetector;
 import com.ghatana.validation.ai.detectors.CorrelationPatternDetector;
@@ -79,41 +70,57 @@ public class AIPatternDetectionServiceImpl implements AIPatternDetectionService 
 
     @Override
     public Promise<List<DetectedPattern>> detectPatterns(List<Event> events, PatternAnalysisConfig analysisConfig) {
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
+        Map<String, Object> algorithmParameters = analysisConfig.algorithmParameters() != null
+            ? analysisConfig.algorithmParameters()
+            : Map.of();
+        boolean useML = mlOperatorGenerator.isPresent()
+            && Boolean.TRUE.equals(algorithmParameters.get("useML"));
+        double temperature = algorithmParameters.get("temperature") instanceof Number number
+            ? number.doubleValue()
+            : 0.7;
 
-            try {
-                List<DetectedPattern> allPatterns = new ArrayList<>();
+        if (useML) {
+            logger.info("Using ML-based operator generation for {} events", events.size());
+            MLOperatorGenerator.GenerationConfig mlConfig = MLOperatorGenerator.GenerationConfig.builder()
+                .temperature(temperature)
+                .maxTokens(2000)
+                .confidenceThreshold(analysisConfig.confidenceThreshold())
+                .build();
 
-                // Use ML-based operator generation if available
-                if (mlOperatorGenerator.isPresent() && analysisConfig.useML()) {
-                    logger.info("Using ML-based operator generation for {} events", events.size());
-                    MLOperatorGenerator.GenerationConfig mlConfig = MLOperatorGenerator.GenerationConfig.builder()
-                        .temperature(analysisConfig.temperature() != null ? analysisConfig.temperature() : 0.7)
-                        .maxTokens(2000)
-                        .confidenceThreshold(analysisConfig.confidenceThreshold())
-                        .build();
-
-                    List<OperatorSpec> operators = mlOperatorGenerator.get()
-                        .generateOperators(events, mlConfig)
-                        .getResult();
-
-                    // Convert OperatorSpec to DetectedPattern
+            return mlOperatorGenerator.get()
+                .generateOperators(events, mlConfig)
+                .map(operators -> {
+                    List<DetectedPattern> allPatterns = new ArrayList<>();
                     for (OperatorSpec operator : operators) {
                         allPatterns.add(convertOperatorToPattern(operator, analysisConfig));
                     }
-                } else {
-                    // Fall back to heuristic detectors
-                    logger.debug("Using heuristic pattern detectors on {} events", events.size());
-                    for (Map.Entry<String, PatternDetector> entry : detectors.entrySet()) {
-                        PatternDetector detector = entry.getValue();
-                        logger.debug("Running {} pattern detector on {} events", entry.getKey(), events.size());
 
-                        List<DetectedPattern> detected = detector.detect(events, analysisConfig).stream()
-                                .filter(pattern -> pattern.confidence() >= analysisConfig.confidenceThreshold())
-                                .collect(Collectors.toList());
-                        allPatterns.addAll(detected);
-                    }
+                    List<DetectedPattern> merged = mergeSimilarPatterns(allPatterns);
+                    metrics.timer("ai.pattern.detection.duration")
+                        .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
+                    logger.info("Detected {} patterns from {} events", merged.size(), events.size());
+                    return merged;
+                })
+                .whenException(exception -> {
+                    metrics.timer("ai.pattern.detection.duration")
+                        .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
+                    logger.error("Pattern detection failed", exception);
+                });
+        }
+
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            try {
+                List<DetectedPattern> allPatterns = new ArrayList<>();
+                logger.debug("Using heuristic pattern detectors on {} events", events.size());
+                for (Map.Entry<String, PatternDetector> entry : detectors.entrySet()) {
+                    PatternDetector detector = entry.getValue();
+                    logger.debug("Running {} pattern detector on {} events", entry.getKey(), events.size());
+
+                    List<DetectedPattern> detected = detector.detect(events, analysisConfig).stream()
+                            .filter(pattern -> pattern.confidence() >= analysisConfig.confidenceThreshold())
+                            .collect(Collectors.toList());
+                    allPatterns.addAll(detected);
                 }
 
                 List<DetectedPattern> merged = mergeSimilarPatterns(allPatterns);
@@ -144,20 +151,18 @@ public class AIPatternDetectionServiceImpl implements AIPatternDetectionService 
         PatternType patternType = mapOperatorTypeToPatternType(operator.getType());
         
         // Extract event types from operands
-        List<String> eventTypes = extractEventTypes(operator);
-        
         // Build description from operator structure
         String description = buildOperatorDescription(operator);
 
         return new DetectedPattern(
             operator.getId(),
-            patternType,
             operator.getType(),
-            0.85, // Default confidence from ML
             description,
-            eventTypes,
+            0.85,
+            patternType,
             operator.getParameters(),
-            List.of() // No matching events at compilation time
+            List.of(),
+            System.currentTimeMillis()
         );
     }
 
@@ -172,24 +177,6 @@ public class AIPatternDetectionServiceImpl implements AIPatternDetectionService 
             case "TEMPORAL", "WITHIN", "UNTIL" -> PatternType.TEMPORAL;
             default -> PatternType.ANOMALY;
         };
-    }
-
-    /**
-     * Extracts event types from operator operands.
-     */
-    private List<String> extractEventTypes(OperatorSpec operator) {
-        List<String> eventTypes = new ArrayList<>();
-        if (operator.getOperands() != null) {
-            for (OperatorSpec operand : operator.getOperands()) {
-                Object eventType = operand.getParameter("eventType");
-                if (eventType != null) {
-                    eventTypes.add(eventType.toString());
-                }
-                // Recursively extract from nested operands
-                eventTypes.addAll(extractEventTypes(operand));
-            }
-        }
-        return eventTypes;
     }
 
     /**

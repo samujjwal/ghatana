@@ -28,6 +28,8 @@ import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
+import com.ghatana.yappc.services.run.CiCdPort;
+import com.ghatana.yappc.services.run.NoOpCiCdAdapter;
 import com.ghatana.yappc.services.run.RunService;
 import com.ghatana.yappc.services.run.RunServiceImpl;
 import com.ghatana.yappc.services.shape.ShapeService;

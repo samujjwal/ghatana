@@ -99,8 +99,11 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify all events persisted with correlationId
             List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byCorrelationId(correlationId))
-            );
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.all())
+            ).stream()
+                .filter(retrievedEvent -> retrievedEvent.headers() != null
+                    && correlationId.equals(retrievedEvent.headers().get("correlationId")))
+                .toList();
 
             assertThat(retrievedEvents).hasSize(5);
             assertThat(retrievedEvents).allMatch(e -> 
@@ -165,7 +168,7 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
                 )
             );
 
-            runPromise(() -> engine.submitPipeline(tenantId, pipeline));
+            engine.submitPipeline(tenantId, pipeline);
 
             // Ingest event that matches pattern
             AepEngine.Event event = new AepEngine.Event(

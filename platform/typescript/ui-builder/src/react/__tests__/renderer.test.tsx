@@ -9,6 +9,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { ComponentContract } from '@ghatana/ds-schema';
+import type { BuilderComponentManifest } from '@ghatana/ds-schema';
 import {
   createNodeId,
   createDocumentId,
@@ -46,6 +48,48 @@ const componentRegistry = {
   Button: MockButton,
   TextField: MockTextField,
   Card: MockCard,
+};
+
+const buttonContract: ComponentContract = {
+  name: 'Button',
+  version: '1.0.0',
+  metadata: {
+    category: 'input',
+    status: 'stable',
+    platforms: ['web', 'ios'],
+    a11y: {
+      role: 'button',
+      ariaSupported: true,
+      keyboardNavigation: true,
+      screenReader: 'supported',
+    },
+    dataClassification: 'internal',
+  },
+  props: [],
+  slots: [],
+  events: [{ name: 'onClick' }],
+};
+
+const buttonManifest: BuilderComponentManifest = {
+  name: 'Button',
+  version: '1.0.0',
+  targets: ['react', 'swiftui'],
+  features: ['manifest-driven'],
+  semantics: {
+    role: 'button',
+    eventNames: ['click'],
+  },
+  slots: [],
+  capabilities: {
+    interactive: true,
+    collection: false,
+    virtualizable: false,
+    async: false,
+    privacy: 'internal',
+    optimizedFor: ['builder-handoff'],
+  },
+  dataClassification: 'internal',
+  reviewRequired: false,
 };
 
 describe('@ghatana/ui-builder/react - Renderer', () => {
@@ -180,6 +224,77 @@ describe('@ghatana/ui-builder/react - Renderer', () => {
       const fallback = screen.getByText('Unregistered component: UnregisteredComponent');
       expect(fallback).toBeInTheDocument();
       expect(fallback.closest('[data-builder-generic="true"]')).toBeInTheDocument();
+    });
+
+    it('should preserve named slot composition as component props', () => {
+      const headerId = createNodeId();
+      const contentId = createNodeId();
+      const cardId = createNodeId();
+
+      const header: ComponentInstance = {
+        id: headerId,
+        contractName: 'Button',
+        props: { label: 'Card Header' },
+        slots: {},
+        bindings: [],
+        metadata: {},
+      };
+
+      const content: ComponentInstance = {
+        id: contentId,
+        contractName: 'TextField',
+        props: { value: 'Body copy' },
+        slots: {},
+        bindings: [],
+        metadata: {},
+      };
+
+      const card: ComponentInstance = {
+        id: cardId,
+        contractName: 'Card',
+        props: {},
+        slots: {
+          header: [headerId],
+          content: [contentId],
+        },
+        bindings: [],
+        metadata: {},
+      };
+
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Card Document',
+        designSystem: {
+          id: 'test-ds',
+          name: 'Test Design System',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [cardId],
+        nodes: new Map([
+          [cardId, card],
+          [headerId, header],
+          [contentId, content],
+        ]),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      };
+
+      render(
+        <ComponentRenderer
+          instance={card}
+          document={document}
+          componentRegistry={componentRegistry}
+        />
+      );
+
+      expect(screen.getByTestId('card-header')).toHaveTextContent('Card Header');
+      expect(screen.getByTestId('card-content').querySelector('[data-testid="mock-textfield"]')).toBeInTheDocument();
     });
   });
 
@@ -648,7 +763,9 @@ describe('@ghatana/ui-builder/react - Renderer', () => {
         props: { label: 'Test' },
         slots: {},
         bindings: [],
-        metadata: {},
+        metadata: {
+          dataClassification: 'internal',
+        },
       };
 
       const document: BuilderDocument = {
@@ -682,6 +799,54 @@ describe('@ghatana/ui-builder/react - Renderer', () => {
       const button = screen.getByTestId('mock-button');
       expect(button).toHaveAttribute('data-builder-id', instance.id);
       expect(button).toHaveAttribute('data-builder-contract', 'Button');
+    });
+
+    it('should add platform-plan annotations when contracts are provided', () => {
+      const instance: ComponentInstance = {
+        id: createNodeId(),
+        contractName: 'Button',
+        props: { label: 'Test' },
+        slots: {},
+        bindings: [],
+        metadata: {
+          dataClassification: 'internal',
+        },
+      };
+
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Test Document',
+        designSystem: {
+          id: 'test-ds',
+          name: 'Test Design System',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [buttonContract],
+          themeId: 'default',
+        },
+        rootNodes: [instance.id],
+        nodes: new Map([[instance.id, instance]]),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      };
+
+      render(
+        <ComponentRenderer
+          instance={instance}
+          document={document}
+          componentRegistry={componentRegistry}
+          contracts={[buttonContract]}
+          manifests={[buttonManifest]}
+        />
+      );
+
+      const button = screen.getByTestId('mock-button');
+      expect(button).toHaveAttribute('data-builder-platforms', 'react swiftui');
+      expect(button).toHaveAttribute('data-builder-classification', 'internal');
+      expect(button).toHaveAttribute('data-builder-signature');
     });
 
     it('should apply custom className when provided', () => {

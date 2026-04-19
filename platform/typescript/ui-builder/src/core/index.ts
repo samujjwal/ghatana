@@ -56,6 +56,22 @@ export {
 } from './codegen';
 
 export type {
+  BuilderPlatformTarget,
+  BuilderPlatformSemantics,
+  BuilderSerializedProps,
+  BuilderPlatformSlotPlan,
+  BuilderPlatformNodePlan,
+  BuilderPlatformDocumentPlan,
+  ContractLookup,
+  ManifestLookup,
+} from './platform-plan';
+
+export {
+  projectInstanceToPlatformPlan,
+  projectDocumentToPlatformPlan,
+} from './platform-plan';
+
+export type {
   BuilderOperationKind,
   BuilderOperationEvent,
   RollbackSnapshot,

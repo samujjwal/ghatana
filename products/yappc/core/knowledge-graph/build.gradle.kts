@@ -66,7 +66,7 @@ description = "YAPPC Knowledge Graph - Consolidated integration module"
 
 // Explicit task dependency to fix Gradle implicit dependency issue
 tasks.compileJava {
-    dependsOn(":core:ai:compileJava")
+    dependsOn(":products:yappc:core:ai:compileJava")
 }
 
 tasks.register<Test>("integrationTest") {

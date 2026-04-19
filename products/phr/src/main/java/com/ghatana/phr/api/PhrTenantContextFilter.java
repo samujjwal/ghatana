@@ -70,11 +70,17 @@ public final class PhrTenantContextFilter implements AsyncServlet {
         LOG.debug("PHR tenant context attached [tenantId={}]", tenantId.get());
         TenantContext.setCurrentTenantId(tenantId.get());
 
-        return delegate.serve(request)
-                .whenComplete((response, exception) -> {
-                    // Always clear to prevent thread-local leakage across pooled threads
-                    TenantContext.clear();
-                });
+        try {
+            return delegate.serve(request)
+                    .whenComplete((response, exception) -> {
+                        // Always clear to prevent thread-local leakage across pooled threads
+                        TenantContext.clear();
+                    });
+        } catch (Exception exception) {
+            TenantContext.clear();
+            LOG.error("PHR request failed before delegate execution [path={}]", request.getPath(), exception);
+            return Promise.ofException(exception);
+        }
     }
 
     // -------------------------------------------------------------------------
