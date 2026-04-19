@@ -2,4 +2,4 @@ export {
   useKeyboardShortcuts,
   shortcutRegistry,
   ShortcutRegistry,
-} from '@yappc/ui/shortcuts';
+} from '@yappc/shortcuts';

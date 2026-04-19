@@ -566,7 +566,8 @@ module.exports = {
       meta: {
         type: "suggestion",
         docs: {
-          description: "Disallow reimplementing utilities already in @ghatana/platform-utils",
+          description:
+            "Disallow reimplementing utilities already in @ghatana/platform-utils",
           category: "Duplication",
           recommended: true,
         },
@@ -581,16 +582,32 @@ module.exports = {
       create(context) {
         // Common utility function names that exist in @ghatana/platform-utils
         const PLATFORM_UTILS = new Set([
-          "truncate", "capitalize", "formatDate", "getCurrentTimestamp",
-          "formatDistanceToNow", "cn", "clsx", "debounce", "throttle",
-          "deepEqual", "deepClone", "omit", "pick", "groupBy", "chunk",
-          "formatBytes", "formatDuration", "slugify",
+          "truncate",
+          "capitalize",
+          "formatDate",
+          "getCurrentTimestamp",
+          "formatDistanceToNow",
+          "cn",
+          "clsx",
+          "debounce",
+          "throttle",
+          "deepEqual",
+          "deepClone",
+          "omit",
+          "pick",
+          "groupBy",
+          "chunk",
+          "formatBytes",
+          "formatDuration",
+          "slugify",
         ]);
 
         // Only flag if the current file is NOT inside platform-utils
         const currentFilePath = context.getFilename();
-        if (currentFilePath.includes("/platform/typescript/platform-utils/") ||
-            currentFilePath.includes("eslint-rules/")) {
+        if (
+          currentFilePath.includes("/platform/typescript/platform-utils/") ||
+          currentFilePath.includes("eslint-rules/")
+        ) {
           return {};
         }
 
@@ -634,7 +651,8 @@ module.exports = {
       meta: {
         type: "suggestion",
         docs: {
-          description: "Disallow reimplementing components already in @ghatana/design-system",
+          description:
+            "Disallow reimplementing components already in @ghatana/design-system",
           category: "Duplication",
           recommended: true,
         },
@@ -649,15 +667,32 @@ module.exports = {
       create(context) {
         // Core primitive components from @ghatana/design-system
         const DESIGN_SYSTEM_COMPONENTS = new Set([
-          "Button", "Input", "Card", "Modal", "Spinner", "Badge",
-          "Checkbox", "Select", "Tooltip", "Tabs", "Alert",
-          "Avatar", "Dropdown", "Popover", "Progress", "Switch",
-          "Textarea", "Label", "Separator",
+          "Button",
+          "Input",
+          "Card",
+          "Modal",
+          "Spinner",
+          "Badge",
+          "Checkbox",
+          "Select",
+          "Tooltip",
+          "Tabs",
+          "Alert",
+          "Avatar",
+          "Dropdown",
+          "Popover",
+          "Progress",
+          "Switch",
+          "Textarea",
+          "Label",
+          "Separator",
         ]);
 
         const currentFilePath = context.getFilename();
-        if (currentFilePath.includes("/platform/typescript/design-system/") ||
-            currentFilePath.includes("eslint-rules/")) {
+        if (
+          currentFilePath.includes("/platform/typescript/design-system/") ||
+          currentFilePath.includes("eslint-rules/")
+        ) {
           return {};
         }
 
@@ -713,7 +748,8 @@ module.exports = {
       meta: {
         type: "error",
         docs: {
-          description: "Disallow imports of devAuth bypass middleware outside explicitly guarded call sites",
+          description:
+            "Disallow imports of devAuth bypass middleware outside explicitly guarded call sites",
           category: "Security",
           recommended: true,
         },
@@ -727,21 +763,122 @@ module.exports = {
       },
 
       create(context) {
-        const DEV_AUTH_PATTERNS = [
-          /devAuth/,
-          /dev-auth/,
-        ];
+        const DEV_AUTH_PATTERNS = [/devAuth/, /dev-auth/];
 
         return {
           ImportDeclaration(node) {
             const importPath = String(node.source.value);
-            if (DEV_AUTH_PATTERNS.some(p => p.test(importPath))) {
+            if (DEV_AUTH_PATTERNS.some((p) => p.test(importPath))) {
               // Allow within the devAuth file itself
               const filename = context.getFilename();
-              if (DEV_AUTH_PATTERNS.some(p => p.test(filename))) {
+              if (DEV_AUTH_PATTERNS.some((p) => p.test(filename))) {
                 return;
               }
               context.report({ node, messageId: "devAuthImport" });
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-stale-file-patterns
+     *
+     * Prevents files with stale/archival naming patterns (*.old.*, *New.tsx)
+     * from being committed. These patterns indicate temporary or duplicate files.
+     */
+    "no-stale-file-patterns": {
+      meta: {
+        type: "error",
+        docs: {
+          description: "Disallow files with stale/archival naming patterns",
+          category: "Cleanup",
+          recommended: true,
+        },
+        messages: {
+          staleFile:
+            "🗑️ File '{{filename}}' has a stale/archival pattern. " +
+            "Delete or rename this file. Patterns like *.old.* and *New.tsx indicate temporary or duplicate code.",
+        },
+        schema: [],
+      },
+
+      create(context) {
+        const filename = context.getFilename();
+
+        // Skip node_modules and build directories
+        if (
+          filename.includes("node_modules") ||
+          filename.includes("dist") ||
+          filename.includes("build")
+        ) {
+          return {};
+        }
+
+        const STALE_PATTERNS = [
+          /\.old\./, // RestructurePage.old.tsx
+          /New\.tsx$/, // DeviceManagementNew.tsx
+          /New\.ts$/, // ComponentNew.ts
+          /_old\./, // index_old.ts
+          /_backup\./, // config_backup.ts
+          /\.backup\./, // file.backup.ts
+          /\.tmp\./, // file.tmp.ts
+        ];
+
+        for (const pattern of STALE_PATTERNS) {
+          if (pattern.test(filename)) {
+            context.report({
+              loc: { line: 0, column: 0 },
+              messageId: "staleFile",
+              data: { filename },
+            });
+            break;
+          }
+        }
+
+        return {};
+      },
+    },
+
+    /**
+     * Rule: no-platform-datagrid-duplicate
+     *
+     * Prevents direct imports from platform/typescript/data-grid when
+     * @ghatana/design-system should be used instead. The design-system
+     * DataGrid wraps the platform version with additional features.
+     */
+    "no-platform-datagrid-duplicate": {
+      meta: {
+        type: "error",
+        docs: {
+          description:
+            "Disallow direct imports from @ghatana/data-grid - use @ghatana/design-system instead",
+          category: "Architecture",
+          recommended: true,
+        },
+        messages: {
+          dataGridImport:
+            "📦 Direct import from '@ghatana/data-grid' detected. " +
+            "Use '@ghatana/design-system' DataGrid instead, which wraps the platform version " +
+            "with additional features (stats cards, CRUD config, multiple display modes).",
+        },
+        schema: [],
+      },
+
+      create(context) {
+        return {
+          ImportDeclaration(node) {
+            const importPath = String(node.source.value);
+
+            // Check for direct data-grid imports
+            if (
+              importPath === "@ghatana/data-grid" ||
+              importPath.startsWith("@ghatana/data-grid/")
+            ) {
+              context.report({
+                node,
+                messageId: "dataGridImport",
+              });
             }
           },
         };

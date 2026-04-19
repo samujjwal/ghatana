@@ -70,7 +70,6 @@ public final class AepReportingService {
     private static final String COL_PIPELINES = "aep_pipelines";
     private static final String COL_ANOMALIES = "aep_anomalies";
     private static final String COL_KPI       = "aep_kpi_snapshots";
-    private static final String COL_METRICS   = "aep_metrics";
 
     private final DataCloudClient client;
     private final Counter         reportCounter;

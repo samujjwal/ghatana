@@ -449,7 +449,7 @@ public final class AepBackupRecoveryService {
                                 collection, e.getMessage(), e);
                         failedCollections.add(collection);
                     })
-                    .then(v -> Promise.<Void>complete(), e -> Promise.<Void>complete()); // absorb failure so Promises.all() still completes
+                                        .then(v -> Promise.complete(), e -> Promise.complete()); // absorb failure so Promises.all() still completes
             collectionBackups.add(backupOne);
         }
 

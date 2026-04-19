@@ -279,7 +279,6 @@ public final class StreamingAnalyticsEngine implements AutoCloseable {
     private static DataCloudAnalyticsStore.KpiSnapshot toKpiSnapshot(Event event) {
         Map<String, Object> payload = event.payload();
         Object tagsObj = payload.get("tags");
-        @SuppressWarnings("unchecked")
         List<String> tags = tagsObj instanceof List<?> rawList
                 ? rawList.stream().map(Object::toString).toList()
                 : List.of();

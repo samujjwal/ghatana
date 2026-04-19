@@ -10,7 +10,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { useDevices, useAlerts } from '@/hooks/useApi';
+import { useDevices, useAlerts } from '@dcmaar/mobile-shared';
 import { formatDuration } from '@/utils/format';
 import { useCanSeeSections } from '@dcmaar/dashboard-core';
 import { useChildUsageStats } from '@/hooks/useChildUsageStats';

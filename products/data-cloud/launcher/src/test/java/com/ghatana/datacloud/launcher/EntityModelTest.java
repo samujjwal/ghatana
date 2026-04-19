@@ -76,9 +76,6 @@ public class EntityModelTest {
         @Test
         @DisplayName("entity type validation: enforced")
         void shouldValidateEntityType() {
-            String id = UUID.randomUUID().toString();
-            String tenantId = "tenant-1";
-
             // Valid types
             assertThat(isValidEntityType("COLLECTION")).isTrue();
             assertThat(isValidEntityType("DATASET")).isTrue();

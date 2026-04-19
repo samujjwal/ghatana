@@ -44,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AgentStepRunner {
 
-    private final MetricsCollector metrics;
     private final AgentEventEmitter eventEmitter;
     private final String tenantId;
     private final AgentExecutionPolicy policy;
@@ -57,7 +56,6 @@ public class AgentStepRunner {
 
     public AgentStepRunner(
             MetricsCollector metrics, AgentEventEmitter eventEmitter, String tenantId, AgentExecutionPolicy policy) {
-        this.metrics = metrics;
         this.eventEmitter = eventEmitter;
         this.tenantId = tenantId;
         this.policy = policy;

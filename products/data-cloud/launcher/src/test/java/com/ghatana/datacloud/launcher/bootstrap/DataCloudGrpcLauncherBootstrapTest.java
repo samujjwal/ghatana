@@ -36,7 +36,13 @@ class DataCloudGrpcLauncherBootstrapTest {
                 registeredHook::set);
 
         assertThat(registeredHook.get()).isNotNull();
-        registeredHook.get().run();
+    registeredHook.get().start();
+        try {
+            registeredHook.get().join();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for shutdown hook", exception);
+        }
         assertThat(stopCalls.get()).isEqualTo(1);
         verify(log).info("Stopping gRPC server...");
     }

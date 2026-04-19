@@ -39,7 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -165,7 +164,7 @@ class WebSocketResilienceTest {
                     new CollectingListener(new ArrayList<>(), greetingLatch))
                 .get(5, TimeUnit.SECONDS);
 
-            greetingLatch.await(3, TimeUnit.SECONDS);
+            assertThat(greetingLatch.await(3, TimeUnit.SECONDS)).isTrue();
 
             // Send normal close — must not throw
             ws.sendClose(WebSocket.NORMAL_CLOSURE, "bye").get(3, TimeUnit.SECONDS);
@@ -190,7 +189,7 @@ class WebSocketResilienceTest {
                         new CollectingListener(new ArrayList<>(), latch))
                     .get(5, TimeUnit.SECONDS);
 
-                latch.await(3, TimeUnit.SECONDS);
+                assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
                 ws.sendClose(WebSocket.NORMAL_CLOSURE, "cycle-" + i).get(3, TimeUnit.SECONDS);
                 Thread.sleep(50);
             }
@@ -251,7 +250,7 @@ class WebSocketResilienceTest {
                     new CollectingListener(new ArrayList<>(), latch))
                 .get(5, TimeUnit.SECONDS);
 
-            latch.await(3, TimeUnit.SECONDS);
+            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
 
             // HTTP must work concurrently with active WebSocket clients
             HttpResponse<String> health = httpClient.send(
@@ -279,7 +278,7 @@ class WebSocketResilienceTest {
             CountDownLatch latch = new CountDownLatch(1);
             AtomicInteger closeCallbacks = new AtomicInteger(0);
 
-            WebSocket ws = httpClient.newWebSocketBuilder()
+            httpClient.newWebSocketBuilder()
                 .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"),
                     new WebSocket.Listener() {
                         @Override
@@ -302,7 +301,7 @@ class WebSocketResilienceTest {
                     })
                 .get(5, TimeUnit.SECONDS);
 
-            latch.await(3, TimeUnit.SECONDS);
+            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
 
             // Stop the server — must not deadlock and must close the WebSocket
             long before = System.currentTimeMillis();
@@ -334,7 +333,7 @@ class WebSocketResilienceTest {
                     new CollectingListener(received, latch))
                 .get(5, TimeUnit.SECONDS);
 
-            latch.await(3, TimeUnit.SECONDS);
+            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
 
             for (String frame : received) {
                 JsonNode node = mapper.readTree(frame);

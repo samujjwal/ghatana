@@ -65,12 +65,30 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
     @Override
     public @NotNull Promise<List<ReviewItem>> getPending(@Nullable ReviewFilter filter) {
         return queryAll()
-            .then(this::normalizeExpiredItems)
-            .map(items -> items.stream()
-                .filter(this::isActive)
-                .filter(item -> matchesFilter(item, filter))
-                .limit(filter != null && filter.limit() > 0 ? filter.limit() : QUERY_LIMIT)
-                .toList());
+            .then(items -> {
+                int limit = filter != null && filter.limit() > 0 ? filter.limit() : QUERY_LIMIT;
+                List<ReviewItem> pending = new ArrayList<>(Math.min(items.size(), limit));
+                List<ReviewItem> expirable = new ArrayList<>();
+
+                for (ReviewItem item : items) {
+                    if (item.isExpired(Instant.now())) {
+                        expirable.add(item);
+                        continue;
+                    }
+                    if (isActive(item) && matchesFilter(item, filter)) {
+                        pending.add(item);
+                        if (pending.size() >= limit) {
+                            break;
+                        }
+                    }
+                }
+
+                if (expirable.isEmpty()) {
+                    return Promise.of(pending);
+                }
+
+                return normalizeExpiredItems(expirable).map(ignored -> pending);
+            });
     }
 
     @Override

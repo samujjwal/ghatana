@@ -216,11 +216,11 @@ class ChaosEngineeringTest extends EventloopTestBase {
         @DisplayName("Should detect stale cache entries and invalidate")
         void shouldInvalidateStaleCacheEntries() throws Exception {
             // Load data into cache
-            Record record = harness.getRecord(TENANT_ID, "record-id");
+            harness.getRecord(TENANT_ID, "record-id");
             assertThat(harness.cacheHitRatio()).isCloseTo(0.0, within(0.01));
 
             // Access again - should hit cache
-            Record cached = harness.getRecord(TENANT_ID, "record-id");
+            harness.getRecord(TENANT_ID, "record-id");
             assertThat(harness.cacheHitRatio()).isCloseTo(1.0, within(0.01));
 
             // Inject failure: cache returns stale data

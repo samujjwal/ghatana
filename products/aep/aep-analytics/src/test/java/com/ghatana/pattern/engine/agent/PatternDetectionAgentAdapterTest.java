@@ -5,10 +5,8 @@
 package com.ghatana.pattern.engine.agent;
 
 import com.ghatana.aep.AepEngine;
-import com.ghatana.pattern.engine.evaluator.ProbabilisticEvaluator;
 import com.ghatana.pattern.engine.nfa.NFA;
 import com.ghatana.pattern.engine.nfa.NFAState;
-import com.ghatana.pattern.engine.nfa.NFATransition;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

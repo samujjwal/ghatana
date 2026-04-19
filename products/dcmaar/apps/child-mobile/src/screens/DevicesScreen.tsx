@@ -10,7 +10,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { useDevices } from '@/hooks/useApi';
+import { useDevices } from '@dcmaar/mobile-shared';
 import { formatRelativeTime } from '@/utils/format';
 
 const DevicesScreen: React.FC = () => {

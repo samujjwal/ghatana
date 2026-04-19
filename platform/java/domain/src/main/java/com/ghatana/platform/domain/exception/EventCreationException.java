@@ -1,8 +1,5 @@
 package com.ghatana.platform.domain.exception;
 
-import com.ghatana.platform.core.exception.BaseException;
-import com.ghatana.platform.core.exception.ErrorCode;
-
 /**
  * Exception thrown when there is an error during event creation.
  *
@@ -15,7 +12,7 @@ import com.ghatana.platform.core.exception.ErrorCode;
  * @doc.layer core
  * @doc.pattern Exception, Event Creation Error
  */
-public class EventCreationException extends BaseException {
+public class EventCreationException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
@@ -25,7 +22,7 @@ public class EventCreationException extends BaseException {
      * @param message the detail message
      */
     public EventCreationException(String message) {
-        super(ErrorCode.EVENT_VALIDATION_ERROR, message);
+        super(message);
     }
 
     /**
@@ -35,7 +32,7 @@ public class EventCreationException extends BaseException {
      * @param cause the cause
      */
     public EventCreationException(String message, Throwable cause) {
-        super(ErrorCode.EVENT_VALIDATION_ERROR, message, cause);
+        super(message, cause);
     }
 
     /**
@@ -44,16 +41,6 @@ public class EventCreationException extends BaseException {
      * @param cause the cause
      */
     public EventCreationException(Throwable cause) {
-        super(ErrorCode.EVENT_VALIDATION_ERROR, cause);
-    }
-
-    /**
-     * Constructs a new event creation exception with a specific error code and message.
-     *
-     * @param errorCode the error code
-     * @param message the detail message
-     */
-    public EventCreationException(ErrorCode errorCode, String message) {
-        super(errorCode, message);
+        super(cause);
     }
 }

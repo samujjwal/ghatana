@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { PageLoader } from '@/components/LoadingState';
+import { ErrorBoundary, LoadingState } from '@/shared/ui/feedback';
 
 /**
  * Lazy-loaded Observe Features
@@ -22,7 +21,7 @@ import { PageLoader } from '@/components/LoadingState';
  */
 
 // Lazy load components
-const AlertsMonitor = lazy(() => 
+const AlertsMonitor = lazy(() =>
     import('./AlertsMonitor').then(module => ({ default: module.AlertsMonitor }))
 );
 

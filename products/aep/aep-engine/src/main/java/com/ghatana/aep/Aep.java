@@ -37,8 +37,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -70,7 +68,6 @@ public final class Aep {
 
     private static final Logger logger = LoggerFactory.getLogger(Aep.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Executor PIPELINE_BLOCKING_EXECUTOR = ForkJoinPool.commonPool();
 
     private Aep() {
         // Utility class - no instantiation
@@ -135,6 +132,21 @@ public final class Aep {
     public static AepEngine forTesting() {
         return new DefaultAepEngine(
             new InMemoryEventCloud(),
+            AepConfig.forTesting(),
+            new NaiveForecastingEngine(),
+            new DefaultConsentService(),
+            EventDeliveryService.noOp());
+    }
+
+    /**
+     * Create an AEP engine for testing with an explicit EventCloud implementation.
+     *
+     * @param eventCloud event cloud implementation used by the test engine
+     * @return testing AEP engine bound to the supplied event cloud
+     */
+    public static AepEngine forTesting(EventCloud eventCloud) {
+        return new DefaultAepEngine(
+            Objects.requireNonNull(eventCloud, "eventCloud required"),
             AepConfig.forTesting(),
             new NaiveForecastingEngine(),
             new DefaultConsentService(),
@@ -583,102 +595,60 @@ public final class Aep {
             checkNotClosed();
             requireTenantId(tenantId);
             Objects.requireNonNull(pipeline, "pipeline must not be null");
-            
-            // Validate DAG structure
+
             if (!pipeline.isValidDAG()) {
                 throw new IllegalArgumentException("Pipeline contains cycles and is not a valid DAG");
             }
-            
+
             logger.info("Submitting pipeline id={} name='{}' with {} steps for tenant={}",
                 pipeline.id(), pipeline.name(), pipeline.steps().size(), tenantId);
 
-            // Execute steps in DAG order (topological sort) using Promise chain
-            executePipelineDAG(tenantId, pipeline)
-                .whenComplete(() -> logger.info("Pipeline {} execution completed", pipeline.id()))
-                .whenException(ex -> logger.error("Pipeline {} execution failed: {}", pipeline.id(), ex.getMessage()));
+            executePipelineSynchronously(tenantId, pipeline);
+            logger.info("Pipeline {} execution completed", pipeline.id());
         }
 
-        private Promise<Void> executePipelineDAG(String tenantId, AepEngine.Pipeline pipeline) {
+        private void executePipelineSynchronously(String tenantId, AepEngine.Pipeline pipeline) {
             Map<String, AepEngine.PipelineStep> stepsById = pipeline.steps().stream()
                 .collect(Collectors.toMap(AepEngine.PipelineStep::id, s -> s));
-            
             Map<String, Boolean> completedSteps = new ConcurrentHashMap<>();
-            List<Exception> errors = new CopyOnWriteArrayList<>();
+            List<Exception> errors = new ArrayList<>();
 
-            // Execute steps in topological order, grouping independent steps for parallel execution
-            List<String> executionOrder = topologicalSort(pipeline);
-            
-            // Group steps by dependency level for parallel execution
-            Map<String, List<String>> stepsByLevel = new LinkedHashMap<>();
-            for (String stepId : executionOrder) {
+            for (String stepId : topologicalSort(pipeline)) {
                 AepEngine.PipelineStep step = stepsById.get(stepId);
-                if (step == null) continue;
-                
-                // Determine level based on dependencies
-                int level = 0;
-                for (String dep : step.dependsOn()) {
-                    if (stepsById.containsKey(dep)) {
-                        level = Math.max(level, getStepLevel(dep, stepsByLevel) + 1);
-                    }
+                if (step == null) {
+                    continue;
                 }
-                
-                String levelKey = "level_" + level;
-                stepsByLevel.computeIfAbsent(levelKey, k -> new ArrayList<>()).add(stepId);
+
+                try {
+                    boolean hasMissingDependency = step.dependsOn().stream()
+                        .anyMatch(dependencyId -> !stepsById.containsKey(dependencyId));
+                    if (hasMissingDependency) {
+                        logger.warn("Skipping step {} in pipeline {} because one or more dependencies are missing: {}",
+                            stepId, pipeline.id(), step.dependsOn());
+                        completedSteps.put(stepId, false);
+                        continue;
+                    }
+
+                    waitForDependencies(step.dependsOn(), completedSteps);
+                    executePipelineStep(tenantId, pipeline.id(), step);
+                    completedSteps.put(stepId, true);
+                } catch (Exception exception) {
+                    logger.error("Failed to execute step {} in pipeline {}: {}",
+                        stepId, pipeline.id(), exception.getMessage(), exception);
+                    errors.add(exception);
+                    completedSteps.put(stepId, false);
+                }
             }
-            
-            // Execute each level in sequence, with parallel execution within each level
-            Promise<Void> executionPromise = Promise.complete();
-            
-            for (List<String> levelSteps : stepsByLevel.values()) {
-                final List<String> currentLevelSteps = levelSteps;
-                executionPromise = executionPromise.then($ -> {
-                    // Execute all steps in this level in parallel using Promises.all()
-                    List<Promise<Void>> stepPromises = currentLevelSteps.stream()
-                        .map(stepId -> {
-                            AepEngine.PipelineStep step = stepsById.get(stepId);
-                            if (step == null) return Promise.complete();
-                            
-                            return waitForDependenciesAsync(step.dependsOn(), completedSteps)
-                                .then($ignored -> Promise.ofBlocking(PIPELINE_BLOCKING_EXECUTOR, () -> {
-                                    try {
-                                        executePipelineStep(tenantId, pipeline.id(), step);
-                                        completedSteps.put(stepId, true);
-                                        logger.debug("Completed step {} in pipeline {}", stepId, pipeline.id());
-                                    } catch (Exception e) {
-                                        logger.error("Failed to execute step {} in pipeline {}: {}", stepId, pipeline.id(), e.getMessage(), e);
-                                        errors.add(e);
-                                        completedSteps.put(stepId, false);
-                                    }
-                                    return (Void) null;
-                                }));
-                        })
-                        .collect(Collectors.toList());
-                    
-                    return Promises.all(stepPromises).toVoid();
-                });
-            }
-            
-            return executionPromise.then($ -> {
-                if (!errors.isEmpty()) {
-                    // Collect all errors in the exception message
-                    String allErrors = errors.stream()
-                        .map(e -> e.getMessage())
-                        .collect(Collectors.joining("; "));
-                    return Promise.ofException(new RuntimeException(
+
+            if (!errors.isEmpty()) {
+                String allErrors = errors.stream()
+                    .map(Exception::getMessage)
+                    .collect(Collectors.joining("; "));
+                throw new java.util.concurrent.CompletionException(
+                    new RuntimeException(
                         "Pipeline execution failed with " + errors.size() + " errors: " + allErrors,
                         errors.get(0)));
-                }
-                return Promise.complete();
-            });
-        }
-
-        private int getStepLevel(String stepId, Map<String, List<String>> stepsByLevel) {
-            for (Map.Entry<String, List<String>> entry : stepsByLevel.entrySet()) {
-                if (entry.getValue().contains(stepId)) {
-                    return Integer.parseInt(entry.getKey().substring(6)); // Extract level from "level_X"
-                }
             }
-            return 0;
         }
 
         private List<String> topologicalSort(AepEngine.Pipeline pipeline) {
@@ -748,34 +718,6 @@ public final class Aep {
             }
             
             throw new RuntimeException("Timeout waiting for dependencies: " + dependencies);
-        }
-
-        private Promise<Void> waitForDependenciesAsync(List<String> dependencies, Map<String, Boolean> completedSteps) {
-            if (dependencies.isEmpty()) {
-                return Promise.complete();
-            }
-            
-            // Async check for dependency completion
-            return Promise.ofBlocking(PIPELINE_BLOCKING_EXECUTOR, () -> {
-                int maxWait = 10000; // 10 seconds
-                int waited = 0;
-                while (waited < maxWait) {
-                    boolean allComplete = dependencies.stream()
-                        .allMatch(dep -> completedSteps.containsKey(dep) && completedSteps.get(dep));
-                    
-                    if (allComplete) return;
-                    
-                    try {
-                        Thread.sleep(50);
-                        waited += 50;
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException("Interrupted while waiting for dependencies", e);
-                    }
-                }
-                
-                throw new RuntimeException("Timeout waiting for dependencies: " + dependencies);
-            });
         }
 
         @Override
@@ -1075,18 +1017,22 @@ public final class Aep {
                         List<AepEngine.PatternDetector> detectors = patternDetectorsByTenant.getOrDefault(tenantId, List.of());
                         if (!detectors.isEmpty()) {
                             List<Promise<List<AepEngine.Detection>>> detectorPromises = detectors.stream()
-                                .map(detector -> detector.detect(tenantId, normalizedEvent, patterns)
-                                    .map(detectedDetections -> {
-                                        metrics.incrementPatternsMatched(tenantId, "custom-detector");
-                                        return detectedDetections;
-                                    })
-                                    .then(
-                                        Promise::of,
-                                        e -> {
+                                .map(detector -> {
+                                    try {
+                                        return detector.detect(tenantId, normalizedEvent, patterns)
+                                            .map(detectedDetections -> {
+                                                metrics.incrementPatternsMatched(tenantId, "custom-detector");
+                                                return detectedDetections;
+                                            })
+                                            .then(Promise::of, e -> {
+                                                logger.warn("Pattern detector failed for tenant={}: {}", tenantId, e.getMessage());
+                                                return Promise.of(List.<AepEngine.Detection>of());
+                                            });
+                                    } catch (Exception e) {
                                         logger.warn("Pattern detector failed for tenant={}: {}", tenantId, e.getMessage());
                                         return Promise.of(List.<AepEngine.Detection>of());
-                                        }
-                                    ))
+                                    }
+                                })
                                 .toList();
                             
                             // Wait for all detectors to complete and collect their detections
@@ -1190,8 +1136,8 @@ public final class Aep {
                 }
                 case PipelineStepTypes.LOG -> logger.info("[Pipeline {}][{}] {}",
                     pipelineId, step.type(), step.config().get("message"));
-                default -> logger.debug("Unknown pipeline step type={} - no handler registered, skipping",
-                    step.type());
+                default -> logger.warn("[Pipeline {}][{}] Skipping unknown step type",
+                    pipelineId, step.type());
             }
         }
 
@@ -1336,9 +1282,8 @@ public final class Aep {
         }
 
         private void requireTenantId(String tenantId) {
-            Objects.requireNonNull(tenantId, "tenantId must not be null");
-            if (tenantId.isBlank()) {
-                throw new IllegalArgumentException("tenantId must not be blank");
+            if (tenantId == null || tenantId.isBlank()) {
+                throw new IllegalArgumentException("tenantId must not be null or blank");
             }
         }
 

@@ -4,7 +4,6 @@
 package com.ghatana.datacloud.security;
 
 import com.ghatana.datacloud.client.DataCloudClient;
-import com.ghatana.datacloud.record.Record;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,8 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.assertj.core.api.InstanceOfAssertFactories.*;
-
 /**
  * Security penetration testing - attempts to exploit known vulnerabilities.
  *
@@ -48,7 +45,6 @@ import static org.assertj.core.api.InstanceOfAssertFactories.*;
 @DisplayName("Security Penetration Tests")
 class SecurityPenetrationTest extends EventloopTestBase {
 
-    private static final String TENANT_ID = "test-tenant";
     @Mock
     private DataCloudClient client;
 
@@ -122,9 +118,9 @@ class SecurityPenetrationTest extends EventloopTestBase {
         @DisplayName("Should prevent MongoDB operator injection")
         void shouldPreventMongoDBOperatorInjection() {
             Map<String, Object> payload = new HashMap<>();
-            payload.put("email", new HashMap<String, Object>() {{
-                put("$ne", null);  // NoSQL injection attempt
-            }});
+            Map<String, Object> emailPayload = new HashMap<>();
+            emailPayload.put("$ne", null);
+            payload.put("email", emailPayload);
 
             assertThatThrownBy(() -> runPromise(() -> harness.quereyWithMap(payload)))
                     .isInstanceOf(QueryInjectionException.class);
@@ -193,7 +189,6 @@ class SecurityPenetrationTest extends EventloopTestBase {
         @DisplayName("Should prevent accessing another tenant's data")
         void shouldEnforceTenantIsolation() {
             String tenant1Id = "tenant-1";
-            String tenant2Id = "tenant-2";
 
             // User from tenant-1 should not access tenant-2 data
             String tenant1Token = harness.generateTokenForTenant(tenant1Id);
@@ -355,12 +350,10 @@ class SecurityPenetrationTest extends EventloopTestBase {
     // ===== Helper Classes =====
 
     private static class SecurityTestHarness {
-        final DataCloudClient client;
         private int apiCallCount = 0;
         private final Map<String, Record> storedRecords = new HashMap<>();
 
         SecurityTestHarness(DataCloudClient client) {
-            this.client = client;
         }
 
         private static boolean containsSQLInjection(String query) {

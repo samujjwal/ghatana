@@ -1,152 +1,233 @@
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, memo, useCallback } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
+import {
+  ActivityFeed,
+  type StatCardConfig,
+  type ColumnConfig,
+  type FilterConfig,
+  type ToastConfig,
+} from '@ghatana/design-system';
 import { usageEventsAtom, addUsageEventAtom } from '../stores/eventsStore';
 import { websocketService, type UsageEvent } from '../services/websocket.service';
-import { useUsageOverview } from '@dcmaar/dashboard-core';
+
+/**
+ * UsageMonitor - Usage monitoring interface using StatsDashboard
+ * 
+ * Displays real-time usage events with filtering and statistics.
+ * 
+ * Features:
+ * - Real-time usage event stream via WebSocket
+ * - Statistics cards (Total Events, Blocked Events, Avg Duration)
+ * - Time range filtering (1h, 24h, 7d, 30d)
+ * - Event type filtering
+ * - Export to CSV
+ * 
+ * @example
+ * ```tsx
+ * <UsageMonitor onEventReceived={(event) => console.log('New usage:', event)} />
+ * ```
+ */
 
 interface UsageMonitorProps {
   onEventReceived?: (event: UsageEvent) => void;
 }
 
+interface UsageEventDisplay {
+  id: string;
+  timestamp: string;
+  itemName: string;
+  deviceName: string;
+  deviceType: string;
+  sessionType: string;
+  durationSeconds: number;
+  childId: string;
+  deviceId: string;
+  usageEvent: UsageEvent;
+}
+
 function UsageMonitorComponent({ onEventReceived }: UsageMonitorProps) {
+  // Guardian state management
   const usageEvents = useAtomValue(usageEventsAtom);
   const [, addUsageEvent] = useAtom(addUsageEventAtom);
-  const [filter, setFilter] = useState({
-    childId: '',
-    deviceId: '',
-    itemName: '',
-  });
+  const [showToast, setShowToast] = useState(false);
+  const [latestUsage, setLatestUsage] = useState<UsageEventDisplay | null>(null);
 
-  // Initialize shared usage overview query (for role-based access and future aggregations)
-  useUsageOverview();
+  // Transform usage events to display format
+  const transformUsageEvent = useCallback((event: UsageEvent): UsageEventDisplay => {
+    return {
+      id: `${event.usageSession.device_id}-${event.usageSession.timestamp}`,
+      timestamp: event.usageSession.timestamp,
+      itemName: event.usageSession.item_name,
+      deviceName: event.device.name,
+      deviceType: event.device.type,
+      sessionType: event.usageSession.session_type,
+      durationSeconds: event.usageSession.duration_seconds,
+      childId: event.usageSession.device_id,
+      deviceId: event.device.id,
+      usageEvent: event,
+    };
+  }, []);
 
+  // Subscribe to WebSocket events
   useEffect(() => {
-    // Subscribe to usage_data events
     const unsubscribe = websocketService.on('usage_data', (event) => {
       const usageEvent = event as unknown as UsageEvent;
       addUsageEvent(usageEvent);
+
+      const display = transformUsageEvent(usageEvent);
+      setLatestUsage(display);
+      setShowToast(true);
       onEventReceived?.(usageEvent);
+
+      // Auto-hide toast after 5 seconds
+      setTimeout(() => setShowToast(false), 5000);
     });
 
     return () => {
       unsubscribe();
     };
-  }, [addUsageEvent, onEventReceived]);
+  }, [addUsageEvent, onEventReceived, transformUsageEvent]);
 
-  // Memoize filtered events to avoid recalculation on every render
-  const filteredEvents = useMemo(() => {
-    return usageEvents.filter((event) => {
-      if (filter.childId && event.usageSession.device_id !== filter.childId) {
+
+
+  // Prepare display data
+  const displayEvents = useMemo(() => {
+    return usageEvents.map(transformUsageEvent);
+  }, [usageEvents, transformUsageEvent]);
+
+  // Calculate statistics
+  const { totalDuration, avgDuration } = useMemo(() => {
+    const total = usageEvents.reduce((sum, event) => sum + event.usageSession.duration_seconds, 0);
+    const avg = usageEvents.length > 0 ? total / usageEvents.length : 0;
+    return { totalDuration: total, avgDuration: avg };
+  }, [usageEvents]);
+
+  // Statistics cards configuration
+  const statCards: StatCardConfig<UsageEventDisplay>[] = [
+    {
+      title: 'Total Sessions',
+      calculate: (items) => items.length,
+      variant: 'blue',
+    },
+    {
+      title: 'Total Duration',
+      calculate: () => `${Math.floor(totalDuration / 60)}m`,
+      variant: 'green',
+    },
+    {
+      title: 'Avg Session',
+      calculate: () => `${Math.floor(avgDuration / 60)}m`,
+      variant: 'purple',
+    },
+  ];
+
+  // Column configuration
+  const columns: ColumnConfig<UsageEventDisplay>[] = [
+    {
+      header: 'App/Website',
+      render: (item) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900">{item.itemName}</div>
+          <div className="text-xs text-gray-500">{item.sessionType}</div>
+        </div>
+      ),
+    },
+    {
+      header: 'Device',
+      render: (item) => (
+        <div>
+          <div className="text-sm text-gray-900">{item.deviceName}</div>
+          <div className="text-xs text-gray-500">{item.deviceType}</div>
+        </div>
+      ),
+    },
+    {
+      header: 'Duration',
+      render: (item) => (
+        <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+          {Math.floor(item.durationSeconds / 60)}m {item.durationSeconds % 60}s
+        </span>
+      ),
+    },
+    {
+      header: 'Time',
+      render: (item) => (
+        <div className="text-sm text-gray-900">
+          {new Date(item.timestamp).toLocaleTimeString()}
+        </div>
+      ),
+    },
+  ];
+
+  // Filter configuration
+  const filters: FilterConfig[] = [
+    {
+      name: 'childId',
+      placeholder: 'Filter by child ID...',
+    },
+    {
+      name: 'deviceId',
+      placeholder: 'Filter by device ID...',
+    },
+    {
+      name: 'itemName',
+      placeholder: 'Filter by app/website...',
+    },
+  ];
+
+  // Toast dismiss handler
+  const hideToast = useCallback(() => {
+    setShowToast(false);
+  }, []);
+
+  // Toast configuration
+  const toastConfig: ToastConfig<UsageEventDisplay> = {
+    title: 'New Usage Session',
+    message: (item: UsageEventDisplay) => item.itemName,
+    subtitle: (item: UsageEventDisplay) => `${item.deviceName} - ${Math.floor(item.durationSeconds / 60)}m ${item.durationSeconds % 60}s`,
+    duration: 5000,
+    variant: 'info',
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  };
+
+  // Custom filter function to handle nested properties
+  const handleFilter = useCallback((items: UsageEventDisplay[], filterValues: Record<string, string>) => {
+    return items.filter((item) => {
+      if (filterValues.childId && !item.childId.toLowerCase().includes(filterValues.childId.toLowerCase())) {
         return false;
       }
-      if (filter.deviceId && event.device.id !== filter.deviceId) {
+      if (filterValues.deviceId && !item.deviceId.toLowerCase().includes(filterValues.deviceId.toLowerCase())) {
         return false;
       }
-      if (filter.itemName && !event.usageSession.item_name.toLowerCase().includes(filter.itemName.toLowerCase())) {
+      if (filterValues.itemName && !item.itemName.toLowerCase().includes(filterValues.itemName.toLowerCase())) {
         return false;
       }
       return true;
     });
-  }, [usageEvents, filter.childId, filter.deviceId, filter.itemName]);
+  }, []);
 
-  // Memoize calculations to avoid recalculation on every render
-  const { totalDuration, avgDuration } = useMemo(() => {
-    const total = filteredEvents.reduce((sum, event) => sum + event.usageSession.duration_seconds, 0);
-    const avg = filteredEvents.length > 0 ? total / filteredEvents.length : 0;
-    return { totalDuration: total, avgDuration: avg };
-  }, [filteredEvents]);
-
+  // Render ActivityFeed with Guardian-specific configuration
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Real-Time Usage Monitoring</h2>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-indigo-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-indigo-600">Total Sessions</h3>
-            <p className="text-3xl font-bold text-indigo-900">{filteredEvents.length}</p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-green-600">Total Duration</h3>
-            <p className="text-3xl font-bold text-green-900">{Math.floor(totalDuration / 60)}m</p>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-purple-600">Avg Session</h3>
-            <p className="text-3xl font-bold text-purple-900">{Math.floor(avgDuration / 60)}m</p>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Filter by child ID..."
-            value={filter.childId}
-            onChange={(e) => setFilter({ ...filter, childId: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <input
-            type="text"
-            placeholder="Filter by device ID..."
-            value={filter.deviceId}
-            onChange={(e) => setFilter({ ...filter, deviceId: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <input
-            type="text"
-            placeholder="Filter by app/website..."
-            value={filter.itemName}
-            onChange={(e) => setFilter({ ...filter, itemName: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-
-        {/* Clear Filters */}
-        {(filter.childId || filter.deviceId || filter.itemName) && (
-          <button
-            onClick={() => setFilter({ childId: '', deviceId: '', itemName: '' })}
-            className="mb-4 text-sm text-indigo-600 hover:text-indigo-800"
-          >
-            Clear all filters
-          </button>
-        )}
-
-        {/* Usage Timeline */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-          {filteredEvents.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No usage events yet. Events will appear here in real-time.</p>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredEvents.slice().reverse().map((event, index) => (
-                <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900">{event.usageSession.item_name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {event.device.name} ({event.device.type})
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Session Type: {event.usageSession.session_type}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
-                        {Math.floor(event.usageSession.duration_seconds / 60)}m {event.usageSession.duration_seconds % 60}s
-                      </span>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(event.usageSession.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <ActivityFeed
+      title="Real-Time Usage Monitoring"
+      tableTitle="Recent Activity"
+      items={displayEvents}
+      columns={columns}
+      filters={filters}
+      onFilter={handleFilter}
+      statsCards={statCards}
+      emptyMessage="No usage events yet. Events will appear here in real-time."
+      showToast={showToast}
+      latestItem={latestUsage}
+      onToastDismiss={hideToast}
+      toastConfig={toastConfig}
+      reverseOrder={true}
+      keyExtractor={(item) => item.id}
+    />
   );
 }
 

@@ -26,4 +26,5 @@ dependencies {
     implementation(libs.guava)
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.bundles.testing.containers)
+    testImplementation(libs.h2)
 }

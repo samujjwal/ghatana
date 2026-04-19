@@ -308,8 +308,6 @@ class AdvancedPerformanceTest extends EventloopTestBase {
         @Test
         @DisplayName("Should isolate load across tenants")
         void shouldIsolateTenantLoad() {
-            String[] tenants = {"tenant-a", "tenant-b", "tenant-c"};
-
             // Tenant A: High load
             LoadProfile profileA = LoadProfile.builder()
                     .tenantId("tenant-a")

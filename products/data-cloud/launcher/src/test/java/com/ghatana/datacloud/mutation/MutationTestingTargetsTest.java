@@ -324,7 +324,11 @@ class MutationTestingTargetsTest {
             boolean isNotNull = subject.checkNotNull(obj);
 
             assertThat(isNotNull).isTrue();
-            assertThat(subject.checkNotNull(null)).isFalse();
+            assertThat(subject.checkNotNull(nullableObject())).isFalse();
+        }
+
+        private Object nullableObject() {
+            return null;
         }
     }
 

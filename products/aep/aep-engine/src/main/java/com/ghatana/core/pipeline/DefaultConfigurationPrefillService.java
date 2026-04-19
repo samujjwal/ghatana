@@ -112,17 +112,19 @@ public class DefaultConfigurationPrefillService implements ConfigurationPrefillS
 
     @Override
     public double getConfidence(String stageType, String eventType, String configKey) {
-        // Rule-based confidence scores
-        if (DEFAULT_CONFIGS.containsKey(stageType) && DEFAULT_CONFIGS.get(stageType).containsKey(configKey)) {
-            return 0.7; // Base confidence for default configs
-        }
+        String normalizedEventType = eventType != null ? eventType.toLowerCase() : "";
+        String normalizedConfigKey = configKey != null ? configKey.toLowerCase() : "";
 
-        if (eventType != null && eventType.contains("transaction") && configKey.contains("amount")) {
+        if (normalizedEventType.contains("transaction") && normalizedConfigKey.contains("amount")) {
             return 0.9; // High confidence for transaction amount configs
         }
 
-        if (eventType != null && eventType.contains("sensor") && configKey.contains("threshold")) {
+        if (normalizedEventType.contains("sensor") && normalizedConfigKey.contains("threshold")) {
             return 0.8; // High confidence for sensor threshold configs
+        }
+
+        if (DEFAULT_CONFIGS.containsKey(stageType) && DEFAULT_CONFIGS.get(stageType).containsKey(configKey)) {
+            return 0.7; // Base confidence for default configs
         }
 
         return 0.5; // Low confidence for other cases

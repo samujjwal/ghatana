@@ -10,7 +10,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { usePolicies, useDevices } from '@/hooks/useApi';
+import { usePolicies, useDevices } from '@dcmaar/mobile-shared';
 
 const PoliciesScreen: React.FC = () => {
   const { data: policies, isLoading, refetch } = usePolicies();

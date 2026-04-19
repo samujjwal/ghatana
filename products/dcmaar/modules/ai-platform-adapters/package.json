@@ -4,8 +4,8 @@
   "type": "module",
   "description": "TypeScript connector integration layer for DCMAAR Agent",
   "private": true,
-  "main": "./dist-ts/index.js",
-  "types": "./dist-ts/index.d.ts",
+  "main": "./src-ts/index.ts",
+  "types": "./src-ts/index.ts",
   "scripts": {
     "build": "tsc",
     "build:napi": "napi build --release --manifest-path crates/agent-napi/Cargo.toml",

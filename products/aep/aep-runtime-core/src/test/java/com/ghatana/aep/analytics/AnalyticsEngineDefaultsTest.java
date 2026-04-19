@@ -32,21 +32,12 @@ import static org.assertj.core.api.Assertions.within;
 class AnalyticsEngineDefaultsTest {
 
     // =========================================================================
-    // Helper: minimal EventView stub
+    // Helper: minimal event observation fixture
     // =========================================================================
 
-    private static com.ghatana.datacloud.spi.EventView event(
+    private static AnalyticsEngine.EventObservation event(
             String tenantId, String type, double value) {
-        return new com.ghatana.datacloud.spi.EventView() {
-            @Override public String getTenantId()         { return tenantId; }
-            @Override public String getEventTypeName()    { return type; }
-            @Override public java.util.UUID getId()       { return java.util.UUID.randomUUID(); }
-            @Override public String getEventTypeVersion() { return "1"; }
-            @Override public Instant getCreatedAt()       { return Instant.now(); }
-            @Override public Map<String, Object> getData() {
-                return Map.of("value", value);
-            }
-        };
+        return new AnalyticsEngine.EventObservation(tenantId, type, Map.of("value", value));
     }
 
     // =========================================================================
@@ -105,7 +96,7 @@ class AnalyticsEngineDefaultsTest {
         @Test
         @DisplayName("updateBaseline feeds the window")
         void updateBaselineFeeds() {
-            List<com.ghatana.datacloud.spi.EventView> batch = new ArrayList<>();
+            List<AnalyticsEngine.EventObservation> batch = new ArrayList<>();
             for (int i = 0; i < 30; i++) {
                 batch.add(event("t1", "login", 50.0));
             }

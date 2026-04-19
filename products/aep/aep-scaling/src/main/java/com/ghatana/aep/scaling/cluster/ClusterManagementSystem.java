@@ -206,11 +206,9 @@ public class ClusterManagementSystem {
     // ==================== Inner Classes ====================
 
     private static class ClusterState {
-        private final String clusterId;
         private final List<String> nodeIds;
 
         ClusterState(String clusterId) {
-            this.clusterId = clusterId;
             this.nodeIds = new java.util.ArrayList<>();
         }
 

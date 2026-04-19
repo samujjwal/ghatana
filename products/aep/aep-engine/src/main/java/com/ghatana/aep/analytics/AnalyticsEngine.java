@@ -2,6 +2,7 @@ package com.ghatana.aep.analytics;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -95,6 +96,29 @@ public interface AnalyticsEngine {
 
         public String getReason() {
             return reason;
+        }
+    }
+
+    /**
+     * Minimal event observation used by local analytics engines.
+     */
+    record EventObservation(String tenantId, String eventType, Map<String, Object> data) {
+        public EventObservation {
+            Objects.requireNonNull(tenantId, "tenantId");
+            Objects.requireNonNull(eventType, "eventType");
+            data = data == null ? Map.of() : Map.copyOf(data);
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public String getEventType() {
+            return eventType;
+        }
+
+        public Map<String, Object> getData() {
+            return data;
         }
     }
 }

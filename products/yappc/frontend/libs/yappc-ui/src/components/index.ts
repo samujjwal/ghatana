@@ -231,8 +231,8 @@ export {
   ShortcutHelper,
   useKeyboardShortcuts,
   shortcutRegistry,
-} from '@yappc/ui/shortcuts';
-export { CommandPalette as defaultCommandPalette } from '@yappc/ui/shortcuts';
+} from '@yappc/shortcuts';
+export { CommandPalette as defaultCommandPalette } from '@yappc/shortcuts';
 export type {
   Command,
   CommandPaletteProps,
@@ -241,7 +241,7 @@ export type {
   ShortcutContext,
   UseKeyboardShortcutsOptions,
   UseKeyboardShortcutsReturn,
-} from '@yappc/ui/shortcuts';
+} from '@yappc/shortcuts';
 export {
   Breadcrumb,
   TabNavigation,

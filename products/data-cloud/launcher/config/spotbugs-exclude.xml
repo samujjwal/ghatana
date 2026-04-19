@@ -32,6 +32,11 @@
 -->
 <FindBugsFilter>
 
+  <!-- ── JaCoCo runtime internals are third-party classes that can leak into test analysis ── -->
+  <Match>
+    <Package name="~org\.jacoco\.agent\.rt\..*"/>
+  </Match>
+
   <!-- ── Mutable-reference exposure (injection pattern, not a security concern) ── -->
   <Match>
     <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>

@@ -216,14 +216,15 @@ class AepHttpServerLifecycleTest {
                     "changeType", "CONFIG_CHANGE",
                     "description", "Update rate limit"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = get("/lifecycle/changes/" + changeId);
             assertThat(resp.statusCode()).isEqualTo(200);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(
+                resp.body(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
             assertThat(body.get("changeId")).isEqualTo(changeId);
             assertThat(body.get("tenantId")).isEqualTo("tenant-1");
         }
@@ -260,7 +261,6 @@ class AepHttpServerLifecycleTest {
                     "changeType", "AGENT_DEPLOYMENT",
                     "description", "Deploy audit agent"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/approve",
@@ -270,8 +270,10 @@ class AepHttpServerLifecycleTest {
                 )));
             assertThat(resp.statusCode()).isEqualTo(200);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(
+                resp.body(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
             assertThat(body.get("status")).isEqualTo("APPROVED");
             assertThat(body.get("reviewerId")).isEqualTo("reviewer-001");
         }
@@ -290,7 +292,6 @@ class AepHttpServerLifecycleTest {
                     "changeType", "AGENT_DEPLOYMENT",
                     "description", "deploy"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/approve",
@@ -313,7 +314,6 @@ class AepHttpServerLifecycleTest {
                     "changeType", "FEATURE_FLAG",
                     "description", "enable dark mode"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             // Attempting to approve an already-APPROVED change → 409
@@ -355,7 +355,6 @@ class AepHttpServerLifecycleTest {
                     "changeType", "PERMISSION_GRANT",
                     "description", "Grant elevated read access"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/reject",
@@ -365,8 +364,10 @@ class AepHttpServerLifecycleTest {
                 )));
             assertThat(resp.statusCode()).isEqualTo(200);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(
+                resp.body(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
             assertThat(body.get("status")).isEqualTo("REJECTED");
         }
 
@@ -384,7 +385,6 @@ class AepHttpServerLifecycleTest {
                     "changeType", "PERMISSION_GRANT",
                     "description", "grant elevated read"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/reject",
@@ -414,14 +414,15 @@ class AepHttpServerLifecycleTest {
                     "changeType", "TOOL_REGISTRATION",
                     "description", "Register new search tool"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/withdraw", "{}");
             assertThat(resp.statusCode()).isEqualTo(200);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(
+                resp.body(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
             assertThat(body.get("status")).isEqualTo("WITHDRAWN");
         }
 
@@ -440,7 +441,6 @@ class AepHttpServerLifecycleTest {
                     "changeType", "FEATURE_FLAG",
                     "description", "some feature flag"
                 )));
-            @SuppressWarnings("unchecked")
             String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/withdraw", "{}");
@@ -469,8 +469,10 @@ class AepHttpServerLifecycleTest {
                 )));
             assertThat(resp.statusCode()).isEqualTo(200);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(
+                resp.body(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
             assertThat(body.get("tenantId")).isEqualTo("tenant-1");
             assertThat(body.get("campaignName")).isEqualTo("Q1 Policy Review");
             assertThat(body.get("scope")).isEqualTo("POLICIES");
@@ -530,8 +532,10 @@ class AepHttpServerLifecycleTest {
             HttpResponse<String> resp = get("/lifecycle/recertification/campaigns?tenantId=tenant-1");
             assertThat(resp.statusCode()).isEqualTo(200);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(
+                resp.body(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
             assertThat(body.get("tenantId")).isEqualTo("tenant-1");
             assertThat(body).containsKey("campaigns");
             assertThat(body).containsKey("count");
@@ -572,14 +576,15 @@ class AepHttpServerLifecycleTest {
                     "campaignName", "Tool Review",
                     "scope", "TOOL_REGISTRATIONS"
                 )));
-            @SuppressWarnings("unchecked")
             String campaignId = (String) mapper.readValue(createResp.body(), Map.class).get("campaignId");
 
             HttpResponse<String> resp = get("/lifecycle/recertification/campaigns/" + campaignId);
             assertThat(resp.statusCode()).isEqualTo(200);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(
+                resp.body(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
             assertThat(body.get("campaignId")).isEqualTo(campaignId);
             assertThat(body.get("scope")).isEqualTo("TOOL_REGISTRATIONS");
         }

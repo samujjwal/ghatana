@@ -50,7 +50,7 @@ public class SessionConfig extends AbstractModule {
         poolConfig.setMaxTotal(maxTotal);
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMinIdle(minIdle);
-        poolConfig.setMaxWaitMillis(maxWaitMillis);
+        poolConfig.setMaxWait(Duration.ofMillis(maxWaitMillis));
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);

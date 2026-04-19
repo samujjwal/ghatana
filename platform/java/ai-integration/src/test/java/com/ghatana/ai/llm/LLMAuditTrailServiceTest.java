@@ -103,14 +103,14 @@ class LLMAuditTrailServiceTest {
     void filtersByTimeRange() {
         LLMAuditTrailService auditService = new LLMAuditTrailService();
         
-        Instant now = Instant.now();
-        Instant yesterday = now.minus(java.time.Duration.ofDays(1));
+        Instant from = Instant.now().minus(java.time.Duration.ofDays(1));
         
         auditService.logCall("tenant-1", "req-1", "openai", "gpt-4", "p1", "r1", 100, 50, 500L, Map.of());
         auditService.logCall("tenant-1", "req-2", "openai", "gpt-4", "p2", "r2", 200, 100, 600L, Map.of());
+        Instant to = Instant.now();
         
         java.util.List<LLMAuditTrailService.AuditEntry> entries = 
-            auditService.getAuditEntries("tenant-1", yesterday, now);
+            auditService.getAuditEntries("tenant-1", from, to);
         
         assertThat(entries).hasSize(2);
     }

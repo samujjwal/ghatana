@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Performance Baseline Tests")
 public class PerformanceBaselineTests {
 
+    private byte[] transientAllocation;
+
     @Nested
     @DisplayName("HTTPLatencySLATests")
     class HTTPLatencySLATests {
@@ -426,7 +428,9 @@ public class PerformanceBaselineTests {
     }
 
     private void simulateWorkloadAndGC() {
-        System.gc();
+        transientAllocation = new byte[1024];
+        transientAllocation[0] = 1;
+        transientAllocation = null;
     }
 
     private long getHeapUsed() {

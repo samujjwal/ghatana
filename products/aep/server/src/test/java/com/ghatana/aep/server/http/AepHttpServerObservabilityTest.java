@@ -32,6 +32,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -139,6 +140,7 @@ class AepHttpServerObservabilityTest {
             if (server != null) {
                 server.stop();
             }
+            port = findFreePort();
 
             DataCloudClient mockDataCloud = mock(DataCloudClient.class);
             when(mockDataCloud.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
@@ -163,6 +165,41 @@ class AepHttpServerObservabilityTest {
             Map<String, Object> components = (Map<String, Object>) body.get("components");
             assertThat(components).containsEntry("data-cloud.connectivity", "ok");
             verify(mockDataCloud).queryEvents(anyString(), any(DataCloudClient.EventQuery.class));
+        }
+
+        @Test
+        @DisplayName("deep health probe reports degraded status when Data Cloud connectivity check fails")
+        void deepHealthProbeReportsConnectivityFailures() throws Exception {
+            if (server != null) {
+                server.stop();
+            }
+            port = findFreePort();
+
+            DataCloudClient mockDataCloud = mock(DataCloudClient.class);
+            when(mockDataCloud.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
+            when(mockDataCloud.eventLogStore()).thenReturn(mock(EventLogStore.class));
+            when(mockDataCloud.queryEvents(anyString(), any(DataCloudClient.EventQuery.class)))
+                .thenReturn(Promise.ofException(new IllegalStateException("probe failed")));
+
+            server = new AepHttpServer(
+                engine,
+                port,
+                mockDataCloud,
+                MetricsCollectorFactory.createNoop());
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/health/deep");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) body.get("components");
+            assertThat(body).containsEntry("status", "degraded");
+            assertThat(components.get("data-cloud.connectivity")).asString()
+                .startsWith("error:")
+                .contains("IllegalStateException");
         }
     }
 
@@ -224,6 +261,57 @@ class AepHttpServerObservabilityTest {
             long totalAfter = ((Number) afterCounts.get("totalRuns")).longValue();
             assertThat(totalAfter).isGreaterThan(totalBefore);
         }
+
+        @Test
+        @DisplayName("failed processing results increment failed run counts")
+        void failedProcessingResultsIncrementFailedRunCounts() throws Exception {
+            if (server != null) {
+                server.stop();
+            }
+            if (engine != null) {
+                engine.close();
+            }
+            port = findFreePort();
+
+            engine = spy(Aep.forTesting());
+            doReturn(Promise.of(AepEngine.ProcessingResult.failed("evt-failed", "engine failure")))
+                .when(engine).process(anyString(), any(AepEngine.Event.class));
+
+            server = new AepHttpServer(engine, port);
+            server.start();
+            waitForServerReady(port);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> before = mapper.readValue(get("/metrics/slo").body(), Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> beforeCounts = (Map<String, Object>) before.get("runCounts");
+            long totalBefore = ((Number) beforeCounts.get("totalRuns")).longValue();
+            long failedBefore = ((Number) beforeCounts.get("failedRuns")).longValue();
+
+            String event = mapper.writeValueAsString(Map.of(
+                "tenantId", "test-tenant",
+                "type", "user.action",
+                "payload", Map.of("key", "value")
+            ));
+            HttpResponse<String> eventResp = post("/api/v1/events", event);
+
+            assertThat(eventResp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> eventBody = mapper.readValue(eventResp.body(), Map.class);
+            assertThat(eventBody).containsEntry("success", false);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> after = mapper.readValue(get("/metrics/slo").body(), Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> afterCounts = (Map<String, Object>) after.get("runCounts");
+            long totalAfter = ((Number) afterCounts.get("totalRuns")).longValue();
+            long failedAfter = ((Number) afterCounts.get("failedRuns")).longValue();
+            double runFailureRate = ((Number) afterCounts.get("runFailureRate")).doubleValue();
+
+            assertThat(totalAfter).isEqualTo(totalBefore + 1);
+            assertThat(failedAfter).isEqualTo(failedBefore + 1);
+            assertThat(runFailureRate).isGreaterThan(0.0);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -272,6 +360,7 @@ class AepHttpServerObservabilityTest {
             if (prometheusRegistry != null) {
                 prometheusRegistry.close();
             }
+            port = findFreePort();
             prometheusRegistry = spy(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
             server = new AepHttpServer(
                 engine,
@@ -325,6 +414,7 @@ class AepHttpServerObservabilityTest {
         if (prometheusRegistry != null) {
             prometheusRegistry.close();
         }
+        port = findFreePort();
         startServer(true);
     }
 

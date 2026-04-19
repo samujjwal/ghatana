@@ -34,11 +34,11 @@ public class DefaultEventSchemaInferenceService implements EventSchemaInferenceS
 
     @Override
     public EventSchema inferSchema(String eventType, List<Map<String, Object>> sampleEvents) {
-        logger.info("Inferring schema for eventType={} from {} sample events", eventType, sampleEvents.size());
-
         if (sampleEvents == null || sampleEvents.isEmpty()) {
             return createEmptySchema(eventType);
         }
+
+        logger.info("Inferring schema for eventType={} from {} sample events", eventType, sampleEvents.size());
 
         Map<String, FieldStats> fieldStats = analyzeFields(sampleEvents);
         Map<String, FieldDefinition> fields = inferFieldDefinitions(fieldStats);
@@ -161,7 +161,8 @@ public class DefaultEventSchemaInferenceService implements EventSchemaInferenceS
             .max()
             .orElse(10000);
 
-        return new SchemaConstraints(maxFieldCount + 10, maxPayloadSize + 1000, false);
+        int allowedFieldCount = Math.max(5, maxFieldCount + 5);
+        return new SchemaConstraints(allowedFieldCount, maxPayloadSize + 1000, false);
     }
 
     private Map<String, Object> inferFieldConstraints(FieldStats stats) {
@@ -303,7 +304,7 @@ public class DefaultEventSchemaInferenceService implements EventSchemaInferenceS
         }
 
         boolean isAlwaysPresent() {
-            return nullCount == 0 && totalCount >= MIN_SAMPLE_SIZE;
+            return nullCount == 0 && totalCount > 0;
         }
 
         boolean hasNulls() {

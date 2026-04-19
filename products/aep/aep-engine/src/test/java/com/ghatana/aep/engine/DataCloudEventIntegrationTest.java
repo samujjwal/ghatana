@@ -8,9 +8,12 @@ package com.ghatana.aep.engine;
 
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.event.EventCloud;
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,13 +34,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Data Cloud Event Integration Tests")
 class DataCloudEventIntegrationTest extends EventloopTestBase {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private DataCloudClient dataCloud;
     private AepEngine engine;
 
     @BeforeEach
     void setUp() {
         dataCloud = DataCloud.embedded();
-        engine = Aep.forTesting();
+        engine = Aep.forTesting(new DataCloudClientEventCloud(dataCloud));
     }
 
     @AfterEach
@@ -388,5 +393,53 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
                 .toList();
             assertThat(sequences).containsExactly(0, 1, 2, 3, 4);
         }
+    }
+
+    private final class DataCloudClientEventCloud implements EventCloud {
+        private final DataCloudClient dataCloudClient;
+
+        private DataCloudClientEventCloud(DataCloudClient dataCloudClient) {
+            this.dataCloudClient = dataCloudClient;
+        }
+
+        @Override
+        public String append(String tenantId, String eventType, byte[] payload) {
+            try {
+                Map<String, Object> envelope = OBJECT_MAPPER.readValue(payload, new TypeReference<>() {});
+                @SuppressWarnings("unchecked")
+                Map<String, Object> eventPayload = (Map<String, Object>) envelope.getOrDefault("payload", Map.of());
+                @SuppressWarnings("unchecked")
+                Map<String, String> headers = (Map<String, String>) envelope.getOrDefault("headers", Map.of());
+                Instant timestamp = Instant.parse(envelope.getOrDefault("timestamp", Instant.now().toString()).toString());
+
+                io.activej.promise.Promise<DataCloudClient.Offset> appendPromise = dataCloudClient.appendEvent(
+                    tenantId,
+                    new DataCloudClient.Event(eventType, eventPayload, headers, timestamp)
+                );
+                if (appendPromise.getException() != null) {
+                    throw appendPromise.getException();
+                }
+                DataCloudClient.Offset offset = appendPromise.getResult();
+                return Long.toString(offset.value());
+            } catch (Exception exception) {
+                throw new IllegalStateException("Failed to append event to DataCloud test adapter", exception);
+            }
+        }
+
+        @Override
+        public Subscription subscribe(String tenantId, String eventType, EventHandler handler) {
+            return new Subscription() {
+                @Override
+                public void cancel() {
+                    // No-op for this persistence-focused test adapter.
+                }
+
+                @Override
+                public boolean isCancelled() {
+                    return false;
+                }
+            };
+        }
+
     }
 }

@@ -13,8 +13,6 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -28,8 +26,6 @@ import java.util.Map;
  * @doc.pattern Service
  */
 public class ComplianceController {
-
-    private static final Logger log = LoggerFactory.getLogger(ComplianceController.class);
 
     @Nullable
     private final AepComplianceService complianceService;

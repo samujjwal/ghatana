@@ -14,137 +14,167 @@
 // BATCH 2: Integration Components (New)
 // ============================================
 
-export { AppLayout } from './AppLayout';
-export { AppHeader } from './AppHeader';
-export { NavigationSidebar } from './NavigationSidebar';
-export { CommandPalette } from './CommandPalette';
-export { SearchBar } from './SearchBar';
-export { NotificationCenter } from './NotificationCenter';
-export { ErrorBoundary } from '../../components/ErrorBoundary';
-export { SettingsPanel } from './SettingsPanel';
+export { AppLayout } from "./AppLayout";
+export { AppHeader } from "./AppHeader";
+export { NavigationSidebar } from "./NavigationSidebar";
+export { CommandPalette } from "./CommandPalette";
+export { SearchBar } from "./SearchBar";
 export {
-    GlobalFilterBar,
-    personaFilterAtom,
-    departmentFilterAtom,
-    environmentFilterAtom,
-    type GlobalFilterBarProps,
-} from './GlobalFilterBar';
+  NotificationCenter,
+  ErrorBoundary,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+} from "../ui/feedback";
+export { SettingsPanel } from "./SettingsPanel";
+export {
+  GlobalFilterBar,
+  personaFilterAtom,
+  departmentFilterAtom,
+  environmentFilterAtom,
+  type GlobalFilterBarProps,
+} from "./GlobalFilterBar";
 
 // ============================================
 // BATCH 3: Landing Page Components (New)
 // ============================================
 
-export { HeroSection } from './HeroSection';
-export { StatsGrid } from './StatsGrid';
-export { FeatureGrid, type Feature } from './FeatureGrid';
-export { CallToActionSection } from './CallToActionSection';
-export { InfoBanner } from './InfoBanner';
+export { HeroSection } from "./HeroSection";
+export { StatsGrid } from "./StatsGrid";
+export { FeatureGrid, type Feature } from "./FeatureGrid";
+export { CallToActionSection } from "./CallToActionSection";
+export { InfoBanner } from "./InfoBanner";
 
 // ============================================
 // BATCH 4: Persona Landing Components (New)
 // ============================================
 
-export { PersonaHero, type PersonaHeroProps } from './PersonaHero';
-export { QuickActionCard, type QuickActionCardProps } from './QuickActionCard';
-export { QuickActionsGrid, type QuickActionsGridProps } from './QuickActionsGrid';
-export { PersonaMetricsGrid, type PersonaMetricsGridProps } from './PersonaMetricsGrid';
-export { RecentActivitiesTimeline, type RecentActivitiesTimelineProps } from './RecentActivitiesTimeline';
-export { PinnedFeaturesGrid, type PinnedFeaturesGridProps } from './PinnedFeaturesGrid';
+export { PersonaHero, type PersonaHeroProps } from "./PersonaHero";
+export { QuickActionCard, type QuickActionCardProps } from "./QuickActionCard";
+export {
+  QuickActionsGrid,
+  type QuickActionsGridProps,
+} from "./QuickActionsGrid";
+export {
+  PersonaMetricsGrid,
+  type PersonaMetricsGridProps,
+} from "./PersonaMetricsGrid";
+export {
+  RecentActivitiesTimeline,
+  type RecentActivitiesTimelineProps,
+} from "./RecentActivitiesTimeline";
+export {
+  PinnedFeaturesGrid,
+  type PinnedFeaturesGridProps,
+} from "./PinnedFeaturesGrid";
 
 // ============================================
 // BATCH 5: Loading Components (New)
 // ============================================
 
 export {
-    SkeletonLoader,
-    PersonaHeroSkeleton,
-    QuickActionsGridSkeleton,
-    ActivitiesTimelineSkeleton,
-    PersonaDashboardSkeleton,
-    type SkeletonLoaderProps,
-} from './SkeletonLoader';
+  SkeletonLoader,
+  PersonaHeroSkeleton,
+  QuickActionsGridSkeleton,
+  ActivitiesTimelineSkeleton,
+  PersonaDashboardSkeleton,
+  type SkeletonLoaderProps,
+} from "./SkeletonLoader";
 
 // ============================================
 // BATCH 6: Development Tools (New)
 // ============================================
 
-export {
-    PersonaSelector,
-    type PersonaSelectorProps,
-} from './PersonaSelector';
+export { PersonaSelector, type PersonaSelectorProps } from "./PersonaSelector";
 
 // ============================================
 // BATCH 8: Engineer Flow Components (New)
 // ============================================
 
-export { MyStoriesCard, type MyStoriesCardProps } from './MyStoriesCard';
-export { DevSecOpsPipelineStrip } from './DevSecOpsPipelineStrip';
+export { MyStoriesCard, type MyStoriesCardProps } from "./MyStoriesCard";
+export { DevSecOpsPipelineStrip } from "./DevSecOpsPipelineStrip";
 
 // ============================================
 // BATCH 7: Navigation Components (New)
 // ============================================
 
-export { TopNavigation, type TopNavigationProps } from './TopNavigation';
-export { Breadcrumb } from './Breadcrumb';
-export { Tooltip, type TooltipProps } from './Tooltip';
+export { TopNavigation, type TopNavigationProps } from "./TopNavigation";
+export { Breadcrumb } from "./Breadcrumb";
+export { Tooltip, type TooltipProps } from "./Tooltip";
 
 // ============================================
 // BATCH 1: Display Components (Existing)
 // ============================================
 
-export { AIInsightCard } from './AIInsightCard';
-export { InsightCard } from './InsightCard';
-export { AiHintBanner, type AiHintBannerProps } from './AiHintBanner';
+export { AIInsightCard } from "./AIInsightCard";
+export { InsightCard } from "./InsightCard";
+export { AiHintBanner, type AiHintBannerProps } from "./AiHintBanner";
 
 // ============================================
 // BATCH 9: Org Builder Components (New)
 // ============================================
 
-export { OrgGraphCanvas, type OrgGraphCanvasProps } from './org/OrgGraphCanvas';
-export { OrgNodeInspector, type OrgNodeInspectorProps } from './org/OrgNodeInspector';
+export { OrgGraphCanvas, type OrgGraphCanvasProps } from "./org/OrgGraphCanvas";
+export {
+  OrgNodeInspector,
+  type OrgNodeInspectorProps,
+} from "./org/OrgNodeInspector";
 
 // ============================================
 // BATCH 10: Persona Flow Components (New)
 // ============================================
 
-export { PersonaFlowStrip, PersonaFlowCard, type PersonaFlowStripProps, type PersonaFlowCardProps } from './PersonaFlowStrip';
-export { PersonaFlowSidebar, type PersonaFlowSidebarProps } from './PersonaFlowSidebar';
-export { PersonaWorkspaceCard, PersonaWorkspaceGrid, type PersonaWorkspaceCardProps, type PersonaWorkspaceGridProps } from './PersonaWorkspaceCard';
 export {
-    WorkspaceOnboardingBanner,
-    WorkspaceTipCard,
-    WorkspaceMetricHighlights,
-    type WorkspaceOnboardingBannerProps,
-    type WorkspaceTipCardProps,
-    type WorkspaceMetricHighlightsProps,
-} from './WorkspaceOnboardingBanner';
+  PersonaFlowStrip,
+  PersonaFlowCard,
+  type PersonaFlowStripProps,
+  type PersonaFlowCardProps,
+} from "./PersonaFlowStrip";
 export {
-    NavigationHint,
-    NavigationHintGroup,
-    ContextualHints,
-    type NavigationHintConfig,
-    type NavigationHintProps,
-    type NavigationHintGroupProps,
-    type ContextualHintsProps,
-} from './NavigationHint';
+  PersonaFlowSidebar,
+  type PersonaFlowSidebarProps,
+} from "./PersonaFlowSidebar";
+export {
+  PersonaWorkspaceCard,
+  PersonaWorkspaceGrid,
+  type PersonaWorkspaceCardProps,
+  type PersonaWorkspaceGridProps,
+} from "./PersonaWorkspaceCard";
+export {
+  WorkspaceOnboardingBanner,
+  WorkspaceTipCard,
+  WorkspaceMetricHighlights,
+  type WorkspaceOnboardingBannerProps,
+  type WorkspaceTipCardProps,
+  type WorkspaceMetricHighlightsProps,
+} from "./WorkspaceOnboardingBanner";
+export {
+  NavigationHint,
+  NavigationHintGroup,
+  ContextualHints,
+  type NavigationHintConfig,
+  type NavigationHintProps,
+  type NavigationHintGroupProps,
+  type ContextualHintsProps,
+} from "./NavigationHint";
 // KpiCard is now imported from @/shared/components/org
-export { KpiGrid } from './KpiGrid';
-export { TimelineChart } from './TimelineChart';
-export { ModelLineage } from './ModelLineage';
-export { StatusBadge } from './StatusBadge';
+export { KpiGrid } from "./KpiGrid";
+export { TimelineChart } from "./TimelineChart";
+export { ModelLineage } from "./ModelLineage";
+export { StatusBadge } from "./StatusBadge";
 
 // ============================================
 // BATCH 11: Entity Detail Components (New)
 // ============================================
 
 export {
-    EntityDetailPage,
-    type EntityDetailPageProps,
-    type EntityField,
-    type EntitySection,
-    type EntityAction,
-    type RelatedEntity,
-} from './EntityDetailPage';
+  EntityDetailPage,
+  type EntityDetailPageProps,
+  type EntityField,
+  type EntitySection,
+  type EntityAction,
+  type RelatedEntity,
+} from "./EntityDetailPage";
 
 // ============================================
 // Type Exports

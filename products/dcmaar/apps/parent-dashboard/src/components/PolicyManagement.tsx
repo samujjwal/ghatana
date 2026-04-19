@@ -1,7 +1,6 @@
-import { apiUrl } from '../config/api';
-import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
+import { DataGrid, type DataGridColumnConfig, type DataGridStatConfig, type DataGridFilterConfig, type CrudConfig } from '@ghatana/design-system';
 import { PolicyForm } from './PolicyForm';
-import { usePoliciesData } from '@dcmaar/dashboard-core';
 
 export interface Policy {
   id: string;
@@ -24,6 +23,25 @@ interface PolicyManagementProps {
   onPolicyDeleted?: (policyId: string) => void;
 }
 
+/**
+ * PolicyManagement - Policy management using DataGrid
+ * 
+ * Manages device policies using the generic DataGrid component configured in table mode.
+ * 
+ * Features:
+ * - Policy listing in table view
+ * - Create, update, delete policies
+ * - Policy status toggle
+ * - Device association
+ * 
+ * @example
+ * ```tsx
+ * <PolicyManagement
+ *   onPolicyCreated={(policy) => console.log('Created:', policy)}
+ *   onPolicyUpdated={(policy) => console.log('Updated:', policy)}
+ * />
+ * ```
+ */
 function PolicyManagementComponent({
   onPolicyCreated,
   onPolicyUpdated,
@@ -33,19 +51,35 @@ function PolicyManagementComponent({
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const { data: corePolicies, isLoading: coreLoading } = usePoliciesData<Policy[]>();
+
+  // Fetch policies
+  const fetchPolicies = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(apiUrl('/policies'), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPolicies(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch policies:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (corePolicies) {
-      setPolicies(corePolicies);
-    }
-    setLoading(coreLoading);
-  }, [corePolicies, coreLoading]);
+    fetchPolicies();
+  }, [fetchPolicies]);
 
-  const handleCreatePolicy = async (policyData: Omit<Policy, 'createdAt' | 'updatedAt'>) => {
+  // Handle CRUD operations
+  const handleCreate = async (policyData: Omit<Policy, 'createdAt' | 'updatedAt'>) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(apiUrl('/policies'), {
@@ -68,7 +102,7 @@ function PolicyManagementComponent({
     }
   };
 
-  const handleUpdatePolicy = async (policyData: Omit<Policy, 'createdAt' | 'updatedAt'>) => {
+  const handleUpdate = async (policyData: Omit<Policy, 'createdAt' | 'updatedAt'>) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(apiUrl(`/policies/${policyData.id}`), {
@@ -91,7 +125,7 @@ function PolicyManagementComponent({
     }
   };
 
-  const handleDeletePolicy = async (policyId: string) => {
+  const handleDelete = async (policyId: string) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(apiUrl(`/policies/${policyId}`), {
@@ -103,7 +137,6 @@ function PolicyManagementComponent({
 
       if (response.ok) {
         setPolicies(policies.filter(p => p.id !== policyId));
-        setDeleteConfirmId(null);
         onPolicyDeleted?.(policyId);
       }
     } catch (error) {
@@ -111,17 +144,8 @@ function PolicyManagementComponent({
     }
   };
 
-  // Memoize filtered policies to avoid recalculation on every render
-  const filteredPolicies = useMemo(() => {
-    return policies.filter(policy => {
-      const matchesSearch = policy.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = filterType === 'all' || policy.type === filterType;
-      return matchesSearch && matchesType;
-    });
-  }, [policies, searchTerm, filterType]);
-
-  // Memoize helper functions to avoid recreation on every render
-  const getPolicyTypeColor = useCallback((type: string) => {
+  // Helper functions
+  const getPolicyTypeColor = (type: string) => {
     switch (type) {
       case 'time-limit':
         return 'bg-blue-100 text-blue-800';
@@ -134,9 +158,9 @@ function PolicyManagementComponent({
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  }, []);
+  };
 
-  const getPolicyTypeLabel = useCallback((type: string) => {
+  const getPolicyTypeLabel = (type: string) => {
     switch (type) {
       case 'time-limit':
         return 'Time Limit';
@@ -149,8 +173,9 @@ function PolicyManagementComponent({
       default:
         return type;
     }
-  }, []);
+  };
 
+  // Show create/edit forms
   if (showCreateForm) {
     return (
       <div className="space-y-6">
@@ -164,7 +189,7 @@ function PolicyManagementComponent({
               Cancel
             </button>
           </div>
-          <PolicyForm onSubmit={handleCreatePolicy} onCancel={() => setShowCreateForm(false)} />
+          <PolicyForm onSubmit={handleCreate} onCancel={() => setShowCreateForm(false)} />
         </div>
       </div>
     );
@@ -185,7 +210,7 @@ function PolicyManagementComponent({
           </div>
           <PolicyForm
             policy={editingPolicy}
-            onSubmit={handleUpdatePolicy}
+            onSubmit={handleUpdate}
             onCancel={() => setEditingPolicy(null)}
           />
         </div>
@@ -193,150 +218,122 @@ function PolicyManagementComponent({
     );
   }
 
+  // DataGrid configuration
+  const columns: DataGridColumnConfig<Policy>[] = [
+    {
+      header: 'Policy Name',
+      render: (policy: Policy) => <span>{policy.name}</span>,
+    },
+    {
+      header: 'Type',
+      render: (policy: Policy) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPolicyTypeColor(policy.type)}`}>
+          {getPolicyTypeLabel(policy.type)}
+        </span>
+      ),
+    },
+    {
+      header: 'Devices',
+      render: (policy: Policy) => `${policy.deviceIds.length} device(s)`,
+    },
+    {
+      header: 'Restrictions',
+      render: (policy: Policy) => {
+        const parts: string[] = [];
+        if (policy.restrictions.maxUsageMinutes) {
+          parts.push(`${policy.restrictions.maxUsageMinutes}min limit`);
+        }
+        if (policy.restrictions.blockedCategories?.length) {
+          parts.push(`${policy.restrictions.blockedCategories.length} categories`);
+        }
+        if (policy.restrictions.blockedApps?.length) {
+          parts.push(`${policy.restrictions.blockedApps.length} apps`);
+        }
+        if (policy.restrictions.allowedHours) {
+          parts.push(`${policy.restrictions.allowedHours.start}-${policy.restrictions.allowedHours.end}`);
+        }
+        return parts.join(', ') || 'None';
+      },
+    },
+    {
+      header: 'Created',
+      render: (policy: Policy) => new Date(policy.createdAt).toLocaleDateString(),
+    },
+  ];
+
+  const statsCards: DataGridStatConfig<Policy>[] = [
+    {
+      title: 'Total Policies',
+      calculate: (items: Policy[]) => items.length,
+      variant: 'blue',
+    },
+    {
+      title: 'Time Limits',
+      calculate: (items: Policy[]) => items.filter(p => p.type === 'time-limit').length,
+      variant: 'green',
+    },
+    {
+      title: 'Content Filters',
+      calculate: (items: Policy[]) => items.filter(p => p.type === 'content-filter').length,
+      variant: 'red',
+    },
+    {
+      title: 'App Blocks',
+      calculate: (items: Policy[]) => items.filter(p => p.type === 'app-block').length,
+      variant: 'yellow',
+    },
+  ];
+
+  const filters: DataGridFilterConfig[] = [
+    {
+      name: 'type',
+      placeholder: 'Filter by type',
+      type: 'select',
+      label: 'Policy Type',
+      options: [
+        { label: 'All Types', value: 'all' },
+        { label: 'Time Limit', value: 'time-limit' },
+        { label: 'Content Filter', value: 'content-filter' },
+        { label: 'App Block', value: 'app-block' },
+        { label: 'Schedule', value: 'schedule' },
+      ],
+    },
+  ];
+
+  // Custom filter function
+  const handleFilter = (items: Policy[], filterValues: Record<string, string>) => {
+    const typeFilter = filterValues.type;
+    if (!typeFilter || typeFilter === 'all') return items;
+    return items.filter(policy => policy.type === typeFilter);
+  };
+
+  const crudConfig: CrudConfig<Policy> = {
+    onEdit: (policy: Policy) => setEditingPolicy(policy),
+    onDelete: (policy: Policy) => {
+      if (confirm(`Delete policy "${policy.name}"?`)) {
+        handleDelete(policy.id);
+      }
+    },
+    onCreate: () => setShowCreateForm(true),
+    createButtonText: 'Create Policy',
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Policy Management</h2>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Create Policy
-          </button>
-        </div>
-
-        {/* Search and Filter */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Search policies..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Types</option>
-            <option value="time-limit">Time Limit</option>
-            <option value="content-filter">Content Filter</option>
-            <option value="app-block">App Block</option>
-            <option value="schedule">Schedule</option>
-          </select>
-        </div>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-600">Total Policies</h3>
-            <p className="text-3xl font-bold text-blue-900">{policies.length}</p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-green-600">Time Limits</h3>
-            <p className="text-3xl font-bold text-green-900">
-              {policies.filter(p => p.type === 'time-limit').length}
-            </p>
-          </div>
-          <div className="bg-red-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-red-600">Content Filters</h3>
-            <p className="text-3xl font-bold text-red-900">
-              {policies.filter(p => p.type === 'content-filter').length}
-            </p>
-          </div>
-          <div className="bg-yellow-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-yellow-600">App Blocks</h3>
-            <p className="text-3xl font-bold text-yellow-900">
-              {policies.filter(p => p.type === 'app-block').length}
-            </p>
-          </div>
-        </div>
-
-        {/* Policy List */}
-        {loading ? (
-          <p className="text-gray-500 text-center py-8">Loading policies...</p>
-        ) : filteredPolicies.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            No policies found. Create your first policy to get started.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
-            {filteredPolicies.map((policy) => (
-              <div key={policy.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow" role="listitem">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{policy.name}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getPolicyTypeColor(policy.type)}`}>
-                    {getPolicyTypeLabel(policy.type)}
-                  </span>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  {policy.type === 'time-limit' && policy.restrictions.maxUsageMinutes && (
-                    <p className="text-sm text-gray-600">
-                      Max Usage: {policy.restrictions.maxUsageMinutes} minutes
-                    </p>
-                  )}
-                  {policy.type === 'content-filter' && policy.restrictions.blockedCategories && (
-                    <p className="text-sm text-gray-600">
-                      Blocked Categories: {policy.restrictions.blockedCategories.join(', ')}
-                    </p>
-                  )}
-                  {policy.type === 'app-block' && policy.restrictions.blockedApps && (
-                    <p className="text-sm text-gray-600">
-                      Blocked Apps: {policy.restrictions.blockedApps.join(', ')}
-                    </p>
-                  )}
-                  {policy.type === 'schedule' && policy.restrictions.allowedHours && (
-                    <p className="text-sm text-gray-600">
-                      Allowed: {policy.restrictions.allowedHours.start} - {policy.restrictions.allowedHours.end}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-600">
-                    Devices: {policy.deviceIds.length}
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setEditingPolicy(policy)}
-                    className="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                  >
-                    Edit
-                  </button>
-                  {deleteConfirmId === policy.id ? (
-                    <div className="flex-1 flex gap-1">
-                      <button
-                        onClick={() => handleDeletePolicy(policy.id)}
-                        className="flex-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="flex-1 px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteConfirmId(policy.id)}
-                      className="flex-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    <DataGrid
+      items={policies}
+      columns={columns}
+      title="Policy Management"
+      displayMode="table"
+      loading={loading}
+      loadingMessage="Loading policies..."
+      emptyMessage="No policies found. Create your first policy to get started."
+      statsCards={statsCards}
+      filters={filters}
+      onFilter={handleFilter}
+      crudConfig={crudConfig}
+    />
   );
 }
 
-// Export memoized component to prevent unnecessary re-renders
+// Export memoized component
 export const PolicyManagement = memo(PolicyManagementComponent);

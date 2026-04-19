@@ -18,7 +18,7 @@ export {
   ShortcutHelper,
   useKeyboardShortcuts,
   type Command,
-} from '@yappc/ui/shortcuts';
+} from '@yappc/shortcuts';
 export {
   Breadcrumb,
   TabNavigation,
@@ -29,10 +29,10 @@ export {
 
 /**
  * UI Components Index
- * 
+ *
  * Centralized exports for all UI components.
  * Provides a single import point for consistent component usage.
- * 
+ *
  * @doc.type module
  * @doc.purpose UI components public API
  * @doc.layer ui
@@ -54,12 +54,12 @@ export { ConfirmationDialog, AlertDialog, FormDialog } from './Dialog';
 
 // Feedback Components
 export {
-    Spinner,
-    Skeleton,
-    LoadingCard,
-    LoadingTable,
-    LoadingState,
-    Progress
+  Spinner,
+  Skeleton,
+  LoadingCard,
+  LoadingTable,
+  LoadingState,
+  Progress,
 } from './Loading';
 
 // Legacy Components (for backward compatibility)

@@ -253,13 +253,13 @@ public final class TokenUsageTrackingService {
      */
     public static class DefaultTokenCostCalculator implements TokenCostCalculator {
         private static final Map<String, Double> PROMPT_PRICES = Map.of(
-            "openai", 0.00003,  // $0.03 per 1K prompt tokens
-            "anthropic", 0.000025  // $0.025 per 1K prompt tokens
+            "openai", 0.03,  // $0.03 per 1K prompt tokens
+            "anthropic", 0.025  // $0.025 per 1K prompt tokens
         );
         
         private static final Map<String, Double> COMPLETION_PRICES = Map.of(
-            "openai", 0.00006,  // $0.06 per 1K completion tokens
-            "anthropic", 0.0001  // $0.10 per 1K completion tokens
+            "openai", 0.06,  // $0.06 per 1K completion tokens
+            "anthropic", 0.10  // $0.10 per 1K completion tokens
         );
 
         @Override

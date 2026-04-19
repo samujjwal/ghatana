@@ -46,7 +46,6 @@ public final class AiSuggestionsController {
     private static final int DEFAULT_LIMIT = 10;
     private static final double HIGH_ERROR_RATE_THRESHOLD = 0.05;
     private static final double CRITICAL_ERROR_RATE_THRESHOLD = 0.20;
-    private static final double LOW_THROUGHPUT_THRESHOLD = 5.0;
 
     @Nullable
     private final DataCloudAnalyticsStore analyticsStore;
@@ -177,12 +176,10 @@ public final class AiSuggestionsController {
             if (snapshot == null || snapshot.isEmpty()) return suggestions;
 
             Object totalObj = snapshot.get("total");
-            Object failedObj = snapshot.get("failed");
             Object rateObj = snapshot.get("failureRate");
             if (totalObj == null) return suggestions;
 
             long total = ((Number) totalObj).longValue();
-            long failed = failedObj instanceof Number ? ((Number) failedObj).longValue() : 0;
             double rate = rateObj instanceof Number ? ((Number) rateObj).doubleValue() : 0.0;
 
             if (total > 0 && rate >= HIGH_ERROR_RATE_THRESHOLD && suggestions.size() < maxCount) {

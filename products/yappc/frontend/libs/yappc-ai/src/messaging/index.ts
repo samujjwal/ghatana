@@ -21,7 +21,8 @@ export { ChatMessage as ChatMessageComponent } from './chat/index';
 export type { ChatMessageProps } from './chat/index';
 
 // Notifications
-export { useNotificationBackend } from './notifications/index';
+// NOTE: Consolidated to @yappc/ai/notifications - re-exporting from canonical location
+export { useNotificationBackend } from '../notifications/index';
 export type {
   UseNotificationBackendConfig,
   Notification,
@@ -31,10 +32,10 @@ export type {
   NotificationReadPayload,
   NotificationDismissPayload,
   NotificationState,
-} from './notifications/index';
-export { NotificationBell } from './notifications/index';
-export type { NotificationBellProps } from './notifications/index';
-export { NotificationPanel } from './notifications/index';
-export type { NotificationPanelProps } from './notifications/index';
-export { NotificationItem } from './notifications/index';
-export type { NotificationItemProps } from './notifications/index';
+} from '../notifications/index';
+export { NotificationBell } from '../notifications/index';
+export type { NotificationBellProps } from '../notifications/index';
+export { NotificationPanel } from '../notifications/index';
+export type { NotificationPanelProps } from '../notifications/index';
+export { NotificationItem } from '../notifications/index';
+export type { NotificationItemProps } from '../notifications/index';

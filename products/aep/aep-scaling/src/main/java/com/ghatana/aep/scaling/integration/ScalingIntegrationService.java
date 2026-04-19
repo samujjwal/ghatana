@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ScalingIntegrationService {
 
-    private final Eventloop eventloop;
     private final AutoScalingEngine autoScalingEngine;
     private final ClusterManagementSystem clusterManagementSystem;
     private final Map<String, AdvancedLoadBalancer> loadBalancers;
@@ -38,7 +37,6 @@ public class ScalingIntegrationService {
             Eventloop eventloop,
             AutoScalingEngine autoScalingEngine,
             ClusterManagementSystem clusterManagementSystem) {
-        this.eventloop = eventloop;
         this.autoScalingEngine = autoScalingEngine;
         this.clusterManagementSystem = clusterManagementSystem;
         this.loadBalancers = new ConcurrentHashMap<>();
@@ -69,10 +67,9 @@ public class ScalingIntegrationService {
                 if (scalingResult.getDecision() != null &&
                     scalingResult.getDecision().getAction() != null &&
                     scalingResult.getDecision().getAction().getType() != ScalingOperationModels.ScalingAction.Type.NO_ACTION) {
-
-                    for (AdvancedLoadBalancer lb : loadBalancers.values()) {
-                        // Notify load balancers of scaling change
-                        log.debug("Notifying load balancer of scaling change for cluster {}", clusterId);
+                    if (!loadBalancers.isEmpty()) {
+                        log.debug("Scaling change detected for cluster {} with {} registered load balancers",
+                            clusterId, loadBalancers.size());
                     }
                 }
 

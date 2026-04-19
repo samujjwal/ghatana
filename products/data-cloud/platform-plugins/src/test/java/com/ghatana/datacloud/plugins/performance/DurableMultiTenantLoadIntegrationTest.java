@@ -1,5 +1,4 @@
 package com.ghatana.datacloud.plugins.performance;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -33,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.lang.management.ManagementFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -633,8 +633,6 @@ class DurableMultiTenantLoadIntegrationTest {
     }
 
     private static long usedHeapBytes() {
-        Runtime runtime = Runtime.getRuntime();
-        System.gc();
-        return runtime.totalMemory() - runtime.freeMemory();
+        return ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
     }
 }

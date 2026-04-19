@@ -31,8 +31,12 @@
     "paths": {
       "@yappc/ai": ["src/types/module-shims.d.ts"],
       "@yappc/ai/*": ["src/types/module-shims.d.ts"],
-      "@ghatana/ui-builder": ["../../../../platform/typescript/ui-builder/src/index.ts"],
-      "@ghatana/ui-builder/*": ["../../../../platform/typescript/ui-builder/src/*"],
+      "@ghatana/ui-builder": [
+        "../../../../platform/typescript/ui-builder/src/index.ts"
+      ],
+      "@ghatana/ui-builder/*": [
+        "../../../../platform/typescript/ui-builder/src/*"
+      ],
       "@yappc/product-theme": ["../libs/yappc-product-theme/src/index.ts"],
       "@yappc/product-theme/*": ["../libs/yappc-product-theme/src/*"],
       "@yappc/api": ["../libs/api/src/index.ts"],
@@ -41,6 +45,10 @@
       "@yappc/auth/rbac": ["../libs/yappc-auth/dist/auth/rbac/index.js"],
       "@yappc/auth/oauth": ["../libs/yappc-auth/dist/auth/oauth/index.js"],
       "@yappc/auth/security": ["../libs/yappc-auth/dist/security/index.js"],
+      "@yappc/config-schema": ["../libs/config-schema/dist/index.js"],
+      "@yappc/config-schema/*": ["../libs/config-schema/dist/*"],
+      "@yappc/config-compiler": ["../libs/config-compiler/dist/index.js"],
+      "@yappc/config-compiler/*": ["../libs/config-compiler/dist/*"],
       "@ghatana/theme": ["src/theme/index.ts"],
       "@ghatana/theme/provider": ["src/theme/provider.ts"],
       "@ghatana/canvas": ["src/shims/ghatana-canvas.ts"],
@@ -61,12 +69,16 @@
     "../libs/yappc-ui/src/components/components/Toast/index.ts",
     "../libs/yappc-ui/src/components/utils/cn.ts"
   ],
-  "files": [
-    "src/utils/Logger.ts"
-  ],
+  "files": ["src/utils/Logger.ts"],
   "references": [
     {
       "path": "../libs/api/tsconfig.json"
+    },
+    {
+      "path": "../libs/config-schema/tsconfig.json"
+    },
+    {
+      "path": "../libs/config-compiler/tsconfig.json"
     }
   ],
   "exclude": [

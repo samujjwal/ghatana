@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Service for automatically synthesizing policies from clustered episode patterns.
@@ -38,7 +37,7 @@ public final class PolicySynthesisService {
      * @param clusteringService episode clustering service
      */
     public PolicySynthesisService(EpisodeClusteringService clusteringService) {
-        this(clusteringService, 0.7, 5);
+        this(clusteringService, 0.7, 3);
     }
 
     /**

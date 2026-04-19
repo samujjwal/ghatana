@@ -1,7 +1,5 @@
 package com.ghatana.aep.analytics;
 
-import com.ghatana.datacloud.spi.EventView;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -25,7 +23,7 @@ public final class DefaultRealTimeAnomalyDetectionEngine {
 
     private final Map<String, Deque<Double>> windows = new LinkedHashMap<>();
 
-    public List<AnalyticsEngine.AnomalyResult> detect(EventView event) {
+    public List<AnalyticsEngine.AnomalyResult> detect(AnalyticsEngine.EventObservation event) {
         if (event == null) {
             return List.of();
         }
@@ -35,7 +33,7 @@ public final class DefaultRealTimeAnomalyDetectionEngine {
             return List.of();
         }
 
-        String windowKey = event.getTenantId() + ":" + event.getEventTypeName();
+        String windowKey = event.getTenantId() + ":" + event.getEventType();
         Deque<Double> window = windows.computeIfAbsent(windowKey, key -> new ArrayDeque<>());
         double value = number.doubleValue();
 
@@ -51,7 +49,7 @@ public final class DefaultRealTimeAnomalyDetectionEngine {
                 double zScore = Math.abs(value - mean) / stdDev;
                 if (zScore >= Z_SCORE_THRESHOLD) {
                     results.add(new AnalyticsEngine.AnomalyResult(
-                        event.getEventTypeName(),
+                        event.getEventType(),
                         zScore,
                         "z-score threshold exceeded"));
                 }
@@ -66,11 +64,11 @@ public final class DefaultRealTimeAnomalyDetectionEngine {
         return results;
     }
 
-    public void updateBaseline(List<EventView> events) {
+    public void updateBaseline(List<AnalyticsEngine.EventObservation> events) {
         if (events == null) {
             return;
         }
-        for (EventView event : events) {
+        for (AnalyticsEngine.EventObservation event : events) {
             detect(event);
         }
     }

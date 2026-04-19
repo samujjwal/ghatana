@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -90,9 +91,19 @@ class EventSchemaInferenceServiceTest {
         @Test
         @DisplayName("handles fields with nulls")
         void handlesFieldsWithNulls() {
+            Map<String, Object> first = new HashMap<>();
+            first.put("id", 1);
+            first.put("name", "Alice");
+            first.put("optional", null);
+
+            Map<String, Object> second = new HashMap<>();
+            second.put("id", 2);
+            second.put("name", "Bob");
+            second.put("optional", null);
+
             List<Map<String, Object>> samples = List.of(
-                Map.of("id", 1, "name", "Alice", "optional", null),
-                Map.of("id", 2, "name", "Bob", "optional", null),
+                first,
+                second,
                 Map.of("id", 3, "name", "Charlie", "optional", "value")
             );
 

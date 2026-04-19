@@ -213,7 +213,6 @@ public class PatternController {
         ));
     }
 
-    @SuppressWarnings("unchecked")
     private PatternSpecification buildSpecification(
             String patternId,
             String tenantId,

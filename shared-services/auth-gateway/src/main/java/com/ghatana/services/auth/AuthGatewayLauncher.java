@@ -26,6 +26,7 @@ import io.activej.http.HttpResponse;
 import io.activej.http.HttpServer;
 import io.activej.http.RoutingServlet;
 import io.activej.inject.annotation.Provides;
+import io.activej.inject.module.AbstractModule;
 import io.activej.inject.module.Module;
 import io.activej.inject.module.ModuleBuilder;
 import io.activej.promise.Promise;
@@ -68,6 +69,16 @@ public class AuthGatewayLauncher extends ServiceLauncher {
     private static final String TOKEN_TYPE = "tokenType";
     private static final String JTI = "jti";
     private static final String UNAUTHORIZED = "UNAUTHORIZED";
+    private static final String DEFAULT_AUTH_JWT_SECRET = "dev-auth-jwt-secret-change-me-in-local-only!";
+
+    private static boolean isLocalProfile(String deploymentEnv) {
+        String normalizedEnv = deploymentEnv == null ? "development" : deploymentEnv.trim().toLowerCase();
+        return normalizedEnv.isBlank()
+                || "local".equals(normalizedEnv)
+                || "development".equals(normalizedEnv)
+                || "dev".equals(normalizedEnv)
+                || "test".equals(normalizedEnv);
+    }
 
     static String resolvePlatformJwtSecret(String deploymentEnv, String configuredSecret) {
         String normalizedEnv = deploymentEnv == null ? "development" : deploymentEnv.trim().toLowerCase();
@@ -123,7 +134,13 @@ public class AuthGatewayLauncher extends ServiceLauncher {
 
     @Provides
     JwtTokenProvider jwtTokenProvider(ConfigManager config) {
+        String deploymentEnv = config.getString("DEPLOYMENT_ENV").orElse("development");
         String secret = config.getString("JWT_SECRET").orElse(null);
+        if (isLocalProfile(deploymentEnv) && (secret == null || secret.isBlank())) {
+            LOGGER.warn("JWT_SECRET not set for local profile '{}'; using development-only fallback", deploymentEnv);
+            secret = DEFAULT_AUTH_JWT_SECRET;
+        }
+
         if (secret == null || secret.isBlank() || secret.length() < 32) {
             throw new IllegalStateException(
                     "JWT_SECRET environment variable must be set to a secure value " +
@@ -136,12 +153,10 @@ public class AuthGatewayLauncher extends ServiceLauncher {
 
     @Provides
     CredentialStore credentialStore(ConfigManager config) {
-        // Default to true for production safety
-        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(true);
-        
-        // Production environment check: fail if JDBC not configured in production
         String deploymentEnv = config.getString("DEPLOYMENT_ENV").orElse("local");
-        boolean isProduction = !deploymentEnv.matches("local|dev|test|development");
+        boolean localProfile = isLocalProfile(deploymentEnv);
+        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(!localProfile);
+        boolean isProduction = !localProfile;
         
         if (isProduction && !useJdbc) {
             throw new IllegalStateException(
@@ -188,8 +203,8 @@ public class AuthGatewayLauncher extends ServiceLauncher {
 
     @Provides
     TokenBlocklist tokenBlocklist(ConfigManager config, CredentialStore credentialStore) {
-        // Use JDBC blocklist if credential store is JDBC-backed
-        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(true);
+        String deploymentEnv = config.getString("DEPLOYMENT_ENV").orElse("local");
+        boolean useJdbc = config.getBoolean("USE_JDBC_CREDENTIALS").orElse(!isLocalProfile(deploymentEnv));
         
         if (useJdbc && credentialStore instanceof JdbcCredentialStore) {
             // Reuse the same DataSource from JdbcCredentialStore
@@ -624,6 +639,63 @@ public class AuthGatewayLauncher extends ServiceLauncher {
                 .install(new ServiceCommonModule(AUTH_GATEWAY))
                 .install(new ObservabilityModule())
                 .install(ServiceGraphModule.create())
+                .install(new AbstractModule() {
+                    @Provides
+                    ConfigManager configManager() {
+                        return AuthGatewayLauncher.this.configManager();
+                    }
+
+                    @Provides
+                    JwtTokenProvider jwtTokenProvider(ConfigManager config) {
+                        return AuthGatewayLauncher.this.jwtTokenProvider(config);
+                    }
+
+                    @Provides
+                    CredentialStore credentialStore(ConfigManager config) {
+                        return AuthGatewayLauncher.this.credentialStore(config);
+                    }
+
+                    @Provides
+                    TokenBlocklist tokenBlocklist(ConfigManager config, CredentialStore credentialStore) {
+                        return AuthGatewayLauncher.this.tokenBlocklist(config, credentialStore);
+                    }
+
+                    @Provides
+                    TenantExtractor tenantExtractor() {
+                        return AuthGatewayLauncher.this.tenantExtractor();
+                    }
+
+                    @Provides
+                    RateLimiter rateLimiter(ConfigManager config, MetricsCollector metrics) {
+                        return AuthGatewayLauncher.this.rateLimiter(config, metrics);
+                    }
+
+                    @Provides
+                    RoutingServlet servlet(
+                            ConfigManager config,
+                            Eventloop eventloop,
+                            JwtTokenProvider tokenProvider,
+                            TenantExtractor tenantExtractor,
+                            RateLimiter rateLimiter,
+                            MetricsCollector metrics,
+                            CredentialStore credentialStore,
+                            TokenBlocklist tokenBlocklist) {
+                        return AuthGatewayLauncher.this.servlet(
+                                config,
+                                eventloop,
+                                tokenProvider,
+                                tenantExtractor,
+                                rateLimiter,
+                                metrics,
+                                credentialStore,
+                                tokenBlocklist);
+                    }
+
+                    @Provides
+                    HttpServer httpServer(ConfigManager config, Eventloop eventloop, RoutingServlet servlet) {
+                        return AuthGatewayLauncher.this.httpServer(config, eventloop, servlet);
+                    }
+                })
                 .build();
     }
 

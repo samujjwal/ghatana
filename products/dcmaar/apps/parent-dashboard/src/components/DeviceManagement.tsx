@@ -1,10 +1,16 @@
 import { apiUrl } from '../config/api';
-import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { useAtomValue } from 'jotai';
-import { useDashboardData } from '@dcmaar/dashboard-core';
 import { devicesStatusAtom } from '../stores/eventsStore';
 import { websocketService } from '../services/websocket.service';
 import type { DeviceStatusEvent } from '../services/websocket.service';
+import {
+  DataGrid,
+  type DataGridStatConfig,
+  type ItemRendererConfig,
+  type DataGridFilterConfig,
+  type CrudConfig,
+} from '@ghatana/design-system';
 
 export interface Device {
   id: string;
@@ -20,17 +26,30 @@ interface DeviceManagementProps {
   onDeviceRegistered?: (device: Device) => void;
 }
 
+/**
+ * DeviceManagement - Device management interface using DataGrid
+ * 
+ * Displays devices in grid mode with real-time status updates.
+ * 
+ * Features:
+ * - Real-time device status via WebSocket
+ * - Statistics cards (Total, Online, Offline, Active Policies)
+ * - Filters (search, status, type)
+ * - Device registration form
+ * - Card-based grid display
+ * 
+ * @example
+ * ```tsx
+ * <DeviceManagement onDeviceRegistered={(device) => console.log('Registered:', device)} />
+ * ```
+ */
 function DeviceManagementComponent({ onDeviceRegistered }: DeviceManagementProps) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterType, setFilterType] = useState<string>('all');
 
   // Subscribe to real-time device status updates
   const deviceStatusMap = useAtomValue(devicesStatusAtom);
-  const { devices: coreDevices, isLoading: coreLoading } = useDashboardData();
 
   // Memoize device status update function
   const updateDeviceStatus = useCallback((deviceId: string, status: 'online' | 'offline', lastHeartbeat: string) => {
@@ -43,14 +62,31 @@ function DeviceManagementComponent({ onDeviceRegistered }: DeviceManagementProps
     );
   }, []);
 
-  useEffect(() => {
-    if (coreDevices) {
-      setDevices(coreDevices as Device[]);
+  // Memoize fetch function
+  const fetchDevices = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(apiUrl('/devices'), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDevices(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch devices:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(coreLoading);
-  }, [coreDevices, coreLoading]);
+  }, []);
 
   useEffect(() => {
+    fetchDevices();
+
     // Subscribe to WebSocket events
     const unsubscribeOnline = websocketService.on('device_online', (data) => {
       const deviceEvent = data as unknown as { device: { id: string; last_seen: string } };
@@ -68,7 +104,7 @@ function DeviceManagementComponent({ onDeviceRegistered }: DeviceManagementProps
       unsubscribeOnline();
       unsubscribeOffline();
     };
-  }, [updateDeviceStatus]);
+  }, [fetchDevices, updateDeviceStatus]);
 
   // Update device list when real-time status changes arrive
   useEffect(() => {
@@ -113,17 +149,7 @@ function DeviceManagementComponent({ onDeviceRegistered }: DeviceManagementProps
     }
   };
 
-  // Memoize filtered devices to avoid recalculation on every render
-  const filteredDevices = useMemo(() => {
-    return devices.filter(device => {
-      const matchesSearch = device.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || device.status === filterStatus;
-      const matchesType = filterType === 'all' || device.type === filterType;
-      return matchesSearch && matchesStatus && matchesType;
-    });
-  }, [devices, searchTerm, filterStatus, filterType]);
-
-  // Memoize helper functions
+  // Helper functions
   const getStatusColor = useCallback((status: string) => {
     return status === 'online' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   }, []);
@@ -161,6 +187,7 @@ function DeviceManagementComponent({ onDeviceRegistered }: DeviceManagementProps
     return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
   };
 
+  // Show register form if requested
   if (showRegisterForm) {
     return (
       <div className="space-y-6">
@@ -228,118 +255,127 @@ function DeviceManagementComponent({ onDeviceRegistered }: DeviceManagementProps
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Device Management</h2>
-          <button
-            onClick={() => setShowRegisterForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Register Device
-          </button>
+  // Statistics cards configuration
+  const statsCards: DataGridStatConfig<Device>[] = [
+    {
+      title: 'Total Devices',
+      calculate: (items) => items.length,
+      variant: 'blue',
+    },
+    {
+      title: 'Online',
+      calculate: (items) => items.filter(d => d.status === 'online').length,
+      variant: 'green',
+    },
+    {
+      title: 'Offline',
+      calculate: (items) => items.filter(d => d.status === 'offline').length,
+      variant: 'gray',
+    },
+    {
+      title: 'Active Policies',
+      calculate: (items) => items.reduce((sum, d) => sum + d.policies.length, 0),
+      variant: 'purple',
+    },
+  ];
+
+  // Item renderer for grid mode (device cards)
+  const itemRenderer: ItemRendererConfig<Device> = {
+    render: (device) => (
+      <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow h-full">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{getTypeIcon(device.type)}</span>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{device.name}</h3>
+              <p className="text-sm text-gray-500 capitalize">{device.type}</p>
+            </div>
+          </div>
+          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(device.status)}`}>
+            {device.status}
+          </span>
         </div>
 
-        {/* Search and Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Search devices..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Statuses</option>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-          </select>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Types</option>
-            <option value="mobile">Mobile</option>
-            <option value="tablet">Tablet</option>
-            <option value="desktop">Desktop</option>
-            <option value="laptop">Laptop</option>
-          </select>
-        </div>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-600">Total Devices</h3>
-            <p className="text-3xl font-bold text-blue-900">{devices.length}</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span className={`h-2 w-2 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+            <span>Last seen: {getTimeSinceLastHeartbeat(device.lastHeartbeat)}</span>
           </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-green-600">Online</h3>
-            <p className="text-3xl font-bold text-green-900">
-              {devices.filter(d => d.status === 'online').length}
-            </p>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-600">Offline</h3>
-            <p className="text-3xl font-bold text-gray-900">
-              {devices.filter(d => d.status === 'offline').length}
-            </p>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-purple-600">Active Policies</h3>
-            <p className="text-3xl font-bold text-purple-900">
-              {devices.reduce((sum, d) => sum + d.policies.length, 0)}
-            </p>
-          </div>
-        </div>
-
-        {/* Device List */}
-        {loading ? (
-          <p className="text-gray-500 text-center py-8">Loading devices...</p>
-        ) : filteredDevices.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            No devices found. Register your first device to get started.
+          <p className="text-sm text-gray-600">
+            Policies: {device.policies.length}
           </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list">
-            {filteredDevices.map((device) => (
-              <div key={device.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow" role="listitem">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{getTypeIcon(device.type)}</span>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{device.name}</h3>
-                      <p className="text-sm text-gray-500 capitalize">{device.type}</p>
-                    </div>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(device.status)}`}>
-                    {device.status}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className={`h-2 w-2 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                    <span>Last seen: {getTimeSinceLastHeartbeat(device.lastHeartbeat)}</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Policies: {device.policies.length}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Registered: {new Date(device.registeredAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+          <p className="text-xs text-gray-500">
+            Registered: {new Date(device.registeredAt).toLocaleDateString()}
+          </p>
+        </div>
       </div>
-    </div>
+    ),
+  };
+
+  // Filters configuration
+  const filters: DataGridFilterConfig[] = [
+    {
+      name: 'search',
+      placeholder: 'Search devices...',
+      type: 'text',
+    },
+    {
+      name: 'status',
+      placeholder: 'All Statuses',
+      type: 'select',
+      options: [
+        { label: 'All Statuses', value: '' },
+        { label: 'Online', value: 'online' },
+        { label: 'Offline', value: 'offline' },
+      ],
+    },
+    {
+      name: 'type',
+      placeholder: 'All Types',
+      type: 'select',
+      options: [
+        { label: 'All Types', value: '' },
+        { label: 'Mobile', value: 'mobile' },
+        { label: 'Tablet', value: 'tablet' },
+        { label: 'Desktop', value: 'desktop' },
+        { label: 'Laptop', value: 'laptop' },
+      ],
+    },
+  ];
+
+  // Custom filter function
+  const handleFilter = (items: Device[], filterValues: Record<string, string>) => {
+    return items.filter(device => {
+      const searchTerm = filterValues.search?.toLowerCase() || '';
+      const matchesSearch = device.name.toLowerCase().includes(searchTerm);
+      const matchesStatus = !filterValues.status || device.status === filterValues.status;
+      const matchesType = !filterValues.type || device.type === filterValues.type;
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  };
+
+  // CRUD configuration
+  const crudConfig: CrudConfig<Device> = {
+    onCreate: () => setShowRegisterForm(true),
+    createButtonText: 'Register Device',
+  };
+
+  return (
+    <DataGrid<Device>
+      items={devices}
+      displayMode="grid"
+      title="Device Management"
+      statsCards={statsCards}
+      itemRenderer={itemRenderer}
+      filters={filters}
+      onFilter={handleFilter}
+      crudConfig={crudConfig}
+      loading={loading}
+      loadingMessage="Loading devices..."
+      emptyMessage="No devices found. Register your first device to get started."
+      keyExtractor={(device) => device.id}
+      gridCols={{ base: 1, md: 2, lg: 3 }}
+    />
   );
 }
 

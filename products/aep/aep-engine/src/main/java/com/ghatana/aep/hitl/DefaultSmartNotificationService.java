@@ -85,15 +85,12 @@ public class DefaultSmartNotificationService implements SmartNotificationService
 
     @Override
     public void recordResponseTime(String itemId, long responseTimeMs) {
-        // Extract tenant from itemId (format: tenantId-itemId)
         String tenantId = extractTenantId(itemId);
         if (tenantId != null) {
-            TenantNotificationStats stats = statsByTenant.get(tenantId);
-            if (stats != null) {
-                stats.recordResponseTime(responseTimeMs);
-                stats.incrementResponded();
-                logger.debug("Recorded response time: tenant={}, time={}ms", tenantId, responseTimeMs);
-            }
+            TenantNotificationStats stats = tenantStats(tenantId);
+            stats.recordResponseTime(responseTimeMs);
+            stats.incrementResponded();
+            logger.debug("Recorded response time: tenant={}, time={}ms", tenantId, responseTimeMs);
         }
     }
 
@@ -101,11 +98,9 @@ public class DefaultSmartNotificationService implements SmartNotificationService
     public void recordDismissal(String itemId, String reason) {
         String tenantId = extractTenantId(itemId);
         if (tenantId != null) {
-            TenantNotificationStats stats = statsByTenant.get(tenantId);
-            if (stats != null) {
-                stats.incrementDismissed();
-                logger.debug("Recorded dismissal: tenant={}, reason={}", tenantId, reason);
-            }
+            TenantNotificationStats stats = tenantStats(tenantId);
+            stats.incrementDismissed();
+            logger.debug("Recorded dismissal: tenant={}, reason={}", tenantId, reason);
         }
     }
 
@@ -151,12 +146,20 @@ public class DefaultSmartNotificationService implements SmartNotificationService
         return channel;
     }
 
+    private TenantNotificationStats tenantStats(String tenantId) {
+        return statsByTenant.computeIfAbsent(tenantId, ignored -> new TenantNotificationStats());
+    }
+
     private String extractTenantId(String itemId) {
-        if (itemId == null) return null;
-        int dashIndex = itemId.indexOf('-');
-        if (dashIndex > 0) {
-            return itemId.substring(0, dashIndex);
+        if (itemId == null) {
+            return null;
         }
+
+        int markerIndex = itemId.indexOf("-item-");
+        if (markerIndex > 0) {
+            return itemId.substring(0, markerIndex);
+        }
+
         return null;
     }
 
@@ -215,8 +218,11 @@ public class DefaultSmartNotificationService implements SmartNotificationService
         double notificationRate() {
             long sent = totalSent.get();
             long dismissed = totalDismissed.get();
-            if (sent == 0) return 0.0;
-            return (double) (sent - dismissed) / sent;
+            long totalOutcomes = sent + dismissed;
+            if (totalOutcomes == 0) {
+                return 0.0;
+            }
+            return (double) sent / totalOutcomes;
         }
     }
 }

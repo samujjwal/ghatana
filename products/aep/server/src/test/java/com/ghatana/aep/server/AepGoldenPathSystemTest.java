@@ -152,7 +152,10 @@ class AepGoldenPathSystemTest {
         HttpResponse<String> listResp = get("/api/v1/runs?tenantId=tenant-acme");
         assertThat(listResp.statusCode()).isEqualTo(200);
 
-        Map<String, Object> listBody = mapper.readValue(listResp.body(), Map.class);
+        Map<String, Object> listBody = mapper.readValue(
+            listResp.body(),
+            new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+        );
         List<Map<String, Object>> runs = mapper.convertValue(
             listBody.get("runs"),
             new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {}

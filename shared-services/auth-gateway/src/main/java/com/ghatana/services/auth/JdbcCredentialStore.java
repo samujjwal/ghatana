@@ -100,23 +100,11 @@ public class JdbcCredentialStore implements CredentialStore {
             @NotNull List<String> roles,
             @NotNull String tenantId) {
         return Promise.ofBlocking(DB_EXECUTOR, () -> {
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(
-                         "INSERT INTO auth_users (username, password_hash, email, roles, tenant_id, enabled) " +
-                         "VALUES (?, ?, ?, ?, ?, TRUE) " +
-                         "ON CONFLICT (username) DO NOTHING RETURNING *")) {
-                ps.setString(1, username);
-                ps.setString(2, passwordHash);
-                ps.setString(3, email);
-                Array rolesArr = conn.createArrayOf("TEXT", roles.toArray());
-                ps.setArray(4, rolesArr);
-                ps.setString(5, tenantId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        throw new IllegalStateException("createUser: username already exists: " + username);
-                    }
-                    return mapRow(rs);
+            try (Connection conn = dataSource.getConnection()) {
+                if (isH2(conn)) {
+                    return createUserH2(conn, username, passwordHash, email, roles, tenantId);
                 }
+                return createUserPostgres(conn, username, passwordHash, email, roles, tenantId);
             } catch (SQLException e) {
                 log.error("createUser failed for '{}': {}", username, e.getMessage());
                 throw new RuntimeException("Credential store insert failed", e);
@@ -131,25 +119,108 @@ public class JdbcCredentialStore implements CredentialStore {
      * Safe to call at startup; uses {@code CREATE TABLE IF NOT EXISTS}.
      */
     public void ensureSchema() {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "CREATE TABLE IF NOT EXISTS auth_users (" +
-                     "  username      TEXT        PRIMARY KEY," +
-                     "  password_hash TEXT        NOT NULL," +
-                     "  email         TEXT        NOT NULL," +
-                     "  roles         TEXT[]      NOT NULL DEFAULT '{}'," +
-                     "  tenant_id     TEXT        NOT NULL," +
-                     "  enabled       BOOLEAN     NOT NULL DEFAULT TRUE," +
-                     "  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()," +
-                     "  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()" +
-                     "); " +
-                     "CREATE INDEX IF NOT EXISTS auth_users_tenant ON auth_users(tenant_id);")) {
-            ps.execute();
+        try (Connection conn = dataSource.getConnection()) {
+            String createTableSql = isH2(conn)
+                    ? "CREATE TABLE IF NOT EXISTS auth_users (" +
+                      "  username      VARCHAR     PRIMARY KEY," +
+                      "  password_hash VARCHAR     NOT NULL," +
+                      "  email         VARCHAR     NOT NULL," +
+                      "  roles         VARCHAR ARRAY NOT NULL," +
+                      "  tenant_id     VARCHAR     NOT NULL," +
+                      "  enabled       BOOLEAN     NOT NULL DEFAULT TRUE," +
+                      "  created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP()," +
+                      "  updated_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP()" +
+                      ")"
+                    : "CREATE TABLE IF NOT EXISTS auth_users (" +
+                      "  username      TEXT        PRIMARY KEY," +
+                      "  password_hash TEXT        NOT NULL," +
+                      "  email         TEXT        NOT NULL," +
+                      "  roles         TEXT[]      NOT NULL DEFAULT '{}'," +
+                      "  tenant_id     TEXT        NOT NULL," +
+                      "  enabled       BOOLEAN     NOT NULL DEFAULT TRUE," +
+                      "  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()," +
+                      "  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()" +
+                      ")";
+
+            try (PreparedStatement createTable = conn.prepareStatement(createTableSql)) {
+                createTable.execute();
+            }
+            try (PreparedStatement createIndex = conn.prepareStatement(
+                    "CREATE INDEX IF NOT EXISTS auth_users_tenant ON auth_users(tenant_id)")) {
+                createIndex.execute();
+            }
             log.info("auth_users schema verified/created");
         } catch (SQLException e) {
             log.error("ensureSchema failed: {}", e.getMessage());
             throw new RuntimeException("Schema migration failed", e);
         }
+    }
+
+    private StoredUser createUserPostgres(
+            Connection conn,
+            String username,
+            String passwordHash,
+            String email,
+            List<String> roles,
+            String tenantId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO auth_users (username, password_hash, email, roles, tenant_id, enabled) " +
+                "VALUES (?, ?, ?, ?, ?, TRUE) " +
+                "ON CONFLICT (username) DO NOTHING RETURNING *")) {
+            ps.setString(1, username);
+            ps.setString(2, passwordHash);
+            ps.setString(3, email);
+            ps.setArray(4, conn.createArrayOf("TEXT", roles.toArray()));
+            ps.setString(5, tenantId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new IllegalStateException("createUser: username already exists: " + username);
+                }
+                return mapRow(rs);
+            }
+        }
+    }
+
+    private StoredUser createUserH2(
+            Connection conn,
+            String username,
+            String passwordHash,
+            String email,
+            List<String> roles,
+            String tenantId) throws SQLException {
+        try (PreparedStatement insert = conn.prepareStatement(
+                "INSERT INTO auth_users (username, password_hash, email, roles, tenant_id, enabled) VALUES (?, ?, ?, ?, ?, TRUE)")) {
+            insert.setString(1, username);
+            insert.setString(2, passwordHash);
+            insert.setString(3, email);
+            insert.setArray(4, conn.createArrayOf("VARCHAR", roles.toArray()));
+            insert.setString(5, tenantId);
+            insert.executeUpdate();
+        } catch (SQLException e) {
+            if (isDuplicateKey(e)) {
+                throw new IllegalStateException("createUser: username already exists: " + username, e);
+            }
+            throw e;
+        }
+
+        try (PreparedStatement select = conn.prepareStatement(
+                "SELECT username, password_hash, email, roles, tenant_id, enabled FROM auth_users WHERE username = ?")) {
+            select.setString(1, username);
+            try (ResultSet rs = select.executeQuery()) {
+                if (!rs.next()) {
+                    throw new IllegalStateException("createUser: inserted user could not be reloaded: " + username);
+                }
+                return mapRow(rs);
+            }
+        }
+    }
+
+    private static boolean isH2(Connection conn) throws SQLException {
+        return conn.getMetaData().getDatabaseProductName().toLowerCase().contains("h2");
+    }
+
+    private static boolean isDuplicateKey(SQLException e) {
+        return "23505".equals(e.getSQLState());
     }
 
     // ── Mapping ────────────────────────────────────────────────────────────────

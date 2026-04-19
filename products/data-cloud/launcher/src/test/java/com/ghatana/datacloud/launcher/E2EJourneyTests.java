@@ -313,7 +313,7 @@ public class E2EJourneyTests {
             String workspaceId = workspace.get("id").toString();
 
             String query1 = "SELECT * FROM sales";
-            Map<String, Object> saved1 = saveQuery(workspaceId, query1, "Sales Report");
+            saveQuery(workspaceId, query1, "Sales Report");
 
             Map<String, Object> saved = getSavedQueries(workspaceId);
             List<?> queries = (List<?>) saved.get("queries");

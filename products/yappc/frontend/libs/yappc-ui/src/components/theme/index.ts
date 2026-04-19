@@ -1,4 +1,5 @@
-export * from './tokens';
+// Tokens are exported from components/tokens/index.ts (re-exports from @ghatana/tokens)
+export * from '../tokens';
 export { theme, lightTheme, darkTheme } from './theme/theme';
 export type { PaletteMode, ThemeOptions, PaletteOptions } from './theme/types';
 export {

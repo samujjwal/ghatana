@@ -6,10 +6,11 @@ package com.ghatana.aep.metrics;
 
 import com.ghatana.platform.observability.Metrics;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -104,9 +105,13 @@ public class AISuggestionMetricsCollector {
     }
 
     private Counter counter(String name, String... tags) {
+        MeterRegistry registry = metrics.getRegistry();
+        if (registry == null) {
+            return Counter.builder(name).tags(tags).register(new SimpleMeterRegistry());
+        }
         return Counter.builder(name)
             .tags(tags)
-            .register(metrics.getRegistry());
+            .register(registry);
     }
 
     /**

@@ -1,9 +1,5 @@
 package com.ghatana.platform.domain.exception;
 
-import com.ghatana.platform.core.exception.ValidationException;
-
-import java.util.HashMap;
-
 /**
  * Exception thrown when data fails schema validation.
  *
@@ -33,7 +29,7 @@ import java.util.HashMap;
  *   </tr>
  *   <tr>
  *     <td>Generic validation error</td>
- *     <td>ValidationException (parent)</td>
+ *     <td>SchemaValidationException</td>
  *   </tr>
  * </table>
  *
@@ -105,14 +101,13 @@ import java.util.HashMap;
  *   <li>Include cause when wrapping lower-level exceptions</li>
  * </ul>
  *
- * @see ValidationException Parent exception for all validation errors
  * @see SchemaEvolutionException When schema definition itself is invalid
  * @doc.type exception
  * @doc.layer core
  * @doc.purpose exception for data that fails schema validation
  * @doc.pattern validation-exception schema-validation error-handling
  */
-public class SchemaValidationException extends ValidationException {
+public class SchemaValidationException extends IllegalArgumentException {
 
     private static final long serialVersionUID = 1L;
 
@@ -156,8 +151,7 @@ public class SchemaValidationException extends ValidationException {
      * @param cause the underlying validation/parsing exception (never null)
      */
     public SchemaValidationException(String message, Throwable cause) {
-        super(message, new HashMap<>());
-        initCause(cause);
+        super(message, cause);
     }
 
     /**

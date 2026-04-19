@@ -24,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 
@@ -206,7 +207,7 @@ class EntityAnomalyHandlerP361Test {
         void returnsAnomalyEntries() {
             EventEntry entry = EventEntry.builder()
                     .eventType(EntityAnomalyHandler.ANOMALY_EVENT_TYPE)
-                    .payload("{\"anomalyId\":\"xyz\",\"title\":\"test\"}".getBytes())
+                    .payload("{\"anomalyId\":\"xyz\",\"title\":\"test\"}".getBytes(StandardCharsets.UTF_8))
                     .headers(java.util.Map.of("collection", "orders", "tenantId", "tenant42"))
                     .build();
 

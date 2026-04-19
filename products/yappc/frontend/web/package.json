@@ -49,6 +49,8 @@
     "@yappc/api": "workspace:*",
     "@yappc/auth": "workspace:*",
     "@yappc/chat": "workspace:*",
+    "@yappc/config-schema": "workspace:*",
+    "@yappc/config-compiler": "workspace:*",
     "@ghatana/code-editor": "workspace:*",
     "@yappc/collab": "workspace:*",
     "@yappc/core": "workspace:*",

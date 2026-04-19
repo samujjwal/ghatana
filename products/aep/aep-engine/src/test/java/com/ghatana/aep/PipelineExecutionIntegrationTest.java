@@ -81,8 +81,9 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
             // THEN
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId));
             assertThat(patterns).hasSize(2);
-            assertThat(patterns.get(0).name()).isEqualTo("high-value-transaction");
-            assertThat(patterns.get(1).name()).isEqualTo("suspicious-location");
+            assertThat(patterns)
+                .extracting(AepEngine.Pattern::name)
+                .containsExactlyInAnyOrder("high-value-transaction", "suspicious-location");
         }
 
         @Test

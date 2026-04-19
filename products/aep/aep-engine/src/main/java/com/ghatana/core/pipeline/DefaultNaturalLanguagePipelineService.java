@@ -33,7 +33,7 @@ public class DefaultNaturalLanguagePipelineService implements NaturalLanguagePip
     private static final Pattern TRANSACTION_PATTERN = Pattern.compile("(?i)(transaction|payment|transfer|order)");
     private static final Pattern LOGIN_PATTERN = Pattern.compile("(?i)(login|auth|authentication|security)");
     private static final Pattern SENSOR_PATTERN = Pattern.compile("(?i)(sensor|iot|telemetry|monitoring)");
-    private static final Pattern AGGREGATION_PATTERN = Pattern.compile("(?i)(aggregate|sum|count|average|window)");
+    private static final Pattern AGGREGATION_PATTERN = Pattern.compile("(?i)(aggregate|aggregation|sum|count|average|window)");
     private static final Pattern FILTER_PATTERN = Pattern.compile("(?i)(filter|exclude|remove|drop)");
     private static final Pattern ENRICH_PATTERN = Pattern.compile("(?i)(enrich|add|augment|join)");
 
@@ -41,10 +41,12 @@ public class DefaultNaturalLanguagePipelineService implements NaturalLanguagePip
     public PipelineSpec generatePipeline(String description, Map<String, Object> context) {
         logger.info("Generating pipeline from description: {}", description);
 
-        String eventType = extractEventType(description, context);
-        List<StageSpec> stages = generateStages(description, eventType);
-        String name = generatePipelineName(description);
-        String pipelineDescription = generatePipelineDescription(description);
+        String normalizedDescription = description != null ? description : "";
+
+        String eventType = extractEventType(normalizedDescription, context);
+        List<StageSpec> stages = generateStages(normalizedDescription, eventType);
+        String name = generatePipelineName(normalizedDescription);
+        String pipelineDescription = generatePipelineDescription(normalizedDescription);
 
         return new PipelineSpec(name, pipelineDescription, eventType, stages);
     }
@@ -166,11 +168,10 @@ public class DefaultNaturalLanguagePipelineService implements NaturalLanguagePip
 
     private String generatePipelineName(String description) {
         String normalized = description.toLowerCase().replaceAll("[^a-z0-9\\s]", "").trim();
-        String[] words = normalized.split("\\s+");
-        
-        if (words.length == 0) {
-            return "generated-pipeline";
+        if (normalized.isEmpty()) {
+            return "Generated Pipeline";
         }
+        String[] words = normalized.split("\\s+");
 
         StringBuilder name = new StringBuilder();
         for (String word : words) {

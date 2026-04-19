@@ -31,6 +31,7 @@ import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.sun.net.httpserver.HttpServer;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Map;
 import java.util.UUID;
@@ -395,7 +396,7 @@ class DataCloudHttpLauncherBootstrapTest {
             HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
             String jwks = new JWKSet(rsaKey.toPublicJWK()).toString();
             server.createContext("/jwks", exchange -> {
-                byte[] body = jwks.getBytes();
+                byte[] body = jwks.getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(200, body.length);
                 try (OutputStream outputStream = exchange.getResponseBody()) {

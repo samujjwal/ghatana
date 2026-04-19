@@ -102,19 +102,36 @@ public final class PredictiveGovernanceService {
      */
     private void analyzeErrorRate(TenantMetrics metrics, List<IncidentPrediction> predictions) {
         List<MetricObservation> errorRateHistory = metrics.getHistory("error_rate");
-        if (errorRateHistory.size() < 5) {
-            return; // Need minimum history
+        if (errorRateHistory.isEmpty()) {
+            return;
         }
 
-        // Calculate trend
-        double recentAvg = errorRateHistory.stream()
-            .limit(5)
+        if (errorRateHistory.size() < 5) {
+            double currentValue = errorRateHistory.get(errorRateHistory.size() - 1).value();
+            if (currentValue >= 0.1 && predictionThreshold <= 0.8) {
+                predictions.add(new IncidentPrediction(
+                    UUID.randomUUID().toString(),
+                    "high_error_rate",
+                    "Incident",
+                    Instant.now().plus(predictionHorizonMinutes, ChronoUnit.MINUTES),
+                    0.8,
+                    Map.of(
+                        "currentErrorRate", currentValue,
+                        "threshold", 0.1,
+                        "observationCount", errorRateHistory.size()
+                    ),
+                    "Elevated error rate observed: " + String.format("%.2f%%", currentValue * 100)
+                ));
+            }
+            return;
+        }
+
+        double recentAvg = tail(errorRateHistory, 5).stream()
             .mapToDouble(MetricObservation::value)
             .average()
             .orElse(0.0);
 
-        double historicalAvg = errorRateHistory.stream()
-            .skip(errorRateHistory.size() / 2)
+        double historicalAvg = head(errorRateHistory, errorRateHistory.size() / 2).stream()
             .mapToDouble(MetricObservation::value)
             .average()
             .orElse(0.0);
@@ -151,8 +168,7 @@ public final class PredictiveGovernanceService {
             return;
         }
 
-        double recentAvg = latencyHistory.stream()
-            .limit(5)
+        double recentAvg = tail(latencyHistory, 5).stream()
             .mapToDouble(MetricObservation::value)
             .average()
             .orElse(0.0);
@@ -187,14 +203,12 @@ public final class PredictiveGovernanceService {
             return;
         }
 
-        double recentAvg = throughputHistory.stream()
-            .limit(5)
+        double recentAvg = tail(throughputHistory, 5).stream()
             .mapToDouble(MetricObservation::value)
             .average()
             .orElse(0.0);
 
-        double historicalAvg = throughputHistory.stream()
-            .skip(throughputHistory.size() / 2)
+        double historicalAvg = head(throughputHistory, throughputHistory.size() / 2).stream()
             .mapToDouble(MetricObservation::value)
             .average()
             .orElse(0.0);
@@ -232,13 +246,13 @@ public final class PredictiveGovernanceService {
         }
 
         double recentCpu = cpuHistory.stream()
-            .limit(5)
+            .skip(Math.max(0, cpuHistory.size() - 5L))
             .mapToDouble(MetricObservation::value)
             .average()
             .orElse(0.0);
 
         double recentMemory = memoryHistory.stream()
-            .limit(5)
+            .skip(Math.max(0, memoryHistory.size() - 5L))
             .mapToDouble(MetricObservation::value)
             .average()
             .orElse(0.0);
@@ -313,6 +327,14 @@ public final class PredictiveGovernanceService {
     public void clearAll() {
         tenantMetrics.clear();
         predictions.clear();
+    }
+
+    private static List<MetricObservation> tail(List<MetricObservation> history, int count) {
+        return history.subList(Math.max(0, history.size() - count), history.size());
+    }
+
+    private static List<MetricObservation> head(List<MetricObservation> history, int count) {
+        return history.subList(0, Math.max(1, Math.min(count, history.size())));
     }
 
     /**

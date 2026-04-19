@@ -1,5 +1,5 @@
 import React, { useState, ReactNode } from 'react';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/shared/ui/feedback';
 import { AppHeader } from './AppHeader';
 import { NavigationSidebar } from './NavigationSidebar';
 

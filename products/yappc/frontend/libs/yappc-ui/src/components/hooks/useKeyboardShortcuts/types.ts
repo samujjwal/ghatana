@@ -3,4 +3,4 @@ export type {
   ShortcutContext,
   UseKeyboardShortcutsOptions,
   UseKeyboardShortcutsReturn,
-} from '@yappc/ui/shortcuts';
+} from '@yappc/shortcuts';

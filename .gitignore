@@ -50,6 +50,7 @@ test-results/
 
 # TypeScript
 *.tsbuildinfo
+dist-ts/
 # Prevent compiled output in source directories (platform and products)
 platform/typescript/**/src/**/*.js
 platform/typescript/**/src/**/*.d.ts
@@ -60,6 +61,8 @@ products/*/libs/**/src/**/*.js
 products/*/libs/**/src/**/*.js.map
 products/*/contracts/**/*.js
 products/*/contracts/**/*.js.map
+# Prevent dist-ts in modules
+products/*/modules/**/dist-ts/
 
 # Turbo
 .turbo/
@@ -70,3 +73,6 @@ products/*/contracts/**/*.js.map
 # Temporary files
 *.tmp
 *.bak
+
+# Stale/archival files
+*.old.*

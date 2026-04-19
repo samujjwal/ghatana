@@ -74,7 +74,9 @@ public final class EpisodeClusteringService {
         // Perform clustering based on algorithm
         List<Cluster> newClusters = switch (algorithm) {
             case HIERARCHICAL -> hierarchicalClustering(episodesWithEmbeddings);
-            case K_MEANS -> kMeansClustering(episodesWithEmbeddings, Math.min(10, episodesWithEmbeddings.size() / 10));
+            case K_MEANS -> kMeansClustering(
+                episodesWithEmbeddings,
+                Math.max(1, Math.min(10, episodesWithEmbeddings.size() / 10)));
             case DBSCAN -> dbscanClustering(episodesWithEmbeddings);
         };
 
@@ -187,17 +189,17 @@ public final class EpisodeClusteringService {
         }
 
         // Build final clusters
-        return centroids.stream()
-            .map(centroid -> {
-                int nearest = findNearestCentroid(centroid, centroids);
+        return java.util.stream.IntStream.range(0, centroids.size())
+            .mapToObj(index -> {
                 return new Cluster(
                     UUID.randomUUID().toString(),
-                    "kmeans-cluster-" + nearest,
-                    assignments.get(nearest),
-                    computeCentroid(assignments.get(nearest)),
+                    "kmeans-cluster-" + index,
+                    assignments.getOrDefault(index, List.of()),
+                    centroids.get(index),
                     Instant.now()
                 );
             })
+            .filter(cluster -> !cluster.episodes().isEmpty())
             .collect(Collectors.toList());
     }
 

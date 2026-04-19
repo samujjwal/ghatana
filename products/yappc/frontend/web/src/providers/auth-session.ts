@@ -26,7 +26,9 @@ export type AuthSessionUser = GeneratedAuthSessionUser & {
   workspaceIds?: string[];
 };
 
-function mapGeneratedRole(role: AuthSessionUser['role'] | string | undefined): User['role'] {
+function mapGeneratedRole(
+  role: AuthSessionUser['role'] | string | undefined
+): User['role'] {
   if (role === 'ADMIN' || role === 'VIEWER') {
     return role;
   }
@@ -136,10 +138,14 @@ async function refreshStoredSession(
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refreshToken: session.refreshToken } satisfies RefreshTokenRequest),
+      body: JSON.stringify({
+        refreshToken: session.refreshToken,
+      } satisfies RefreshTokenRequest),
     });
 
     if (!response.ok) {
+      return null;
+    }
 
     const refreshed = await parseJsonResponse<RefreshTokenResponse>(
       response,
@@ -149,7 +155,9 @@ async function refreshStoredSession(
       ...session,
       token: refreshed.accessToken,
       refreshToken: refreshed.refreshToken,
-      expiresAt: new Date(Date.now() + refreshed.expiresIn * 1000).toISOString(),
+      expiresAt: new Date(
+        Date.now() + refreshed.expiresIn * 1000
+      ).toISOString(),
     };
 
     persistStoredSession(nextSession);
@@ -184,7 +192,10 @@ export async function fetchAuthSession(
     let response = await fetchCurrentUser(storedSession.token);
 
     if (response.status === 401) {
-      const refreshedSession = await refreshStoredSession(storedSession, effectiveFetch);
+      const refreshedSession = await refreshStoredSession(
+        storedSession,
+        effectiveFetch
+      );
       if (!refreshedSession?.token) {
         clearStoredSession();
         return null;

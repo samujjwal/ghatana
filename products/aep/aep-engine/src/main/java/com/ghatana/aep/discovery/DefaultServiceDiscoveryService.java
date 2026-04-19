@@ -8,11 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -111,6 +108,9 @@ public class DefaultServiceDiscoveryService implements ServiceDiscoveryService {
 
         for (String envVar : serviceEnvVars) {
             String endpoint = System.getenv(envVar);
+            if (endpoint == null || endpoint.isEmpty()) {
+                endpoint = System.getProperty(envVar);
+            }
             if (endpoint != null && !endpoint.isEmpty()) {
                 String serviceName = envVar.replace("_URL", "").toLowerCase();
                 services.add(new DiscoveredService(

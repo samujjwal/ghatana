@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PostgresIntegrationTest {
 
     @Container
+    @SuppressWarnings("resource") // Managed by Testcontainers/JUnit lifecycle
     private static final PostgreSQLContainer<?> POSTGRES =
         new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("aep_integration")

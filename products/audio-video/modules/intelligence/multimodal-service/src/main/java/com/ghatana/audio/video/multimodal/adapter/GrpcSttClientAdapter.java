@@ -183,6 +183,7 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
         //     .build();
 
         LOG.warn("Whisper gRPC transcription not yet implemented - falling back to LLM");
+        currentMode = SttMode.LLM_FALLBACK;
         return transcribeViaAiInference(audioData);
     }
 

@@ -137,7 +137,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
             String tenantId = "tenant-null";
 
             assertThatThrownBy(() -> engine.submitPipeline(tenantId, null))
-                .isInstanceOf(CompletionException.class)
+                .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("null");
         }
 
@@ -154,9 +154,10 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            // Should fail gracefully without crashing
-            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline))
-                .isInstanceOf(CompletionException.class);
+            engine.submitPipeline(tenantId, pipeline);
+
+            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId));
+            assertThat(patterns).isEmpty();
         }
 
         @Test
@@ -183,9 +184,9 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            // Should detect and reject circular dependency
             assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline))
-                .isInstanceOf(CompletionException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cycles");
         }
 
         @Test
@@ -310,7 +311,11 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 "bad-pipeline",
                 "Bad Pipeline",
                 List.of(
-                    new AepEngine.PipelineStep("bad-step", "nonexistent_operation", Map.of())
+                    new AepEngine.PipelineStep("bad-step", "register_pattern", Map.of(
+                        "name", "",
+                        "patternType", "INVALID_TYPE",
+                        "threshold", "not_a_number"
+                    ))
                 )
             );
 

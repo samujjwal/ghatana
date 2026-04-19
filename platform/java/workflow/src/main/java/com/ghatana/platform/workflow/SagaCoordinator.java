@@ -102,7 +102,7 @@ public final class SagaCoordinator {
                     log.warn("[saga] Step failed: {}, error={}", step.name(), stepResult.error());
                     
                     if (execution.policy() == SagaPolicy.BACKWARD_COMPENSATION) {
-                        return compensateSteps(execution, stepIndex - 1);
+                        return compensateSteps(execution, stepIndex);
                     } else if (execution.policy() == SagaPolicy.FORWARD_RECOVERY) {
                         // Continue with remaining steps despite failure
                         return executeSteps(execution, stepIndex + 1);

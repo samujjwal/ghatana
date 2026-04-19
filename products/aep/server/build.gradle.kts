@@ -97,6 +97,17 @@ tasks.named<Test>("test") {
     environment("AEP_AUTH_DISABLED", "true")
     environment("AEP_ENV", "test")
     environment("AEP_JWT_SECRET", "test-jwt-secret-0123456789abcdef")
+
+    // Fail fast when a server-side integration test truly stalls instead of
+    // leaving the Gradle task looking hung indefinitely.
+    systemProperty(
+        "junit.jupiter.execution.timeout.default",
+        System.getProperty("junit.jupiter.execution.timeout.default", "2m")
+    )
+    systemProperty(
+        "junit.jupiter.execution.timeout.thread.mode.default",
+        System.getProperty("junit.jupiter.execution.timeout.thread.mode.default", "separate_thread")
+    )
 }
 
 // All previously-excluded tests are now fully implemented and enabled:

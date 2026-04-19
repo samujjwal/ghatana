@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CommandPalette } from './CommandPalette';
 import { SearchBar } from './SearchBar';
-import { NotificationCenter } from './NotificationCenter';
+import { NotificationCenter } from '@/shared/ui/feedback';
 import { SettingsPanel } from './SettingsPanel';
 
 /**

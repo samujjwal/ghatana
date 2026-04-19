@@ -155,7 +155,6 @@ public final class LifecycleController {
      * POST /lifecycle/changes/:changeId/approve — approve a pending change.
      * Body: { reviewerId, notes? }
      */
-    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleApproveChange(HttpRequest request) {
         String changeId = request.getPathParameter("changeId");
         if (changeId == null || changeId.isBlank()) {
@@ -190,7 +189,6 @@ public final class LifecycleController {
      * POST /lifecycle/changes/:changeId/reject — reject a pending change.
      * Body: { reviewerId, reason }
      */
-    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleRejectChange(HttpRequest request) {
         String changeId = request.getPathParameter("changeId");
         if (changeId == null || changeId.isBlank()) {
@@ -250,7 +248,6 @@ public final class LifecycleController {
      * POST /lifecycle/recertification/campaigns — create a recertification campaign.
      * Body: { tenantId, campaignName, scope }
      */
-    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCreateCampaign(HttpRequest request) {
         return request.loadBody().then(buf -> {
             try {
@@ -337,7 +334,6 @@ public final class LifecycleController {
      * POST /lifecycle/recertification/campaigns/:campaignId/items/:itemId/certify
      * Body: { certifierId }
      */
-    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCertifyItem(HttpRequest request) {
         String campaignId = request.getPathParameter("campaignId");
         String itemId     = request.getPathParameter("itemId");
@@ -372,7 +368,6 @@ public final class LifecycleController {
      * POST /lifecycle/recertification/campaigns/:campaignId/items/:itemId/revoke
      * Body: { certifierId, reason }
      */
-    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleRevokeItem(HttpRequest request) {
         String campaignId = request.getPathParameter("campaignId");
         String itemId     = request.getPathParameter("itemId");

@@ -2,8 +2,6 @@ package com.ghatana.pipeline.registry.session;
 
 import com.ghatana.platform.security.session.RequestContext;
 import com.ghatana.platform.security.session.SessionState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -23,8 +21,6 @@ import java.util.function.Supplier;
  * @since 2.0.0
  */
 public final class SessionUtils {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SessionUtils.class);
 
     private SessionUtils() {
         // Utility class, no instances

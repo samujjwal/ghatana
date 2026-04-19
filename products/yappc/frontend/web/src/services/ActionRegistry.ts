@@ -30,6 +30,12 @@ export interface ActionContext {
   requiresProject?: boolean;
   /** Available in these routes (empty = all routes) */
   routes?: string[];
+  /** Requires interface selection */
+  requiresInterface?: boolean;
+  /** Requires connection selection */
+  requiresConnection?: boolean;
+  /** Connection type required */
+  connectionType?: 'event' | 'data' | 'navigation' | 'any';
   /** Custom condition function */
   condition?: (state: ActionState) => boolean;
 }
@@ -73,7 +79,9 @@ export type ActionCategory =
   | 'navigation'
   | 'project'
   | 'deploy'
-  | 'help';
+  | 'help'
+  | 'interface'
+  | 'connection';
 
 /**
  * Current action state (for context evaluation)
@@ -89,6 +97,9 @@ export interface ActionState {
   canUndo: boolean;
   canRedo: boolean;
   isDirty: boolean;
+  hasInterfaceSelection?: boolean;
+  hasConnectionSelection?: boolean;
+  connectionType?: 'event' | 'data' | 'navigation' | null;
   customState?: Record<string, unknown>;
 }
 
@@ -125,11 +136,13 @@ const CATEGORY_CONFIG: Record<
   view: { label: 'View', order: 3 },
   canvas: { label: 'Canvas', order: 4 },
   selection: { label: 'Selection', order: 5 },
-  ai: { label: 'AI', order: 6 },
-  navigation: { label: 'Navigation', order: 7 },
-  project: { label: 'Project', order: 8 },
-  deploy: { label: 'Deploy', order: 9 },
-  help: { label: 'Help', order: 10 },
+  interface: { label: 'Interface', order: 6 },
+  connection: { label: 'Connection', order: 7 },
+  ai: { label: 'AI', order: 8 },
+  navigation: { label: 'Navigation', order: 9 },
+  project: { label: 'Project', order: 10 },
+  deploy: { label: 'Deploy', order: 11 },
+  help: { label: 'Help', order: 12 },
 };
 
 /**
@@ -269,6 +282,23 @@ class ActionRegistryService {
     // Check selection type
     if (context.selectionType && context.selectionType !== 'any') {
       if (state.selectionType !== context.selectionType) {
+        return false;
+      }
+    }
+
+    // Check interface selection requirement
+    if (context.requiresInterface && !state.hasInterfaceSelection) {
+      return false;
+    }
+
+    // Check connection selection requirement
+    if (context.requiresConnection && !state.hasConnectionSelection) {
+      return false;
+    }
+
+    // Check connection type
+    if (context.connectionType && context.connectionType !== 'any') {
+      if (state.connectionType !== context.connectionType) {
         return false;
       }
     }
@@ -939,6 +969,192 @@ export function registerAIActions(handlers: {
   ];
 
   ActionRegistry.registerAll(aiActions);
+}
+
+/**
+ * Register interface-related actions
+ */
+export function registerInterfaceActions(handlers: {
+  addInterface?: () => void;
+  editInterface?: () => void;
+  deleteInterface?: () => void;
+  addProperty?: () => void;
+  editProperty?: () => void;
+  deleteProperty?: () => void;
+  addValidation?: () => void;
+  editValidation?: () => void;
+  deleteValidation?: () => void;
+}): void {
+  const interfaceActions: ActionDefinition[] = [
+    {
+      id: 'interface.add',
+      label: 'Add Interface',
+      description: 'Add a new interface definition',
+      icon: 'add',
+      category: 'interface',
+      shortcut: 'mod+shift+i',
+      context: { requiresProject: true },
+      handler: () => handlers.addInterface?.(),
+      priority: 100,
+    },
+    {
+      id: 'interface.edit',
+      label: 'Edit Interface',
+      description: 'Edit selected interface',
+      icon: 'edit',
+      category: 'interface',
+      shortcut: 'mod+e',
+      context: { requiresInterface: true },
+      handler: () => handlers.editInterface?.(),
+      priority: 90,
+    },
+    {
+      id: 'interface.delete',
+      label: 'Delete Interface',
+      description: 'Delete selected interface',
+      icon: 'delete',
+      category: 'interface',
+      context: { requiresInterface: true },
+      handler: () => handlers.deleteInterface?.(),
+      isDangerous: true,
+      priority: 80,
+    },
+    {
+      id: 'interface.addProperty',
+      label: 'Add Property',
+      description: 'Add a property to interface',
+      icon: 'addCircle',
+      category: 'interface',
+      context: { requiresInterface: true },
+      handler: () => handlers.addProperty?.(),
+      priority: 85,
+    },
+    {
+      id: 'interface.editProperty',
+      label: 'Edit Property',
+      description: 'Edit selected property',
+      icon: 'edit',
+      category: 'interface',
+      context: { requiresInterface: true },
+      handler: () => handlers.editProperty?.(),
+      priority: 75,
+    },
+    {
+      id: 'interface.deleteProperty',
+      label: 'Delete Property',
+      description: 'Delete selected property',
+      icon: 'delete',
+      category: 'interface',
+      context: { requiresInterface: true },
+      handler: () => handlers.deleteProperty?.(),
+      isDangerous: true,
+      priority: 65,
+    },
+    {
+      id: 'interface.addValidation',
+      label: 'Add Validation',
+      description: 'Add validation rule to property',
+      icon: 'checkCircle',
+      category: 'interface',
+      context: { requiresInterface: true },
+      handler: () => handlers.addValidation?.(),
+      priority: 84,
+    },
+    {
+      id: 'interface.editValidation',
+      label: 'Edit Validation',
+      description: 'Edit selected validation rule',
+      icon: 'edit',
+      category: 'interface',
+      context: { requiresInterface: true },
+      handler: () => handlers.editValidation?.(),
+      priority: 74,
+    },
+    {
+      id: 'interface.deleteValidation',
+      label: 'Delete Validation',
+      description: 'Delete selected validation rule',
+      icon: 'delete',
+      category: 'interface',
+      context: { requiresInterface: true },
+      handler: () => handlers.deleteValidation?.(),
+      isDangerous: true,
+      priority: 64,
+    },
+  ];
+
+  ActionRegistry.registerAll(interfaceActions);
+}
+
+/**
+ * Register connection-related actions
+ */
+export function registerConnectionActions(handlers: {
+  addEventConnection?: () => void;
+  addDataConnection?: () => void;
+  addNavigationConnection?: () => void;
+  editConnection?: () => void;
+  deleteConnection?: () => void;
+}): void {
+  const connectionActions: ActionDefinition[] = [
+    {
+      id: 'connection.addEvent',
+      label: 'Add Event Connection',
+      description: 'Add an event handler connection',
+      icon: 'bolt',
+      category: 'connection',
+      shortcut: 'mod+shift+e',
+      context: { requiresProject: true },
+      handler: () => handlers.addEventConnection?.(),
+      priority: 100,
+    },
+    {
+      id: 'connection.addData',
+      label: 'Add Data Connection',
+      description: 'Add a data binding connection',
+      icon: 'link',
+      category: 'connection',
+      shortcut: 'mod+shift+d',
+      context: { requiresProject: true },
+      handler: () => handlers.addDataConnection?.(),
+      priority: 99,
+    },
+    {
+      id: 'connection.addNavigation',
+      label: 'Add Navigation Connection',
+      description: 'Add a navigation connection',
+      icon: 'arrowForward',
+      category: 'connection',
+      shortcut: 'mod+shift+n',
+      context: { requiresProject: true },
+      handler: () => handlers.addNavigationConnection?.(),
+      priority: 98,
+    },
+    {
+      id: 'connection.edit',
+      label: 'Edit Connection',
+      description: 'Edit selected connection',
+      icon: 'edit',
+      category: 'connection',
+      shortcut: 'mod+e',
+      context: { requiresConnection: true },
+      handler: () => handlers.editConnection?.(),
+      priority: 90,
+    },
+    {
+      id: 'connection.delete',
+      label: 'Delete Connection',
+      description: 'Delete selected connection',
+      icon: 'delete',
+      category: 'connection',
+      context: { requiresConnection: true },
+      handler: () => handlers.deleteConnection?.(),
+      isDangerous: true,
+      priority: 80,
+    },
+  ];
+
+  ActionRegistry.registerAll(connectionActions);
 }
 
 // ============================================================================

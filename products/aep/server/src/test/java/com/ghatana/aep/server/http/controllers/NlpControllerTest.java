@@ -6,7 +6,6 @@ package com.ghatana.aep.server.http.controllers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -57,7 +56,6 @@ class NlpControllerTest {
         return request;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> parseBody(HttpResponse response) throws Exception {
         String json = response.getBody().getString(StandardCharsets.UTF_8);
         return MAPPER.readValue(json, new TypeReference<>() {});

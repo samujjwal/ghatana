@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 
 import java.util.List;
 import java.util.Map;
@@ -27,11 +28,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("ServiceDiscoveryService")
 class ServiceDiscoveryServiceTest {
 
+    private static final String PAYMENT_SERVICE_URL = "PAYMENT_SERVICE_URL";
+
     private ServiceDiscoveryService service;
 
     @BeforeEach
     void setUp() {
         service = new DefaultServiceDiscoveryService();
+    }
+
+    @AfterEach
+    void tearDown() {
+        System.clearProperty(PAYMENT_SERVICE_URL);
     }
 
     @Nested
@@ -41,12 +49,13 @@ class ServiceDiscoveryServiceTest {
         @Test
         @DisplayName("discovers services from environment")
         void discoversServicesFromEnvironment() {
-            System.setProperty("PAYMENT_SERVICE_URL", "http://localhost:8080");
+            System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080");
             
             List<DiscoveredService> services = service.discoverServices("all", Map.of());
             
-            // May discover services if env vars are set
-            assertThat(services).isNotNull();
+            assertThat(services)
+                .extracting(DiscoveredService::endpoint)
+                .contains("http://localhost:8080");
         }
 
         @Test
@@ -143,6 +152,8 @@ class ServiceDiscoveryServiceTest {
         @Test
         @DisplayName("returns discovery statistics")
         void returnsDiscoveryStatistics() {
+            System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080");
+
             DiscoveredService discoveredService = new DiscoveredService(
                 "service-1",
                 "Test Service",

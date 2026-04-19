@@ -1,11 +1,7 @@
-/**
- * Reports Component
- * Main interface for generating and scheduling reports
- */
-
 import { useState, useMemo, memo } from 'react';
 import { useAtom } from 'jotai';
 import { usageEventsAtom, blockEventsAtom } from '../stores/eventsStore';
+import { DynamicForm, type FieldConfig } from '@ghatana/design-system';
 import { ReportPreview } from './ReportPreview';
 import {
   type ReportPeriod,
@@ -20,16 +16,42 @@ import {
   type ReportSchedule,
 } from '../utils/reportGenerator';
 
-export const Reports = memo(function Reports() {
+/**
+ * Reports - Report generation interface using DynamicForm
+ * 
+ * Provides report configuration and generation using the generic DynamicForm component.
+ * 
+ * Features:
+ * - Report period selection (daily, weekly, monthly, custom)
+ * - Format selection (PDF, CSV)
+ * - Custom date range picker
+ * - Preview functionality
+ * - Report scheduling
+ * 
+ * @example
+ * ```tsx
+ * <Reports />
+ * ```
+ */
+
+interface ReportFormData {
+  period: ReportPeriod;
+  format: ReportFormat;
+  customStartDate?: string;
+  customEndDate?: string;
+}
+
+export const ReportsNew = memo(function ReportsNew() {
   const [usageEvents] = useAtom(usageEventsAtom);
   const [blockEvents] = useAtom(blockEventsAtom);
-
-  const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriod>('weekly');
-  const [selectedFormat, setSelectedFormat] = useState<ReportFormat>('pdf');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [schedules, setSchedules] = useState<ReportSchedule[]>(getReportSchedules());
+  const [formData, setFormData] = useState<ReportFormData>({
+    period: 'weekly',
+    format: 'pdf',
+    customStartDate: '',
+    customEndDate: '',
+  });
 
   // Generate report data for preview
   const reportData = useMemo<ReportData | null>(() => {
@@ -37,30 +59,75 @@ export const Reports = memo(function Reports() {
 
     try {
       return generateReportData(usageEvents, blockEvents, {
-        period: selectedPeriod,
-        format: selectedFormat,
-        startDate: customStartDate || undefined,
-        endDate: customEndDate || undefined,
+        period: formData.period,
+        format: formData.format,
+        startDate: formData.customStartDate || undefined,
+        endDate: formData.customEndDate || undefined,
       });
     } catch (error) {
       console.error('Error generating report data:', error);
       return null;
     }
-  }, [showPreview, usageEvents, blockEvents, selectedPeriod, selectedFormat, customStartDate, customEndDate]);
+  }, [showPreview, usageEvents, blockEvents, formData]);
 
-  const handleGeneratePreview = () => {
-    if (selectedPeriod === 'custom' && (!customStartDate || !customEndDate)) {
+  // Form fields configuration
+  const formFields: FieldConfig<ReportFormData>[] = [
+    {
+      name: 'period',
+      label: 'Report Period',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Daily (Yesterday)', value: 'daily' },
+        { label: 'Weekly (Last 7 Days)', value: 'weekly' },
+        { label: 'Monthly (Last 30 Days)', value: 'monthly' },
+        { label: 'Custom Period', value: 'custom' },
+      ],
+      helpText: 'Select the time period for the report',
+    },
+    {
+      name: 'format',
+      label: 'Report Format',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'PDF Report', value: 'pdf' },
+        { label: 'CSV Export', value: 'csv' },
+      ],
+      helpText: 'Choose the export format',
+    },
+    ...(formData.period === 'custom'
+      ? [
+        {
+          name: 'customStartDate' as keyof ReportFormData,
+          label: 'Start Date',
+          type: 'date' as const,
+          required: true,
+        },
+        {
+          name: 'customEndDate' as keyof ReportFormData,
+          label: 'End Date',
+          type: 'date' as const,
+          required: true,
+        },
+      ]
+      : []),
+  ];
+
+  const handlePreview = (data: ReportFormData) => {
+    if (data.period === 'custom' && (!data.customStartDate || !data.customEndDate)) {
       alert('Please select both start and end dates for custom period');
       return;
     }
+    setFormData(data);
     setShowPreview(true);
   };
 
-  const handleGenerateReport = () => {
+  const handleGenerate = () => {
     if (!reportData) return;
 
     try {
-      generateReport(reportData, selectedFormat);
+      generateReport(reportData, formData.format);
       setShowPreview(false);
     } catch (error) {
       console.error('Error generating report:', error);
@@ -68,20 +135,16 @@ export const Reports = memo(function Reports() {
     }
   };
 
-  const handleCancelPreview = () => {
-    setShowPreview(false);
-  };
-
-  const handleCreateSchedule = () => {
+  const handleSchedule = (data: ReportFormData) => {
     const schedule = createReportSchedule({
-      period: selectedPeriod,
-      format: selectedFormat,
+      period: data.period,
+      format: data.format,
       enabled: true,
     });
-    
+
     saveReportSchedule(schedule);
     setSchedules(getReportSchedules());
-    alert(`Schedule created! Report will be generated ${selectedPeriod}.`);
+    alert(`Schedule created! Report will be generated ${data.period}.`);
   };
 
   const handleToggleSchedule = (scheduleId: string) => {
@@ -95,7 +158,7 @@ export const Reports = memo(function Reports() {
 
   const handleDeleteSchedule = (scheduleId: string) => {
     if (!confirm('Are you sure you want to delete this schedule?')) return;
-    
+
     deleteReportSchedule(scheduleId);
     setSchedules(getReportSchedules());
   };
@@ -110,12 +173,13 @@ export const Reports = memo(function Reports() {
     }
   };
 
+  // Show preview if requested
   if (showPreview && reportData) {
     return (
       <ReportPreview
         reportData={reportData}
-        onGenerate={handleGenerateReport}
-        onCancel={handleCancelPreview}
+        onGenerate={handleGenerate}
+        onCancel={() => setShowPreview(false)}
       />
     );
   }
@@ -125,91 +189,27 @@ export const Reports = memo(function Reports() {
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Analytics Reports</h2>
 
-        {/* Report Configuration */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Period Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Report Period
-            </label>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as ReportPeriod)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="daily">Daily (Yesterday)</option>
-              <option value="weekly">Weekly (Last 7 Days)</option>
-              <option value="monthly">Monthly (Last 30 Days)</option>
-              <option value="custom">Custom Period</option>
-            </select>
-          </div>
+        {/* Report Configuration Form */}
+        <DynamicForm
+          fields={formFields}
+          onSubmit={handlePreview}
+          submitText="Preview Report"
+          initialData={formData}
+        />
 
-          {/* Format Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Report Format
-            </label>
-            <select
-              value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value as ReportFormat)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="pdf">PDF Report</option>
-              <option value="csv">CSV Export</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Custom Date Range */}
-        {selectedPeriod === 'custom' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 bg-gray-50 rounded-md">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                max={customEndDate || new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Date
-              </label>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                min={customStartDate}
-                max={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex space-x-4 mb-8">
+        {/* Schedule Button */}
+        <div className="mt-4">
           <button
-            onClick={handleGeneratePreview}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
-          >
-            Preview Report
-          </button>
-          <button
-            onClick={handleCreateSchedule}
+            onClick={() => handleSchedule(formData)}
             className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
           >
             Schedule Report
           </button>
         </div>
 
-        {/* Scheduled Reports */}
+        {/* Scheduled Reports Section */}
         {schedules.length > 0 && (
-          <div className="border-t pt-6">
+          <div className="mt-8 border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Scheduled Reports</h3>
             <div className="space-y-3">
               {schedules.map((schedule) => (
@@ -246,7 +246,7 @@ export const Reports = memo(function Reports() {
             </div>
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Scheduled reports are currently stored locally. 
+                <strong>Note:</strong> Scheduled reports are currently stored locally.
                 Backend integration for automatic email delivery is coming soon.
               </p>
             </div>

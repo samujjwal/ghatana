@@ -153,12 +153,11 @@ class ApiPerformanceTest extends EventloopTestBase {
         @DisplayName("Mixed workload P99 must stay within SLA")
         void mixedWorkloadP99WithinSla() throws Exception {
             List<Long> latencies = new ArrayList<>();
-            Random rng = new Random(42L);
 
             for (int i = 0; i < 300; i++) {
                 final int idx = i;
                 long start = System.nanoTime();
-                int roll = rng.nextInt(4);
+                int roll = ThreadLocalRandom.current().nextInt(4);
                 switch (roll) {
                     case 0 -> runPromise(() -> client.save(TENANT_ID, COLLECTION, Map.of("i", idx)));
                     case 1 -> runPromise(() -> client.appendEvent(TENANT_ID, buildEvent("e-" + idx)));
@@ -312,7 +311,7 @@ class ApiPerformanceTest extends EventloopTestBase {
             }
 
             start.countDown();
-            done.await(30, TimeUnit.SECONDS);
+            assertThat(done.await(30, TimeUnit.SECONDS)).isTrue();
 
             long p99 = percentile(latencies, 99);
             assertThat(p99).as("Concurrent reads P99 at concurrency=" + concurrency)
@@ -482,10 +481,6 @@ class ApiPerformanceTest extends EventloopTestBase {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-    }
-
-    private DataCloudClient.Entity buildEntity(String id, Map<String, Object> data) {
-        return DataCloudClient.Entity.of(id, COLLECTION, data);
     }
 
     private DataCloudClient.Event buildEvent(String type) {

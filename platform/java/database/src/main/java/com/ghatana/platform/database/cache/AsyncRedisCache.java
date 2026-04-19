@@ -3,6 +3,7 @@ package com.ghatana.platform.database.cache;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.core.activej.async.AsyncBridge;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import io.activej.promise.SettablePromise;
@@ -247,15 +248,7 @@ public final class AsyncRedisCache<T> implements AutoCloseable {
     }
 
     private static <T> Promise<T> toPromise(RedisFuture<T> future) {
-        SettablePromise<T> promise = new SettablePromise<>();
-        future.whenComplete((value, throwable) -> {
-            if (throwable != null) {
-                promise.setException(throwable instanceof Exception exception ? exception : new RuntimeException(throwable));
-            } else {
-                promise.set(value);
-            }
-        });
-        return promise;
+        return AsyncBridge.fromFuture(future.toCompletableFuture());
     }
 
     public record CacheStats(

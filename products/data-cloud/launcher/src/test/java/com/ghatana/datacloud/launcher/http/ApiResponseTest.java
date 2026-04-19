@@ -101,10 +101,11 @@ class ApiResponseTest {
         @DisplayName("does not mutate the original instance")
         void withAiMeta_doesNotMutateOriginal() {
             ApiResponse base = ApiResponse.success(Map.of("x", 1), "t", "r");
-            base.withAiMeta(0.5, "model", java.util.List.of(), true);
+            ApiResponse updated = base.withAiMeta(0.5, "model", java.util.List.of(), true);
 
             // original should have no ai block
             assertThat(base.getAi()).isNull();
+            assertThat(updated.getAi()).isNotNull();
         }
 
         @Test

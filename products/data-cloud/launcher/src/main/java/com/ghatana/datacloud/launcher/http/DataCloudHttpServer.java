@@ -22,8 +22,10 @@ import java.util.Optional;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 import java.util.function.Supplier;
@@ -1105,10 +1107,14 @@ public class DataCloudHttpServer {
             .withListenPort(port)
             .build();
 
+        CountDownLatch startupLatch = new CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<Exception> startupFailure = new java.util.concurrent.atomic.AtomicReference<>();
+
         blockingExecutor.execute(() -> {
             try {
                 server.listen();
                 log.info("Data-Cloud HTTP Server started on port {}", port);
+                startupLatch.countDown();
                 // Start background anomaly detection scanning (P3.6.1) if detector + event store are both available
                 if (anomalyDetector != null && eventLogStore != null) {
                     anomalyDetectionTask = new AnomalyDetectionTask(
@@ -1136,9 +1142,18 @@ public class DataCloudHttpServer {
                 }
                 eventloop.run();
             } catch (Exception e) {
+                startupFailure.set(e);
+                startupLatch.countDown();
                 log.error("Failed to start HTTP server", e);
             }
         });
+
+        if (!startupLatch.await(5, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Timed out waiting for Data-Cloud HTTP server to start on port " + port);
+        }
+        if (startupFailure.get() != null) {
+            throw startupFailure.get();
+        }
     }
 
     /**
