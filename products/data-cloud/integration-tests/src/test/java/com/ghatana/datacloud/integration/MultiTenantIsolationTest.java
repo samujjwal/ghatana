@@ -1,266 +1,156 @@
-/*
- * Copyright (c) 2026 Ghatana Inc.
- * All rights reserved.
- */
 package com.ghatana.datacloud.integration;
 
-import com.ghatana.platform.testing.activej.EventloopTestBase;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.DataCloud;
+import com.ghatana.datacloud.DataCloud.DataCloudConfig;
+import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
+import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.IntStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Component tests for multi-tenant isolation logic.
- *
- * <p>Tests tenant scoping, access rejection, and concurrent write isolation using a
- * custom in-memory MultiTenantDataStore. This verifies the isolation logic but does NOT
- * exercise the real EntityStore or Data Cloud launcher security filter chain.
- *
- * <p>NOTE: This is a COMPONENT test, not an integration test. It uses a custom in-memory
- * data store (MultiTenantDataStore) unrelated to the real EntityStore persistence stack.
- * Real multi-tenant isolation integration tests should exercise the launcher's
- * TenantContextFilter and EntityStore against a real database.
- *
- * <p>TODO: Add real integration tests that:
- * <ul>
- *   <li>Exercise the launcher TenantContextFilter with real HTTP requests</li>
- *   <li>Test EntityStore tenant isolation against a real database (PostgreSQL/sovereign)</li>
- *   <li>Verify cross-tenant access rejection at the HTTP handler level</li>
- *   <li>Test concurrent multi-tenant operations against durable storage</li>
- * </ul>
- *
- * @doc.type    class
- * @doc.purpose Component test for multi-tenant isolation logic (not real persistence integration)
- * @doc.layer   product
- * @doc.pattern ComponentTest
+ * @doc.type class
+ * @doc.purpose Proves tenant isolation through the live launcher against sovereign storage
+ * @doc.layer product
+ * @doc.pattern IntegrationTest
  */
-@DisplayName("Multi-Tenant Isolation Component Tests (In-Memory Store)")
-class MultiTenantIsolationComponentTest extends EventloopTestBase {
+@DisplayName("Multi-Tenant Isolation Integration Tests")
+class MultiTenantIsolationTest {
 
-    private MultiTenantDataStore store;
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final String COLLECTION = "tenant_isolation_entities";
+
+    @TempDir
+    Path tempDir;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+
+    private DataCloudClient client;
+    private DataCloudHttpServer server;
+    private int port;
 
     @BeforeEach
-    void setUp() {
-        store = new MultiTenantDataStore();
+    void setUp() throws Exception {
+        DataCloudConfig config = DataCloudConfig.builder()
+            .profile(DataCloudProfile.SOVEREIGN)
+            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store").toString()))
+            .build();
+        client = DataCloud.create(config);
+        port = findFreePort();
+        server = new DataCloudHttpServer(client, port);
+        server.start();
     }
 
-    // ── Collection isolation ───────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("collection created for tenant-A is not visible to tenant-B")
-    void collectionCreatedForTenantAIsInvisibleToTenantB() {
-        store.createCollection("tenant-A", "col-A");
-
-        List<String> tenantBCols = store.listCollections("tenant-B");
-        assertThat(tenantBCols).doesNotContain("col-A");
-    }
-
-    @Test
-    @DisplayName("each tenant sees only their own collections")
-    void eachTenantSeesOnlyTheirOwnCollections() {
-        store.createCollection("tenant-X", "col-X1");
-        store.createCollection("tenant-X", "col-X2");
-        store.createCollection("tenant-Y", "col-Y1");
-
-        assertThat(store.listCollections("tenant-X")).containsExactlyInAnyOrder("col-X1", "col-X2");
-        assertThat(store.listCollections("tenant-Y")).containsExactly("col-Y1");
-    }
-
-    // ── Entity isolation ──────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("entity written by tenant-A is not readable by tenant-B")
-    void entityWrittenByTenantAIsNotReadableByTenantB() {
-        String colAId = store.createCollection("t-iso-A", "iso-col");
-        String entityId = store.createEntity("t-iso-A", colAId, Map.of("secret", "data-A"));
-
-        Optional<Map<String, Object>> result = store.findEntity("t-iso-B", colAId, entityId);
-        assertThat(result).isEmpty();
+    @AfterEach
+    void tearDown() {
+        if (server != null) {
+            server.stop();
+        }
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Test
-    @DisplayName("entity count per tenant is independent")
-    void entityCountPerTenantIsIndependent() {
-        String colA = store.createCollection("count-A", "counting-col");
-        String colB = store.createCollection("count-B", "counting-col");
+    @DisplayName("query endpoint returns only the requesting tenant's entities")
+    void queryEndpointReturnsOnlyTheRequestingTenantsEntities() throws Exception {
+        String tenantAId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION,
+            Map.of("name", "tenant-a-doc", "owner", "tenant-a"), "tenant-a").body().get("id"));
+        String tenantBId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION,
+            Map.of("name", "tenant-b-doc", "owner", "tenant-b"), "tenant-b").body().get("id"));
 
-        IntStream.range(0, 10).forEach(i ->
-                store.createEntity("count-A", colA, Map.of("i", i)));
-        IntStream.range(0, 3).forEach(i ->
-                store.createEntity("count-B", colB, Map.of("i", i)));
+        ParsedHttpResponse tenantAQuery = sendJson("GET", "/api/v1/entities/" + COLLECTION + "?limit=10",
+            null, "tenant-a");
+        ParsedHttpResponse tenantBQuery = sendJson("GET", "/api/v1/entities/" + COLLECTION + "?limit=10",
+            null, "tenant-b");
 
-        assertThat(store.entityCount("count-A", colA)).isEqualTo(10);
-        assertThat(store.entityCount("count-B", colB)).isEqualTo(3);
-    }
-
-    // ── Cross-tenant access rejection ─────────────────────────────────────────
-
-    @Test
-    @DisplayName("cross-tenant collection deletion is rejected")
-    void crossTenantCollectionDeletionRejected() {
-        store.createCollection("owner-T", "sensitive-col");
-
-        assertThatThrownBy(() -> store.deleteCollection("attacker-T", "sensitive-col"))
-                .isInstanceOf(SecurityException.class)
-                .hasMessageContaining("Unauthorized");
+        assertThat(tenantAQuery.statusCode()).isEqualTo(200);
+        assertThat(tenantBQuery.statusCode()).isEqualTo(200);
+        assertThat(entityIds(tenantAQuery.body())).containsExactly(tenantAId);
+        assertThat(entityIds(tenantBQuery.body())).containsExactly(tenantBId);
     }
 
     @Test
-    @DisplayName("cross-tenant entity deletion is rejected")
-    void crossTenantEntityDeletionRejected() {
-        String colId = store.createCollection("owner-E", "entity-col");
-        String entityId = store.createEntity("owner-E", colId, Map.of("data", "secret"));
+    @DisplayName("cross-tenant reads and deletes do not expose another tenant's entity")
+    void crossTenantReadsAndDeletesDoNotExposeAnotherTenantsEntity() throws Exception {
+        String tenantAId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION,
+            Map.of("name", "secret-doc", "classification", "private"), "tenant-a").body().get("id"));
 
-        assertThatThrownBy(() -> store.deleteEntity("evil-E", colId, entityId))
-                .isInstanceOf(SecurityException.class);
+        ParsedHttpResponse crossTenantRead = sendJson("GET", "/api/v1/entities/" + COLLECTION + "/" + tenantAId,
+            null, "tenant-b");
+        ParsedHttpResponse crossTenantDelete = sendJson("DELETE", "/api/v1/entities/" + COLLECTION + "/" + tenantAId,
+            null, "tenant-b");
+        ParsedHttpResponse ownerRead = sendJson("GET", "/api/v1/entities/" + COLLECTION + "/" + tenantAId,
+            null, "tenant-a");
+
+        assertThat(crossTenantRead.statusCode()).isEqualTo(404);
+        assertThat(crossTenantDelete.statusCode()).isEqualTo(404);
+        assertThat(ownerRead.statusCode()).isEqualTo(200);
+        assertThat(ownerRead.body()).containsEntry("id", tenantAId);
+        assertThat(asMap(ownerRead.body().get("data"))).containsEntry("classification", "private");
     }
 
-    // ── Namespace isolation ───────────────────────────────────────────────────
+    private ParsedHttpResponse sendJson(
+        String method,
+        String path,
+        Map<String, Object> body,
+        String tenantId
+    ) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("Accept", "application/json")
+            .header("X-Tenant-Id", tenantId);
 
-    @Test
-    @DisplayName("same collection name in different tenants refers to distinct collections")
-    void sameCollectionNameInDifferentTenantsIsDistinct() {
-        String idA = store.createCollection("ns-A", "shared-name");
-        String idB = store.createCollection("ns-B", "shared-name");
+        if (body != null) {
+            builder.header("Content-Type", "application/json");
+            builder.method(method, HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)));
+        } else {
+            builder.method(method, HttpRequest.BodyPublishers.noBody());
+        }
 
-        assertThat(idA).isNotEqualTo(idB);
-        assertThat(store.findCollection("ns-A", idA)).isPresent();
-        assertThat(store.findCollection("ns-B", idA)).isEmpty(); // A's ID not visible to B
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        Map<String, Object> parsedBody = response.body() == null || response.body().isBlank()
+            ? Map.of()
+            : objectMapper.readValue(response.body(), MAP_TYPE);
+
+        return new ParsedHttpResponse(response.statusCode(), parsedBody);
     }
 
-    // ── Concurrent multi-tenant writes ────────────────────────────────────────
+    @SuppressWarnings("unchecked")
+    private List<String> entityIds(Map<String, Object> responseBody) {
+        return ((List<Map<String, Object>>) responseBody.get("entities")).stream()
+            .map(entity -> String.valueOf(entity.get("id")))
+            .toList();
+    }
 
-    @Test
-    @DisplayName("concurrent writes from multiple tenants are all persisted and isolated")
-    void concurrentWritesFromMultipleTenantsAreIsolated() throws Exception {
-        int tenantsCount = 5;
-        int entitiesPerTenant = 20;
-        String[] colIds = new String[tenantsCount];
-        String[] tenants = new String[tenantsCount];
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object value) {
+        return (Map<String, Object>) value;
+    }
 
-        for (int i = 0; i < tenantsCount; i++) {
-            tenants[i] = "concurrent-tenant-" + i;
-            colIds[i] = store.createCollection(tenants[i], "concurrent-col");
-        }
-
-        CyclicBarrier barrier = new CyclicBarrier(tenantsCount * entitiesPerTenant);
-        Thread[] threads = new Thread[tenantsCount * entitiesPerTenant];
-
-        for (int t = 0; t < tenantsCount; t++) {
-            for (int e = 0; e < entitiesPerTenant; e++) {
-                final int ti = t;
-                final int ei = e;
-                threads[t * entitiesPerTenant + e] = Thread.ofVirtual().start(() -> {
-                    try {
-                        barrier.await();
-                        store.createEntity(tenants[ti], colIds[ti], Map.of("entity", ei));
-                    } catch (Exception ignored) {}
-                });
-            }
-        }
-
-        for (Thread thread : threads) thread.join();
-
-        for (int i = 0; i < tenantsCount; i++) {
-            assertThat(store.entityCount(tenants[i], colIds[i])).isEqualTo(entitiesPerTenant);
+    private int findFreePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
         }
     }
 
-    // ── Tenant deletion ───────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("purging a tenant removes all their data but does not affect other tenants")
-    void purgingTenantDoesNotAffectOtherTenants() {
-        String survivorColId = store.createCollection("survivor-T", "survivor-col");
-        store.createEntity("survivor-T", survivorColId, Map.of("key", "value"));
-
-        String purgeColId = store.createCollection("purge-T", "purge-col");
-        store.createEntity("purge-T", purgeColId, Map.of("key", "data"));
-
-        store.purgeTenant("purge-T");
-
-        assertThat(store.listCollections("purge-T")).isEmpty();
-        assertThat(store.listCollections("survivor-T")).isNotEmpty();
-        assertThat(store.entityCount("survivor-T", survivorColId)).isEqualTo(1);
-    }
-
-    // ── Data-store implementation (for tests) ──────────────────────────────────
-
-    static class MultiTenantDataStore {
-        private final ConcurrentHashMap<String, Map<String, Object>> collections = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<String, ConcurrentHashMap<String, Map<String, Object>>> entities
-                = new ConcurrentHashMap<>();
-
-        String createCollection(String tenantId, String name) {
-            String id = UUID.randomUUID().toString();
-            collections.put(key(tenantId, id), Map.of("id", id, "name", name, "tenantId", tenantId));
-            return id;
-        }
-
-        Optional<Map<String, Object>> findCollection(String tenantId, String collectionId) {
-            return Optional.ofNullable(collections.get(key(tenantId, collectionId)));
-        }
-
-        void deleteCollection(String tenantId, String collectionName) {
-            // Verify ownership
-            boolean owned = collections.entrySet().stream()
-                    .anyMatch(e -> e.getKey().startsWith(tenantId + "|")
-                            && Objects.equals(e.getValue().get("name"), collectionName));
-            if (!owned) throw new SecurityException("Unauthorized: tenant " + tenantId + " cannot delete collection");
-            collections.entrySet().removeIf(e ->
-                    e.getKey().startsWith(tenantId + "|") &&
-                    Objects.equals(e.getValue().get("name"), collectionName));
-        }
-
-        List<String> listCollections(String tenantId) {
-            return collections.entrySet().stream()
-                    .filter(e -> e.getKey().startsWith(tenantId + "|"))
-                    .map(e -> (String) e.getValue().get("name"))
-                    .toList();
-        }
-
-        String createEntity(String tenantId, String collectionId, Map<String, Object> data) {
-            // Require the collection to exist for this tenant
-            String entityId = UUID.randomUUID().toString();
-            Map<String, Object> entity = new HashMap<>(data);
-            entity.put("id", entityId);
-            entities.computeIfAbsent(key(tenantId, collectionId),
-                    k -> new ConcurrentHashMap<>()).put(entityId, entity);
-            return entityId;
-        }
-
-        Optional<Map<String, Object>> findEntity(String tenantId, String collectionId, String entityId) {
-            ConcurrentHashMap<String, Map<String, Object>> colEntities =
-                    entities.get(key(tenantId, collectionId));
-            if (colEntities == null) return Optional.empty();
-            return Optional.ofNullable(colEntities.get(entityId));
-        }
-
-        void deleteEntity(String tenantId, String collectionId, String entityId) {
-            // Verify entity belongs to tenant
-            String k = key(tenantId, collectionId);
-            ConcurrentHashMap<String, Map<String, Object>> colEntities = entities.get(k);
-            if (colEntities == null || !colEntities.containsKey(entityId)) {
-                throw new SecurityException("Unauthorized: entity not owned by tenant " + tenantId);
-            }
-            colEntities.remove(entityId);
-        }
-
-        int entityCount(String tenantId, String collectionId) {
-            ConcurrentHashMap<String, Map<String, Object>> colEntities =
-                    entities.get(key(tenantId, collectionId));
-            return colEntities == null ? 0 : colEntities.size();
-        }
-
-        void purgeTenant(String tenantId) {
-            collections.entrySet().removeIf(e -> e.getKey().startsWith(tenantId + "|"));
-            entities.entrySet().removeIf(e -> e.getKey().startsWith(tenantId + "|"));
-        }
-
-        private String key(String tenantId, String id) { return tenantId + "|" + id; }
-    }
+    private record ParsedHttpResponse(int statusCode, Map<String, Object> body) {}
 }

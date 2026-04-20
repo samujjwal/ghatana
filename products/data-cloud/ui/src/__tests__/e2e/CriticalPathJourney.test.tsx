@@ -86,6 +86,7 @@ vi.mock('@ghatana/canvas/flow', () => ({
     FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
         React.createElement('div', { 'data-testid': 'flow-canvas' }, children),
     FlowControls: () => React.createElement('div'),
+    MarkerType: { ArrowClosed: 'arrowclosed' },
     useNodesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
     useEdgesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
     addEdge: vi.fn((conn: unknown, eds: unknown) => eds),

@@ -30,6 +30,46 @@ const workspaceAliases = {
     __dirname,
     "../../../platform/typescript/foundation/platform-utils/src/index.ts",
   ),
+  "@ghatana/domain-components": resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/index.ts",
+  ),
+  "@ghatana/domain-components/privacy": resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/privacy/index.ts",
+  ),
+  "@ghatana/realtime": resolve(
+    __dirname,
+    "../../../platform/typescript/realtime/src/index.ts",
+  ),
+  "@ghatana/platform-events": resolve(
+    __dirname,
+    "../../../platform/typescript/platform-events/src/index.ts",
+  ),
+  "@ghatana/security-ui": resolve(
+    __dirname,
+    "../../../platform/typescript/security-ui/src/index.ts",
+  ),
+  "@ghatana/voice-ui": resolve(
+    __dirname,
+    "../../../platform/typescript/voice-ui/src/index.ts",
+  ),
+  "@ghatana/nlp-ui": resolve(
+    __dirname,
+    "../../../platform/typescript/nlp-ui/src/index.ts",
+  ),
+  "@ghatana/audit-ui": resolve(
+    __dirname,
+    "../../../platform/typescript/audit-ui/src/index.ts",
+  ),
+  "@ghatana/selection-ui": resolve(
+    __dirname,
+    "../../../platform/typescript/selection-ui/src/index.ts",
+  ),
+  "@audio-video/ui": resolve(
+    __dirname,
+    "../../../products/audio-video/libs/audio-video-ui/src/index.tsx",
+  ),
   clsx: resolve(__dirname, "node_modules/clsx"),
   "tailwind-merge": resolve(__dirname, "node_modules/tailwind-merge"),
 };

@@ -11,6 +11,7 @@ import com.ghatana.aep.server.query.AepQueryService;
 import com.ghatana.aep.server.report.AepReportingService;
 import com.ghatana.aep.server.store.DataCloudPatternStore;
 import com.ghatana.aep.server.store.DataCloudPipelineStore;
+import com.ghatana.aep.di.AepRuntimeProfile;
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.security.AepSecurityFilter;
 import com.ghatana.aep.security.AepAuthFilter;
@@ -203,6 +204,8 @@ public class AepHttpServer {
 
     /** P0-4: In-memory set of processed idempotency keys for deduplication. */
     private final java.util.Set<String> processedIdempotencyKeys = new java.util.HashSet<>();
+
+    private static final String ALLOW_IN_MEMORY_RUN_HISTORY_ENV = "AEP_ALLOW_IN_MEMORY_RUN_HISTORY";
 
     /**
      * Active SSE subscriber queues keyed by tenantId (event-loop thread only).
@@ -576,10 +579,16 @@ public class AepHttpServer {
             log.info("[init] PipelineRepository backed by in-memory store (set DC_SERVER_URL for durable pipelines)");
         }
 
-        // P0-3: Warn about in-memory run history in production
+        // P0 hardening: fail closed in explicit production profile when run history is non-durable.
         if (agentDataCloud == null || agentDataCloud.eventLogStore() == null) {
-            log.warn("[PRODUCTION WARNING] Run history is stored in-memory (max {} entries) and will be lost on restart. "
-                + "Configure Data Cloud with EventLogStore for durable run history in production.", MAX_RECENT_RUNS);
+            if (isExplicitProductionProfile() && !isBooleanSettingEnabled(ALLOW_IN_MEMORY_RUN_HISTORY_ENV)) {
+                throw new IllegalStateException(
+                    "Data Cloud EventLogStore is required for durable run history in production. "
+                        + "Set " + ALLOW_IN_MEMORY_RUN_HISTORY_ENV + "=true only for explicit embedded/test deployments "
+                        + "where non-durable in-memory run history is acceptable.");
+            }
+            log.warn("[STARTUP WARNING] Run history is stored in-memory (max {} entries) and will be lost on restart. "
+                + "Configure Data Cloud with EventLogStore for durable run history.", MAX_RECENT_RUNS);
         }
         this.pipelineValidator = new PipelineValidator();
         this.capabilitiesService = new CapabilitiesService();
@@ -592,7 +601,8 @@ public class AepHttpServer {
         this.healthController.addDependencyCheck("review-queue",
             () -> this.humanReviewQueue != null ? "ok" : "disabled");
         this.healthController.addDependencyCheck("run-ledger",
-            () -> this.agentDataCloud != null ? "ok" : "disabled");
+            () -> this.agentDataCloud == null ? "disabled"
+                : (this.agentDataCloud.eventLogStore() != null ? "ok" : "misconfigured"));
         this.healthController.addDependencyCheck("database",
             this::databaseHealthStatus);
         this.healthController.addDependencyCheck("redis",
@@ -616,7 +626,7 @@ public class AepHttpServer {
             () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
         this.healthController.addAsyncDeepDependencyCheck("data-cloud.connectivity", this::dataCloudConnectivityStatus);
         // P0-2: Removed discarded PipelineController instantiation - pipeline routes are handled inline
-        this.agentController = new AgentController(this.engine, this.agentDataCloud);
+        this.agentController = new AgentController(this.engine, this.agentDataCloud, this.sloMetrics);
         this.marketplaceController = new AgentMarketplaceController(this.agentDataCloud);
         this.patternController = new PatternController(this.engine, this.patternStore);
         this.sseController = new SseController();
@@ -668,6 +678,32 @@ public class AepHttpServer {
         return this.agentDataCloud.queryEvents("health-check-tenant", DataCloudClient.EventQuery.all())
             .map(ignored -> "ok")
             .then(Promise::of, error -> Promise.of("error: " + error.getClass().getSimpleName()));
+    }
+
+    private static boolean isExplicitProductionProfile() {
+        String explicitProfile = resolveSetting("AEP_PROFILE");
+        if (explicitProfile != null && !explicitProfile.isBlank()) {
+            return "production".equalsIgnoreCase(explicitProfile.trim());
+        }
+
+        String explicitEnv = resolveSetting("AEP_ENV");
+        if (explicitEnv == null || explicitEnv.isBlank()) {
+            return false;
+        }
+        return AepRuntimeProfile.isProduction(Map.of("AEP_ENV", explicitEnv));
+    }
+
+    private static boolean isBooleanSettingEnabled(String key) {
+        String value = resolveSetting(key);
+        return value != null && "true".equalsIgnoreCase(value.trim());
+    }
+
+    private static String resolveSetting(String key) {
+        String propertyValue = System.getProperty(key);
+        if (propertyValue != null) {
+            return propertyValue;
+        }
+        return System.getenv(key);
     }
 
     /**

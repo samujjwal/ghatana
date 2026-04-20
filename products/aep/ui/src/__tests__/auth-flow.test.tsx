@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
+import { ThemeProvider } from '@ghatana/theme';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/security/ProtectedRoute';
 import { NavBar } from '@/components/shared/NavBar';
@@ -22,9 +23,11 @@ function renderWithProviders(ui: React.ReactElement, initialEntries: string[] = 
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>,
   );
 }

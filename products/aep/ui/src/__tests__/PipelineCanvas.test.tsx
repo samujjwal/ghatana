@@ -23,6 +23,7 @@ import { Provider as JotaiProvider, createStore } from 'jotai';
 
 import { PipelineCanvas } from '@/components/pipeline/PipelineCanvas';
 import { PipelineErrorBoundary } from '@/components/pipeline/PipelineErrorBoundary';
+import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 import {
   nodesAtom,
   edgesAtom,
@@ -90,11 +91,7 @@ function stageNode(id: string, selected = false) {
 }
 
 function renderCanvas(store = createStore()) {
-  return render(
-    <JotaiProvider store={store}>
-      <PipelineCanvas />
-    </JotaiProvider>,
-  );
+  return render(<PipelineCanvas />, { wrapper: createAepTestWrapper(store) });
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────
@@ -259,6 +256,7 @@ describe('PipelineErrorBoundary', () => {
       <PipelineErrorBoundary>
         <div data-testid="child">ok</div>
       </PipelineErrorBoundary>,
+      { wrapper: createAepTestWrapper() },
     );
     expect(screen.getByTestId('child')).toBeInTheDocument();
   });
@@ -275,6 +273,7 @@ describe('PipelineErrorBoundary', () => {
       <PipelineErrorBoundary>
         <Bomb />
       </PipelineErrorBoundary>,
+      { wrapper: createAepTestWrapper() },
     );
 
     expect(screen.getByTestId('pipeline-error-fallback')).toBeInTheDocument();
@@ -296,6 +295,7 @@ describe('PipelineErrorBoundary', () => {
       <PipelineErrorBoundary>
         <MaybeThrow />
       </PipelineErrorBoundary>,
+      { wrapper: createAepTestWrapper() },
     );
 
     expect(screen.getByTestId('pipeline-error-fallback')).toBeInTheDocument();

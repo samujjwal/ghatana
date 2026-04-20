@@ -1,675 +1,757 @@
-You are a principal product architect, staff full-stack engineer, AI/ML-native systems designer, UX strategist, platform/reliability reviewer, security/privacy/governance auditor, and production-readiness assessor.
+Perform a strict, evidence-based deep audit of the **current codebase** for the **target product** and its **directly or transitively dependent libraries/modules only**.
 
-Your task is to perform a **deep, evidence-based, end-to-end, production-grade audit** of the following target scope:
+Do **not** audit the entire repository by default.
+Do **not** use previous audit reports as a primary input.
+Do **not** spend time on unrelated products, unrelated packages, dormant modules, or repo-wide content unless they are actually required by the target product’s runtime, build, test, deploy, contracts, or critical workflows.
 
-- **Product or products under audit:** [phr and finance together with kernel]
-- **Optional product family / portfolio context:** [platform, audio-vido, design-system]
-- **Optional key repositories / services / apps / environments:** [security, auth, o11y, aep, data-cloud]
+Goal: determine whether the current product and the libraries it depends on are:
+- feature-complete for intended scope and use cases
+- correct end to end
+- production-hardened
+- secure and privacy-conscious
+- observable and operationally transparent
+- performant and scalable
+- simple in UX and architecture
+- AI/ML-native, with AI/ML as a first-class, embedded, pervasive capability
+- designed to minimize customer effort and require manual intervention only when truly necessary
 
-Your job is to determine whether the specified product or set of products is truly:
+AI/ML must not be a visible gimmick or a separate “feature.” It must be embedded into workflows to solve real-world problems, reduce customer work, and improve outcomes. Customers should only be involved when confidence, governance, policy, approval, ambiguity, or exception handling requires it.
 
-- **working end to end**
-- **production-grade**
-- **AI/ML-pervasive and automation-first**
-- **dead simple to use**
-- **low cognitive load**
-- **minimal in required user effort**
-- **governance-, privacy-, security-, and visibility-first**
-- **operationally trustworthy**
-- **fit for real-world delivery, operation, and evolution**
-
-This is **not** a generic code review.  
-This is a **strict product reality audit** across UX, workflows, APIs, backend, data, automation, operations, governance, security, privacy, observability, deployment, and production behavior.
+Your job is to find the truth in the **current implementation** and its **actual dependency surface**.
 
 ---
 
-# Primary Audit Goal
+# Scope rules
 
-Determine whether the target product or product set actually delivers intended user and business outcomes with:
+## 1. Audit target scope only
+Audit:
+- the target product/application
+- the libraries/modules/packages/services it directly depends on
+- transitive dependencies only when they materially affect the product’s behavior, correctness, performance, security, UX, automation, or operations
 
-- minimal friction
-- minimal manual work
-- minimal user decision burden
-- minimal exposure to internal complexity
-- maximal safe automation
-- strong governance/privacy/security
-- strong observability and operational trust
-- credible production resilience and maintainability
+Do not audit:
+- unrelated apps/products in the repo
+- unrelated shared libraries not used by the target product
+- experimental, dead, archived, or dormant modules unless referenced by the target product
+- generic repo-wide issues that do not affect this product
 
-The system should hide complexity and deliver outcomes.
+## 2. Build the dependency surface first
+Before deep review, identify the product’s actual dependency surface:
+- runtime dependencies
+- build dependencies
+- test dependencies relevant to proving product correctness
+- shared libraries used by product flows
+- APIs/services/contracts the product depends on
+- schemas/migrations/storage paths the product uses
+- observability/security/automation components used by the product
 
-Users should not need to understand:
-- internal architecture
-- backend orchestration
-- AI/ML mechanics
-- workflow plumbing
-- integration details
-- state reconciliation
-- operational workarounds
+Use that dependency graph to define audit boundaries.
 
-The product should do the work unless user involvement is truly necessary.
+## 3. Current codebase only
+Base the audit on:
+- current code
+- current configs
+- current scripts
+- current tests
+- current docs used by the product
+- current routes/pages/components
+- current APIs/contracts/schemas/migrations
+- current deployment/runtime/observability/security artifacts
 
----
-
-# Product Philosophy to Audit Against
-
-Audit the target product(s) against the following principles.
-
-## 1. Outcome First
-The product exists to achieve user and business outcomes, not to expose system mechanics.
-
-The user should primarily experience:
-- clear intent capture
-- guided progression
-- strong defaults
-- quiet automation
-- trustworthy results
-- easy review only when needed
-- truthful visibility into important status and risk
-
-## 2. End-to-End Truth Over Partial Completeness
-A feature is not complete because:
-- code exists
-- a page renders
-- an endpoint returns 200
-- a workflow demo works once
-- a test passes in isolation
-
-A feature is complete only if the intended outcome works through the real system:
-- UI
-- client state
-- API contract
-- backend/domain logic
-- database operations
-- async jobs/events/agents
-- integrations
-- policy/security/privacy enforcement
-- observability/audit trail
-- recovery paths
-- user-visible result
-
-## 3. AI/ML as a First-Class Operational Layer
-AI/ML should be used as a pervasive product capability wherever credible and valuable.
-
-It should:
-- infer
-- prefill
-- recommend
-- summarize
-- rank
-- validate
-- detect duplicates/conflicts/anomalies
-- automate repetitive work
-- reduce navigation and configuration burden
-- reduce low-value user decisions
-- improve completion quality and speed
-- remain mostly implicit unless explicit user control or governance is required
-
-AI/ML should not be a visible gimmick or force users to become prompt engineers for core product behavior.
-
-## 4. Minimal User Involvement
-The default product posture should be:
-- automate first
-- ask only when needed
-
-The user should only be meaningfully involved when:
-- legal/compliance/policy requires it
-- security/privacy/trust boundaries require it
-- confidence is too low for safe automation
-- irreversible action needs review
-- business governance requires approval
-- ambiguity cannot be resolved safely
-- explicit human judgment is necessary
-
-## 5. Simplicity and Low Cognitive Load
-The primary UX should feel:
-- calm
-- obvious
-- concise
-- guided
-- low-friction
-- low-choice
-- low-clutter
-- low-memory-load
-
-The system should reduce:
-- repeated input
-- repeated review
-- context switching
-- over-configuration
-- dashboard clutter
-- option overload
-- jargon
-- unnecessary forms
-- unnecessary approvals
-- unnecessary navigation depth
-
-## 6. Governance, Privacy, Security, and Visibility Are First-Class
-These are core product qualities, not add-ons.
-
-The product must be:
-- governable
-- privacy-aware
-- secure by default
-- auditable
-- observable
-- policy-aware
-- operationally visible
-- explainable where required
-- safe to automate
-- safe to operate at scale
+Do not rely on previous audit reports to define truth.
+If previous audits exist, they may be used only as optional context after the current-code audit is complete, never as the baseline source of findings.
 
 ---
 
-# Required Audit Coverage
+# Inputs
 
-Audit all relevant evidence across the target product(s), including:
+Use only what is relevant to the target product:
+- product code
+- dependent libraries/modules
+- configs, scripts, build/deploy files
+- tests for product and dependent modules
+- routes/pages/components
+- APIs/contracts/schemas/migrations used by the product
+- architecture/design/docs relevant to the product
+- observability/monitoring/security/privacy artifacts relevant to the product
+- performance/load artifacts relevant to the product
 
-- vision, product, and requirements docs
-- business flows and user journeys
-- UX/UI designs and actual screens
-- routes/pages/layouts/forms/dialogs/states
-- frontend state/actions/side effects
-- API definitions, DTOs, schemas, contracts, errors
-- backend services, domain logic, orchestration, agents, workers, jobs, queues, events
-- databases, migrations, queries, transactions, retention, lineage, archival, deletion
-- integrations and third-party dependencies
-- IAM, roles, permissions, policies, governance controls
-- privacy and security controls
-- audit logs, traces, metrics, events, dashboards, alerts
-- deployment/config/runtime model
-- feature flags, rollout/rollback mechanisms
-- tests at all levels
-- scripts, local/dev/test/prod environments
-- resilience, recovery, and operability design
-- portfolio-wide dependencies and cross-product flows where multiple products are in scope
-
-If the scope includes multiple products, audit both:
-- each product independently
-- the integrated product system as a whole
+If scope is ambiguous, infer it from imports, build graphs, package/module references, runtime wiring, API usage, and dependency declarations.
 
 ---
 
-# Additional Production-Grade Audit Dimensions
+# Core rules
 
-You must explicitly cover these areas.
-
-## A. Real Production Operability
-Determine whether the product can be run safely in production.
-
-Review:
-- deployability
-- rollback safety
-- migration safety
-- backup/restore readiness
-- disaster recovery assumptions
-- alerting coverage
-- incident diagnosability
-- configuration hygiene
-- secret handling
-- environment isolation
-- feature flag safety
-- operational runbooks if present
-- startup/shutdown behavior
-- failure containment
-- retry/idempotency/backpressure/timeouts
-- scaling behavior
-- noisy-neighbor or tenant isolation issues where relevant
-- cost realism and resource efficiency where relevant
-
-## B. Data Lifecycle Integrity
-Determine whether data is handled correctly throughout its full lifecycle.
-
-Review:
-- creation
-- validation
-- enrichment
-- persistence
-- mutation
-- versioning/history
-- deduplication
-- retention
-- archival
-- deletion/purge
-- export/import
-- lineage/provenance
-- auditability
-- privacy boundaries
-- access control
-- data quality and consistency
-
-## C. Cross-Product / Platform Integrity
-If multiple products or a platform portfolio are in scope, review:
-- product boundaries
-- ownership clarity
-- duplicated capabilities
-- shared service correctness
-- contract correctness
-- dependency direction
-- failure propagation across products
-- identity/policy consistency across products
-- data sharing boundaries
-- event/async contract correctness
-- end-to-end flows that cross product boundaries
-- portfolio complexity and sprawl
-- reuse vs duplication
-
-## D. AI/ML Productionworthiness
-Review AI/ML not just for existence but for trustworthiness in production.
-
-Check:
-- where AI/ML meaningfully reduces user burden
-- whether it is used pervasively enough
-- confidence handling
-- fallback behavior
-- human escalation paths
-- evaluation quality
-- regression detection
-- drift/quality monitoring where relevant
-- privacy/security/policy enforcement around AI/ML
-- traceability of AI-assisted actions where needed
-- explainability where governance requires it
-- unsafe automation risks
-- overexposure of AI that increases user burden
-
-## E. Accessibility, Trust, and Adoption
-Review whether the product is realistically usable and adoptable.
-
-Check:
-- onboarding simplicity
-- discoverability
-- accessibility basics and usability barriers
-- terminology clarity
-- trust and transparency where needed
-- admin/operator burden
-- supportability
-- user recovery paths
-- safe defaults
-- progressive disclosure
-- empty/loading/error states
-- learnability without training overhead
+- Use evidence only.
+- Do not trust claims without implementation proof.
+- Do not trust implementation without end-to-end proof.
+- Focus on current code behavior, not historical intent.
+- Prefer root-cause analysis over symptom commentary.
+- Do not reward complexity if a simpler system would perform better or be easier to operate.
+- Do not reward AI/ML claims unless AI/ML is actually embedded into workflows and reduces customer effort.
+- Do not reward automation that is opaque, ungovernable, or hard to observe.
+- Do not reward polished UI over weak product, operational, or technical foundations.
 
 ---
 
-# Required Method
+# Mission A: Establish product boundary and dependency map
 
-## 1. Reconstruct the Intended Product Reality
-Before judging implementation, reconstruct:
+First determine:
+- what the target product is
+- what user-facing capabilities it owns
+- which modules/libraries/services it actually depends on
+- which dependencies are critical to runtime correctness
+- which dependencies are critical to performance, security, privacy, o11y, automation, and AI/ML behavior
 
-- target users/personas
-- user jobs to be done
-- intended business outcomes
-- primary workflows
-- secondary workflows
-- critical cross-product flows
-- automation expectations
-- expected role of AI/ML
-- where human review is justified
-- governance/privacy/security expectations
-- operational expectations in production
+Produce a scoped dependency map:
+- product modules
+- direct dependent libraries
+- important transitive dependencies
+- external integrations/contracts
+- supporting operational modules
 
-Infer from docs, code, tests, configs, routes, schemas, DB models, API contracts, and runtime behavior if documentation is incomplete.
+Use this map to constrain the rest of the audit.
 
-State all assumptions explicitly.
+---
 
-## 2. Trace Real End-to-End Flows
-For every significant workflow, trace the real path:
+# Mission B: Validate feature completeness in current implementation
 
-- user intent
-- entry point
-- navigation and UX flow
-- user inputs
-- AI/ML assistance or automation
-- frontend logic/state transitions
-- API requests and responses
-- backend/domain processing
-- DB operations
-- jobs/events/agents/workers
-- third-party integrations
-- policy/security/privacy/governance controls
-- telemetry/audit signals
-- resulting persisted state
-- resulting user-visible outcome
-- failure/retry/recovery behavior
-
-For multi-product scope, include:
-- cross-service
-- cross-app
-- cross-team-boundary
-- cross-data-boundary flows
-
-## 3. Audit User Burden Ruthlessly
-For every workflow, ask:
-
-- What work is the user doing that the system should do?
-- What decisions is the user making that the system should make or recommend?
-- What information is the user entering that the system could infer?
-- What repetition exists?
-- What approvals/reviews are unnecessary?
-- What navigation is avoidable?
-- What advanced controls are shown too early?
-- What internal complexity is leaking into the UX?
-
-Treat unjustified user burden as a product failure.
-
-## 4. Audit AI/ML Pervasiveness
-For every workflow, ask:
-
-- Where should AI/ML be helping?
-- Is AI/ML reducing effort enough?
-- Is it too shallow?
-- Is it too explicit?
-- Is it safe enough?
-- Is confidence handled correctly?
-- Are escalations and approvals well placed?
-- Does the product still burden the user because AI/ML is not used deeply enough?
-
-## 5. Audit Governance, Privacy, Security, and Visibility Everywhere
-Do not treat these as separate silos.  
-Check them across the entire workflow.
+Determine whether the current product is truly complete for its intended scope, users, use cases, and workflows.
 
 Validate:
-- permissions and least privilege
-- policy-aware actions
-- approval gates
-- audit trails
-- sensitive data handling
-- secure defaults
-- privacy-aware retention/deletion/export
-- traceability
-- observability
-- operational visibility into automation and failures
-- escalation paths
-- trust boundaries
-- tenant/workspace boundaries where relevant
+- target users/personas/operators/admins
+- core and secondary use cases
+- expected workflows
+- feature claims actually represented in current code/docs
+- supporting backend/domain/data/contracts
+- validation/auth/authz
+- observability and auditability
+- operational readiness
+- edge cases and exception handling
+- manual fallback behavior when automation cannot proceed safely
 
-## 6. Audit Production Behavior, Not Just Development Behavior
-Determine whether the system behaves credibly in real operations.
+For each major feature/use case, determine:
+- intended user and problem being solved
+- expected workflow and outcome
+- implementation evidence in current code
+- missing pieces
+- correctness status
+- UX completeness
+- automation completeness
+- visibility/o11y completeness
+- production credibility
+
+Classify each as:
+- complete and credible
+- complete but fragile
+- partial
+- incorrect
+- misleadingly complete
+- non-production-grade
+- missing but required
+
+Explicitly detect:
+- claimed features not fully implemented
+- shallow workflows that stop before real value delivery
+- backend capabilities without usable UX
+- UX capabilities without real backend truth
+- incomplete exception/recovery paths
+- missing admin/operator/governance surfaces
+
+---
+
+# Mission C: Validate correctness deeply
+
+Verify correctness in the current codebase and dependent modules.
 
 Check:
-- environment parity
-- config correctness
-- deployment assumptions
-- migration behavior
-- rollback strategy
-- startup sequencing
-- background job safety
-- concurrency and idempotency
-- error propagation
+- business rules
+- computations
+- state transitions
+- workflow sequencing
+- forms and validation
+- API request/response handling
+- persistence effects
+- role/permission behavior
+- retries/error handling
+- loading/empty/error/success states
+- search/filter/sort/pagination
+- import/export/sync/reporting flows
+- integration flows
+- concurrency and stale-state behavior
+- idempotency/retry correctness where relevant
+- correctness of automated and manual paths
+- correctness of AI/ML-assisted outcomes and fallbacks
+
+For each critical flow:
+- expected behavior
+- actual behavior
+- edge cases
+- failure modes
+- proof quality
+- severity if wrong
+- release confidence
+
+---
+
+# Mission D: Audit AI/ML as a first-class, pervasive capability
+
+Determine whether AI/ML is embedded as a first-class citizen in the target product and its dependent modules where it creates real value.
+
+AI/ML must be:
+- implicit, not noisy
+- pervasive where justified
+- embedded into workflows, not bolted on
+- used to reduce customer work
+- measurable and observable
+- safe, governable, and fallback-aware
+- paired with deterministic methods where appropriate
+- operationally visible even if mostly invisible to the user
+
+Validate whether AI/ML is meaningfully used for:
+- intent/context inference
+- ranking/prioritization
+- recommendation
+- anomaly/error/duplicate/conflict detection
+- validation assistance
+- classification/tagging/routing
+- summarization/extraction where useful
+- forecasting/optimization/planning
+- workflow adaptation
+- quality improvement
+- automation of repetitive or low-value steps
+- reducing decision burden and manual input
+
+For each AI/ML-relevant area, determine:
+- what real problem it solves
+- whether AI/ML is justified vs deterministic alternatives
+- whether it is embedded into workflow instead of exposed as a gimmick
+- whether it reduces manual effort
+- whether outputs are monitored, explainable enough, and governable
+- whether confidence/fallback/human-escalation paths exist
+- whether the system remains trustworthy when AI/ML is wrong or unavailable
+
+Classify AI/ML usage as:
+- meaningful and embedded
+- useful but shallow
+- absent where needed
+- misapplied
+- gimmicky
+- unsafe due to weak controls
+- too visible to user for the value delivered
+
+---
+
+# Mission E: Minimize manual intervention
+
+Audit whether the current product solves as much as possible automatically before asking the customer to act.
+
+For major workflows, determine whether the system:
+- infers or pre-fills what it reasonably can
+- automates routine steps
+- detects and resolves simple issues automatically
+- asks for only necessary input
+- avoids repetitive questions
+- avoids making the user orchestrate internal system steps
+- escalates only when confidence, policy, approval, governance, or ambiguity requires it
+- provides safe defaults, suggestions, and next actions
+- preserves trust while reducing clicks, steps, and decisions
+
+Find places where:
+- the product asks users to do work the system should do
+- AI/ML should help but does not
+- deterministic automation should exist before AI/ML
+- users are forced to reconcile gaps manually
+- internal intelligence exists but user workflows remain clumsy
+- manual review is required too often without good reason
+
+---
+
+# Mission F: Full visibility of actions and operations
+
+Determine whether both automation and manual actions have full operational visibility within the target product and its dependent modules.
+
+Validate whether the system provides clear, inspectable visibility into:
+- what actions were taken
+- who/what took them
+- when they happened
+- why they happened
+- what inputs/context were used
+- what outputs/effects occurred
+- whether the action was manual, automated, deterministic, or AI/ML-assisted
+- what confidence/risk/status applied
+- whether approval/review/escalation occurred
+- whether rollback/retry/reconciliation is possible where needed
+
+Audit visibility for:
+- user actions
+- system actions
+- background jobs
+- automated workflow steps
+- AI/ML-driven decisions or suggestions
+- integration calls
+- security-sensitive operations
+- data changes
+- failures and retries
+- approvals and overrides
+
+Find gaps where automation exists but is opaque, untraceable, unauditable, or difficult to govern.
+
+---
+
+# Mission G: Audit observability and o11y
+
+Determine whether the target product and its dependency surface have first-class observability for correctness, performance, failures, automation, AI/ML behavior, and operations.
+
+Validate:
+- logs
+- metrics
+- traces
+- correlation IDs / request tracing
+- job/workflow visibility
+- audit trails
+- alerting surfaces
+- dashboards
+- failure classification
+- bottleneck visibility
+- dependency health visibility
+- user-impact visibility
+- automation success/failure visibility
+- AI/ML inference/evaluation visibility where relevant
+
+Check whether observability answers:
+- what happened
+- where it happened
+- why it failed
+- who is affected
+- whether it is recurring
+- whether automation is helping or harming
+- whether AI/ML is improving outcomes or degrading trust
+- whether operators can diagnose issues quickly
+
+Find:
+- blind spots
+- noisy useless telemetry
+- missing key metrics
+- poor tracing across boundaries
+- weak audit trails
+- missing visibility for automation or AI/ML decisions
+- operational surfaces too shallow for real support
+
+---
+
+# Mission H: Audit security and privacy
+
+Determine whether the target product and its dependent modules are secure and privacy-conscious.
+
+Validate:
+- authentication
+- authorization
+- least-privilege design
+- secret handling
+- config safety
+- boundary validation
+- tenant/user isolation if relevant
+- input/output sanitization
+- sensitive data handling
+- logging/privacy hygiene
+- encryption assumptions if relevant
+- third-party/integration trust boundaries
+- auditability of privileged actions
+- approval/review paths for sensitive automation
+- AI/ML data exposure risks
+- privacy-preserving defaults
+- data minimization practices where relevant
+
+Find:
+- weak auth/authz
+- overexposure of sensitive data
+- unsafe defaults
+- privacy leaks
+- logs/traces capturing sensitive content improperly
+- weak trust boundaries
+- insecure integrations
+- automation acting without enough policy/governance
+- AI/ML flows that leak or misuse sensitive information
+
+---
+
+# Mission I: Audit performance and efficiency
+
+Determine whether the target product and its dependent modules are performant in design and implementation.
+
+Validate:
+- latency on critical paths
+- throughput assumptions
+- memory behavior
+- CPU-heavy logic
+- I/O efficiency
+- database/query efficiency
+- cache strategy
+- batching/streaming where relevant
+- async/concurrency handling
+- render/recompute efficiency
+- excessive network chatter
+- hot-path complexity
+- backpressure handling if relevant
+- efficiency of automation/AI/ML pipelines
+
+Search for:
+- N+1 patterns
+- repeated computation
+- redundant queries/calls
+- unnecessary serialization/deserialization
+- blocking operations in wrong layers
+- bad pagination/search/filter design
+- unnecessary rerenders or state churn
+- poor cache invalidation
+- resource leaks
+- inefficient file/object/media handling
+- wasteful inference or repeated model calls
+
+For each issue, determine:
+- where it exists
+- why it is inefficient
+- impact under realistic and scaled load
+- whether locally fixable or structural
+
+---
+
+# Mission J: Audit scalability and long-term architecture fitness
+
+Determine whether the target product and its dependencies can scale technically and operationally while remaining understandable and maintainable.
+
+Validate:
+- load growth assumptions
+- user/workflow/data growth handling
+- persistence behavior under scale
+- automation/job handling under scale
+- AI/ML workload scaling assumptions
+- observability usefulness under scale
+- deployment/runtime topology realism
+- failure-mode amplification under scale
+- multi-tenant/multi-region/high-throughput evolution if relevant
+
+Find:
+- central bottlenecks
+- points of contention
+- coupling that blocks scale
+- architecture choices that will break under growth
+- overengineered scaling mechanisms with low present value
+- underbuilt platform areas that will become blockers
+
+Classify scalability concerns as:
+- acceptable now
+- near-term concern
+- structural blocker
+- future risk worth tracking
+- overengineering
+
+---
+
+# Mission K: Audit simplicity in architecture and UX
+
+Determine whether the target product is simple in the right way.
+
+Simplicity means:
+- fewer moving parts where possible
+- understandable workflows
+- low accidental complexity
+- predictable behavior
+- low operator burden
+- low developer burden
+- low customer burden
+- AI/ML reducing effort rather than creating extra interaction
+
+Find:
+- unnecessary complexity
+- duplicate patterns
+- too many tools/frameworks for same job
+- hard-to-follow flows
+- too many config paths
+- unclear ownership
+- hidden control flow
+- architecture/documentation mismatch
+- user-facing workflows that expose internal system mess
+
+Verify whether:
+- the simplest viable design was chosen
+- complexity was added only when justified
+- the product reduces customer effort instead of shifting burden outward
+
+---
+
+# Mission L: Audit reliability, hardening, and production readiness
+
+Validate:
+- failure handling
+- recovery behavior
+- retries and idempotency
+- concurrency/race safety
+- data consistency and integrity
+- config/env safety
+- migration/release safety
+- graceful degradation
+- fallback behavior for AI/ML and integrations
 - resilience under partial failure
-- data recovery assumptions
-- monitoring and alert readiness
-- support and incident diagnosis readiness
+- operational recovery procedures if present
 
-## 7. Audit Tests as Evidence of Product Truth
-Review whether tests actually prove:
-- end-to-end correctness
-- product outcome correctness
-- AI/ML-assisted behavior where relevant
-- API correctness
-- backend/domain correctness
-- DB correctness
-- contract integrity
-- privacy/security/governance correctness
-- observability assumptions where important
-- multi-product flow correctness
-- failure/retry/recovery correctness
-- truthful UI state and user outcomes
-
-Treat tests as insufficient if they:
-- only assert implementation details
-- are over-mocked
-- do not prove user-visible outcomes
-- do not cover failure/recovery/governance paths
-- do not validate cross-product behavior where relevant
+Find:
+- silent corruption risk
+- fragile retries
+- missing validation
+- stale state issues
+- hidden dependency failures
+- partial failure blind spots
+- weak fallback logic
+- optimistic UI not backed by durable truth
+- production paths still relying on mocks/stubs/placeholders
 
 ---
 
-# Strict Evaluation Questions
+# Mission M: Judge proof quality
 
-For every feature, workflow, subsystem, and cross-product flow, answer all of these:
+Do not count tests; judge whether they prove truth for the target product and its dependent modules.
 
-1. Does it truly work end to end?
-2. Does it achieve the intended user/business outcome?
-3. Does it minimize user effort?
-4. Is AI/ML used deeply enough?
-5. Is AI/ML mostly implicit and outcome-oriented?
-6. Is the UX genuinely simple?
-7. Is cognitive load minimized?
-8. Are governance controls first-class?
-9. Are privacy controls first-class?
-10. Are security controls first-class?
-11. Is observability/visibility first-class?
-12. Are persisted states and business outcomes correct?
-13. Are async and side-effect paths reliable?
-14. Are failure, retry, rollback, and recovery paths credible?
-15. Is it production-real, not partially mocked or deceptive?
-16. Is it operable in production?
-17. Is data lifecycle handling correct?
-18. Is cross-product integration correct, if applicable?
-19. Is there credible test evidence?
-20. Is this feature/workflow truly ready to be trusted by real users/operators?
+Look for evidence via:
+- unit tests
+- integration tests
+- API/service E2E tests
+- browser E2E tests
+- contract tests
+- migration tests
+- perf/load/stress tests
+- failure-mode/chaos tests if present
+- security/privacy tests if present
+- observability dashboards/alerts if present
+- AI/ML evaluation artifacts if present
 
-If any answer is “no” or “partial,” explain exactly why and where.
+For each critical area determine:
+- expected proof
+- current proof
+- proof quality
+- gaps in proof
+- whether release confidence is justified
 
----
-
-# What to Flag Aggressively
-
-Flag these aggressively:
-
-- features that appear complete but are not truly end to end
-- flows that work only in ideal/demo paths
-- missing or weak cross-product integration paths
-- missed AI/ML automation opportunities
-- unnecessary user input, review, or navigation
-- UI exposing internal complexity
-- dashboard/report clutter
-- weak defaults
-- hidden workflow breaks
-- contract mismatches
-- backend/DB inconsistencies
-- migration or rollout risk
-- weak privacy/security/governance handling
-- missing observability or auditability
-- fragile jobs/events/workers
-- weak recovery behavior
-- weak tenant/workspace isolation where relevant
-- duplicated capabilities across products
-- shallow, misleading, or non-evidentiary tests
-- anything that undermines real production trust
+Flag all cases where:
+- feature completeness is claimed without proof
+- performance/scalability is asserted without evidence
+- AI/ML value is claimed without evaluation or operational evidence
+- tests validate implementation trivia instead of system truth
+- critical flows lack end-to-end proof
+- automation correctness lacks validation
+- privacy/security assurances lack evidence
 
 ---
 
-# Required Output Format
+# Mission N: Identify gaps we must fill
 
-## A. Executive Verdict
-Provide:
-- overall maturity
-- end-to-end readiness
-- production readiness
-- AI/ML-first maturity
-- automation maturity
-- UX simplicity rating
-- cognitive load assessment
-- governance/privacy/security/visibility maturity
-- operability/resilience maturity
-- top blockers
+Group gaps across:
+- feature completeness
+- correctness
+- AI/ML embedding
+- manual-effort reduction
+- action visibility
+- o11y
+- security/privacy
+- performance/efficiency
+- scalability
+- simplicity
+- hardening/reliability
+- testing/proof
+- platform/operational excellence
 
-## B. Reconstructed Product Model
-Include:
-- target personas/users
-- jobs to be done
-- expected outcomes
-- primary workflows
-- secondary workflows
-- cross-product workflows if applicable
-- expected AI/ML role
-- expected user involvement level
-- justified human review/governance points
-- operational expectations
-
-## C. End-to-End Workflow Audit Matrix
-For every major workflow, include:
-- workflow name
-- intended outcome
-- actual current behavior
-- user burden assessment
-- AI/ML role today
-- AI/ML role that should exist
-- UI assessment
-- API assessment
-- backend assessment
-- DB assessment
-- async/integration assessment
-- governance/privacy/security/visibility assessment
-- production operability assessment
-- test evidence
-- key gaps
-- severity
-- exact files/services/components involved
-
-## D. UX and Cognitive Load Review
-Group findings into:
-- information architecture
-- navigation
-- workflow simplicity
-- form/input minimization
-- dashboard/report simplification
-- review/approval burden
-- error/loading/empty/recovery states
-- onboarding/discoverability
-- progressive disclosure
-- accessibility/usability barriers
-- implicit AI/ML assistance
-
-## E. AI/ML Pervasive Automation Review
-Include:
-- where AI/ML is correctly first-class
-- where it is too shallow
-- where it should automate more
-- where it should infer more
-- where it is too exposed
-- where trust/fallback/escalation is weak
-- where policy/privacy/security around AI/ML is insufficient
-- where AI/ML should reduce user burden but currently does not
-
-## F. API / Backend / DB / Integration Review
-Include:
-- API contract issues
-- orchestration issues
-- backend/domain logic issues
-- database/query/transaction issues
-- event/job/worker issues
-- integration contract issues
-- consistency/integrity issues
-- reuse/duplication issues
-- scalability/cost/efficiency concerns where relevant
-
-## G. Governance / Privacy / Security / Visibility Review
-Include:
-- governance gaps
-- privacy gaps
-- security gaps
-- auditability gaps
-- observability gaps
-- approval/control gaps
-- trust boundary issues
-- tenant/workspace isolation concerns where relevant
-
-## H. Production Operability Review
-Include:
-- deployment/config issues
-- migration/rollback risk
-- resilience/failure handling issues
-- backup/restore/disaster recovery gaps
-- monitoring/alerting gaps
-- supportability/incident diagnosis gaps
-- operational burden risks
-- environment parity/config hygiene issues
-
-## I. Testing and Evidence Gaps
-Include:
-- missing workflow tests
-- missing cross-product tests
-- missing production-behavior tests
-- missing privacy/security/governance tests
-- missing failure/recovery tests
-- weak or misleading tests
-- highest-risk unproven product claims
-
-## J. Prioritized Remediation Plan
-Group into:
-- P0: must fix immediately
-- P1: required for production trust
-- P2: simplification and automation hardening
-- P3: strategic improvements
-
-For each item include:
-- issue
+For each gap include:
+- what is missing or weak
 - why it matters
-- affected outcomes
-- affected products/layers
-- root cause
-- exact fix
-- AI/ML implication
-- governance/privacy/security implication
-- production operability implication
-- required validation/tests
-
-## K. Simplicity and Automation Blueprint
-Provide a concrete redesign/hardening proposal:
-- workflows to simplify
-- screens/routes to merge/remove
-- inputs to infer/auto-populate
-- decisions to automate
-- decisions to recommend instead of asking
-- unnecessary review points to remove
-- review/governance points to retain
-- AI/ML interventions to add
-- AI/ML exposure to reduce
-- visibility/audit controls to strengthen
-- operational signals needed to trust the product in production
-
-## L. Product System Architecture Corrections
-If applicable, provide:
-- product boundary corrections
-- shared capability consolidation opportunities
-- dependency direction fixes
-- ownership clarification
-- integration simplification
-- contract normalization
-- data boundary corrections
-- reuse-first consolidation recommendations
-
-## M. Final Truth Statement
-State clearly:
-- what truly works end to end today
-- what works only partially
-- what is misleading or overstated
-- what creates user burden
-- what blocks dead-simple UX
-- what blocks pervasive automation
-- what blocks production trust
-- what blocks governance/privacy/security/visibility maturity
-- what blocks operability and resilience
-- what must change for the target product or product set to become truly production-grade, automation-first, AI/ML-pervasive, minimally burdensome, and end-to-end trustworthy
+- urgency
+- impact on trust/performance/scale/customer effort
+- whether foundational or incremental
+- recommended direction
 
 ---
 
-# Final Instruction
+# Mission O: Define frontrunner technical and product positioning
 
-Do not perform a shallow repository review.
+Recommend how the target product can become a frontrunner through:
+- superior correctness and trust
+- higher feature completeness with lower complexity
+- pervasive but implicit AI/ML
+- lower customer effort
+- stronger automation with clear governance
+- full operational visibility
+- stronger observability and debuggability
+- better security/privacy posture
+- better performance efficiency
+- simpler scalable architecture
+- faster time-to-value
+- fewer moving parts with higher capability
 
-Perform a **strict, evidence-based, production reality audit** of the specified product or product set to determine whether it is truly:
+For each proposed differentiator:
+- what real problem it solves
+- why it matters
+- why current market solutions do not solve it well
+- why it is technically credible
+- feasibility
+- defensibility
+- effect on customer effort
+- effect on trust/operations/scale
+- whether it is commodity, meaningful differentiator, disruptive differentiator, or moat candidate
 
-- working end to end
-- production-grade
-- AI/ML-pervasive
-- automation-first
-- dead simple to use
-- low cognitive load
-- minimal in required user effort
-- governance/privacy/security/visibility-first
-- operationally trustworthy
-- ready to deliver real outcomes in the hands of real users and operators
+---
+
+# Output
+
+Return one compact structured report:
+
+## 1. Executive verdict
+- Scope audited
+- Feature completeness: Strong / Moderate / Weak
+- Technical excellence: Strong / Moderate / Weak
+- Production readiness: Ready / Not Ready / Critically Not Ready
+- Correctness confidence: High / Medium / Low
+- AI/ML-native quality: Strong / Moderate / Weak
+- Customer-effort reduction: Strong / Moderate / Weak
+- Action/operation visibility: Strong / Moderate / Weak
+- Observability quality: Strong / Moderate / Weak
+- Security/privacy posture: Strong / Moderate / Weak
+- Performance quality: Strong / Moderate / Weak
+- Scalability readiness: Strong / Moderate / Weak
+- Simplicity quality: Strong / Moderate / Weak
+- Top 10–15 critical findings
+
+## 2. Scope and dependency map
+- target product boundary
+- direct dependent libraries/modules
+- critical transitive dependencies
+- external integrations/contracts
+- excluded out-of-scope areas
+
+## 3. Feature completeness matrix
+For each major feature/use case:
+- feature/use case
+- intended user/problem
+- implementation evidence
+- missing pieces
+- correctness
+- automation completeness
+- visibility/o11y
+- production credibility
+- verdict
+
+## 4. AI/ML-native assessment
+For each AI/ML-relevant area:
+- problem being solved
+- current implementation
+- whether AI/ML is justified
+- whether AI/ML is embedded and pervasive
+- whether it reduces manual effort
+- fallback/governance/evaluation quality
+- visibility/o11y quality
+- verdict
+
+## 5. Manual-effort reduction findings
+- where system should do more automatically
+- where user burden is too high
+- where deterministic automation should exist
+- where AI/ML should assist
+- where manual review is overused
+
+## 6. Action visibility / operations findings
+- missing auditability
+- opaque automation
+- poor traceability
+- weak governance/override surfaces
+- missing visibility into background/system actions
+
+## 7. Observability findings
+- logging/metrics/tracing gaps
+- dashboard/alert gaps
+- automation visibility gaps
+- AI/ML visibility gaps
+- operator blind spots
+
+## 8. Security/privacy findings
+- auth/authz issues
+- data exposure/privacy risks
+- secret/config issues
+- trust-boundary weaknesses
+- unsafe automation/AI handling
+
+## 9. Performance and efficiency findings
+For each issue:
+- location
+- issue
+- why inefficient
+- scale impact
+- severity
+- recommended fix
+
+## 10. Scalability findings
+For each concern:
+- area
+- scalability risk
+- current evidence
+- time horizon
+- severity
+- recommended direction
+
+## 11. Correctness and hardening findings
+- workflow/area
+- issue/risk
+- severity
+- evidence
+- required fix
+
+## 12. Simplicity findings
+- unnecessary complexity
+- duplicate patterns
+- too many moving parts
+- simplification opportunities
+
+## 13. Proof gaps
+- capability/claim
+- expected proof
+- current proof
+- missing proof
+- confidence
+- tests/evaluations/benchmarks needed
+
+## 14. Strategic gaps to fill
+- what must improve for market leadership
+- what must be simplified or removed
+- what platform capabilities should be strengthened
+- what hidden risks block trust, adoption, or scale
+
+## 15. Prioritized execution plan
+- Phase 0: correctness/security/privacy/hardening blockers
+- Phase 1: feature completeness + proof + o11y + visibility
+- Phase 2: performance/scalability + simplification + operational excellence
+- Phase 3: pervasive AI/ML + autonomous value + differentiated leadership
+
+For each item:
+- problem
+- why it matters
+- fix direction
+- expected impact
+- priority
+
+---
+
+# Style
+
+- Be direct, critical, and concrete.
+- Use bullets, not essays.
+- Reference real files/modules/routes/services/tests where possible.
+- Distinguish clearly:
+  - complete vs partial vs misleadingly complete
+  - correct vs plausible
+  - automated vs manual vs AI/ML-assisted
+  - visible/governable vs opaque
+  - secure/private vs risky
+  - observable vs blind
+  - performant/scalable vs merely claimed
+  - simple vs underbuilt vs overbuilt
+  - AI/ML embedded vs gimmicky
+
+Final goal: determine whether the **current target product and its actual dependency surface** are feature-complete, correct, secure, observable, performant, scalable, simple, and truly AI/ML-native, while minimizing customer effort and preserving full visibility and governance over both manual and automated operations.

@@ -388,7 +388,7 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
 
         @Override
         public Promise<List<ExecutionLogEntry>> getExecutionLogs(String tenantId, String executionId) {
-            return client.findById(tenantId, EXECUTION_LOGS_COLLECTION, executionId)
+            return client.findById(tenantId, EXECUTION_LOGS_COLLECTION, executionLogRecordId(executionId))
                 .map(optionalEntity -> optionalEntity
                     .map(this::toExecutionLogs)
                     .orElse(List.of()));
@@ -401,7 +401,7 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
 
         private Promise<Void> persistExecutionLogs(String executionId, String tenantId, String workflowId, List<ExecutionLogEntry> logs) {
             Map<String, Object> record = new LinkedHashMap<>();
-            record.put("id", executionId);
+            record.put("id", executionLogRecordId(executionId));
             record.put("tenantId", tenantId);
             record.put("executionId", executionId);
             record.put("workflowId", workflowId);
@@ -409,6 +409,10 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
             record.put("updatedAt", Instant.now().toString());
             return client.save(tenantId, EXECUTION_LOGS_COLLECTION, record)
                 .map(ignored -> null);
+        }
+
+        private String executionLogRecordId(String executionId) {
+            return executionId + ":logs";
         }
 
         private Map<String, Object> toExecutionRecord(ExecutionSnapshot snapshot) {

@@ -6,6 +6,7 @@ package com.ghatana.aep.server.http.controllers;
 
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.eventcloud.store.EventCloudAgentStore;
+import com.ghatana.aep.observability.AepSloMetrics;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
@@ -17,10 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 /**
@@ -57,6 +61,9 @@ public class AgentController {
     /** Data-Cloud client retained for memory operations (episodes, facts, policies). */
     @Nullable
     private final DataCloudClient agentDataCloud;
+    /** Optional SLO metrics recorder for agent execution outcomes. */
+    @Nullable
+    private final AepSloMetrics sloMetrics;
 
     /**
      * Creates an agent controller backed by the canonical {@link EventCloudAgentStore}.
@@ -67,8 +74,23 @@ public class AgentController {
      *                       are also enabled
      */
     public AgentController(AepEngine engine, @Nullable DataCloudClient agentDataCloud) {
+        this(engine, agentDataCloud, null);
+    }
+
+    /**
+     * Creates an agent controller with optional SLO metrics recording.
+     *
+     * @param engine         AEP engine for event processing
+     * @param agentDataCloud optional Data-Cloud client and store provider
+     * @param sloMetrics     optional SLO metrics recorder for execution outcomes
+     */
+    public AgentController(
+            AepEngine engine,
+            @Nullable DataCloudClient agentDataCloud,
+            @Nullable AepSloMetrics sloMetrics) {
         this.engine = engine;
         this.agentDataCloud = agentDataCloud;
+        this.sloMetrics = sloMetrics;
         EntityStore entityStore = agentDataCloud != null ? agentDataCloud.entityStore() : null;
         this.agentStore = entityStore != null ? new EventCloudAgentStore(entityStore) : null;
     }
@@ -222,6 +244,7 @@ public class AgentController {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleExecuteAgent(HttpRequest request) {
         String agentId = request.getPathParameter("agentId");
+        Instant startedAt = Instant.now();
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(HttpHelper.errorResponse(400,
                 "agentId path parameter is required"));
@@ -235,8 +258,28 @@ public class AgentController {
                 String tenantId = reqBody.containsKey("tenantId")
                     ? (String) reqBody.get("tenantId")
                     : HttpHelper.resolveTenantId(request);
-                Map<String, Object> input = reqBody.containsKey("input")
-                    ? (Map<String, Object>) reqBody.get("input")
+                Object rawInput = reqBody.get("input");
+                if (rawInput != null && !(rawInput instanceof Map<?, ?>)) {
+                    recordAgentExecutionFailure(
+                        tenantId,
+                        agentId,
+                        "INVALID_INPUT",
+                        "permanent",
+                        false,
+                        startedAt);
+                    return Promise.of(HttpHelper.errorResponse(
+                        400,
+                        "Invalid request: input must be an object",
+                        Map.of(
+                            "errorCode", "INVALID_INPUT",
+                            "category", "permanent",
+                            "retryable", false,
+                            "suggestion", "Send input as a JSON object under the 'input' field"
+                        )
+                    ));
+                }
+                Map<String, Object> input = rawInput instanceof Map<?, ?>
+                    ? (Map<String, Object>) rawInput
                     : Map.of();
 
                 Map<String, Object> payload = new java.util.HashMap<>(input);
@@ -250,25 +293,152 @@ public class AgentController {
                     Instant.now()
                 );
                 return engine.process(tenantId, event)
-                    .map(result -> HttpHelper.jsonResponse(Map.of(
-                        "agentId", agentId,
-                        "tenantId", tenantId,
-                        "eventId", result.eventId(),
-                        "success", result.success(),
-                        "detections", result.detections().size(),
-                        "timestamp", Instant.now().toString()
-                    )))
+                    .map(result -> {
+                        recordAgentExecutionSuccess(tenantId, agentId, startedAt);
+                        return HttpHelper.jsonResponse(Map.of(
+                            "agentId", agentId,
+                            "tenantId", tenantId,
+                            "eventId", result.eventId(),
+                            "success", result.success(),
+                            "detections", result.detections().size(),
+                            "timestamp", Instant.now().toString()
+                        ));
+                    })
                     .then(Promise::of, e -> {
                         log.error("[agents] execute failed for agentId={}: {}",
                             agentId, e.getMessage(), e);
-                        return Promise.of(HttpHelper.errorResponse(500,
-                            "Agent execution failed: " + e.getMessage()));
+                        return Promise.of(toAgentExecutionErrorResponse(e, agentId, tenantId, startedAt));
                     });
             } catch (Exception e) {
+                recordAgentExecutionFailure(
+                    "unknown",
+                    agentId,
+                    "INVALID_REQUEST",
+                    "permanent",
+                    false,
+                    startedAt);
                 return Promise.of(HttpHelper.errorResponse(400,
                     "Invalid request: " + e.getMessage()));
             }
         }, e -> Promise.of(HttpHelper.errorResponse(400, "Failed to read request body")));
+    }
+
+    private HttpResponse toAgentExecutionErrorResponse(
+            Throwable error,
+            String agentId,
+            String tenantId,
+            Instant startedAt) {
+        Throwable rootCause = rootCause(error);
+        String message = safeErrorMessage(rootCause);
+        String normalized = message.toLowerCase(Locale.ROOT);
+
+        int statusCode = 500;
+        String errorCode = "AGENT_EXECUTION_FAILED";
+        String category = "transient";
+        boolean retryable = true;
+        String suggestion = "Retry the request; if the issue persists, inspect AEP runtime logs for this tenant and agent";
+
+        if (rootCause instanceof SecurityException || normalized.contains("forbidden") || normalized.contains("unauthorized")) {
+            statusCode = 403;
+            errorCode = "AGENT_EXECUTION_FORBIDDEN";
+            category = "permanent";
+            retryable = false;
+            suggestion = "Verify principal permissions and tenant access before retrying";
+        } else if (rootCause instanceof IllegalArgumentException || normalized.contains("invalid") || normalized.contains("validation")) {
+            statusCode = 400;
+            errorCode = "AGENT_EXECUTION_INVALID_REQUEST";
+            category = "permanent";
+            retryable = false;
+            suggestion = "Fix request payload and metadata, then retry";
+        } else if (rootCause instanceof TimeoutException || normalized.contains("timeout")) {
+            statusCode = 504;
+            errorCode = "AGENT_EXECUTION_TIMEOUT";
+            category = "transient";
+            retryable = true;
+            suggestion = "Retry with smaller input scope or higher upstream timeout budget";
+        } else if (normalized.contains("unavailable") || normalized.contains("connection refused")
+            || normalized.contains("temporarily") || normalized.contains("downstream")) {
+            statusCode = 503;
+            errorCode = "AGENT_EXECUTION_DEPENDENCY_UNAVAILABLE";
+            category = "transient";
+            retryable = true;
+            suggestion = "Check dependent services and connectivity, then retry";
+        } else if (normalized.contains("not found")) {
+            statusCode = 404;
+            errorCode = "AGENT_EXECUTION_TARGET_NOT_FOUND";
+            category = "permanent";
+            retryable = false;
+            suggestion = "Ensure the target agent exists for the tenant before executing";
+        }
+
+        recordAgentExecutionFailure(tenantId, agentId, errorCode, category, retryable, startedAt);
+
+        return HttpHelper.errorResponse(
+            statusCode,
+            "Agent execution failed: " + message,
+            Map.of(
+                "errorCode", errorCode,
+                "category", category,
+                "retryable", retryable,
+                "tenantId", tenantId,
+                "agentId", agentId,
+                "suggestion", suggestion
+            )
+        );
+    }
+
+    private void recordAgentExecutionSuccess(String tenantId, String agentId, Instant startedAt) {
+        if (sloMetrics == null) {
+            return;
+        }
+        long durationMs = Math.max(0L, Duration.between(startedAt, Instant.now()).toMillis());
+        try {
+            sloMetrics.recordAgentExecutionSuccess(tenantId, agentId, durationMs);
+        } catch (Exception metricsError) {
+            log.debug("[agents] failed to record success metrics for agentId={}: {}",
+                agentId, metricsError.getMessage());
+        }
+    }
+
+    private void recordAgentExecutionFailure(
+            String tenantId,
+            String agentId,
+            String errorCode,
+            String category,
+            boolean retryable,
+            Instant startedAt) {
+        if (sloMetrics == null) {
+            return;
+        }
+        long durationMs = Math.max(0L, Duration.between(startedAt, Instant.now()).toMillis());
+        try {
+            sloMetrics.recordAgentExecutionFailure(
+                tenantId,
+                agentId,
+                errorCode,
+                category,
+                retryable,
+                durationMs);
+        } catch (Exception metricsError) {
+            log.debug("[agents] failed to record failure metrics for agentId={}: {}",
+                agentId, metricsError.getMessage());
+        }
+    }
+
+    private static Throwable rootCause(Throwable throwable) {
+        Throwable cursor = throwable;
+        while (cursor.getCause() != null && cursor.getCause() != cursor) {
+            cursor = cursor.getCause();
+        }
+        return cursor;
+    }
+
+    private static String safeErrorMessage(Throwable throwable) {
+        String message = throwable.getMessage();
+        if (message == null || message.isBlank()) {
+            return throwable.getClass().getSimpleName();
+        }
+        return message;
     }
 
     public Promise<HttpResponse> handleGetAgentMemory(HttpRequest request) {

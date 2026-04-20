@@ -9,9 +9,9 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AgentMarketplacePage } from '@/pages/AgentMarketplacePage';
 import { CostDashboardPage } from '@/pages/CostDashboardPage';
+import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 import * as aepApi from '@/api/aep.api';
 
 vi.mock('@/api/aep.api');
@@ -88,10 +88,7 @@ const COST_SUMMARY: aepApi.CostSummary = {
 };
 
 function renderWithQuery(ui: React.ReactElement) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(ui, { wrapper: createAepTestWrapper() });
 }
 
 describe('AgentMarketplacePage', () => {

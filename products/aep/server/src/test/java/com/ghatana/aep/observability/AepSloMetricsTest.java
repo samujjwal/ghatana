@@ -136,5 +136,23 @@ class AepSloMetricsTest {
         void recordReplayAttemptFailureDoesNotThrow() {
             sloMetrics.recordReplayAttempt(false, "tenant-1", "pipeline-1");
         }
+
+        @Test
+        @DisplayName("recordAgentExecutionSuccess records metrics without throwing")
+        void recordAgentExecutionSuccessDoesNotThrow() {
+            sloMetrics.recordAgentExecutionSuccess("tenant-1", "agent-1", 125L);
+        }
+
+        @Test
+        @DisplayName("recordAgentExecutionFailure records categorized metrics without throwing")
+        void recordAgentExecutionFailureDoesNotThrow() {
+            sloMetrics.recordAgentExecutionFailure(
+                "tenant-1",
+                "agent-1",
+                "AGENT_EXECUTION_TIMEOUT",
+                "transient",
+                true,
+                240L);
+        }
     }
 }

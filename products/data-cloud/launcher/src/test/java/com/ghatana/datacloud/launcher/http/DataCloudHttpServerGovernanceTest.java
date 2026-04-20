@@ -451,6 +451,58 @@ class DataCloudHttpServerGovernanceTest {
             Map<String, Object> error = (Map<String, Object>) respBody.get("error");
             assertThat(error.get("code")).isEqualTo("MISSING_CONFIRMATION");
         }
+
+        @Test
+        @DisplayName("invalid confirmationToken returns 403 with INVALID_CONFIRMATION_TOKEN")
+        @SuppressWarnings("unchecked")
+        void invalidToken_returnsForbidden() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            String body = mapper.writeValueAsString(Map.of(
+                "collection", "old_events",
+                "confirmationToken", "invalid-token"
+            ));
+            HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("INVALID_CONFIRMATION_TOKEN");
+        }
+
+        @Test
+        @DisplayName("production profile without purge token secret returns 503")
+        @SuppressWarnings("unchecked")
+        void missingPurgeSecretInProduction_returnsServiceUnavailable() throws Exception {
+            String previousProfile = System.getProperty("DATACLOUD_PROFILE");
+            String previousSecret = System.getProperty("DATACLOUD_PURGE_TOKEN_SECRET");
+            try {
+                System.setProperty("DATACLOUD_PROFILE", "production");
+                System.clearProperty("DATACLOUD_PURGE_TOKEN_SECRET");
+
+                server = new DataCloudHttpServer(mockClient, port);
+                server.start();
+                waitForServerReady(port);
+
+                String body = mapper.writeValueAsString(Map.of(
+                    "collection", "old_events",
+                    "dryRun", true
+                ));
+                HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body);
+
+                assertThat(resp.statusCode()).isEqualTo(503);
+                Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
+                assertThat(respBody).containsKey("error");
+                Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+                assertThat(error.get("code")).isEqualTo("PURGE_TOKEN_SECRET_REQUIRED");
+            } finally {
+                restoreSystemProperty("DATACLOUD_PROFILE", previousProfile);
+                restoreSystemProperty("DATACLOUD_PURGE_TOKEN_SECRET", previousSecret);
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -569,6 +621,28 @@ class DataCloudHttpServerGovernanceTest {
             assertThat(respBody).containsKey("error");
             Map<String, Object> error = (Map<String, Object>) respBody.get("error");
             assertThat(error.get("code")).isEqualTo("MISSING_REQUIRED");
+        }
+
+        @Test
+        @DisplayName("unknown entity returns 404 ENTITY_NOT_FOUND")
+        @SuppressWarnings("unchecked")
+        void unknownEntity_returnsNotFound() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            String body = mapper.writeValueAsString(Map.of(
+                "collection", "user_profiles",
+                "entityId", "ent-missing",
+                "fields", List.of("email")
+            ));
+            HttpResponse<String> resp = post("/api/v1/governance/privacy/redact", body);
+
+            assertThat(resp.statusCode()).isEqualTo(404);
+            Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("ENTITY_NOT_FOUND");
         }
     }
 
@@ -748,6 +822,23 @@ class DataCloudHttpServerGovernanceTest {
             assertThat((List<String>) data.get("verifiedFields")).containsExactly("phone");
             assertThat((List<String>) data.get("pendingFields")).containsExactly("email");
         }
+
+        @Test
+        @DisplayName("returns 404 when entity does not exist")
+        @SuppressWarnings("unchecked")
+        void verifyMissingEntity_returnsNotFound() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-missing&fields=email,phone");
+
+            assertThat(resp.statusCode()).isEqualTo(404);
+            Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("ENTITY_NOT_FOUND");
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -866,6 +957,14 @@ class DataCloudHttpServerGovernanceTest {
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 unavailable", e);
+        }
+    }
+
+    private static void restoreSystemProperty(String key, String value) {
+        if (value == null) {
+            System.clearProperty(key);
+        } else {
+            System.setProperty(key, value);
         }
     }
 }

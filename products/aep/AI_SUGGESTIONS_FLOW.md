@@ -201,6 +201,7 @@ None - the endpoint works without DataCloud (fallback mode)
 - `DC_SERVER_URL` - Data-Cloud server URL
 - `DC_API_KEY` - Data-Cloud API key
 - `DC_TENANT_ID` - Default tenant ID
+- `AEP_AI_SUGGESTIONS_RATE_LIMIT_PER_MIN` - Per-tenant suggestion request budget (default `60`)
 
 ### SLO Metrics Configuration
 
@@ -215,14 +216,14 @@ SLO metrics are automatically collected from pipeline runs. No additional config
 
 ## Security Considerations
 
-- Tenant isolation enforced via `tenantId` parameter
+- Endpoint is authenticated via `AepAuthFilter` (JWT bearer required unless `AEP_AUTH_DISABLED=true`)
+- Tenant isolation is enforced by validating request `tenantId` against authenticated principal `tenantId`
+- Suggestion requests are rate limited per tenant using `AEP_AI_SUGGESTIONS_RATE_LIMIT_PER_MIN` (default: 60/minute)
 - No direct access to raw anomaly data (filtered through controller)
-- No authentication required for suggestions (public endpoint)
-- Consider adding authentication for production deployments
+- Invalid tenant context and auth mismatches return HTTP 4xx responses
 
 ## Future Enhancements
 
-- [ ] Add authentication/authorization to suggestions endpoint
 - [ ] Support configurable time windows (beyond 1 hour)
 - [ ] Add caching for suggestion responses
 - [ ] Add suggestion dismissal/acknowledgment tracking

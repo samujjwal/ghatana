@@ -224,10 +224,15 @@ export function useRangeSelection<T>({
     if (isShiftKey) {
       selectRange(index);
     } else {
-      selection.toggle(keyFn(items[index]));
+      const id = keyFn(items[index]);
+      if (allowMultiple) {
+        selection.setSelectedIds(new Set([id]));
+      } else {
+        selection.toggle(id);
+      }
       setLastSelectedIndex(index);
     }
-  }, [selection, selectRange, items, keyFn]);
+  }, [selection, selectRange, items, keyFn, allowMultiple]);
 
   return {
     ...selection,

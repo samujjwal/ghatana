@@ -2066,6 +2066,20 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 
+    Forbidden:
+      description: Request is understood but not authorized.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    ServiceUnavailable:
+      description: Service is temporarily unavailable or misconfigured.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
   headers:
     X-Tenant-ID:
       description: Alternative to the `tenantId` query parameter.
@@ -4026,6 +4040,10 @@ paths:
               $ref: "#/components/schemas/VoiceIntentRequest"
       responses:
         "200": { description: Intent resolution and execution result }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/voice/intents:
     get:
@@ -4036,6 +4054,8 @@ paths:
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
         "200": { description: Complete voice intent catalog }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/voice/intent/classify:
     post:
@@ -4052,6 +4072,8 @@ paths:
               $ref: "#/components/schemas/VoiceIntentClassificationRequest"
       responses:
         "200": { description: Classification result }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   # ── Data lifecycle and governance (DC-E5) ───────────────────────────────
 
@@ -4107,6 +4129,8 @@ paths:
       responses:
         "200": { description: Purge scheduled or dry-run estimation }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
         "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/privacy/redact:
@@ -4125,6 +4149,7 @@ paths:
       responses:
         "200": { description: Redaction result with list of redacted fields }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/privacy/verify:
@@ -4142,6 +4167,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
         "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/privacy/pii-fields:

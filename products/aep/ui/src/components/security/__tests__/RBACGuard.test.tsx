@@ -5,9 +5,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { RBACGuard, usePermission, usePermissions } from '../RBACGuard';
+import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 
 // Mock fetch
 global.fetch = vi.fn();
+
+function renderWithProviders(ui: React.ReactElement) {
+  return render(ui, { wrapper: createAepTestWrapper() });
+}
 
 describe('RBACGuard', () => {
   beforeEach(() => {
@@ -24,7 +29,7 @@ describe('RBACGuard', () => {
       json: async () => ({ granted: true }),
     });
 
-    render(
+    renderWithProviders(
       <RBACGuard permission="read:resource">
         <div>Protected Content</div>
       </RBACGuard>
@@ -39,7 +44,7 @@ describe('RBACGuard', () => {
       json: async () => ({ granted: false }),
     });
 
-    render(
+    renderWithProviders(
       <RBACGuard
         permission="read:resource"
         fallback={<div>Access Denied</div>}
@@ -55,7 +60,7 @@ describe('RBACGuard', () => {
   it('renders loading fallback while checking permission', () => {
     (global.fetch as any).mockImplementationOnce(() => new Promise(() => {}));
 
-    render(
+    renderWithProviders(
       <RBACGuard
         permission="read:resource"
         loadingFallback={<div>Loading...</div>}
@@ -71,7 +76,7 @@ describe('RBACGuard', () => {
   it('renders fallback when permission check fails', async () => {
     (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
-    render(
+    renderWithProviders(
       <RBACGuard
         permission="read:resource"
         fallback={<div>Access Denied</div>}
@@ -89,7 +94,7 @@ describe('RBACGuard', () => {
       json: async () => ({ granted: true }),
     });
 
-    render(
+    renderWithProviders(
       <RBACGuard
         permission="write:resource"
         resource="pipeline-123"
@@ -120,7 +125,7 @@ describe('RBACGuard', () => {
       json: async () => ({ granted: true }),
     });
 
-    render(
+    renderWithProviders(
       <RBACGuard
         permission="read:resource"
         endpoint="/custom/permission/check"
@@ -143,7 +148,7 @@ describe('RBACGuard', () => {
       json: async () => ({ granted: false }),
     });
 
-    render(
+    renderWithProviders(
       <RBACGuard permission="read:resource">
         <div>Protected Content</div>
       </RBACGuard>
@@ -172,7 +177,7 @@ describe('usePermission hook', () => {
       );
     };
 
-    render(<TestComponent />);
+    renderWithProviders(<TestComponent />);
 
     await screen.findByText('Granted');
     await screen.findByText('Loaded');
@@ -186,7 +191,7 @@ describe('usePermission hook', () => {
       return <div>{hasPermission ? 'Granted' : 'Denied'}</div>;
     };
 
-    render(<TestComponent />);
+    renderWithProviders(<TestComponent />);
 
     await screen.findByText('Denied');
   });
@@ -199,7 +204,7 @@ describe('usePermission hook', () => {
       );
     };
 
-    render(<TestComponent />);
+    renderWithProviders(<TestComponent />);
 
     const button = screen.getByText('Refetch');
     expect(button).toBeInTheDocument();
@@ -229,7 +234,7 @@ describe('usePermissions hook', () => {
       );
     };
 
-    render(<TestComponent />);
+    renderWithProviders(<TestComponent />);
 
     await screen.findByText('Loaded');
   });
@@ -256,7 +261,7 @@ describe('usePermissions hook', () => {
       );
     };
 
-    render(<TestComponent />);
+    renderWithProviders(<TestComponent />);
 
     await screen.findByText('Read Granted');
     await screen.findByText('Write Denied');

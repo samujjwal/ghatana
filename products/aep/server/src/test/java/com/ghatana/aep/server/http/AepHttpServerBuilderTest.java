@@ -24,6 +24,9 @@ import redis.clients.jedis.JedisPool;
  */
 class AepHttpServerBuilderTest {
 
+    private static final String AEP_PROFILE = "AEP_PROFILE";
+    private static final String ALLOW_IN_MEMORY_RUN_HISTORY = "AEP_ALLOW_IN_MEMORY_RUN_HISTORY";
+
     @Test
     void shouldBuildServerWithRequiredParameters() {
         // Arrange & Act
@@ -112,6 +115,58 @@ class AepHttpServerBuilderTest {
     }
 
     @Test
+    void shouldFailClosedInProductionWhenDurableRunHistoryIsNotConfigured() {
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+
+        String previousProfile = System.getProperty(AEP_PROFILE);
+        String previousAllowInMemory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY);
+
+        try {
+            System.setProperty(AEP_PROFILE, "production");
+            System.clearProperty(ALLOW_IN_MEMORY_RUN_HISTORY);
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                AepHttpServer.builder()
+                    .engine(mockEngine)
+                    .port(8080)
+                    .build()
+            );
+
+            assertTrue(exception.getMessage().contains("EventLogStore"));
+        } finally {
+            restoreSystemProperty(AEP_PROFILE, previousProfile);
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory);
+        }
+    }
+
+    @Test
+    void shouldAllowExplicitEmbeddedOverrideForInMemoryRunHistoryInProduction() {
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+
+        String previousProfile = System.getProperty(AEP_PROFILE);
+        String previousAllowInMemory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY);
+
+        try {
+            System.setProperty(AEP_PROFILE, "production");
+            System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true");
+
+            AepHttpServer server = AepHttpServer.builder()
+                .engine(mockEngine)
+                .port(8080)
+                .build();
+
+            assertNotNull(server);
+        } finally {
+            restoreSystemProperty(AEP_PROFILE, previousProfile);
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory);
+        }
+    }
+
+    @Test
     void shouldHaveImmutableBuilderState() {
         // Arrange
         AepHttpServer.Builder builder = AepHttpServer.builder()
@@ -123,5 +178,13 @@ class AepHttpServerBuilderTest {
         // Assert - the builder should accept the change (builders are mutable by design)
         // This test documents the builder pattern behavior
         assertNotNull(builder);
+    }
+
+    private static void restoreSystemProperty(String key, String value) {
+        if (value == null) {
+            System.clearProperty(key);
+        } else {
+            System.setProperty(key, value);
+        }
     }
 }

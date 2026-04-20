@@ -188,17 +188,19 @@ public class DataLifecycleHandler {
                 String reason     = sanitise((String) input.getOrDefault("reason", "unspecified"));
 
                 if (collection.isBlank()) {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("MISSING_COLLECTION", "collection is required", tenantId, requestId),
-                        objectMapper));
+                        objectMapper,
+                        400));
                 }
 
                 if (!RETENTION_TIERS.containsKey(tier)) {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("INVALID_TIER",
                             "Valid tiers: " + RETENTION_TIERS.keySet(),
                             tenantId, requestId),
-                        objectMapper));
+                        objectMapper,
+                        400));
                 }
 
                 Period retentionPeriod = RETENTION_TIERS.get(tier);
@@ -257,10 +259,11 @@ public class DataLifecycleHandler {
                 collection == null || collection.isBlank() ? Map.of("request.id", requestId) : Map.of("request.id", requestId, "collection", collection));
 
         if (collection == null || collection.isBlank()) {
-            return Promise.of(http.envelopeResponse(
+            return Promise.of(http.errorEnvelopeResponse(
                 ApiResponse.error("MISSING_COLLECTION", "collection query parameter is required",
                     tenantId, requestId),
-                objectMapper)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+                objectMapper,
+                400)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
         }
 
         TenantContext tenantContext = buildTenantContext(tenantId, requestId);
@@ -312,21 +315,23 @@ public class DataLifecycleHandler {
                 boolean dryRun           = Boolean.TRUE.equals(input.get("dryRun"));
 
                 if (collection.isBlank()) {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("MISSING_COLLECTION", "collection is required", tenantId, requestId),
-                        objectMapper));
+                        objectMapper,
+                        400));
                 }
 
                 TokenSecretRequirement tokenSecretRequirement = validatePurgeTokenSecretConfiguration(runtimeEnvironment());
                 if (!tokenSecretRequirement.available()) {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error(
                             PURGE_TOKEN_SECRET_REQUIRED,
                             tokenSecretRequirement.message(),
                             Map.of("profile", tokenSecretRequirement.profile()),
                             tenantId,
                             requestId),
-                        objectMapper));
+                        objectMapper,
+                        503));
                 }
 
                 EntityStore entityStore = requireEntityStore();
@@ -363,12 +368,13 @@ public class DataLifecycleHandler {
 
                 // Execute path: token is mandatory and must pass HMAC verification
                 if (confirmationToken.isBlank()) {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("MISSING_CONFIRMATION",
                             "confirmationToken is required to authorise data deletion. " +
                             "Perform a dry-run first to obtain a valid token.",
                             tenantId, requestId),
-                        objectMapper));
+                        objectMapper,
+                        400));
                 }
 
                 TokenValidationResult tokenResult = validatePurgeToken(confirmationToken, tenantId, collection);
@@ -379,11 +385,12 @@ public class DataLifecycleHandler {
                               collection, Map.of(
                                   "reason", tokenResult.reason(),
                                   "confirmationTokenHash", sha256Hex(confirmationToken)));
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("INVALID_CONFIRMATION_TOKEN",
                             "Confirmation token is invalid or expired: " + tokenResult.reason(),
                             tenantId, requestId),
-                        objectMapper));
+                        objectMapper,
+                        403));
                 }
 
                 return policyPromise.then(policy -> entityStore.query(tenantContext, buildCollectionQuery(collection))
@@ -507,11 +514,12 @@ public class DataLifecycleHandler {
                     : Set.copyOf(requestedFields);
 
                 if (collection.isBlank() || entityId.isBlank()) {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("MISSING_REQUIRED",
                             "collection and entityId are required",
                             tenantId, requestId),
-                        objectMapper));
+                        objectMapper,
+                        400));
                 }
 
                 EntityStore entityStore = requireEntityStore();
@@ -519,11 +527,12 @@ public class DataLifecycleHandler {
                 return entityStore.findById(tenantContext, storeEntityId)
                     .then(entityOpt -> {
                         if (entityOpt.isEmpty()) {
-                            return Promise.of(http.envelopeResponse(
+                            return Promise.of(http.errorEnvelopeResponse(
                                 ApiResponse.error("ENTITY_NOT_FOUND",
                                     "No entity found for entityId=" + entityId,
                                     tenantId, requestId),
-                                objectMapper));
+                                objectMapper,
+                                404));
                         }
 
                         EntityStore.Entity existingEntity = entityOpt.get();
@@ -674,9 +683,10 @@ public class DataLifecycleHandler {
             Map.of("request.id", requestId));
 
         if (collection.isBlank() || entityId.isBlank()) {
-            return Promise.of(http.envelopeResponse(
+            return Promise.of(http.errorEnvelopeResponse(
                 ApiResponse.error("MISSING_REQUIRED", "collection and entityId are required", tenantId, requestId),
-                objectMapper)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+                objectMapper,
+                400)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
         }
 
         TenantContext tenantContext = buildTenantContext(tenantId, requestId);
@@ -684,9 +694,10 @@ public class DataLifecycleHandler {
             .then(policy -> requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(entityId))
                 .map(entityOpt -> {
                     if (entityOpt.isEmpty()) {
-                        return http.envelopeResponse(
+                        return http.errorEnvelopeResponse(
                             ApiResponse.error("ENTITY_NOT_FOUND", "No entity found for entityId=" + entityId, tenantId, requestId),
-                            objectMapper);
+                            objectMapper,
+                            404);
                     }
 
                     EntityStore.Entity entity = entityOpt.get();

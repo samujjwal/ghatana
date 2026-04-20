@@ -93,8 +93,8 @@ describe('Workflows Page with Mock Data', () => {
       expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
-    // WorkflowsPage shows 'Last Executed' column header and execution date/time per row
-    expect(screen.getByText('Last Executed')).toBeInTheDocument();
+    expect(screen.getByText('Recently Run')).toBeInTheDocument();
+    expect(screen.getAllByText('Last run').length).toBeGreaterThan(0);
   });
 
   it('should navigate to workflow editor on click', async () => {
@@ -104,11 +104,10 @@ describe('Workflows Page with Mock Data', () => {
       expect(screen.queryByText('Loading pipelines...')).not.toBeInTheDocument();
     });
 
-    // WorkflowsPage renders workflows in a table (no anchor wrapper per row).
-    // Verify the first workflow is present and the Actions column exists.
     const firstWorkflow = getMockWorkflows()[0];
     expect(screen.getByText(firstWorkflow.name)).toBeInTheDocument();
-    expect(screen.getByText('Actions')).toBeInTheDocument();
+    expect(screen.getByTestId(`advanced-editor-${firstWorkflow.id}`)).toBeInTheDocument();
+    expect(screen.getByTestId(`review-pipeline-${firstWorkflow.id}`)).toBeInTheDocument();
   });
 });
 

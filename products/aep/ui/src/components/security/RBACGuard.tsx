@@ -181,7 +181,8 @@ export function usePermissions(
     action?: 'read' | 'write' | 'delete' | 'admin'
   ): boolean => {
     const key = JSON.stringify({ permission, resource, action });
-    return results?.[key] ?? false;
+    const arrayKey = JSON.stringify([{ permission, resource, action }]);
+    return results?.[key] ?? results?.[arrayKey] ?? false;
   };
 
   return {

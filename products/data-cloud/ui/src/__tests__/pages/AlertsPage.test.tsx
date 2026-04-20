@@ -215,7 +215,9 @@ describe('AlertsPage', () => {
 
     render(<AlertsPage />, { wrapper: TestWrapper });
 
-    expect(await screen.findByText(alertsSurfaceBoundary.title)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Operator-facing alert triage remains unavailable until the launcher exposes canonical alert routes/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(alertsSurfaceBoundary.summary)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Create Alert Rule/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/AI-Detected Correlations/i)).not.toBeInTheDocument();

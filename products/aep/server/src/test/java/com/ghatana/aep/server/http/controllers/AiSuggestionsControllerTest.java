@@ -7,7 +7,9 @@ package com.ghatana.aep.server.http.controllers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.observability.AepSloMetrics;
+import com.ghatana.aep.security.AepAuthFilter;
 import com.ghatana.aep.server.analytics.DataCloudAnalyticsStore;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -29,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,18 +55,28 @@ class AiSuggestionsControllerTest {
     @Mock
     private AepSloMetrics sloMetrics;
 
+    @Mock
+    private RateLimiter suggestionsRateLimiter;
+
     private AiSuggestionsController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AiSuggestionsController(analyticsStore, sloMetrics);
+        lenient().when(suggestionsRateLimiter.tryAcquire(anyString()))
+            .thenReturn(new RateLimiter.AcquireResult(true, 59, 0L, 0L));
+        controller = new AiSuggestionsController(analyticsStore, sloMetrics, null, suggestionsRateLimiter, true);
     }
 
     private HttpRequest buildGetRequest(String tenantId) {
+        return buildGetRequest(tenantId, null);
+    }
+
+    private HttpRequest buildGetRequest(String tenantId, AepAuthFilter.JwtPayload jwtPayload) {
         HttpRequest request = mock(HttpRequest.class);
         when(request.getHeader(any())).thenReturn(null);
         when(request.getQueryParameter("tenantId")).thenReturn(tenantId);
         when(request.getQueryParameter("limit")).thenReturn(null);
+        when(request.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT)).thenReturn(jwtPayload);
         return request;
     }
 
@@ -188,6 +201,42 @@ class AiSuggestionsControllerTest {
             boolean hasFailureWarning = suggestions.stream()
                     .anyMatch(s -> "high".equals(s.get("severity")) || "medium".equals(s.get("severity")));
             assertThat(hasFailureWarning).isTrue();
+        }
+
+        @Test
+        @DisplayName("returns 403 when authenticated tenant context does not match request tenant")
+        void jwtTenantMismatch_returns403() throws Exception {
+            AiSuggestionsController securedController = new AiSuggestionsController(
+                analyticsStore, sloMetrics, null, suggestionsRateLimiter, false);
+            AepAuthFilter.JwtPayload jwtPayload = new AepAuthFilter.JwtPayload(
+                "user-1",
+                "test-issuer",
+                Instant.now().plusSeconds(3600).getEpochSecond(),
+                Instant.now().getEpochSecond(),
+                List.of("viewer"),
+                List.of("ai:read"),
+                "tenant-auth");
+            HttpRequest request = buildGetRequest("tenant-query", jwtPayload);
+
+            HttpResponse response = securedController.handleGetSuggestions(request).getResult();
+
+            assertThat(response.getCode()).isEqualTo(403);
+            Map<String, Object> body = parseBody(response);
+            assertThat(body.get("message").toString()).contains("Tenant context mismatch");
+        }
+
+        @Test
+        @DisplayName("returns 429 when AI suggestions endpoint rate limit is exceeded")
+        void rateLimitExceeded_returns429() throws Exception {
+            when(suggestionsRateLimiter.tryAcquire("tenant-burst"))
+                .thenReturn(new RateLimiter.AcquireResult(false, 0, 15L, 0L));
+            HttpRequest request = buildGetRequest("tenant-burst");
+
+            HttpResponse response = controller.handleGetSuggestions(request).getResult();
+
+            assertThat(response.getCode()).isEqualTo(429);
+            Map<String, Object> body = parseBody(response);
+            assertThat(body.get("message").toString()).contains("rate limit exceeded");
         }
     }
 }

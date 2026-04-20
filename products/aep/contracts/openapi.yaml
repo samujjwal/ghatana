@@ -746,6 +746,16 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
   /api/v1/agents/{agentId}/memory:
     get:
@@ -1950,6 +1960,8 @@ paths:
       summary: Get AI-scored pipeline suggestions
       operationId: getAiSuggestions
       tags: [AI]
+      security:
+        - bearerAuth: []
       parameters:
         - name: tenantId
           in: query
@@ -1982,6 +1994,14 @@ paths:
                   generatedAt:
                     type: string
                     format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -2082,8 +2102,50 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
 
+    Unauthorized:
+      description: Missing or invalid authentication credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Authenticated principal is not allowed to access the resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Request rate exceeded configured limit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ServiceUnavailable:
+      description: Upstream dependency unavailable or temporarily misconfigured
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    GatewayTimeout:
+      description: Upstream dependency timeout
       content:
         application/json:
           schema:

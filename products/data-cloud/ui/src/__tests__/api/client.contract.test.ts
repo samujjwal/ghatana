@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DataCloudApiClient } from '@/api/client';
+import { apiClient } from '@/lib/api/client';
+import SessionBootstrap from '@/lib/auth/session';
 import {
   DATASET_CATALOG_BOUNDARY_MESSAGE,
   DATASET_DETAIL_BOUNDARY_MESSAGE,
@@ -213,5 +215,34 @@ describe('DataCloudApiClient contract mapping', () => {
       }),
     );
     expect(created).toMatchObject({ id: 'feature-2', name: 'churn_risk' });
+  });
+});
+
+describe('shared UI apiClient tenant propagation', () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it('forwards the bootstrapped tenant header on canonical entity requests', async () => {
+    SessionBootstrap.setTenantId('tenant-contract');
+    fetchMock.mockResolvedValueOnce(createJsonResponse({
+      body: {
+        entities: [],
+        count: 0,
+      },
+    }));
+
+    await apiClient.get('/entities/dc_collections', {
+      params: { limit: 5 },
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = new Headers(init.headers as HeadersInit);
+    expect(headers.get('X-Tenant-ID')).toBe('tenant-contract');
   });
 });

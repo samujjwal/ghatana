@@ -21,6 +21,7 @@ import { Provider as JotaiProvider, createStore } from 'jotai';
 import { toast } from 'sonner';
 
 import { PipelineBuilderPage } from '@/pages/PipelineBuilderPage';
+import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 import {
   isDirtyAtom,
   historyAtom,
@@ -65,11 +66,7 @@ vi.mock('@/api/pipeline.api', () => ({
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function renderPage(store = createStore()) {
-  return render(
-    <JotaiProvider store={store}>
-      <PipelineBuilderPage />
-    </JotaiProvider>,
-  );
+  return render(<PipelineBuilderPage />, { wrapper: createAepTestWrapper(store) });
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────

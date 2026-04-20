@@ -28,7 +28,7 @@ export const alertsSurfaceBoundary = {
     'This surface is operator-facing and hidden from primary-user discovery per route truth matrix.',
     'Default navigation and search do not promote alerts as a primary workflow.',
   ],
-  state: 'live',
+  state: 'operator-only',
 } satisfies UnsupportedSurfaceDefinition;
 
 export const smartWorkflowGenerationBoundary = {

@@ -73,6 +73,15 @@ public final class AepSloMetrics {
     /** Counter for failed replays. */
     public static final String REPLAY_FAILED = "aep.slo.replay.failed";
 
+        /** Counter for agent execution attempts. */
+        public static final String AGENT_EXECUTION_ATTEMPTS = "aep.slo.agent.execution.attempts";
+
+        /** Counter for successful agent executions. */
+        public static final String AGENT_EXECUTION_SUCCEEDED = "aep.slo.agent.execution.succeeded";
+
+        /** Counter for failed agent executions. */
+        public static final String AGENT_EXECUTION_FAILED = "aep.slo.agent.execution.failed";
+
     // ─── State for rolling run-failure-rate gauge ─────────────────────────────
 
     private final AtomicLong totalRuns = new AtomicLong(0);
@@ -235,6 +244,58 @@ public final class AepSloMetrics {
                     "tenant", tenantId, "pipeline", pipelineId);
             log.debug("[slo] replay-failed tenant={} pipeline={}", tenantId, pipelineId);
         }
+    }
+
+    /**
+     * Records a successful agent execution attempt and duration.
+     *
+     * @param tenantId   tenant tag
+     * @param agentId    agent identifier tag
+     * @param durationMs total execution duration in milliseconds
+     */
+    public void recordAgentExecutionSuccess(
+            @NotNull String tenantId,
+            @NotNull String agentId,
+            long durationMs) {
+        metricsCollector.incrementCounter(AGENT_EXECUTION_ATTEMPTS,
+                "tenant", tenantId, "agent", agentId);
+        metricsCollector.incrementCounter(AGENT_EXECUTION_SUCCEEDED,
+                "tenant", tenantId, "agent", agentId);
+        metricsCollector.recordTimer("aep.slo.agent.execution.duration.ms", durationMs,
+                "tenant", tenantId, "agent", agentId, "status", "SUCCEEDED");
+    }
+
+    /**
+     * Records a failed agent execution with structured error tags and duration.
+     *
+     * @param tenantId    tenant tag
+     * @param agentId     agent identifier tag
+     * @param errorCode   canonical error code
+     * @param category    failure category (transient/permanent)
+     * @param retryable   whether retry is recommended
+     * @param durationMs  total execution duration in milliseconds
+     */
+    public void recordAgentExecutionFailure(
+            @NotNull String tenantId,
+            @NotNull String agentId,
+            @NotNull String errorCode,
+            @NotNull String category,
+            boolean retryable,
+            long durationMs) {
+        metricsCollector.incrementCounter(AGENT_EXECUTION_ATTEMPTS,
+                "tenant", tenantId, "agent", agentId);
+        metricsCollector.incrementCounter(AGENT_EXECUTION_FAILED,
+                "tenant", tenantId,
+                "agent", agentId,
+                "error_code", errorCode,
+                "category", category,
+                "retryable", Boolean.toString(retryable));
+        metricsCollector.recordTimer("aep.slo.agent.execution.duration.ms", durationMs,
+                "tenant", tenantId,
+                "agent", agentId,
+                "status", "FAILED",
+                "error_code", errorCode,
+                "category", category);
     }
 
     // ─── Snapshots for /metrics/slo endpoint ─────────────────────────────────

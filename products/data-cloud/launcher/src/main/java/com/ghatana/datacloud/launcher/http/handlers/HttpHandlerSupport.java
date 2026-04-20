@@ -8,6 +8,7 @@ import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -400,7 +401,45 @@ public class HttpHandlerSupport {
      * @return HTTP response with JSON body (200 for success, 400 for errors)
      */
     public HttpResponse envelopeResponse(ApiResponse envelope, ObjectMapper mapper) {
-        return errorEnvelopeResponse(envelope, mapper, envelope.isSuccess() ? 200 : 400);
+        int statusCode = envelope.isSuccess() ? 200 : resolveEnvelopeErrorStatusCode(envelope);
+        return errorEnvelopeResponse(envelope, mapper, statusCode);
+    }
+
+    private static int resolveEnvelopeErrorStatusCode(ApiResponse envelope) {
+        ApiResponse.ErrorBody errorBody = envelope.getError();
+        if (errorBody == null || errorBody.getCode() == null || errorBody.getCode().isBlank()) {
+            return 400;
+        }
+
+        String code = errorBody.getCode().toUpperCase(Locale.ROOT);
+
+        if (code.contains("RATE_LIMIT") || code.contains("TOO_MANY_REQUEST")) {
+            return 429;
+        }
+        if (code.contains("UNAUTHORIZED") || code.contains("AUTHENTICATION") || code.contains("AUTH_REQUIRED")) {
+            return 401;
+        }
+        if (code.contains("FORBIDDEN") || code.contains("PERMISSION") || code.contains("ACCESS_DENIED")
+            || code.contains("INVALID_CONFIRMATION_TOKEN")) {
+            return 403;
+        }
+        if (code.contains("NOT_FOUND") || code.contains("UNKNOWN_INTENT") || code.contains("MISSING_RESOURCE")) {
+            return 404;
+        }
+        if (code.contains("CONFLICT") || code.contains("ALREADY_EXISTS") || code.contains("DUPLICATE")) {
+            return 409;
+        }
+        if (code.contains("TIMEOUT")) {
+            return 504;
+        }
+        if (code.contains("UNAVAILABLE") || code.contains("DEPENDENCY") || code.contains("MISCONFIGURED")
+            || code.contains("PURGE_TOKEN_SECRET_REQUIRED")) {
+            return 503;
+        }
+        if (code.contains("INTERNAL") || code.contains("EXCEPTION") || code.contains("SERVER_ERROR")) {
+            return 500;
+        }
+        return 400;
     }
 
     /**

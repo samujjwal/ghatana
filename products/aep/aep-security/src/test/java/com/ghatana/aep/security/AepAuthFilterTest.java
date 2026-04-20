@@ -44,6 +44,7 @@ import static org.mockito.Mockito.when;
 class AepAuthFilterTest extends EventloopTestBase {
 
     private static final String PRIVATE_URL = "http://localhost/api/v1/pipelines";
+    private static final String AI_SUGGESTIONS_URL = "http://localhost/api/v1/ai/suggestions";
     private static final String PUBLIC_URL = "http://localhost/health";
 
     @Test
@@ -139,6 +140,18 @@ class AepAuthFilterTest extends EventloopTestBase {
         assertEquals("corr-failure-456", response.getHeader(HttpHeaders.of("X-Correlation-ID")));
         verify(nextServlet, never()).serve(any());
         assertNull(MDC.get("correlationId"));
+    }
+
+    @Test
+    @DisplayName("ai suggestions endpoint requires authentication when auth is enabled")
+    void aiSuggestionsEndpointRequiresAuthentication() {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true);
+
+        HttpRequest request = HttpRequest.get(AI_SUGGESTIONS_URL).build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(401, response.getCode());
     }
 
     @Test

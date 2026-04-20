@@ -1008,6 +1008,137 @@ function withPerformanceTracking<T extends object>(
 - **Subscriptions**: Unsubscribe from observables
 - **Large objects**: Use WeakMap/WeakSet for temporary storage
 
+## 29. Test Authenticity (Anti-Theatre Rule)
+
+A test must exercise a real subject under test. The following patterns are forbidden because they produce green CI signal with zero coverage:
+
+- **Object-literal tests** that build a hard-coded object encoding the expected answer and then assert on that literal:
+  ```ts
+  // FORBIDDEN
+  it("validates token", () => {
+    const result = { tokenValid: false, allowed: false };
+    expect(result.tokenValid).toBe(false);
+  });
+  ```
+- **`expect(true).toBe(true)`** style assertions or any assertion whose truth is independent of production code.
+- **Tests that import nothing from production source.** A test file MUST import at least one symbol from the module/package it claims to test.
+- **Disabled tests committed to the main branch** (`.disabled` suffix, `it.skip` / `xit` / `@Disabled` without an open ticket reference in the comment).
+
+When discovered during code review or audit, such tests must be either:
+1. rewritten to invoke the real subject (preferred), or
+2. deleted outright.
+
+Never extend or paper over object-literal test theatre.
+
+## 30. Module Wiring Discipline
+
+Every Java module under `platform/java/<name>/` and every TypeScript package under `platform/typescript/<name>/` must satisfy ALL of:
+
+- Has a `build.gradle.kts` (Java) using `id("java-module")` / `id("java-application")` / `id("protobuf-module")`, OR a `package.json` (TypeScript) with `name`, `version`, build script, and `tsconfig.json`.
+- Is included in the appropriate `settings.gradle.kts` (Java) or `pnpm-workspace.yaml` (TypeScript).
+- Owns its own README.md.
+
+A folder containing only `src/` is not a module. It is either dead code (delete) or work-in-progress that does not belong on the main branch.
+
+When auditing or refactoring, scan for orphan modules with:
+
+```bash
+# Java orphans
+find platform/java -type d -mindepth 1 -maxdepth 1 ! -exec test -f {}/build.gradle.kts \; -print
+
+# TypeScript orphans
+find platform/typescript -type d -mindepth 1 -maxdepth 1 ! -exec test -f {}/package.json \; -print
+```
+
+## 31. Stub Adapters Are Not Production Code
+
+Adapters that integrate with external systems (OPA, LLM providers, message brokers, identity providers) must NOT ship as stubs. A stub is identified by any of:
+
+- A `// TODO` comment in the only realistic implementation path (e.g. *"replace before production use"*).
+- Hand-rolled JSON serialisation where Jackson / a typed schema is the established repo standard.
+- Decision logic that uses substring matching on a response body instead of parsing it (e.g. `body.contains("\"allow\":true")`).
+- Methods named `*Unsafe`, `*Hack`, `*Temp`, `*Demo` in production source.
+
+Required posture for every external-system adapter:
+
+1. Typed request/response records (Jackson `@JsonProperty` or equivalent).
+2. Explicit handling of HTTP/transport status codes.
+3. Integration test against a Testcontainers image (or equivalent) of the real system.
+4. Timeouts, retries, and circuit-breaking declared explicitly.
+5. Telemetry: at least one metric (latency + outcome) and one structured log per call.
+
+## 32. Canonical TypeScript Package Registry (Single Source of Truth)
+
+This section is the **single canonical list** for `@ghatana/*` platform packages. Section 17 is superseded by this section. [platform/typescript/LIBRARY_GOVERNANCE.md](platform/typescript/LIBRARY_GOVERNANCE.md) and [platform/typescript/PACKAGE_NAMING_STANDARD.md](platform/typescript/PACKAGE_NAMING_STANDARD.md) must reference this section, not redefine it.
+
+| Canonical Package | Folder | Purpose |
+|---|---|---|
+| `@ghatana/platform-utils` | `platform/typescript/foundation/platform-utils` (slated to flatten to `platform/typescript/platform-utils`) | Shared utility functions |
+| `@ghatana/tokens` | `platform/typescript/tokens` | Design tokens |
+| `@ghatana/theme` | `platform/typescript/theme` | Theme system |
+| `@ghatana/primitives` | `platform/typescript/primitives` | Headless component primitives |
+| `@ghatana/design-system` | `platform/typescript/design-system` | UI atoms / molecules / organisms (consolidates `audit`, `privacy`, `security`, `voice`, `nlp`, `selection` subpaths) |
+| `@ghatana/accessibility` | `platform/typescript/accessibility` | Accessibility audit + audit-log components |
+| `@ghatana/domain-components` | `platform/typescript/domain-components` | Domain-specific UI |
+| `@ghatana/canvas` | `platform/typescript/canvas` | Canonical canvas (use subpaths `./core`, `./plugins`, `./tools` instead of separate packages) |
+| `@ghatana/code-editor` | `platform/typescript/code-editor` | Monaco + AST/LSP/refactoring |
+| `@ghatana/data-grid` | `platform/typescript/data-grid` | Data grid |
+| `@ghatana/charts` | `platform/typescript/charts` | Charts |
+| `@ghatana/forms` | `platform/typescript/forms` | Form primitives + Zod |
+| `@ghatana/wizard` | `platform/typescript/wizard` | Multi-step wizard |
+| `@ghatana/state` | `platform/typescript/state` | Shared Jotai atoms |
+| `@ghatana/config` | `platform/typescript/config` | Env validation, feature flags |
+| `@ghatana/i18n` | `platform/typescript/i18n` | i18n |
+| `@ghatana/api` | `platform/typescript/api` | API client |
+| `@ghatana/sso-client` | `platform/typescript/sso-client` | SSO client (Fastify plugin via `./security/fastify` subpath only) |
+| `@ghatana/realtime` | `platform/typescript/realtime` | Realtime transport |
+| `@ghatana/events` | `platform/typescript/events` | `PlatformEvent` type |
+| `@ghatana/platform-events` | `platform/typescript/platform-events` | Platform event schemas |
+| `@ghatana/patterns` | `platform/typescript/patterns` | Reusable composition patterns |
+| `@ghatana/ds-schema` | `platform/typescript/ds-schema` | Design-system component schema |
+| `@ghatana/ds-registry` | `platform/typescript/ds-registry` | Design-system component registry |
+| `@ghatana/ds-governance` | `platform/typescript/ds-governance` | Design-system governance |
+| `@ghatana/ds-generator` | `platform/typescript/ds-generator` | Design-system code generator |
+| `@ghatana/ui-builder` | `platform/typescript/ui-builder` | Visual UI builder |
+| `@ghatana/ghatana-studio` | `platform/typescript/ghatana-studio` | Studio app shell |
+| `@ghatana/eslint-plugin` | `platform/typescript/eslint-plugin` | Internal lint rules |
+| `@ghatana/platform-testing` | `platform/typescript/testing` | Shared TS test utilities (NOT cross-cutting integration tests) |
+
+### Removed / forbidden package names
+
+The following names must NOT be used in new code, and existing references must be fix-forwarded immediately (no aliases):
+
+- `@ghatana/ui` — fold into `@ghatana/design-system`.
+- `@ghatana/utils` — replaced by `@ghatana/platform-utils`.
+- `@ghatana/accessibility-audit` — replaced by `@ghatana/accessibility`. The folder no longer exists.
+- `@ghatana/canvas-core`, `@ghatana/canvas-plugins`, `@ghatana/canvas-tools`, `@ghatana/canvas-react`, `@ghatana/canvas-chrome` — replaced by `@ghatana/canvas` subpaths. Delete the deprecated facade packages, do not keep them as re-export shims.
+- `@ghatana/dcmaar-*`, `@ghatana/yappc-*` — product prefixes are forbidden in the platform scope.
+
+### Folder-only shells must be deleted
+
+Any folder under `platform/typescript/` that contains only an `index.ts` and no `package.json` is not a package and must be deleted. Examples currently in violation: `audit-ui/`, `nlp-ui/`, `privacy-ui/`, `security-ui/`, `voice-ui/`, `selection-ui/`, `browser-events/`. Their behaviour belongs inside `@ghatana/design-system` subpaths or `@ghatana/domain-components`.
+
+## 33. Platform-vs-Product Boundary Enforcement
+
+`platform/` must not contain product-named code. Any module whose identity references a product (AEP, Data-Cloud, YAPPC, PHR, Finance, Tutorputor, etc.) belongs under that product's tree, not under `platform/shared-services/` or `platform/java/`.
+
+When adding a new shared service, decide:
+
+- It is **truly product-agnostic** → `platform/java/<name>/` or `platform/typescript/<name>/`.
+- It is **owned by one product but consumed by others** → `shared-services/<name>/` (top-level) or `products/<owner>/<name>/`.
+- It is **a kernel adapter for one product** → `products/<product>/kernel-bridge/`, never inside `platform/`.
+
+## 34. Repository-Wide Documentation Reconciliation Rule
+
+When a domain rule (canonical packages, naming conventions, agent taxonomy, etc.) appears in more than one document, exactly one of them must be marked authoritative and the others must reference it. If you change a rule, update only the authoritative document and verify that the dependent documents still resolve correctly.
+
+Currently authoritative:
+
+- TypeScript canonical packages: **this file, Section 32** (others reference it).
+- ActiveJ Promise patterns: [platform/java/ACTIVEJ_PROMISE_PATTERNS.md](platform/java/ACTIVEJ_PROMISE_PATTERNS.md).
+- Java utility naming: [platform/UTILITY_NAMING_CONVENTIONS.md](platform/UTILITY_NAMING_CONVENTIONS.md).
+- Agent taxonomy: this file, Section 18.
+
 ---
 
-**Last Updated:** 2026-04-12
+**Last Updated:** 2026-04-20

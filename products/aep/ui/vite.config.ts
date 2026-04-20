@@ -31,6 +31,14 @@ const workspaceAliases = {
     __dirname,
     "../../../platform/typescript/foundation/platform-utils/src/index.ts",
   ),
+  "@ghatana/domain-components": resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/index.ts",
+  ),
+  "@ghatana/domain-components/privacy": resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/privacy/index.ts",
+  ),
   "@ghatana/realtime": resolve(
     __dirname,
     "../../../platform/typescript/realtime/src/index.ts",
@@ -38,10 +46,6 @@ const workspaceAliases = {
   "@ghatana/platform-events": resolve(
     __dirname,
     "../../../platform/typescript/platform-events/src/index.ts",
-  ),
-  "@ghatana/privacy-ui": resolve(
-    __dirname,
-    "../../../platform/typescript/privacy-ui/src/index.ts",
   ),
   "@ghatana/security-ui": resolve(
     __dirname,

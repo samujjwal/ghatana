@@ -1,100 +1,186 @@
-/**
- * @doc.type class
- * @doc.purpose Component test for platform resilience primitives (circuit breaker, DLQ, retry)
- * @doc.layer products
- * @doc.pattern ComponentTest
- *
- * NOTE: This is a COMPONENT test, not an integration test. It exercises platform resilience
- * primitives in isolation but does NOT test Data Cloud runtime behavior against durable providers.
- * Real failure recovery integration tests should exercise the launcher against real EntityStore,
- * EventLogStore, and external service failures with proper backpressure and timeout semantics.
- */
 package com.ghatana.datacloud.integration;
 
-import com.ghatana.platform.resilience.CircuitBreaker;
-import com.ghatana.platform.resilience.DeadLetterQueue;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.DataCloud;
+import com.ghatana.datacloud.DataCloud.DataCloudConfig;
+import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
+import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.time.Duration;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Component tests for platform resilience primitives.
- *
- * <p>Tests CircuitBreaker, DeadLetterQueue, and fallback mechanisms at the component level.
- * These tests verify primitive behavior but do NOT exercise Data Cloud runtime integration
- * with durable storage or external service failures.
- *
- * <p>TODO: Add real integration tests that:
- * <ul>
- *   <li>Exercise launcher HTTP handlers against real EntityStore/EventLogStore failures</li>
- *   <li>Test backpressure and timeout behavior under real network/partition conditions</li>
- *   <li>Verify retry and circuit breaker behavior at the HTTP handler level</li>
- * </ul>
+ * @doc.type class
+ * @doc.purpose Verifies launcher recovery behavior against sovereign durable stores
+ * @doc.layer product
+ * @doc.pattern IntegrationTest
  */
-@DisplayName("Failure Recovery Component Tests (Platform Primitives)")
-class FailureRecoveryComponentTest {
+@DisplayName("Failure Recovery Integration Tests")
+class FailureRecoveryTest extends EventloopTestBase {
 
-    @Test
-    @DisplayName("Should handle retry logic")
-    void shouldHandleRetryLogic() {
-        int retryCount = 3;
-        int maxRetries = 5;
-        
-        assertThat(retryCount).isLessThan(maxRetries);
-    }
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final String TENANT_ID = "recovery-tenant";
+    private static final String COLLECTION = "recovery_entities";
 
-    @Test
-    @DisplayName("Should handle circuit breaker")
-    void shouldHandleCircuitBreaker() {
-        CircuitBreaker breaker = CircuitBreaker.builder("test-breaker")
-            .failureThreshold(10)
-            .resetTimeout(Duration.ofSeconds(30))
+    @TempDir
+    Path tempDir;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+
+    private DataCloudConfig config;
+    private DataCloudClient client;
+    private DataCloudHttpServer server;
+    private int port;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        config = DataCloudConfig.builder()
+            .profile(DataCloudProfile.SOVEREIGN)
+            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store").toString()))
             .build();
-        
-        assertThat(breaker).isNotNull();
+        startServer();
+    }
+
+    @AfterEach
+    void tearDown() {
+        stopServer();
     }
 
     @Test
-    @DisplayName("Should handle fallback mechanisms")
-    void shouldHandleFallbackMechanisms() {
-        boolean primaryAvailable = false;
-        boolean fallbackAvailable = true;
-        
-        assertThat(fallbackAvailable).isTrue();
+    @DisplayName("entity and CDC event survive full launcher restart")
+    void entityAndCdcEventSurviveFullLauncherRestart() throws Exception {
+        ParsedHttpResponse created = sendJson("POST", "/api/v1/entities/" + COLLECTION,
+            Map.of("name", "survives restart", "phase", "created"), TENANT_ID);
+        String entityId = String.valueOf(created.body().get("id"));
+
+        Optional<DataCloudClient.Entity> beforeRestart = runPromise(() -> client.findById(TENANT_ID, COLLECTION, entityId));
+        assertThat(created.statusCode()).isEqualTo(200);
+        assertThat(beforeRestart).isPresent();
+
+        restartLauncher();
+
+        ParsedHttpResponse fetched = sendJson("GET", "/api/v1/entities/" + COLLECTION + "/" + entityId,
+            null, TENANT_ID);
+        List<DataCloudClient.Event> events = runPromise(() -> client.queryEvents(
+            TENANT_ID,
+            DataCloudClient.EventQuery.byType("entity.saved")));
+
+        assertThat(fetched.statusCode()).isEqualTo(200);
+        assertThat(fetched.body()).containsEntry("id", entityId);
+        assertThat(asMap(fetched.body().get("data"))).containsEntry("name", "survives restart");
+        assertThat(events)
+            .anySatisfy(event -> {
+                assertThat(event.type()).isEqualTo("entity.saved");
+                assertThat(event.payload()).containsEntry("collection", COLLECTION);
+                assertThat(event.payload()).containsEntry("id", entityId);
+            });
     }
 
     @Test
-    @DisplayName("Should handle dead letter queue")
-    void shouldHandleDeadLetterQueue() {
-        DeadLetterQueue dlq = DeadLetterQueue.builder()
-            .maxSize(50_000)
-            .ttl(Duration.ofDays(7))
-            .enableReplay(true)
-            .build();
-        
-        assertThat(dlq).isNotNull();
+    @DisplayName("delete after restart removes entity and appends durable deletion event")
+    void deleteAfterRestartRemovesEntityAndAppendsDurableDeletionEvent() throws Exception {
+        ParsedHttpResponse created = sendJson("POST", "/api/v1/entities/" + COLLECTION,
+            Map.of("name", "delete me", "phase", "created"), TENANT_ID);
+        String entityId = String.valueOf(created.body().get("id"));
+
+        restartLauncher();
+
+        ParsedHttpResponse deleted = sendJson("DELETE", "/api/v1/entities/" + COLLECTION + "/" + entityId,
+            null, TENANT_ID);
+        Optional<DataCloudClient.Entity> entityAfterDelete = runPromise(() -> client.findById(TENANT_ID, COLLECTION, entityId));
+        List<DataCloudClient.Event> deleteEvents = runPromise(() -> client.queryEvents(
+            TENANT_ID,
+            DataCloudClient.EventQuery.byType("entity.deleted")));
+
+        assertThat(deleted.statusCode()).isEqualTo(200);
+        assertThat(deleted.body()).containsEntry("deleted", true);
+        assertThat(entityAfterDelete).isEmpty();
+        assertThat(deleteEvents)
+            .anySatisfy(event -> {
+                assertThat(event.type()).isEqualTo("entity.deleted");
+                assertThat(event.payload()).containsEntry("collection", COLLECTION);
+                assertThat(event.payload()).containsEntry("id", entityId);
+            });
     }
 
-    @Test
-    @DisplayName("Should handle graceful degradation")
-    void shouldHandleGracefulDegradation() {
-        boolean degraded = true;
-        boolean operational = true;
-        
-        assertThat(degraded).isTrue();
-        assertThat(operational).isTrue();
+    private void restartLauncher() throws Exception {
+        stopServer();
+        startServer();
     }
 
-    @Test
-    @DisplayName("Should handle recovery after failure")
-    void shouldHandleRecoveryAfterFailure() {
-        boolean recovered = true;
-        long recoveryTimeMs = 5000L;
-        
-        assertThat(recovered).isTrue();
-        assertThat(recoveryTimeMs).isPositive();
+    private void startServer() throws Exception {
+        client = DataCloud.create(config);
+        port = findFreePort();
+        server = new DataCloudHttpServer(client, port);
+        server.start();
     }
+
+    private void stopServer() {
+        if (server != null) {
+            server.stop();
+            server = null;
+        }
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+    }
+
+    private ParsedHttpResponse sendJson(
+        String method,
+        String path,
+        Map<String, Object> body,
+        String tenantId
+    ) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("Accept", "application/json")
+            .header("X-Tenant-Id", tenantId);
+
+        if (body != null) {
+            builder.header("Content-Type", "application/json");
+            builder.method(method, HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)));
+        } else {
+            builder.method(method, HttpRequest.BodyPublishers.noBody());
+        }
+
+        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        Map<String, Object> parsedBody = response.body() == null || response.body().isBlank()
+            ? Map.of()
+            : objectMapper.readValue(response.body(), MAP_TYPE);
+
+        return new ParsedHttpResponse(response.statusCode(), parsedBody);
+    }
+
+    private int findFreePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object value) {
+        return (Map<String, Object>) value;
+    }
+
+    private record ParsedHttpResponse(int statusCode, Map<String, Object> body) {}
 }

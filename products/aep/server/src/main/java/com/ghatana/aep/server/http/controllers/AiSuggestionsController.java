@@ -5,9 +5,14 @@
 package com.ghatana.aep.server.http.controllers;
 
 import com.ghatana.aep.metrics.AISuggestionMetricsCollector;
+import com.ghatana.aep.security.AepAuthFilter;
+import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.server.analytics.DataCloudAnalyticsStore;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.aep.observability.AepSloMetrics;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -15,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -45,6 +51,9 @@ public final class AiSuggestionsController {
     private static final Logger log = LoggerFactory.getLogger(AiSuggestionsController.class);
 
     private static final int DEFAULT_LIMIT = 10;
+    private static final int MAX_LIMIT = 50;
+    private static final int DEFAULT_RATE_LIMIT_PER_MINUTE = 60;
+    private static final String RATE_LIMIT_ENV = "AEP_AI_SUGGESTIONS_RATE_LIMIT_PER_MIN";
     private static final double HIGH_ERROR_RATE_THRESHOLD = 0.05;
     private static final double CRITICAL_ERROR_RATE_THRESHOLD = 0.20;
 
@@ -55,6 +64,8 @@ public final class AiSuggestionsController {
     /** P2-11: Metrics collector for tracking suggestion effectiveness. */
     @Nullable
     private final AISuggestionMetricsCollector metricsCollector;
+    private final RateLimiter suggestionsRateLimiter;
+    private final boolean authDisabled;
 
     /**
      * @param analyticsStore optional DataCloud analytics store; when {@code null} only SLO metrics
@@ -64,7 +75,7 @@ public final class AiSuggestionsController {
     public AiSuggestionsController(
             @Nullable DataCloudAnalyticsStore analyticsStore,
             @Nullable AepSloMetrics sloMetrics) {
-        this(analyticsStore, sloMetrics, null);
+        this(analyticsStore, sloMetrics, null, defaultRateLimiter(), isAuthDisabled());
     }
 
     /**
@@ -77,9 +88,20 @@ public final class AiSuggestionsController {
             @Nullable DataCloudAnalyticsStore analyticsStore,
             @Nullable AepSloMetrics sloMetrics,
             @Nullable AISuggestionMetricsCollector metricsCollector) {
+        this(analyticsStore, sloMetrics, metricsCollector, defaultRateLimiter(), isAuthDisabled());
+    }
+
+    AiSuggestionsController(
+            @Nullable DataCloudAnalyticsStore analyticsStore,
+            @Nullable AepSloMetrics sloMetrics,
+            @Nullable AISuggestionMetricsCollector metricsCollector,
+            RateLimiter suggestionsRateLimiter,
+            boolean authDisabled) {
         this.analyticsStore = analyticsStore;
         this.sloMetrics = sloMetrics;
         this.metricsCollector = metricsCollector;
+        this.suggestionsRateLimiter = suggestionsRateLimiter;
+        this.authDisabled = authDisabled;
     }
 
     /**
@@ -91,7 +113,23 @@ public final class AiSuggestionsController {
      */
     public Promise<HttpResponse> handleGetSuggestions(HttpRequest request) {
         String tenantId = HttpHelper.resolveTenantId(request);
-        int limit = parseIntParam(request.getQueryParameter("limit"), DEFAULT_LIMIT);
+        HttpResponse tenantValidationError = validateTenantContext(request, tenantId);
+        if (tenantValidationError != null) {
+            return Promise.of(tenantValidationError);
+        }
+
+        int limit = parseLimitParam(request.getQueryParameter("limit"));
+
+        RateLimiter.AcquireResult rateLimitResult = suggestionsRateLimiter.tryAcquire(tenantId);
+        if (!rateLimitResult.allowed()) {
+            return Promise.of(HttpHelper.errorResponse(429,
+                "AI suggestions rate limit exceeded",
+                Map.of(
+                    "tenantId", tenantId,
+                    "retryAfterSeconds", rateLimitResult.retryAfterSeconds(),
+                    "remainingTokens", rateLimitResult.remainingTokens()
+                )));
+        }
 
         log.debug("[ai-suggestions] generating suggestions for tenant={}", tenantId);
 
@@ -273,6 +311,82 @@ public final class AiSuggestionsController {
         } catch (NumberFormatException e) {
             return defaultValue;
         }
+    }
+
+    private static int parseLimitParam(@Nullable String value) {
+        int parsed = parseIntParam(value, DEFAULT_LIMIT);
+        if (parsed < 1) {
+            return DEFAULT_LIMIT;
+        }
+        return Math.min(parsed, MAX_LIMIT);
+    }
+
+    private HttpResponse validateTenantContext(HttpRequest request, String tenantId) {
+        try {
+            AepInputValidator.validateTenantId(tenantId);
+        } catch (IllegalArgumentException validationError) {
+            return HttpHelper.errorResponse(400, "Invalid tenantId: " + validationError.getMessage());
+        }
+
+        AepAuthFilter.JwtPayload jwtPayload = request.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null) {
+            if (authDisabled) {
+                return null;
+            }
+            return HttpHelper.errorResponse(403,
+                "AI suggestions require an authenticated principal with tenant context");
+        }
+
+        String principalTenantId = jwtPayload.tenantId();
+        if (principalTenantId == null || principalTenantId.isBlank()) {
+            return HttpHelper.errorResponse(403,
+                "Authenticated principal is missing tenant context");
+        }
+
+        if (!principalTenantId.equals(tenantId)) {
+            return HttpHelper.errorResponse(403,
+                "Tenant context mismatch between request and authenticated principal");
+        }
+
+        return null;
+    }
+
+    private static RateLimiter defaultRateLimiter() {
+        int limitPerMinute = resolveRateLimitPerMinute();
+        return DefaultRateLimiter.create(RateLimiterConfig.builder()
+            .maxRequestsPerMinute(limitPerMinute)
+            .burstSize(limitPerMinute)
+            .windowDuration(Duration.ofMinutes(1))
+            .build());
+    }
+
+    private static int resolveRateLimitPerMinute() {
+        String configuredValue = resolveSetting(RATE_LIMIT_ENV);
+        if (configuredValue == null || configuredValue.isBlank()) {
+            return DEFAULT_RATE_LIMIT_PER_MINUTE;
+        }
+        try {
+            int parsedValue = Integer.parseInt(configuredValue.trim());
+            if (parsedValue < 1) {
+                return DEFAULT_RATE_LIMIT_PER_MINUTE;
+            }
+            return Math.min(parsedValue, 10_000);
+        } catch (NumberFormatException ignored) {
+            return DEFAULT_RATE_LIMIT_PER_MINUTE;
+        }
+    }
+
+    private static boolean isAuthDisabled() {
+        String rawValue = resolveSetting("AEP_AUTH_DISABLED");
+        return rawValue != null && "true".equalsIgnoreCase(rawValue.trim());
+    }
+
+    private static String resolveSetting(String key) {
+        String propertyValue = System.getProperty(key);
+        if (propertyValue != null) {
+            return propertyValue;
+        }
+        return System.getenv(key);
     }
 
     private static String formatInstant(Instant instant) {

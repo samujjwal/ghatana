@@ -1,9 +1,11 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -102,5 +104,35 @@ class HttpHandlerSupportTenantResolutionTest {
     @DisplayName("exposes strict tenant resolution flag")
     void exposesStrictTenantResolutionFlag() {
         assertThat(support.isStrictTenantResolution()).isTrue();
+    }
+
+    @Test
+    @DisplayName("maps NOT_FOUND envelope code to HTTP 404")
+    void mapsNotFoundEnvelopeTo404() {
+        ApiResponse envelope = ApiResponse.error("ENTITY_NOT_FOUND", "entity missing", "tenant-a", "req-1");
+
+        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper());
+
+        assertThat(response.getCode()).isEqualTo(404);
+    }
+
+    @Test
+    @DisplayName("maps timeout envelope code to HTTP 504")
+    void mapsTimeoutEnvelopeTo504() {
+        ApiResponse envelope = ApiResponse.error("QUERY_TIMEOUT", "query timed out", "tenant-a", "req-2");
+
+        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper());
+
+        assertThat(response.getCode()).isEqualTo(504);
+    }
+
+    @Test
+    @DisplayName("maps dependency unavailable envelope code to HTTP 503")
+    void mapsUnavailableEnvelopeTo503() {
+        ApiResponse envelope = ApiResponse.error("DEPENDENCY_UNAVAILABLE", "service unavailable", "tenant-a", "req-3");
+
+        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper());
+
+        assertThat(response.getCode()).isEqualTo(503);
     }
 }

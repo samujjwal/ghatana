@@ -26,11 +26,11 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Type-check
-        run: pnpm --filter @ghatana/aep-ui exec tsc --noEmit
+        run: pnpm --filter @aep/ui exec tsc --noEmit
       - name: Test
-        run: pnpm --filter @ghatana/aep-ui test -- --run
+        run: pnpm --filter @aep/ui exec vitest run
       - name: Build
-        run: pnpm --filter @ghatana/aep-ui build
+        run: pnpm --filter @aep/ui build
 
   data-cloud-ui:
     name: Data Cloud UI Build & Test
@@ -44,11 +44,31 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Type-check
-        run: pnpm --filter @ghatana/data-cloud-ui exec tsc --noEmit
+        run: pnpm --filter @data-cloud/ui exec tsc --noEmit
       - name: Test
-        run: pnpm --filter @ghatana/data-cloud-ui test -- --run
+        run: pnpm --filter @data-cloud/ui exec vitest run
       - name: Build
-        run: pnpm --filter @ghatana/data-cloud-ui build
+        run: pnpm --filter @data-cloud/ui build
+
+  platform-typescript-dependency-boundaries:
+    name: 'platform/typescript — dependency boundaries'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Dependency-cruiser boundary check
+        run: >-
+          pnpm dlx dependency-cruiser@17.3.10
+          --config platform/typescript/.dependency-cruiser.cjs
+          --output-type text
+          platform/typescript/*/src
+          platform/typescript/foundation/*/src
+          platform/typescript/canvas/*/src
 
   gateway:
     name: AEP Gateway Build & Test

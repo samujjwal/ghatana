@@ -11,6 +11,7 @@
  */
 
 import { TokenStorage } from '../auth/tokenStorage';
+import SessionBootstrap from '../auth/session';
 
 /**
  * API Response wrapper
@@ -83,6 +84,10 @@ export class ApiClient {
             ...this.defaultHeaders,
             ...extraHeaders,
         });
+        const tenantId = SessionBootstrap.getTenantId();
+        if (tenantId) {
+            headers.set('X-Tenant-ID', tenantId);
+        }
         // Use TokenStorage instead of direct localStorage access.
         // TokenStorage uses memory-first storage with sessionStorage fallback,
         // reducing XSS token-theft risk. See lib/auth/tokenStorage.ts for the

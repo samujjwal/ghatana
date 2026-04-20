@@ -73,10 +73,29 @@ export default defineConfig({
   ],
 
   // Run local dev server before starting tests
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  webServer: [
+    {
+      command: '.\\gradlew.bat :products:data-cloud:launcher:runLauncher',
+      cwd: '..\\..\\..',
+      url: 'http://127.0.0.1:8082/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 240 * 1000,
+      env: {
+        ...process.env,
+        DATACLOUD_PROFILE: process.env.DATACLOUD_PROFILE ?? 'local',
+        DATACLOUD_HTTP_ENABLED: process.env.DATACLOUD_HTTP_ENABLED ?? 'true',
+      },
+    },
+    {
+      command: 'corepack pnpm exec vite --host 127.0.0.1 --port 5173',
+      cwd: '.',
+      url: 'http://127.0.0.1:5173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+      env: {
+        ...process.env,
+        VITE_USE_MSW: 'false',
+      },
+    },
+  ],
 });
