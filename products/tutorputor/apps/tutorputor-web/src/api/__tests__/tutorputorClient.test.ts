@@ -30,6 +30,7 @@ describe("TutorPutorApiClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    window.localStorage.setItem("tenant_id", "tenant-42");
 
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -47,7 +48,6 @@ describe("TutorPutorApiClient", () => {
 
   it("uses fetch with auth and tenant headers for dashboard requests", async () => {
     window.localStorage.setItem("auth_token", "token-123");
-    window.localStorage.setItem("tenant_id", "tenant-42");
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         user: { id: "1", email: "test@test.com", displayName: "Test" },
@@ -71,14 +71,19 @@ describe("TutorPutorApiClient", () => {
     );
   });
 
+  it("rejects requests when no tenant context is stored", async () => {
+    window.localStorage.removeItem("tenant_id");
+
+    await expect(client.getDashboard()).rejects.toThrow(
+      "Authentication required: No tenant context found",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns fallback dashboard data when the backend is unavailable", async () => {
     fetchMock.mockRejectedValueOnce(new Error("Network error"));
 
-    const result = await client.getDashboard();
-
-    expect(result.user.displayName).toBe("Student User");
-    expect(result.currentEnrollments.length).toBeGreaterThan(0);
-    expect(result.recommendedModules.length).toBeGreaterThan(0);
+    await expect(client.getDashboard()).rejects.toThrow("Network error");
   });
 
   it("serializes query parameters for module listing", async () => {
@@ -95,9 +100,7 @@ describe("TutorPutorApiClient", () => {
   it("returns fallback module lists when listing fails", async () => {
     fetchMock.mockRejectedValueOnce(new Error("API error"));
 
-    const result = await client.listModules();
-
-    expect(result.items.length).toBeGreaterThan(0);
+    await expect(client.listModules()).rejects.toThrow("API error");
   });
 
   it("posts enrollment payloads with fetch", async () => {
@@ -119,17 +122,15 @@ describe("TutorPutorApiClient", () => {
       jsonResponse({ error: "bad" }, false, 500, "Server Error"),
     );
 
-    await expect(client.enrollInModule("mod-1")).rejects.toThrow(
-      "HTTP 500: Server Error",
-    );
+    await expect(client.enrollInModule("mod-1")).rejects.toThrow("bad");
   });
 
   it("falls back to empty search results when search fails", async () => {
     fetchMock.mockRejectedValueOnce(new Error("Search unavailable"));
 
-    const result = await client.search("vectors", { domain: "math" });
-
-    expect(result).toEqual({ results: [], total: 0, facets: {} });
+    await expect(client.search("vectors", { domain: "math" })).rejects.toThrow(
+      "Search unavailable",
+    );
   });
 
   it("exports a shared default API client instance", () => {

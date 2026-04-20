@@ -55,15 +55,18 @@ interface DashboardData {
   stats: DashboardStats;
 }
 
-async function fetchDashboard(): Promise<DashboardData> {
+export async function fetchDashboard(): Promise<DashboardData> {
   const session = getSessionSnapshot();
   const token = session.accessToken;
-  const tenantId = session.tenantId ?? 'default';
+
+  if (!token || !session.tenantId) {
+    throw new Error('Authenticated tenant session required to fetch dashboard');
+  }
 
   const response = await fetch('/api/v1/learning/dashboard', {
     headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
+      'Authorization': `Bearer ${token}`,
+      'X-Tenant-ID': session.tenantId,
       'Content-Type': 'application/json',
     },
   });

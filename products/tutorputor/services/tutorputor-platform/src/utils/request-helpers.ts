@@ -15,6 +15,7 @@
  */
 
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
+import { canUseTrustedProxyAuth } from "../core/http/trustedProxyAuth.js";
 
 /** Shape of the JWT payload as decoded by @fastify/jwt */
 export interface JwtUser {
@@ -25,9 +26,26 @@ export interface JwtUser {
 }
 
 export type RequestWithContext = {
+  ip?: string;
   headers: Record<string, string | string[] | undefined>;
   user?: JwtUser | string | object | Buffer;
 };
+
+function getTrustedHeader(
+  req: RequestWithContext,
+  headerName: "x-tenant-id" | "x-user-id" | "x-user-role",
+): string | null {
+  if (!canUseTrustedProxyAuth(req as never)) {
+    return null;
+  }
+
+  const headerValue = req.headers[headerName];
+  if (!headerValue) {
+    return null;
+  }
+
+  return Array.isArray(headerValue) ? headerValue[0] ?? null : headerValue;
+}
 
 function getJwtUser(user: RequestWithContext["user"]): JwtUser | undefined {
   if (!user || typeof user !== "object" || Buffer.isBuffer(user)) {
@@ -44,13 +62,14 @@ function getJwtUser(user: RequestWithContext["user"]): JwtUser | undefined {
 export function getTenantId(req: RequestWithContext): TenantId {
   const user = getJwtUser(req.user);
 
-  // Prefer JWT claim (set by global auth guard)
   if (user?.tenantId) return user.tenantId as TenantId;
 
-  // Fallback: gateway-injected header (trusted proxy only)
-  const tenantId = req.headers["x-tenant-id"];
-  const value = Array.isArray(tenantId) ? tenantId[0] : tenantId;
-  return (value || "default") as TenantId;
+  const tenantId = getTrustedHeader(req, "x-tenant-id");
+  if (!tenantId) {
+    throw new Error("Missing tenant context");
+  }
+
+  return tenantId as TenantId;
 }
 
 /**
@@ -60,14 +79,15 @@ export function getTenantId(req: RequestWithContext): TenantId {
 export function getUserId(req: RequestWithContext): UserId {
   const user = getJwtUser(req.user);
 
-  // Prefer JWT subject claim (set by global auth guard)
   if (user?.sub) return user.sub as UserId;
   if (user?.userId) return user.userId as UserId;
 
-  // Fallback: gateway-injected header (trusted proxy only)
-  const userId = req.headers["x-user-id"];
-  const value = Array.isArray(userId) ? userId[0] : userId;
-  return (value || "anonymous") as UserId;
+  const userId = getTrustedHeader(req, "x-user-id");
+  if (!userId) {
+    throw new Error("Missing user context");
+  }
+
+  return userId as UserId;
 }
 
 /**
@@ -78,13 +98,10 @@ export function getUserId(req: RequestWithContext): UserId {
 export function requireRole(req: RequestWithContext, roles: string[]): void {
   const user = getJwtUser(req.user);
 
-  // Prefer JWT claim
   const jwtRole = user?.role;
   if (jwtRole && roles.includes(jwtRole)) return;
 
-  // Fallback: gateway-injected header
-  const userRole = req.headers["x-user-role"];
-  const role = Array.isArray(userRole) ? userRole[0] : userRole;
+  const role = getTrustedHeader(req, "x-user-role");
   if (!role || !roles.includes(role)) {
     throw new Error("Forbidden: insufficient permissions");
   }

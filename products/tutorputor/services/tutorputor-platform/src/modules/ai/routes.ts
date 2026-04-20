@@ -17,7 +17,11 @@ import {
   AIContentGenerationError,
   AIContentGenerationService,
 } from "./AIContentGenerationService.js";
-import { getTenantId, requireRole } from "../../core/http/requestContext.js";
+import {
+  getTenantId,
+  getUserId,
+  requireRole,
+} from "../../core/http/requestContext.js";
 import { aiRegistryClient as defaultAiRegistryClient } from "../../clients/ai-registry.client.js";
 import { aiQuerySchema } from "../../validation/validator.js";
 import { validateBody } from "../../validation/middleware/validation.js";
@@ -124,108 +128,129 @@ export async function registerAIRoutes(
 ): Promise<void> {
   const aiContentService = new AIContentGenerationService(deps.aiProxyService);
 
+  function sendRequestContextError(
+    reply: FastifyReply,
+    error: unknown,
+  ): FastifyReply | null {
+    const statusCode =
+      typeof (error as { statusCode?: unknown })?.statusCode === "number"
+        ? ((error as { statusCode: number }).statusCode as number)
+        : null;
+    const message =
+      error instanceof Error ? error.message : "Request context unavailable";
+
+    if (statusCode === null) {
+      return null;
+    }
+
+    return reply.status(statusCode).send({
+      error: message,
+      code:
+        typeof (error as { code?: unknown })?.code === "string"
+          ? (error as { code: string }).code
+          : "REQUEST_CONTEXT_ERROR",
+    });
+  }
+
   // AI Tutor query endpoint
   app.post(
     "/tutor/query",
     { preHandler: validateBody(aiQuerySchema) },
     async (req, reply) => {
-    if (!(await enforceAiTenantRateLimit(app, req, reply, "tutor-query"))) {
-      return;
-    }
-
-    const rawTenantHdr = req.headers["x-tenant-id"];
-    const rawUserHdr = req.headers["x-user-id"];
-    const tenantId = ((req as FastifyRequest & { user?: { tenantId?: string } })
-      .user?.tenantId ||
-      (Array.isArray(rawTenantHdr) ? rawTenantHdr[0] : rawTenantHdr) ||
-      "default") as TenantId;
-    const userId = ((
-      req as FastifyRequest & { user?: { sub?: string; userId?: string } }
-    ).user?.sub ||
-      (Array.isArray(rawUserHdr) ? rawUserHdr[0] : rawUserHdr) ||
-      "anonymous") as UserId;
-    const { moduleId, question, locale } = req.body as {
-      moduleId?: ModuleId;
-      question: string;
-      locale?: string;
-    };
-
-    if (!question || question.trim().length === 0) {
-      return reply.status(400).send({ error: "Question is required" });
-    }
-
-    // Resolve active model from platform AI Registry for observability & routing
-    let activeModelId: string | undefined;
-    if (deps.aiRegistryClient) {
       try {
-        const model = await deps.aiRegistryClient.findActiveModel(
-          String(tenantId),
-          "tutoring-llm",
-        );
-        if (model) {
-          activeModelId = model.id;
-          app.log.debug(
-            `[AI] Active model resolved: ${model.id} (${model.name})`,
-          );
+        if (!(await enforceAiTenantRateLimit(app, req, reply, "tutor-query"))) {
+          return;
         }
-      } catch {
-        app.log.warn("[AI] Could not resolve active model from registry");
+
+        const tenantId = getTenantId(req) as TenantId;
+        const userId = getUserId(req) as UserId;
+        const { moduleId, question, locale } = req.body as {
+          moduleId?: ModuleId;
+          question: string;
+          locale?: string;
+        };
+
+        if (!question || question.trim().length === 0) {
+          return reply.status(400).send({ error: "Question is required" });
+        }
+
+        // Resolve active model from platform AI Registry for observability & routing
+        let activeModelId: string | undefined;
+        if (deps.aiRegistryClient) {
+          try {
+            const model = await deps.aiRegistryClient.findActiveModel(
+              String(tenantId),
+              "tutoring-llm",
+            );
+            if (model) {
+              activeModelId = model.id;
+              app.log.debug(
+                `[AI] Active model resolved: ${model.id} (${model.name})`,
+              );
+            }
+          } catch {
+            app.log.warn("[AI] Could not resolve active model from registry");
+          }
+        }
+
+        app.log.info(
+          `[AI] Tutor query from user ${String(userId)}: ${question.substring(0, 50)}...`,
+        );
+
+        const response = await deps.aiProxyService.handleTutorQuery({
+          tenantId,
+          userId,
+          question,
+          ...(moduleId ? { moduleId } : {}),
+          ...(locale ? { locale } : {}),
+        });
+
+        if (activeModelId) {
+          void reply.header("x-active-model-id", activeModelId);
+        }
+        return reply.send({ response });
+      } catch (error) {
+        const contextErrorReply = sendRequestContextError(reply, error);
+        if (contextErrorReply) {
+          return contextErrorReply;
+        }
+
+        throw error;
       }
-    }
-
-    app.log.info(
-      `[AI] Tutor query from user ${String(userId)}: ${question.substring(0, 50)}...`,
-    );
-
-    const response = await deps.aiProxyService.handleTutorQuery({
-      tenantId,
-      userId,
-      question,
-      ...(moduleId ? { moduleId } : {}),
-      ...(locale ? { locale } : {}),
-    });
-
-    if (activeModelId) {
-      void reply.header("x-active-model-id", activeModelId);
-    }
-    return reply.send({ response });
-  });
+    },
+  );
 
   // AI-generated questions from module content
   app.post("/generate-questions", async (req, reply) => {
-    if (
-      !(await enforceAiTenantRateLimit(app, req, reply, "generate-questions"))
-    ) {
-      return;
-    }
-
-    const rawTenantHdr2 = req.headers["x-tenant-id"];
-    const tenantId = ((req as FastifyRequest & { user?: { tenantId?: string } })
-      .user?.tenantId ||
-      (Array.isArray(rawTenantHdr2) ? rawTenantHdr2[0] : rawTenantHdr2) ||
-      "default") as TenantId;
-    const {
-      moduleId,
-      count = 5,
-      difficulty = "medium",
-    } = req.body as {
-      moduleId: ModuleId;
-      count?: number;
-      difficulty?: "easy" | "medium" | "hard";
-    };
-
-    if (!moduleId) {
-      return reply.status(400).send({ error: "moduleId is required" });
-    }
-
-    if (!deps.aiProxyService.generateQuestionsFromContent) {
-      return reply.status(501).send({
-        error: "Question generation not available",
-        questions: [],
-      });
-    }
-
     try {
+      if (
+        !(await enforceAiTenantRateLimit(app, req, reply, "generate-questions"))
+      ) {
+        return;
+      }
+
+      const tenantId = getTenantId(req) as TenantId;
+      const {
+        moduleId,
+        count = 5,
+        difficulty = "medium",
+      } = req.body as {
+        moduleId: ModuleId;
+        count?: number;
+        difficulty?: "easy" | "medium" | "hard";
+      };
+
+      if (!moduleId) {
+        return reply.status(400).send({ error: "moduleId is required" });
+      }
+
+      if (!deps.aiProxyService.generateQuestionsFromContent) {
+        return reply.status(501).send({
+          error: "Question generation not available",
+          questions: [],
+        });
+      }
+
       const questions = await deps.aiProxyService.generateQuestionsFromContent({
         tenantId: String(tenantId),
         moduleId: String(moduleId),
@@ -266,6 +291,11 @@ export async function registerAIRoutes(
       }
 
       // Unknown error
+      const contextErrorReply = sendRequestContextError(reply, error);
+      if (contextErrorReply) {
+        return contextErrorReply;
+      }
+
       return reply.status(500).send({
         error: message,
         code: "UNKNOWN_ERROR",
@@ -284,14 +314,7 @@ export async function registerAIRoutes(
       }
 
       requireRole(req, ["admin"]);
-      const rawConceptTenantHdr = req.headers["x-tenant-id"];
-      const tenantId = ((
-        req as FastifyRequest & { user?: { tenantId?: string } }
-      ).user?.tenantId ||
-        (Array.isArray(rawConceptTenantHdr)
-          ? rawConceptTenantHdr[0]
-          : rawConceptTenantHdr) ||
-        "default") as TenantId;
+      const tenantId = getTenantId(req) as TenantId;
       const { conceptName, domain } = req.body as {
         conceptName: string;
         domain: string;
@@ -330,6 +353,11 @@ export async function registerAIRoutes(
         });
       }
 
+      const contextErrorReply = sendRequestContextError(reply, error);
+      if (contextErrorReply) {
+        return contextErrorReply;
+      }
+
       app.log.error(`[AI] Concept generation failed: ${errorMessage}`);
       return reply.status(500).send({ error: errorMessage });
     }
@@ -350,14 +378,7 @@ export async function registerAIRoutes(
       }
 
       requireRole(req, ["admin"]);
-      const rawSimTenantHdr = req.headers["x-tenant-id"];
-      const tenantId = ((
-        req as FastifyRequest & { user?: { tenantId?: string } }
-      ).user?.tenantId ||
-        (Array.isArray(rawSimTenantHdr)
-          ? rawSimTenantHdr[0]
-          : rawSimTenantHdr) ||
-        "default") as TenantId;
+      const tenantId = getTenantId(req) as TenantId;
       const { description, conceptName, domain } = req.body as {
         description: string;
         conceptName: string;
@@ -391,6 +412,11 @@ export async function registerAIRoutes(
         errorMessage.includes("Forbidden")
       ) {
         return reply.status(403).send({ error: errorMessage });
+      }
+
+      const contextErrorReply = sendRequestContextError(reply, error);
+      if (contextErrorReply) {
+        return contextErrorReply;
       }
 
       app.log.error(`[AI] Simulation generation failed: ${errorMessage}`);

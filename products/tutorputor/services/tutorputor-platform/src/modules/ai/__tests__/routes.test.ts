@@ -29,6 +29,15 @@ const mockAIProxyService = {
   generateQuestionsFromContent: vi.fn(),
 };
 
+function authHeaders(overrides: Record<string, string> = {}): Record<string, string> {
+  return {
+    "x-tenant-id": "test-tenant",
+    "x-user-id": "test-user",
+    "x-user-role": "student",
+    ...overrides,
+  };
+}
+
 describe("AI Routes", () => {
   let app: FastifyInstance;
 
@@ -43,7 +52,9 @@ describe("AI Routes", () => {
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    Object.values(mockAIProxyService).forEach((mockFn) => {
+      mockFn.mockReset();
+    });
   });
 
   describe("POST /tutor/query", () => {
@@ -59,10 +70,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/tutor/query",
-        headers: {
-          "x-tenant-id": "test-tenant",
-          "x-user-id": "test-user",
-        },
+        headers: authHeaders(),
         payload: {
           question: "What is photosynthesis?",
           locale: "en",
@@ -75,7 +83,7 @@ describe("AI Routes", () => {
       expect(body.response.citations).toHaveLength(1);
     });
 
-    it("uses default tenant ID when not provided", async () => {
+    it("returns 401 when tenant context is not provided", async () => {
       mockAIProxyService.handleTutorQuery.mockResolvedValueOnce({
         answer: "Test answer",
         safety: { blocked: false },
@@ -87,15 +95,10 @@ describe("AI Routes", () => {
         payload: { question: "Test?" },
       });
 
-      expect(response.statusCode).toBe(200);
-      expect(mockAIProxyService.handleTutorQuery).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tenantId: "default",
-        }),
-      );
+      expect(response.statusCode).toBe(401);
     });
 
-    it("uses default user ID when not provided", async () => {
+    it("returns 401 when user context is not provided", async () => {
       mockAIProxyService.handleTutorQuery.mockResolvedValueOnce({
         answer: "Test answer",
         safety: { blocked: false },
@@ -104,15 +107,13 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/tutor/query",
+        headers: {
+          "x-tenant-id": "test-tenant",
+        },
         payload: { question: "Test?" },
       });
 
-      expect(response.statusCode).toBe(200);
-      expect(mockAIProxyService.handleTutorQuery).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: "anonymous",
-        }),
-      );
+      expect(response.statusCode).toBe(401);
     });
 
     it("returns 400 for empty question", async () => {
@@ -124,7 +125,7 @@ describe("AI Routes", () => {
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("required");
+      expect(body.error).toBe("Validation Error");
     });
 
     it("returns 400 for missing question", async () => {
@@ -141,6 +142,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/tutor/query",
+        headers: authHeaders(),
         payload: { question: "   " },
       });
 
@@ -156,7 +158,7 @@ describe("AI Routes", () => {
       await app.inject({
         method: "POST",
         url: "/tutor/query",
-        headers: { "x-tenant-id": "test" },
+        headers: authHeaders({ "x-tenant-id": "test" }),
         payload: {
           question: "Help with this module",
           moduleId: "mod-123",
@@ -179,6 +181,7 @@ describe("AI Routes", () => {
       await app.inject({
         method: "POST",
         url: "/tutor/query",
+        headers: authHeaders(),
         payload: {
           question: "¿Qué es la fotosíntesis?",
           locale: "es",
@@ -200,11 +203,11 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/tutor/query",
+        headers: authHeaders(),
         payload: { question: "Test" },
       });
 
-      // Should not crash, error handling depends on implementation
-      expect(response.statusCode).toBeGreaterThanOrEqual(200);
+      expect(response.statusCode).toBe(500);
     });
   });
 
@@ -222,7 +225,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-questions",
-        headers: { "x-tenant-id": "test" },
+        headers: authHeaders({ "x-tenant-id": "test" }),
         payload: {
           moduleId: "mod-biology-101",
           count: 5,
@@ -239,6 +242,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { count: 5 },
       });
 
@@ -253,6 +257,7 @@ describe("AI Routes", () => {
       await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "test" },
       });
 
@@ -267,6 +272,7 @@ describe("AI Routes", () => {
       await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "test" },
       });
 
@@ -281,6 +287,7 @@ describe("AI Routes", () => {
       await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "test", count: 100 },
       });
 
@@ -297,6 +304,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "test" },
       });
 
@@ -313,6 +321,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "empty-module" },
       });
 
@@ -329,6 +338,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "test" },
       });
 
@@ -345,6 +355,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "test" },
       });
 
@@ -367,6 +378,7 @@ describe("AI Routes", () => {
       const response = await appWithoutMethod.inject({
         method: "POST",
         url: "/generate-questions",
+        headers: authHeaders(),
         payload: { moduleId: "test" },
       });
 
@@ -381,8 +393,10 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/generate-concept",
         headers: {
-          "x-tenant-id": "test",
-          "x-user-role": "student",
+          ...authHeaders({
+            "x-tenant-id": "test",
+            "x-user-role": "student",
+          }),
         },
         payload: {
           conceptName: "Photosynthesis",
@@ -398,8 +412,10 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/generate-concept",
         headers: {
-          "x-tenant-id": "test",
-          "x-user-role": "admin",
+          ...authHeaders({
+            "x-tenant-id": "test",
+            "x-user-role": "admin",
+          }),
         },
         payload: {
           domain: "BIOLOGY",
@@ -416,8 +432,10 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/generate-concept",
         headers: {
-          "x-tenant-id": "test",
-          "x-user-role": "admin",
+          ...authHeaders({
+            "x-tenant-id": "test",
+            "x-user-role": "admin",
+          }),
         },
         payload: {
           conceptName: "Test",
@@ -439,8 +457,10 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/generate-concept",
         headers: {
-          "x-tenant-id": "test",
-          "x-user-role": "admin",
+          ...authHeaders({
+            "x-tenant-id": "test",
+            "x-user-role": "admin",
+          }),
         },
         payload: {
           conceptName: "Photosynthesis",
@@ -463,7 +483,7 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/generate-simulation",
         headers: {
-          "x-user-role": "student",
+          ...authHeaders({ "x-user-role": "student" }),
         },
         payload: {
           description: "Bouncing ball simulation",
@@ -479,7 +499,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-simulation",
-        headers: { "x-user-role": "admin" },
+        headers: authHeaders({ "x-user-role": "admin" }),
         payload: {
           conceptName: "Test",
           domain: "PHYSICS",
@@ -493,7 +513,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-simulation",
-        headers: { "x-user-role": "admin" },
+        headers: authHeaders({ "x-user-role": "admin" }),
         payload: {
           description: "Test sim",
           domain: "PHYSICS",
@@ -507,7 +527,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/generate-simulation",
-        headers: { "x-user-role": "admin" },
+        headers: authHeaders({ "x-user-role": "admin" }),
         payload: {
           description: "Test sim",
           conceptName: "Test",
@@ -530,7 +550,7 @@ describe("AI Routes", () => {
         method: "POST",
         url: "/tutor/query",
         headers: {
-          "x-tenant-id": "tenant-from-array",
+          ...authHeaders({ "x-tenant-id": "tenant-from-array" }),
         },
         payload: { question: "Test" },
       });
@@ -594,8 +614,10 @@ describe("AI Routes - Tenant Rate Limit", () => {
         method: "POST",
         url: "/tutor/query",
         headers: {
-          "x-tenant-id": "tenant-a",
-          "x-user-id": "user-a",
+          ...authHeaders({
+            "x-tenant-id": "tenant-a",
+            "x-user-id": "user-a",
+          }),
         },
         payload: { question: "hello" },
       });
@@ -605,8 +627,10 @@ describe("AI Routes - Tenant Rate Limit", () => {
         method: "POST",
         url: "/tutor/query",
         headers: {
-          "x-tenant-id": "tenant-a",
-          "x-user-id": "user-a",
+          ...authHeaders({
+            "x-tenant-id": "tenant-a",
+            "x-user-id": "user-a",
+          }),
         },
         payload: { question: "hello again" },
       });

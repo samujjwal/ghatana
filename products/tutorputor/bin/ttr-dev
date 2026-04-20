@@ -58,7 +58,7 @@ export TUTORPUTOR_DATABASE_URL="${TUTORPUTOR_DATABASE_URL:-$DATABASE_URL}"
 # Redis URL
 export REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
 export JWT_SECRET="${JWT_SECRET:-test-secret-do-not-use-in-prod-1234567890}"
-export STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY:-test-stripe-secret-key-placeholder}"
+export STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY:-stripe_test_placeholder_secret}"
 export CONTENT_WORKER_ENABLED="${CONTENT_WORKER_ENABLED:-true}"
 export CONTENT_QUEUE_DISABLED="${CONTENT_QUEUE_DISABLED:-false}"
 export TRUST_PROXY_AUTH_HEADERS="${TRUST_PROXY_AUTH_HEADERS:-false}"

@@ -20,7 +20,6 @@ function createSessionStorage(): NativeSessionStorage {
 }
 
 const sessionStorage = createSessionStorage();
-const DEFAULT_TENANT_ID = 'default';
 
 export interface SessionSnapshot {
   accessToken: string | null;
@@ -30,7 +29,7 @@ export interface SessionSnapshot {
 
 export interface SessionRequestContext {
   accessToken: string | null;
-  tenantId: string;
+  tenantId: string | null;
 }
 
 export function getSessionSnapshot(): SessionSnapshot {
@@ -46,7 +45,7 @@ export function getSessionRequestContext(): SessionRequestContext {
 
   return {
     accessToken: snapshot.accessToken,
-    tenantId: snapshot.tenantId ?? DEFAULT_TENANT_ID,
+    tenantId: snapshot.tenantId,
   };
 }
 
@@ -59,7 +58,7 @@ export function createSessionHeaders(
     ...(session.accessToken
       ? { Authorization: `Bearer ${session.accessToken}` }
       : {}),
-    'X-Tenant-ID': session.tenantId,
+    ...(session.tenantId ? { 'X-Tenant-ID': session.tenantId } : {}),
     ...extraHeaders,
   };
 }

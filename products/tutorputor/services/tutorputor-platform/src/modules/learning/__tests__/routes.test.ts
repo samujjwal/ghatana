@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import learningRoutes from "../routes.js";
@@ -48,6 +48,18 @@ type MockSessionAdaptationEngine = {
   processEvent: ReturnType<typeof vi.fn>;
   getCurrentAdaptation: ReturnType<typeof vi.fn>;
 };
+
+function getHeaderValue(
+  request: FastifyRequest,
+  headerName: "x-tenant-id" | "x-user-id" | "x-user-role",
+): string | null {
+  const headerValue = request.headers[headerName];
+  if (!headerValue) {
+    return null;
+  }
+
+  return Array.isArray(headerValue) ? headerValue[0] ?? null : headerValue;
+}
 
 describe("learning routes", () => {
   let app: FastifyInstance;
@@ -134,6 +146,31 @@ describe("learning routes", () => {
     app.setValidatorCompiler(() => {
       return (value: unknown) => ({ value });
     });
+    app.addHook("onRequest", async (request) => {
+      const tenantId = getHeaderValue(request, "x-tenant-id");
+      const userId = getHeaderValue(request, "x-user-id");
+
+      if (!tenantId || !userId) {
+        return;
+      }
+
+      const role = getHeaderValue(request, "x-user-role") ?? "student";
+      (
+        request as FastifyRequest & {
+          user?: {
+            tenantId: string;
+            sub: string;
+            userId: string;
+            role: string;
+          };
+        }
+      ).user = {
+        tenantId,
+        sub: userId,
+        userId,
+        role,
+      };
+    });
     app.decorate("prisma", prisma as never);
     await app.register(learningRoutes, options);
     await app.ready();
@@ -141,6 +178,53 @@ describe("learning routes", () => {
 
   afterEach(async () => {
     await app.close();
+  });
+
+  it("returns learner dashboard data for the authenticated tenant context", async () => {
+    learningService.getDashboard.mockResolvedValue({
+      user: {
+        id: "user-1",
+        email: "student@example.com",
+        displayName: "Student User",
+      },
+      currentEnrollments: [],
+      recommendedModules: [],
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/learning/dashboard",
+      headers: {
+        "x-tenant-id": "tenant-1",
+        "x-user-id": "user-1",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      currentEnrollments: [],
+      recommendedModules: [],
+    });
+    expect(learningService.getDashboard).toHaveBeenCalledWith(
+      "tenant-1",
+      "user-1",
+    );
+  });
+
+  it("returns 401 when dashboard tenant context is missing", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/learning/dashboard",
+      headers: {
+        "x-user-id": "user-1",
+      },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(learningService.getDashboard).not.toHaveBeenCalled();
   });
 
   it("forwards learner pacing constraints when updating enrollment progress", async () => {
