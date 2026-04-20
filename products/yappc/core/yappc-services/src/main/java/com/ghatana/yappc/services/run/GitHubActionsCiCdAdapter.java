@@ -119,11 +119,6 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
                 .status(RunStatus.SUCCESS)
                 .output("Build executed via GitHub Actions (TODO: implement actual workflow trigger)")
                 .durationMs(System.currentTimeMillis() - startTime)
-                .metadata(Map.of(
-                        "adapter", "github-actions",
-                        "repo", githubRepo,
-                        "workflow", "build.yml"
-                ))
                 .build());
     }
 
@@ -144,11 +139,6 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
                 .status(RunStatus.SUCCESS)
                 .output("Test suite executed via GitHub Actions (TODO: implement actual workflow trigger)")
                 .durationMs(System.currentTimeMillis() - startTime)
-                .metadata(Map.of(
-                        "adapter", "github-actions",
-                        "repo", githubRepo,
-                        "workflow", "test.yml"
-                ))
                 .build());
     }
 
@@ -173,12 +163,6 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
                 .status(RunStatus.SUCCESS)
                 .output("Deployment to " + targetEnvironment + " executed via GitHub Actions (TODO: implement actual workflow trigger)")
                 .durationMs(System.currentTimeMillis() - startTime)
-                .metadata(Map.of(
-                        "adapter", "github-actions",
-                        "repo", githubRepo,
-                        "workflow", "deploy.yml",
-                        "environment", targetEnvironment
-                ))
                 .build());
     }
 
@@ -199,11 +183,6 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
                 .status(RunStatus.SUCCESS)
                 .output("Database migration executed via GitHub Actions (TODO: implement actual workflow trigger)")
                 .durationMs(System.currentTimeMillis() - startTime)
-                .metadata(Map.of(
-                        "adapter", "github-actions",
-                        "repo", githubRepo,
-                        "workflow", "migrate.yml"
-                ))
                 .build());
     }
 
@@ -230,12 +209,6 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
                 .status(RunStatus.SUCCESS)
                 .output("Rollback to " + targetVersion + " executed via GitHub Actions (TODO: implement actual workflow trigger)")
                 .durationMs(System.currentTimeMillis() - startTime)
-                .metadata(Map.of(
-                        "adapter", "github-actions",
-                        "repo", githubRepo,
-                        "workflow", "rollback.yml",
-                        "targetVersion", targetVersion
-                ))
                 .build());
     }
 

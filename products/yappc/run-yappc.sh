@@ -61,7 +61,7 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 API_PORT=7002
 WEB_PORT=7001
 JAVA_BACKEND_PORT=7003
-AEP_PORT=8080
+AEP_PORT=8082
 DATA_CLOUD_PORT=7004
 
 # Mode configuration (embedded = library mode by default)

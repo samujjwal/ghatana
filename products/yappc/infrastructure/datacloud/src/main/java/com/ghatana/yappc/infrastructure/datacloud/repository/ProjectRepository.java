@@ -111,14 +111,16 @@ public class ProjectRepository {
   /**
    * Finds active projects (not completed or archived).
    *
+   * <p><b>Note:</b> Sorting is not currently supported by the Data Cloud adapter.
+   * Results are returned in arbitrary order. Sort client-side if needed.
+   *
    * @return active projects
    */
   @NotNull
   public Promise<List<ProjectEntity>> findActive() {
-    Map<String, Object> filter = Map.of(
-        "status", "ACTIVE"
-    );
-    return delegate.findByFilter(filter, "lastActivityAt DESC", 1000, 0);
+    // P1-5: Sort parameter removed - Data Cloud adapter does not support sorting
+    // Sort client-side if ordering is required
+    return delegate.findByField("status", "ACTIVE");
   }
 
   /**

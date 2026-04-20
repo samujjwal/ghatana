@@ -12,7 +12,7 @@ import { Rate, Trend, Counter, Gauge } from 'k6/metrics';
  */
 
 // Configuration
-const BASE_URL = __ENV.YAPPC_URL || 'http://localhost:8080';
+const BASE_URL = __ENV.YAPPC_URL || 'http://localhost:8082';
 const API_TOKEN = __ENV.YAPPC_API_TOKEN || 'test-token-12345';
 
 // Performance SLA thresholds

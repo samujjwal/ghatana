@@ -107,11 +107,25 @@ public class TenantContext {
     /**
      * Gets the current tenant ID.
      *
-     * @return The current tenant ID, or "default-tenant" if not set
+     * @return The current tenant ID
+     * @throws IllegalStateException if no tenant is set in non-development mode
      */
     public static String getCurrentTenantId() {
         String tenantId = CURRENT_TENANT_ID.get();
-        return tenantId != null ? tenantId : "default-tenant";
+        if (tenantId != null) {
+            return tenantId;
+        }
+        
+        // In development mode, allow default-tenant for testing
+        String profile = System.getProperty("yappc.profile", System.getenv().getOrDefault("YAPPC_PROFILE", "dev"));
+        if ("dev".equalsIgnoreCase(profile) || "development".equalsIgnoreCase(profile)) {
+            return "default-tenant";
+        }
+        
+        throw new IllegalStateException(
+            "Tenant context is not set. In production, all requests must include a valid X-Tenant-Id header " +
+            "or JWT claims with tenantId. This is a security requirement to prevent cross-tenant data leakage."
+        );
     }
 
     /**

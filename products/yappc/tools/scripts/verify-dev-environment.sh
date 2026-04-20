@@ -124,7 +124,7 @@ check_port() {
 
 check_port 3000 "Frontend"
 check_port 8000 "Backend API"
-check_port 8080 "Domain Service"
+check_port 8082 "Domain Service"
 check_port 8081 "AI Requirements API"
 check_port 8082 "Lifecycle API"
 check_port 5432 "PostgreSQL"

@@ -11,22 +11,23 @@ Four legacy libraries in `products/yappc/frontend/libs/` are **deprecated**.
 They will be deleted after their sunset dates. All new feature work must target
 the replacement libraries listed below.
 
-| Legacy (`@ghatana/yappc-*`) | Replacement (`@yappc/*`) | Sunset Date |
-| --------------------------- | ------------------------ | ----------- |
-| `@ghatana/yappc-canvas`     | `@yappc/canvas`          | 2026-06-30  |
-| `@ghatana/yappc-ai`         | `@yappc/ai`              | 2026-06-30  |
-| `@ghatana/yappc-ui`         | `@yappc/ui`              | 2026-06-30  |
-| `@ghatana/yappc-ide`        | `@yappc/canvas`          | 2026-06-06  |
+| Legacy (`@ghatana/yappc-*`) | Replacement (`@ghatana/*` or `@yappc/*`) | Sunset Date |
+| --------------------------- | ---------------------------------------- | ----------- |
+| `@ghatana/yappc-canvas`     | `@ghatana/canvas` (platform library)     | 2026-06-30  |
+| `@ghatana/yappc-ai`         | `@yappc/ai`                              | 2026-06-30  |
+| `@ghatana/yappc-ui`         | `@yappc/ui`                              | 2026-06-30  |
+| `@ghatana/yappc-ide`        | `@ghatana/canvas` (platform library)     | 2026-06-06  |
 
 ---
 
 ## Migration Guides
 
-### `@ghatana/yappc-canvas` → `@yappc/canvas`
+### `@ghatana/yappc-canvas` → `@ghatana/canvas`
 
 **Why:** `@ghatana/yappc-canvas` ships un-bundled TypeScript source, has no
 separate chunk splitting, and exports internal state atoms publicly.
-`@yappc/canvas` ships a pre-bundled ESM artifact with a stable public API.
+Use the platform-level `@ghatana/canvas` library instead, which provides
+a stable, shared canvas implementation across all Ghatana products.
 
 **Steps:**
 
@@ -36,7 +37,7 @@ separate chunk splitting, and exports internal state atoms publicly.
    // Before
    "@ghatana/yappc-canvas": "workspace:*"
    // After
-   "@yappc/canvas": "workspace:*"
+   "@ghatana/canvas": "workspace:*"
    ```
 
 2. Update import paths:
@@ -47,12 +48,13 @@ separate chunk splitting, and exports internal state atoms publicly.
    import { canvasAtoms } from '@ghatana/yappc-canvas/state';
 
    // After
-   import { CanvasEditor } from '@yappc/canvas';
-   import { canvasAtoms } from '@yappc/canvas/atoms';
+   import { CanvasEditor } from '@ghatana/canvas';
+   // Use YAPPC-specific state atoms from libs/canvas if needed
    ```
 
 3. The `<EditorCanvas>` component API is unchanged.  
-   The `useCanvasStore()` hook replaces direct atom subscriptions.
+   Platform canvas provides the core canvas functionality, while
+   YAPPC-specific extensions are in libs/canvas.
 
 ---
 

@@ -2,6 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "DCMAAR Extension - Base TypeScript Configuration",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     // Target and module system
     "target": "ES2022",
     "module": "ESNext",

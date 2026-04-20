@@ -81,6 +81,9 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
 
     @Override
     protected void setupService(ModuleBuilder builder) {
+        // Fail-fast environment validation before any DI wiring
+        com.ghatana.yappc.services.security.YappcEnvironmentConfig.validate();
+
         // Eventloop (NioReactor) for HTTP server and routing
         builder.bind(io.activej.eventloop.Eventloop.class)
                 .toInstance(io.activej.eventloop.Eventloop.create());

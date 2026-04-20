@@ -278,7 +278,7 @@ export default tseslint.config(
               message:
                 '@ghatana/yappc-store is deprecated. Use Jotai atoms directly from workspace/canvasAtoms.ts.',
             },
-            // Note: @ghatana/yappc-state is allowed temporarily - contains app-level atoms
+            // @ghatana/yappc-state removed in P2-6 - deprecated package deleted
             // that need dedicated migration effort (19 files). See TODO in migration docs.
             // Deprecated libs/design-tokens package
             {

@@ -206,10 +206,7 @@ try {
   uiTmp.compilerOptions.paths['@ghatana/yappc-store/*'] = [
     path.join(repoRoot, 'libs', 'state', 'dist', 'types', '*'),
   ];
-  uiTmp.compilerOptions.paths['@ghatana/yappc-state'] = [stateDeclIndex];
-  uiTmp.compilerOptions.paths['@ghatana/yappc-state/*'] = [
-    path.join(repoRoot, 'libs', 'state', 'dist', 'types', '*'),
-  ];
+  // @ghatana/yappc-state removed in P2-6 - deprecated package deleted
   fs.writeFileSync(tempUiTsconfig, JSON.stringify(uiTmp, null, 2));
   run('pnpm exec tsc -p libs/ui/tsconfig.build.tmp.json', { cwd: repoRoot });
   // 11) cleanup temporary tsconfigs

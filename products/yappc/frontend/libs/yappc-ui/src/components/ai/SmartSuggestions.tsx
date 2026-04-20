@@ -11,6 +11,7 @@
  * - Loading states
  * - Error handling
  * - Customizable suggestion rendering
+ * - Progressive disclosure (P3-2): Show only highest-priority suggestion initially
  *
  * @example
  * ```tsx
@@ -19,6 +20,7 @@
  *   context="User is writing code"
  *   onSelect={(suggestion) => insertText(suggestion.text)}
  *   suggestionTypes={['completion', 'improve']}
+ *   progressiveDisclosure={true}
  * />
  * ```
  */
@@ -27,6 +29,8 @@ import {
   Sparkles as AutoAwesomeIcon,
   RefreshCw as RefreshIcon,
   X as CloseIcon,
+  ChevronDown as ExpandMoreIcon,
+  ChevronUp as ExpandLessIcon,
 } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
@@ -171,6 +175,8 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
   showConfidence = true,
   autoGenerate = true,
   className,
+  progressiveDisclosure = false,
+  disclosureMode = 'single',
 }) => {
   // Stabilize prop defaults that are arrays/objects so they don't create
   // new references on every render. This prevents useCallback/useEffect
@@ -214,9 +220,48 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
 
   // mountedRef is provided by useMountedRef
 
+  // P3-2: Progressive disclosure state
+  const [showAll, setShowAll] = useState(progressiveDisclosure ? disclosureMode === 'all' : true);
+
+  // P3-2: Calculate priority for suggestions (impact + confidence - effort heuristic)
+  const prioritizedSuggestions = useMemo(() => {
+    return suggestions.map(s => ({
+      ...s,
+      priority: s.priority ?? calculatePriority(s)
+    })).sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  }, [suggestions]);
+
+  // P3-2: Filter suggestions based on disclosure mode
+  const displayedSuggestions = useMemo(() => {
+    if (!progressiveDisclosure || showAll) {
+      return prioritizedSuggestions;
+    }
+    return prioritizedSuggestions.slice(0, 1);
+  }, [progressiveDisclosure, showAll, prioritizedSuggestions]);
+
+  // P3-2: Priority calculation heuristic
+  function calculatePriority(suggestion: Suggestion): number {
+    let priority = 0;
+    
+    // Higher confidence = higher priority
+    if (suggestion.confidence) {
+      priority += suggestion.confidence * 50;
+    }
+    
+    // Certain types get priority boost
+    if (suggestion.type === 'completion') priority += 20;
+    if (suggestion.type === 'improve') priority += 15;
+    
+    // Length-based heuristic (shorter suggestions often more actionable)
+    if (suggestion.text.length < 50) priority += 10;
+    else if (suggestion.text.length < 100) priority += 5;
+    
+    return Math.min(100, Math.max(0, priority));
+  }
+
   // extract keyboard handling into hook to reduce component size
   useKeyboardNavigation(
-    suggestions,
+    displayedSuggestions,
     onSelect,
     onDismiss,
     selectedIndexRef,
@@ -297,13 +342,37 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
       )}
 
       {suggestions.length > 0 && (
-        <SuggestionList
-          suggestions={suggestions}
-          suggestionTypes={stableSuggestionTypes}
-          selectedIndex={selectedIndex}
-          onClick={handleSuggestionClick}
-          showConfidence={showConfidence}
-        />
+        <>
+          <SuggestionList
+            suggestions={displayedSuggestions}
+            suggestionTypes={stableSuggestionTypes}
+            selectedIndex={selectedIndex}
+            onClick={handleSuggestionClick}
+            showConfidence={showConfidence}
+          />
+          
+          {/* P3-2: Show more/less button for progressive disclosure */}
+          {progressiveDisclosure && suggestions.length > 1 && (
+            <Box className="p-3 border-gray-200 dark:border-gray-700 border-t">
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                {showAll ? (
+                  <>
+                    <ExpandLessIcon size={16} />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <ExpandMoreIcon size={16} />
+                    Show {suggestions.length - 1} more suggestions
+                  </>
+                )}
+              </button>
+            </Box>
+          )}
+        </>
       )}
 
       <Footer />

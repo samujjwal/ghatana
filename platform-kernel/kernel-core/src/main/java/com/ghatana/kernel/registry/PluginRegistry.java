@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 public class PluginRegistry {
     private final Map<String, KernelPlugin> plugins = new ConcurrentHashMap<>();
     private final Map<String, Set<KernelCapability>> capabilitiesByPlugin = new ConcurrentHashMap<>();
+    /** Plugin IDs that have been explicitly disabled at runtime. */
+    private final Set<String> disabledPlugins = ConcurrentHashMap.newKeySet();
     private final CapabilityRegistry capabilityRegistry;
 
     public PluginRegistry(CapabilityRegistry capabilityRegistry) {
@@ -106,14 +108,79 @@ public class PluginRegistry {
     }
 
     /**
+     * Disables a registered plugin at runtime.
+     *
+     * <p>The plugin remains registered but will not be started by
+     * {@link #startAllPlugins()} and will be stopped if it is currently running.
+     * Capabilities contributed by the plugin remain visible in the
+     * {@link CapabilityRegistry} to avoid breaking already-resolved dependency
+     * references; callers should check {@link #isPluginEnabled(String)} when
+     * routing requests at runtime.</p>
+     *
+     * @param pluginId the ID of the plugin to disable
+     * @return Promise completing when the plugin has been stopped (no-op if not started)
+     * @throws IllegalArgumentException if the plugin is not registered
+     */
+    public Promise<Void> disablePlugin(String pluginId) {
+        if (!plugins.containsKey(pluginId)) {
+            throw new IllegalArgumentException("Plugin not registered: " + pluginId);
+        }
+        disabledPlugins.add(pluginId);
+        KernelPlugin plugin = plugins.get(pluginId);
+        if (plugin == null) {
+            return Promise.complete();
+        }
+        return plugin.stop().whenException(e ->
+            System.err.println("Error stopping plugin " + pluginId + " during disable: " + e.getMessage()));
+    }
+
+    /**
+     * Re-enables a previously disabled plugin.
+     *
+     * <p>The plugin is removed from the disabled set. Call {@code plugin.start()}
+     * separately (or restart via {@link #startAllPlugins()}) to activate it.</p>
+     *
+     * @param pluginId the ID of the plugin to enable
+     * @throws IllegalArgumentException if the plugin is not registered
+     */
+    public void enablePlugin(String pluginId) {
+        if (!plugins.containsKey(pluginId)) {
+            throw new IllegalArgumentException("Plugin not registered: " + pluginId);
+        }
+        disabledPlugins.remove(pluginId);
+    }
+
+    /**
+     * Returns {@code true} if the plugin is registered and not disabled.
+     *
+     * @param pluginId the plugin identifier
+     * @return whether the plugin is active
+     */
+    public boolean isPluginEnabled(String pluginId) {
+        return plugins.containsKey(pluginId) && !disabledPlugins.contains(pluginId);
+    }
+
+    /**
+     * Returns the set of plugin IDs that are currently disabled.
+     *
+     * @return unmodifiable view of disabled plugin IDs
+     */
+    public Set<String> getDisabledPluginIds() {
+        return Collections.unmodifiableSet(disabledPlugins);
+    }
+
+    /**
      * Start all plugins.
      *
-     * @return Promise completing when all plugins have started
+     * <p>Plugins in the disabled set are skipped silently.</p>
+     *
+     * @return Promise completing when all enabled plugins have started
      */
     public Promise<Void> startAllPlugins() {
-        List<Promise<Void>> starts = plugins.values().stream()
-            .map(plugin -> plugin.start()
-                .mapException(e -> new RuntimeException("Failed to start plugin: " + plugin.getModuleId(), e)))
+        List<Promise<Void>> starts = plugins.entrySet().stream()
+            .filter(entry -> !disabledPlugins.contains(entry.getKey()))
+            .map(entry -> entry.getValue().start()
+                .mapException(e -> new RuntimeException("Failed to start plugin: " + entry.getKey(), e)))
             .collect(Collectors.toList());
         return Promises.all(starts);
     }

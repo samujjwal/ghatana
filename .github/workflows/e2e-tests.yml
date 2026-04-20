@@ -1,4 +1,5 @@
 name: E2E Tests
+# P1-4: Toolchain already uses Node 20 and pnpm@10.28.2 as required
 
 on:
   push:

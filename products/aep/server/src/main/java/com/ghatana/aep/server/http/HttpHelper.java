@@ -4,6 +4,7 @@
  */
 package com.ghatana.aep.server.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import io.activej.http.HttpRequest;
@@ -24,7 +25,16 @@ import java.util.Map;
  */
 public final class HttpHelper {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private HttpHelper() {}
+
+    /**
+     * Shared ObjectMapper for AEP HTTP controllers.
+     */
+    public static ObjectMapper mapper() {
+        return OBJECT_MAPPER;
+    }
 
     /**
      * Creates a 200 JSON response from a Map payload.
@@ -51,7 +61,7 @@ public final class HttpHelper {
      * Delegates to platform ResponseBuilder and ErrorResponse.
      */
     public static HttpResponse errorResponse(int code, String message, Map<String, Object> fields) {
-        ErrorResponse.Builder builder = ErrorResponse.builder()
+        ErrorResponse.ErrorResponseBuilder builder = ErrorResponse.builder()
             .status(code)
             .message(message);
         

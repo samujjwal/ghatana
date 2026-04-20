@@ -90,6 +90,9 @@ public final class YappcEnvironmentConfig {
     /** Tenant ID environment variable used when no request-scoped tenant context is present. */
     public static final String TENANT_ID_ENV = "YAPPC_TENANT_ID";
 
+    /** JWT secret environment variable for token signing. */
+    public static final String JWT_SECRET_ENV = "YAPPC_JWT_SECRET";
+
     private YappcEnvironmentConfig() {}
 
     /**
@@ -115,6 +118,7 @@ public final class YappcEnvironmentConfig {
         validateProductionAiObservability(env, errors);
         validateDatabase(env, errors);
         validateTenantId(env, errors);
+        validateJwtSecret(env, errors);
 
         if (!errors.isEmpty()) {
             String message = "YAPPC environment configuration is invalid:\n  - " +
@@ -140,6 +144,7 @@ public final class YappcEnvironmentConfig {
         validateProductionAiObservability(env, errors);
         validateDatabase(env, errors);
         validateTenantId(env, errors);
+        validateJwtSecret(env, errors);
         return new ValidationResult(errors);
     }
 
@@ -257,6 +262,24 @@ public final class YappcEnvironmentConfig {
         if (tenantId == null || tenantId.isBlank()) {
             log.warn("YappcEnvironmentConfig: {} not set — tenant ID must be provided via X-Tenant-ID header or JWT claims. " +
                     "Set this variable for service-to-service calls that require a default tenant context.", TENANT_ID_ENV);
+        }
+    }
+
+    private static void validateJwtSecret(Map<String, String> env, List<String> errors) {
+        String secret = env.get(JWT_SECRET_ENV);
+        if (secret == null || secret.isBlank()) {
+            errors.add(JWT_SECRET_ENV + " is required for JWT token signing");
+            return;
+        }
+
+        // Reject insecure placeholder values in production
+        String profile = env.getOrDefault(PROFILE_ENV, "dev").toLowerCase();
+        if ("production".equals(profile) || "prod".equals(profile)) {
+            if (secret.contains("change") || secret.contains("dev") || secret.length() < 32) {
+                errors.add(JWT_SECRET_ENV + " must be a cryptographically random secret (minimum 32 characters) " +
+                        "in production mode (YAPPC_PROFILE=" + profile + "). " +
+                        "Placeholder or short secrets are not allowed.");
+            }
         }
     }
 

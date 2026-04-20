@@ -29,7 +29,7 @@ const packages = [
 
 // Dependencies to update
 const depsToUpdate = {
-  '@yappc/canvas': 'file:../canvas',
+  // P2-3: @yappc/canvas removed - use platform @ghatana/canvas instead
   '@ghatana/yappc-designer': 'file:../designer',
   '@ghatana/yappc-types': 'file:../types',
   '@ghatana/yappc-mocks': 'file:../mocks',

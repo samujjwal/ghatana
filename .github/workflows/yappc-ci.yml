@@ -122,14 +122,14 @@ jobs:
           trap 'if [ -f lifecycle.pid ]; then kill "$(cat lifecycle.pid)" 2>/dev/null || true; fi' EXIT
 
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:8080/health/readiness > products/yappc/build/release-evidence/startup/readiness.txt 2>/dev/null; then
+            if curl -sf http://localhost:8082/health/readiness > products/yappc/build/release-evidence/startup/readiness.txt 2>/dev/null; then
               break
             fi
             sleep 1
           done
 
-          curl -sf http://localhost:8080/health/liveness > products/yappc/build/release-evidence/startup/liveness.txt
-          curl -sf -H 'X-Api-Key: diagnostics-key' http://localhost:8080/metrics > products/yappc/build/release-evidence/startup/metrics.txt
+          curl -sf http://localhost:8082/health/liveness > products/yappc/build/release-evidence/startup/liveness.txt
+          curl -sf -H 'X-Api-Key: diagnostics-key' http://localhost:8082/metrics > products/yappc/build/release-evidence/startup/metrics.txt
           grep -Eq 'READY|ready' products/yappc/build/release-evidence/startup/readiness.txt
           grep -Eq 'ok|OK' products/yappc/build/release-evidence/startup/liveness.txt
           grep -Eq 'jvm_|http_server_|yappc_' products/yappc/build/release-evidence/startup/metrics.txt
@@ -406,7 +406,7 @@ jobs:
           ./gradlew :products:yappc:services:run --no-daemon &
           echo $! > api.pid
           for i in {1..60}; do
-            if curl -sf http://localhost:8080/health; then
+            if curl -sf http://localhost:8082/health; then
               echo "API ready"
               break
             fi
@@ -418,7 +418,7 @@ jobs:
         working-directory: products/yappc/docs/api
         run: |
           schemathesis run openapi.yaml \
-            --base-url http://localhost:8080 \
+            --base-url http://localhost:8082 \
             --checks all \
             --hypothesis-max-examples 50 \
             --hypothesis-deadline 5000 \

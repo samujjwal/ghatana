@@ -92,9 +92,6 @@ dependencies {
 
     // Docker (for runtime build execution)
     implementation(libs.docker.java)
-    // Testcontainers for integration tests only (not production classpath)
-    testImplementation("org.testcontainers:testcontainers:1.19.3")
-    testImplementation("org.testcontainers:postgresql:1.19.3")
 
     // Prometheus
     implementation("io.prometheus:simpleclient:0.16.0")
@@ -115,8 +112,9 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":products:yappc:core:yappc-services"))
     testImplementation(project(":products:yappc:infrastructure:datacloud"))
-    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
-    testImplementation("org.testcontainers:postgresql:1.19.3")
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 // useJUnitPlatform() already applied by java-application

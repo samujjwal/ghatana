@@ -37,6 +37,8 @@ import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
+import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
+import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.services.lifecycle.storage.YappcDataCloudArtifactStore;
 import com.ghatana.core.database.config.JpaConfig;
 import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
@@ -90,10 +92,14 @@ import com.ghatana.agent.memory.store.procedural.ProcedureSelector;
 import com.ghatana.agent.memory.store.semantic.SemanticMemoryManager;
 import com.ghatana.agent.memory.store.taskstate.JdbcTaskStateStore;
 import com.ghatana.agent.memory.store.taskstate.TaskStateStore;
+// ─── Phase Gate Scheduler (P3-1) ─────────────────────────────────────────
+import com.ghatana.yappc.services.lifecycle.scheduler.PhaseGateSchedulerService;
+import com.ghatana.yappc.services.lifecycle.scheduler.DataCloudProjectProvider;
 // ──────────────────────────────────────────────────────────────────────────
 import io.activej.eventloop.Eventloop;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -258,9 +264,27 @@ public class LifecycleServiceModule extends AbstractModule {
     /** Provides JwtTokenProvider for bearer token validation endpoints. */
     @Provides
     JwtTokenProvider jwtTokenProvider() {
-        String secret = System.getenv().getOrDefault(
-                "YAPPC_JWT_SECRET",
-                "yappc-dev-secret-key-change-in-production-2026");
+        String secret = System.getenv("YAPPC_JWT_SECRET");
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                "YAPPC_JWT_SECRET environment variable is required. " +
+                "Set it to a cryptographically random secret (minimum 32 characters) " +
+                "for JWT token signing. This is a security requirement."
+            );
+        }
+
+        // Reject insecure placeholder values in production
+        String profile = System.getProperty("yappc.profile", System.getenv().getOrDefault("YAPPC_PROFILE", "dev"));
+        if (!"dev".equalsIgnoreCase(profile) && !"development".equalsIgnoreCase(profile)) {
+            if (secret.contains("change") || secret.contains("dev") || secret.length() < 32) {
+                throw new IllegalStateException(
+                    "YAPPC_JWT_SECRET must be a cryptographically random secret (minimum 32 characters) " +
+                    "in production mode (YAPPC_PROFILE=" + profile + "). " +
+                    "Placeholder or short secrets are not allowed."
+                );
+            }
+        }
+
         long validityMillis = Long.parseLong(System.getenv().getOrDefault(
                 "YAPPC_JWT_VALIDITY_MS", "3600000"));
 
@@ -280,6 +304,43 @@ public class LifecycleServiceModule extends AbstractModule {
     LifecycleLoginController lifecycleLoginController(JwtTokenProvider tokenProvider) {
         logger.info("Creating LifecycleLoginController");
         return LifecycleLoginController.fromEnvironment(tokenProvider);
+    }
+
+    // ========== Phase Gate Scheduler (P3-1) ==========
+
+    /** Provides DataCloudProjectProvider for active project discovery. */
+    @Provides
+    DataCloudProjectProvider dataCloudProjectProvider(DataCloudClient dataCloudClient) {
+        logger.info("Creating DataCloudProjectProvider");
+        return new DataCloudProjectProvider(dataCloudClient);
+    }
+
+    /** Provides PhaseGateSchedulerService for proactive gate validation. */
+    @Provides
+    PhaseGateSchedulerService phaseGateSchedulerService(
+            Eventloop eventloop,
+            PhaseGateValidator phaseGateValidator,
+            DataCloudProjectProvider projectProvider,
+            @Nullable BusinessMetrics metrics) {
+        logger.info("Creating PhaseGateSchedulerService");
+        
+        Map<String, String> config = Map.of(
+            "yappc.scheduler.phase-gate.interval", System.getenv().getOrDefault("YAPPC_SCHEDULER_INTERVAL_SECONDS", "300"),
+            "yappc.scheduler.phase-gate.enabled", System.getenv().getOrDefault("YAPPC_SCHEDULER_ENABLED", "true")
+        );
+        
+        PhaseGateSchedulerService scheduler = new PhaseGateSchedulerService(
+            eventloop,
+            phaseGateValidator,
+            projectProvider,
+            metrics,
+            config
+        );
+        
+        // Auto-start the scheduler
+        scheduler.start();
+        
+        return scheduler;
     }
 
     /** Provides LifecycleTracingConfig — initializes OpenTelemetry for all lifecycle spans. */

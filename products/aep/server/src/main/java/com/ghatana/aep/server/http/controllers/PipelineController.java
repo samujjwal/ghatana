@@ -7,7 +7,7 @@ package com.ghatana.aep.server.http.controllers;
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.core.pipeline.NaturalLanguagePipelineService;
-import com.ghatana.core.pipeline.PipelineSpec;
+import com.ghatana.core.pipeline.NaturalLanguagePipelineService.PipelineSpec;
 import com.ghatana.pipeline.registry.model.PipelineRegistration;
 import com.ghatana.pipeline.registry.repository.PipelineRepository;
 import com.ghatana.platform.domain.auth.TenantId;

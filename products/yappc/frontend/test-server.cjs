@@ -208,7 +208,7 @@ const server = http.createServer((req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8082;
 server.listen(PORT, () => {
     console.log(`Test config server running on port ${PORT}`);
     console.log(`Config base path: ${CONFIG_BASE_PATH}`);

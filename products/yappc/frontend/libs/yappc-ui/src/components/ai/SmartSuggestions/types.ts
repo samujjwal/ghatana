@@ -13,6 +13,8 @@ export interface Suggestion {
   description?: string;
   /** Optional confidence score (0-1) */
   confidence?: number;
+  /** Priority score (higher = more important) - P3-2 progressive disclosure */
+  priority?: number;
   /** Any extra metadata from the AI */
   metadata?: Record<string, unknown>;
 }
@@ -40,4 +42,8 @@ export interface SmartSuggestionsProps {
   autoGenerate?: boolean;
   className?: string;
   position?: 'above' | 'below' | 'left' | 'right';
+  /** Enable progressive disclosure - show only top suggestion initially (P3-2) */
+  progressiveDisclosure?: boolean;
+  /** User preference for disclosure mode (P3-2) */
+  disclosureMode?: 'single' | 'all';
 }

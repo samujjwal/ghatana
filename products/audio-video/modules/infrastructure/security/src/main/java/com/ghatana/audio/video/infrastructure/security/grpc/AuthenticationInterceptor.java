@@ -1,6 +1,6 @@
 package com.ghatana.audio.video.infrastructure.security.grpc;
 
-import com.ghatana.platform.governance.tenant.TenantContext;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.security.auth.AuthenticationProvider;
 import com.ghatana.platform.security.auth.Credentials;
 import com.ghatana.platform.security.auth.impl.TokenCredentials;

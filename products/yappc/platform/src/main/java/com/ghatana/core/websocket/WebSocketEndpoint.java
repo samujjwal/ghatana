@@ -44,7 +44,7 @@ import java.util.function.Function;
  *     .build();
  *
  * HttpServer server = HttpServerBuilder.create()
- *     .withPort(8080)
+ *     .withPort(8082)
  *     .addRoute(HttpMethod.GET, "/ws", endpoint.asServlet(reactor))
  *     .build();
  * }</pre>

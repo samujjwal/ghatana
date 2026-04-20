@@ -103,15 +103,20 @@ export function mapAuthSessionToUser(user: AuthSessionUser): User {
   const name = `${first} ${last}`.trim() || user.name?.trim() || user.id;
   const role = getPrimaryRole(user);
 
+  // Reject default-tenant fallback - tenantId must be explicitly set
+  if (!user.tenantId || user.tenantId.trim().length === 0 || user.tenantId === 'default-tenant') {
+    throw new Error(
+      'Tenant ID is required and cannot be default-tenant. ' +
+      'Ensure the auth server provides a valid tenant ID in the user context.'
+    );
+  }
+
   return {
     id: user.id,
     email: user.email ?? '',
     name,
     role,
-    tenantId:
-      user.tenantId && user.tenantId.trim().length > 0
-        ? user.tenantId
-        : 'default-tenant',
+    tenantId: user.tenantId,
     workspaceIds: user.workspaceIds ?? [],
   };
 }

@@ -971,7 +971,7 @@ public class AepHttpServer {
      * Call this at the start of request processing.
      */
     private void setCorrelationId(HttpRequest request) {
-        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
+        String correlationId = request.getHeader(HttpHeaders.of(CORRELATION_ID_HEADER));
         if (correlationId == null || correlationId.isBlank()) {
             correlationId = UUID.randomUUID().toString();
         }
@@ -1006,7 +1006,7 @@ public class AepHttpServer {
                 Map<String, Object> payload = AepInputValidator.validatePayload(rawPayload);
 
                 // P0-4: Check idempotency key for deduplication
-                String idempotencyKey = request.getHeader("Idempotency-Key");
+                String idempotencyKey = request.getHeader(HttpHeaders.of("Idempotency-Key"));
                 if (idempotencyKey != null && !idempotencyKey.isBlank()) {
                     synchronized (processedIdempotencyKeys) {
                         if (processedIdempotencyKeys.contains(idempotencyKey)) {
@@ -1021,7 +1021,7 @@ public class AepHttpServer {
 
                 // P0-1: Check consent before processing event
                 return consentService.evaluateConsent(tenantId, event)
-                    .flatMap(consentDecision -> {
+                    .then(consentDecision -> {
                         if (!consentDecision.allowed()) {
                             log.warn("Event processing denied by consent service for tenantId={}, eventType={}, reason={}",
                                 tenantId, eventType, consentDecision.reason());
@@ -1029,10 +1029,10 @@ public class AepHttpServer {
                         }
 
                         // P3-18: Scan event data for PII before processing
-                        PIIScanner.PIIResult piiResult = piiScanner.scanMap(event);
+                        PIIScanner.PIIResult piiResult = piiScanner.scanMap(payload);
                         if (piiResult.hasPII()) {
                             log.warn("[PIIScanner] PII detected in event for tenantId={}, eventId={}, types={}",
-                                tenantId, eventId, piiResult.items().stream()
+                                tenantId, "n/a", piiResult.items().stream()
                                     .map(PIIScanner.PIIItem::type)
                                     .distinct()
                                     .reduce((a, b) -> a + ", " + b)
