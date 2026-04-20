@@ -7,9 +7,6 @@ package com.ghatana.yappc.services.lifecycle.scheduler;
 import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import io.activej.eventloop.Eventloop;
-import io.activej.inject.annotation.InjectorModule;
-import io.activej.inject.module.Module;
-import io.activej.inject.module.ModuleBuilder;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +44,7 @@ class PhaseGateSchedulerServiceTest {
         if (scheduler != null && scheduler.isRunning()) {
             scheduler.stop();
         }
-        eventloop.break();
+        eventloop.breakEventloop();
     }
 
     @Test

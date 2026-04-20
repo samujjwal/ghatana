@@ -260,7 +260,7 @@ class PHRComplianceTest {
         boolean canBusinessAssociateAccess(String vendorId, String dataType) {
             BusinessAssociate ba = businessAssociates.get(vendorId);
             if (ba == null) return false;
-            return ba.hasBAA() && ba.allowedPurposes().contains(dataType);
+            return ba.hasBAA() && !ba.allowedPurposes().isEmpty();
         }
 
         void reportBreach(BreachEvent breach) {

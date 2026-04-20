@@ -134,8 +134,8 @@ public class InMemorySessionStore implements SessionStore {
                         .createdAt(session.getCreatedAt())
                         .expiresAt(session.getExpiresAt())
                         .lastAccessedAt(Instant.now())
-                        .ipAddress(session.getIpAddress())
-                        .userAgent(session.getUserAgent())
+                        .ipAddress(session.getIpAddress().orElse(null))
+                        .userAgent(session.getUserAgent().orElse(null))
                         .valid(session.isValid())
                         .build();
                 return store(updated);

@@ -28,6 +28,12 @@ The audit was partially stale by the time remediation work started. A code-to-au
 - Added minimal Tutorputor mobile Jest and Babel configuration so the new mobile tests execute inside the app workspace.
 - Expanded learner E2E coverage with a resumable dashboard journey that asserts authenticated dashboard hydration, personalized recommendation rendering, and resume-learning navigation to the canonical module route.
 - Added publish-provenance regression coverage in content studio so publish-time audit and revision records must capture validation metadata, evidence-bundle confidence, and latest AI generation context.
+- Fixed the consent-enforcement route map to cover the real `/api/v1/integration/*` namespace and added regression coverage for third-party-sharing consent requirements.
+- Replaced the Content Studio E2E suite's trusted-header API shortcut with a real signed bearer token so authoring lifecycle verification exercises the authenticated backend path.
+- Aligned Docker Compose and deployment guidance with the neutral Stripe placeholder required by stricter startup validation.
+- Updated Tutorputor architecture truth-surface links to point at the current deep audit instead of the stale 2026-04-18 audit reference.
+- Added manual publish review gating in Content Studio so low-confidence or contradictory evidence bundles now block direct publish, create reviewer work items, and emit `REVIEW_SUBMITTED` lifecycle events instead of silently promoting risky content.
+- Tightened the Content Studio browser flow so the admin authoring E2E bootstraps the page through `/api/v1/auth/me` with a real signed bearer token in browser storage, not only through request-level API auth.
 
 ## Verification
 
@@ -38,9 +44,18 @@ The audit was partially stale by the time remediation work started. A code-to-au
 - `src/storage/__tests__/NativeSessionStorage.test.ts`: passed.
 - `src/hooks/__tests__/useDashboard.test.ts`: passed.
 - `src/modules/content/studio/__tests__/service.test.ts`: 47 passed.
+- `src/core/middleware/__tests__/consent-enforcement.test.ts`: expanded route-mapping coverage for integration consent.
+- `src/__tests__/setupPlatform.integration.test.ts`: expanded runtime consent coverage for integration routes.
+- `src/modules/content/studio/__tests__/service.test.ts`: expanded publish-path coverage for manual review gating on low-confidence and contradictory evidence bundles.
 - `tests/e2e/LearnerJourney.spec.ts`: compiles in isolation with TypeScript.
+- `tests/e2e/ContentStudio.spec.ts`: now signs a real HS256 bearer token instead of relying on trusted proxy identity headers.
+- Follow-up verification: `npx vitest run src/core/middleware/__tests__/consent-enforcement.test.ts src/__tests__/setupPlatform.integration.test.ts` passed with 62 tests green across the two suites.
+- Follow-up verification: `npx playwright test --list ContentStudio.spec.ts` successfully discovered the updated authoring lifecycle test.
+- Follow-up verification: `npx vitest run src/modules/content/studio/__tests__/service.test.ts src/core/middleware/__tests__/consent-enforcement.test.ts src/__tests__/setupPlatform.integration.test.ts` passed with 111 tests green across the three suites.
+- Follow-up verification: `npx playwright test --list ContentStudio.spec.ts LearnerJourney.spec.ts` discovered 3 browser tests across the updated Tutorputor authoring and learner flows.
 - Playwright runtime execution is currently blocked in this workspace because the Tutorputor gateway/platform startup path requires explicit `DATABASE_URL`, `REDIS_URL`, and `JWT_SECRET` configuration plus reachable backing services.
-- Total targeted test verification for this remediation slice: 159 passed, 0 failed.
+- A direct Playwright execution attempt in this workspace currently fails before browser startup with `spawn /bin/sh ENOENT`, so browser-runtime validation remains environment-blocked rather than code-blocked.
+- Total targeted test verification for this remediation slice: 111 additional targeted tests passed in this follow-up batch, with Playwright spec discovery succeeding for 3 browser tests.
 
 ## Remaining Work
 
@@ -50,6 +65,7 @@ The following audit themes remain broader product workstreams rather than safe s
 - Deeper end-to-end coverage across mobile, web, and cross-service learning flows.
 - Broader UX and workflow simplification items identified in the audit.
 - Product-level provenance, review, and operational maturity items that require separate design slices.
+- Independent evaluator-driven publish gating is now enforced for evidence confidence and contradiction signals, but broader evaluator integration and golden-dataset validation are still separate workstreams.
 
 ## Next Recommended Execution Shape
 

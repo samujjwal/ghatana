@@ -130,6 +130,7 @@ class PMSReferenceDataIntegrationTest {
         private final java.util.Map<String, Instrument> instruments = new java.util.HashMap<>();
         private final java.util.Map<String, Position> positions = new java.util.HashMap<>();
         private final java.util.Map<String, java.util.Map<String, BigDecimal>> exchangeRates = new java.util.HashMap<>();
+        private final java.util.Set<String> accessedKeys = new java.util.HashSet<>();
         private int cacheHits = 0;
 
         void registerInstrument(Instrument instrument) {
@@ -187,7 +188,11 @@ class PMSReferenceDataIntegrationTest {
 
         Instrument getInstrument(String symbol) {
             if (instruments.containsKey(symbol)) {
-                cacheHits++;
+                if (accessedKeys.contains(symbol)) {
+                    cacheHits++;
+                } else {
+                    accessedKeys.add(symbol);
+                }
             }
             return instruments.get(symbol);
         }

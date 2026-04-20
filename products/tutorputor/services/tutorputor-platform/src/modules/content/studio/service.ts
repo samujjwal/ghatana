@@ -6,6 +6,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import { createHttpError } from "../../../core/http/requestContext.js";
 import type {
   ContentStudioService,
   CreateExperienceRequest,
@@ -237,6 +238,19 @@ type ExperienceTimelineEvent = {
   actorId: string;
   metadata: Record<string, unknown> | null;
   createdAt: string;
+};
+
+const MANUAL_PUBLISH_BUNDLE_CONFIDENCE_MIN = 0.85;
+
+type EvidencePublishReviewSignals = {
+  lowConfidenceBundles: Array<{
+    claimRef: string;
+    bundleConfidence: number;
+  }>;
+  contradictoryBundles: Array<{
+    claimRef: string;
+    bundleConfidence: number;
+  }>;
 };
 
 function generateSlug(title: string): string {
@@ -491,6 +505,112 @@ async function recordExperiencePublishProvenance(
       },
     }),
   ]);
+}
+
+async function submitExperiencePublishReview(
+  prisma: PrismaClient,
+  params: {
+    tenantId: string;
+    experienceId: string;
+    actorId: string;
+    validation: ExperienceValidationResult;
+    reviewChecks: ValidationCheck[];
+  },
+): Promise<string | null> {
+  const prismaWithReview = prisma as PrismaClient & {
+    reviewQueue?: {
+      findFirst?: (args: unknown) => Promise<{ id: string } | null>;
+      create?: (args: unknown) => Promise<{ id: string }>;
+    };
+    auditLog?: {
+      create?: (args: unknown) => Promise<unknown>;
+    };
+  };
+
+  const triggerReason = params.reviewChecks.some(
+    (check) => check.checkId === "evidence-bundle-contradictions",
+  )
+    ? "high_risk"
+    : "low_confidence";
+  const riskLevel = triggerReason === "high_risk" ? "HIGH" : "MEDIUM";
+  const priority = triggerReason === "high_risk" ? 90 : 60;
+  const reviewReasons = params.reviewChecks.map((check) => check.message);
+
+  const existingReview =
+    typeof prismaWithReview.reviewQueue?.findFirst === "function"
+      ? await prismaWithReview.reviewQueue.findFirst({
+          where: {
+            experienceId: params.experienceId,
+            assignedTo: null,
+            triggerReason,
+          },
+          orderBy: { queuedAt: "desc" },
+          select: { id: true },
+        })
+      : null;
+
+  const reviewQueueId = existingReview?.id
+    ? existingReview.id
+    : typeof prismaWithReview.reviewQueue?.create === "function"
+      ? (
+          await prismaWithReview.reviewQueue.create({
+            data: {
+              tenantId: params.tenantId,
+              experienceId: params.experienceId,
+              priority,
+              riskLevel,
+              triggerReason,
+              metadata: {
+                source: "content_studio.publishExperience",
+                validationScore: params.validation.score,
+                checks: params.validation.checks
+                  .filter((check) => !check.passed)
+                  .map((check) => ({
+                    checkId: check.checkId,
+                    message: check.message,
+                    severity: check.severity,
+                  })),
+                reviewReasons,
+              },
+            } as never,
+          })
+        ).id
+      : null;
+
+  if (!existingReview && reviewQueueId) {
+    await recordExperienceEvent(
+      prisma,
+      params.experienceId,
+      "REVIEW_SUBMITTED",
+      params.actorId,
+      {
+        reviewQueueId,
+        source: "content_studio.publishExperience",
+        validationScore: params.validation.score,
+          reviewReasons,
+      },
+    );
+  }
+
+  if (typeof prismaWithReview.auditLog?.create === "function") {
+    await prismaWithReview.auditLog.create({
+      data: {
+        tenantId: params.tenantId,
+        actorId: params.actorId,
+        action: "experience_publish_review_required",
+        resourceType: "LearningExperience",
+        resourceId: params.experienceId,
+        outcome: "manual_review",
+        metadata: JSON.stringify({
+          reviewQueueId,
+          validationScore: params.validation.score,
+          reviewReasons,
+        }),
+      },
+    });
+  }
+
+  return reviewQueueId;
 }
 
 function defaultGradeAdaptation(gradeRange: GradeRange): GradeAdaptation {
@@ -1139,6 +1259,43 @@ export function createContentStudioService(
       .filter(([claimRef, count]) => count > 0 && !claimRefs.has(claimRef))
       .map(([claimRef]) => claimRef || "unlinked-task");
 
+    const prismaWithEvidence = prisma as PrismaClient & {
+      evidenceBundleMetadata?: {
+        findMany?: (args: unknown) => Promise<
+          Array<{
+            claimRef: string;
+            bundleConfidence: number;
+            contradictionDetected: boolean;
+          }>
+        >;
+      };
+    };
+    const evidenceBundles =
+      claimRefs.size > 0 &&
+      typeof prismaWithEvidence.evidenceBundleMetadata?.findMany === "function"
+        ? await prismaWithEvidence.evidenceBundleMetadata.findMany({
+            where: {
+              experienceId: id,
+              claimRef: { in: [...claimRefs] },
+            },
+            select: {
+              claimRef: true,
+              bundleConfidence: true,
+              contradictionDetected: true,
+            },
+            orderBy: { claimRef: "asc" },
+          })
+        : [];
+    const lowConfidenceBundles = evidenceBundles.filter(
+      (bundle) =>
+        bundle.bundleConfidence < MANUAL_PUBLISH_BUNDLE_CONFIDENCE_MIN,
+    );
+    const contradictoryBundles = evidenceBundles.filter(
+      (bundle) => bundle.contradictionDetected,
+    );
+    const requiresManualReview =
+      lowConfidenceBundles.length > 0 || contradictoryBundles.length > 0;
+
     // --------------------------------------------------------------------------
     // Pillar scoring (0–100 per pillar)
     // --------------------------------------------------------------------------
@@ -1194,10 +1351,13 @@ export function createContentStudioService(
       claimCount > 0 &&
       allClaimsMeetBaseline &&
       orphanTaskRefs.length === 0 &&
-      overallScore >= 60;
+      overallScore >= 60 &&
+      !requiresManualReview;
     const overallStatus = canPublish
       ? "PASS"
-      : overallScore >= 45
+      : contradictoryBundles.length > 0
+        ? "FAIL"
+        : overallScore >= 45
         ? "WARN"
         : "FAIL";
 
@@ -1302,6 +1462,47 @@ export function createContentStudioService(
           "Relink or remove tasks whose claimRef no longer exists before publishing.";
       }
       checks.push(orphanTaskCheck);
+
+      const evidenceConfidenceCheck: ValidationCheck = {
+        checkId: "evidence-bundle-confidence",
+        pillar: "technical",
+        name: "Evidence Bundle Confidence",
+        passed: lowConfidenceBundles.length === 0,
+        severity: lowConfidenceBundles.length === 0 ? "info" : "error",
+        message:
+          lowConfidenceBundles.length === 0
+            ? "Evidence bundle confidence meets the publish threshold."
+            : `${lowConfidenceBundles.length} claim${lowConfidenceBundles.length > 1 ? "s have" : " has"} evidence confidence below ${MANUAL_PUBLISH_BUNDLE_CONFIDENCE_MIN}: ${lowConfidenceBundles
+                .map(
+                  (bundle) =>
+                    `${bundle.claimRef} (${bundle.bundleConfidence.toFixed(2)})`,
+                )
+                .join(", ")}.`,
+      };
+      if (lowConfidenceBundles.length > 0) {
+        evidenceConfidenceCheck.suggestion =
+          "Regenerate or strengthen evidence bundles before publishing, or route the experience for reviewer approval.";
+      }
+      checks.push(evidenceConfidenceCheck);
+
+      const evidenceContradictionCheck: ValidationCheck = {
+        checkId: "evidence-bundle-contradictions",
+        pillar: "safety",
+        name: "Evidence Bundle Contradictions",
+        passed: contradictoryBundles.length === 0,
+        severity: contradictoryBundles.length === 0 ? "info" : "error",
+        message:
+          contradictoryBundles.length === 0
+            ? "No contradictions were detected in publish-time evidence bundles."
+            : `${contradictoryBundles.length} claim${contradictoryBundles.length > 1 ? "s contain" : " contains"} contradictory evidence bundles: ${contradictoryBundles
+                .map((bundle) => bundle.claimRef)
+                .join(", ")}.`,
+      };
+      if (contradictoryBundles.length > 0) {
+        evidenceContradictionCheck.suggestion =
+          "Resolve evidence contradictions or submit the experience for manual review before publishing.";
+      }
+      checks.push(evidenceContradictionCheck);
     }
 
     const gradeCheck: ValidationCheck = {
@@ -1381,12 +1582,44 @@ export function createContentStudioService(
     id: string,
     userId: string,
   ): Promise<LearningExperience | null> {
+    const publishContext = await prisma.learningExperience.findUnique({
+      where: { id },
+      select: { tenantId: true },
+    });
+
+    if (!publishContext) {
+      throw new Error("Experience not found");
+    }
+
     // Validate before publishing and surface the exact blocking artifact-graph defects.
     const validation = await validateExperience(id);
     if (!validation.canPublish) {
       const blockingIssues = validation.checks
         .filter((c) => !c.passed && c.severity !== "info")
         .map((c) => c.message);
+      const reviewReasonChecks = validation.checks.filter(
+        (check) =>
+          !check.passed &&
+          (check.checkId === "evidence-bundle-confidence" ||
+            check.checkId === "evidence-bundle-contradictions"),
+      );
+
+      if (reviewReasonChecks.length > 0) {
+        const reviewQueueId = await submitExperiencePublishReview(prisma, {
+          tenantId: publishContext.tenantId,
+          experienceId: id,
+          actorId: userId || "publisher",
+          validation,
+          reviewChecks: reviewReasonChecks,
+        });
+
+        throw createHttpError(
+          409,
+          "REVIEW_REQUIRED",
+          `Cannot publish without manual review. ${blockingIssues.join("; ")}${reviewQueueId ? ` Review queue: ${reviewQueueId}.` : ""}`,
+        );
+      }
+
       throw new Error(
         `Cannot publish: validation failed (score ${validation.score}/100). ` +
           `Fix the following issues: ${blockingIssues.join("; ")}`,

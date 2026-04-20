@@ -36,7 +36,7 @@ Create `.env` file in `products/tutorputor/`:
 DATABASE_URL="postgresql://user:password@localhost:5432/tutorputor"
 
 # Payment Processing
-STRIPE_SECRET_KEY="sk_test_..." # or sk_live_... for production
+STRIPE_SECRET_KEY="stripe_test_placeholder_secret" # replace with a real key outside local/dev
 
 # Caching & Sessions
 REDIS_URL="redis://localhost:6379"
@@ -144,6 +144,8 @@ Use managed Redis service (AWS ElastiCache, Redis Cloud, etc.)
 1. Sign up at https://stripe.com
 2. Get test keys from Dashboard → Developers → API keys
 3. For production, activate account and get live keys
+
+Use the neutral local placeholder only for local/dev startup checks. Production-like environments must use a real Stripe secret key.
 
 ### 2. Configure Webhooks
 

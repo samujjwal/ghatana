@@ -205,6 +205,10 @@ describe("Tutorputor Platform Startup & Auth (Integration)", () => {
       return { ok: true };
     });
 
+    app.post("/api/v1/integration/test-consent", async () => {
+      return { ok: true };
+    });
+
     app.get("/api/v1/ai/test-consent", async () => {
       return { ok: true };
     });
@@ -674,6 +678,47 @@ describe("Tutorputor Platform Startup & Auth (Integration)", () => {
       const response = await fixture.app.inject({
         method: "GET",
         url: "/api/v1/analytics/test-consent",
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ ok: true });
+    });
+
+    it("blocks consent-gated integration routes when third_party_sharing consent is missing", async () => {
+      const token = createTestJWT(
+        { userId: "user4", tenantId: "tenant1" },
+        JWT_SECRET,
+      );
+
+      const response = await fixture.app.inject({
+        method: "POST",
+        url: "/api/v1/integration/test-consent",
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(451);
+      expect(JSON.parse(response.body)).toEqual(
+        expect.objectContaining({
+          error: "Consent Required",
+          missingConsent: expect.arrayContaining(["third_party_sharing"]),
+        }),
+      );
+    });
+
+    it("allows consent-gated integration routes when third_party_sharing consent is granted", async () => {
+      (fixture.prisma as any).userConsent.findMany.mockResolvedValueOnce([
+        { category: "third_party_sharing" },
+      ]);
+
+      const token = createTestJWT(
+        { userId: "user5", tenantId: "tenant1" },
+        JWT_SECRET,
+      );
+
+      const response = await fixture.app.inject({
+        method: "POST",
+        url: "/api/v1/integration/test-consent",
         headers: { authorization: `Bearer ${token}` },
       });
 

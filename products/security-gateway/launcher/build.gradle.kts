@@ -15,6 +15,7 @@ tasks.named<JavaExec>("run") {
 dependencies {
     implementation(project(":products:security-gateway:platform:java"))
     implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:security"))
     implementation(project(":platform:java:observability"))
 
     implementation(libs.activej.http)

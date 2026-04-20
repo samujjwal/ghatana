@@ -125,6 +125,7 @@ class FinancePHRIntegrationTest {
     void shouldMaintainDataConsistencyAcrossSystems() {
         PatientBillingRecord record = new PatientBillingRecord("patient-1", "encounter-1", BigDecimal.valueOf(500.00), "USD");
         service.syncBillingRecord(record);
+        service.createLedgerEntry("encounter-1");
         ConsistencyCheck check = service.verifyConsistency("encounter-1");
         assertThat(check.isConsistent()).isTrue();
         assertThat(check.financeAmount()).isEqualByComparingTo(check.phrAmount());

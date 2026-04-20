@@ -97,6 +97,12 @@ describe('createConsentEnforcement', () => {
             expect(cats).toContain('analytics');
         });
 
+        it('returns third_party_sharing for /api/v1/integration/* routes', () => {
+            const { findRequiredCategories } = createConsentEnforcement({ prisma });
+            const cats = findRequiredCategories('POST', '/api/v1/integration/billing/checkout');
+            expect(cats).toContain('third_party_sharing');
+        });
+
         it('returns empty for routes without consent requirements', () => {
             const { findRequiredCategories } = createConsentEnforcement({ prisma });
             const cats = findRequiredCategories('GET', '/api/v1/modules');

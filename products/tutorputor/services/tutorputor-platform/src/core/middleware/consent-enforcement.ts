@@ -52,7 +52,7 @@ const DEFAULT_REQUIREMENTS: ConsentRequirement[] = [
   { pattern: "/api/v1/ai/*", method: "*", categories: ["ai_processing"] },
   { pattern: "/api/v1/analytics/*", method: "*", categories: ["analytics"] },
   {
-    pattern: "/api/v1/integrations/*",
+    pattern: "/api/v1/integration/*",
     method: "*",
     categories: ["third_party_sharing"],
   },

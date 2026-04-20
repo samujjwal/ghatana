@@ -5,7 +5,7 @@ This page is an orientation guide, not the final product-truth document.
 Use these as the authoritative high-level sources:
 
 - [CURRENT_STATE.md](CURRENT_STATE.md) for what is implemented today
-- [../PRODUCT_REALITY_AUDIT_2026-04-18.md](../PRODUCT_REALITY_AUDIT_2026-04-18.md) for the audit findings, gaps, and remediation priorities
+- [../audit/TUTORPUTOR_DEEP_PRODUCT_REALITY_AUDIT_2026-04-19.md](../audit/TUTORPUTOR_DEEP_PRODUCT_REALITY_AUDIT_2026-04-19.md) for the audit findings, gaps, and remediation priorities
 
 ## Overview
 
@@ -188,7 +188,7 @@ The learner and admin apps talk to the gateway on `3200`. The direct platform pr
 ## Documentation
 
 - [CURRENT_STATE.md](CURRENT_STATE.md) - Current implementation status and the primary product-state source
-- [../PRODUCT_REALITY_AUDIT_2026-04-18.md](../PRODUCT_REALITY_AUDIT_2026-04-18.md) - Audit source and remediation backlog
+- [../audit/TUTORPUTOR_DEEP_PRODUCT_REALITY_AUDIT_2026-04-19.md](../audit/TUTORPUTOR_DEEP_PRODUCT_REALITY_AUDIT_2026-04-19.md) - Audit source and remediation backlog
 - [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) - Autonomous content roadmap
 - [TUTORPUTOR_FLOW_MAP.md](TUTORPUTOR_FLOW_MAP.md) - Detailed flow diagrams
 - [TUTORPUTOR_MODULE_INVENTORY.md](TUTORPUTOR_MODULE_INVENTORY.md) - Module catalog

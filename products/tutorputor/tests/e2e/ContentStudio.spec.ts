@@ -1,24 +1,79 @@
 import { expect, test } from "@playwright/test";
+import { createHmac } from "node:crypto";
 
 const adminUrl = process.env.ADMIN_URL ?? "http://127.0.0.1:3202";
 const gatewayUrl = process.env.GATEWAY_URL ?? "http://127.0.0.1:3200";
+const jwtSecret =
+  process.env.JWT_SECRET ?? "test-secret-do-not-use-in-prod-1234567890";
 
-const trustedHeaders = {
-  "x-tenant-id": "default",
-  "x-user-id": "user-admin-001",
-  "x-user-role": "admin",
-  "x-trusted-proxy-secret":
-    process.env.TRUST_PROXY_AUTH_SHARED_SECRET ??
-    "tutorputor-internal-dev-proxy-secret",
-};
+function createAdminAccessToken(): string {
+  const header = Buffer.from(
+    JSON.stringify({ alg: "HS256", typ: "JWT" }),
+  ).toString("base64url");
+  const payload = Buffer.from(
+    JSON.stringify({
+      sub: "user-admin-001",
+      email: "admin@demo.tutorputor.com",
+      name: "Sarah Admin",
+      role: "admin",
+      tenantId: "default",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    }),
+  ).toString("base64url");
+  const signature = createHmac("sha256", jwtSecret)
+    .update(`${header}.${payload}`)
+    .digest("base64url");
+
+  return `${header}.${payload}.${signature}`;
+}
+
+function createAuthHeaders(): Record<string, string> {
+  return {
+    Authorization: `Bearer ${createAdminAccessToken()}`,
+  };
+}
 
 test.describe("TutorPutor authoring lifecycle", () => {
   test("uses the canonical admin route and exercises create, validate, and publish through real APIs", async ({
     page,
     request,
   }) => {
+    const authHeaders = createAuthHeaders();
+    const meAuthHeaders: string[] = [];
+
+    await page.addInitScript((token: string) => {
+      window.localStorage.setItem("auth_token", token);
+      window.localStorage.setItem("refresh_token", "refresh-token-admin-1");
+      window.localStorage.setItem("tenant_id", "default");
+    }, authHeaders.Authorization.replace("Bearer ", ""));
+
+    await page.route("**/api/v1/auth/me", async (route) => {
+      const authorization = route.request().headers()["authorization"];
+      if (authorization) {
+        meAuthHeaders.push(authorization);
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "user-admin-001",
+          email: "admin@demo.tutorputor.com",
+          role: "admin",
+          firstName: "Sarah",
+          lastName: "Admin",
+          fullName: "Sarah Admin",
+          tenantId: "default",
+        }),
+      });
+    });
+
     await page.goto(`${adminUrl}/authoring`);
     await page.waitForLoadState("domcontentloaded");
+
+    await expect.poll(() => meAuthHeaders.length).toBeGreaterThan(0);
+    expect(meAuthHeaders).toContain(authHeaders.Authorization);
 
     await expect(
       page.getByRole("heading", { name: "What do you want to teach?" }),
@@ -29,7 +84,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const createResponse = await request.post(
       `${gatewayUrl}/api/content-studio/experiences`,
       {
-        headers: trustedHeaders,
+        headers: authHeaders,
         data: {
           title,
           description: "Decisive authoring flow verification",
@@ -53,7 +108,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const claimResponse = await request.post(
       `${gatewayUrl}/api/content-studio/experiences/${experienceId}/claims`,
       {
-        headers: trustedHeaders,
+        headers: authHeaders,
         data: {
           text: "Balanced forces keep an object moving at constant velocity.",
           bloomLevel: "understand",
@@ -71,7 +126,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const taskResponse = await request.post(
       `${gatewayUrl}/api/content-studio/experiences/${experienceId}/claims/${claimRef}/tasks`,
       {
-        headers: trustedHeaders,
+        headers: authHeaders,
         data: {
           prompt: "Explain how balanced forces affect motion in your own words.",
           type: "explanation",
@@ -84,7 +139,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const manifestResponse = await request.post(
       `${gatewayUrl}/api/sim-author/manifests`,
       {
-        headers: trustedHeaders,
+        headers: authHeaders,
         data: {
           title: `${title} Simulation`,
           domain: "PHYSICS",
@@ -106,7 +161,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const linkResponse = await request.post(
       `${gatewayUrl}/api/sim-author/manifests/${manifestId}/link-claim`,
       {
-        headers: trustedHeaders,
+        headers: authHeaders,
         data: {
           experienceId,
           claimRef,
@@ -120,7 +175,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const validationResponse = await request.post(
       `${gatewayUrl}/api/content-studio/experiences/${experienceId}/validate`,
       {
-        headers: trustedHeaders,
+        headers: authHeaders,
         data: {},
       },
     );
@@ -135,7 +190,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const publishResponse = await request.post(
       `${gatewayUrl}/api/content-studio/experiences/${experienceId}/publish`,
       {
-        headers: trustedHeaders,
+        headers: authHeaders,
       },
     );
     expect(publishResponse.ok()).toBe(true);

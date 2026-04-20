@@ -122,6 +122,7 @@ class EMSReferenceDataIntegrationTest {
 
     static class IntegrationService {
         private final java.util.Map<String, Instrument> instruments = new java.util.HashMap<>();
+        private final java.util.Set<String> accessedKeys = new java.util.HashSet<>();
         private int cacheHits = 0;
 
         void registerInstrument(Instrument instrument) {
@@ -153,7 +154,11 @@ class EMSReferenceDataIntegrationTest {
 
         Instrument getInstrument(String symbol) {
             if (instruments.containsKey(symbol)) {
-                cacheHits++;
+                if (accessedKeys.contains(symbol)) {
+                    cacheHits++;
+                } else {
+                    accessedKeys.add(symbol);
+                }
             }
             return instruments.get(symbol);
         }

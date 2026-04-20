@@ -112,6 +112,10 @@ function makePrisma() {
     auditLog: {
       create: vi.fn().mockResolvedValue({ id: "audit-1" }),
     },
+    reviewQueue: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({ id: "review-1" }),
+    },
     evidenceBundleMetadata: {
       findMany: vi.fn().mockResolvedValue([]),
     },
@@ -541,8 +545,12 @@ describe("ContentStudioService", () => {
         simulations: [],
         animations: [],
       };
-      // First call (validateExperience) and second call (mapExperience) both use findUnique
+      // publishExperience first fetches tenant context, then validateExperience,
+      // then mapExperience re-fetches the updated experience.
       prisma.learningExperience.findUnique
+        .mockResolvedValueOnce({
+          tenantId: "tenant-1",
+        })
         .mockResolvedValueOnce({
           id: "exp-1",
           tenantId: "tenant-1",
@@ -614,7 +622,7 @@ describe("ContentStudioService", () => {
         contentNeeds: { examples: 1 },
       };
 
-      prisma.evidenceBundleMetadata.findMany.mockResolvedValueOnce([
+      const bundleMetadata = [
         {
           claimRef: "claim-1",
           bundleConfidence: 0.93,
@@ -626,7 +634,10 @@ describe("ContentStudioService", () => {
           regeneratedAt: null,
           generationJobId: "job-123",
         },
-      ]);
+      ];
+      prisma.evidenceBundleMetadata.findMany
+        .mockResolvedValueOnce(bundleMetadata)
+        .mockResolvedValueOnce(bundleMetadata);
       prisma.aiGenerationLog.findFirst.mockResolvedValueOnce({
         promptHash: "prompt-hash-99",
         model: "gpt-4.1",
@@ -635,6 +646,9 @@ describe("ContentStudioService", () => {
         createdAt: new Date("2024-01-03T00:00:00.000Z"),
       });
       prisma.learningExperience.findUnique
+        .mockResolvedValueOnce({
+          tenantId: "tenant-1",
+        })
         .mockResolvedValueOnce({
           id: "exp-1",
           tenantId: "tenant-1",
@@ -708,6 +722,116 @@ describe("ContentStudioService", () => {
           }),
         }),
       );
+    });
+
+    it("blocks publishing and opens manual review when evidence confidence is below the publish threshold", async () => {
+      prisma.evidenceBundleMetadata.findMany.mockResolvedValueOnce([
+        {
+          claimRef: "claim-1",
+          bundleConfidence: 0.61,
+          contradictionDetected: false,
+        },
+      ]);
+      prisma.learningExperience.findUnique
+        .mockResolvedValueOnce({
+          tenantId: "tenant-1",
+        })
+        .mockResolvedValueOnce({
+          id: "exp-1",
+          tenantId: "tenant-1",
+          status: "DRAFT",
+          gradeAdaptations: [],
+          claims: [
+            {
+              id: "claim-1",
+              claimRef: "claim-1",
+              bloomLevel: "APPLY",
+              examples: [{ id: "ex-1" }],
+              simulations: [],
+              animations: [],
+            },
+          ],
+          evidences: [],
+          experienceTasks: [{ id: "task-1", claimRef: "claim-1" }],
+        });
+
+      await expect(
+        service.publishExperience("exp-1", "user-7"),
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        code: "REVIEW_REQUIRED",
+      });
+
+      expect(prisma.reviewQueue.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tenantId: "tenant-1",
+            experienceId: "exp-1",
+            triggerReason: "low_confidence",
+            riskLevel: "MEDIUM",
+          }),
+        }),
+      );
+      expect(prisma.experienceEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            experienceId: "exp-1",
+            eventType: "REVIEW_SUBMITTED",
+            actorId: "user-7",
+          }),
+        }),
+      );
+      expect(prisma.learningExperience.update).not.toHaveBeenCalled();
+    });
+
+    it("blocks publishing and opens high-risk review when evidence contradictions are detected", async () => {
+      prisma.evidenceBundleMetadata.findMany.mockResolvedValueOnce([
+        {
+          claimRef: "claim-1",
+          bundleConfidence: 0.94,
+          contradictionDetected: true,
+        },
+      ]);
+      prisma.learningExperience.findUnique
+        .mockResolvedValueOnce({
+          tenantId: "tenant-1",
+        })
+        .mockResolvedValueOnce({
+          id: "exp-1",
+          tenantId: "tenant-1",
+          status: "DRAFT",
+          gradeAdaptations: [],
+          claims: [
+            {
+              id: "claim-1",
+              claimRef: "claim-1",
+              bloomLevel: "APPLY",
+              examples: [{ id: "ex-1" }],
+              simulations: [],
+              animations: [],
+            },
+          ],
+          evidences: [],
+          experienceTasks: [{ id: "task-1", claimRef: "claim-1" }],
+        });
+
+      await expect(
+        service.publishExperience("exp-1", "reviewer-9"),
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        code: "REVIEW_REQUIRED",
+      });
+
+      expect(prisma.reviewQueue.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            triggerReason: "high_risk",
+            riskLevel: "HIGH",
+            priority: 90,
+          }),
+        }),
+      );
+      expect(prisma.learningExperience.update).not.toHaveBeenCalled();
     });
   });
 

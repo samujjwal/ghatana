@@ -4,6 +4,7 @@ package com.ghatana.refactorer.languages.tsjs.util;
 import static org.assertj.core.api.Assertions.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ghatana.platform.core.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 /**

@@ -226,6 +226,22 @@ class PHREventIntegrationTest {
 
         void resolveConflict(String conflictId, String resolution) {
             if ("MERGE".equals(resolution)) {
+                // Find the conflict first before removing it
+                List<Conflict> matchingConflicts = conflicts.stream()
+                    .filter(c -> c.conflictId().equals(conflictId))
+                    .toList();
+                // Merge finance events for the encounter - keep only one
+                for (Conflict conflict : matchingConflicts) {
+                    String encounterId = conflict.encounterId();
+                    List<FinanceEvent> events = getFinanceEventsForEncounter(encounterId);
+                    if (events.size() > 1) {
+                        // Remove all but the first event
+                        for (int i = 1; i < events.size(); i++) {
+                            financeEvents.remove(events.get(i).eventId());
+                        }
+                    }
+                }
+                // Remove the conflict after processing
                 conflicts.removeIf(c -> c.conflictId().equals(conflictId));
             }
         }

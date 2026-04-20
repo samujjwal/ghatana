@@ -135,7 +135,18 @@ class EMSPMSIntegrationTest {
 
         Position processFillToPosition(ExecutionFill fill) {
             if (fill.quantity() < 0) return null;
-            Position position = new Position("AAPL", fill.quantity(), fill.price());
+            Position existing = positions.get("AAPL");
+            long newQuantity = fill.quantity();
+            BigDecimal newAvgPrice = fill.price();
+            if (existing != null) {
+                newQuantity = existing.quantity() + fill.quantity();
+                BigDecimal totalValue = existing.averagePrice().multiply(BigDecimal.valueOf(existing.quantity()))
+                    .add(fill.price().multiply(BigDecimal.valueOf(fill.quantity())));
+                newAvgPrice = newQuantity > 0
+                    ? totalValue.divide(BigDecimal.valueOf(newQuantity), 2, java.math.RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            }
+            Position position = new Position("AAPL", newQuantity, newAvgPrice);
             positions.put("AAPL", position);
             executions.put(fill.orderId(), new ExecutionStatus("FILLED", fill.quantity()));
             positionUpdateCount++;

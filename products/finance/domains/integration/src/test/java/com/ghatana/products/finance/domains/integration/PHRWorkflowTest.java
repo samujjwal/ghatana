@@ -142,19 +142,21 @@ class PHRWorkflowTest {
 
         WorkflowResult executeBillingWorkflow(String patientId, String encounterId, BigDecimal amount) {
             List<String> steps = new ArrayList<>();
-            
+
             billingRecords.put(encounterId, new BillingRecord(encounterId, patientId, amount, "PENDING"));
             steps.add("ENCOUNTER_CREATED");
             steps.add("BILL_GENERATED");
-            
+
             if ("FINANCE_SYNC".equals(simulatedFailure)) {
+                // Roll back the billing record as compensation
+                billingRecords.remove(encounterId);
                 return new WorkflowResult(false, steps, "Finance sync failed", true);
             }
-            
+
             steps.add("FINANCE_SYNCED");
             steps.add("LEDGER_POSTED");
             billingRecords.put(encounterId, new BillingRecord(encounterId, patientId, amount, "ACTIVE"));
-            
+
             return new WorkflowResult(true, steps, "billingAmount=" + amount, false);
         }
 
@@ -207,17 +209,19 @@ class PHRWorkflowTest {
             steps.add("BALANCE_CALCULATED");
             steps.add("PDF_CREATED");
             steps.add("NOTIFICATION_SENT");
-            
+
             BigDecimal totalCharges = billingRecords.values().stream()
                 .filter(r -> r.patientId().equals(patientId))
                 .map(BillingRecord::amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, java.math.RoundingMode.HALF_UP);
             BigDecimal totalPayments = payments.stream()
                 .filter(p -> billingRecords.get(p.encounterId()).patientId().equals(patientId))
                 .map(Payment::amount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal balanceDue = totalCharges.subtract(totalPayments);
-            
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal balanceDue = totalCharges.subtract(totalPayments).setScale(2, java.math.RoundingMode.HALF_UP);
+
             return new WorkflowResult(true, steps, "totalCharges=" + totalCharges + ",totalPayments=" + totalPayments + ",balanceDue=" + balanceDue, false);
         }
 
