@@ -58,6 +58,10 @@ type EnrollmentRecord = {
   id: string;
   userId: string;
   moduleId: string;
+  module?: {
+    slug: string;
+    title: string;
+  } | null;
   status: Enrollment["status"];
   progressPercent: number;
   startedAt: Date | null;
@@ -95,6 +99,14 @@ export function createLearningService(
         prisma.enrollment.findMany({
           where: { tenantId, userId },
           orderBy: { updatedAt: "desc" },
+          include: {
+            module: {
+              select: {
+                slug: true,
+                title: true,
+              },
+            },
+          },
         }),
         prisma.module.findMany({
           where: { tenantId, status: "PUBLISHED" },
@@ -309,6 +321,8 @@ function mapEnrollment(record: EnrollmentRecord): Enrollment {
     id: record.id as Enrollment["id"],
     userId: record.userId as UserId,
     moduleId: record.moduleId as ModuleId,
+    ...(record.module?.slug ? { moduleSlug: record.module.slug } : {}),
+    ...(record.module?.title ? { moduleTitle: record.module.title } : {}),
     status: record.status,
     progressPercent: record.progressPercent,
     ...(record.startedAt ? { startedAt: record.startedAt.toISOString() } : {}),

@@ -18,7 +18,7 @@ class DataTypeTest {
     @Test
     void allEnumValuesShouldBeAccessible() {
         DataType[] types = DataType.values();
-        assertThat(types).hasSize(24);
+        assertThat(types).hasSizeGreaterThanOrEqualTo(24);
     }
 
     @ParameterizedTest

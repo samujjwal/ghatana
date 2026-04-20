@@ -603,6 +603,112 @@ describe("ContentStudioService", () => {
         }),
       );
     });
+
+    it("records publish provenance with validation and evidence bundle metadata", async () => {
+      const claim = {
+        id: "claim-1",
+        text: "Explain the relationship between force and acceleration.",
+        bloom: "apply",
+        tasks: [{ id: "task-1" }],
+        evidenceRequirements: [{ id: "evidence-1" }],
+        contentNeeds: { examples: 1 },
+      };
+
+      prisma.evidenceBundleMetadata.findMany.mockResolvedValueOnce([
+        {
+          claimRef: "claim-1",
+          bundleConfidence: 0.93,
+          coverageScore: 0.88,
+          contradictionDetected: false,
+          freshnessOverall: "CURRENT",
+          evidenceCount: 4,
+          generatedAt: new Date("2024-01-02T00:00:00.000Z"),
+          regeneratedAt: null,
+          generationJobId: "job-123",
+        },
+      ]);
+      prisma.aiGenerationLog.findFirst.mockResolvedValueOnce({
+        promptHash: "prompt-hash-99",
+        model: "gpt-4.1",
+        modelVersion: "2026-04",
+        guardrailsVersion: "guardrails-v2",
+        createdAt: new Date("2024-01-03T00:00:00.000Z"),
+      });
+      prisma.learningExperience.findUnique
+        .mockResolvedValueOnce({
+          id: "exp-1",
+          tenantId: "tenant-1",
+          status: "DRAFT",
+          gradeAdaptations: [],
+          claims: [
+            {
+              id: "claim-1",
+              claimRef: "claim-1",
+              bloomLevel: "APPLY",
+              examples: [{ id: "ex-1" }],
+              simulations: [],
+              animations: [],
+            },
+          ],
+          evidences: [],
+          experienceTasks: [{ id: "task-1", claimRef: "claim-1" }],
+        })
+        .mockResolvedValueOnce({
+          ...mockExperience,
+          status: "PUBLISHED",
+          claims: [claim],
+          gradeAdaptation: {
+            gradeRange: "grade_6_8",
+            mathLevel: "pre_algebra",
+            rigorLevel: "procedural",
+            scaffoldingLevel: "medium",
+            vocabularyComplexity: 6,
+            readingLevel: 7,
+            prerequisiteConcepts: [],
+          },
+        });
+
+      await service.publishExperience("exp-1", "publisher-7");
+
+      expect(prisma.experienceRevision.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            experienceId: "exp-1",
+            promptHash: "prompt-hash-99",
+            diff: expect.objectContaining({
+              validation: expect.objectContaining({
+                source: "content_studio.validateExperience",
+                version: "heuristic-v2",
+              }),
+              latestGeneration: expect.objectContaining({
+                promptHash: "prompt-hash-99",
+                model: "gpt-4.1",
+              }),
+              evidenceBundles: [
+                expect.objectContaining({
+                  claimRef: "claim-1",
+                  bundleConfidence: 0.93,
+                  coverageScore: 0.88,
+                  generationJobId: "job-123",
+                }),
+              ],
+              publishedBy: "publisher-7",
+            }),
+          }),
+        }),
+      );
+
+      const experienceRevisionCall = prisma.experienceRevision.create.mock.calls[0][0];
+      expect(experienceRevisionCall.data.diff.validation.score).toBeGreaterThanOrEqual(60);
+
+      expect(prisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            metadata: expect.stringContaining('"bundleConfidence":0.93'),
+          }),
+        }),
+      );
+    });
   });
 
   describe("getExperienceAnalytics", () => {

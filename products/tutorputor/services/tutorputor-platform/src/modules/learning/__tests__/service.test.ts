@@ -119,6 +119,8 @@ describe("createLearningService", () => {
       expect(dashboard.user.id).toBe(USER);
       expect(dashboard.user.email).toBe("student@test.com");
       expect(dashboard.currentEnrollments).toHaveLength(1);
+      expect(dashboard.currentEnrollments[0]?.moduleSlug).toBe("intro-math");
+      expect(dashboard.currentEnrollments[0]?.moduleTitle).toBe("Intro to Math");
       expect(dashboard.recommendedModules).toHaveLength(1);
       expect(dashboard.recommendedModules[0]?.slug).toBe("intro-math");
     });

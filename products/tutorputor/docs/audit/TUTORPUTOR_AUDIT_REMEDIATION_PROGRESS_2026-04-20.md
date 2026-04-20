@@ -26,6 +26,8 @@ The audit was partially stale by the time remediation work started. A code-to-au
 - Added web API client regression coverage for strict tenant-context requirements and fail-closed request behavior.
 - Added mobile session storage and dashboard fetch regression coverage to verify no fabricated tenant context is emitted.
 - Added minimal Tutorputor mobile Jest and Babel configuration so the new mobile tests execute inside the app workspace.
+- Expanded learner E2E coverage with a resumable dashboard journey that asserts authenticated dashboard hydration, personalized recommendation rendering, and resume-learning navigation to the canonical module route.
+- Added publish-provenance regression coverage in content studio so publish-time audit and revision records must capture validation metadata, evidence-bundle confidence, and latest AI generation context.
 
 ## Verification
 
@@ -35,7 +37,10 @@ The audit was partially stale by the time remediation work started. A code-to-au
 - `src/api/__tests__/tutorputorClient.test.ts`: 9 passed.
 - `src/storage/__tests__/NativeSessionStorage.test.ts`: passed.
 - `src/hooks/__tests__/useDashboard.test.ts`: passed.
-- Total targeted verification for this remediation slice: 112 passed, 0 failed.
+- `src/modules/content/studio/__tests__/service.test.ts`: 47 passed.
+- `tests/e2e/LearnerJourney.spec.ts`: compiles in isolation with TypeScript.
+- Playwright runtime execution is currently blocked in this workspace because the Tutorputor gateway/platform startup path requires explicit `DATABASE_URL`, `REDIS_URL`, and `JWT_SECRET` configuration plus reachable backing services.
+- Total targeted test verification for this remediation slice: 159 passed, 0 failed.
 
 ## Remaining Work
 

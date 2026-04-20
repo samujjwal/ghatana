@@ -25,6 +25,8 @@ interface UserInfo {
 interface DashboardEnrollment {
   id: string;
   moduleId: string;
+  moduleSlug?: string;
+  moduleTitle?: string;
   status: EnrollmentStatus;
   progress: number;
   progressPercent: number;
@@ -102,6 +104,8 @@ interface ModuleDetail {
 interface Enrollment {
   id: string;
   moduleId: string;
+  moduleSlug?: string;
+  moduleTitle?: string;
   userId: string;
   status: EnrollmentStatus;
   progressPercent: number;

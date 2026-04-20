@@ -90,6 +90,11 @@ export function DashboardPage() {
     { icon: Target, label: "Assessments", href: "/assessments", color: "bg-orange-500" },
   ];
 
+  const getModuleRoute = (enrollment: Enrollment) => {
+    const modulePathSegment = enrollment.moduleSlug ?? enrollment.moduleId;
+    return `/modules/${modulePathSegment}`;
+  };
+
   return (
     <Box className="p-6">
       <div className="max-w-6xl mx-auto">
@@ -129,7 +134,7 @@ export function DashboardPage() {
           <section className="mb-8">
             <ContinueLearningCard 
               enrollment={topEnrollment}
-              onResume={() => navigate(`/modules/${topEnrollment.moduleId}`)}
+              onResume={() => navigate(getModuleRoute(topEnrollment))}
               onViewAll={() => navigate("/enrollments")}
             />
           </section>
@@ -213,7 +218,7 @@ export function DashboardPage() {
                 <CompactEnrollmentCard
                   key={enrollment.id}
                   enrollment={enrollment}
-                  onClick={() => navigate(`/modules/${enrollment.moduleId}`)}
+                  onClick={() => navigate(getModuleRoute(enrollment))}
                 />
               ))}
             </div>

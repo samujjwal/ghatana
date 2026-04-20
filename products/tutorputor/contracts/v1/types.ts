@@ -274,6 +274,8 @@ export interface Enrollment {
   id: EnrollmentId;
   userId: UserId;
   moduleId: ModuleId;
+  moduleSlug?: string;
+  moduleTitle?: string;
   status: EnrollmentStatus;
   progressPercent: number;
   startedAt?: string;
