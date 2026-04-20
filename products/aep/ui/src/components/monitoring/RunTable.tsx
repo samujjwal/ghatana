@@ -8,6 +8,7 @@
 import React from 'react';
 import { Link } from 'react-router';
 import type { PipelineRun } from '@/api/aep.api';
+import { Button } from '@ghatana/design-system';
 
 interface RunTableProps {
   runs: PipelineRun[];
@@ -134,25 +135,27 @@ export function RunTable({
                   {(run.status === 'FAILED' || run.status === 'SUCCEEDED') && (
                     <div className="flex gap-2 justify-end">
                       {onApprove && (
-                        <button
+                        <Button
                           onClick={() => onApprove(run.id)}
+                          variant="text"
                           className="text-xs text-green-600 hover:text-green-700 font-medium"
                           aria-label={`Approve run ${run.id}`}
                         >
                           Approve
-                        </button>
+                        </Button>
                       )}
                       {onReject && (
-                        <button
+                        <Button
                           onClick={() => {
                             const reason = prompt('Enter rejection reason:');
                             if (reason) onReject(run.id, reason);
                           }}
+                          variant="text"
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
                           aria-label={`Reject run ${run.id}`}
                         >
                           Reject
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )}
@@ -161,12 +164,13 @@ export function RunTable({
               {onCancel && (
                 <td className="px-3 py-2 text-right">
                   {run.status === 'RUNNING' && (
-                    <button
+                    <Button
                       onClick={() => onCancel(run.id)}
+                      variant="text"
                       className="text-xs text-red-500 hover:text-red-700 font-medium"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   )}
                 </td>
               )}

@@ -1,0 +1,40 @@
+// This file documents the refactoring of FhirInteropKernelPlugin to support strict/degraded modes
+// Place this content into the existing FhirInteropKernelPlugin after line 48
+
+    private DependencyAvailability dataCloudAvailability;
+    
+    private static final String DATACLOUD_MODE_ENV = "PHR_DATACLOUD_MODE";
+    private static final String DATACLOUD_MODE_DEFAULT = "STRICT";
+
+    @Override
+    public void initialize(KernelContext context) {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+
+        this.context = context;
+
+        // Initialize DataCloud dependency availability with configured mode
+        DependencyMode datacloudMode = resolveDataCloudMode();
+        boolean datacloudAvailable = context != null && context.hasDependency(DataCloudKernelAdapter.class);
+        this.dataCloudAvailability = new DependencyAvailability("DataCloudKernelAdapter", datacloudMode, datacloudAvailable);
+
+        if (datacloudMode.isStrict() && !datacloudAvailable) {
+            org.slf4j.LoggerFactory.getLogger(FhirInteropKernelPlugin.class)
+                .warn("INITIALIZATION WARNING: DataCloud adapter not found but STRICT mode is enabled. " +
+                      "Write operations will fail. Consider using DEGRADED mode for development.");
+        }
+    }
+
+    private DependencyMode resolveDataCloudMode() {
+        String modeEnv = System.getenv(DATACLOUD_MODE_ENV);
+        if (modeEnv != null && !modeEnv.isEmpty()) {
+            try {
+                return DependencyMode.valueOf(modeEnv.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                org.slf4j.LoggerFactory.getLogger(FhirInteropKernelPlugin.class)
+                    .warn("Invalid PHR_DATACLOUD_MODE value: {}; using default: {}", modeEnv, DATACLOUD_MODE_DEFAULT);
+            }
+        }
+        return DependencyMode.valueOf(DATACLOUD_MODE_DEFAULT);
+    }

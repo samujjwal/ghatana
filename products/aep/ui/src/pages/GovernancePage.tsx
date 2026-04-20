@@ -18,6 +18,7 @@ import {
   type PolicyStatus,
 } from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
+import { Button } from '@ghatana/design-system';
 
 type GovSection = 'policies' | 'compliance' | 'tenancy' | 'audit';
 
@@ -220,12 +221,13 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
           </p>
 
           <div className="mt-4">
-            <button
+            <Button
               onClick={() => setShowAdvanced(!showAdvanced)}
+              variant="text"
               className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
             >
               {showAdvanced ? 'Hide' : 'Show'} advanced controls
-            </button>
+            </Button>
             {showAdvanced && (
               <div className="mt-3 space-y-2">
                 {data.soc2.controls.map((control) => (
@@ -375,9 +377,10 @@ export function GovernancePage() {
 
       <div className="flex flex-shrink-0 gap-0 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-950">
         {SECTIONS.map((sectionItem) => (
-          <button
+          <Button
             key={sectionItem.id}
             onClick={() => setSection(sectionItem.id)}
+            variant="text"
             className={[
               'flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-medium transition-colors -mb-px',
               section === sectionItem.id
@@ -389,7 +392,7 @@ export function GovernancePage() {
               <path strokeLinecap="round" strokeLinejoin="round" d={sectionItem.icon} />
             </svg>
             {sectionItem.label}
-          </button>
+          </Button>
         ))}
       </div>
 

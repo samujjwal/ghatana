@@ -53,6 +53,10 @@ tags:
     description: Pipeline run operations and operator detail views
   - name: Governance
     description: Governance, audit, and compliance operator surfaces
+  - name: Lifecycle
+    description: Change approval and recertification workflows
+  - name: Costs
+    description: Cost tracking and summary endpoints
 
 security:
   - bearerAuth: []
@@ -1746,6 +1750,199 @@ paths:
                 properties:
                   deletedCount:
                     type: integer
+
+  # ========== Lifecycle ========== (P1-6: Added missing endpoints)
+  /lifecycle/changes:
+    post:
+      summary: Submit a change for approval
+      operationId: submitChangeApproval
+      tags: [Lifecycle]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Change submitted for approval
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /lifecycle/changes/{changeId}:
+    get:
+      summary: Get change approval status
+      operationId: getChangeApproval
+      tags: [Lifecycle]
+      parameters:
+        - name: changeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Change approval status
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /lifecycle/changes/{changeId}/approve:
+    post:
+      summary: Approve a change
+      operationId: approveChange
+      tags: [Lifecycle]
+      parameters:
+        - name: changeId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Change approved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /lifecycle/changes/{changeId}/reject:
+    post:
+      summary: Reject a change
+      operationId: rejectChange
+      tags: [Lifecycle]
+      parameters:
+        - name: changeId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Change rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /lifecycle/recertification:
+    post:
+      summary: Trigger recertification workflow
+      operationId: triggerRecertification
+      tags: [Lifecycle]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Recertification initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /lifecycle/recertification/{recertificationId}:
+    get:
+      summary: Get recertification status
+      operationId: getRecertificationStatus
+      tags: [Lifecycle]
+      parameters:
+        - name: recertificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recertification status
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  # ========== Costs ========== (P1-6: Added missing endpoint)
+  /api/v1/costs/summary:
+    get:
+      summary: Get cost summary for tenant
+      operationId: getCostSummary
+      tags: [Costs]
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: string
+          description: Tenant context for cost summary
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start date for cost aggregation
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: End date for cost aggregation
+      responses:
+        '200':
+          description: Cost summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  totalCost:
+                    type: number
+                    format: double
+                  currency:
+                    type: string
+                  breakdown:
+                    type: object
+                    additionalProperties:
+                      type: number
+                  startDate:
+                    type: string
+                    format: date-time
+                  endDate:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # ========== AI Suggestions ==========
   /api/v1/ai/suggestions:

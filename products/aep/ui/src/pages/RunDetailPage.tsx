@@ -19,6 +19,7 @@ import {
   type RunPolicyEntry,
 } from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
+import { Button } from '@ghatana/design-system';
 
 type TabId = 'lineage' | 'decisions' | 'policies';
 
@@ -167,13 +168,14 @@ export function RunDetailPage() {
 
           <div className="flex items-center gap-2">
             {run.status === 'RUNNING' && (
-              <button
+              <Button
                 onClick={() => cancelMut.mutate()}
                 disabled={cancelMut.isPending}
-                className="rounded bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900"
+                variant="secondary"
+                className="rounded bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900"
               >
                 {cancelMut.isPending ? 'Cancelling…' : 'Cancel run'}
-              </button>
+              </Button>
             )}
             {run.status === 'FAILED' && (
               <Link
@@ -183,12 +185,13 @@ export function RunDetailPage() {
                 Open review queue
               </Link>
             )}
-            <button
+            <Button
               onClick={() => navigate('/operate')}
-              className="rounded px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+              variant="secondary"
+              className="rounded px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
             >
               ← All runs
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -218,9 +221,10 @@ export function RunDetailPage() {
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex flex-shrink-0 gap-0 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-950">
             {TABS.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                variant="text"
                 className={[
                   'border-b-2 px-4 py-3 text-sm font-medium transition-colors -mb-px',
                   activeTab === tab.id
@@ -229,7 +233,7 @@ export function RunDetailPage() {
                 ].join(' ')}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
 

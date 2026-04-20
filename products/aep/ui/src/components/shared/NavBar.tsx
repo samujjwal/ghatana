@@ -23,6 +23,7 @@ import { NavLink, type NavLinkRenderProps, useNavigate } from 'react-router';
 import { TenantSelector } from './TenantSelector';
 import { SseStatus } from './SseStatus';
 import { useAuth } from '@/context/AuthContext';
+import { Button } from '@ghatana/design-system';
 
 interface NavItem {
   label: string;
@@ -203,7 +204,7 @@ export function NavBar() {
                   : 'Token only'
               : 'Signed out'}
           </p>
-          <button
+          <Button
             type="button"
             onClick={() => {
               if (isAuthenticated) {
@@ -211,10 +212,11 @@ export function NavBar() {
               }
               navigate('/login', { replace: !isAuthenticated });
             }}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-gray-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-950 dark:hover:bg-white"
+            variant="primary"
+            className="mt-2 inline-flex w-full items-center justify-center rounded-md px-3 py-2 text-xs font-medium bg-gray-900 text-white hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-950 dark:hover:bg-white"
           >
             {isAuthenticated ? 'Sign out' : 'Sign in'}
-          </button>
+          </Button>
         </div>
         <TenantSelector />
         <SseStatus />

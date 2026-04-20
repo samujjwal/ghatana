@@ -237,6 +237,66 @@ public class AiAssistHandler {
     }
 
     /**
+     * {@code POST /api/v1/analytics/automate}
+     *
+     * <p>Advanced analytics automation with intent clarification, query rewrite,
+     * safe scope inference, and policy-aware recommendations (P2-2).
+     *
+     * <p>This endpoint provides automation-first analytics assistance by:
+     * <ul>
+     *   <li>Clarifying ambiguous user intent through interactive questioning</li>
+     *   <li>Rewriting suboptimal queries for performance and correctness</li>
+     *   <li>Inferring safe data access scopes based on schema and governance policies</li>
+     *   <li>Providing policy-aware recommendations that respect governance constraints</li>
+     * </ul>
+     *
+     * @param request HTTP request; body must contain {@code {"query": "...", "schema": {...}, "context": {...}}}
+     * @return 200 with automated query improvements, safety analysis, and AI confidence metadata
+     */
+    public Promise<HttpResponse> handleAnalyticsAutomate(HttpRequest request) {
+        String tenantId  = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String requestId = resolveRequestId(request);
+        long   startMs   = System.currentTimeMillis();
+
+        return request.loadBody(MAX_PROMPT_TOKENS * 4)
+            .then(body -> {
+                Map<String, Object> input = parseBody(body.getString(StandardCharsets.UTF_8));
+                String query  = (String) input.getOrDefault("query", "");
+                String schema = String.valueOf(input.getOrDefault("schema", "{}"));
+                String context = String.valueOf(input.getOrDefault("context", "{}"));
+
+                if (completionService == null) {
+                    HttpResponse resp = heuristicAnalyticsAutomateResponse(query, schema, tenantId, requestId);
+                    recommendationMetrics.recordRecommendation(
+                        AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
+                        HEURISTIC_CONFIDENCE, true, System.currentTimeMillis() - startMs);
+                    return Promise.of(resp);
+                }
+
+                String prompt = buildAnalyticsAutomatePrompt(query, schema, context, tenantId);
+                return callAi(prompt)
+                    .map(result -> {
+                        HttpResponse resp = buildAnalyticsAutomateHttpResponse(result, query, tenantId, requestId);
+                        double conf = estimateConfidence(result);
+                        recommendationMetrics.recordRecommendation(
+                            AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
+                            conf, conf < FALLBACK_CONFIDENCE_THRESHOLD, System.currentTimeMillis() - startMs);
+                        return resp;
+                    })
+                    .then(Promise::of,
+                          e -> {
+                              log.warn("[DC-E3] analytics automate AI call failed tenant={}: {}", tenantId, e.getMessage());
+                              recommendationMetrics.recordError(
+                                  AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, e);
+                              return Promise.of(heuristicAnalyticsAutomateResponse(query, schema, tenantId, requestId));
+                          });
+            });
+    }
+
+    /**
      * {@code POST /api/v1/pipelines/draft}
      *
      * <p>Generates a reviewable pipeline draft from natural-language intent.
@@ -295,6 +355,74 @@ public class AiAssistHandler {
                                 tenantId,
                                 e);
                             return Promise.of(heuristicPipelineDraftResponse(prompt, tenantId, requestId));
+                        });
+            });
+    }
+
+    /**
+     * {@code POST /api/v1/pipelines/:draftId/refine}
+     *
+     * <p>Post-draft refinement with validation and suggested fixes (P2-3).
+     *
+     * <p>This endpoint provides workflow draft automation by:
+     * <ul>
+     *   <li>Validating the draft structure and step dependencies</li>
+     *   <li>Auto-validating step configurations against available plugins</li>
+     *   <li>Suggesting fixes for common issues (missing error handling, circular dependencies)</li>
+     *   <li>Providing step-specific recommendations for improvement</li>
+     * </ul>
+     *
+     * @param request HTTP request; body must contain {@code {"draft": {...}}}
+     * @return 200 with validation results, suggested fixes, and AI confidence metadata
+     */
+    public Promise<HttpResponse> handlePipelineDraftRefine(HttpRequest request) {
+        String draftId = request.getPathParameter("draftId");
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String requestId = resolveRequestId(request);
+        long startMs = System.currentTimeMillis();
+
+        return request.loadBody(MAX_PROMPT_TOKENS * 4)
+            .then(body -> {
+                Map<String, Object> input = parseBody(body.getString(StandardCharsets.UTF_8));
+                Map<String, Object> draft = (Map<String, Object>) input.getOrDefault("draft", Map.of());
+
+                if (completionService == null) {
+                    HttpResponse resp = heuristicPipelineRefineResponse(draftId, draft, tenantId, requestId);
+                    recommendationMetrics.recordRecommendation(
+                        AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
+                        tenantId,
+                        HEURISTIC_CONFIDENCE,
+                        true,
+                        System.currentTimeMillis() - startMs);
+                    return Promise.of(resp);
+                }
+
+                String draftJson = String.valueOf(draft);
+                String safeDraft = draftJson.length() > 1000 ? draftJson.substring(0, 1000) + "..." : draftJson;
+                String prompt = buildPipelineRefinePrompt(draftId, safeDraft, tenantId);
+                return callAi(prompt)
+                    .map(result -> {
+                        HttpResponse resp = buildPipelineRefineHttpResponse(result, draftId, tenantId, requestId);
+                        double conf = estimateConfidence(result);
+                        recommendationMetrics.recordRecommendation(
+                            AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
+                            tenantId,
+                            conf,
+                            conf < FALLBACK_CONFIDENCE_THRESHOLD,
+                            System.currentTimeMillis() - startMs);
+                        return resp;
+                    })
+                    .then(Promise::of,
+                        e -> {
+                            log.warn("[DC-E3] pipeline refine AI call failed draftId={} tenant={}: {}", draftId, tenantId, e.getMessage());
+                            recommendationMetrics.recordError(
+                                AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
+                                tenantId,
+                                e);
+                            return Promise.of(heuristicPipelineRefineResponse(draftId, draft, tenantId, requestId));
                         });
             });
     }
@@ -539,6 +667,29 @@ public class AiAssistHandler {
             sanitise(tenantId));
     }
 
+    private String buildAnalyticsAutomatePrompt(String query, String schema, String context, String tenantId) {
+        String safeSchema = schema.length() > 600 ? schema.substring(0, 600) + "..." : schema;
+        String safeContext = context.length() > 400 ? context.substring(0, 400) + "..." : context;
+        return String.format(
+            """
+            Original query: %s
+            Schema context: %s
+            Execution context: %s
+            Tenant scope: %s
+            Instructions: Provide analytics automation improvements including:
+            1. Intent clarification - identify if the query is ambiguous and suggest clarification questions
+            2. Query rewrite - optimize the query for performance and correctness
+            3. Safe scope inference - determine what data can be safely accessed based on schema
+            4. Policy-aware recommendations - suggest improvements respecting governance constraints
+            Return JSON: {
+              "intentClarification": {"isAmbiguous": true/false, "questions": ["..."]},
+              "queryRewrite": {"optimizedQuery": "...", "improvements": ["..."]},
+              "safeScopeInference": {"accessibleTables": ["..."], "restrictedFields": ["..."]},
+              "policyRecommendations": [{"type": "...", "description": "...", "priority": "high|medium|low"}]
+            }""",
+            sanitise(query), sanitise(safeSchema), sanitise(safeContext), sanitise(tenantId));
+    }
+
         private String buildPipelineDraftPrompt(String prompt, String tenantId) {
                 return String.format(
                         """
@@ -571,6 +722,26 @@ public class AiAssistHandler {
                         sanitise(tenantId),
                         sanitise(prompt));
         }
+
+    private String buildPipelineRefinePrompt(String draftId, String draftJson, String tenantId) {
+        return String.format(
+            """
+            Draft ID: %s
+            Draft definition: %s
+            Tenant scope: %s
+            Instructions: Validate and refine the pipeline draft. Provide:
+            1. Structural validation - check step dependencies and flow
+            2. Auto-validation - verify step configurations against available plugins
+            3. Suggested fixes - identify issues like missing error handling, circular dependencies
+            4. Step-specific recommendations - improvements for each step
+            Return JSON: {
+              "validation": {"isValid": true/false, "errors": ["..."], "warnings": ["..."]},
+              "autoValidation": {"stepsValidated": N, "stepsNeedingConfig": ["..."]},
+              "suggestedFixes": [{"stepId": "...", "issue": "...", "fix": "...", "priority": "high|medium|low"}],
+              "stepRecommendations": [{"stepId": "...", "recommendation": "..."}]
+            }""",
+            sanitise(draftId), sanitise(draftJson), sanitise(tenantId));
+    }
 
     private String buildPipelineOptimisePrompt(String pipelineId, String pipelineJson, String tenantId) {
         String safe = pipelineJson.length() > 800 ? pipelineJson.substring(0, 800) + "..." : pipelineJson;
@@ -632,6 +803,27 @@ public class AiAssistHandler {
         return http.envelopeResponse(envelope, objectMapper);
     }
 
+    private HttpResponse buildAnalyticsAutomateHttpResponse(
+            CompletionResult result, String originalQuery, String tenantId, String requestId) {
+        double confidence = estimateConfidence(result);
+        boolean fallback  = confidence < FALLBACK_CONFIDENCE_THRESHOLD;
+
+        Map<String, Object> automation = tryParseAiJson(result.getText(),
+            Map.of(
+                "intentClarification", Map.of("isAmbiguous", false, "questions", List.of()),
+                "queryRewrite", Map.of("optimizedQuery", originalQuery, "improvements", List.of("Query analyzed")),
+                "safeScopeInference", Map.of("accessibleTables", List.of("events"), "restrictedFields", List.of()),
+                "policyRecommendations", List.of(
+                    Map.of("type", "performance", "description", "Consider adding LIMIT clause", "priority", "medium")
+                )
+            ));
+
+        ApiResponse envelope = ApiResponse.success(automation, tenantId, requestId)
+            .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
+                        List.of("llm", "analytics-automation"), fallback);
+        return http.envelopeResponse(envelope, objectMapper);
+    }
+
     private HttpResponse buildPipelineHintHttpResponse(
             CompletionResult result, String pipelineId, String tenantId, String requestId) {
         double confidence = estimateConfidence(result);
@@ -667,6 +859,25 @@ public class AiAssistHandler {
                 result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
                 List.of("llm", "pipeline-draft"),
                 fallback);
+        return http.envelopeResponse(envelope, objectMapper);
+    }
+
+    private HttpResponse buildPipelineRefineHttpResponse(
+            CompletionResult result, String draftId, String tenantId, String requestId) {
+        double confidence = estimateConfidence(result);
+        boolean fallback = confidence < FALLBACK_CONFIDENCE_THRESHOLD;
+
+        Map<String, Object> refinement = tryParseAiJson(result.getText(),
+            Map.of(
+                "validation", Map.of("isValid", true, "errors", List.of(), "warnings", List.of()),
+                "autoValidation", Map.of("stepsValidated", 0, "stepsNeedingConfig", List.of()),
+                "suggestedFixes", List.of(),
+                "stepRecommendations", List.of()
+            ));
+
+        ApiResponse envelope = ApiResponse.success(refinement, tenantId, requestId)
+            .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
+                        List.of("llm", "pipeline-refinement"), fallback);
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -723,6 +934,37 @@ public class AiAssistHandler {
         return http.envelopeResponse(envelope, objectMapper);
     }
 
+    private HttpResponse heuristicAnalyticsAutomateResponse(
+            String query, String schema, String tenantId, String requestId) {
+        Map<String, Object> data = Map.of(
+            "intentClarification", Map.of(
+                "isAmbiguous", query.toLowerCase().contains("select") && query.toLowerCase().contains("*"),
+                "questions", query.toLowerCase().contains("*") 
+                    ? List.of("Which specific columns do you need?", "Do you want to filter by time range?")
+                    : List.of()
+            ),
+            "queryRewrite", Map.of(
+                "optimizedQuery", query.toLowerCase().contains("*") 
+                    ? query.replaceAll("\\*", "id, timestamp, eventType") 
+                    : query,
+                "improvements", query.toLowerCase().contains("*") 
+                    ? List.of("Replaced SELECT * with explicit columns for better performance")
+                    : List.of("Query structure is acceptable")
+            ),
+            "safeScopeInference", Map.of(
+                "accessibleTables", List.of("events", "entities"),
+                "restrictedFields", List.of("pii", "sensitive_data")
+            ),
+            "policyRecommendations", List.of(
+                Map.of("type", "performance", "description", "Consider adding LIMIT clause for large result sets", "priority", "medium"),
+                Map.of("type", "privacy", "description", "Review if query exposes PII fields", "priority", "high")
+            )
+        );
+        ApiResponse envelope = ApiResponse.success(data, tenantId, requestId)
+            .withAiMeta(HEURISTIC_CONFIDENCE, "static-heuristic", List.of("fallback", "ruleset"), true);
+        return http.envelopeResponse(envelope, objectMapper);
+    }
+
     private HttpResponse heuristicPipelineHintResponse(
             String pipelineId, String tenantId, String requestId) {
         Map<String, Object> data = Map.of("hints", List.of(
@@ -741,6 +983,34 @@ public class AiAssistHandler {
     private HttpResponse heuristicPipelineDraftResponse(
             String prompt, String tenantId, String requestId) {
         Map<String, Object> data = createHeuristicDraftData(prompt, true, "static-heuristic");
+        ApiResponse envelope = ApiResponse.success(data, tenantId, requestId)
+            .withAiMeta(HEURISTIC_CONFIDENCE, "static-heuristic", List.of("fallback", "ruleset"), true);
+        return http.envelopeResponse(envelope, objectMapper);
+    }
+
+    private HttpResponse heuristicPipelineRefineResponse(
+            String draftId, Map<String, Object> draft, String tenantId, String requestId) {
+        Object stepsObj = draft.get("steps");
+        int stepCount = stepsObj instanceof List<?> list ? list.size() : 0;
+        
+        Map<String, Object> data = Map.of(
+            "validation", Map.of(
+                "isValid", stepCount > 0 && stepCount <= 20,
+                "errors", stepCount == 0 ? List.of("Pipeline must have at least one step") : List.of(),
+                "warnings", stepCount > 15 ? List.of("Pipeline has many steps - consider splitting") : List.of()
+            ),
+            "autoValidation", Map.of(
+                "stepsValidated", stepCount,
+                "stepsNeedingConfig", stepCount > 0 ? List.of("step-1") : List.of()
+            ),
+            "suggestedFixes", List.of(
+                Map.of("stepId", "all", "issue", "Add error handling", "fix", "Ensure each step has a failure branch", "priority", "medium"),
+                Map.of("stepId", "source", "issue": "Validate input", "fix": "Add input validation step at pipeline entry", "priority", "high")
+            ),
+            "stepRecommendations", stepCount > 0 
+                ? List.of(Map.of("stepId", "step-1", "recommendation", "Review step configuration for completeness"))
+                : List.of()
+        );
         ApiResponse envelope = ApiResponse.success(data, tenantId, requestId)
             .withAiMeta(HEURISTIC_CONFIDENCE, "static-heuristic", List.of("fallback", "ruleset"), true);
         return http.envelopeResponse(envelope, objectMapper);

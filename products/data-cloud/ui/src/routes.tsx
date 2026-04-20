@@ -274,10 +274,10 @@ export const routes: RouteObject[] = [
         element: withSuspense(InsightsPage),
       },
 
-      // Alerts
+      // Alerts - redirected to Insights (P2-1: consolidate operator surfaces)
       {
         path: 'alerts',
-        element: withSuspense(AlertsPage),
+        element: <Navigate to="/insights?tab=alerts" replace />,
       },
 
       // Operations Console - Operator-facing diagnostics and tools
@@ -287,35 +287,35 @@ export const routes: RouteObject[] = [
       },
 
       // AEP Integration Pages
-      // Event Explorer — browse/tail events across four-tier fabric
+      // Event Explorer — redirected to Insights (P2-1: consolidate operator surfaces)
       {
         path: 'events',
-        element: withSuspense(EventExplorerPage),
+        element: <Navigate to="/insights?tab=events" replace />,
       },
-      // Memory Plane Viewer — browse agent memory items by type
+      // Memory Plane Viewer — redirected to Data (P2-1: consolidate operator surfaces)
       {
         path: 'memory',
-        element: withSuspense(MemoryPlaneViewerPage),
+        element: <Navigate to="/data?view=memory" replace />,
       },
-      // Entity Browser — inspects entities with schema
+      // Entity Browser — redirected to Data (P2-1: consolidate operator surfaces)
       {
         path: 'entities',
-        element: withSuspense(EntityBrowserPage),
+        element: <Navigate to="/data?view=entities" replace />,
       },
-      // Context Explorer — unified schema, lineage, governance, freshness, and relationships
+      // Context Explorer — redirected to Trust (P2-1: consolidate operator surfaces)
       {
         path: 'context',
-        element: withSuspense(ContextExplorerPage),
+        element: <Navigate to="/trust?tab=context" replace />,
       },
-      // Data Fabric — four-tier topology canvas using @ghatana/canvas/flow
+      // Data Fabric — redirected to Operations Console (P3-3: eliminate boundary dead ends)
       {
         path: 'fabric',
-        element: withSuspense(DataFabricPage),
+        element: <Navigate to="/operations" replace />,
       },
-      // Agent Catalog — launcher-exposed read-only view while AEP owns control-plane registry
+      // Agent Catalog — redirected to Operations Console (P2-1: consolidate operator surfaces)
       {
         path: 'agents',
-        element: withSuspense(AgentPluginManagerPage),
+        element: <Navigate to="/operations" replace />,
       },
 
       // Settings

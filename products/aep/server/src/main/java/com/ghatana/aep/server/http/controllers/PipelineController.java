@@ -6,6 +6,8 @@ package com.ghatana.aep.server.http.controllers;
 
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.server.http.HttpHelper;
+import com.ghatana.core.pipeline.NaturalLanguagePipelineService;
+import com.ghatana.core.pipeline.PipelineSpec;
 import com.ghatana.pipeline.registry.model.PipelineRegistration;
 import com.ghatana.pipeline.registry.repository.PipelineRepository;
 import com.ghatana.platform.domain.auth.TenantId;
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -46,10 +49,18 @@ public class PipelineController implements AepController {
 
     private final PipelineRepository pipelineRepository;
     private final ObjectMapper objectMapper;
+    /** P3-19: Natural language pipeline service for primary creation mode. */
+    private final NaturalLanguagePipelineService nlqService;
 
     public PipelineController(PipelineRepository pipelineRepository, ObjectMapper objectMapper) {
+        this(pipelineRepository, objectMapper, null);
+    }
+
+    public PipelineController(PipelineRepository pipelineRepository, ObjectMapper objectMapper,
+                             NaturalLanguagePipelineService nlqService) {
         this.pipelineRepository = pipelineRepository;
         this.objectMapper = objectMapper;
+        this.nlqService = nlqService;
     }
 
     @Override
@@ -63,7 +74,13 @@ public class PipelineController implements AepController {
 
         HttpMethod method = request.getMethod();
         if (HttpMethod.GET.equals(method)) return handleGet(request, path, tenantId);
-        if (HttpMethod.POST.equals(method)) return handlePost(request, tenantId);
+        if (HttpMethod.POST.equals(method)) {
+            // P3-19: Check if this is an NLQ-based creation (primary mode)
+            if (path.equals("/nlq") || path.equals("/nlq/")) {
+                return handleNLQCreate(request, tenantId);
+            }
+            return handlePost(request, tenantId);
+        }
         if (HttpMethod.PUT.equals(method)) return handlePut(request, path, tenantId);
         if (HttpMethod.DELETE.equals(method)) return handleDelete(request, path, tenantId);
         return Promise.of(HttpHelper.errorResponse(405, "Method not allowed"));
@@ -82,6 +99,103 @@ public class PipelineController implements AepController {
         return pipelineRepository.findById(pipelineId, tenantId)
             .map(opt -> opt.map(this::toJsonResponse)
                 .orElseGet(() -> HttpHelper.errorResponse(404, "Pipeline not found")));
+    }
+
+    /**
+     * P3-19: Primary pipeline creation mode using natural language input.
+     * POST /api/v1/pipelines/nlq
+     * 
+     * Accepts a natural language description and automatically generates a pipeline.
+     * This is promoted as the primary creation mode for better UX.
+     */
+    private Promise<HttpResponse> handleNLQCreate(HttpRequest request, String tenantId) {
+        if (nlqService == null) {
+            log.warn("[PipelineController] NLQ service not configured for tenant={}", tenantId);
+            return Promise.of(HttpHelper.errorResponse(501, "Natural language pipeline service not configured"));
+        }
+
+        return request.loadBody()
+            .then(buf -> {
+                String body = buf.getString(StandardCharsets.UTF_8);
+
+                if (!AepInputValidator.isValidJson(body)) {
+                    return Promise.of(errorResponse(400, "Invalid JSON"));
+                }
+
+                try {
+                    Map<String, Object> payload = objectMapper.readValue(body, MAP_TYPE);
+                    String description = asString(payload.get("description"));
+                    
+                    if (description == null || description.isBlank()) {
+                        return Promise.of(errorResponse(400, "Description is required for NLQ pipeline creation"));
+                    }
+
+                    // Validate description
+                    NaturalLanguagePipelineService.ValidationResult validation = 
+                        nlqService.validateDescription(description);
+                    if (!validation.valid()) {
+                        return Promise.of(HttpHelper.errorResponse(400, 
+                            "Invalid description: " + String.join(", ", validation.errors())));
+                    }
+
+                    // Generate pipeline from natural language
+                    Map<String, Object> context = new HashMap<>();
+                    context.put("tenantId", tenantId);
+                    if (payload.containsKey("eventType")) {
+                        context.put("eventType", payload.get("eventType"));
+                    }
+
+                    PipelineSpec spec = nlqService.generatePipeline(description, context);
+
+                    // Create pipeline registration from generated spec
+                    String configJson = objectMapper.writeValueAsString(Map.of(
+                        "stages", spec.stages(),
+                        "eventType", spec.eventType()
+                    ));
+
+                    PipelineRegistration pipeline = PipelineRegistration.builder()
+                        .id(UUID.randomUUID().toString())
+                        .tenantId(TenantId.of(tenantId))
+                        .name(spec.name())
+                        .description(spec.description())
+                        .active(true)
+                        .version(1)
+                        .config(configJson)
+                        .createdAt(Instant.now())
+                        .updatedAt(Instant.now())
+                        .createdBy("nlq-pipeline-creator")
+                        .updatedBy("nlq-pipeline-creator")
+                        .build();
+
+                    return pipelineRepository.save(pipeline)
+                        .map(saved -> {
+                            Map<String, Object> response = new HashMap<>();
+                            response.put("pipeline", Map.of(
+                                "id", saved.getId(),
+                                "name", saved.getName(),
+                                "description", saved.getDescription(),
+                                "version", saved.getVersion(),
+                                "active", saved.isActive()
+                            ));
+                            response.put("generatedFrom", description);
+                            response.put("inferredCapabilities", List.of(spec.eventType()));
+                            
+                            return HttpResponse.ofCode(201)
+                                .withHeader(HttpHeaders.CONTENT_TYPE,
+                                    HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                                .withBody(objectMapper.writeValueAsString(response)
+                                    .getBytes(StandardCharsets.UTF_8))
+                                .build();
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("Failed to create NLQ pipeline for tenant={}", tenantId, e);
+                            return Promise.of(errorResponse(500, "Failed to create pipeline: " + e.getMessage()));
+                        });
+                } catch (Exception e) {
+                    log.error("Error parsing NLQ pipeline create request", e);
+                    return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+                }
+            });
     }
 
     private Promise<HttpResponse> handleList(HttpRequest request, String tenantId) {

@@ -30,6 +30,7 @@ import { tenantIdAtom } from '@/stores/tenant.store';
 import { FactTable } from '@/components/memory/FactTable';
 import { ConfidenceBadge } from '@/components/shared/ConfidenceBadge';
 import type { AgentMemorySummary } from '@/types/memory.types';
+import { Button } from '@ghatana/design-system';
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -171,9 +172,10 @@ function MemoryTab({
       {/* Sub-tab selector */}
       <div className="flex gap-1 border-b border-gray-200 dark:border-gray-800">
         {SUB_TABS.map((t) => (
-          <button
+          <Button
             key={t.id}
             onClick={() => setSubTab(t.id)}
+            variant="text"
             className={[
               'px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors',
               subTab === t.id
@@ -182,7 +184,7 @@ function MemoryTab({
             ].join(' ')}
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -391,12 +393,13 @@ export function AgentDetailPage() {
     return (
       <div className="flex h-full items-center justify-center flex-col gap-3">
         <p className="text-gray-500">Agent not found or DataCloud not configured.</p>
-        <button
+        <Button
           onClick={() => void navigate('/agents')}
+          variant="text"
           className="text-indigo-600 hover:underline text-sm"
         >
           ← Back to agents
-        </button>
+        </Button>
       </div>
     );
   }
@@ -410,15 +413,16 @@ export function AgentDetailPage() {
     <div className="flex flex-col h-full overflow-hidden bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center gap-4">
-        <button
+        <Button
           onClick={() => void navigate('/agents')}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          variant="ghost"
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
           aria-label="Back to agents"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-        </button>
+        </Button>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
             {agent.name}
@@ -433,20 +437,22 @@ export function AgentDetailPage() {
         >
           {agent.status}
         </span>
-        <button
+        <Button
           onClick={() => setConfirmDelete(true)}
-          className="text-xs text-red-600 hover:text-red-700 border border-red-200 rounded px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+          variant="secondary"
+          className="text-xs text-red-600 hover:text-red-700 border border-red-200 rounded px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-950"
         >
           Deregister
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         {TABS.map((t) => (
-          <button
+          <Button
             key={t.id}
             onClick={() => setTab(t.id)}
+            variant="text"
             className={[
               'px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors',
               tab === t.id
@@ -455,7 +461,7 @@ export function AgentDetailPage() {
             ].join(' ')}
           >
             {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -486,19 +492,21 @@ export function AgentDetailPage() {
               </p>
             )}
             <div className="flex justify-end gap-3">
-              <button
+              <Button
                 onClick={() => setConfirmDelete(false)}
-                className="px-4 py-2 text-sm rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                variant="secondary"
+                className="px-4 py-2 text-sm rounded"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => deregisterMut.mutate()}
                 disabled={deregisterMut.isPending}
-                className="px-4 py-2 text-sm rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                variant="primary"
+                className="px-4 py-2 text-sm rounded bg-red-600 text-white hover:bg-red-700"
               >
                 {deregisterMut.isPending ? 'Deregistering…' : 'Deregister'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

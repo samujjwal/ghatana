@@ -11,6 +11,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router';
 import type { LearnedPolicy } from '@/api/aep.api';
 import { ConfidenceBadge } from '@/components/shared/ConfidenceBadge';
+import { Button } from '@ghatana/design-system';
+import { TextArea } from '@ghatana/design-system';
 
 interface PolicyCardProps {
   policy: LearnedPolicy;
@@ -85,52 +87,59 @@ export function PolicyCard({ policy, onApprove, onReject, isSubmitting = false, 
       {policy.status === 'PENDING_REVIEW' && hasPendingActions && !rejectMode && (
         <div className="flex gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
           {onApprove && (
-            <button
+            <Button
               type="button"
               onClick={() => onApprove(policy.id)}
               disabled={isSubmitting}
-              className="flex-1 px-3 py-1 text-xs rounded bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 transition-colors"
+              variant="primary"
+              className="flex-1 text-xs"
+              style={{ backgroundColor: '#16a34a' }}
             >
               Approve
-            </button>
+            </Button>
           )}
           {onReject && (
-            <button
+            <Button
               type="button"
               onClick={() => setRejectMode(true)}
-              className="flex-1 px-3 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white transition-colors"
+              variant="primary"
+              className="flex-1 text-xs"
+              style={{ backgroundColor: '#dc2626' }}
             >
               Reject
-            </button>
+            </Button>
           )}
         </div>
       )}
 
       {rejectMode && onReject && (
         <div className="space-y-2 pt-1 border-t border-gray-100 dark:border-gray-800">
-          <textarea
-            className="block w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs"
+          <TextArea
+            className="block w-full text-xs"
             rows={2}
             placeholder="Rejection reason (required)…"
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
           />
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => { setRejectMode(false); setRejectReason(''); }}
-              className="flex-1 px-3 py-1 text-xs rounded border border-gray-200 dark:border-gray-700"
+              variant="secondary"
+              className="flex-1 text-xs"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => { onReject(policy.id, rejectReason); setRejectMode(false); setRejectReason(''); }}
               disabled={!rejectReason || isSubmitting}
-              className="flex-1 px-3 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+              variant="primary"
+              className="flex-1 text-xs"
+              style={{ backgroundColor: '#dc2626' }}
             >
               {isSubmitting ? 'Rejecting…' : 'Confirm reject'}
-            </button>
+            </Button>
           </div>
         </div>
       )}

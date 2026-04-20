@@ -29,6 +29,7 @@ public class AIAssistServiceImpl implements AIAssistService {
     private final Map<String, Conversation> conversations = new ConcurrentHashMap<>();
     private final MetricsCollector metrics;
     private final LLMProvider llmProvider;
+    private final List<AIEvaluationResult> evaluationResults = Collections.synchronizedList(new ArrayList<>());
 
     private long requestsProcessed = 0;
     private double totalLatencyMs = 0;
@@ -266,6 +267,50 @@ public class AIAssistServiceImpl implements AIAssistService {
         );
 
         return Promise.of(status);
+    }
+
+    @Override
+    public Promise<AIEvaluationMetrics> getEvaluationMetrics(TimeRange timeRange) {
+        Instant cutoff = switch (timeRange) {
+            case LAST_HOUR -> Instant.now().minusSeconds(3600);
+            case LAST_DAY -> Instant.now().minusSeconds(86400);
+            case LAST_WEEK -> Instant.now().minusSeconds(604800);
+            case LAST_MONTH -> Instant.now().minusSeconds(2592000);
+            case ALL_TIME -> Instant.EPOCH;
+        };
+
+        List<AIEvaluationResult> filtered;
+        synchronized (evaluationResults) {
+            filtered = evaluationResults.stream()
+                .filter(r -> r.timestamp() != null && !r.timestamp().isBefore(cutoff))
+                .toList();
+        }
+
+        int total = filtered.size();
+        long passed = filtered.stream().filter(AIEvaluationResult::passed).count();
+        double accuracy = total == 0 ? 0.0 : (double) passed / total;
+        double avgLatency = total == 0 ? 0.0 : filtered.stream().mapToDouble(AIEvaluationResult::latencyMs).average().orElse(0.0);
+
+        AIEvaluationMetrics snapshot = new AIEvaluationMetrics(
+            accuracy,
+            accuracy,
+            accuracy,
+            accuracy,
+            avgLatency,
+            total,
+            (int) passed,
+            Instant.now()
+        );
+
+        return Promise.of(snapshot);
+    }
+
+    @Override
+    public Promise<Void> recordEvaluationResult(AIEvaluationResult result) {
+        Objects.requireNonNull(result, "Evaluation result required");
+        evaluationResults.add(result);
+        metrics.incrementCounter("ai.evaluation.recorded", "tenant", result.tenantId() == null ? "unknown" : result.tenantId());
+        return Promise.complete();
     }
 
     // Helper methods

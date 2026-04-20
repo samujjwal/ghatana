@@ -36,6 +36,7 @@ import { useSelection } from '@/hooks/useSelection';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { useConsent } from '@/components/privacy/ConsentManager';
 import { useSpeechSynthesis } from '@audio-video/ui';
+import { Button } from '@ghatana/design-system';
 
 // ─── Chart ───────────────────────────────────────────────────────────
 
@@ -154,9 +155,10 @@ export function MonitoringDashboardPage() {
         {/* Tab selector */}
         <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
           {(['runs', 'metrics'] as const).map((t) => (
-            <button
+            <Button
               key={t}
               onClick={() => setTab(t)}
+              variant="text"
               className={[
                 'px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors capitalize',
                 tab === t
@@ -165,7 +167,7 @@ export function MonitoringDashboardPage() {
               ].join(' ')}
             >
               {t === 'runs' ? 'Recent Runs' : 'Pipeline Metrics'}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -179,7 +181,7 @@ export function MonitoringDashboardPage() {
                   {selectedIds.size} run{selectedIds.size !== 1 ? 's' : ''} selected
                 </span>
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     onClick={() => {
                       const runningIds = selectedItems.filter(r => r.status === 'RUNNING').map(r => r.id);
                       if (runningIds.length > 0) {
@@ -187,16 +189,19 @@ export function MonitoringDashboardPage() {
                       }
                     }}
                     disabled={bulkCancelMut.isPending}
-                    className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                    variant="primary"
+                    className="px-3 py-1.5 text-xs font-medium"
+                    style={{ backgroundColor: '#dc2626' }}
                   >
                     Cancel Selected
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={deselectAll}
-                    className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 rounded"
+                    variant="secondary"
+                    className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800"
                   >
                     Clear Selection
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

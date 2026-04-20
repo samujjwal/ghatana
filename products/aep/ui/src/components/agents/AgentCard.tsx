@@ -9,6 +9,7 @@ import React from 'react';
 import { Link } from 'react-router';
 import type { AgentRegistration } from '@/api/aep.api';
 import { AgentStatusBadge } from './AgentStatusBadge';
+import { Button } from '@ghatana/design-system';
 
 interface AgentCardProps {
   agent: AgentRegistration;
@@ -62,14 +63,15 @@ export function AgentCard({ agent, onDeregister, isDeregistering }: AgentCardPro
           View detail
         </Link>
         {onDeregister && (
-          <button
+          <Button
             type="button"
             onClick={() => onDeregister(agent.id)}
             disabled={isDeregistering}
-            className="px-3 py-1.5 text-xs rounded-md bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 disabled:opacity-50 transition-colors"
+            variant="secondary"
+            className="px-3 py-1.5 text-xs bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900"
           >
             {isDeregistering ? 'Removing…' : 'Deregister'}
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -1,5 +1,7 @@
 package com.ghatana.products.finance.launcher;
 
+import com.ghatana.core.activej.http.HttpServerBinding;
+import com.ghatana.core.activej.http.HttpServerBindingFactory;
 import com.ghatana.core.activej.promise.PromiseUtils;
 import com.ghatana.kernel.config.HierarchicalKernelConfigResolver;
 import com.ghatana.kernel.config.KernelConfigResolver;
@@ -9,6 +11,7 @@ import com.ghatana.kernel.contracts.ContractRegistry;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
 import com.ghatana.products.finance.FinanceProductModule;
+import com.ghatana.products.finance.http.FinanceHttpServer;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import java.time.Duration;
@@ -37,21 +40,37 @@ public final class FinanceLauncher {
     public static void main(String[] args) {
         FinanceLauncherConfig config = FinanceLauncherConfig.from(args);
         FinanceProductModule module = new FinanceProductModule();
+        HttpServerBinding httpBinding = null;
 
         try {
             DefaultKernelContext context = createContext(config.environment());
             module.initialize(context);
             await("finance startup", module.start(), START_TIMEOUT);
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> stopQuietly(module), "finance-shutdown"));
+            // Create and start HTTP server binding
+            Eventloop eventloop = context.getDependency(Eventloop.class);
+            FinanceHttpServer financeHttpServer = context.getDependency(FinanceHttpServer.class);
+            httpBinding = new HttpServerBindingFactory()
+                    .withServiceName("finance")
+                    .build(eventloop, financeHttpServer.getServlet());
+            await("finance http binding", httpBinding.start(), START_TIMEOUT);
 
-            log.info("Finance launcher started: environment={}", config.environment());
+            HttpServerBinding bindingForShutdown = httpBinding;
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                stopQuietly(bindingForShutdown);
+                stopQuietly(module);
+            }, "finance-shutdown"));
+
+            log.info("Finance launcher started: environment={}, http={}:{}", 
+                config.environment(), httpBinding.getHost(), httpBinding.getPort());
             Thread.currentThread().join();
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
+            stopQuietly(httpBinding);
             stopQuietly(module);
             log.info("Finance launcher interrupted");
         } catch (Exception exception) {
+            stopQuietly(httpBinding);
             stopQuietly(module);
             log.error("Finance launcher failed", exception);
             System.exit(1);
@@ -86,6 +105,17 @@ public final class FinanceLauncher {
             await("finance shutdown", module.stop(), STOP_TIMEOUT);
         } catch (Exception exception) {
             log.warn("Finance shutdown encountered an error", exception);
+        }
+    }
+
+    private static void stopQuietly(HttpServerBinding binding) {
+        if (binding == null) {
+            return;
+        }
+        try {
+            await("finance http shutdown", binding.stop(), STOP_TIMEOUT);
+        } catch (Exception exception) {
+            log.warn("Finance HTTP server shutdown encountered an error", exception);
         }
     }
 

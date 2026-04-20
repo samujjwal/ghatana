@@ -8,6 +8,7 @@
 import React from 'react';
 import type { ReviewItem } from '@/types/hitl.types';
 import { ConfidenceBadge } from '@/components/shared/ConfidenceBadge';
+import { Button } from '@ghatana/design-system';
 
 interface ReviewCardProps {
   item: ReviewItem;
@@ -38,9 +39,10 @@ function elapsed(iso: string) {
 
 export function ReviewCard({ item, isSelected, onClick }: ReviewCardProps) {
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
+      variant="ghost"
       className={[
         'w-full text-left rounded-lg border p-4 transition-colors',
         isSelected
@@ -75,6 +77,6 @@ export function ReviewCard({ item, isSelected, onClick }: ReviewCardProps) {
           <ConfidenceBadge confidence={item.confidenceScore} />
         </div>
       )}
-    </button>
+    </Button>
   );
 }

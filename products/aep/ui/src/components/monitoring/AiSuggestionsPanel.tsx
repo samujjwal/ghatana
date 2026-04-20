@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, TrendingUp, Zap, X, CheckCircle } from 'lucide-react';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { RBACGuard } from '../security/RBACGuard';
+import { Button } from '@ghatana/design-system';
 
 /**
  * AI suggestion type
@@ -168,26 +169,28 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
                 )}
                 {suggestion.action && (
                   <RBACGuard permission="write:pipeline" resource={suggestion.resourceId} action="write">
-                    <button
+                    <Button
                       onClick={() => {
                         suggestion.action?.handler();
                         onSuggestionApply?.(suggestion);
                       }}
+                      variant="text"
                       className="mt-2 text-xs font-medium underline hover:opacity-75"
                     >
                       {suggestion.action.label}
-                    </button>
+                    </Button>
                   </RBACGuard>
                 )}
               </div>
               {onSuggestionDismiss && (
-                <button
+                <Button
                   onClick={() => onSuggestionDismiss(suggestion.id)}
-                  className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+                  variant="ghost"
+                  className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity p-1"
                   aria-label="Dismiss suggestion"
                 >
                   <X className="h-3 w-3" />
-                </button>
+                </Button>
               )}
             </div>
           );

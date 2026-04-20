@@ -1,319 +1,145 @@
 package com.ghatana.datacloud.client;
 
-import lombok.Builder;
-import lombok.Value;
-
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Canonical learning signal for AI/ML training.
  *
- * <p>
- * <b>Purpose</b><br>
- * Data-Cloud stores <b>signals, not models</b>. Learning signals are immutable
- * observations that feed:
- * <ul>
- * <li>Offline ML model training</li>
- * <li>Online learning systems</li>
- * <li>A/B testing and experimentation</li>
- * <li>Performance analysis and optimization</li>
- * </ul>
- *
- * <p>
- * <b>Signal Types</b><br>
- * <ul>
- * <li><b>QUERY</b> - Query patterns, features, execution stats</li>
- * <li><b>PERFORMANCE</b> - Latency, throughput, resource usage</li>
- * <li><b>FEEDBACK</b> - User acceptance/rejection of recommendations</li>
- * <li><b>GOVERNANCE</b> - Policy violations, access patterns</li>
- * <li><b>DATA_QUALITY</b> - Schema violations, null rates</li>
- * <li><b>OPERATIONAL</b> - System health, errors, incidents</li>
- * </ul>
- *
- * <p>
- * <b>Storage Strategy</b><br>
- * Learning signals are stored as EVENT records in a dedicated collection:
- * <ul>
- * <li>Collection: {@code learning-signals}</li>
- * <li>RecordType: {@code EVENT} (immutable, append-only)</li>
- * <li>Retention: Configurable, typically 90+ days</li>
- * <li>Indexing: By tenantId, signalType, timestamp, source.plugin</li>
- * </ul>
- *
- * <p>
- * <b>Usage</b><br>
- * <pre>{@code
- * // Capture query pattern signal
- * LearningSignal signal = LearningSignal.builder()
- *     .signalType(SignalType.QUERY)
- *     .tenantId("tenant-123")
- *     .source(SignalSource.builder()
- *         .plugin("postgresql")
- *         .collection("events")
- *         .build())
- *     .features(Map.of(
- *         "hasTimeFilter", true,
- *         "joinCount", 2,
- *         "aggregationCount", 3,
- *         "estimatedRows", 1000
- *     ))
- *     .metrics(Map.of(
- *         "latencyMs", 45.2,
- *         "rowsScanned", 10000,
- *         "rowsReturned", 100
- *     ))
- *     .build();
- *
- * // Store via StoragePlugin
- * learningSignalStore.insert(signal);
- * }</pre>
- *
- * @see com.ghatana.datacloud.spi.StoragePlugin
- * @doc.type record
+ * @doc.type class
  * @doc.purpose Canonical learning signal model
  * @doc.layer core
  * @doc.pattern Value Object
  */
-@Value
-@Builder
-public class LearningSignal {
+public final class LearningSignal {
 
-    /**
-     * Unique signal ID.
-     */
-    @Builder.Default
-    UUID signalId = UUID.randomUUID();
+    private final UUID signalId;
+    private final Instant timestamp;
+    private final String tenantId;
+    private final SignalType signalType;
+    private final SignalSource source;
+    private final String sourceId;
+    private final String sourceType;
+    private final String category;
+    private final double strength;
+    private final double confidence;
+    private final Set<String> tags;
+    private final Map<String, Object> features;
+    private final Map<String, Object> metrics;
+    private final Map<String, Object> context;
+    private final Map<String, Object> metadata;
+    private final String correlationId;
+    private final int version;
 
-    /**
-     * Timestamp when signal was captured.
-     */
-    @Builder.Default
-    Instant timestamp = Instant.now();
+    private LearningSignal(Builder builder) {
+        this.signalId = builder.signalId;
+        this.timestamp = builder.timestamp;
+        this.tenantId = builder.tenantId;
+        this.signalType = builder.signalType;
+        this.source = builder.source;
+        this.sourceId = builder.sourceId;
+        this.sourceType = builder.sourceType;
+        this.category = builder.category;
+        this.strength = builder.strength;
+        this.confidence = builder.confidence;
+        this.tags = Collections.unmodifiableSet(builder.tags);
+        this.features = Collections.unmodifiableMap(builder.features);
+        this.metrics = Collections.unmodifiableMap(builder.metrics);
+        this.context = Collections.unmodifiableMap(builder.context);
+        this.metadata = Collections.unmodifiableMap(builder.metadata);
+        this.correlationId = builder.correlationId;
+        this.version = builder.version;
+    }
 
-    /**
-     * Tenant ID for multi-tenancy.
-     */
-    String tenantId;
+    public static Builder builder() {
+        return new Builder();
+    }
 
-    /**
-     * Type of learning signal.
-     */
-    SignalType signalType;
+    public UUID getSignalId() { return signalId; }
+    public Instant getTimestamp() { return timestamp; }
+    public String getTenantId() { return tenantId; }
+    public SignalType getSignalType() { return signalType; }
+    public SignalSource getSource() { return source; }
+    public String getSourceId() { return sourceId; }
+    public String getSourceType() { return sourceType; }
+    public String getCategory() { return category; }
+    public double getStrength() { return strength; }
+    public double getConfidence() { return confidence; }
+    public Set<String> getTags() { return tags; }
+    public Map<String, Object> getFeatures() { return features; }
+    public Map<String, Object> getMetrics() { return metrics; }
+    public Map<String, Object> getContext() { return context; }
+    public Map<String, Object> getMetadata() { return metadata; }
+    public String getCorrelationId() { return correlationId; }
+    public int getVersion() { return version; }
 
-    /**
-     * Source of the signal (plugin, collection, operation).
-     */
-    SignalSource source;
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Brain/Feedback Loop Fields
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Direct reference to source entity (for brain feedback signals).
-     */
-    String sourceId;
-
-    /**
-     * Type of the source entity (e.g., "pattern", "reflex", "prediction").
-     */
-    String sourceType;
-
-    /**
-     * Category for organizing signals.
-     */
-    String category;
-
-    /**
-     * Signal strength (0.0 to 1.0).
-     */
-    @Builder.Default
-    double strength = 1.0;
-
-    /**
-     * Confidence level of the signal (0.0 to 1.0).
-     */
-    @Builder.Default
-    double confidence = 1.0;
-
-    /**
-     * Tags for categorization and filtering.
-     */
-    java.util.Set<String> tags;
-
-    /**
-     * Feature vector extracted from the observation.
-     * <p>
-     * Examples:
-     * <ul>
-     * <li>Query features: filterCount, joinCount, hasAggregation, etc.</li>
-     * <li>Performance features: cpuUsage, memoryUsage, diskIO</li>
-     * <li>Data quality features: nullRate, distinctCount, outlierRate</li>
-     * </ul>
-     */
-    Map<String, Object> features;
-
-    /**
-     * Outcome metrics (labels for supervised learning).
-     * <p>
-     * Examples:
-     * <ul>
-     * <li>Query metrics: latencyMs, rowsScanned, cost</li>
-     * <li>Recommendation metrics: accepted, impact, userRating</li>
-     * <li>Anomaly metrics: severity, falsePositive, resolution</li>
-     * </ul>
-     */
-    Map<String, Object> metrics;
-
-    /**
-     * Additional context for the signal.
-     */
-    Map<String, Object> context;
-
-    /**
-     * Metadata map (alternative to context, for brain feedback signals).
-     */
-    Map<String, Object> metadata;
-
-    /**
-     * Correlation ID for tracing.
-     */
-    String correlationId;
-
-    /**
-     * Signal version for schema evolution.
-     */
-    @Builder.Default
-    int version = 1;
-
-    /**
-     * Types of learning signals.
-     */
     public enum SignalType {
-        /**
-         * Query pattern and execution.
-         */
         QUERY,
-
-        /**
-         * Performance metrics.
-         */
         PERFORMANCE,
-
-        /**
-         * User feedback on recommendations.
-         */
         FEEDBACK,
-
-        /**
-         * Governance events.
-         */
         GOVERNANCE,
-
-        /**
-         * Data quality observations.
-         */
         DATA_QUALITY,
-
-        /**
-         * Operational metrics.
-         */
         OPERATIONAL,
-
-        /**
-         * Prediction outcomes.
-         */
         PREDICTION_OUTCOME,
-
-        /**
-         * Anomaly detection events.
-         */
         ANOMALY,
-
-        /**
-         * Custom plugin-specific signal.
-         */
         CUSTOM,
-
-        // ═══════════════════════════════════════════════════════════════════════════
-        // Brain/Feedback Loop Signal Types
-        // ═══════════════════════════════════════════════════════════════════════════
-
-        /**
-         * Positive reinforcement signal - behavior should be repeated.
-         */
         REINFORCEMENT,
-
-        /**
-         * Correction signal - behavior should be adjusted.
-         */
         CORRECTION,
-
-        /**
-         * Error signal - something went wrong.
-         */
         ERROR,
-
-        /**
-         * Observation signal - passive learning from behavior.
-         */
         OBSERVATION,
-
-        /**
-         * Adaptation signal - system should adapt.
-         */
         ADAPTATION,
-
-        /**
-         * Exploration signal - try new approaches.
-         */
         EXPLORATION,
-
-        /**
-         * Instruction signal - explicit teaching from expert.
-         */
         INSTRUCTION
     }
 
-    /**
-     * Source information for a learning signal.
-     */
-    @Value
-    @Builder
-    public static class SignalSource {
-        /**
-         * Plugin ID that generated the signal.
-         */
-        String plugin;
+    public static final class SignalSource {
+        private final String plugin;
+        private final String collection;
+        private final String operation;
+        private final String actor;
+        private final Map<String, String> metadata;
 
-        /**
-         * Collection name (if applicable).
-         */
-        String collection;
+        private SignalSource(SignalSourceBuilder builder) {
+            this.plugin = builder.plugin;
+            this.collection = builder.collection;
+            this.operation = builder.operation;
+            this.actor = builder.actor;
+            this.metadata = Collections.unmodifiableMap(builder.metadata);
+        }
 
-        /**
-         * Operation that triggered the signal.
-         */
-        String operation;
+        public static SignalSourceBuilder builder() {
+            return new SignalSourceBuilder();
+        }
 
-        /**
-         * User or service that initiated the operation.
-         */
-        String actor;
+        public String getPlugin() { return plugin; }
+        public String getCollection() { return collection; }
+        public String getOperation() { return operation; }
+        public String getActor() { return actor; }
+        public Map<String, String> getMetadata() { return metadata; }
 
-        /**
-         * Additional source metadata.
-         */
-        Map<String, String> metadata;
+        public static final class SignalSourceBuilder {
+            private String plugin;
+            private String collection;
+            private String operation;
+            private String actor;
+            private Map<String, String> metadata = Collections.emptyMap();
+
+            private SignalSourceBuilder() {
+            }
+
+            public SignalSourceBuilder plugin(String plugin) { this.plugin = plugin; return this; }
+            public SignalSourceBuilder collection(String collection) { this.collection = collection; return this; }
+            public SignalSourceBuilder operation(String operation) { this.operation = operation; return this; }
+            public SignalSourceBuilder actor(String actor) { this.actor = actor; return this; }
+            public SignalSourceBuilder metadata(Map<String, String> metadata) { this.metadata = metadata != null ? metadata : Collections.emptyMap(); return this; }
+
+            public SignalSource build() { return new SignalSource(this); }
+        }
     }
 
-    /**
-     * Converts this signal to a map for storage.
-     *
-     * @return Map representation suitable for JSONB storage
-     */
     public Map<String, Object> toMap() {
         Map<String, Object> result = new java.util.HashMap<>();
         result.put("signalId", signalId.toString());
@@ -334,11 +160,56 @@ public class LearningSignal {
             return Map.of();
         }
         return Map.of(
-                "plugin", source.plugin != null ? source.plugin : "",
-                "collection", source.collection != null ? source.collection : "",
-                "operation", source.operation != null ? source.operation : "",
-                "actor", source.actor != null ? source.actor : "",
-                "metadata", source.metadata != null ? source.metadata : Map.of()
+            "plugin", source.plugin != null ? source.plugin : "",
+            "collection", source.collection != null ? source.collection : "",
+            "operation", source.operation != null ? source.operation : "",
+            "actor", source.actor != null ? source.actor : "",
+            "metadata", source.metadata != null ? source.metadata : Map.of()
         );
+    }
+
+    public static final class Builder {
+        private UUID signalId = UUID.randomUUID();
+        private Instant timestamp = Instant.now();
+        private String tenantId;
+        private SignalType signalType;
+        private SignalSource source;
+        private String sourceId;
+        private String sourceType;
+        private String category;
+        private double strength = 1.0;
+        private double confidence = 1.0;
+        private Set<String> tags = Collections.emptySet();
+        private Map<String, Object> features = Collections.emptyMap();
+        private Map<String, Object> metrics = Collections.emptyMap();
+        private Map<String, Object> context = Collections.emptyMap();
+        private Map<String, Object> metadata = Collections.emptyMap();
+        private String correlationId;
+        private int version = 1;
+
+        private Builder() {
+        }
+
+        public Builder signalId(UUID signalId) { this.signalId = signalId != null ? signalId : UUID.randomUUID(); return this; }
+        public Builder timestamp(Instant timestamp) { this.timestamp = timestamp != null ? timestamp : Instant.now(); return this; }
+        public Builder tenantId(String tenantId) { this.tenantId = tenantId; return this; }
+        public Builder signalType(SignalType signalType) { this.signalType = signalType; return this; }
+        public Builder source(SignalSource source) { this.source = source; return this; }
+        public Builder sourceId(String sourceId) { this.sourceId = sourceId; return this; }
+        public Builder sourceType(String sourceType) { this.sourceType = sourceType; return this; }
+        public Builder category(String category) { this.category = category; return this; }
+        public Builder strength(double strength) { this.strength = strength; return this; }
+        public Builder confidence(double confidence) { this.confidence = confidence; return this; }
+        public Builder tags(Set<String> tags) { this.tags = tags != null ? tags : Collections.emptySet(); return this; }
+        public Builder features(Map<String, Object> features) { this.features = features != null ? features : Collections.emptyMap(); return this; }
+        public Builder metrics(Map<String, Object> metrics) { this.metrics = metrics != null ? metrics : Collections.emptyMap(); return this; }
+        public Builder context(Map<String, Object> context) { this.context = context != null ? context : Collections.emptyMap(); return this; }
+        public Builder metadata(Map<String, Object> metadata) { this.metadata = metadata != null ? metadata : Collections.emptyMap(); return this; }
+        public Builder correlationId(String correlationId) { this.correlationId = correlationId; return this; }
+        public Builder version(int version) { this.version = version; return this; }
+
+        public LearningSignal build() {
+            return new LearningSignal(this);
+        }
     }
 }

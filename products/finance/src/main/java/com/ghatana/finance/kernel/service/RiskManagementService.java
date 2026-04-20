@@ -1,5 +1,7 @@
 package com.ghatana.finance.kernel.service;
 
+import com.ghatana.finance.kernel.service.dto.OrderRecord;
+import com.ghatana.finance.kernel.service.dto.PositionRecord;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Risk Management Service for pre-trade and post-trade risk checks.
@@ -224,10 +227,14 @@ public class RiskManagementService extends AbstractDataService {
             Map.of("traderId", traderId, "symbol", symbol),
             1,
             0,
-            Map.class
-        ).map(results -> results.isEmpty()
-            ? BigDecimal.ZERO
-            : new BigDecimal((String) results.get(0).getOrDefault("value", "0")));
+            PositionRecord.class
+        ).map(results -> {
+            if (results.isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+            PositionRecord position = results.get(0);
+            return position.getValue();
+        });
     }
 
     private Promise<BigDecimal> getPortfolioValue(String traderId) {
@@ -237,9 +244,9 @@ public class RiskManagementService extends AbstractDataService {
             Map.of("traderId", traderId),
             1000,
             0,
-            Map.class
+            PositionRecord.class
         ).map(results -> results.stream()
-            .map(r -> new BigDecimal((String) r.getOrDefault("value", "0")))
+            .map(PositionRecord::getValue)
             .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
@@ -262,13 +269,10 @@ public class RiskManagementService extends AbstractDataService {
             Map.of("traderId", traderId),
             1000,
             0,
-            Map.class
+            OrderRecord.class
         ).map(results -> results.stream()
-            .map(r -> {
-                BigDecimal qty = new BigDecimal((String) r.getOrDefault("quantity", "0"));
-                BigDecimal price = new BigDecimal((String) r.getOrDefault("price", "0"));
-                return qty.multiply(price);
-            })
+            .filter(OrderRecord::isOpen)
+            .map(OrderRecord::getExposure)
             .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 

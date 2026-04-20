@@ -16,6 +16,8 @@ import React, { useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import { useQueryClient } from '@tanstack/react-query';
 import { tenantIdAtom } from '@/stores/tenant.store';
+import { Button } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 
 export function TenantSelector() {
   const [tenantId, setTenantId] = useAtom(tenantIdAtom);
@@ -43,14 +45,14 @@ export function TenantSelector() {
         }}
         className="px-3 mt-1"
       >
-        <input
+        <TextField
           ref={inputRef}
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={submit}
           onKeyDown={(e) => e.key === 'Escape' && setEditing(false)}
-          className="w-full text-xs rounded border border-indigo-400 bg-white dark:bg-gray-800 px-2 py-1 outline-none"
+          className="w-full text-xs"
           aria-label="Tenant ID"
         />
       </form>
@@ -58,18 +60,19 @@ export function TenantSelector() {
   }
 
   return (
-    <button
+    <Button
       onClick={() => {
         setDraft(tenantId);
         setEditing(true);
       }}
       title="Click to change tenant"
-      className="mx-3 mt-1 flex items-center gap-1.5 px-2 py-1 rounded text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-700 w-[calc(100%-1.5rem)] truncate"
+      variant="ghost"
+      className="mx-3 mt-1 flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-700 w-[calc(100%-1.5rem)] truncate"
     >
       <span className="flex-shrink-0 font-medium text-gray-400 uppercase tracking-wide">
         Tenant
       </span>
       <span className="truncate text-gray-700 dark:text-gray-300 font-mono">{tenantId}</span>
-    </button>
+    </Button>
   );
 }

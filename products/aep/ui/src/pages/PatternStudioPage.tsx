@@ -33,6 +33,9 @@ import {
 import { useAllEpisodes, usePolicies, POLICIES_QUERY_KEY } from '@/hooks/useAgentMemory';
 import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { PolicyCard } from '@/components/memory/PolicyCard';
+import { Button } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
+import { TextArea } from '@ghatana/design-system';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -96,8 +99,8 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
         <div className="space-y-3">
           <label className="block text-sm">
             <span className="text-gray-600 dark:text-gray-400">Name</span>
-            <input
-              className="mt-1 block w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            <TextField
+              className="mt-1 block w-full text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. high-error-rate"
@@ -120,9 +123,9 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
           {type === 'THRESHOLD' && (
             <label className="block text-sm">
               <span className="text-gray-600 dark:text-gray-400">Threshold value</span>
-              <input
+              <TextField
                 type="number"
-                className="mt-1 block w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="mt-1 block w-full text-sm"
                 value={threshold}
                 onChange={(e) => setThreshold(e.target.value)}
                 placeholder="0.95"
@@ -132,8 +135,8 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
 
           <label className="block text-sm">
             <span className="text-gray-600 dark:text-gray-400">Description (optional)</span>
-            <textarea
-              className="mt-1 block w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            <TextArea
+              className="mt-1 block w-full text-sm"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -163,19 +166,21 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
         </div>
 
         <div className="mt-5 flex justify-end gap-3">
-          <button
+          <Button
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+            variant="secondary"
+            className="px-4 py-2 text-sm"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => mut.mutate()}
             disabled={!name || mut.isPending}
-            className="px-4 py-2 text-sm rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+            variant="primary"
+            className="px-4 py-2 text-sm"
           >
             {mut.isPending ? 'Creating…' : 'Create'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -219,13 +224,14 @@ function PoliciesTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={() => reflectMut.mutate()}
           disabled={reflectMut.isPending}
-          className="px-4 py-2 text-sm rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+          variant="primary"
+          className="px-4 py-2 text-sm"
         >
           {reflectMut.isPending ? 'Running…' : '▶ Trigger reflection'}
-        </button>
+        </Button>
       </div>
 
       {isLoading && <p className="text-center text-gray-400 py-12">Loading policies…</p>}
@@ -285,9 +291,10 @@ export function PatternStudioPage() {
         <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Pattern Studio</h1>
         <div className="flex gap-1 ml-2">
           {(['patterns', 'learning'] as const).map((t) => (
-            <button
+            <Button
               key={t}
               onClick={() => setMainTab(t)}
+              variant="text"
               className={[
                 'px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors',
                 mainTab === t
@@ -296,16 +303,17 @@ export function PatternStudioPage() {
               ].join(' ')}
             >
               {t}
-            </button>
+            </Button>
           ))}
         </div>
         {mainTab === 'patterns' && (
           <>
             <div className="flex gap-1 ml-4">
               {ALL_TYPES.map((t) => (
-                <button
+                <Button
                   key={t}
                   onClick={() => setFilterType(t)}
+                  variant="ghost"
                   className={[
                     'px-3 py-1 rounded-full text-xs font-medium transition-colors',
                     filterType === t
@@ -314,15 +322,16 @@ export function PatternStudioPage() {
                   ].join(' ')}
                 >
                   {t}
-                </button>
+                </Button>
               ))}
             </div>
-            <button
+            <Button
               onClick={() => setShowCreate(true)}
-              className="ml-auto px-3 py-1.5 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-700 text-white"
+              variant="primary"
+              className="ml-auto px-3 py-1.5 text-sm font-medium"
             >
               + New pattern
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -355,13 +364,14 @@ export function PatternStudioPage() {
                     >
                       {pattern.status}
                     </span>
-                    <button
+                    <Button
                       onClick={() => deleteMut.mutate(pattern.id)}
                       aria-label={`Delete pattern ${pattern.name}`}
-                      className="text-gray-400 hover:text-red-500 transition-colors text-sm ml-2"
+                      variant="ghost"
+                      className="text-gray-400 hover:text-red-500 transition-colors text-sm ml-2 p-1"
                     >
                       🗑
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -372,9 +382,10 @@ export function PatternStudioPage() {
         <div className="flex-1 overflow-auto px-6 py-4">
           <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800 -mb-4 mb-4">
             {(['episodes', 'policies'] as const).map((t) => (
-              <button
+              <Button
                 key={t}
                 onClick={() => setLearningSubTab(t)}
+                variant="text"
                 className={[
                   'px-4 py-2 text-sm font-medium -mb-px border-b-2 capitalize transition-colors',
                   learningSubTab === t
@@ -383,7 +394,7 @@ export function PatternStudioPage() {
                 ].join(' ')}
               >
                 {t}
-              </button>
+              </Button>
             ))}
           </div>
           {learningSubTab === 'episodes' ? <EpisodesTab /> : <PoliciesTab />}

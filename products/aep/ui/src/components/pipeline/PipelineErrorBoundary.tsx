@@ -9,6 +9,7 @@
  * @doc.layer frontend
  */
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Button } from '@ghatana/design-system';
 
 interface Props {
   children: ReactNode;
@@ -49,12 +50,13 @@ export class PipelineErrorBoundary extends Component<Props, State> {
           <p className="text-sm text-gray-500 max-w-md">
             {this.state.error?.message ?? 'An unexpected rendering error occurred.'}
           </p>
-          <button
+          <Button
             onClick={this.handleReset}
-            className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            variant="primary"
+            className="px-4 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700"
           >
             Try to recover
-          </button>
+          </Button>
         </div>
       );
     }

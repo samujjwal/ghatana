@@ -23,6 +23,7 @@ import {
 import { useAllEpisodes, usePolicies, POLICIES_QUERY_KEY } from '@/hooks/useAgentMemory';
 import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { PolicyCard } from '@/components/memory/PolicyCard';
+import { Button } from '@ghatana/design-system';
 
 // ─── Episodes tab ────────────────────────────────────────────────────
 
@@ -63,13 +64,14 @@ function PoliciesTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={() => reflectMut.mutate()}
           disabled={reflectMut.isPending}
-          className="px-4 py-2 text-sm rounded-md bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+          variant="primary"
+          className="px-4 py-2 text-sm"
         >
           {reflectMut.isPending ? 'Running…' : '▶ Trigger reflection'}
-        </button>
+        </Button>
       </div>
 
       {isLoading && <p className="text-center text-gray-400 py-12">Loading policies…</p>}
@@ -105,9 +107,10 @@ export function LearningPage() {
         <h1 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Learning</h1>
         <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800 -mb-4">
           {(['episodes', 'policies'] as const).map((t) => (
-            <button
+            <Button
               key={t}
               onClick={() => setTab(t)}
+              variant="text"
               className={[
                 'px-4 py-2 text-sm font-medium -mb-px border-b-2 capitalize transition-colors',
                 tab === t
@@ -116,7 +119,7 @@ export function LearningPage() {
               ].join(' ')}
             >
               {t}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

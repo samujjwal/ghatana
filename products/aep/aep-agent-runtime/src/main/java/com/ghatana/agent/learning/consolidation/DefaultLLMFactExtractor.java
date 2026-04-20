@@ -8,17 +8,20 @@ import com.ghatana.agent.memory.model.fact.EnhancedFact;
 import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.LLMGateway;
+import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
 /**
  * LLM-backed implementation of {@link LLMFactExtractor}.
@@ -49,10 +52,17 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
     /** Maximum tokens allowed in the LLM response to bound cost. */
     private static final int MAX_RESPONSE_TOKENS = 1_024;
 
+    /** P1-8: Timeout for LLM calls to prevent indefinite blocking. */
+    private static final Duration LLM_TIMEOUT = Duration.ofSeconds(30);
+
     /** Shared virtual-thread executor for blocking LLM HTTP calls. */
     private static final Executor EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private final LLMGateway llmGateway;
+    /** P2-16: Metrics collector for token count tracking. */
+    private final MetricsCollector metricsCollector;
 
     private static final String SYSTEM_PROMPT = """
         You are a knowledge-extraction engine. Given an agent interaction (input and output),
@@ -66,15 +76,25 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
         If no facts can be extracted, respond with {"facts":[]}.
         """;
 
-    private final LLMGateway llmGateway;
-
     /**
      * Creates a fact extractor backed by the given LLM gateway.
      *
      * @param llmGateway the gateway used for completions
      */
     public DefaultLLMFactExtractor(@NotNull LLMGateway llmGateway) {
+        this(llmGateway, null);
+    }
+
+    /**
+     * Creates a fact extractor backed by the given LLM gateway with metrics collection.
+     *
+     * @param llmGateway the gateway used for completions
+     * @param metricsCollector optional metrics collector for token tracking
+     */
+    public DefaultLLMFactExtractor(@NotNull LLMGateway llmGateway,
+                                   @Nullable MetricsCollector metricsCollector) {
         this.llmGateway = llmGateway;
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -100,12 +120,39 @@ public class DefaultLLMFactExtractor implements LLMFactExtractor {
 
         // Chain: (1) LLM call on eventloop → (2) JSON parsing on virtual thread
         // Any failure in either step is caught by the error-recovery branch.
-        return llmGateway.complete(request)
+        // P1-8: Add timeout to prevent indefinite blocking on LLM calls
+        // P2-16: Add token count logging and metrics
+        return Promise.ofFuture(llmGateway.complete(request)
+            .toCompletableFuture()
+            .orTimeout(LLM_TIMEOUT.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS))
             .then(
-                response -> Promise.ofBlocking(EXECUTOR, () -> parseFacts(response.getText(), episode)),
+                response -> {
+                    // P2-16: Log and emit token count metrics
+                    log.info("[LLMFactExtractor] LLM call completed for agentId={} turnId={} " +
+                            "tokensUsed={} promptTokens={} completionTokens={} model={}",
+                        episode.getAgentId(), episode.getTurnId(),
+                        response.getTokensUsed(), response.getPromptTokens(),
+                        response.getCompletionTokens(), response.getModelUsed());
+                    
+                    if (metricsCollector != null) {
+                        metricsCollector.increment("llm.fact_extractor.tokens.total",
+                            response.getTokensUsed(), java.util.Map.of());
+                        metricsCollector.increment("llm.fact_extractor.tokens.prompt",
+                            response.getPromptTokens(), java.util.Map.of());
+                        metricsCollector.increment("llm.fact_extractor.tokens.completion",
+                            response.getCompletionTokens(), java.util.Map.of());
+                    }
+                    
+                    return Promise.ofBlocking(EXECUTOR, () -> parseFacts(response.getText(), episode));
+                },
                 e -> {
-                    log.warn("[LLMFactExtractor] extraction failed for agentId={} turnId={}: {}",
-                        episode.getAgentId(), episode.getTurnId(), e.getMessage());
+                    if (e instanceof TimeoutException) {
+                        log.warn("[LLMFactExtractor] extraction timed out after {}ms for agentId={} turnId={}",
+                            LLM_TIMEOUT.toMillis(), episode.getAgentId(), episode.getTurnId());
+                    } else {
+                        log.warn("[LLMFactExtractor] extraction failed for agentId={} turnId={}: {}",
+                            episode.getAgentId(), episode.getTurnId(), e.getMessage());
+                    }
                     return Promise.of(List.of());
                 }
             );

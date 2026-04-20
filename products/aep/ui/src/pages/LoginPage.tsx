@@ -11,6 +11,7 @@
 import React, { useMemo, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
+import { Button, TextArea } from '@ghatana/design-system';
 
 interface LoginLocationState {
   from?: string;
@@ -102,7 +103,7 @@ export function LoginPage() {
               <label className="text-sm font-medium text-slate-200" htmlFor="jwt-token">
                 JWT access token
               </label>
-              <textarea
+              <TextArea
                 id="jwt-token"
                 value={token}
                 onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setToken(event.target.value)}
@@ -121,13 +122,14 @@ export function LoginPage() {
               </div>
             ) : null}
 
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-900/40 disabled:text-cyan-100"
+              variant="primary"
+              fullWidth
             >
               {isSubmitting ? 'Signing in…' : 'Sign in'}
-            </button>
+            </Button>
 
             <p className="text-xs leading-5 text-slate-400">
               {isBootstrappingSession

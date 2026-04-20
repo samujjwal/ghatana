@@ -17,7 +17,7 @@ import java.util.Map;
  * @doc.purpose Define time windows for metric aggregation
  * @doc.layer product
  */
-public enum TimeRange {
+enum TimeRange {
     LAST_HOUR,
     LAST_DAY,
     LAST_WEEK,
@@ -32,7 +32,7 @@ public enum TimeRange {
  * @doc.purpose Track AI evaluation quality metrics
  * @doc.layer product
  */
-public record AIEvaluationMetrics(
+record AIEvaluationMetrics(
     double accuracy,
     double precision,
     double recall,
@@ -50,7 +50,7 @@ public record AIEvaluationMetrics(
  * @doc.purpose Record individual AI evaluation outcomes
  * @doc.layer product
  */
-public record AIEvaluationResult(
+record AIEvaluationResult(
     String evaluationId,
     String tenantId,
     String userId,

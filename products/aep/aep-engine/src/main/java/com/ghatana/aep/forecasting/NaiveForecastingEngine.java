@@ -5,6 +5,7 @@
 package com.ghatana.aep.forecasting;
 
 import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.annotation.DevelopmentOnly;
 import io.activej.promise.Promise;
 
 import java.util.ArrayList;
@@ -12,13 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Naive {@link ForecastingEngine} that predicts future values by projecting the
- * last observed value forward with a fixed 1 % per-step growth rate.
+ * P2-13: Naive {@link ForecastingEngine} marked as development-only.
  *
- * <p>This is the simplest possible baseline. It is suitable for smoke-testing and
- * environments where no historical data exist for a more sophisticated model.
- * Replace with {@link LinearTrendForecastingEngine} or an ARIMA-based engine
- * for production workloads.
+ * <p>This is the simplest possible baseline that predicts future values by projecting the
+ * last observed value forward with a fixed 1% per-step growth rate. It is suitable for
+ * smoke-testing and environments where no historical data exist for a more sophisticated model.
+ *
+ * <p><strong>This implementation is NOT suitable for production workloads.</strong>
+ * Replace with a time-series ML model (ARIMA, Prophet, LSTM, etc.) for production use.
  *
  * <h3>Algorithm</h3>
  * <pre>
@@ -27,10 +29,11 @@ import java.util.Map;
  * </pre>
  *
  * @doc.type class
- * @doc.purpose Naive last-value-carry-forward forecasting baseline
+ * @doc.purpose Naive last-value-carry-forward forecasting baseline (development-only)
  * @doc.layer product
  * @doc.pattern Strategy, NullObject
  */
+@DevelopmentOnly(reason = "Simple baseline implementation - replace with time-series ML model for production")
 public final class NaiveForecastingEngine implements ForecastingEngine {
 
     /** Default number of future steps to predict. */

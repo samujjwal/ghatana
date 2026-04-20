@@ -17,6 +17,8 @@ import type { AgentRegistration } from '@/api/aep.api';
 import { useAgents, useDeregisterAgent } from '@/hooks/useAgents';
 import { AgentTable } from '@/components/agents/AgentTable';
 import { AgentStatusBadge } from '@/components/agents/AgentStatusBadge';
+import { Button } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 
 // ─── Status styling ──────────────────────────────────────────────────
 
@@ -50,13 +52,14 @@ function AgentDetailPanel({
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
         <h2 className="font-semibold text-sm text-gray-900 dark:text-white truncate">{agent.name}</h2>
-        <button
+        <Button
           onClick={onClose}
           aria-label="Close agent details"
-          className="text-gray-400 hover:text-gray-600 focus:outline-none"
+          variant="ghost"
+          className="text-gray-400 hover:text-gray-600 focus:outline-none p-1"
         >
           ✕
-        </button>
+        </Button>
       </div>
 
       <div className="px-4 py-3 space-y-3 text-sm">
@@ -92,13 +95,14 @@ function AgentDetailPanel({
       </div>
 
       <div className="mt-auto px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <button
+        <Button
           onClick={() => onDeregister(agent.id)}
           disabled={isDeregistering}
-          className="w-full px-3 py-2 text-sm font-medium rounded-md bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 disabled:opacity-50 transition-colors"
+          variant="secondary"
+          className="w-full px-3 py-2 text-sm font-medium bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900"
         >
           {isDeregistering ? 'Removing…' : 'Deregister agent'}
-        </button>
+        </Button>
       </div>
     </aside>
   );
@@ -135,13 +139,13 @@ export function AgentRegistryPage() {
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 bg-white dark:bg-gray-950">
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Agent Registry</h1>
           <span className="text-xs text-gray-400">{agents.length} registered</span>
-          <input
+          <TextField
             type="search"
             placeholder="Search by name or capability…"
             aria-label="Search agents"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="ml-auto w-64 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="ml-auto w-64 text-sm"
           />
         </div>
 
@@ -163,18 +167,20 @@ export function AgentRegistryPage() {
                 Get started by registering your first agent. Agents provide pattern detection, enrichment, and other AI capabilities for your event pipelines.
               </p>
               <div className="flex gap-3">
-                <button
+                <Button
                   onClick={() => {/* TODO: Open agent registration dialog */}}
-                  className="px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+                  variant="primary"
+                  className="px-4 py-2 text-sm font-medium"
                 >
                   Register first agent
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => {/* TODO: Open discovery dialog */}}
-                  className="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
+                  variant="secondary"
+                  className="px-4 py-2 text-sm font-medium"
                 >
                   Auto-discover services
-                </button>
+                </Button>
               </div>
             </div>
           )}

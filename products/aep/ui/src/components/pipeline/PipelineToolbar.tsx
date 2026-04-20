@@ -21,6 +21,7 @@ import {
   validationAtom,
 } from '@/stores/pipeline.store';
 import type { PipelineStatus } from '@/types/pipeline.types';
+import { Button } from '@ghatana/design-system';
 
 // ─── Tooltip Helper ─────────────────────────────────────────────────────
 
@@ -125,24 +126,26 @@ export function PipelineToolbar({
 
       {/* Undo / Redo */}
       <Tooltip content="Undo last change (Ctrl+Z)">
-        <button
+        <Button
           onClick={onUndo}
           disabled={!canUndo}
-          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+          variant="ghost"
+          className="p-1.5"
           data-testid="btn-undo"
         >
           ↩
-        </button>
+        </Button>
       </Tooltip>
       <Tooltip content="Redo last change (Ctrl+Y)">
-        <button
+        <Button
           onClick={onRedo}
           disabled={!canRedo}
-          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+          variant="ghost"
+          className="p-1.5"
           data-testid="btn-redo"
         >
           ↪
-        </button>
+        </Button>
       </Tooltip>
 
       {/* Divider */}
@@ -150,72 +153,72 @@ export function PipelineToolbar({
 
       {/* Validate */}
       <Tooltip content="Validate pipeline structure and dependencies">
-        <button
+        <Button
           onClick={onValidate}
           disabled={validating}
+          variant="secondary"
           className={clsx(
-            'px-3 py-1 text-xs font-medium rounded border transition-colors',
-            hasErrors
-              ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
-              : 'border-gray-200 hover:bg-gray-100',
-            'disabled:opacity-50',
+            'px-3 py-1 text-xs font-medium',
+            hasErrors && 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
           )}
           data-testid="btn-validate"
         >
           {validating ? 'Validating…' : hasErrors ? `⚠ ${validation.errors.length} errors` : 'Validate'}
-        </button>
+        </Button>
       </Tooltip>
 
       {/* Save */}
       <Tooltip content="Save pipeline to backend">
-        <button
+        <Button
           onClick={onSave}
           disabled={!dirty || saving}
-          className="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white
-                     hover:bg-blue-700 disabled:opacity-40 transition-colors"
+          variant="primary"
+          className="px-3 py-1 text-xs font-medium"
+          style={{ backgroundColor: '#2563eb' }}
           data-testid="btn-save"
         >
           {saving ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       </Tooltip>
 
       {/* Run Now */}
       {onRunNow && (
         <Tooltip content="Trigger pipeline execution with test event">
-          <button
+          <Button
             onClick={onRunNow}
             disabled={running}
-            className="px-3 py-1 text-xs font-medium rounded bg-green-600 text-white
-                       hover:bg-green-700 disabled:opacity-40 transition-colors"
+            variant="primary"
+            className="px-3 py-1 text-xs font-medium"
+            style={{ backgroundColor: '#16a34a' }}
             data-testid="btn-run-now"
           >
             {running ? 'Running…' : '▶ Run'}
-          </button>
+          </Button>
         </Tooltip>
       )}
 
       {/* Export */}
       <Tooltip content="Export pipeline as JSON file">
-        <button
+        <Button
           onClick={onExport}
-          className="px-3 py-1 text-xs font-medium rounded border border-gray-200
-                     hover:bg-gray-100 transition-colors"
+          variant="secondary"
+          className="px-3 py-1 text-xs font-medium"
           data-testid="btn-export"
         >
           Export JSON
-        </button>
+        </Button>
       </Tooltip>
 
       {/* New */}
       <Tooltip content="Create new pipeline (unsaved changes will be lost)">
-        <button
+        <Button
           onClick={onNew}
-          className="px-3 py-1 text-xs font-medium rounded border border-gray-200
-                     hover:bg-gray-100 transition-colors"
+          variant="secondary"
+          className="px-3 py-1 text-xs font-medium"
           data-testid="btn-new"
         >
           + New
-        </button>
+        </Button>
       </Tooltip>
     </header>
   );

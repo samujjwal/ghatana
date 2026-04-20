@@ -17,6 +17,9 @@ import {
   type MarketplaceAgentListing,
   type PublishMarketplaceAgentInput,
 } from '@/api/aep.api';
+import { Button } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
+import { TextArea } from '@ghatana/design-system';
 
 interface PublishFormState {
   name: string;
@@ -80,9 +83,10 @@ function MarketplaceCard({
   onSelect: (id: string) => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
       onClick={() => onSelect(listing.id)}
+      variant="ghost"
       className={[
         'w-full rounded-xl border p-4 text-left transition-colors',
         selected
@@ -124,7 +128,7 @@ function MarketplaceCard({
         </div>
         <span>{formatTimestamp(listing.updatedAt ?? listing.publishedAt)}</span>
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -226,65 +230,65 @@ export function AgentMarketplacePage() {
         </div>
 
         <div className="border-b border-gray-100 px-6 py-4 dark:border-gray-800">
-          <input
+          <TextField
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search marketplace agents"
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 focus:border-indigo-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+            className="w-full text-sm"
           />
         </div>
 
         <div className="grid gap-4 border-b border-gray-100 px-6 py-4 dark:border-gray-800 lg:grid-cols-2">
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <span className="font-medium">Agent name</span>
-            <input
+            <TextField
               value={publishForm.name}
               onChange={(event) => setPublishForm((current) => ({ ...current, name: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="w-full text-sm"
             />
           </label>
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <span className="font-medium">Version</span>
-            <input
+            <TextField
               value={publishForm.version}
               onChange={(event) => setPublishForm((current) => ({ ...current, version: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="w-full text-sm"
             />
           </label>
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300 lg:col-span-2">
             <span className="font-medium">Description</span>
-            <textarea
+            <TextArea
               value={publishForm.description}
               onChange={(event) => setPublishForm((current) => ({ ...current, description: event.target.value }))}
               rows={2}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="w-full text-sm"
             />
           </label>
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <span className="font-medium">Capabilities</span>
-            <input
+            <TextField
               value={publishForm.capabilities}
               onChange={(event) => setPublishForm((current) => ({ ...current, capabilities: event.target.value }))}
               placeholder="triage, explain, deploy"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="w-full text-sm"
             />
           </label>
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <span className="font-medium">Tags</span>
-            <input
+            <TextField
               value={publishForm.tags}
               onChange={(event) => setPublishForm((current) => ({ ...current, tags: event.target.value }))}
               placeholder="beta, operator-approved"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="w-full text-sm"
             />
           </label>
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
             <span className="font-medium">Domain</span>
-            <input
+            <TextField
               value={publishForm.domain}
               onChange={(event) => setPublishForm((current) => ({ ...current, domain: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="w-full text-sm"
             />
           </label>
           <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -304,7 +308,7 @@ export function AgentMarketplacePage() {
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Marketplace publishing stays tenant-scoped until shared distribution governance is enabled.
             </p>
-            <button
+            <Button
               type="button"
               onClick={() =>
                 publishMutation.mutate({
@@ -318,10 +322,11 @@ export function AgentMarketplacePage() {
                 })
               }
               disabled={!publishForm.name.trim() || publishMutation.isPending}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              variant="primary"
+              className="rounded-lg px-4 py-2 text-sm font-medium"
             >
               {publishMutation.isPending ? 'Publishing…' : 'Publish Agent'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -405,14 +410,7 @@ export function AgentMarketplacePage() {
             </div>
 
             <div className="mt-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Reviews</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                  <RatingStars rating={selectedAgent.listing.averageRating} />
-                  <span>{selectedAgent.listing.averageRating.toFixed(1)}</span>
-                </div>
-              </div>
-
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Reviews</h3>
               <div className="mt-4 space-y-3">
                 {selectedAgent.reviews.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">No operator reviews have been submitted yet.</p>
@@ -441,18 +439,18 @@ export function AgentMarketplacePage() {
             <div className="mt-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Add Review</h3>
               <div className="mt-4 grid gap-3">
-                <input
+                <TextField
                   value={reviewForm.reviewer}
                   onChange={(event) => setReviewForm((current) => ({ ...current, reviewer: event.target.value }))}
                   placeholder="Reviewer"
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                  className="rounded-lg text-sm"
                 />
                 <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-3">
-                  <input
+                  <TextField
                     value={reviewForm.title}
                     onChange={(event) => setReviewForm((current) => ({ ...current, title: event.target.value }))}
                     placeholder="Review title"
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                    className="rounded-lg text-sm"
                   />
                   <select
                     value={reviewForm.rating}
@@ -466,14 +464,14 @@ export function AgentMarketplacePage() {
                     <option value="1">1 star</option>
                   </select>
                 </div>
-                <textarea
+                <TextArea
                   value={reviewForm.comment}
                   onChange={(event) => setReviewForm((current) => ({ ...current, comment: event.target.value }))}
                   placeholder="What worked well? What still needs review?"
                   rows={4}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                  className="rounded-lg text-sm"
                 />
-                <button
+                <Button
                   type="button"
                   disabled={!selectedAgentId || reviewMutation.isPending}
                   onClick={() => {
@@ -481,10 +479,11 @@ export function AgentMarketplacePage() {
                       reviewMutation.mutate(selectedAgentId);
                     }
                   }}
-                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-100 dark:text-gray-950 dark:hover:bg-white"
+                  variant="secondary"
+                  className="rounded-lg px-4 py-2 text-sm font-medium bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-950"
                 >
                   {reviewMutation.isPending ? 'Submitting…' : 'Submit Review'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

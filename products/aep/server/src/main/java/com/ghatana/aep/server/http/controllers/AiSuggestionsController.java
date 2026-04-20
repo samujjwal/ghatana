@@ -4,6 +4,7 @@
  */
 package com.ghatana.aep.server.http.controllers;
 
+import com.ghatana.aep.metrics.AISuggestionMetricsCollector;
 import com.ghatana.aep.server.analytics.DataCloudAnalyticsStore;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.aep.observability.AepSloMetrics;
@@ -51,6 +52,9 @@ public final class AiSuggestionsController {
     private final DataCloudAnalyticsStore analyticsStore;
     @Nullable
     private final AepSloMetrics sloMetrics;
+    /** P2-11: Metrics collector for tracking suggestion effectiveness. */
+    @Nullable
+    private final AISuggestionMetricsCollector metricsCollector;
 
     /**
      * @param analyticsStore optional DataCloud analytics store; when {@code null} only SLO metrics
@@ -60,8 +64,22 @@ public final class AiSuggestionsController {
     public AiSuggestionsController(
             @Nullable DataCloudAnalyticsStore analyticsStore,
             @Nullable AepSloMetrics sloMetrics) {
+        this(analyticsStore, sloMetrics, null);
+    }
+
+    /**
+     * @param analyticsStore optional DataCloud analytics store; when {@code null} only SLO metrics
+     *                       signals are used
+     * @param sloMetrics     optional SLO metrics for recent run statistics; may be {@code null}
+     * @param metricsCollector optional metrics collector for suggestion tracking
+     */
+    public AiSuggestionsController(
+            @Nullable DataCloudAnalyticsStore analyticsStore,
+            @Nullable AepSloMetrics sloMetrics,
+            @Nullable AISuggestionMetricsCollector metricsCollector) {
         this.analyticsStore = analyticsStore;
         this.sloMetrics = sloMetrics;
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -78,13 +96,27 @@ public final class AiSuggestionsController {
         log.debug("[ai-suggestions] generating suggestions for tenant={}", tenantId);
 
         if (analyticsStore == null) {
-            return Promise.of(buildFallbackResponse(tenantId, limit));
+            HttpResponse response = buildFallbackResponse(tenantId, limit);
+            // P2-11: Record suggestion shown for fallback
+            if (metricsCollector != null) {
+                metricsCollector.recordSuggestionShown("fallback", "fallback", Map.of("tenantId", tenantId));
+            }
+            return Promise.of(response);
         }
 
         Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
 
         return analyticsStore.queryAnomalies(tenantId, null, oneHourAgo, null, 50)
-                .map(anomalies -> buildSuggestions(tenantId, anomalies, limit))
+                .map(anomalies -> {
+                    Map<String, Object> suggestions = buildSuggestions(tenantId, anomalies, limit);
+                    // P2-11: Record suggestion shown for anomaly-based suggestions
+                    if (metricsCollector != null) {
+                        int suggestionCount = (int) suggestions.get("count");
+                        metricsCollector.recordSuggestionShown("anomaly", "query",
+                            Map.of("tenantId", tenantId, "count", suggestionCount));
+                    }
+                    return suggestions;
+                })
                 .map(HttpHelper::jsonResponse)
                 .then(Promise::of, e -> {
                     log.error("[ai-suggestions] suggestion generation failed for tenant={}: {}",
@@ -246,5 +278,52 @@ public final class AiSuggestionsController {
     private static String formatInstant(Instant instant) {
         if (instant == null) return "unknown";
         return instant.truncatedTo(ChronoUnit.SECONDS).toString();
+    }
+
+    // P2-11: Metrics endpoint for CTR and suggestion effectiveness
+    /**
+     * GET /api/v1/ai/suggestions/metrics
+     *
+     * <p>Returns suggestion effectiveness metrics including click-through rate (CTR),
+     * adoption rate, and per-type statistics.
+     */
+    public Promise<HttpResponse> handleGetMetrics(HttpRequest request) {
+        String tenantId = HttpHelper.resolveTenantId(request);
+
+        if (metricsCollector == null) {
+            return Promise.of(HttpHelper.jsonResponse(Map.of(
+                "tenantId", tenantId,
+                "metricsEnabled", false,
+                "message", "Metrics collector not configured"
+            )));
+        }
+
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("tenantId", tenantId);
+        response.put("metricsEnabled", true);
+        response.put("timestamp", Instant.now().toString());
+
+        // CTR for each suggestion type
+        Map<String, Double> ctrByType = new java.util.LinkedHashMap<>();
+        ctrByType.put("anomaly", metricsCollector.getClickThroughRate("anomaly"));
+        ctrByType.put("fallback", metricsCollector.getClickThroughRate("fallback"));
+        ctrByType.put("slo", metricsCollector.getClickThroughRate("slo"));
+        response.put("clickThroughRate", ctrByType);
+
+        // Adoption rate for each suggestion type
+        Map<String, Double> adoptionByType = new java.util.LinkedHashMap<>();
+        adoptionByType.put("anomaly", metricsCollector.getAdoptionRate("anomaly"));
+        adoptionByType.put("fallback", metricsCollector.getAdoptionRate("fallback"));
+        adoptionByType.put("slo", metricsCollector.getAdoptionRate("slo"));
+        response.put("adoptionRate", adoptionByType);
+
+        // Detailed stats by type
+        Map<String, Object> statsByType = new java.util.LinkedHashMap<>();
+        statsByType.put("anomaly", metricsCollector.getStats("anomaly"));
+        statsByType.put("fallback", metricsCollector.getStats("fallback"));
+        statsByType.put("slo", metricsCollector.getStats("slo"));
+        response.put("stats", statsByType);
+
+        return Promise.of(HttpHelper.jsonResponse(response));
     }
 }

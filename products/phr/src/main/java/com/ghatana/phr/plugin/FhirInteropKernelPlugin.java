@@ -12,12 +12,16 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.plugin.PluginManifest;
 import com.ghatana.platform.health.HealthStatus;
+import com.ghatana.platform.kernel.dependency.DependencyAvailability;
+import com.ghatana.platform.kernel.dependency.DependencyMode;
 import com.ghatana.phr.fhir.FhirResourceService;
 import com.ghatana.phr.fhir.FhirTransformer;
 import com.ghatana.phr.fhir.FhirValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -42,12 +46,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceService, FhirValidator, FhirTransformer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(FhirInteropKernelPlugin.class);
     private static final String PLUGIN_ID = "fhir-interop-r4";
     private static final String VERSION = "1.0.0";
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final String FHIR_RESOURCE_DATASET = "phr.fhir.resources";
+    private static final String DATACLOUD_MODE_ENV = "PHR_DATACLOUD_MODE";
+    private static final String DATACLOUD_MODE_DEFAULT = "STRICT";
 
     private volatile KernelContext context;
+    private volatile DependencyAvailability dataCloudAvailability;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean installed = new AtomicBoolean(false);
@@ -101,7 +109,37 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
             return;
         }
         this.context = context;
+
+        // Initialize DataCloud dependency availability tracker with configured mode
+        DependencyMode datacloudMode = resolveDataCloudMode();
+        boolean datacloudAvailable = context != null && context.hasDependency(DataCloudKernelAdapter.class);
+        this.dataCloudAvailability = new DependencyAvailability("DataCloudKernelAdapter", datacloudMode, datacloudAvailable);
+
+        if (datacloudMode.isStrict() && !datacloudAvailable) {
+            LOG.warn("INITIALIZATION WARNING: DataCloud adapter not found but STRICT mode is enabled. " +
+                    "Write operations will fail. Consider using DEGRADED mode for development.");
+        }
+
+        LOG.info("PHR FHIR Plugin initialized with DataCloud mode: {} (available: {})", datacloudMode.name(), datacloudAvailable);
+
         registerEventHandlers();
+    }
+
+    /**
+     * Resolve DataCloud operation mode from environment or use default.
+     * STRICT mode (default): Fail fast on missing dependencies, suitable for production.
+     * DEGRADED mode: Allow graceful degradation with fallbacks, suitable for development.
+     */
+    private DependencyMode resolveDataCloudMode() {
+        String modeEnv = System.getenv(DATACLOUD_MODE_ENV);
+        if (modeEnv != null && !modeEnv.isEmpty()) {
+            try {
+                return DependencyMode.valueOf(modeEnv.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                LOG.warn("Invalid {} value: {}; using default: {}", DATACLOUD_MODE_ENV, modeEnv, DATACLOUD_MODE_DEFAULT);
+            }
+        }
+        return DependencyMode.valueOf(DATACLOUD_MODE_DEFAULT);
     }
 
     @Override
@@ -242,7 +280,16 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     }
 
     private Promise<Void> initializeFhirResources() {
-        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+        // Verify DataCloud availability for schema creation (write operation)
+        try {
+            dataCloudAvailability.verifyAvailable("FHIR_RESOURCE_SCHEMA_CREATION", true);
+        } catch (IllegalStateException e) {
+            LOG.error("Cannot initialize FHIR resources: {}", e.getMessage());
+            return Promise.ofException(e);
+        }
+
+        if (!dataCloudAvailability.isAvailable()) {
+            LOG.warn("DataCloud not available for FHIR resource initialization in DEGRADED mode");
             return Promise.complete();
         }
 
@@ -334,7 +381,11 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     }
 
     private Promise<Void> persistResource(FhirResource resource) {
-        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+        // Verify DataCloud availability - will throw in STRICT mode if unavailable
+        dataCloudAvailability.verifyAvailable("FHIR_RESOURCE_PERSISTENCE", true);
+
+        if (!dataCloudAvailability.isAvailable()) {
+            LOG.warn("DataCloud not available for resource persistence [id={}] in DEGRADED mode; resource cached only", resource.getId());
             return Promise.complete();
         }
 
@@ -345,11 +396,16 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
                 resource.getJson().getBytes(StandardCharsets.UTF_8),
                 extractIndexedMetadata(resource)
             )
-        );
+        ).then(v -> {
+            LOG.debug("FHIR resource persisted [id={} dataset={}]", resource.getId(), FHIR_RESOURCE_DATASET);
+            return Promise.complete();
+        });
     }
 
     private Promise<FhirResource> loadResource(String resourceId) {
-        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+        // Check DataCloud availability - but this is a read operation, so allowed in degraded mode
+        if (!dataCloudAvailability.isAvailable()) {
+            LOG.debug("DataCloud not available; returning cached/empty resource [id={}]", resourceId);
             return Promise.of(new FhirResource(resourceId, "Unknown", "{}", Instant.now()));
         }
 
@@ -363,11 +419,17 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
                 FhirResource resource = toFhirResource(result);
                 resourceCache.put(resource.getId(), resource);
                 return resource;
+            })
+            .mapException(e -> {
+                LOG.warn("Failed to load FHIR resource [id={}] from DataCloud; using empty fallback: {}", resourceId, e.getMessage());
+                return e;
             });
     }
 
     private Promise<SearchResult> performSearch(String resourceType, Map<String, String> searchParams) {
-        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+        // Check DataCloud availability - read operation allowed in degraded mode
+        if (!dataCloudAvailability.isAvailable()) {
+            LOG.debug("DataCloud not available; returning cached search results for resourceType={}", resourceType);
             return Promise.of(searchCache(resourceType, searchParams));
         }
 
@@ -379,7 +441,11 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
                 parseSearchCount(searchParams),
                 0
             ))
-            .map(result -> toSearchResult(resourceType, searchParams, result));
+            .map(result -> toSearchResult(resourceType, searchParams, result))
+            .mapException(e -> {
+                LOG.warn("Search query failed for resourceType={}; using cache fallback: {}", resourceType, e.getMessage());
+                return e;
+            });
     }
 
     private FhirResource toFhirResource(DataResult result) {

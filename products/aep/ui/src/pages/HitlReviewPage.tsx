@@ -18,6 +18,8 @@ import { tenantIdAtom } from '@/stores/tenant.store';
 import { useHitlQueue, useApproveItem, useRejectItem } from '@/hooks/useHitlQueue';
 import { ReviewCard } from '@/components/hitl/ReviewCard';
 import type { ReviewItem } from '@/api/aep.api';
+import { Button } from '@ghatana/design-system';
+import { TextArea } from '@ghatana/design-system';
 
 // ─── PolicyDiff ──────────────────────────────────────────────────────
 
@@ -89,9 +91,9 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
           <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.skillId}</p>
           <p className="text-xs text-gray-400 font-mono">{item.reviewId}</p>
         </div>
-        <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600">
+        <Button onClick={onClose} aria-label="Close" variant="ghost" className="text-gray-400 hover:text-gray-600 p-1">
           ✕
-        </button>
+        </Button>
       </div>
 
       {/* Meta */}
@@ -129,18 +131,22 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-800 space-y-3">
           {mode === null && (
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={() => setMode('approve')}
-                className="flex-1 px-3 py-2 text-sm rounded-md bg-green-600 hover:bg-green-700 text-white font-medium"
+                variant="primary"
+                className="flex-1 px-3 py-2 text-sm font-medium"
+                style={{ backgroundColor: '#16a34a' }}
               >
                 Approve
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setMode('reject')}
-                className="flex-1 px-3 py-2 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white font-medium"
+                variant="primary"
+                className="flex-1 px-3 py-2 text-sm font-medium"
+                style={{ backgroundColor: '#dc2626' }}
               >
                 Reject
-              </button>
+              </Button>
             </div>
           )}
 
@@ -148,8 +154,8 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
             <div className="space-y-2">
               <label className="block text-xs text-gray-500">
                 Note (optional)
-                <textarea
-                  className="mt-1 block w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                <TextArea
+                  className="mt-1 block w-full text-sm"
                   rows={2}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -157,19 +163,22 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
                 />
               </label>
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => setMode(null)}
-                  className="flex-1 px-3 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700"
+                  variant="secondary"
+                  className="flex-1 px-3 py-1.5 text-sm"
                 >
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleApprove}
                   disabled={approveMut.isPending}
-                  className="flex-1 px-3 py-1.5 text-sm rounded bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                  variant="primary"
+                  className="flex-1 px-3 py-1.5 text-sm"
+                  style={{ backgroundColor: '#16a34a' }}
                 >
                   {approveMut.isPending ? 'Approving…' : 'Confirm Approve'}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -178,8 +187,8 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
             <div className="space-y-2">
               <label className="block text-xs text-gray-500">
                 Reason <span className="text-red-500">*</span>
-                <textarea
-                  className="mt-1 block w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                <TextArea
+                  className="mt-1 block w-full text-sm"
                   rows={2}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -187,19 +196,22 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
                 />
               </label>
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => setMode(null)}
-                  className="flex-1 px-3 py-1.5 text-sm rounded border border-gray-200 dark:border-gray-700"
+                  variant="secondary"
+                  className="flex-1 px-3 py-1.5 text-sm"
                 >
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleReject}
                   disabled={!reason || rejectMut.isPending}
-                  className="flex-1 px-3 py-1.5 text-sm rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                  variant="primary"
+                  className="flex-1 px-3 py-1.5 text-sm"
+                  style={{ backgroundColor: '#dc2626' }}
                 >
                   {rejectMut.isPending ? 'Rejecting…' : 'Confirm Reject'}
-                </button>
+                </Button>
               </div>
             </div>
           )}

@@ -18,8 +18,10 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Controller for agent management endpoints.
@@ -39,6 +41,14 @@ import java.util.Map;
 public class AgentController {
 
     private static final Logger log = LoggerFactory.getLogger(AgentController.class);
+
+    // P1-9: Security scan patterns for detecting suspicious agent definitions
+    private static final Pattern SUSPICIOUS_CODE_PATTERN = Pattern.compile(
+        "(eval|exec|system|Runtime\\.getRuntime|ProcessBuilder|Class\\.forName)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SUSPICIOUS_URL_PATTERN = Pattern.compile(
+        "(http://|https://|ftp://)[^\\s/$.?#].[^\\s]*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SUSPICIOUS_PATH_PATTERN = Pattern.compile(
+        "(\\.\\.[\\\\/]|/etc/passwd|/proc/|C:\\\\Windows)", Pattern.CASE_INSENSITIVE);
 
     private final AepEngine engine;
     /** Agent registry store backed by Data-Cloud EntityStore. Null when Data-Cloud is absent. */
@@ -61,6 +71,86 @@ public class AgentController {
         this.agentDataCloud = agentDataCloud;
         EntityStore entityStore = agentDataCloud != null ? agentDataCloud.entityStore() : null;
         this.agentStore = entityStore != null ? new EventCloudAgentStore(entityStore) : null;
+    }
+
+    // P1-9: Security scan for agent registration
+    private List<String> performSecurityScan(Map<String, Object> agentData) {
+        List<String> securityIssues = new ArrayList<>();
+        String serialized = agentData.toString();
+
+        // Check for suspicious code patterns
+        if (SUSPICIOUS_CODE_PATTERN.matcher(serialized).find()) {
+            securityIssues.add("Suspicious code execution patterns detected");
+        }
+
+        // Check for suspicious URLs
+        if (SUSPICIOUS_URL_PATTERN.matcher(serialized).find()) {
+            securityIssues.add("External URLs detected in agent definition");
+        }
+
+        // Check for suspicious file paths
+        if (SUSPICIOUS_PATH_PATTERN.matcher(serialized).find()) {
+            securityIssues.add("Suspicious file path patterns detected");
+        }
+
+        return securityIssues;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleRegisterAgent(HttpRequest request) {
+        if (agentStore == null) {
+            return Promise.of(HttpHelper.errorResponse(503,
+                "Agent registry not available — DataCloudClient not configured"));
+        }
+
+        return request.loadBody().then(buf -> {
+            try {
+                String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> reqBody = bodyStr.isBlank()
+                    ? Map.of()
+                    : HttpHelper.mapper().readValue(bodyStr, Map.class);
+                String tenantId = reqBody.containsKey("tenantId")
+                    ? (String) reqBody.get("tenantId")
+                    : HttpHelper.resolveTenantId(request);
+
+                // P1-9: Perform security scan before registration
+                List<String> securityIssues = performSecurityScan(reqBody);
+                if (!securityIssues.isEmpty()) {
+                    log.warn("[agents] security scan failed for tenantId={}: {}",
+                        tenantId, String.join(", ", securityIssues));
+                    return Promise.of(HttpHelper.errorResponse(403,
+                        "Security scan failed: " + String.join(", ", securityIssues)));
+                }
+
+                String agentId = reqBody.containsKey("id")
+                    ? (String) reqBody.get("id")
+                    : "agent-" + java.util.UUID.randomUUID();
+
+                // Create agent entity
+                Map<String, Object> agentData = new java.util.HashMap<>(reqBody);
+                agentData.put("id", agentId);
+                agentData.put("tenantId", tenantId);
+                agentData.put("status", "ACTIVE");
+                agentData.put("createdAt", Instant.now().toString());
+
+                return agentStore.save(tenantId, agentId, agentData)
+                    .map(ignored -> HttpHelper.jsonResponse(Map.of(
+                        "id", agentId,
+                        "tenantId", tenantId,
+                        "status", "ACTIVE",
+                        "timestamp", Instant.now().toString()
+                    )))
+                    .then(Promise::of, e -> {
+                        log.error("[agents] registration failed for agentId={}: {}",
+                            agentId, e.getMessage(), e);
+                        return Promise.of(HttpHelper.errorResponse(500,
+                            "Failed to register agent: " + e.getMessage()));
+                    });
+            } catch (Exception e) {
+                return Promise.of(HttpHelper.errorResponse(400,
+                    "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(HttpHelper.errorResponse(400, "Failed to read request body")));
     }
 
     public Promise<HttpResponse> handleListAgents(HttpRequest request) {

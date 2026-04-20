@@ -25,6 +25,7 @@ import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { FactTable } from '@/components/memory/FactTable';
 import { PolicyCard } from '@/components/memory/PolicyCard';
 import type { AgentRegistration } from '@/api/aep.api';
+import { Button } from '@ghatana/design-system';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,10 +82,11 @@ function TabBar({ active, onChange }: TabBarProps) {
   return (
     <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
       {TABS.map(({ key, label }) => (
-        <button
+        <Button
           key={key}
           type="button"
           onClick={() => onChange(key)}
+          variant="text"
           className={[
             'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
             active === key
@@ -93,7 +95,7 @@ function TabBar({ active, onChange }: TabBarProps) {
           ].join(' ')}
         >
           {label}
-        </button>
+        </Button>
       ))}
     </div>
   );

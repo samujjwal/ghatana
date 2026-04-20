@@ -9,6 +9,8 @@
  */
 import React, { useState } from 'react';
 import type { ReviewItem } from '@/types/hitl.types';
+import { Button } from '@ghatana/design-system';
+import { TextArea } from '@ghatana/design-system';
 
 interface ApproveRejectPanelProps {
   item: ReviewItem;
@@ -64,12 +66,12 @@ export function ApproveRejectPanel({
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
             Review note (optional)
           </label>
-          <textarea
+          <TextArea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
             placeholder="Add an optional note…"
-            className="w-full text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 outline-none focus:ring-1 focus:ring-green-400 resize-none"
+            className="text-sm resize-none"
           />
         </div>
       )}
@@ -79,38 +81,42 @@ export function ApproveRejectPanel({
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
             Rejection reason <span className="text-red-500">*</span>
           </label>
-          <textarea
+          <TextArea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={2}
             placeholder="Describe why this is being rejected…"
-            className="w-full text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 outline-none focus:ring-1 focus:ring-red-400 resize-none"
+            className="text-sm resize-none"
           />
         </div>
       )}
 
       <div className="flex gap-2">
-        <button
+        <Button
           onClick={handleApprove}
           disabled={isSubmitting}
-          className="flex-1 rounded px-3 py-1.5 text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+          variant="primary"
+          className="flex-1"
+          style={{ backgroundColor: '#16a34a' }}
         >
           {mode === 'approving' ? '✓ Confirm Approve' : 'Approve'}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={handleReject}
           disabled={isSubmitting || (mode === 'rejecting' && !reason.trim())}
-          className="flex-1 rounded px-3 py-1.5 text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+          variant="primary"
+          className="flex-1"
+          style={{ backgroundColor: '#dc2626' }}
         >
           {mode === 'rejecting' ? '✗ Confirm Reject' : 'Reject'}
-        </button>
+        </Button>
         {mode !== 'idle' && (
-          <button
+          <Button
             onClick={() => setMode('idle')}
-            className="rounded px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 dark:border-gray-600"
+            variant="secondary"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </div>

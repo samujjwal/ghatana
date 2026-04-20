@@ -1,281 +1,166 @@
 package com.ghatana.datacloud.client;
 
 import com.ghatana.datacloud.spi.ai.PredictionCapability;
-import lombok.Builder;
-import lombok.Value;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * Context document for LLM consumption (Tier-2).
  *
- * <p>
- * <b>Purpose</b><br>
- * Represents a piece of context derived from Tier-1 (deterministic facts) or
- * Tier-2 (summaries, insights, patterns) that can be fed to LLMs for:
- * <ul>
- * <li>Natural language query understanding</li>
- * <li>Explanation generation</li>
- * <li>Insight summarization</li>
- * <li>Conversational interfaces</li>
- * </ul>
- *
- * <p>
- * <b>Tier-1 vs Tier-2</b><br>
- * <ul>
- * <li><b>Tier-1</b>: Authoritative facts from StoragePlugin (events, entities,
- * time-series)</li>
- * <li><b>Tier-2</b>: Derived context (summaries, aggregations, patterns,
- * predictions)</li>
- * </ul>
- *
- * <p>
- * <b>Safety Guarantees</b><br>
- * <ul>
- * <li>LLMs receive context documents but NEVER write to Tier-1</li>
- * <li>All context includes confidence and determinism scores</li>
- * <li>Context has TTL and freshness tracking</li>
- * <li>Provenance links back to source data</li>
- * </ul>
- *
- * <p>
- * <b>Usage</b><br>
- * <pre>{@code
- * // Create context from query results
- * ContextDocument doc = ContextDocument.builder()
- *     .contextType(ContextType.FACT)
- *     .tenantId("tenant-123")
- *     .source(ContextSource.builder()
- *         .collection("events")
- *         .queryId("query-123")
- *         .plugin("postgresql")
- *         .build())
- *     .content("Last 100 login events for user X")
- *     .structuredData(queryResults)
- *     .confidence(1.0)
- *     .determinism(DeterminismLevel.HIGH)
- *     .ttl(Duration.ofHours(1))
- *     .build();
- *
- * // Store for LLM retrieval
- * contextStore.store(doc);
- *
- * // LLM queries context
- * List<ContextDocument> context = contextStore.selectContext(
- *     "Tell me about recent login patterns",
- *     tenantId,
- *     maxTokens: 4000
- * );
- * }</pre>
- *
- * @see LearningSignal
- * @see com.ghatana.datacloud.spi.StoragePlugin
- * @doc.type record
+ * @doc.type class
  * @doc.purpose Context document for LLM gateway
  * @doc.layer core
  * @doc.pattern Value Object
  */
-@Value
-@Builder
-public class ContextDocument {
+public final class ContextDocument {
 
-    /**
-     * Unique context document ID.
-     */
-    @Builder.Default
-    UUID contextId = UUID.randomUUID();
+    private final UUID contextId;
+    private final Instant createdAt;
+    private final String tenantId;
+    private final ContextType contextType;
+    private final ContextSource source;
+    private final String content;
+    private final Map<String, Object> structuredData;
+    private final double confidence;
+    private final PredictionCapability.DeterminismLevel determinism;
+    private final Duration ttl;
+    private final Instant expiresAt;
+    private final float[] embedding;
+    private final Map<String, String> tags;
+    private final Integer tokenCount;
+    private final int version;
 
-    /**
-     * Timestamp when context was created.
-     */
-    @Builder.Default
-    Instant createdAt = Instant.now();
+    private ContextDocument(Builder builder) {
+        this.contextId = builder.contextId;
+        this.createdAt = builder.createdAt;
+        this.tenantId = builder.tenantId;
+        this.contextType = builder.contextType;
+        this.source = builder.source;
+        this.content = builder.content;
+        this.structuredData = Collections.unmodifiableMap(builder.structuredData);
+        this.confidence = builder.confidence;
+        this.determinism = builder.determinism;
+        this.ttl = builder.ttl;
+        this.expiresAt = builder.expiresAt;
+        this.embedding = builder.embedding;
+        this.tags = Collections.unmodifiableMap(builder.tags);
+        this.tokenCount = builder.tokenCount;
+        this.version = builder.version;
+    }
 
-    /**
-     * Tenant ID for multi-tenancy.
-     */
-    String tenantId;
+    public static Builder builder() {
+        return new Builder();
+    }
 
-    /**
-     * Type of context document.
-     */
-    ContextType contextType;
+    public Builder toBuilder() {
+        return builder()
+            .contextId(contextId)
+            .createdAt(createdAt)
+            .tenantId(tenantId)
+            .contextType(contextType)
+            .source(source)
+            .content(content)
+            .structuredData(structuredData)
+            .confidence(confidence)
+            .determinism(determinism)
+            .ttl(ttl)
+            .expiresAt(expiresAt)
+            .embedding(embedding)
+            .tags(tags)
+            .tokenCount(tokenCount)
+            .version(version);
+    }
 
-    /**
-     * Source information (where this context came from).
-     */
-    ContextSource source;
+    public UUID getContextId() { return contextId; }
+    public Instant getCreatedAt() { return createdAt; }
+    public String getTenantId() { return tenantId; }
+    public ContextType getContextType() { return contextType; }
+    public ContextSource getSource() { return source; }
+    public String getContent() { return content; }
+    public Map<String, Object> getStructuredData() { return structuredData; }
+    public double getConfidence() { return confidence; }
+    public PredictionCapability.DeterminismLevel getDeterminism() { return determinism; }
+    public Duration getTtl() { return ttl; }
+    public Instant getExpiresAt() { return expiresAt; }
+    public float[] getEmbedding() { return embedding; }
+    public Map<String, String> getTags() { return tags; }
+    public Integer getTokenCount() { return tokenCount; }
+    public int getVersion() { return version; }
 
-    /**
-     * Human-readable content summary.
-     */
-    String content;
-
-    /**
-     * Structured data (original query results, aggregates, etc.).
-     */
-    Map<String, Object> structuredData;
-
-    /**
-     * Confidence score (0.0 to 1.0).
-     * <p>
-     * - 1.0 for Tier-1 facts
-     * - 0.0-1.0 for Tier-2 derived content
-     */
-    double confidence;
-
-    /**
-     * Determinism level.
-     */
-    PredictionCapability.DeterminismLevel determinism;
-
-    /**
-     * Time-to-live for this context.
-     * <p>
-     * Context becomes stale after TTL expires.
-     */
-    Duration ttl;
-
-    /**
-     * Expiration timestamp (createdAt + ttl).
-     */
-    @Builder.Default
-    Instant expiresAt = Instant.now().plus(Duration.ofDays(30));
-
-    /**
-     * Embedding vector for semantic search (optional).
-     */
-    float[] embedding;
-
-    /**
-     * Tags for categorization and filtering.
-     */
-    Map<String, String> tags;
-
-    /**
-     * Size estimate in tokens (for LLM context window management).
-     */
-    Integer tokenCount;
-
-    /**
-     * Version for schema evolution.
-     */
-    @Builder.Default
-    int version = 1;
-
-    /**
-     * Checks if context is still fresh.
-     *
-     * @return true if not expired
-     */
     public boolean isFresh() {
         return Instant.now().isBefore(expiresAt);
     }
 
-    /**
-     * Checks if context is high-confidence and deterministic enough for critical operations.
-     *
-     * @return true if suitable for critical use
-     */
     public boolean isCriticalGrade() {
         return confidence >= 0.95 && determinism == PredictionCapability.DeterminismLevel.HIGH;
     }
 
-    /**
-     * Types of context documents.
-     */
     public enum ContextType {
-        /**
-         * Direct fact from Tier-1 storage (event, entity).
-         */
         FACT,
-
-        /**
-         * Summary or aggregation of multiple facts.
-         */
         SUMMARY,
-
-        /**
-         * Execution trace (query plan, provenance).
-         */
         TRACE,
-
-        /**
-         * Time-series aggregation.
-         */
         AGGREGATION,
-
-        /**
-         * Pattern or insight detected by AI.
-         */
         PATTERN,
-
-        /**
-         * Anomaly detection result.
-         */
         ANOMALY,
-
-        /**
-         * Recommendation.
-         */
         RECOMMENDATION,
-
-        /**
-         * Explanation.
-         */
         EXPLANATION,
-
-        /**
-         * Custom context type.
-         */
         CUSTOM
     }
 
-    /**
-     * Source information for context document.
-     */
-    @Value
-    @Builder
-    public static class ContextSource {
-        /**
-         * Source collection.
-         */
-        String collection;
+    public static final class ContextSource {
+        private final String collection;
+        private final String plugin;
+        private final String queryId;
+        private final String operation;
+        private final String actor;
+        private final Map<String, String> provenance;
 
-        /**
-         * Plugin that generated the data.
-         */
-        String plugin;
+        private ContextSource(ContextSourceBuilder builder) {
+            this.collection = builder.collection;
+            this.plugin = builder.plugin;
+            this.queryId = builder.queryId;
+            this.operation = builder.operation;
+            this.actor = builder.actor;
+            this.provenance = Collections.unmodifiableMap(builder.provenance);
+        }
 
-        /**
-         * Query ID if from a query.
-         */
-        String queryId;
+        public static ContextSourceBuilder builder() {
+            return new ContextSourceBuilder();
+        }
 
-        /**
-         * Operation that created this context.
-         */
-        String operation;
+        public String getCollection() { return collection; }
+        public String getPlugin() { return plugin; }
+        public String getQueryId() { return queryId; }
+        public String getOperation() { return operation; }
+        public String getActor() { return actor; }
+        public Map<String, String> getProvenance() { return provenance; }
 
-        /**
-         * Actor (user or system).
-         */
-        String actor;
+        public static final class ContextSourceBuilder {
+            private String collection;
+            private String plugin;
+            private String queryId;
+            private String operation;
+            private String actor;
+            private Map<String, String> provenance = Collections.emptyMap();
 
-        /**
-         * Provenance chain (lineage).
-         */
-        Map<String, String> provenance;
+            private ContextSourceBuilder() {
+            }
+
+            public ContextSourceBuilder collection(String collection) { this.collection = collection; return this; }
+            public ContextSourceBuilder plugin(String plugin) { this.plugin = plugin; return this; }
+            public ContextSourceBuilder queryId(String queryId) { this.queryId = queryId; return this; }
+            public ContextSourceBuilder operation(String operation) { this.operation = operation; return this; }
+            public ContextSourceBuilder actor(String actor) { this.actor = actor; return this; }
+            public ContextSourceBuilder provenance(Map<String, String> provenance) { this.provenance = provenance != null ? provenance : Collections.emptyMap(); return this; }
+
+            public ContextSource build() { return new ContextSource(this); }
+        }
     }
 
-    /**
-     * Converts this document to a map for storage.
-     *
-     * @return Map representation
-     */
     public Map<String, Object> toMap() {
         Map<String, Object> map = new java.util.HashMap<>();
         map.put("contextId", contextId.toString());
@@ -296,13 +181,60 @@ public class ContextDocument {
     }
 
     private Map<String, Object> sourceToMap() {
+        if (source == null) {
+            return Map.of();
+        }
         return Map.of(
-                "collection", source.collection != null ? source.collection : "",
-                "plugin", source.plugin != null ? source.plugin : "",
-                "queryId", source.queryId != null ? source.queryId : "",
-                "operation", source.operation != null ? source.operation : "",
-                "actor", source.actor != null ? source.actor : "",
-                "provenance", source.provenance != null ? source.provenance : Map.of()
+            "collection", source.collection != null ? source.collection : "",
+            "plugin", source.plugin != null ? source.plugin : "",
+            "queryId", source.queryId != null ? source.queryId : "",
+            "operation", source.operation != null ? source.operation : "",
+            "actor", source.actor != null ? source.actor : "",
+            "provenance", source.provenance != null ? source.provenance : Map.of()
         );
+    }
+
+    public static final class Builder {
+        private UUID contextId = UUID.randomUUID();
+        private Instant createdAt = Instant.now();
+        private String tenantId;
+        private ContextType contextType;
+        private ContextSource source;
+        private String content;
+        private Map<String, Object> structuredData = Collections.emptyMap();
+        private double confidence;
+        private PredictionCapability.DeterminismLevel determinism;
+        private Duration ttl = Duration.ofDays(30);
+        private Instant expiresAt = Instant.now().plus(Duration.ofDays(30));
+        private float[] embedding;
+        private Map<String, String> tags = Collections.emptyMap();
+        private Integer tokenCount;
+        private int version = 1;
+
+        private Builder() {
+        }
+
+        public Builder contextId(UUID contextId) { this.contextId = contextId != null ? contextId : UUID.randomUUID(); return this; }
+        public Builder createdAt(Instant createdAt) { this.createdAt = createdAt != null ? createdAt : Instant.now(); return this; }
+        public Builder tenantId(String tenantId) { this.tenantId = tenantId; return this; }
+        public Builder contextType(ContextType contextType) { this.contextType = contextType; return this; }
+        public Builder source(ContextSource source) { this.source = source; return this; }
+        public Builder content(String content) { this.content = content; return this; }
+        public Builder structuredData(Map<String, Object> structuredData) { this.structuredData = structuredData != null ? structuredData : Collections.emptyMap(); return this; }
+        public Builder confidence(double confidence) { this.confidence = confidence; return this; }
+        public Builder determinism(PredictionCapability.DeterminismLevel determinism) { this.determinism = determinism; return this; }
+        public Builder ttl(Duration ttl) { this.ttl = ttl != null ? ttl : Duration.ofDays(30); return this; }
+        public Builder expiresAt(Instant expiresAt) { this.expiresAt = expiresAt != null ? expiresAt : Instant.now().plus(Duration.ofDays(30)); return this; }
+        public Builder embedding(float[] embedding) { this.embedding = embedding; return this; }
+        public Builder tags(Map<String, String> tags) { this.tags = tags != null ? tags : Collections.emptyMap(); return this; }
+        public Builder tokenCount(Integer tokenCount) { this.tokenCount = tokenCount; return this; }
+        public Builder version(int version) { this.version = version; return this; }
+
+        public ContextDocument build() {
+            if (expiresAt == null && createdAt != null && ttl != null) {
+                expiresAt = createdAt.plus(ttl);
+            }
+            return new ContextDocument(this);
+        }
     }
 }

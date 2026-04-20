@@ -1,5 +1,7 @@
 package com.ghatana.phr.launcher;
 
+import com.ghatana.core.activej.http.HttpServerBinding;
+import com.ghatana.core.activej.http.HttpServerBindingFactory;
 import com.ghatana.core.activej.promise.PromiseUtils;
 import com.ghatana.kernel.config.HierarchicalKernelConfigResolver;
 import com.ghatana.kernel.config.KernelConfigResolver;
@@ -8,6 +10,7 @@ import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.contracts.ContractRegistry;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
+import com.ghatana.phr.api.PhrHttpServer;
 import com.ghatana.phr.kernel.PhrKernelModule;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
@@ -36,21 +39,37 @@ public final class PhrLauncher {
     public static void main(String[] args) {
         PhrLauncherConfig config = PhrLauncherConfig.from(args);
         PhrKernelModule module = new PhrKernelModule();
+        HttpServerBinding httpBinding = null;
 
         try {
             DefaultKernelContext context = createContext(config.environment());
             module.initialize(context);
             await("phr startup", module.start(), START_TIMEOUT);
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> stopQuietly(module), "phr-shutdown"));
+            // Create and start HTTP server binding
+            Eventloop eventloop = context.getDependency(Eventloop.class);
+            PhrHttpServer phrHttpServer = context.getDependency(PhrHttpServer.class);
+            httpBinding = new HttpServerBindingFactory()
+                    .withServiceName("phr")
+                    .build(eventloop, phrHttpServer.getServlet());
+            await("phr http binding", httpBinding.start(), START_TIMEOUT);
 
-            log.info("PHR launcher started: environment={}", config.environment());
+            HttpServerBinding bindingForShutdown = httpBinding;
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                stopQuietly(bindingForShutdown);
+                stopQuietly(module);
+            }, "phr-shutdown"));
+
+            log.info("PHR launcher started: environment={}, http={}:{}", 
+                config.environment(), httpBinding.getHost(), httpBinding.getPort());
             Thread.currentThread().join();
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
+            stopQuietly(httpBinding);
             stopQuietly(module);
             log.info("PHR launcher interrupted");
         } catch (Exception exception) {
+            stopQuietly(httpBinding);
             stopQuietly(module);
             log.error("PHR launcher failed", exception);
             System.exit(1);
@@ -83,6 +102,17 @@ public final class PhrLauncher {
             await("phr shutdown", module.stop(), STOP_TIMEOUT);
         } catch (Exception exception) {
             log.warn("PHR shutdown encountered an error", exception);
+        }
+    }
+
+    private static void stopQuietly(HttpServerBinding binding) {
+        if (binding == null) {
+            return;
+        }
+        try {
+            await("phr http shutdown", binding.stop(), STOP_TIMEOUT);
+        } catch (Exception exception) {
+            log.warn("PHR HTTP server shutdown encountered an error", exception);
         }
     }
 

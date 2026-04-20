@@ -221,10 +221,83 @@
         }
       },
       {
+        "id": 16,
+        "title": "HITL Queue Depth",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "aep_hitl_queue_depth",
+            "legendFormat": "HITL Queue",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "items"
+          }
+        }
+      },
+      {
+        "id": 17,
+        "title": "LLM Latency (p95)",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(llm_request_duration_seconds_bucket[5m])))",
+            "legendFormat": "p95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum by (le) (rate(llm_request_duration_seconds_bucket[5m])))",
+            "legendFormat": "p50",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 18,
+        "title": "LLM Token Usage",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 32, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "sum by (type) (rate(llm_tokens_total[5m]))",
+            "legendFormat": "{{type}} tokens/s",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "tokens/s"
+          }
+        }
+      },
+      {
         "id": 9,
         "title": "Error Rate by Type",
         "type": "timeseries",
-        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+        "gridPos": {"x": 8, "y": 32, "w": 8, "h": 8},
         "targets": [
           {
             "expr": "sum by (error_type) (rate(aep_errors_total[5m]))",
@@ -247,7 +320,7 @@
         "id": 10,
         "title": "Pattern Matching Performance",
         "type": "timeseries",
-        "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+        "gridPos": {"x": 16, "y": 32, "w": 8, "h": 8},
         "targets": [
           {
             "expr": "histogram_quantile(0.95, rate(aep_pattern_matching_duration_seconds_bucket[5m]))",
@@ -274,7 +347,7 @@
         "id": 11,
         "title": "Resource Utilization",
         "type": "timeseries",
-        "gridPos": {"x": 0, "y": 32, "w": 8, "h": 8},
+        "gridPos": {"x": 0, "y": 40, "w": 8, "h": 8},
         "targets": [
           {
             "expr": "rate(process_cpu_seconds_total{job=\"aep\"}[5m]) * 100",
@@ -300,7 +373,7 @@
         "id": 12,
         "title": "Event Type Distribution",
         "type": "piechart",
-        "gridPos": {"x": 8, "y": 32, "w": 8, "h": 8},
+        "gridPos": {"x": 8, "y": 40, "w": 8, "h": 8},
         "targets": [
           {
             "expr": "sum by (event_type) (rate(aep_events_processed_total[5m]))",
@@ -320,7 +393,7 @@
         "id": 13,
         "title": "Workflow Execution Time",
         "type": "timeseries",
-        "gridPos": {"x": 16, "y": 32, "w": 8, "h": 8},
+        "gridPos": {"x": 16, "y": 40, "w": 8, "h": 8},
         "targets": [
           {
             "expr": "histogram_quantile(0.95, sum by (workflow_type, le) (rate(aep_workflow_duration_seconds_bucket[5m])))",
@@ -342,7 +415,7 @@
         "id": 14,
         "title": "Top Agents by Execution Count",
         "type": "table",
-        "gridPos": {"x": 0, "y": 40, "w": 12, "h": 8},
+        "gridPos": {"x": 0, "y": 48, "w": 12, "h": 8},
         "targets": [
           {
             "expr": "topk(10, sum by (agent_type) (rate(aep_agent_executions_total[5m])))",
@@ -368,7 +441,7 @@
         "id": 15,
         "title": "Recent Errors",
         "type": "table",
-        "gridPos": {"x": 12, "y": 40, "w": 12, "h": 8},
+        "gridPos": {"x": 12, "y": 48, "w": 12, "h": 8},
         "targets": [
           {
             "expr": "aep_last_error_info",

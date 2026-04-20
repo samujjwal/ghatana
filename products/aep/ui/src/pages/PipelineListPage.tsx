@@ -16,6 +16,8 @@ import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { listPipelines, deletePipeline } from '@/api/pipeline.api';
 import type { PipelineStatus } from '@/types/pipeline.types';
+import { Button } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -94,25 +96,22 @@ export function PipelineListPage() {
             <span className="font-mono text-indigo-600">{tenantId}</span>
           </p>
         </div>
-        <button
+        <Button
           onClick={handleNew}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md
-                     hover:bg-indigo-700 transition-colors"
+          variant="primary"
         >
           + New Pipeline
-        </button>
+        </Button>
       </div>
 
       {/* Search */}
       <div className="mb-4">
-        <input
+        <TextField
           type="search"
           placeholder="Search pipelines…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-80 px-3 py-1.5 text-sm border border-gray-200 rounded-md
-                     bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-white
-                     focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full sm:w-80"
         />
       </div>
 
@@ -123,12 +122,13 @@ export function PipelineListPage() {
       {isError && (
         <div className="text-center py-12">
           <p className="text-red-500 text-sm mb-2">Failed to load pipelines</p>
-          <button
+          <Button
             onClick={() => void refetch()}
+            variant="text"
             className="text-xs text-indigo-600 underline"
           >
             Retry
-          </button>
+          </Button>
         </div>
       )}
 
@@ -140,13 +140,12 @@ export function PipelineListPage() {
             {search ? 'Try clearing the search filter.' : 'Create your first pipeline to get started.'}
           </p>
           {!search && (
-            <button
+            <Button
               onClick={handleNew}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md
-                         hover:bg-indigo-700 transition-colors"
+              variant="primary"
             >
               + New Pipeline
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -195,22 +194,22 @@ export function PipelineListPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 flex-shrink-0">
-                  <button
+                  <Button
                     onClick={() => handleEdit(pipeline.id)}
-                    className="px-3 py-1 text-xs font-medium border border-gray-200 rounded
-                               hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    variant="secondary"
+                    className="text-xs font-medium"
                   >
                     Edit
-                  </button>
+                  </Button>
                   {pipeline.id && (
-                    <button
+                    <Button
                       onClick={() => setConfirmDelete(pipeline.id!)}
                       disabled={deleteMutation.isPending}
-                      className="px-3 py-1 text-xs font-medium border border-red-200 text-red-600
-                                 rounded hover:bg-red-50 transition-colors disabled:opacity-40"
+                      variant="secondary"
+                      className="text-xs font-medium text-red-600 border-red-200 hover:bg-red-50"
                     >
                       Delete
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -228,20 +227,20 @@ export function PipelineListPage() {
               This will permanently remove the pipeline. This action cannot be undone.
             </p>
             <div className="flex gap-2 justify-end">
-              <button
+              <Button
                 onClick={() => setConfirmDelete(null)}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded hover:bg-gray-50"
+                variant="secondary"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => deleteMutation.mutate(confirmDelete)}
                 disabled={deleteMutation.isPending}
-                className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700
-                           disabled:opacity-40 transition-colors"
+                variant="primary"
+                style={{ backgroundColor: '#dc2626' }}
               >
                 {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -3,6 +3,8 @@ package com.ghatana.aep.server.http;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.compliance.AepSoc2ControlFramework;
+import com.ghatana.aep.consent.ConsentService;
+import com.ghatana.aep.consent.DefaultConsentService;
 import com.ghatana.aep.server.compliance.AepComplianceService;
 import com.ghatana.aep.server.analytics.DataCloudAnalyticsStore;
 import com.ghatana.aep.server.query.AepQueryService;
@@ -12,6 +14,7 @@ import com.ghatana.aep.server.store.DataCloudPipelineStore;
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.security.AepSecurityFilter;
 import com.ghatana.aep.security.AepAuthFilter;
+import com.ghatana.aep.security.PIIScanner;
 import com.ghatana.aep.security.SessionFilter;
 import com.ghatana.aep.server.http.controllers.AgentController;
 import com.ghatana.aep.server.http.controllers.AgentMarketplaceController;
@@ -87,9 +90,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
+import org.slf4j.MDC;
 
 /**
  * HTTP Server for AEP Standalone deployment.
@@ -154,6 +159,10 @@ public class AepHttpServer {
     /** Compliance services — non-null when agentDataCloud is configured. */
     @Nullable
     private final AepComplianceService complianceService;
+    /** Consent service for event processing validation. */
+    private final ConsentService consentService;
+    /** P3-18: PII scanner for detecting sensitive data in events. */
+    private final PIIScanner piiScanner;
     @Nullable
     private final DataCloudPatternStore patternStore;
     @Nullable
@@ -192,6 +201,9 @@ public class AepHttpServer {
     private final java.util.Deque<Map<String, Object>> recentRuns = new java.util.ArrayDeque<>();
     private static final int MAX_RECENT_RUNS = 1_000;
 
+    /** P0-4: In-memory set of processed idempotency keys for deduplication. */
+    private final java.util.Set<String> processedIdempotencyKeys = new java.util.HashSet<>();
+
     /**
      * Active SSE subscriber queues keyed by tenantId (event-loop thread only).
      * Managed by {@link SseController}.
@@ -207,6 +219,181 @@ public class AepHttpServer {
      */
     public AepHttpServer(AepEngine engine, int port) {
         this(engine, port, null, null, MetricsCollectorFactory.createNoop());
+    }
+
+    // P2-12: Builder pattern to replace 9 constructor overloads
+    /**
+     * Builder for {@link AepHttpServer}.
+     * Provides a fluent API for constructing AepHttpServer instances with various optional dependencies.
+     */
+    public static final class Builder {
+        private AepEngine engine;
+        private int port;
+        private DataCloudClient agentDataCloud;
+        private HumanReviewQueue humanReviewQueue;
+        private MetricsCollector metricsCollector;
+        private KillSwitchService killSwitchService;
+        private GracefulDegradationManager degradationManager;
+        private PolicyAsCodeEngine policyEngine;
+        private EgressMonitor egressMonitor;
+        private PromptInjectionDetector injectionDetector;
+        private ChangeApprovalWorkflow changeApprovalWorkflow;
+        private RecertificationPipeline recertificationPipeline;
+        private PrometheusMeterRegistry prometheusRegistry;
+        private DataSource dataSource;
+        private JedisPool jedisPool;
+
+        private Builder() {}
+
+        /**
+         * Sets the required AEP engine.
+         */
+        public Builder engine(AepEngine engine) {
+            this.engine = engine;
+            return this;
+        }
+
+        /**
+         * Sets the required port.
+         */
+        public Builder port(int port) {
+            this.port = port;
+            return this;
+        }
+
+        /**
+         * Sets the optional DataCloud client for agent registry.
+         */
+        public Builder agentDataCloud(@Nullable DataCloudClient agentDataCloud) {
+            this.agentDataCloud = agentDataCloud;
+            return this;
+        }
+
+        /**
+         * Sets the optional human review queue for HITL workflows.
+         */
+        public Builder humanReviewQueue(@Nullable HumanReviewQueue humanReviewQueue) {
+            this.humanReviewQueue = humanReviewQueue;
+            return this;
+        }
+
+        /**
+         * Sets the metrics collector (defaults to noop if not set).
+         */
+        public Builder metricsCollector(@Nullable MetricsCollector metricsCollector) {
+            this.metricsCollector = metricsCollector;
+            return this;
+        }
+
+        /**
+         * Sets the optional kill switch service.
+         */
+        public Builder killSwitchService(@Nullable KillSwitchService killSwitchService) {
+            this.killSwitchService = killSwitchService;
+            return this;
+        }
+
+        /**
+         * Sets the optional graceful degradation manager.
+         */
+        public Builder degradationManager(@Nullable GracefulDegradationManager degradationManager) {
+            this.degradationManager = degradationManager;
+            return this;
+        }
+
+        /**
+         * Sets the optional policy-as-code engine.
+         */
+        public Builder policyEngine(@Nullable PolicyAsCodeEngine policyEngine) {
+            this.policyEngine = policyEngine;
+            return this;
+        }
+
+        /**
+         * Sets the optional egress monitor.
+         */
+        public Builder egressMonitor(@Nullable EgressMonitor egressMonitor) {
+            this.egressMonitor = egressMonitor;
+            return this;
+        }
+
+        /**
+         * Sets the optional prompt injection detector.
+         */
+        public Builder injectionDetector(@Nullable PromptInjectionDetector injectionDetector) {
+            this.injectionDetector = injectionDetector;
+            return this;
+        }
+
+        /**
+         * Sets the optional change approval workflow.
+         */
+        public Builder changeApprovalWorkflow(@Nullable ChangeApprovalWorkflow changeApprovalWorkflow) {
+            this.changeApprovalWorkflow = changeApprovalWorkflow;
+            return this;
+        }
+
+        /**
+         * Sets the optional recertification pipeline.
+         */
+        public Builder recertificationPipeline(@Nullable RecertificationPipeline recertificationPipeline) {
+            this.recertificationPipeline = recertificationPipeline;
+            return this;
+        }
+
+        /**
+         * Sets the optional Prometheus meter registry.
+         */
+        public Builder prometheusRegistry(@Nullable PrometheusMeterRegistry prometheusRegistry) {
+            this.prometheusRegistry = prometheusRegistry;
+            return this;
+        }
+
+        /**
+         * Sets the optional data source for persistence.
+         */
+        public Builder dataSource(@Nullable DataSource dataSource) {
+            this.dataSource = dataSource;
+            return this;
+        }
+
+        /**
+         * Sets the optional Jedis pool for Redis.
+         */
+        public Builder jedisPool(@Nullable JedisPool jedisPool) {
+            this.jedisPool = jedisPool;
+            return this;
+        }
+
+        /**
+         * Builds the AepHttpServer instance.
+         *
+         * @throws IllegalArgumentException if required fields (engine, port) are not set
+         */
+        public AepHttpServer build() {
+            if (engine == null) {
+                throw new IllegalArgumentException("engine must be set");
+            }
+            if (port <= 0) {
+                throw new IllegalArgumentException("port must be positive");
+            }
+            MetricsCollector actualMetricsCollector = metricsCollector != null
+                ? metricsCollector
+                : MetricsCollectorFactory.createNoop();
+
+            return new AepHttpServer(
+                engine, port, agentDataCloud, humanReviewQueue, actualMetricsCollector,
+                killSwitchService, degradationManager, policyEngine,
+                egressMonitor, injectionDetector, changeApprovalWorkflow,
+                recertificationPipeline, prometheusRegistry, dataSource, jedisPool);
+        }
+    }
+
+    /**
+     * Creates a new Builder for AepHttpServer.
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -358,6 +545,9 @@ public class AepHttpServer {
         this.agentDataCloud = agentDataCloud;
         this.humanReviewQueue = humanReviewQueue;
         this.complianceService = agentDataCloud != null ? new AepComplianceService(agentDataCloud) : null;
+        this.consentService = new DefaultConsentService();
+        // P3-18: Initialize PII scanner for event data validation
+        this.piiScanner = new PIIScanner();
         this.integrationMeterRegistry = new SimpleMeterRegistry();
         this.patternStore = agentDataCloud != null ? new DataCloudPatternStore(agentDataCloud) : null;
         this.analyticsStore = agentDataCloud != null ? new DataCloudAnalyticsStore(agentDataCloud) : null;
@@ -384,6 +574,12 @@ public class AepHttpServer {
             this.pipelineRepository = new InMemoryPipelineRepository();
             this.durablePipelines = false;
             log.info("[init] PipelineRepository backed by in-memory store (set DC_SERVER_URL for durable pipelines)");
+        }
+
+        // P0-3: Warn about in-memory run history in production
+        if (agentDataCloud == null || agentDataCloud.eventLogStore() == null) {
+            log.warn("[PRODUCTION WARNING] Run history is stored in-memory (max {} entries) and will be lost on restart. "
+                + "Configure Data Cloud with EventLogStore for durable run history in production.", MAX_RECENT_RUNS);
         }
         this.pipelineValidator = new PipelineValidator();
         this.capabilitiesService = new CapabilitiesService();
@@ -419,7 +615,7 @@ public class AepHttpServer {
         this.healthController.addDeepDependencyCheck("execution-history",
             () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
         this.healthController.addAsyncDeepDependencyCheck("data-cloud.connectivity", this::dataCloudConnectivityStatus);
-        new PipelineController(this.pipelineRepository, this.objectMapper);
+        // P0-2: Removed discarded PipelineController instantiation - pipeline routes are handled inline
         this.agentController = new AgentController(this.engine, this.agentDataCloud);
         this.marketplaceController = new AgentMarketplaceController(this.agentDataCloud);
         this.patternController = new PatternController(this.engine, this.patternStore);
@@ -541,6 +737,7 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/reports", analyticsController::handleCreateReport)
 
             // Agent management endpoints (delegated to AgentController)
+            .with(HttpMethod.POST, "/api/v1/agents", agentController::handleRegisterAgent)
             .with(HttpMethod.GET, "/api/v1/agents", agentController::handleListAgents)
             .with(HttpMethod.GET, "/api/v1/agents/:agentId", agentController::handleGetAgent)
             .with(HttpMethod.POST, "/api/v1/agents/:agentId/execute", agentController::handleExecuteAgent)
@@ -579,6 +776,7 @@ public class AepHttpServer {
 
             // AI suggestions endpoint (delegated to AiSuggestionsController)
             .with(HttpMethod.GET, "/api/v1/ai/suggestions", aiSuggestionsController::handleGetSuggestions)
+            .with(HttpMethod.GET, "/api/v1/ai/suggestions/metrics", aiSuggestionsController::handleGetMetrics)
 
             // NLQ (Natural Language Query) endpoint (delegated to NlpController)
             .with(HttpMethod.POST, "/api/v1/nlp/parse", nlpController::handleParseQuery)
@@ -763,10 +961,37 @@ public class AepHttpServer {
         }
     }
 
+    // ==================== Correlation ID Helpers (P1-7) ====================
+
+    private static final String CORRELATION_ID_HEADER = "X-Correlation-ID";
+    private static final String CORRELATION_ID_MDC_KEY = "correlationId";
+
+    /**
+     * Extract or generate a correlation ID and set it in MDC for logging.
+     * Call this at the start of request processing.
+     */
+    private void setCorrelationId(HttpRequest request) {
+        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString();
+        }
+        MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
+    }
+
+    /**
+     * Clear the correlation ID from MDC.
+     * Call this at the end of request processing.
+     */
+    private void clearCorrelationId() {
+        MDC.remove(CORRELATION_ID_MDC_KEY);
+    }
+
     // ==================== Event Processing Endpoints ====================
 
     @SuppressWarnings("unchecked")
     private Promise<HttpResponse> handleProcessEvent(HttpRequest request) {
+        // P1-7: Set correlation ID for request tracing
+        setCorrelationId(request);
         Instant receivedAt = Instant.now();
         return request.loadBody().then(buf -> {
             try {
@@ -780,27 +1005,72 @@ public class AepHttpServer {
                 Map<String, Object> rawPayload = rawObjectMap(eventData.get("payload"));
                 Map<String, Object> payload = AepInputValidator.validatePayload(rawPayload);
 
+                // P0-4: Check idempotency key for deduplication
+                String idempotencyKey = request.getHeader("Idempotency-Key");
+                if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                    synchronized (processedIdempotencyKeys) {
+                        if (processedIdempotencyKeys.contains(idempotencyKey)) {
+                            log.info("Duplicate event detected with idempotency key for tenantId={}, eventType={}", tenantId, eventType);
+                            return Promise.of(errorResponse(409, "Duplicate event: idempotency key already processed"));
+                        }
+                    }
+                }
+
                 AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
                 Instant startedAt = Instant.now();
 
-                return engine.process(tenantId, event)
-                    .map(result -> {
-                        recordRun(result.eventId(), tenantId, null,
-                            result.success() ? "SUCCEEDED" : "FAILED", startedAt);
-                        sloMetrics.recordIntakeLatency(receivedAt, startedAt, tenantId);
-                        return jsonResponse(Map.of(
-                            "eventId", result.eventId(),
-                            "success", result.success(),
-                            "detections", result.detections().size(),
-                            "timestamp", Instant.now().toString()
-                        ));
+                // P0-1: Check consent before processing event
+                return consentService.evaluateConsent(tenantId, event)
+                    .flatMap(consentDecision -> {
+                        if (!consentDecision.allowed()) {
+                            log.warn("Event processing denied by consent service for tenantId={}, eventType={}, reason={}",
+                                tenantId, eventType, consentDecision.reason());
+                            return Promise.of(errorResponse(403, "Event processing denied: " + consentDecision.reason()));
+                        }
+
+                        // P3-18: Scan event data for PII before processing
+                        PIIScanner.PIIResult piiResult = piiScanner.scanMap(event);
+                        if (piiResult.hasPII()) {
+                            log.warn("[PIIScanner] PII detected in event for tenantId={}, eventId={}, types={}",
+                                tenantId, eventId, piiResult.items().stream()
+                                    .map(PIIScanner.PIIItem::type)
+                                    .distinct()
+                                    .reduce((a, b) -> a + ", " + b)
+                                    .orElse(""));
+                        }
+
+                        return engine.process(tenantId, event)
+                            .map(result -> {
+                                // P0-4: Store idempotency key after successful processing
+                                if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                                    synchronized (processedIdempotencyKeys) {
+                                        processedIdempotencyKeys.add(idempotencyKey);
+                                    }
+                                }
+
+                                recordRun(result.eventId(), tenantId, null,
+                                    result.success() ? "SUCCEEDED" : "FAILED", startedAt);
+                                sloMetrics.recordIntakeLatency(receivedAt, startedAt, tenantId);
+                                return jsonResponse(Map.of(
+                                    "eventId", result.eventId(),
+                                    "success", result.success(),
+                                    "detections", result.detections().size(),
+                                    "timestamp", Instant.now().toString()
+                                ));
+                            });
+                    })
+                    .whenComplete((result, error) -> {
+                        // P1-7: Clear correlation ID after request completes
+                        clearCorrelationId();
                     });
             } catch (Exception e) {
                 log.error("Error processing event", e);
+                clearCorrelationId();
                 return Promise.of(errorResponse(400, "Invalid event data: " + e.getMessage()));
             }
         }, e -> {
             log.error("Failed to read event body", e);
+            clearCorrelationId();
             return Promise.of(errorResponse(400, "Failed to read request body"));
         });
     }

@@ -13,6 +13,7 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import { ConsentManager, useConsent } from '../privacy/ConsentManager';
+import { Button } from '@ghatana/design-system';
 
 /**
  * Type declarations for SpeechRecognition API
@@ -296,19 +297,18 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
         {...inputProps}
       />
       {isSupported && (
-        <button
+        <Button
           type="button"
           onClick={toggleListening}
           disabled={disabled}
+          variant="ghost"
           className={`
             absolute right-2 top-1/2 -translate-y-1/2
             p-1.5 rounded-full transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
             ${isListening 
               ? 'bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800' 
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
             }
-            ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
           `}
           aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
           aria-pressed={isListening}
@@ -319,7 +319,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
           ) : (
             <Mic className="h-4 w-4" />
           )}
-        </button>
+        </Button>
       )}
       {isListening && (
         <div className="absolute -bottom-6 left-0 text-xs text-indigo-600 dark:text-indigo-400">

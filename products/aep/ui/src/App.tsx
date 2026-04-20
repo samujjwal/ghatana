@@ -47,16 +47,108 @@ import {
   Outlet,
   useParams,
 } from 'react-router';
+import { BarChart3, FileText, Database, Shield, Settings } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/security/ProtectedRoute';
 import { NavBar } from '@/components/shared/NavBar';
+import { Breadcrumbs } from '@/components/core/Breadcrumbs';
+import { FuzzyFinder, DEFAULT_FINDER_ITEMS } from '@/components/core/FuzzyFinder';
 import { AuthProvider } from '@/context/AuthContext';
+import { useLocation, useNavigate } from 'react-router';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30_000 },
   },
 });
+
+// P2-14: AEP-specific finder items for command palette
+const getAEPFinderItems = (navigate: (path: string) => void) => [
+  {
+    id: 'monitoring',
+    label: 'Monitoring Dashboard',
+    icon: <BarChart3 className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/operate'),
+  },
+  {
+    id: 'costs',
+    label: 'Cost Dashboard',
+    icon: <BarChart3 className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/operate/costs'),
+  },
+  {
+    id: 'reviews',
+    label: 'HITL Reviews',
+    icon: <FileText className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/operate/reviews'),
+  },
+  {
+    id: 'pipelines',
+    label: 'Pipelines',
+    icon: <FileText className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/build/pipelines'),
+  },
+  {
+    id: 'new-pipeline',
+    label: 'New Pipeline',
+    icon: <FileText className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/build/pipelines/new'),
+  },
+  {
+    id: 'patterns',
+    label: 'Pattern Studio',
+    icon: <FileText className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/build/patterns'),
+  },
+  {
+    id: 'episodes',
+    label: 'Learning Episodes',
+    icon: <Database className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/learn/episodes'),
+  },
+  {
+    id: 'memory',
+    label: 'Memory Explorer',
+    icon: <Database className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/learn/memory'),
+  },
+  {
+    id: 'governance',
+    label: 'Governance',
+    icon: <Shield className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/govern'),
+  },
+  {
+    id: 'agents',
+    label: 'Agent Registry',
+    icon: <Settings className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/catalog/agents'),
+  },
+  {
+    id: 'marketplace',
+    label: 'Agent Marketplace',
+    icon: <Settings className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/catalog/marketplace'),
+  },
+  {
+    id: 'workflows',
+    label: 'Workflow Catalog',
+    icon: <FileText className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate('/catalog/workflows'),
+  },
+];
 
 // Lazy-loaded pages — canonical routes
 const MonitoringDashboardPage = lazy(() =>
@@ -116,10 +208,23 @@ function AgentDetailRedirect() {
 // ─── Layout ──────────────────────────────────────────────────────────
 
 function PageShell({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // P2-14: Generate breadcrumbs from current route
+  const breadcrumbItems = generateBreadcrumbs(location.pathname);
+  
+  // P2-14: Get finder items with navigation actions
+  const finderItems = getAEPFinderItems(navigate);
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <NavBar />
       <main className="flex-1 overflow-auto">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <Breadcrumbs items={breadcrumbItems} />
+          <FuzzyFinder items={finderItems} enableShortcut={true} />
+        </div>
         <Suspense
           fallback={
             <div className="flex h-full items-center justify-center text-gray-400">
@@ -132,6 +237,60 @@ function PageShell({ children }: { children: React.ReactNode }) {
       </main>
     </div>
   );
+}
+
+/**
+ * P2-14: Generate breadcrumb items from current pathname
+ */
+function generateBreadcrumbs(pathname: string) {
+  const parts = pathname.split('/').filter(Boolean);
+  const items: { label: string; href?: string }[] = [];
+
+  // Build breadcrumb trail
+  let currentPath = '';
+  for (let i = 0; i < parts.length; i++) {
+    currentPath += '/' + parts[i];
+    const label = formatBreadcrumbLabel(parts[i]);
+    
+    // Don't make the last item clickable
+    if (i === parts.length - 1) {
+      items.push({ label });
+    } else {
+      items.push({ label, href: currentPath });
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Format breadcrumb labels for better readability
+ */
+function formatBreadcrumbLabel(segment: string): string {
+  const labelMap: Record<string, string> = {
+    'operate': 'Operate',
+    'build': 'Build',
+    'learn': 'Learn',
+    'govern': 'Governance',
+    'catalog': 'Catalog',
+    'pipelines': 'Pipelines',
+    'patterns': 'Patterns',
+    'episodes': 'Episodes',
+    'memory': 'Memory',
+    'agents': 'Agents',
+    'marketplace': 'Marketplace',
+    'workflows': 'Workflows',
+    'reviews': 'Reviews',
+    'costs': 'Costs',
+    'runs': 'Runs',
+  };
+
+  // Check if it's a dynamic segment (like :runId)
+  if (segment.startsWith(':')) {
+    return segment.replace(':', '').replace(/([A-Z])/g, ' $1').trim();
+  }
+
+  return labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
 }
 
 function ProtectedShell() {

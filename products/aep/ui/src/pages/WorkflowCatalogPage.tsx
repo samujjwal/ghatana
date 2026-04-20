@@ -21,6 +21,8 @@ import {
   instantiateTemplate,
   type WorkflowTemplate,
 } from '@/api/aep.api';
+import { Button } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -90,14 +92,15 @@ function TemplateCard({ template, onInstantiate, isInstantiating }: TemplateCard
       </div>
 
       {/* Action */}
-      <button
+      <Button
         type="button"
         disabled={isInstantiating}
         onClick={() => onInstantiate(template.id)}
-        className="mt-4 w-full rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        variant="primary"
+        className="mt-4 w-full px-3 py-1.5 text-sm font-medium"
       >
         {isInstantiating ? 'Instantiating…' : 'Instantiate'}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -194,12 +197,12 @@ export function WorkflowCatalogPage() {
 
       {/* Search bar */}
       <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
-        <input
+        <TextField
           type="search"
           placeholder="Search by name or tag…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full max-w-sm text-sm"
         />
       </div>
 
@@ -230,13 +233,14 @@ export function WorkflowCatalogPage() {
                 : 'No templates match your search.'}
             </p>
             {search && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setSearch('')}
+                variant="text"
                 className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
               >
                 Clear search
-              </button>
+              </Button>
             )}
           </div>
         )}

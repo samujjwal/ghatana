@@ -16,6 +16,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Mic, Command, X } from 'lucide-react';
 import { useSpeechSynthesis } from '@audio-video/ui';
 import { useConsent } from '../privacy/ConsentManager';
+import { Button } from '@ghatana/design-system';
 
 /**
  * Voice command intent
@@ -145,22 +146,15 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
 
   if (!isOpen) {
     return (
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
-        className={cn(
-          'flex items-center gap-2 px-3 py-1.5',
-          'bg-gray-100 dark:bg-gray-800',
-          'text-gray-600 dark:text-gray-400',
-          'rounded-lg text-sm',
-          'hover:bg-gray-200 dark:hover:bg-gray-700',
-          'transition-colors',
-          className
-        )}
+        variant="secondary"
+        className={cn('flex items-center gap-2 px-3 py-1.5 text-sm', className)}
         aria-label="Open voice commands (Cmd+K)"
       >
         <Command className="h-4 w-4" />
         <span>Cmd+K</span>
-      </button>
+      </Button>
     );
   }
 
@@ -183,13 +177,14 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             placeholder={placeholder}
             className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder:text-gray-500"
           />
-          <button
+          <Button
             onClick={() => setIsOpen(false)}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+            variant="ghost"
+            className="p-1"
             aria-label="Close"
           >
             <X className="h-4 w-4 text-gray-500" />
-          </button>
+          </Button>
         </div>
         
         <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
