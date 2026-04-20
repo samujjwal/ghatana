@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: build ddww [`c525d52`](https://github.com/samujjwal/ghatana/commit/c525d528279ad6a8135232e893b7527a4359d1de)
 - **Changed**: ref fdfds [`3cc9220`](https://github.com/samujjwal/ghatana/commit/3cc9220db4c196a7686800042b3d2652e250281e)
 - **Changed**: data-cloud refactor + todos [`b6bc831`](https://github.com/samujjwal/ghatana/commit/b6bc8317ab963d2598bc03d9f2098b3aba850626)
 - **Changed**: build success 11 [`2c1cc70`](https://github.com/samujjwal/ghatana/commit/2c1cc7009633be7983ae0cbb24bc57a4641952ea)
