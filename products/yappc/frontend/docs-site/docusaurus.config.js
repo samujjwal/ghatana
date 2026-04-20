@@ -84,8 +84,8 @@ const config = {
             label: 'Guides',
           },
           {
-            href: '/canvas/demo',
-            label: 'Interactive Demo',
+            to: '/canvas/overview',
+            label: 'Canvas Overview',
             position: 'right',
           },
           {
@@ -120,15 +120,15 @@ const config = {
             items: [
               {
                 label: 'Interactive Demo',
-                to: '/canvas/demo',
+                to: '/canvas/overview',
               },
               {
                 label: 'Video Tutorials',
-                to: '/tutorials',
+                to: '/guides/tutorials-overview',
               },
               {
                 label: 'Examples',
-                to: '/examples',
+                to: '/examples/basic-canvas',
               },
             ],
           },
@@ -141,7 +141,7 @@ const config = {
               },
               {
                 label: 'Contributing',
-                to: '/contributing',
+                href: 'https://github.com/yappc/app-creator',
               },
             ],
           },

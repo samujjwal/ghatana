@@ -27,6 +27,7 @@ shared-services/**/package-lock.json
 .gradle/
 gradle-app.setting
 !gradle-wrapper.jar
+build-logic/conventions/bin/
 
 # OS
 .DS_Store
@@ -47,6 +48,8 @@ Thumbs.db
 coverage/
 test-results/
 .nyc_output/
+playwright-report.json
+products/**/playwright-report.json
 
 # TypeScript
 *.tsbuildinfo
@@ -66,6 +69,18 @@ products/*/modules/**/dist-ts/
 
 # Turbo
 .turbo/
+
+# Generated docs artifacts
+**/.docusaurus/
+
+# Local command/run outputs
+*_output.txt
+*output*.txt
+type_check_*.txt
+type-check-*.txt
+typecheck_*.txt
+compose_output.txt
+Compilation
 
 # Heap dumps
 *.hprof

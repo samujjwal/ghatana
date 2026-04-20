@@ -1,8 +1,0 @@
-
-> @tutorputor/platform@1.0.0 type-check /Users/samujjwal/Development/ghatana/products/tutorputor/services/tutorputor-platform
-> tsc --noEmit
-
-../../libs/tutorputor-core/src/db/index.ts(140,5): error TS2739: Type '{}' is missing the following properties from type 'SqlDriverAdapterFactory': connect, provider, adapterName
-src/modules/observability/alerts.ts(348,5): error TS2322: Type '{ resolvedAt?: Date; acknowledgedBy?: string; acknowledgedAt?: Date; alertId: string; ruleId: string; severity: AlertSeverity; title: string; message: string; metricValue: number; threshold: number; status: AlertStatus; triggeredAt: Date; }[]' is not assignable to type 'Alert[]'.
-  Property 'metadata' is missing in type '{ resolvedAt?: Date; acknowledgedBy?: string; acknowledgedAt?: Date; alertId: string; ruleId: string; severity: AlertSeverity; title: string; message: string; metricValue: number; threshold: number; status: AlertStatus; triggeredAt: Date; }' but required in type 'Alert'.
- ELIFECYCLE  Command failed with exit code 2.

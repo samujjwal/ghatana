@@ -1,5 +1,0 @@
-
-> @tutorputor/platform@1.0.0 type-check /Users/samujjwal/Development/ghatana/products/tutorputor/services/tutorputor-platform
-> tsc --noEmit
-
- ELIFECYCLE  Command failed.

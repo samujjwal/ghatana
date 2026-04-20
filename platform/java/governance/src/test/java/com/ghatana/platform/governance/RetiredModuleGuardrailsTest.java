@@ -55,8 +55,8 @@ class RetiredModuleGuardrailsTest {
     }
 
     @Test
-    @DisplayName("Settings snapshots do not re-include retired modules")
-    void settingsSnapshotsDoNotReincludeRetiredModules() throws IOException {
+    @DisplayName("Root settings does not re-include retired modules")
+    void settingsDoesNotReincludeRetiredModules() throws IOException {
         Path repoRoot = findRepoRoot();
 
         List<String> forbiddenIncludes = List.of(
@@ -67,13 +67,12 @@ class RetiredModuleGuardrailsTest {
                 "include(\":platform:java:security-analytics\")"
         );
 
-        for (String settingsFile : List.of("settings.gradle.kts", "settings.gradle.kts.fixed")) {
-            String content = Files.readString(repoRoot.resolve(settingsFile));
-            for (String forbiddenInclude : forbiddenIncludes) {
-                assertThat(content)
-                        .as("%s must not contain retired include %s", settingsFile, forbiddenInclude)
-                        .doesNotContain(forbiddenInclude);
-            }
+        String settingsFile = "settings.gradle.kts";
+        String content = Files.readString(repoRoot.resolve(settingsFile));
+        for (String forbiddenInclude : forbiddenIncludes) {
+            assertThat(content)
+                    .as("%s must not contain retired include %s", settingsFile, forbiddenInclude)
+                    .doesNotContain(forbiddenInclude);
         }
     }
 

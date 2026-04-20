@@ -1,8 +1,0 @@
-
-> @tutorputor/platform@1.0.0 type-check /Users/samujjwal/Development/ghatana/products/tutorputor/services/tutorputor-platform
-> tsc --noEmit
-
-src/modules/observability/alerts.ts(348,5): error TS2322: Type '{ metadata: undefined; resolvedAt?: Date; acknowledgedBy?: string; acknowledgedAt?: Date; alertId: string; ruleId: string; severity: AlertSeverity; title: string; ... 4 more ...; triggeredAt: Date; }[]' is not assignable to type 'Alert[]'.
-  Type '{ metadata: undefined; resolvedAt?: Date; acknowledgedBy?: string; acknowledgedAt?: Date; alertId: string; ruleId: string; severity: AlertSeverity; title: string; message: string; metricValue: number; threshold: number; status: AlertStatus; triggeredAt: Date; }' is not assignable to type 'Alert'.
-    Property 'acknowledgedAt' is optional in type '{ metadata: undefined; resolvedAt?: Date; acknowledgedBy?: string; acknowledgedAt?: Date; alertId: string; ruleId: string; severity: AlertSeverity; title: string; ... 4 more ...; triggeredAt: Date; }' but required in type 'Alert'.
- ELIFECYCLE  Command failed with exit code 2.
