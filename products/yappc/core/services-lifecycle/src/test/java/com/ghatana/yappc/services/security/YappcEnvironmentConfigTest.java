@@ -226,6 +226,7 @@ class YappcEnvironmentConfigTest {
     private static Map<String, String> minimalValidEnv() {
         Map<String, String> env = new HashMap<>();
         env.put(YappcEnvironmentConfig.API_KEYS_ENV, "apikey-abc123,apikey-def456");
+        env.put(YappcEnvironmentConfig.JWT_SECRET_ENV, "test-jwt-secret-minimum-32-bytes-long");
         return env;
     }
 

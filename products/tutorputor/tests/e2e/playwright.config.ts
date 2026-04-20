@@ -31,7 +31,13 @@ const adminBypassEnv = {
  */
 export default defineConfig({
   testDir: "./",
-  testMatch: ["LearnerJourney.spec.ts", "ContentStudio.spec.ts", "smoke.spec.ts"],
+  testMatch: [
+    "LearnerJourney.spec.ts",
+    "ContentStudio.spec.ts",
+    "StudentOnboarding.spec.ts",
+    "EducatorWorkflow.spec.ts",
+    "smoke.spec.ts",
+  ],
   timeout: 30000,
   expect: {
     timeout: 5000,

@@ -34,12 +34,22 @@ function createAuthHeaders(): Record<string, string> {
   };
 }
 
+function createTrustedProxyHeaders(): Record<string, string> {
+  return {
+    "x-tenant-id": "default",
+    "x-user-id": "user-admin-001",
+    "x-user-role": "admin",
+    "x-trusted-proxy-secret": "tutorputor-internal-dev-proxy-secret",
+  };
+}
+
 test.describe("TutorPutor authoring lifecycle", () => {
   test("uses the canonical admin route and exercises create, validate, and publish through real APIs", async ({
     page,
     request,
   }) => {
     const authHeaders = createAuthHeaders();
+    const trustedProxyHeaders = createTrustedProxyHeaders();
     const meAuthHeaders: string[] = [];
 
     await page.addInitScript((token: string) => {
@@ -139,7 +149,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const manifestResponse = await request.post(
       `${gatewayUrl}/api/sim-author/manifests`,
       {
-        headers: authHeaders,
+        headers: trustedProxyHeaders,
         data: {
           title: `${title} Simulation`,
           domain: "PHYSICS",
@@ -161,7 +171,7 @@ test.describe("TutorPutor authoring lifecycle", () => {
     const linkResponse = await request.post(
       `${gatewayUrl}/api/sim-author/manifests/${manifestId}/link-claim`,
       {
-        headers: authHeaders,
+        headers: trustedProxyHeaders,
         data: {
           experienceId,
           claimRef,

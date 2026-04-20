@@ -76,6 +76,7 @@ docs/
 |-------|----------|
 | **Getting Started** | [guides/DEVELOPMENT_SETUP.md](guides/DEVELOPMENT_SETUP.md) |
 | **Onboarding** | [guides/ONBOARDING.md](guides/ONBOARDING.md) |
+| **Testing Guide** | [guidelines/TESTING.md](guidelines/TESTING.md) |
 | **Architecture** | [architecture/README.md](architecture/README.md) |
 | **Current State** | [architecture/CURRENT_STATE.md](architecture/CURRENT_STATE.md) |
 | **Implementation** | [architecture/IMPLEMENTATION_PLAN.md](architecture/IMPLEMENTATION_PLAN.md) |

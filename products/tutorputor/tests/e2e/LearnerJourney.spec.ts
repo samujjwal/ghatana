@@ -92,6 +92,16 @@ test.describe("TutorPutor learner journey", () => {
       });
     });
 
+    await page.route('**/api/v1/assessments?*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [],
+        }),
+      });
+    });
+
     await expectNoPageErrors(page, async () => {
       await page.goto(`${learnerBaseUrl}/login?redirect=/dashboard&tenant=school`);
       await page.waitForLoadState("domcontentloaded");
@@ -151,7 +161,9 @@ test.describe("TutorPutor learner journey", () => {
     await expect(
       page.getByRole("heading", { name: "Assessments" }),
     ).toBeVisible();
-    await expect(page.getByText("No assessments found.")).toBeVisible();
+    await expect(
+      page.getByText("No assessments available. Check back later!"),
+    ).toBeVisible();
 
     await page.goto(`${learnerBaseUrl}/modules`);
     await expect(page).toHaveURL(/\/search$/);
@@ -217,25 +229,27 @@ test.describe("TutorPutor learner journey", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          modules: [
-            {
-              id: "module-2",
-              title: "Forces and Motion",
-              slug: "forces-and-motion",
-              description: "Explore balanced and unbalanced forces.",
-              tags: ["physics"],
-              domain: "PHYSICS",
-              difficultyLevel: "beginner",
-              estimatedTimeMinutes: 20,
-              isAiRecommended: true,
-              recommendationReason: "Builds naturally on your current kinematics progress.",
-              matchScore: 0.91,
+          data: {
+            modules: [
+              {
+                id: "module-2",
+                title: "Forces and Motion",
+                slug: "forces-and-motion",
+                description: "Explore balanced and unbalanced forces.",
+                tags: ["physics"],
+                domain: "PHYSICS",
+                difficultyLevel: "beginner",
+                estimatedTimeMinutes: 20,
+                isAiRecommended: true,
+                recommendationReason: "Builds naturally on your current kinematics progress.",
+                matchScore: 0.91,
+              },
+            ],
+            reasoning: {
+              basedOn: "recent progress",
+              userLevel: "beginner",
+              suggestedDomains: ["PHYSICS"],
             },
-          ],
-          reasoning: {
-            basedOn: "recent progress",
-            userLevel: "beginner",
-            suggestedDomains: ["PHYSICS"],
           },
         }),
       });
@@ -278,7 +292,10 @@ test.describe("TutorPutor learner journey", () => {
       page.getByRole("heading", { name: /hello, jordan/i }),
     ).toBeVisible();
     await expect(page.getByText("Kinematics Basics")).toBeVisible();
-    await expect(page.getByText("65%")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /resume learning/i })
+        .locator("..").locator("..").getByText("65%", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByText(/builds naturally on your current kinematics progress/i),
     ).toBeVisible();

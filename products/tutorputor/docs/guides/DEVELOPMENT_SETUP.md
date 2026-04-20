@@ -169,6 +169,34 @@ ttr test --ci --coverage
 ttr test --unit -f "example"
 ```
 
+### Live Critical-Journey E2E
+
+When Playwright's built-in `webServer` launcher is unreliable in the local workspace, use the product runner instead of starting services manually:
+
+```bash
+cd products/tutorputor
+./scripts/run-critical-journey-e2e.sh
+```
+
+What the runner does:
+
+- starts Tutorputor Postgres and Redis with non-conflicting default host ports `55432` and `56379`
+- starts the local platform, gateway, learner web app, and admin app with the exact trusted-proxy and auth settings required by the current Playwright specs
+- waits for `/health`, `/login`, and `/authoring` readiness checks
+- runs `ContentStudio.spec.ts` and `LearnerJourney.spec.ts` with `PLAYWRIGHT_SKIP_WEBSERVER=true`
+- writes service logs to `products/tutorputor/.tmp/live-e2e/`
+
+Useful overrides:
+
+```bash
+TUTORPUTOR_POSTGRES_PORT=56432 \
+TUTORPUTOR_REDIS_PORT=57379 \
+JWT_SECRET=test-secret-do-not-use-in-prod-1234567890 \
+./scripts/run-critical-journey-e2e.sh smoke.spec.ts
+```
+
+The runner stops the app processes it starts on exit. Docker-backed Postgres and Redis stay up for reuse.
+
 ## Troubleshooting
 
 ### Port Already in Use
@@ -183,6 +211,8 @@ lsof -ti :7105 | xargs kill
 # Or use ttr stop
 ttr stop
 ```
+
+If `5432` or `6379` is already occupied locally, prefer the live E2E runner above or override `TUTORPUTOR_POSTGRES_PORT` and `TUTORPUTOR_REDIS_PORT` when using `docker compose` directly.
 
 ### Database Issues
 

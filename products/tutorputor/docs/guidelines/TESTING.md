@@ -71,6 +71,21 @@ pnpm --filter "./services/**" test
 pnpm --filter "./apps/**" test
 ```
 
+### Run the canonical live browser flow
+
+The supported live Tutorputor browser verification path is the product script:
+
+```bash
+cd products/tutorputor
+./scripts/run-critical-journey-e2e.sh
+```
+
+Notes:
+
+- This runner starts the local learner app, admin app, gateway, and platform service with the same auth and trusted-proxy settings used by the current Playwright critical-journey specs.
+- It defaults Docker-backed Postgres and Redis to host ports `55432` and `56379` to avoid common local conflicts on `5432` and `6379`.
+- Additional Playwright spec names can be passed as arguments, for example `./scripts/run-critical-journey-e2e.sh smoke.spec.ts`.
+
 ---
 
 ## 4. Test Categories
