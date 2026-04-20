@@ -12,6 +12,16 @@ const platformServiceDir = path.resolve(
   "services/tutorputor-platform",
 );
 const shouldSkipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === "true";
+const trustedProxyAuthEnv = {
+  ...process.env,
+  TRUST_PROXY_AUTH_HEADERS: "true",
+  TRUST_PROXY_AUTH_SHARED_SECRET: "tutorputor-internal-dev-proxy-secret",
+};
+const adminBypassEnv = {
+  ...process.env,
+  VITE_DEV_AUTH_BYPASS: "true",
+  VITE_TRUST_PROXY_AUTH_SHARED_SECRET: "tutorputor-internal-dev-proxy-secret",
+};
 
 /**
  * Canonical Playwright configuration for TutorPutor product validation.
@@ -49,6 +59,7 @@ export default defineConfig({
     : [
         {
           command: "pnpm dev",
+          env: trustedProxyAuthEnv,
           cwd: gatewayAppDir,
           url: "http://127.0.0.1:3200/health",
           reuseExistingServer: !process.env.CI,
@@ -56,6 +67,7 @@ export default defineConfig({
         },
         {
           command: "pnpm dev",
+          env: trustedProxyAuthEnv,
           cwd: platformServiceDir,
           url: "http://127.0.0.1:7105/health",
           reuseExistingServer: !process.env.CI,
@@ -63,6 +75,7 @@ export default defineConfig({
         },
         {
           command: "pnpm dev",
+          env: process.env,
           cwd: webAppDir,
           url: "http://127.0.0.1:3201/login",
           reuseExistingServer: !process.env.CI,
@@ -70,6 +83,7 @@ export default defineConfig({
         },
         {
           command: "pnpm dev",
+          env: adminBypassEnv,
           cwd: adminAppDir,
           url: "http://127.0.0.1:3202/authoring",
           reuseExistingServer: !process.env.CI,

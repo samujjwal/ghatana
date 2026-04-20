@@ -12,6 +12,10 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AITutorPage } from "../AITutorPage";
 
+vi.mock("../../contexts/AuthContext", () => ({
+  useAuth: () => ({ token: "test-access-token" }),
+}));
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;

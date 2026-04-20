@@ -12,6 +12,10 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { OmnipresentAITutor } from "../OmnipresentAITutor";
 
+vi.mock("../../contexts/AuthContext", () => ({
+  useAuth: () => ({ token: "test-access-token" }),
+}));
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -388,7 +392,7 @@ describe("OmnipresentAITutor", () => {
         expect(mockFetch).toHaveBeenCalledWith(
           "/api/v1/ai/tutor/query",
           expect.objectContaining({
-            body: expect.stringContaining("learning paths"),
+            body: expect.stringContaining("learning pathways"),
           }),
         );
       });

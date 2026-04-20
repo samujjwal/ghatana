@@ -170,7 +170,9 @@ export class APIMetricsService {
           method: req.method,
           statusCode: res.status,
           latencyMs,
-          tenantId: (req as Request & { tenantId?: string }).tenantId,
+          ...(((req as Request & { tenantId?: string }).tenantId)
+            ? { tenantId: (req as Request & { tenantId?: string }).tenantId }
+            : {}),
         });
       });
 

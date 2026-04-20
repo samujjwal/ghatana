@@ -621,6 +621,7 @@ export class ContentNeedsAnalyzer {
     const created: unknown[] = [];
     let orderIndex = 0;
     for (const example of generated as Array<Record<string, unknown>>) {
+      const manifestId = String(example.id ?? `${claim.claimRef}-example-${orderIndex}`);
       const exampleType = String(example.type ?? "worked");
       const exampleTitle = String(example.title ?? "Generated Example");
       const exampleContent = example.content;
@@ -628,6 +629,8 @@ export class ContentNeedsAnalyzer {
         data: {
           experienceId: claim.experienceId,
           claimRef: claim.claimRef,
+          manifestId,
+          manifestVersion: "1.0.0",
           type: exampleType.toUpperCase(),
           title: exampleTitle,
           description: `${exampleType} example for ${claim.text}`,
@@ -678,32 +681,36 @@ export class ContentNeedsAnalyzer {
       },
     });
 
-    return this.prisma.claimSimulation.upsert({
+    const existingSimulation = await this.prisma.claimSimulation.findFirst({
       where: {
-        experienceId_claimRef: {
-          experienceId: claim.experienceId,
-          claimRef: claim.claimRef,
-        },
-      },
-      create: {
         experienceId: claim.experienceId,
         claimRef: claim.claimRef,
-        simulationManifestId: manifestId,
-        interactionType: generated.interactionType,
-        goal: generated.config.description,
-        successCriteria: toInputJsonValue({
-          estimatedTimeMinutes: generated.estimatedTimeMinutes,
-        }),
-        estimatedMinutes: generated.estimatedTimeMinutes,
       },
-      update: {
-        simulationManifestId: manifestId,
-        interactionType: generated.interactionType,
-        goal: generated.config.description,
-        successCriteria: toInputJsonValue({
-          estimatedTimeMinutes: generated.estimatedTimeMinutes,
-        }),
-        estimatedMinutes: generated.estimatedTimeMinutes,
+      select: { id: true },
+    });
+
+    const simulationData = {
+      simulationManifestId: manifestId,
+      interactionType: generated.interactionType,
+      goal: generated.config.description,
+      successCriteria: toInputJsonValue({
+        estimatedTimeMinutes: generated.estimatedTimeMinutes,
+      }),
+      estimatedMinutes: generated.estimatedTimeMinutes,
+    };
+
+    if (existingSimulation) {
+      return this.prisma.claimSimulation.update({
+        where: { id: existingSimulation.id },
+        data: simulationData,
+      });
+    }
+
+    return this.prisma.claimSimulation.create({
+      data: {
+        experienceId: claim.experienceId,
+        claimRef: claim.claimRef,
+        ...simulationData,
       },
     });
   }
@@ -713,29 +720,41 @@ export class ContentNeedsAnalyzer {
     needs: ContentNeeds,
   ): Promise<unknown> {
     const generated = await this.generateAnimation(claim, needs);
-
-    return this.prisma.claimAnimation.upsert({
+    const manifestId = generated.id;
+    const manifestVersion = "1.0.0";
+    const existingAnimation = await this.prisma.claimAnimation.findFirst({
       where: {
-        experienceId_claimRef: {
-          experienceId: claim.experienceId,
-          claimRef: claim.claimRef,
-        },
-      },
-      create: {
         experienceId: claim.experienceId,
         claimRef: claim.claimRef,
-        title: generated.config.title,
-        description: generated.config.description,
-        type: generated.type,
-        duration: generated.durationSeconds,
-        config: toInputJsonValue(generated),
+        variantKey: "primary",
       },
-      update: {
-        title: generated.config.title,
-        description: generated.config.description,
-        type: generated.type,
-        duration: generated.durationSeconds,
-        config: toInputJsonValue(generated),
+      select: { id: true },
+    });
+
+    const animationData = {
+      manifestId,
+      manifestVersion,
+      title: generated.config.title,
+      description: generated.config.description,
+      type: generated.type,
+      duration: generated.durationSeconds,
+      config: toInputJsonValue(generated),
+    };
+
+    if (existingAnimation) {
+      return this.prisma.claimAnimation.update({
+        where: { id: existingAnimation.id },
+        data: animationData,
+      });
+    }
+
+    return this.prisma.claimAnimation.create({
+      data: {
+        experienceId: claim.experienceId,
+        claimRef: claim.claimRef,
+        variantKey: "primary",
+        isPrimary: true,
+        ...animationData,
       },
     });
   }

@@ -14,6 +14,8 @@ export interface ContentGenerationJobOptions {
     delay: number;
   };
   jobId?: string;
+  removeOnComplete?: number;
+  removeOnFail?: number;
 }
 
 export type ContentGenerationQueueLike = {
@@ -94,6 +96,14 @@ export function toBullMQOptions(opts?: ContentGenerationJobOptions): Record<stri
     bullMQOptions.jobId = opts.jobId;
   }
 
+  if (typeof opts.removeOnComplete === 'number') {
+    bullMQOptions.removeOnComplete = opts.removeOnComplete;
+  }
+
+  if (typeof opts.removeOnFail === 'number') {
+    bullMQOptions.removeOnFail = opts.removeOnFail;
+  }
+
   return bullMQOptions;
 }
 
@@ -133,19 +143,29 @@ export function getContentGenerationQueue(): ContentGenerationQueueLike {
       });
 
       queueSingleton = {
-        add: async (name, data, opts) => {
+        add: async (
+          name: string,
+          data: object,
+          opts?: ContentGenerationJobOptions,
+        ) => {
           const bullMQOpts = toBullMQOptions(opts);
           const job = await queue.add(name, data, bullMQOpts);
           return { id: job.id };
         },
-        addBulk: async (jobs) => {
-          const bullMQJobs = jobs.map(job => ({
+        addBulk: async (
+          jobs: Array<{
+            name: string;
+            data: object;
+            opts?: ContentGenerationJobOptions;
+          }>,
+        ) => {
+          const bullMQJobs = jobs.map((job) => ({
             name: job.name,
             data: job.data,
             opts: toBullMQOptions(job.opts),
           }));
           const addedJobs = await queue.addBulk(bullMQJobs);
-          return addedJobs.map(job => ({ id: job.id }));
+          return addedJobs.map((job) => ({ id: job.id }));
         },
       } as unknown as ContentGenerationQueueLike;
     }

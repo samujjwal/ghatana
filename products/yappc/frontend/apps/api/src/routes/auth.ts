@@ -45,6 +45,19 @@ function toAuthenticatedUser(user: AuthUser): JWTUserPayload {
 // ============================================================================
 
 export async function authRoutes(fastify: FastifyInstance) {
+  // Register cookie plugin if available
+  // Note: Requires @fastify/cookie to be installed
+  // pnpm add @fastify/cookie
+  try {
+    // @ts-ignore - Cookie plugin may not be registered
+    await fastify.register(import('@fastify/cookie'), {
+      secret: process.env.COOKIE_SECRET || 'change-me-in-production',
+    });
+  } catch {
+    // Cookie plugin not available, fall back to token-in-response mode
+    console.warn('Cookie plugin not available, using token-in-response mode');
+  }
+
   // Login endpoint
   fastify.post(
     '/auth/login',
@@ -93,7 +106,32 @@ export async function authRoutes(fastify: FastifyInstance) {
           password,
         });
 
-        reply.send(result);
+        // Set httpOnly cookies if cookie plugin is available
+        if (reply.setCookie && typeof reply.setCookie === 'function') {
+          const isProduction = process.env.NODE_ENV === 'production';
+          
+          reply.setCookie('accessToken', result.tokens.accessToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            path: '/',
+            maxAge: result.tokens.expiresIn * 1000,
+          });
+          
+          reply.setCookie('refreshToken', result.tokens.refreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            path: '/api/auth/refresh',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          });
+          
+          // Return user info only when using cookies
+          reply.send({ user: result.user });
+        } else {
+          // Fall back to token-in-response mode
+          reply.send(result);
+        }
       } catch (error: unknown) {
         reply.code(401).send({
           error: 'Authentication failed',
@@ -111,7 +149,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
-          required: ['refreshToken'],
           properties: {
             refreshToken: { type: 'string' },
           },
@@ -120,11 +157,54 @@ export async function authRoutes(fastify: FastifyInstance) {
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { refreshToken } = request.body as RefreshRequestBody;
+        // Try to get refresh token from cookie first
+        let refreshToken: string | undefined;
+        if (request.cookies && typeof request.cookies === 'object') {
+          refreshToken = (request.cookies as Record<string, string>).refreshToken;
+        }
+        
+        // Fall back to body if cookie not available
+        if (!refreshToken) {
+          const body = request.body as RefreshRequestBody;
+          refreshToken = body.refreshToken;
+        }
+        
+        if (!refreshToken) {
+          reply.code(401).send({
+            error: 'Token refresh failed',
+            message: 'No refresh token provided',
+          });
+          return;
+        }
 
         const result = await authService.refreshTokens(refreshToken);
 
-        reply.send(result);
+        // Set new cookies if cookie plugin is available
+        if (reply.setCookie && typeof reply.setCookie === 'function') {
+          const isProduction = process.env.NODE_ENV === 'production';
+          
+          reply.setCookie('accessToken', result.accessToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            path: '/',
+            maxAge: result.expiresIn * 1000,
+          });
+          
+          reply.setCookie('refreshToken', result.refreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            path: '/api/auth/refresh',
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+          });
+          
+          // Return user info only when using cookies
+          reply.send({ accessToken: result.accessToken, expiresIn: result.expiresIn });
+        } else {
+          // Fall back to token-in-response mode
+          reply.send(result);
+        }
       } catch (error: unknown) {
         reply.code(401).send({
           error: 'Token refresh failed',
@@ -142,7 +222,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       schema: {
         body: {
           type: 'object',
-          required: ['refreshToken'],
           properties: {
             refreshToken: { type: 'string' },
           },
@@ -151,12 +230,36 @@ export async function authRoutes(fastify: FastifyInstance) {
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { refreshToken } = request.body as RefreshRequestBody;
+        // Try to get refresh token from cookie first
+        let refreshToken: string | undefined;
+        if (request.cookies && typeof request.cookies === 'object') {
+          refreshToken = (request.cookies as Record<string, string>).refreshToken;
+        }
+        
+        // Fall back to body if cookie not available
+        if (!refreshToken) {
+          const body = request.body as RefreshRequestBody;
+          refreshToken = body.refreshToken;
+        }
 
-        await authService.logout(refreshToken);
+        if (refreshToken) {
+          await authService.logout(refreshToken);
+        }
+
+        // Clear cookies if cookie plugin is available
+        if (reply.clearCookie && typeof reply.clearCookie === 'function') {
+          reply.clearCookie('accessToken', { path: '/' });
+          reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+        }
 
         reply.send({ message: 'Logged out successfully' });
       } catch (error: unknown) {
+        // Always clear cookies even if logout fails
+        if (reply.clearCookie && typeof reply.clearCookie === 'function') {
+          reply.clearCookie('accessToken', { path: '/' });
+          reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+        }
+        
         reply.code(400).send({
           error: 'Logout failed',
           message: getErrorMessage(error),
@@ -198,16 +301,28 @@ export async function authenticateToken(
   reply: FastifyReply
 ) {
   try {
-    const authHeader = request.headers.authorization;
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Try to get token from cookie first
+    if (request.cookies && typeof request.cookies === 'object') {
+      token = (request.cookies as Record<string, string>).accessToken;
+    }
+
+    // Fall back to Authorization header
+    if (!token) {
+      const authHeader = request.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
+
+    if (!token) {
       return reply.code(401).send({
         error: 'Authentication required',
         message: 'No token provided',
       });
     }
 
-    const token = authHeader.substring(7);
     const user = await authService.validateAccessToken(token);
 
     (request as AuthenticatedRequest).user = toAuthenticatedUser(user);

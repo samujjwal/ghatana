@@ -107,17 +107,22 @@ export class FActScoreEvaluator {
     const sentences = content.match(/[^.!?]+[.!?]+/g) || [content];
 
     for (let i = 0; i < sentences.length; i++) {
-      const sentence = sentences[i].trim();
-      if (sentence.length > 20) { // Skip very short fragments
+      const sentence = sentences[i];
+      if (!sentence) {
+        continue;
+      }
+
+      const normalizedSentence = sentence.trim();
+      if (normalizedSentence.length > 20) { // Skip very short fragments
         // Calculate position in original content
-        const startPos = content.indexOf(sentence);
-        const endPos = startPos + sentence.length;
+        const startPos = content.indexOf(normalizedSentence);
+        const endPos = startPos + normalizedSentence.length;
 
         facts.push({
           factId: `fact-${i}`,
-          statement: sentence,
+          statement: normalizedSentence,
           sourceSpan: [startPos, endPos],
-          entities: this.extractEntities(sentence),
+          entities: this.extractEntities(normalizedSentence),
         });
       }
     }

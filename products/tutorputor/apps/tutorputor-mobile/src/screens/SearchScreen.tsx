@@ -23,6 +23,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ExploreStackParamList } from '../navigation/types';
 import { useQuery } from '@tanstack/react-query';
+import { createSessionHeaders } from '../storage/NativeSessionStorage';
 
 type Props = NativeStackScreenProps<ExploreStackParamList, 'Search'>;
 
@@ -36,16 +37,9 @@ interface SearchResult {
 
 async function searchContent(query: string): Promise<SearchResult[]> {
   if (!query.trim()) return [];
-  
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
 
   const response = await fetch(`/api/v1/search?q=${encodeURIComponent(query)}`, {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
   });
 
   if (!response.ok) {

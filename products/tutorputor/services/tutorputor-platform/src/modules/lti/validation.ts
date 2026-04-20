@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { AuthorizationError, ValidationError } from "@tutorputor/core";
+import { AuthorizationError, ValidationError } from "@tutorputor/core/errors";
 import type { TenantId } from "@tutorputor/contracts/v1/types";
 import type { LtiLaunchService } from "@tutorputor/contracts/v1/services";
 

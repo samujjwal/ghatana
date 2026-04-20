@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Box, Card, Text, Button, Spinner } from "@/components/ui";
+import { useAuth } from "../contexts/AuthContext";
 import { createLogger } from '../utils/logger';
 const logger = createLogger('AITutorPage');
 
@@ -33,6 +34,7 @@ interface TutorResponse {
  * @doc.pattern Page
  */
 export function AITutorPage() {
+  const { token } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -60,7 +62,7 @@ export function AITutorPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-tenant-id": "default",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           question,

@@ -83,8 +83,11 @@ export class CacheMetricsService {
    */
   async collectRedisMetrics(): Promise<CacheMetrics> {
     try {
-      const info = await this.redis.info('stats');
-      const memoryInfo = await this.redis.info('memory');
+      const redisInfoClient = this.redis as Redis & {
+        info: (section?: string) => Promise<string>;
+      };
+      const info = await redisInfoClient.info('stats');
+      const memoryInfo = await redisInfoClient.info('memory');
 
       const stats = this.parseInfo(info);
       const memory = this.parseInfo(memoryInfo);
@@ -200,7 +203,12 @@ export class CacheMetricsService {
     return {
       status,
       redisMetrics,
-      customMetrics: new Map(this.customMetrics),
+      customMetrics: new Map(
+        Array.from(this.customMetrics.entries()).map(([name, metrics]) => [
+          name,
+          this.getCustomMetrics(name),
+        ]),
+      ),
       recommendations,
     };
   }

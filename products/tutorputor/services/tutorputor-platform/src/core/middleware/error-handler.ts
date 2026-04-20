@@ -12,7 +12,7 @@
 
 import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import type { Logger } from "pino";
-import { isDomainError, type DomainError } from "@tutorputor/core";
+import { isDomainError, type DomainError } from "@tutorputor/core/errors";
 
 /**
  * Error handler middleware for Fastify

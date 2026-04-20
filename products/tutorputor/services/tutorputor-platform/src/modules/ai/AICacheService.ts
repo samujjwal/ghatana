@@ -144,8 +144,18 @@ export class AICacheService<T> {
       const pattern = `ai:${prefix}:*`;
       const keys = await this.redis.keys(pattern);
       
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
+      if (keys.length === 1) {
+        const firstKey = keys[0];
+        if (!firstKey) {
+          return;
+        }
+
+        await this.redis.del(firstKey);
+        logger.debug({ message: 'AI cache prefix cleared', prefix, count: keys.length });
+      } else if (keys.length > 1) {
+        for (const key of keys) {
+          await this.redis.del(key);
+        }
         logger.debug({ message: 'AI cache prefix cleared', prefix, count: keys.length });
       }
     } catch (error) {

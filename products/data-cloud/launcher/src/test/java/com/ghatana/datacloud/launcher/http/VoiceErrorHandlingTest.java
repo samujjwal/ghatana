@@ -82,12 +82,12 @@ class VoiceErrorHandlingTest {
 
         @ParameterizedTest(name = "body=''{0}''")
         @ValueSource(strings = {"{}", "{\"utterance\":\"\"}", "{\"utterance\":\"   \"}"})
-        @DisplayName("missing or blank utterance → error code MISSING_UTTERANCE")
+        @DisplayName("missing or blank utterance → error code MISSING_UTTERANCE with HTTP 400")
         @SuppressWarnings("unchecked")
         void blankOrMissingUtterance_returnsMissingUtteranceError(String body) throws Exception {
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200); // ApiResponse envelope
+            assertThat(resp.statusCode()).isEqualTo(400); // Client error - bad request
             Map<String, Object> resBody = parseBody(resp);
             assertThat(resBody).containsKey("error");
             Map<String, Object> error = (Map<String, Object>) resBody.get("error");
@@ -125,7 +125,7 @@ class VoiceErrorHandlingTest {
     class IntentResolutionFailureTests {
 
         @Test
-        @DisplayName("utterance with no matching intent → error code INTENT_NOT_FOUND or AMBIGUOUS")
+        @DisplayName("utterance with no matching intent → error code UNKNOWN_INTENT with HTTP 404")
         @SuppressWarnings("unchecked")
         void noMatchingIntent_returnsIntentNotFoundError() throws Exception {
             // This phrase has zero keyword overlap with any registered intent
@@ -135,24 +135,15 @@ class VoiceErrorHandlingTest {
 
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(404); // Not found
             Map<String, Object> resBody = parseBody(resp);
-            // When no intent can be resolved the handler should surface this in data or error
-            assertThat(resBody).satisfiesAnyOf(
-                b -> assertThat(b).containsKey("error"),
-                b -> {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> data = (Map<String, Object>) b.get("data");
-                    // If returned as data, confirmation required and confidence must be low
-                    if (data != null) {
-                        assertThat((Boolean) data.get("confirmationRequired")).isTrue();
-                    }
-                }
-            );
+            assertThat(resBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
+            assertThat(error.get("code")).isEqualTo("UNKNOWN_INTENT");
         }
 
         @Test
-        @DisplayName("unknown exact intent name → response indicates unresolved")
+        @DisplayName("unknown exact intent name → response indicates unresolved with HTTP 404")
         @SuppressWarnings("unchecked")
         void unknownExactIntentName_notExecuted() throws Exception {
             String body = mapper.writeValueAsString(Map.of(
@@ -163,22 +154,15 @@ class VoiceErrorHandlingTest {
 
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(404); // Not found
             Map<String, Object> resBody = parseBody(resp);
-            // Handler must not execute an unknown intent
-            if (resBody.containsKey("data")) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> data = (Map<String, Object>) resBody.get("data");
-                // Either executed=false or confirmationRequired=true is acceptable
-                if (data != null && data.containsKey("executed")) {
-                    assertThat(data.get("executed")).isEqualTo(false);
-                }
-            }
-            // If it returned an error block, that's also acceptable
+            assertThat(resBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
+            assertThat(error.get("code")).isEqualTo("UNKNOWN_INTENT");
         }
 
         @Test
-        @DisplayName("ambiguous utterance matching multiple intents → confidence below 0.65")
+        @DisplayName("ambiguous utterance matching multiple intents → confidence below 0.65 or confirmation required")
         @SuppressWarnings("unchecked")
         void ambiguousUtterance_lowConfidenceOrConfirmationGate() throws Exception {
             // "list" matches many intents (list_pipelines, list_entities, list_models, etc.)
@@ -188,9 +172,10 @@ class VoiceErrorHandlingTest {
 
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            // Ambiguous match may return 200 with confirmationRequired or 404 if no match
+            assertThat(resp.statusCode()).isIn(200, 404);
             Map<String, Object> resBody = parseBody(resp);
-            if (resBody.containsKey("data")) {
+            if (resp.statusCode() == 200 && resBody.containsKey("data")) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> data = (Map<String, Object>) resBody.get("data");
                 if (data != null && data.containsKey("confidence")) {
@@ -199,6 +184,9 @@ class VoiceErrorHandlingTest {
                     boolean confirmRequired = Boolean.TRUE.equals(data.get("confirmationRequired"));
                     assertThat(confidence < 0.65 || confirmRequired).isTrue();
                 }
+            } else if (resp.statusCode() == 404) {
+                // Also acceptable if no match found
+                assertThat(resBody).containsKey("error");
             }
         }
     }
@@ -227,7 +215,7 @@ class VoiceErrorHandlingTest {
         }
 
         @Test
-        @DisplayName("audioData present but no STT provider → graceful STT-unavailable response")
+        @DisplayName("audioData present but no STT provider → graceful STT-unavailable response with HTTP 400")
         @SuppressWarnings("unchecked")
         void audioDataWithoutSttProvider_returnsGracefulError() throws Exception {
             // Encode minimal dummy PCM bytes as base64
@@ -241,14 +229,12 @@ class VoiceErrorHandlingTest {
 
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            // Without STT provider, handler returns 400 with EMPTY_UTTERANCE error
+            assertThat(resp.statusCode()).isEqualTo(400);
             Map<String, Object> resBody = parseBody(resp);
-            // Without STT provider, handler must gracefully indicate STT unavailable
-            // (via error block or data with sttAvailable=false / confirmationRequired)
-            assertThat(resBody).satisfiesAnyOf(
-                b -> assertThat(b).containsKey("error"),
-                b -> assertThat(b).containsKey("data")
-            );
+            assertThat(resBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
+            assertThat(error.get("code")).isEqualTo("EMPTY_UTTERANCE");
         }
     }
 
@@ -293,7 +279,15 @@ class VoiceErrorHandlingTest {
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
             // Must not 500 — classify-only mode should never throw on unknown intent
+            // Returns 200 with matched=false for no match
             assertThat(resp.statusCode()).isLessThan(500);
+            Map<String, Object> resBody = parseBody(resp);
+            if (resp.statusCode() == 200) {
+                assertThat(resBody).containsKey("data");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> data = (Map<String, Object>) resBody.get("data");
+                assertThat(data.get("matched")).isEqualTo(false);
+            }
         }
     }
 
@@ -326,8 +320,8 @@ class VoiceErrorHandlingTest {
         }
 
         @Test
-        @DisplayName("GET /api/v1/voice/intents always returns HTTP 200")
-        void intentsEndpoint_alwaysReturns200() throws Exception {
+        @DisplayName("GET /api/v1/voice/intents returns HTTP 200 for successful catalog retrieval")
+        void intentsEndpoint_returns200ForSuccess() throws Exception {
             for (int i = 0; i < 3; i++) {
                 HttpResponse<String> resp = get("/api/v1/voice/intents");
                 assertThat(resp.statusCode()).isEqualTo(200);

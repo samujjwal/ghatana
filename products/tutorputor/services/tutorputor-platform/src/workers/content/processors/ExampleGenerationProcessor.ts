@@ -8,7 +8,7 @@
  */
 
 import { Job } from "bullmq";
-import { PrismaClient } from "@tutorputor/core/db";
+import { Prisma, PrismaClient } from "@tutorputor/core/db";
 import { Logger } from "pino";
 import { RealContentGenerationClient } from "../grpc/RealContentGenerationClient";
 import * as crypto from "crypto";
@@ -99,22 +99,37 @@ export class ExampleGenerationProcessor {
       });
 
       // Store examples in database
+      let orderIndex = 0;
       for (const example of response.examples || []) {
+        const manifestId = String(
+          example.example_id ?? example.exampleId ?? `${claimRef}-${orderIndex + 1}`,
+        );
+        const content = Prisma.JsonNull;
+        const payload = {
+          problemStatement:
+            example.problem_statement ??
+            example.title ??
+            claimText,
+          solution:
+            example.solution_content ??
+            example.content ??
+            null,
+          keyPoints: example.key_learning_points ?? example.tags ?? [],
+          realWorldConnection: example.real_world_connection ?? null,
+        } satisfies Record<string, unknown>;
+
         await this.prisma.claimExample.create({
           data: {
             experienceId,
             claimRef,
+            manifestId,
+            manifestVersion: "1.0.0",
             type: String(example.type),
-            title: example.title,
-            description: example.description,
-            content: {
-              problemStatement: example.problem_statement,
-              solution: example.solution_content,
-              keyPoints: example.key_learning_points || [],
-              realWorldConnection: example.real_world_connection,
-            },
+            title: String(example.title ?? `Example ${orderIndex + 1}`),
+            description: String(example.description ?? ""),
+            content: payload as Prisma.InputJsonValue,
             difficulty: "INTERMEDIATE", // Default
-            orderIndex: example.order_index,
+            orderIndex: Number(example.order_index ?? orderIndex),
           },
         });
 
@@ -122,6 +137,8 @@ export class ExampleGenerationProcessor {
           { jobId: job.id, claimRef, exampleId: example.example_id },
           "Example stored in database",
         );
+
+        orderIndex += 1;
       }
 
       this.logger.info(

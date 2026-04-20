@@ -16,6 +16,8 @@ java {
 
 
 dependencies {
+    implementation(project(":products:tutorputor:libs:content-studio-agents"))
+
     // Platform AI integration (replaces all stub implementations)
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:observability"))

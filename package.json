@@ -64,6 +64,7 @@
       "prettier": "^3.8.2",
       "date-fns": "^4.1.0",
       "axios": "^1.13.1",
+      "bullmq>uuid": "11.1.0",
       "uuid": "npm:nanoid@5"
     },
     "ignoredBuiltDependencies": [

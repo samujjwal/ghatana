@@ -74,6 +74,8 @@ export async function devAuthBypass(fastify: FastifyInstance): Promise<void> {
     return;
   }
 
+  console.warn('[DevAuth] ⚠️  AUTH BYPASS ACTIVE - Development mode only. DO NOT use in production or staging.');
+  console.warn('[DevAuth] ⚠️  All authentication checks are bypassed. This is a security risk.');
   console.log('[DevAuth] Plugin loaded. NODE_ENV:', process.env.NODE_ENV);
 
   {

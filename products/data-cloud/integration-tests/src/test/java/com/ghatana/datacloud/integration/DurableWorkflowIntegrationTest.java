@@ -351,13 +351,14 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
                 stmt.executeUpdate();
             }
 
-            // Simulate failure by violating foreign key (non-existent tenant)
+            // Simulate failure by violating foreign key (non-existent workflow_id)
+            // This triggers the FK constraint: workflow_executions.workflow_id -> workflows.id
             try (PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO workflow_executions (id, workflow_id, tenant_id, status, started_at) VALUES (?, ?, ?, ?, NOW())"
             )) {
                 stmt.setString(1, UUID.randomUUID().toString());
-                stmt.setString(2, workflowId);
-                stmt.setString(3, "non-existent-tenant");
+                stmt.setString(2, "non-existent-workflow"); // This violates the FK constraint
+                stmt.setString(3, tenantId);
                 stmt.setString(4, "running");
                 stmt.executeUpdate();
             }

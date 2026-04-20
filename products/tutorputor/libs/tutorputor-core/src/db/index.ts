@@ -1,5 +1,3 @@
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -77,6 +75,10 @@ async function getPrismaClientImpl() {
   return PrismaClientImpl;
 }
 
+type PrismaClientOptions = NonNullable<ConstructorParameters<typeof PrismaClient>[0]>;
+type PrismaAdapterFactory = NonNullable<PrismaClientOptions["adapter"]>;
+type PrismaAdapterConstructor = new (config: Record<string, unknown>) => PrismaAdapterFactory;
+
 export type TutorPrismaClient = PrismaClient;
 
 export interface SeedOptions {
@@ -105,13 +107,46 @@ function isPostgresUrl(connectionString: string): boolean {
   );
 }
 
+function loadAdapterConstructor(
+  packageName: string,
+  exportName: string,
+): PrismaAdapterConstructor {
+  try {
+    const loaded = require(packageName) as Record<string, unknown>;
+    const ctor = loaded[exportName];
+    if (typeof ctor !== "function") {
+      throw new Error(`${exportName} was not exported by ${packageName}`);
+    }
+    return ctor as PrismaAdapterConstructor;
+  } catch (error) {
+    throw new Error(
+      `Missing Prisma adapter dependency ${packageName}. Install workspace dependencies before using this datasource.`,
+      { cause: error instanceof Error ? error : undefined },
+    );
+  }
+}
+
+function createPrismaAdapter(connectionString: string): PrismaAdapterFactory {
+  if (isPostgresUrl(connectionString)) {
+    const PrismaPg = loadAdapterConstructor("@prisma/adapter-pg", "PrismaPg");
+    return new PrismaPg({ connectionString });
+  }
+
+  const PrismaLibSql = loadAdapterConstructor("@prisma/adapter-libsql", "PrismaLibSql");
+  return new PrismaLibSql({ url: connectionString });
+}
+
+export function createPrismaClientForUrl(connectionString: string): PrismaClient {
+  return new PrismaClientImpl({
+    adapter: createPrismaAdapter(connectionString),
+    log: process.env.PRISMA_DEBUG === "true" ? ["query", "error", "warn"] : [],
+  }) as PrismaClient;
+}
+
 /**
  * Create a PrismaClient with the adapter matching the configured datasource.
  */
 export function createPrismaClient(): PrismaClient {
-  // Use the imported PrismaClient class
-  const PrismaClientClass = PrismaClientImpl;
-
   const rootFromDistSrc = path.resolve(__dirname, "..", "..");
   const rootFromSrc = path.resolve(__dirname, "..");
   const packageRoot = existsSync(path.resolve(rootFromDistSrc, "prisma"))
@@ -122,14 +157,7 @@ export function createPrismaClient(): PrismaClient {
     process.env.TUTORPUTOR_DATABASE_URL ??
     `file:${path.resolve(packageRoot, "prisma", "dev.db")}`;
 
-  const adapter = isPostgresUrl(configuredUrl)
-    ? new PrismaPg({ connectionString: configuredUrl })
-    : new PrismaLibSql({ url: configuredUrl });
-  const client = new PrismaClientClass({
-    adapter,
-    // Enable detailed logging for debugging
-    log: process.env.PRISMA_DEBUG === "true" ? ["query", "error", "warn"] : [],
-  }) as PrismaClient;
+  const client = createPrismaClientForUrl(configuredUrl);
 
   // Log what we got
   console.log("[TutorPutor DB] PrismaClient created");

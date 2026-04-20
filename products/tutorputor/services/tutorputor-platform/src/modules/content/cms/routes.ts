@@ -53,7 +53,7 @@ const createModuleBodySchema = z.object({
   domain: z.string().trim().min(1),
   gradeRange: z.string().trim().min(1).optional(),
   tags: z.array(z.string().trim().min(1)).optional(),
-  content: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateModuleBodySchema = z.object({
@@ -62,7 +62,7 @@ const updateModuleBodySchema = z.object({
   status: z.string().trim().min(1).optional(),
   gradeRange: z.string().trim().min(1).optional(),
   tags: z.array(z.string().trim().min(1)).optional(),
-  content: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
 });
 
 const generateDraftBodySchema = z.object({

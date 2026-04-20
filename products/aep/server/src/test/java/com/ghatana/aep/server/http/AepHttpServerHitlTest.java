@@ -197,7 +197,7 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(501);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).contains("HITL queue not configured");
+            assertThat(body.get("message").toString()).contains("HITL queue not configured");
         }
 
         @Test
@@ -270,7 +270,7 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(404);
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class);
-            assertThat(respBody.get("error").toString()).contains("not found");
+            assertThat(respBody.get("message").toString()).contains("not found");
         }
 
         @Test
@@ -315,7 +315,7 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(501);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).contains("HITL queue not configured");
+            assertThat(body.get("message").toString()).contains("HITL queue not configured");
         }
 
         @Test
@@ -388,7 +388,7 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(404);
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class);
-            assertThat(respBody.get("error").toString()).contains("not found");
+            assertThat(respBody.get("message").toString()).contains("not found");
         }
 
         @Test

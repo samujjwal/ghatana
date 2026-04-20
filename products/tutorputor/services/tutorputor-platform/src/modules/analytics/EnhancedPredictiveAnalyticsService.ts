@@ -68,13 +68,17 @@ export class EnhancedPredictiveAnalyticsService {
         where: { tenantId, userId },
         include: { module: { select: { id: true, title: true, difficulty: true } } },
       }),
-      this.prisma.learnerProfile.findUnique({
-        where: { tenantId_userId: { tenantId, userId } },
+      this.prisma.learnerProfile.findFirst({
+        where: { tenantId, userId },
+        include: { masteries: { select: { masteryProbability: true } } },
       }),
     ]);
 
     const completedModules = enrollments.filter((e) => e.status === 'COMPLETED').map((e) => e.moduleId);
-    const currentMastery = learnerProfile?.masterySummary?.averageMastery || 0.5;
+    const currentMastery = learnerProfile == null || learnerProfile.masteries.length === 0
+      ? 0.5
+      : learnerProfile.masteries.reduce((sum, mastery) => sum + mastery.masteryProbability, 0) /
+        learnerProfile.masteries.length;
 
     // Get available modules
     const availableModules = await this.prisma.module.findMany({
@@ -129,16 +133,24 @@ export class EnhancedPredictiveAnalyticsService {
     });
 
     const [learnerProfile, conceptData] = await Promise.all([
-      this.prisma.learnerProfile.findUnique({
-        where: { tenantId_userId: { tenantId, userId } },
+      this.prisma.learnerProfile.findFirst({
+        where: { tenantId, userId },
+        select: { id: true },
       }),
-      this.prisma.conceptMastery.findMany({
-        where: { tenantId, userId, conceptId },
+      this.prisma.learnerMastery.findMany({
+        where: {
+          tenantId,
+          conceptId,
+          profile: { userId },
+        },
+        select: { masteryProbability: true },
       }),
     ]);
 
-    const currentMastery = conceptData.length > 0 ? conceptData[0]?.masteryLevel || 0 : 0;
-    const historicalRate = learnerProfile?.masterySummary?.averageMastery || 0.5;
+    const currentMastery = conceptData[0]?.masteryProbability ?? 0;
+    const historicalRate = learnerProfile == null
+      ? 0.5
+      : await this.calculateAverageMastery(tenantId, userId);
 
     // Predict future mastery based on historical rate
     const predictedMastery = Math.min(1, currentMastery + (historicalRate * 0.1));
@@ -227,7 +239,12 @@ export class EnhancedPredictiveAnalyticsService {
 
     // Factor: Stalled progress
     const recentEnrollments = enrollments.filter((e) => e.status === 'IN_PROGRESS');
-    const stalledEnrollments = recentEnrollments.filter((e) => e.progressPercent < 20 && (Date.now() - new Date(e.startedAt).getTime()) > 7 * 24 * 60 * 60 * 1000);
+    const stalledEnrollments = recentEnrollments.filter((e) => {
+      if (e.startedAt == null) {
+        return false;
+      }
+      return e.progressPercent < 20 && (Date.now() - e.startedAt.getTime()) > 7 * 24 * 60 * 60 * 1000;
+    });
     if (stalledEnrollments.length > 0) {
       riskFactors.push({
         factor: 'stalled_progress',
@@ -306,5 +323,24 @@ export class EnhancedPredictiveAnalyticsService {
       ADVANCED: 90,
     };
     return durationMap[difficulty] || 60;
+  }
+
+  private async calculateAverageMastery(tenantId: string, userId: string): Promise<number> {
+    const masteries = await this.prisma.learnerMastery.findMany({
+      where: {
+        tenantId,
+        profile: { userId },
+      },
+      select: { masteryProbability: true },
+    });
+
+    if (masteries.length === 0) {
+      return 0.5;
+    }
+
+    return (
+      masteries.reduce((sum, mastery) => sum + mastery.masteryProbability, 0) /
+      masteries.length
+    );
   }
 }

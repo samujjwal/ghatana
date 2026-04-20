@@ -73,7 +73,7 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                minimum = "0.300".toBigDecimal()
+                minimum = "0.50".toBigDecimal()  // COP-TEST-1: raised from 0.30 to 0.50
             }
         }
     }

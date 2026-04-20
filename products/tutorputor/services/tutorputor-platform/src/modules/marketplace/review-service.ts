@@ -189,11 +189,13 @@ export class MarketplaceReviewService {
     return {
       status: review.status as ReviewStatus,
       submittedAt: review.submittedAt,
-      reviewerId: review.reviewerId ?? undefined,
-      assignedAt: review.assignedAt ?? undefined,
-      completedAt: review.completedAt ?? undefined,
-      criteria: review.criteria ? JSON.parse(review.criteria) as ReviewCriteria : undefined,
-      comments: review.comments ?? undefined,
+      ...(review.reviewerId ? { reviewerId: review.reviewerId } : {}),
+      ...(review.assignedAt ? { assignedAt: review.assignedAt } : {}),
+      ...(review.completedAt ? { completedAt: review.completedAt } : {}),
+      ...(review.criteria
+        ? { criteria: JSON.parse(review.criteria) as ReviewCriteria }
+        : {}),
+      ...(review.comments ? { comments: review.comments } : {}),
     };
   }
 

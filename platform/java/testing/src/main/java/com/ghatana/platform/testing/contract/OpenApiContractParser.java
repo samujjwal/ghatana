@@ -5,6 +5,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.logging.*;
 import java.util.stream.*;
+import java.util.Arrays;
 
 /**
  * @doc.type class
@@ -25,6 +26,27 @@ public final class OpenApiContractParser {
      */
     public static ApiContractDefinition parseFromFile(String specFilePath) throws IOException {
         Path path = Paths.get(specFilePath);
+        if (!path.isAbsolute()) {
+            // Try multiple resolution strategies
+            Path[] possiblePaths = {
+                path, // As provided
+                Paths.get(System.getProperty("user.dir"), specFilePath), // From user.dir
+                Paths.get(System.getProperty("user.dir")).resolve(specFilePath), // Resolve from user.dir
+                Paths.get("..").resolve(specFilePath), // From parent directory
+                Paths.get("../..").resolve(specFilePath) // From grandparent directory
+            };
+            
+            for (Path possiblePath : possiblePaths) {
+                if (Files.exists(possiblePath)) {
+                    path = possiblePath.toAbsolutePath();
+                    break;
+                }
+            }
+            
+            if (!Files.exists(path)) {
+                throw new IOException("OpenAPI spec file not found: " + specFilePath + " (tried: " + Arrays.toString(possiblePaths) + ")");
+            }
+        }
         String content = Files.readString(path);
         return parseFromString(content, path.getFileName().toString());
     }

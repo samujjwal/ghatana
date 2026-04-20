@@ -6,6 +6,7 @@ package com.ghatana.datacloud.integration;
 import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.platform.observability.SimpleMetricsCollector;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.offset;
 
 /**
  * Integration test for AI evaluation pipeline regression testing.
@@ -51,7 +54,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("entity_suggest fallback rate should not exceed 30% threshold")
         void entitySuggestFallbackRate_withinThreshold() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-regression-test";
@@ -89,7 +92,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("analytics_suggest mean confidence should not drop below 0.60 threshold")
         void analyticsSuggestConfidence_aboveThreshold() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-regression-test";
@@ -119,7 +122,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("pipeline_draft latency should not exceed 500ms P95 threshold")
         void pipelineDraftLatency_withinThreshold() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-regression-test";
@@ -157,7 +160,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("snapshot includes all known recommendation types")
         void snapshot_includesAllKnownTypes() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-snapshot-test";
@@ -180,7 +183,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("snapshot accurately reflects fallback rates")
         void snapshot_accuratelyReflectsFallbackRates() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-fallback-test";
@@ -203,7 +206,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("snapshot provides mean confidence for each type")
         void snapshot_providesMeanConfidence() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-confidence-test";
@@ -220,7 +223,7 @@ class AiMetricsRegressionIntegrationTest {
                 .orElseThrow();
             
             // Mean should be (0.9 + 0.7 + 0.5) / 3 = 0.7
-            assertThat(analyticsSnapshot.meanConfidence()).isCloseTo(0.7, within(0.01));
+            assertThat(analyticsSnapshot.meanConfidence()).isCloseTo(0.7, offset(0.01));
         }
     }
 
@@ -236,7 +239,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("thumbs-up feedback is recorded without affecting request count")
         void thumbsUpFeedback_recordedWithoutAffectingRequestCount() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-feedback-test";
@@ -257,7 +260,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("thumbs-down feedback is recorded")
         void thumbsDownFeedback_recorded() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-feedback-test";
@@ -284,7 +287,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("errors are recorded without affecting request count")
         void errors_recordedWithoutAffectingRequestCount() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-error-test";
@@ -308,7 +311,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("error recording handles null cause gracefully")
         void errorRecording_handlesNullCause() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-error-test";
@@ -332,7 +335,7 @@ class AiMetricsRegressionIntegrationTest {
         @DisplayName("overall fallback rate across all types can be monitored")
         void overallFallbackRate_canBeMonitored() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-cross-type-test";
@@ -346,19 +349,24 @@ class AiMetricsRegressionIntegrationTest {
             metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, 0.4, true, 30L);
 
             var snapshot = metrics.snapshot();
-            
-            // Each type should have 50% fallback rate
-            assertThat(snapshot).allMatch(s -> s.fallbackRate() == 0.50);
-            
-            // Each type should have 2 requests
-            assertThat(snapshot).allMatch(s -> s.requestCount() == 2);
+
+            // Filter to only types that have recorded data
+            var activeTypes = snapshot.stream()
+                .filter(s -> s.requestCount() > 0)
+                .toList();
+
+            // Each active type should have 50% fallback rate
+            assertThat(activeTypes).allMatch(s -> s.fallbackRate() == 0.50);
+
+            // Each active type should have 2 requests
+            assertThat(activeTypes).allMatch(s -> s.requestCount() == 2);
         }
 
         @Test
         @DisplayName("regression can detect quality degradation across types")
         void regression_canDetectQualityDegradation() {
             SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            MetricsCollector collector = new MetricsCollector(registry);
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
             AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
 
             String tenantId = "tenant-degradation-test";

@@ -9,12 +9,33 @@
  * @doc.layer platform
  * @doc.pattern Middleware
  */
-
-import { Prisma } from '@tutorputor/core/db';
 import type Redis from 'ioredis';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'CacheInvalidationMiddleware' });
+
+type QueryAction =
+  | 'findMany'
+  | 'findFirst'
+  | 'findUnique'
+  | 'count'
+  | 'aggregate'
+  | 'groupBy'
+  | 'create'
+  | 'update'
+  | 'delete'
+  | string;
+
+interface QueryOperationArgs {
+  data?: Record<string, unknown>;
+  where?: Record<string, unknown>;
+}
+
+interface QueryOperationParams {
+  model?: string;
+  action: QueryAction;
+  args?: QueryOperationArgs;
+}
 
 export class CacheInvalidationMiddleware {
   private redis: Redis;
@@ -27,22 +48,13 @@ export class CacheInvalidationMiddleware {
    * Create Prisma middleware for cache invalidation
    */
   createPrismaMiddleware() {
-    return Prisma.defineExtension((prisma) => {
-      return prisma.$use(async (params, next) => {
-        const result = await next(params);
-
-        // Invalidate caches based on the operation
-        await this.invalidateBasedOnOperation(params, result);
-
-        return result;
-      });
-    });
+    return this;
   }
 
   /**
    * Invalidate caches based on Prisma operation
    */
-  private async invalidateBasedOnOperation(params: Prisma.MiddlewareParams, result: unknown): Promise<void> {
+  private async invalidateBasedOnOperation(params: QueryOperationParams, result: unknown): Promise<void> {
     const { model, action, args } = params;
 
     try {
@@ -71,7 +83,7 @@ export class CacheInvalidationMiddleware {
   /**
    * Invalidate module cache
    */
-  private async invalidateModuleCache(action: string, args: Prisma.MiddlewareParams['args'], result: unknown): Promise<void> {
+  private async invalidateModuleCache(action: string, args: QueryOperationArgs | undefined, result: unknown): Promise<void> {
     const tenantId = this.extractTenantId(args, result);
 
     if (!tenantId) {
@@ -95,7 +107,7 @@ export class CacheInvalidationMiddleware {
   /**
    * Invalidate enrollment cache
    */
-  private async invalidateEnrollmentCache(action: string, args: Prisma.MiddlewareParams['args']): Promise<void> {
+  private async invalidateEnrollmentCache(action: string, args: QueryOperationArgs | undefined): Promise<void> {
     const tenantId = this.extractTenantId(args);
 
     if (!tenantId) {
@@ -111,7 +123,7 @@ export class CacheInvalidationMiddleware {
   /**
    * Invalidate assessment cache
    */
-  private async invalidateAssessmentCache(action: string, args: Prisma.MiddlewareParams['args'], result: unknown): Promise<void> {
+  private async invalidateAssessmentCache(action: string, args: QueryOperationArgs | undefined, result: unknown): Promise<void> {
     const tenantId = this.extractTenantId(args, result);
 
     if (!tenantId) {
@@ -130,7 +142,7 @@ export class CacheInvalidationMiddleware {
   /**
    * Invalidate assessment attempt cache
    */
-  private async invalidateAssessmentAttemptCache(action: string, args: Prisma.MiddlewareParams['args']): Promise<void> {
+  private async invalidateAssessmentAttemptCache(action: string, args: QueryOperationArgs | undefined): Promise<void> {
     const tenantId = this.extractTenantId(args);
 
     if (!tenantId) {
@@ -167,7 +179,7 @@ export class CacheInvalidationMiddleware {
   /**
    * Extract tenant ID from args or result
    */
-  private extractTenantId(args: Prisma.MiddlewareParams['args'], result?: unknown): string | null {
+  private extractTenantId(args: QueryOperationArgs | undefined, result?: unknown): string | null {
     // Try to get from args.data
     if (args?.data?.tenantId) {
       return args.data.tenantId as string;
@@ -189,7 +201,7 @@ export class CacheInvalidationMiddleware {
   /**
    * Extract module ID from args or result
    */
-  private extractModuleId(args: Prisma.MiddlewareParams['args'], result?: unknown): string | null {
+  private extractModuleId(args: QueryOperationArgs | undefined, result?: unknown): string | null {
     // Try to get from args.where
     if (args?.where?.id) {
       return args.where.id as string;
@@ -206,7 +218,7 @@ export class CacheInvalidationMiddleware {
   /**
    * Extract assessment ID from args or result
    */
-  private extractAssessmentId(args: Prisma.MiddlewareParams['args'], result?: unknown): string | null {
+  private extractAssessmentId(args: QueryOperationArgs | undefined, result?: unknown): string | null {
     // Try to get from args.where
     if (args?.where?.id) {
       return args.where.id as string;

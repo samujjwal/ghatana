@@ -64,9 +64,9 @@ export class AutoPublishGatingService {
     notPolicySensitive: true,
   };
 
-  private readonly factScoreEvaluator: FActScoreEvaluator;
+  private readonly factScoreEvaluator: Pick<FActScoreEvaluator, "evaluate">;
   private readonly validatorService: IndependentGeneratedContentValidator;
-  private readonly thresholdOverrides?: Partial<PublishThresholds>;
+  private readonly thresholdOverrides: Partial<PublishThresholds> | undefined;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -227,16 +227,20 @@ export class AutoPublishGatingService {
       thresholds,
     );
 
-    return {
+    const decision: AutoPublishDecision = {
       canAutoPublish,
       reasons,
       confidence,
       requiresHumanReview: reviewReasons.length > 0,
-      reviewReasons: reviewReasons.length > 0 ? reviewReasons : undefined,
-      validatorVersion: validationResult.validatorVersion,
-      auditLogId,
+      ...(reviewReasons.length > 0 ? { reviewReasons } : {}),
+      ...(validationResult.validatorVersion
+        ? { validatorVersion: validationResult.validatorVersion }
+        : {}),
+      ...(auditLogId ? { auditLogId } : {}),
       ...(reviewQueueId ? { reviewQueueId } : {}),
     };
+
+    return decision;
   }
 
   private async isNovelDomainPattern(

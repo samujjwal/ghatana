@@ -120,7 +120,7 @@ JWT_SECRET=your-secret-key-here
 OPENAI_API_KEY=your-openai-api-key
 
 # Stripe (for payments)
-STRIPE_SECRET_KEY=sk_test_your-stripe-key
+STRIPE_SECRET_KEY=stripe_test_placeholder_secret
 ```
 
 ### 4. Initialize the Database

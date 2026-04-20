@@ -482,8 +482,8 @@ export class RecommendationService {
     });
 
     const enrolledModuleIds = new Set(enrollments.map((e) => e.moduleId));
-    const completedModules = enrollments.filter((e) => e.status === "completed");
-    const inProgressModules = enrollments.filter((e) => e.status === "active");
+    const completedModules = enrollments.filter((e) => e.status === "COMPLETED");
+    const inProgressModules = enrollments.filter((e) => e.status === "IN_PROGRESS");
 
     // Calculate user learning profile
     const userDomains = new Map<string, number>();
@@ -592,9 +592,11 @@ export class RecommendationService {
         ...module,
         slug: module.legacyModuleId ?? module.id,
         tags: module.tags ?? [],
-        estimatedTimeMinutes: module.estimatedMinutes,
+        ...(typeof module.estimatedTimeMinutes === "number"
+          ? { estimatedTimeMinutes: module.estimatedTimeMinutes }
+          : {}),
         isAiRecommended,
-        recommendationReason,
+        ...(recommendationReason ? { recommendationReason } : {}),
         matchScore: score,
       }));
 
@@ -895,6 +897,9 @@ export class RecommendationService {
       raw.legacyExperienceId.length > 0
     ) {
       asset.legacyExperienceId = raw.legacyExperienceId;
+    }
+    if (typeof raw.estimatedTimeMinutes === "number") {
+      asset.estimatedTimeMinutes = raw.estimatedTimeMinutes;
     }
 
     return asset;

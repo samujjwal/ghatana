@@ -129,7 +129,10 @@ export class GenerationPlannerService {
         description: input.description ?? null,
         domain: input.domain,
         conceptId: input.conceptId ?? null,
-        targetGrades: input.targetGrades ?? null,
+        targetGrades:
+          input.targetGrades != null
+            ? (input.targetGrades as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         requestedBy: input.requestedBy,
         requestConfig:
           input.requestConfig != null

@@ -56,8 +56,8 @@ export interface DeduplicationResult {
 export class JobDeduplicator {
   private readonly dedupWindowMs: number;
   private readonly lockTtlSeconds: number;
-  private readonly redis?: Redis;
-  private readonly jobTracking?: JobTrackingDelegate;
+  private readonly redis: Redis | undefined;
+  private readonly jobTracking: JobTrackingDelegate | undefined;
 
   constructor(
     prisma: PrismaClient,
@@ -100,9 +100,9 @@ export class JobDeduplicator {
       const lockResult = await (this.redis as unknown as RedisLockClient).set(
         lockKey,
         "1",
-        "NX",
         "EX",
         this.lockTtlSeconds,
+        "NX",
       );
       if (lockResult !== "OK") {
         return {

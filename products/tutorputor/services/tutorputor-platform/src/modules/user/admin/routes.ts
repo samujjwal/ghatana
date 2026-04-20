@@ -7,7 +7,13 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { InstitutionAdminServiceImpl } from "./service";
-import type { InstitutionAdminService, TenantId, UserId } from "@tutorputor/contracts";
+import type {
+  ClassroomId,
+  InstitutionAdminService,
+  TenantId,
+  UserId,
+  UserRole,
+} from "@tutorputor/contracts";
 import {
   getTenantId,
   getUserId,
@@ -146,8 +152,8 @@ export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
         ...(role ? { role } : {}),
         ...(searchQuery ? { searchQuery } : {}),
         pagination: {
+          limit: typeof limit === "number" ? Number(limit) : 50,
           ...(cursor ? { cursor } : {}),
-          ...(typeof limit === "number" ? { limit: Number(limit) } : {}),
           ...(sortBy ? { sortBy } : {}),
           ...(sortOrder ? { sortOrder } : {}),
         },
@@ -234,7 +240,12 @@ export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
       const result = await adminService.bulkImportUsers({
         tenantId,
         importedBy: adminId,
-        users: parseResult.data.users,
+        users: parseResult.data.users.map((user) => ({
+          email: user.email,
+          displayName: user.displayName ?? user.email,
+          role: user.role,
+          ...(user.classroomIds ? { classroomIds: user.classroomIds } : {}),
+        })),
         ...(typeof parseResult.data.sendInvites === "boolean"
           ? { sendInvites: parseResult.data.sendInvites }
           : {}),
@@ -282,7 +293,7 @@ export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
       const user = await adminService.updateUserRole({
         tenantId,
         userId: userId as UserId,
-        newRole,
+        newRole: newRole as UserRole,
         updatedBy: adminId,
       });
       return reply.send(user);
@@ -327,7 +338,7 @@ export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
     try {
       const result = await adminService.assignPathToClassroom({
         tenantId,
-        classroomId,
+        classroomId: classroomId as ClassroomId,
         pathwayId,
         assignedBy: adminId,
       });

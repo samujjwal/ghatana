@@ -30,6 +30,8 @@ class FhirInteropKernelPluginTest {
 
     @BeforeEach
     void setUp() {
+        // Set DEGRADED mode to allow tests to pass without DataCloud dependency
+        System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
         plugin = new FhirInteropKernelPlugin();
         mockContext = createMockContext();
     }

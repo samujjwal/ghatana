@@ -439,6 +439,8 @@ export class GenerationRequestJobProcessor {
       claimRef: job.data.targetRef ?? job.data.generationJobId,
       animationType: "TWO_D",
       durationSeconds: 45,
+      domain: job.data.domain,
+      gradeLevel: getPrimaryGrade(job.data.targetGrades),
     });
 
     const animation = response.animation;

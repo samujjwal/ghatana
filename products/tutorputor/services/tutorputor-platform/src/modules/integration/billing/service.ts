@@ -15,6 +15,11 @@ import Stripe from "stripe";
 
 export type HealthAwareBillingService = BillingService & {
     checkHealth: () => Promise<boolean>;
+    createBillingPortalSession: (args: {
+        tenantId: TenantId;
+        userId: UserId;
+        returnUrl?: string;
+    }) => Promise<{ url: string }>;
 };
 
 /**
@@ -197,11 +202,15 @@ export function createBillingService(
             return true;
         },
 
-        async createBillingPortalSession({ tenantId, returnUrl }) {
+        async createBillingPortalSession({ tenantId, userId: _userId, returnUrl }: {
+            tenantId: TenantId;
+            userId: UserId;
+            returnUrl?: string;
+        }) {
             // For now, return a placeholder URL
             // In production, this would call Stripe Customer Portal API
             return {
-                url: `https://billing.stripe.com/session/${tenantId}?return_url=${encodeURIComponent(returnUrl)}`,
+                url: `https://billing.stripe.com/session/${tenantId}?return_url=${encodeURIComponent(returnUrl ?? "")}`,
             };
         }
     };

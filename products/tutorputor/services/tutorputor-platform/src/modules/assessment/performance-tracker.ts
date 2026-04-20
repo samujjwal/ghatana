@@ -13,7 +13,28 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
+
+type StoredQuestionAttempt = {
+  tenantId: string;
+  userId: string;
+  questionId: string;
+  correct: boolean;
+  timeSpentSeconds: number;
+  topicId: string | null;
+  difficultyLevel: number;
+  hintUsed: boolean;
+  attemptedAt: Date;
+};
+
+type QuestionAttemptDelegate = {
+  create(args: { data: Record<string, unknown> }): Promise<StoredQuestionAttempt>;
+  findMany(args: {
+    where: Record<string, unknown>;
+    orderBy: { attemptedAt: 'asc' | 'desc' };
+    take: number;
+  }): Promise<StoredQuestionAttempt[]>;
+};
 
 export interface QuestionAttempt {
   questionId: string;
@@ -56,7 +77,19 @@ export interface StreakAnalysis {
 }
 
 export class PerformanceTracker {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: TutorPrismaClient) {}
+
+  private getQuestionAttemptDelegate(): QuestionAttemptDelegate {
+    const prismaWithDelegate = this.prisma as TutorPrismaClient & {
+      questionAttempt?: QuestionAttemptDelegate;
+    };
+
+    if (!prismaWithDelegate.questionAttempt) {
+      throw new Error('questionAttempt delegate is unavailable. Regenerate Prisma client or align PerformanceTracker with the current assessment attempt schema.');
+    }
+
+    return prismaWithDelegate.questionAttempt;
+  }
 
   /**
    * Record a question attempt and update performance metrics
@@ -66,7 +99,7 @@ export class PerformanceTracker {
     userId: string,
     attempt: QuestionAttempt,
   ): Promise<void> {
-    await this.prisma.questionAttempt.create({
+    await this.getQuestionAttemptDelegate().create({
       data: {
         tenantId,
         userId,
@@ -91,7 +124,7 @@ export class PerformanceTracker {
     tenantId: string,
     userId: string,
   ): Promise<PerformanceMetrics> {
-    const attempts = await this.prisma.questionAttempt.findMany({
+    const attempts = await this.getQuestionAttemptDelegate().findMany({
       where: { tenantId, userId },
       orderBy: { attemptedAt: "desc" },
       take: 100, // Recent 100 attempts
@@ -101,12 +134,15 @@ export class PerformanceTracker {
       return this.getDefaultMetrics();
     }
 
-    const correctCount = attempts.filter((a) => a.correct).length;
-    const totalTime = attempts.reduce((sum, a) => sum + a.timeSpentSeconds, 0);
+    const correctCount = attempts.filter((attemptRecord) => attemptRecord.correct).length;
+    const totalTime = attempts.reduce(
+      (sum: number, attemptRecord) => sum + attemptRecord.timeSpentSeconds,
+      0,
+    );
     const streaks = this.calculateStreaks(attempts);
 
     // Calculate topic performance
-    const topicMap = new Map<string, Array<typeof attempts[0]>>();
+    const topicMap = new Map<string, StoredQuestionAttempt[]>();
     for (const attempt of attempts) {
       if (attempt.topicId) {
         const list = topicMap.get(attempt.topicId) ?? [];
@@ -153,7 +189,7 @@ export class PerformanceTracker {
     tenantId: string,
     userId: string,
   ): Promise<StreakAnalysis> {
-    const attempts = await this.prisma.questionAttempt.findMany({
+    const attempts = await this.getQuestionAttemptDelegate().findMany({
       where: { tenantId, userId },
       orderBy: { attemptedAt: "desc" },
       take: 20, // Recent 20 for streak analysis
@@ -166,9 +202,9 @@ export class PerformanceTracker {
       streakType: streaks.streakType,
       longestCorrectStreak: streaks.longestCorrectStreak,
       longestIncorrectStreak: streaks.longestIncorrectStreak,
-      recentAttempts: attempts.slice(0, 5).map((a) => ({
-        correct: a.correct,
-        timestamp: a.attemptedAt,
+      recentAttempts: attempts.slice(0, 5).map((attemptRecord) => ({
+        correct: attemptRecord.correct,
+        timestamp: attemptRecord.attemptedAt,
       })),
     };
   }

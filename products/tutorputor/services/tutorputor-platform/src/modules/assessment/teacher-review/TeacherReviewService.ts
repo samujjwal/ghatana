@@ -9,7 +9,7 @@
  * @doc.pattern Workflow Service
  */
 
-import type { PrismaClient } from '@tutorputor/core/db';
+import type { Prisma, PrismaClient } from '@tutorputor/core/db';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'TeacherReviewService' });
@@ -65,6 +65,44 @@ export interface SubmitReviewInput {
   comments?: string;
 }
 
+type StoredReviewTask = {
+  id: string;
+  tenantId: string;
+  assessmentId: string;
+  attemptId: string;
+  itemId: string;
+  studentId: string;
+  assignedTo: string | null;
+  status: ReviewTask['status'];
+  originalScore: number | null;
+  originalFeedback: string | null;
+  aiGradingResult: Prisma.JsonValue | null;
+  reviewedScore: number | null;
+  reviewedFeedback: string | null;
+  priority: ReviewTask['priority'];
+  reason: string;
+  assignedAt: Date | null;
+  completedAt: Date | null;
+  createdAt: Date;
+};
+
+type ReviewTaskDelegate = {
+  create(args: { data: Record<string, unknown> }): Promise<StoredReviewTask>;
+  update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<StoredReviewTask>;
+  findMany(args: {
+    where: Record<string, unknown>;
+    orderBy?: Array<Record<string, 'asc' | 'desc'>>;
+  }): Promise<StoredReviewTask[]>;
+};
+
+type AttemptFeedbackItem = {
+  itemId: string;
+  scorePercent: number;
+  feedback?: string;
+};
+
+type AIGradingResult = NonNullable<ReviewTask['aiGradingResult']>;
+
 export class TeacherReviewService {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -81,7 +119,7 @@ export class TeacherReviewService {
     });
 
     // Create review task in database
-    const task = await this.prisma.gradingReviewTask.create({
+    const task = await this.getReviewTaskDelegate().create({
       data: {
         tenantId: input.tenantId,
         assessmentId: input.assessmentId,
@@ -110,7 +148,7 @@ export class TeacherReviewService {
       teacherId,
     });
 
-    const task = await this.prisma.gradingReviewTask.update({
+    const task = await this.getReviewTaskDelegate().update({
       where: { id: taskId },
       data: {
         assignedTo: teacherId,
@@ -126,7 +164,7 @@ export class TeacherReviewService {
    * Get pending review tasks for a teacher
    */
   async getPendingTasks(tenantId: string, teacherId: string): Promise<ReviewTask[]> {
-    const tasks = await this.prisma.gradingReviewTask.findMany({
+    const tasks = await this.getReviewTaskDelegate().findMany({
       where: {
         tenantId,
         assignedTo: teacherId,
@@ -135,7 +173,7 @@ export class TeacherReviewService {
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
     });
 
-    return tasks.map((t) => this.mapToReviewTask(t));
+    return tasks.map((task) => this.mapToReviewTask(task));
   }
 
   /**
@@ -149,7 +187,7 @@ export class TeacherReviewService {
       approved: input.approved,
     });
 
-    const task = await this.prisma.gradingReviewTask.update({
+    const task = await this.getReviewTaskDelegate().update({
       where: { id: input.taskId },
       data: {
         status: input.approved ? 'completed' : 'rejected',
@@ -176,22 +214,22 @@ export class TeacherReviewService {
     completed: number;
     avgCompletionTimeMs: number;
   }> {
-    const tasks = await this.prisma.gradingReviewTask.findMany({
+    const tasks = await this.getReviewTaskDelegate().findMany({
       where: { tenantId },
     });
 
-    const pending = tasks.filter((t) => t.status === 'pending' || t.status === 'assigned').length;
-    const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
-    const completed = tasks.filter((t) => t.status === 'completed').length;
+    const pending = tasks.filter((task) => task.status === 'pending' || task.status === 'assigned').length;
+    const inProgress = tasks.filter((task) => task.status === 'in_progress').length;
+    const completed = tasks.filter((task) => task.status === 'completed').length;
 
     const completedWithTimes = tasks.filter(
-      (t) => t.status === 'completed' && t.assignedAt && t.completedAt,
+      (task) => task.status === 'completed' && task.assignedAt && task.completedAt,
     );
     const avgCompletionTimeMs =
       completedWithTimes.length > 0
-        ? completedWithTimes.reduce((sum, t) => {
-            const assigned = new Date(t.assignedAt!).getTime();
-            const completed = new Date(t.completedAt!).getTime();
+        ? completedWithTimes.reduce((sum: number, task) => {
+            const assigned = task.assignedAt?.getTime() ?? 0;
+            const completedAt = task.completedAt?.getTime() ?? 0;
             return sum + (completed - assigned);
           }, 0) / completedWithTimes.length
         : 0;
@@ -219,15 +257,20 @@ export class TeacherReviewService {
     if (!attempt) return;
 
     // Update the feedback for this item
-    const feedbackArray = (attempt.feedback as Prisma.InputJsonValue) as Array<{ itemId: string; scorePercent: number; feedback?: string }>;
+    const feedbackArray = this.parseFeedbackArray(attempt.feedback);
     const itemIndex = feedbackArray.findIndex((f) => f.itemId === itemId);
 
     if (itemIndex >= 0) {
-      feedbackArray[itemIndex] = {
+      const updatedItem: AttemptFeedbackItem = {
         itemId,
         scorePercent: score,
-        feedback,
       };
+
+      if (feedback) {
+        updatedItem.feedback = feedback;
+      }
+
+      feedbackArray[itemIndex] = updatedItem;
     }
 
     // Recalculate total score
@@ -242,26 +285,114 @@ export class TeacherReviewService {
     });
   }
 
-  private mapToReviewTask(task: any): ReviewTask {
+  private parseFeedbackArray(feedback: Prisma.JsonValue | null): AttemptFeedbackItem[] {
+    if (!Array.isArray(feedback)) {
+      return [];
+    }
+
+    return feedback.flatMap((entry): AttemptFeedbackItem[] => {
+      if (!entry || typeof entry !== 'object') {
+        return [];
+      }
+
+      const itemId = 'itemId' in entry && typeof entry.itemId === 'string' ? entry.itemId : null;
+      const scorePercent =
+        'scorePercent' in entry && typeof entry.scorePercent === 'number'
+          ? entry.scorePercent
+          : null;
+      const entryFeedback =
+        'feedback' in entry && typeof entry.feedback === 'string'
+          ? entry.feedback
+          : null;
+
+      if (!itemId || scorePercent == null) {
+        return [];
+      }
+
+      return [
+        entryFeedback ? { itemId, scorePercent, feedback: entryFeedback } : { itemId, scorePercent },
+      ];
+    });
+  }
+
+  private getReviewTaskDelegate(): ReviewTaskDelegate {
+    const prismaWithDelegate = this.prisma as PrismaClient & {
+      gradingReviewTask?: ReviewTaskDelegate;
+    };
+
+    if (!prismaWithDelegate.gradingReviewTask) {
+      throw new Error('gradingReviewTask delegate is unavailable. Regenerate Tutorputor Prisma client or align TeacherReviewService with the current assessment review schema.');
+    }
+
+    return prismaWithDelegate.gradingReviewTask;
+  }
+
+  private parseAiGradingResult(value: Prisma.JsonValue | null): AIGradingResult | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    const scorePercent = 'scorePercent' in value && typeof value.scorePercent === 'number'
+      ? value.scorePercent
+      : null;
+    const confidence = 'confidence' in value && typeof value.confidence === 'number'
+      ? value.confidence
+      : null;
+    const feedback = 'feedback' in value && typeof value.feedback === 'string'
+      ? value.feedback
+      : null;
+
+    if (scorePercent == null || confidence == null || !feedback) {
+      return null;
+    }
+
     return {
+      scorePercent,
+      confidence,
+      feedback,
+    };
+  }
+
+  private mapToReviewTask(task: StoredReviewTask): ReviewTask {
+    const mappedTask: ReviewTask = {
       id: task.id,
       tenantId: task.tenantId,
       assessmentId: task.assessmentId,
       attemptId: task.attemptId,
       itemId: task.itemId,
       studentId: task.studentId,
-      assignedTo: task.assignedTo ?? undefined,
       status: task.status,
-      originalScore: task.originalScore ?? undefined,
-      originalFeedback: task.originalFeedback ?? undefined,
-      aiGradingResult: task.aiGradingResult as any,
-      reviewedScore: task.reviewedScore ?? undefined,
-      reviewedFeedback: task.reviewedFeedback ?? undefined,
       priority: task.priority,
       reason: task.reason,
-      assignedAt: task.assignedAt?.toISOString() ?? undefined,
-      completedAt: task.completedAt?.toISOString() ?? undefined,
       createdAt: task.createdAt.toISOString(),
     };
+
+    if (task.assignedTo) {
+      mappedTask.assignedTo = task.assignedTo;
+    }
+    if (task.originalScore != null) {
+      mappedTask.originalScore = task.originalScore;
+    }
+    if (task.originalFeedback) {
+      mappedTask.originalFeedback = task.originalFeedback;
+    }
+    const aiGradingResult = this.parseAiGradingResult(task.aiGradingResult);
+    if (aiGradingResult) {
+      mappedTask.aiGradingResult = aiGradingResult;
+    }
+    if (task.reviewedScore != null) {
+      mappedTask.reviewedScore = task.reviewedScore;
+    }
+    if (task.reviewedFeedback) {
+      mappedTask.reviewedFeedback = task.reviewedFeedback;
+    }
+    if (task.assignedAt) {
+      mappedTask.assignedAt = task.assignedAt.toISOString();
+    }
+    if (task.completedAt) {
+      mappedTask.completedAt = task.completedAt.toISOString();
+    }
+
+    return mappedTask;
   }
 }

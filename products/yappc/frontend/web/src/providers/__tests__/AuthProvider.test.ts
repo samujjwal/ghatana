@@ -54,14 +54,16 @@ describe('mapAuthSessionToUser — tenantId mapping', () => {
     expect(result.tenantId).toBe('org-xyz');
   });
 
-  it('falls back to default-tenant when API returns no tenantId', () => {
-    const result = mapAuthSessionToUser({ id: 'u1' });
-    expect(result.tenantId).toBe('default-tenant');
+  it('throws error when API returns no tenantId', () => {
+    expect(() => mapAuthSessionToUser({ id: 'u1' })).toThrow(
+      'Tenant ID is required and cannot be default-tenant'
+    );
   });
 
-  it('falls back to default-tenant when tenantId is blank', () => {
-    const result = mapAuthSessionToUser({ id: 'u1', tenantId: '   ' });
-    expect(result.tenantId).toBe('default-tenant');
+  it('throws error when tenantId is blank', () => {
+    expect(() => mapAuthSessionToUser({ id: 'u1', tenantId: '   ' })).toThrow(
+      'Tenant ID is required and cannot be default-tenant'
+    );
   });
 
   it('does NOT hard-code tenantId — distinct tenants are preserved', () => {

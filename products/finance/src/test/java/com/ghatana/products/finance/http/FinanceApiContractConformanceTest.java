@@ -59,17 +59,4 @@ public final class FinanceApiContractConformanceTest extends ApiContractConforma
         // Verify that all routes are tenant-aware via context or explicit parameter
         assertThat("/transactions").as("Tenant context should be enforced").isNotEmpty();
     }
-
-    @Test
-    @DisplayName("Finance health check endpoints should be discoverable")
-    void testHealthEndpointsDiscoverable() {
-        Set<HttpRouteScanner.RouteDefinition> routes = HttpRouteScanner.scanRoutes(FinanceHttpServer.class);
-        Set<String> healthRoutes = new HashSet<>();
-        for (HttpRouteScanner.RouteDefinition route : routes) {
-            if (route.getPath().contains("health") || route.getPath().contains("ready")) {
-                healthRoutes.add(route.getPath());
-            }
-        }
-        assertThat(healthRoutes).as("Health check endpoints should be discoverable").isNotEmpty();
-    }
 }

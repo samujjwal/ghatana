@@ -226,7 +226,10 @@ export class IntentInferenceService {
       if (preferredDomain && matches.some(m => m.subject === preferredDomain)) {
         return preferredDomain;
       }
-      return matches[0].subject;
+      const topMatch = matches[0];
+      if (topMatch) {
+        return topMatch.subject;
+      }
     }
 
     // Default to tenant's preferred domain or General
@@ -427,8 +430,14 @@ export class IntentInferenceService {
     const level = this.mapGradeToLevel(gradeLevel);
 
     // Get smart defaults for subject and level
-    const subjectDefaults = this.contentTypeDefaults[subject] || this.contentTypeDefaults.General;
-    let types = subjectDefaults[level] || subjectDefaults.middle || this.contentTypeDefaults.General.middle;
+    const fallbackDefaults: Record<string, string[]> = { middle: [] };
+    const generalDefaults = this.contentTypeDefaults.General ?? fallbackDefaults;
+    const subjectDefaults = this.contentTypeDefaults[subject] ?? generalDefaults;
+    const types =
+      subjectDefaults[level] ??
+      subjectDefaults.middle ??
+      generalDefaults.middle ??
+      [];
 
     // Topic-specific enhancements
     const enhancedTypes = [...types];

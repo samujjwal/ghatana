@@ -12,7 +12,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import { PerformanceTracker } from "./performance-tracker";
 import { AdaptiveDifficultyEngine } from "./adaptive-engine";
 import type { DifficultyAdjustment } from "./adaptive-engine";
@@ -62,7 +62,7 @@ export class AssessmentService {
   private adaptiveEngine: AdaptiveDifficultyEngine;
   private activeSessions: Map<string, AssessmentSession> = new Map();
 
-  constructor(private readonly prisma: PrismaClient) {
+  constructor(private readonly prisma: TutorPrismaClient) {
     this.performanceTracker = new PerformanceTracker(prisma);
     this.adaptiveEngine = new AdaptiveDifficultyEngine(prisma);
   }
@@ -95,10 +95,10 @@ export class AssessmentService {
 
     // Get initial questions
     const questions = await this.selectQuestions(tenantId, {
-      topicId: options.topicId,
       difficultyRange: { min: initialDifficulty - 0.5, max: initialDifficulty + 0.5 },
       excludeIds: [],
       limit: options.maxQuestions ?? 20,
+      ...(options.topicId ? { topicId: options.topicId } : {}),
     });
 
     const session: AssessmentSession = {
@@ -183,11 +183,18 @@ export class AssessmentService {
       limit: 1,
     });
 
+    const nextQuestion = nextQuestions[0];
+
     return {
       session,
-      nextQuestion: nextQuestions.length > 0
-        ? { id: nextQuestions[0].id, difficulty: adjustment.newDifficulty }
-        : undefined,
+      ...(nextQuestion
+        ? {
+            nextQuestion: {
+              id: nextQuestion.id,
+              difficulty: adjustment.newDifficulty,
+            },
+          }
+        : {}),
       adjustment,
       isComplete: false,
     };

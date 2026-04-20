@@ -36,6 +36,21 @@ export interface JobTiming {
   totalTime: number;
 }
 
+type QueueJobSnapshot = {
+  id: string;
+  queueName: string;
+  timestamp: number;
+  processedOn?: number;
+  finishedOn?: number;
+};
+
+type QueueEventEmitter = Queue & {
+  on: (
+    event: string,
+    listener: (job: QueueJobSnapshot) => void | Promise<void>,
+  ) => void;
+};
+
 export class QueueMetricsService {
   private queues: Map<string, Queue> = new Map();
   private metrics: Map<string, QueuePerformanceMetrics> = new Map();
@@ -48,13 +63,14 @@ export class QueueMetricsService {
   registerQueue(queue: Queue): void {
     this.queues.set(queue.name, queue);
     this.jobTimings.set(queue.name, []);
+    const queueEvents = queue as QueueEventEmitter;
     
     // Set up event listeners
-    queue.on('completed', async (job) => {
+    queueEvents.on('completed', async (job: QueueJobSnapshot) => {
       this.recordJobCompletion(job);
     });
 
-    queue.on('failed', async (job) => {
+    queueEvents.on('failed', async (job: QueueJobSnapshot) => {
       this.recordJobFailure(job);
     });
 
@@ -64,7 +80,7 @@ export class QueueMetricsService {
   /**
    * Record job completion timing
    */
-  private async recordJobCompletion(job: any): Promise<void> {
+  private async recordJobCompletion(job: QueueJobSnapshot): Promise<void> {
     const queueName = job.queueName;
     const timings = this.jobTimings.get(queueName) || [];
 
@@ -92,7 +108,7 @@ export class QueueMetricsService {
   /**
    * Record job failure
    */
-  private async recordJobFailure(job: any): Promise<void> {
+  private async recordJobFailure(job: QueueJobSnapshot): Promise<void> {
     const queueName = job.queueName;
     const timings = this.jobTimings.get(queueName) || [];
 

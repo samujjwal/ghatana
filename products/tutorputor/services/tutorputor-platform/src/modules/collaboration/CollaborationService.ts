@@ -154,7 +154,7 @@ type Socket = {
   leave: (room: string) => Promise<void>;
   to: (room: string) => { emit: (event: string, data: unknown) => void };
   emit: (event: string, data: unknown) => void;
-  on: (event: string, handler: (data: unknown) => void) => void;
+  on: (event: string, handler: (...args: unknown[]) => void) => void;
   disconnect: () => void;
 };
 
@@ -167,12 +167,26 @@ export class CollaborationService {
   private userSockets = new Map<string, string>(); // userId -> socketId
   private presence = new Map<string, UserPresence>();
 
+  private onSocketEvent<T>(
+    socket: Socket,
+    event: string,
+    handler: (data: T) => void,
+  ): void {
+    socket.on(event, (...args: unknown[]) => {
+      const [data] = args;
+      handler(data as T);
+    });
+  }
+
   /**
    * Initialize Socket.io server
    */
   async initialize(httpServer: HTTPServer): Promise<void> {
     try {
-      const { Server } = await import("socket.io");
+      const importSocketIo = new Function(
+        'return import("socket.io")',
+      ) as () => Promise<{ Server: new (server: HTTPServer, options: Record<string, unknown>) => SocketServer }>;
+      const { Server } = await importSocketIo();
       this.io = new Server(httpServer, {
         cors: {
           origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
@@ -203,27 +217,27 @@ export class CollaborationService {
       logger.info(`[Collaboration] Client connected: ${socket.id}`);
 
       // Authenticate user
-      socket.on("authenticate", (data: { userId: string; userName: string; token: string }) => {
+      this.onSocketEvent(socket, "authenticate", (data: { userId: string; userName: string; token: string }) => {
         this.handleAuthentication(socket, data);
       });
 
       // Join module room
-      socket.on("join:module", (data: { moduleId: string }) => {
+      this.onSocketEvent(socket, "join:module", (data: { moduleId: string }) => {
         this.handleJoinModule(socket, data.moduleId);
       });
 
       // Leave module room
-      socket.on("leave:module", (data: { moduleId: string }) => {
+      this.onSocketEvent(socket, "leave:module", (data: { moduleId: string }) => {
         this.handleLeaveModule(socket, data.moduleId);
       });
 
       // Cursor move
-      socket.on("cursor:move", (data: { moduleId: string; x: number; y: number; elementId?: string }) => {
+      this.onSocketEvent(socket, "cursor:move", (data: { moduleId: string; x: number; y: number; elementId?: string }) => {
         this.handleCursorMove(socket, data);
       });
 
       // Content edit (with OT)
-      socket.on("content:edit", (data: {
+      this.onSocketEvent(socket, "content:edit", (data: {
         moduleId: string;
         operation: "insert" | "delete" | "replace";
         path: string[];
@@ -236,7 +250,7 @@ export class CollaborationService {
       });
 
       // Add annotation
-      socket.on("annotation:add", (data: {
+      this.onSocketEvent(socket, "annotation:add", (data: {
         moduleId: string;
         targetElementId: string;
         position: { x: number; y: number };
@@ -247,27 +261,27 @@ export class CollaborationService {
       });
 
       // Update annotation
-      socket.on("annotation:update", (data: { moduleId: string; annotationId: string; content: string }) => {
+      this.onSocketEvent(socket, "annotation:update", (data: { moduleId: string; annotationId: string; content: string }) => {
         this.handleUpdateAnnotation(socket, data);
       });
 
       // Reply to annotation
-      socket.on("annotation:reply", (data: { moduleId: string; annotationId: string; content: string }) => {
+      this.onSocketEvent(socket, "annotation:reply", (data: { moduleId: string; annotationId: string; content: string }) => {
         this.handleReplyToAnnotation(socket, data);
       });
 
       // Resolve annotation
-      socket.on("annotation:resolve", (data: { moduleId: string; annotationId: string }) => {
+      this.onSocketEvent(socket, "annotation:resolve", (data: { moduleId: string; annotationId: string }) => {
         this.handleResolveAnnotation(socket, data);
       });
 
       // Chat message
-      socket.on("chat:message", (data: { moduleId: string; message: string; replyTo?: string }) => {
+      this.onSocketEvent(socket, "chat:message", (data: { moduleId: string; message: string; replyTo?: string }) => {
         this.handleChatMessage(socket, data);
       });
 
       // User status change
-      socket.on("user:status", (data: { status: UserPresence["status"] }) => {
+      this.onSocketEvent(socket, "user:status", (data: { status: UserPresence["status"] }) => {
         this.handleStatusChange(socket, data.status);
       });
 
@@ -451,11 +465,14 @@ export class CollaborationService {
         operation: data.operation,
         path: data.path,
         position: data.position,
-        length: data.length,
         content: data.content,
         revision: data.revision,
       },
     };
+
+    if (data.length != null) {
+      event.payload.length = data.length;
+    }
 
     room.events.push(event);
     room.updatedAt = new Date();
@@ -619,22 +636,27 @@ export class CollaborationService {
     const mentions: string[] = [];
     let match;
     while ((match = mentionRegex.exec(data.message)) !== null) {
-      mentions.push(match[1]);
+      const mention = match[1];
+      if (mention) {
+        mentions.push(mention);
+      }
     }
 
     const event: ChatMessageEvent = {
       id: `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       type: "chat_message",
       userId: socket.data.userId,
-      userName: socket.data.userName,
       moduleId: data.moduleId,
       timestamp: new Date(),
       payload: {
         message: data.message,
-        replyTo: data.replyTo,
         mentions,
       },
     };
+
+    if (data.replyTo) {
+      event.payload.replyTo = data.replyTo;
+    }
 
     room.chatHistory.push(event);
     room.updatedAt = new Date();

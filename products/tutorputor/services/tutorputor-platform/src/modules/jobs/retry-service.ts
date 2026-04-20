@@ -12,7 +12,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 export interface RetryConfig {
   maxRetries: number;
@@ -196,7 +196,7 @@ export class RetryService {
 
     return {
       canRetry: true,
-      nextRetryAt: state.nextRetryAt,
+      ...(state.nextRetryAt ? { nextRetryAt: state.nextRetryAt } : {}),
     };
   }
 
@@ -498,15 +498,17 @@ export class RetryService {
     `.catch(() => []);
 
     for (const state of states) {
-      this.retryStates.set(state.job_id, {
+      const retryState: JobRetryState = {
         jobId: state.job_id,
         retryCount: state.retry_count,
-        nextRetryAt: state.next_retry_at ?? undefined,
         attempts: JSON.parse(state.attempts) as RetryAttempt[],
         circuitBreakerState: state.circuit_breaker_state as JobRetryState["circuitBreakerState"],
         consecutiveFailures: state.consecutive_failures,
-        lastFailureAt: state.last_failure_at ?? undefined,
-      });
+        ...(state.next_retry_at ? { nextRetryAt: state.next_retry_at } : {}),
+        ...(state.last_failure_at ? { lastFailureAt: state.last_failure_at } : {}),
+      };
+
+      this.retryStates.set(state.job_id, retryState);
     }
 
     console.log(`Loaded ${this.retryStates.size} retry states from database`);

@@ -4,6 +4,8 @@
  */
 package com.ghatana.aep.server.http;
 
+import io.activej.http.HttpHeaders;
+import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.MDC;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -137,23 +141,24 @@ class CorrelationIdPropagationTest {
     // In a real integration test, these would interact with the actual AepHttpServer
     
     private HttpRequest mockHttpRequestWithCorrelationId(String correlationId) {
-        return new MockHttpRequest(correlationId);
+        HttpRequest mock = mock(HttpRequest.class);
+        when(mock.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(correlationId);
+        return mock;
     }
 
     private HttpRequest mockHttpRequestWithoutCorrelationId() {
-        return new MockHttpRequest(null);
+        HttpRequest mock = mock(HttpRequest.class);
+        when(mock.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(null);
+        return mock;
     }
 
     private String extractCorrelationId(HttpRequest request) {
-        // Simulate the extraction logic from AepHttpServer
-        String headerValue = ((MockHttpRequest) request).getCorrelationIdHeader();
-        
-        if (headerValue == null || headerValue.isBlank()) {
-            // Generate new correlation ID
-            return "gen-" + System.currentTimeMillis();
+        String header = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        if (header != null && !header.isEmpty()) {
+            return header;
         }
-        
-        return headerValue;
+        // Generate correlation ID if not present
+        return java.util.UUID.randomUUID().toString();
     }
 
     private void setCorrelationIdInMDC(String correlationId) {
@@ -162,48 +167,5 @@ class CorrelationIdPropagationTest {
 
     private void clearCorrelationIdFromMDC() {
         MDC.remove("correlationId");
-    }
-
-    // Mock HttpRequest implementation for testing
-    private static class MockHttpRequest implements HttpRequest {
-        private final String correlationId;
-
-        MockHttpRequest(String correlationId) {
-            this.correlationId = correlationId;
-        }
-
-        String getCorrelationIdHeader() {
-            return correlationId;
-        }
-
-        @Override
-        public HttpMethod getMethod() {
-            return HttpMethod.POST;
-        }
-
-        @Override
-        public String getPath() {
-            return "/api/v1/events";
-        }
-
-        @Override
-        public String getQueryParameter(String name) {
-            return null;
-        }
-
-        @Override
-        public String getHeader(String header) {
-            if ("X-Correlation-ID".equals(header)) {
-                return correlationId;
-            }
-            return null;
-        }
-
-        @Override
-        public Promise<byte[]> loadBody() {
-            return Promise.of("{}".getBytes(StandardCharsets.UTF_8));
-        }
-
-        // Other interface methods not needed for this test
     }
 }

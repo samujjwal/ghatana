@@ -170,6 +170,7 @@ export class SemanticChunkService {
       .join(" ");
 
     if (metaText.trim()) {
+      const assetTags = asStringArray(asset.tags);
       rawChunks.push({
         chunkRef: "meta:0",
         source: "METADATA",
@@ -178,8 +179,8 @@ export class SemanticChunkService {
         text: metaText.trim(),
         tokenCount: estimateTokens(metaText),
         contentHash: hashText(metaText),
-        domain: asset.domain,
-        tags: asStringArray(asset.tags),
+        ...(asset.domain ? { domain: asset.domain } : {}),
+        ...(assetTags ? { tags: assetTags } : {}),
       });
     }
 
@@ -196,6 +197,7 @@ export class SemanticChunkService {
       for (let i = 0; i < segments.length; i++) {
         const text = segments[i];
         if (!text) continue;
+        const blockClaimRefs = asStringArray(block.claimRefs);
         rawChunks.push({
           chunkRef: `${block.blockRef}:${i}`,
           source: "BLOCK",
@@ -204,8 +206,8 @@ export class SemanticChunkService {
           text,
           tokenCount: estimateTokens(text),
           contentHash: hashText(text),
-          domain: asset.domain,
-          claimRefs: asStringArray(block.claimRefs),
+          ...(asset.domain ? { domain: asset.domain } : {}),
+          ...(blockClaimRefs ? { claimRefs: blockClaimRefs } : {}),
         });
       }
     }
@@ -228,7 +230,7 @@ export class SemanticChunkService {
           text,
           tokenCount: estimateTokens(text),
           contentHash: hashText(text),
-          domain: asset.domain,
+          ...(asset.domain ? { domain: asset.domain } : {}),
           ...(manifest.claimRef ? { claimRefs: [manifest.claimRef] } : {}),
         });
       }
@@ -271,9 +273,9 @@ export class SemanticChunkService {
             tokenCount: raw.tokenCount,
             contentHash: raw.contentHash,
             embeddingStatus: "PENDING",
-            domain: raw.domain,
-            claimRefs: raw.claimRefs,
-            tags: raw.tags,
+            ...(raw.domain ? { domain: raw.domain } : {}),
+            ...(raw.claimRefs ? { claimRefs: raw.claimRefs } : {}),
+            ...(raw.tags ? { tags: raw.tags } : {}),
           },
         });
         chunksCreated++;
@@ -286,9 +288,9 @@ export class SemanticChunkService {
             tokenCount: raw.tokenCount,
             contentHash: raw.contentHash,
             embeddingStatus: "STALE",
-            domain: raw.domain,
-            claimRefs: raw.claimRefs,
-            tags: raw.tags,
+            ...(raw.domain ? { domain: raw.domain } : {}),
+            ...(raw.claimRefs ? { claimRefs: raw.claimRefs } : {}),
+            ...(raw.tags ? { tags: raw.tags } : {}),
           },
         });
         chunksUpdated++;

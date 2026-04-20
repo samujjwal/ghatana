@@ -222,7 +222,7 @@ POST /api/v1/webhooks/stripe
 
 ```env
 # Stripe
-STRIPE_SECRET_KEY=sk_test_your-key
+STRIPE_SECRET_KEY=stripe_test_placeholder_secret
 STRIPE_WEBHOOK_SECRET=whsec_your-secret
 STRIPE_PRICE_ID=price_your-price-id
 

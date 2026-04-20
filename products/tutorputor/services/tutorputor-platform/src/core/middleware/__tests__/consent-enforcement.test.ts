@@ -179,6 +179,29 @@ describe('createConsentEnforcement', () => {
             expect(reply.status).not.toHaveBeenCalled();
         });
 
+        it('uses subject claim when JWT user id is stored as sub', async () => {
+            (prisma.userConsent.findMany as any).mockResolvedValue([
+                { category: 'ai_processing' },
+            ]);
+            const { preHandler } = createConsentEnforcement({ prisma, enableCache: false });
+            const reply = makeReply();
+
+            await preHandler(
+                makeRequest({
+                    url: '/api/v1/ai/generate',
+                    method: 'POST',
+                    user: { sub: 'u1', tenantId: 't1', role: 'learner' },
+                }),
+                reply,
+            );
+
+            expect(prisma.userConsent.findMany).toHaveBeenCalledWith({
+                where: { tenantId: 't1', userId: 'u1', granted: true },
+                select: { category: true },
+            });
+            expect(reply.status).not.toHaveBeenCalled();
+        });
+
         it('always includes essential consent', async () => {
             const { fetchGrantedConsent } = createConsentEnforcement({ prisma, enableCache: false });
 

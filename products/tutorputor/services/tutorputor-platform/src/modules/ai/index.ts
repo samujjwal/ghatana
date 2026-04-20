@@ -42,7 +42,7 @@ export const aiModule: FastifyPluginAsync = async (app) => {
 
   // Create AI Cache Service
   const aiCacheService = new AICacheService(
-    parseInt(process.env.AI_CACHE_MAX_ENTRIES || '1000', 10),
+    app.redis,
     parseInt(process.env.AI_CACHE_TTL || '3600000', 10)
   );
   app.decorate('aiCacheService', aiCacheService);

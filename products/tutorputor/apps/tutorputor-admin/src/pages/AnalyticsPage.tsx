@@ -4,8 +4,72 @@ import { Card, Button, Spinner } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
 import { ExternalLink, Star } from "lucide-react";
 
-// Mock chart components
-const ResponsiveTable = ({ children }: { children: React.ReactNode }) => <table className="w-full border">{children}</table>;
+interface ResponsiveTableColumn<T> {
+  header: string;
+  accessor: keyof T | ((row: T) => React.ReactNode);
+  hideOnMobile?: boolean;
+}
+
+interface ResponsiveTableProps<T> {
+  data: T[];
+  columns: ResponsiveTableColumn<T>[];
+  getRowKey: (row: T) => string;
+  mobileCardRenderer: (row: T) => React.ReactNode;
+}
+
+function ResponsiveTable<T>({
+  data,
+  columns,
+  getRowKey,
+  mobileCardRenderer,
+}: ResponsiveTableProps<T>) {
+  const renderCell = (row: T, column: ResponsiveTableColumn<T>): React.ReactNode => {
+    if (typeof column.accessor === "function") {
+      return column.accessor(row);
+    }
+
+    return row[column.accessor] as React.ReactNode;
+  };
+
+  return (
+    <>
+      <table className="hidden w-full border md:table">
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.header}
+                className="border-b px-4 py-2 text-left text-sm font-medium text-gray-500"
+              >
+                {column.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row) => (
+            <tr key={getRowKey(row)}>
+              {columns.map((column) => (
+                <td key={column.header} className="border-b px-4 py-3 text-sm text-gray-900">
+                  {renderCell(row, column)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="space-y-3 md:hidden" aria-hidden="true">
+        {data.map((row) => (
+          <Card key={getRowKey(row)} className="p-4">
+            {mobileCardRenderer(row)}
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+}
+
 const PullToRefresh = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
 const LineChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
 const BarChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;

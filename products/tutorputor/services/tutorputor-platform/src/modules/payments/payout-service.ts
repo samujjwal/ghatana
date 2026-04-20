@@ -101,7 +101,7 @@ export class PayoutService {
           currency: config.currency || "usd",
           status,
           arrivalDate: payout.arrival_date ? new Date(payout.arrival_date * 1000) : null,
-          description: config.description,
+          ...(config.description ? { description: config.description } : {}),
           metadata: config.metadata ? JSON.stringify(config.metadata) : null,
         },
       });

@@ -1,19 +1,22 @@
 import { Navigate, createBrowserRouter } from "react-router-dom";
-import { DashboardPage } from "../pages/DashboardPage";
-import { ModulePage } from "../pages/ModulePage";
-import { PathwaysPage } from "../pages/PathwaysPage";
-import { SearchResultsPage } from "../pages/SearchResultsPage";
-import { AssessmentsPage } from "../pages/AssessmentsPage";
-import { AssessmentDetailPage } from "../pages/AssessmentDetailPage";
-import { AnalyticsPage } from "../pages/AnalyticsPage";
-import { MarketplacePage } from "../pages/MarketplacePage";
-import { CollaborationPage } from "../pages/CollaborationPage";
-import { TeacherPage } from "../pages/TeacherPage";
-import SettingsPage from "../pages/Settings";
-import SimulationListPage from "../pages/SimulationList";
 import { AppLayout } from "../components/AppLayout";
 import { LoginRoutePage } from "../pages/LoginRoutePage";
 import { canonicalLearnerRoutes } from "./canonicalRouteMap";
+
+async function loadNamedComponent<TModule extends Record<string, unknown>>(
+  loader: () => Promise<TModule>,
+  exportName: keyof TModule,
+) {
+  const module = await loader();
+  return { Component: module[exportName] as React.ComponentType };
+}
+
+async function loadDefaultComponent<TModule extends { default: React.ComponentType }>(
+  loader: () => Promise<TModule>,
+) {
+  const module = await loader();
+  return { Component: module.default };
+}
 
 /**
  * Canonical learner route map.
@@ -34,11 +37,11 @@ export const router = createBrowserRouter([
       // === LEARN SECTION ===
       {
         index: true,
-        element: <DashboardPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/DashboardPage"), "DashboardPage"),
       },
       {
         path: "dashboard",
-        element: <DashboardPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/DashboardPage"), "DashboardPage"),
       },
       {
         path: "modules",
@@ -46,51 +49,51 @@ export const router = createBrowserRouter([
       },
       {
         path: "modules/:slug",
-        element: <ModulePage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/ModulePage"), "ModulePage"),
       },
       {
         path: "pathways",
-        element: <PathwaysPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/PathwaysPage"), "PathwaysPage"),
       },
 
       // === PRACTICE SECTION ===
       {
         path: "assessments",
-        element: <AssessmentsPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/AssessmentsPage"), "AssessmentsPage"),
       },
       {
         path: "assessments/:assessmentId",
-        element: <AssessmentDetailPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/AssessmentDetailPage"), "AssessmentDetailPage"),
       },
 
       // === EXPLORE SECTION ===
       {
         path: "search",
-        element: <SearchResultsPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/SearchResultsPage"), "SearchResultsPage"),
       },
       {
         path: "marketplace",
-        element: <MarketplacePage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/MarketplacePage"), "MarketplacePage"),
       },
 
       // === CONNECT SECTION ===
       {
         path: "collaboration",
-        element: <CollaborationPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/CollaborationPage"), "CollaborationPage"),
       },
 
       // === PROFILE SECTION ===
       {
         path: "analytics",
-        element: <AnalyticsPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/AnalyticsPage"), "AnalyticsPage"),
       },
       {
         path: "teacher",
-        element: <TeacherPage />,
+        lazy: async () => loadNamedComponent(() => import("../pages/TeacherPage"), "TeacherPage"),
       },
       {
         path: "settings",
-        element: <SettingsPage />,
+        lazy: async () => loadDefaultComponent(() => import("../pages/Settings")),
       },
 
       // === AI TUTOR COMPATIBILITY ALIAS ===
@@ -102,7 +105,7 @@ export const router = createBrowserRouter([
       // === SIMULATIONS ===
       {
         path: "simulations",
-        element: <SimulationListPage />,
+        lazy: async () => loadDefaultComponent(() => import("../pages/SimulationList")),
       },
       {
         path: "simulations/studio/:id?",

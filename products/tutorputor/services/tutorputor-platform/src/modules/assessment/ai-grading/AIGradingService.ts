@@ -78,13 +78,19 @@ export class AIGradingService {
 
     try {
       // Call AI client for grading
-      const aiResponse = await aiClient.gradeResponse({
+      const gradeRequest = {
         question: request.questionPrompt,
         response: request.studentResponse,
-        rubric: request.rubric,
-        modelAnswer: request.modelAnswer,
-        context: request.context,
-      });
+        ...(request.rubric ? { rubric: request.rubric } : {}),
+        ...(request.modelAnswer ? { modelAnswer: request.modelAnswer } : {}),
+        ...(request.context ? { context: request.context } : {}),
+      };
+
+      const aiResponse = await aiClient.gradeResponse(gradeRequest);
+
+      if (!aiResponse) {
+        throw new Error('AI grading returned no response');
+      }
 
       const processingTimeMs = Date.now() - startTime;
 
@@ -100,7 +106,9 @@ export class AIGradingService {
           strengths: aiResponse.strengths || [],
           improvements: aiResponse.improvements || [],
           comments: aiResponse.comments || '',
-          rubricScores: aiResponse.rubricScores,
+          ...(aiResponse.rubricScores
+            ? { rubricScores: aiResponse.rubricScores }
+            : {}),
         },
         metadata: {
           modelUsed: aiResponse.model || 'tutorputor-grading-v1',

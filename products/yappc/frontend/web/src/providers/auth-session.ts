@@ -79,6 +79,22 @@ function readStoredSession(): StoredSession | null {
   }
 }
 
+function getAccessTokenFromCookie(): string | null {
+  try {
+    // Try to get token from cookie
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'accessToken' && value) {
+        return value;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function persistStoredSession(session: StoredSession): void {
   if (typeof localStorage === 'undefined') {
     return;
@@ -122,10 +138,15 @@ export function mapAuthSessionToUser(user: AuthSessionUser): User {
 }
 
 export function getStoredAccessToken(): string | null {
+  // Try cookie first (httpOnly, more secure)
+  const cookieToken = getAccessTokenFromCookie();
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  // Fall back to localStorage (for backward compatibility)
   const session = readStoredSession();
-  return typeof session?.token === 'string' && session.token.length > 0
-    ? session.token
-    : null;
+  return session?.token ?? null;
 }
 
 async function refreshStoredSession(

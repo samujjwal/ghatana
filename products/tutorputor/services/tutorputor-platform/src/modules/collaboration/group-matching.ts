@@ -13,7 +13,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 export interface UserLearningProfile {
   userId: string;
@@ -54,7 +54,7 @@ export interface GroupFormationSuggestion {
 }
 
 export class GroupMatchingService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: TutorPrismaClient) {}
 
   /**
    * Find study groups matching a user's profile

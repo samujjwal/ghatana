@@ -7,6 +7,9 @@ const trustedHeaders = {
   "x-tenant-id": "default",
   "x-user-id": "user-admin-001",
   "x-user-role": "admin",
+  "x-trusted-proxy-secret":
+    process.env.TRUST_PROXY_AUTH_SHARED_SECRET ??
+    "tutorputor-internal-dev-proxy-secret",
 };
 
 test.describe("TutorPutor authoring lifecycle", () => {

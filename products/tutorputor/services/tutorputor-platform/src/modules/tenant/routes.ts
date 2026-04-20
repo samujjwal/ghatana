@@ -151,7 +151,7 @@ export const tenantRoutes: FastifyPluginAsync<{
   app.patch("/config", async (req, reply) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin", "superadmin"]);
-    const updatesResult = z.record(z.unknown()).safeParse(req.body);
+    const updatesResult = z.record(z.string(), z.unknown()).safeParse(req.body);
     if (!updatesResult.success) {
       return reply.code(400).send({
         error: "Invalid tenant config payload",
@@ -190,11 +190,11 @@ export const tenantRoutes: FastifyPluginAsync<{
 
     await respondWithErrors(reply, () =>
       tenantService.listDomainPacks(tenantId, {
-        domain: normalizedDomain,
-        status: normalizedStatus,
-        search,
         page: page ?? 1,
         limit: limit ?? 20,
+        ...(normalizedDomain ? { domain: normalizedDomain } : {}),
+        ...(normalizedStatus ? { status: normalizedStatus } : {}),
+        ...(search ? { search } : {}),
       }),
     );
   });

@@ -127,7 +127,7 @@ const sendMessageBodySchema = z.object({
     .enum(["text", "image", "file", "code", "math", "quiz_share", "system"])
     .optional(),
   content: z.string().trim().min(1),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   replyToId: z.string().optional(),
   attachments: z
     .array(
@@ -156,7 +156,7 @@ const feedQuerySchema = z.object({
 const activityBodySchema = z.object({
   activityType: z.string().trim().min(1),
   content: z.string().trim().min(1),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 function sendValidationError(reply: { code: (code: number) => { send: (payload: unknown) => unknown } }, error: z.ZodError): unknown {
@@ -840,7 +840,7 @@ export const socialRoutes: FastifyPluginAsync<{
     const { userId } = paramsResult.data as { userId: UserId };
 
     try {
-      const followers = await socialService.getFollowers({
+      const followers = await forumService.getFollowers({
         tenantId,
         userId,
       });

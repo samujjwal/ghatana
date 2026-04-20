@@ -37,7 +37,7 @@ const observationBodySchema = z.object({
   completed: z.boolean().optional(),
   masteryScore: z.number().optional(),
   feedbackScore: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const evaluateActiveBodySchema = z.object({
@@ -80,7 +80,15 @@ export function registerABTestingRoutes(
 
       const experiment = await service.createExperienceExperiment(
         getTenantId(request),
-        bodyResult.data,
+        {
+          experienceId: bodyResult.data.experienceId,
+          controlVersion: bodyResult.data.controlVersion,
+          treatmentVersion: bodyResult.data.treatmentVersion,
+          ...(bodyResult.data.notes ? { notes: bodyResult.data.notes } : {}),
+          ...(typeof bodyResult.data.priority === 'number'
+            ? { priority: bodyResult.data.priority }
+            : {}),
+        },
       );
       return reply.status(201).send(experiment);
     },
@@ -167,7 +175,23 @@ export function registerABTestingRoutes(
         getTenantId(request),
         paramsResult.data.experimentId,
         bodyResult.data.userId,
-        bodyResult.data,
+        {
+          metricValue: bodyResult.data.metricValue,
+          ...(bodyResult.data.sessionId
+            ? { sessionId: bodyResult.data.sessionId }
+            : {}),
+          ...(bodyResult.data.assetId ? { assetId: bodyResult.data.assetId } : {}),
+          ...(typeof bodyResult.data.completed === 'boolean'
+            ? { completed: bodyResult.data.completed }
+            : {}),
+          ...(typeof bodyResult.data.masteryScore === 'number'
+            ? { masteryScore: bodyResult.data.masteryScore }
+            : {}),
+          ...(typeof bodyResult.data.feedbackScore === 'number'
+            ? { feedbackScore: bodyResult.data.feedbackScore }
+            : {}),
+          ...(bodyResult.data.metadata ? { metadata: bodyResult.data.metadata } : {}),
+        },
       );
       return reply.status(201).send(observation);
     },
@@ -212,7 +236,23 @@ export function registerABTestingRoutes(
 
       const evaluation = await service.evaluateActiveExperiments(
         getTenantId(request),
-        bodyResult.data,
+        {
+          ...(typeof bodyResult.data.minSampleSize === 'number'
+            ? { minSampleSize: bodyResult.data.minSampleSize }
+            : {}),
+          ...(typeof bodyResult.data.autoPromote === 'boolean'
+            ? { autoPromote: bodyResult.data.autoPromote }
+            : {}),
+          ...(typeof bodyResult.data.maxPValue === 'number'
+            ? { maxPValue: bodyResult.data.maxPValue }
+            : {}),
+          ...(typeof bodyResult.data.minRelativeImprovement === 'number'
+            ? {
+                minRelativeImprovement:
+                  bodyResult.data.minRelativeImprovement,
+              }
+            : {}),
+        },
       );
       return reply.status(200).send(evaluation);
     },

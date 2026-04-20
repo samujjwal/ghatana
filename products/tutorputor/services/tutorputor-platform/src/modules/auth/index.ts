@@ -1,8 +1,68 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { TenantId } from "@tutorputor/contracts/v1";
+import crypto from "crypto";
 import { createSsoService } from "./service.js";
 import { getTenantId } from "../../core/http/requestContext.js";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
+
+interface AuthJwtClaims {
+  sub: string;
+  tenantId: string;
+  role?: string;
+  email?: string;
+  name?: string;
+  type?: string;
+  jti?: string;
+}
+
+interface SessionUser {
+  id: string;
+  email: string;
+  displayName: string;
+  role: string;
+  tenantId: string;
+}
+
+interface RefreshSessionRecord {
+  userId: string;
+  tenantId: string;
+  jti: string;
+}
+
+type RedisLike = {
+  get: (key: string) => Promise<string | null>;
+  set: (
+    key: string,
+    value: string,
+    mode: 'EX',
+    ttlSeconds: number,
+  ) => Promise<unknown>;
+  del: (key: string) => Promise<number>;
+};
+
+type SsoCallbackResultWithRedirect = {
+  success: boolean;
+  user?: {
+    id: string;
+    email: string;
+    displayName: string;
+    role: string;
+  };
+  accessToken?: string;
+  refreshToken?: string;
+  redirectUri?: string;
+};
+
+const REFRESH_SESSION_PREFIX = "auth:refresh-session:";
+const REFRESH_SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+function getRefreshSessionKey(jti: string): string {
+  return `${REFRESH_SESSION_PREFIX}${jti}`;
+}
+
+function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
 
 /**
  * Authentication module (OIDC/SSO).
@@ -14,19 +74,129 @@ import type { TutorPrismaClient } from "@tutorputor/core/db";
  */
 export const authModule: FastifyPluginAsync = async (app) => {
   const prisma = app.prisma as TutorPrismaClient;
-  const jwt = (app as any).jwt; // fastify-jwt used in platform setup
+  const redis = app.redis as unknown as RedisLike;
+  const jwt = (app as typeof app & { jwt: { sign: (payload: object, options?: { expiresIn?: string }) => string; verify: (token: string) => AuthJwtClaims } }).jwt;
+
+  async function fetchSessionUser(claims: AuthJwtClaims): Promise<SessionUser> {
+    const user = await prisma.user.findUnique({
+      where: { id: claims.sub },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        role: true,
+        tenantId: true,
+      },
+    });
+
+    if (user) {
+      return user;
+    }
+
+    return {
+      id: claims.sub,
+      email: claims.email || "unknown",
+      displayName: claims.name || "User",
+      role: claims.role || "student",
+      tenantId: claims.tenantId || "default",
+    };
+  }
+
+  async function storeRefreshSession(
+    refreshToken: string,
+    claims: AuthJwtClaims,
+  ): Promise<void> {
+    if (!claims.jti) {
+      return;
+    }
+
+    const record: RefreshSessionRecord = {
+      userId: claims.sub,
+      tenantId: claims.tenantId,
+      jti: claims.jti,
+    };
+
+    await redis.set(
+      getRefreshSessionKey(claims.jti),
+      JSON.stringify({ ...record, tokenHash: hashToken(refreshToken) }),
+      'EX',
+      REFRESH_SESSION_TTL_SECONDS,
+    );
+  }
+
+  async function readRefreshSession(jti: string): Promise<
+    (RefreshSessionRecord & { tokenHash: string }) | null
+  > {
+    const raw = await redis.get(getRefreshSessionKey(jti));
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as RefreshSessionRecord & { tokenHash: string };
+    } catch {
+      return null;
+    }
+  }
+
+  async function deleteRefreshSession(jti: string | undefined): Promise<void> {
+    if (!jti) {
+      return;
+    }
+
+    await redis.del(getRefreshSessionKey(jti));
+  }
+
+  function signAccessToken(user: SessionUser): string {
+    return jwt.sign(
+      {
+        sub: user.id,
+        tenantId: user.tenantId,
+        role: user.role,
+        email: user.email,
+        name: user.displayName,
+      },
+      { expiresIn: "1h" },
+    );
+  }
+
+  function signRefreshToken(user: SessionUser): string {
+    return jwt.sign(
+      {
+        sub: user.id,
+        tenantId: user.tenantId,
+        role: user.role,
+        type: "refresh",
+        jti: crypto.randomUUID(),
+      },
+      { expiresIn: "7d" },
+    );
+  }
 
   // Dependencies
   const ssoService = createSsoService({
     prisma,
     baseUrl: process.env.API_BASE_URL || "http://localhost:3000",
-    redis: app.redis,
+    redis: {
+      get: (key) => redis.get(key),
+      set: (key, value) => redis.set(key, value, 'EX', REFRESH_SESSION_TTL_SECONDS),
+      expire: async (key, seconds) => {
+        const value = await redis.get(key);
+        if (value == null) {
+          return 0;
+        }
+
+        await redis.set(key, value, 'EX', seconds);
+        return 1;
+      },
+      del: (key) => redis.del(key),
+    },
     generateAccessToken: (userId, tenantId) => {
       return jwt.sign({ sub: userId, tenantId }, { expiresIn: "1h" });
     },
     generateRefreshToken: (userId, tenantId) => {
       return jwt.sign(
-        { sub: userId, tenantId, type: "refresh" },
+        { sub: userId, tenantId, type: "refresh", jti: crypto.randomUUID() },
         { expiresIn: "7d" },
       );
     },
@@ -89,47 +259,13 @@ export const authModule: FastifyPluginAsync = async (app) => {
     },
     async (req, reply) => {
       try {
-        // Verify JWT token from Authorization header
-        const authHeader = req.headers.authorization;
-        if (!authHeader?.startsWith("Bearer ")) {
-          return reply
-            .code(401)
-            .send({ error: "Authorization token required" });
+        const claims = (req as typeof req & { user?: AuthJwtClaims }).user;
+        if (!claims?.sub || !claims.tenantId) {
+          return reply.code(401).send({ error: "Authorization token required" });
         }
 
-        const token = authHeader.slice(7);
-        const decoded = jwt.verify(token) as {
-          sub: string;
-          tenantId: string;
-          email?: string;
-          name?: string;
-          role?: string;
-        };
-
-        // Optionally fetch full user from database
-        const user = await prisma.user.findUnique({
-          where: { id: decoded.sub },
-          select: {
-            id: true,
-            email: true,
-            displayName: true,
-            role: true,
-            tenantId: true,
-          },
-        });
-
-        if (user) {
-          return reply.send(user);
-        }
-
-        // Return token claims if user not in DB (e.g., first login)
-        return reply.send({
-          id: decoded.sub,
-          email: decoded.email || "unknown",
-          displayName: decoded.name || "User",
-          role: decoded.role || "student",
-          tenantId: decoded.tenantId || "default",
-        });
+        const user = await fetchSessionUser(claims);
+        return reply.send(user);
       } catch {
         return reply.code(401).send({ error: "Invalid or expired token" });
       }
@@ -150,7 +286,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
       return reply.code(400).send({ error: "tenantSlug is required" });
 
     const providers = await ssoService.getLoginProviders({ tenantSlug });
-    return reply.send(providers);
+    return reply.send({ providers });
   });
 
   /**
@@ -158,17 +294,47 @@ export const authModule: FastifyPluginAsync = async (app) => {
    */
   app.get("/sso/login/:providerId", async (req, reply) => {
     const { providerId } = req.params as { providerId: string };
-    const { redirect_uri } = req.query as {
+    const { redirect_uri, tenantSlug } = req.query as {
       redirect_uri?: string;
+      tenantSlug?: string;
     };
 
     let tenantId: TenantId;
     try {
       tenantId = getTenantId(req) as TenantId;
     } catch {
-      return reply
-        .code(400)
-        .send({ error: "Tenant Context Required (x-tenant-id)" });
+      if (tenantSlug) {
+        const tenant = await prisma.tenant.findFirst({
+          where: { subdomain: tenantSlug },
+          select: { id: true },
+        });
+
+        if (tenant?.id) {
+          tenantId = tenant.id as TenantId;
+        } else {
+          const provider = await prisma.identityProvider.findUnique({
+            where: { id: providerId },
+            select: { tenantId: true },
+          });
+
+          if (!provider?.tenantId) {
+            return reply.code(400).send({ error: "Tenant context could not be resolved" });
+          }
+
+          tenantId = provider.tenantId as TenantId;
+        }
+      } else {
+        const provider = await prisma.identityProvider.findUnique({
+          where: { id: providerId },
+          select: { tenantId: true },
+        });
+
+        if (!provider?.tenantId) {
+          return reply.code(400).send({ error: "Tenant context could not be resolved" });
+        }
+
+        tenantId = provider.tenantId as TenantId;
+      }
     }
 
     try {
@@ -201,17 +367,76 @@ export const authModule: FastifyPluginAsync = async (app) => {
         providerId,
         code,
         state,
-      });
+      }) as SsoCallbackResultWithRedirect;
 
-      const target = "/dashboard";
+      const callbackUser = result.user;
+      if (!result.success || !callbackUser || !result.accessToken || !result.refreshToken) {
+        return reply.code(400).send({ error: 'Login Failed', details: 'SSO callback did not return a complete session' });
+      }
+
+      const refreshClaims = jwt.verify(result.refreshToken) as AuthJwtClaims;
+      await storeRefreshSession(result.refreshToken, refreshClaims);
+
+      const target = result.redirectUri || "/dashboard";
       const separator = target.includes("?") ? "&" : "?";
       return reply.redirect(
-        `${target}${separator}accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`,
+        `${target}${separator}accessToken=${encodeURIComponent(result.accessToken)}&refreshToken=${encodeURIComponent(result.refreshToken)}`,
       );
     } catch (e: unknown) {
       return reply
         .code(400)
         .send({ error: "Login Failed", details: e instanceof Error ? e.message : String(e) });
     }
+  });
+
+  app.post("/refresh", async (req, reply) => {
+    const { refreshToken } = (req.body as { refreshToken?: string }) ?? {};
+
+    if (!refreshToken) {
+      return reply.code(400).send({ error: "refreshToken is required" });
+    }
+
+    try {
+      const claims = jwt.verify(refreshToken) as AuthJwtClaims;
+      if (claims.type !== "refresh" || !claims.jti) {
+        return reply.code(401).send({ error: "Invalid refresh token" });
+      }
+
+      const session = await readRefreshSession(claims.jti);
+      if (!session || session.tokenHash !== hashToken(refreshToken)) {
+        return reply.code(401).send({ error: "Refresh token invalid or expired" });
+      }
+
+      const user = await fetchSessionUser(claims);
+      await deleteRefreshSession(claims.jti);
+
+      const nextAccessToken = signAccessToken(user);
+      const nextRefreshToken = signRefreshToken(user);
+      const nextRefreshClaims = jwt.verify(nextRefreshToken) as AuthJwtClaims;
+      await storeRefreshSession(nextRefreshToken, nextRefreshClaims);
+
+      return reply.send({
+        accessToken: nextAccessToken,
+        refreshToken: nextRefreshToken,
+        user,
+      });
+    } catch {
+      return reply.code(401).send({ error: "Refresh token invalid or expired" });
+    }
+  });
+
+  app.post("/logout", async (req, reply) => {
+    const refreshToken = (req.body as { refreshToken?: string } | undefined)?.refreshToken;
+
+    if (refreshToken) {
+      try {
+        const claims = jwt.verify(refreshToken) as AuthJwtClaims;
+        await deleteRefreshSession(claims.jti);
+      } catch {
+        // Logout stays idempotent.
+      }
+    }
+
+    return reply.send({ success: true });
   });
 };

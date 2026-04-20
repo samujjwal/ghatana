@@ -172,10 +172,10 @@ export class QueueMonitoringService {
         state: state as JobMetrics['state'],
         progress: progress as number,
         attemptsMade,
-        failedReason: failedReason || undefined,
-        processedOn,
-        finishedOn,
-        duration,
+        ...(failedReason ? { failedReason } : {}),
+        ...(processedOn !== undefined ? { processedOn } : {}),
+        ...(finishedOn !== undefined ? { finishedOn } : {}),
+        ...(duration !== undefined ? { duration } : {}),
       };
     } catch (error) {
       logger.error({ message: 'Failed to get job metrics', queue: queue.name, jobId, error });

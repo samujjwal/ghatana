@@ -400,9 +400,23 @@ public class HttpHandlerSupport {
      * @return HTTP response with JSON body (200 for success, 400 for errors)
      */
     public HttpResponse envelopeResponse(ApiResponse envelope, ObjectMapper mapper) {
+        return errorEnvelopeResponse(envelope, mapper, envelope.isSuccess() ? 200 : 400);
+    }
+
+    /**
+     * Serialises an {@link ApiResponse} canonical envelope and returns it as an
+     * HTTP response with the specified status code. This method allows different
+     * error types to return appropriate HTTP status codes (400, 404, 429, 500, etc.)
+     * while preserving the structured error envelope.
+     *
+     * @param envelope  the response envelope to serialise
+     * @param mapper    Jackson ObjectMapper
+     * @param statusCode the HTTP status code to return
+     * @return HTTP response with JSON body and specified status code
+     */
+    public HttpResponse errorEnvelopeResponse(ApiResponse envelope, ObjectMapper mapper, int statusCode) {
         try {
             String json = envelope.toJson(mapper);
-            int statusCode = envelope.isSuccess() ? 200 : 400;
             return HttpResponse.ofCode(statusCode)
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))

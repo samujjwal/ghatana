@@ -76,7 +76,14 @@ export function registerQualityMLRoutes(
 
       const predictions = await pipeline.backfillPredictions(
         getTenantId(request),
-        bodyResult.data,
+        {
+          ...(typeof bodyResult.data.limit === "number"
+            ? { limit: bodyResult.data.limit }
+            : {}),
+          ...(bodyResult.data.assetIds
+            ? { assetIds: bodyResult.data.assetIds }
+            : {}),
+        },
       );
       return reply.status(200).send({
         predictions,
@@ -109,7 +116,11 @@ export function registerQualityMLRoutes(
       const predictions = await pipeline.applyPredictionsForExperience(
         getTenantId(request),
         paramsResult.data.experienceId,
-        bodyResult.data,
+        {
+          ...(typeof bodyResult.data.limit === "number"
+            ? { limit: bodyResult.data.limit }
+            : {}),
+        },
       );
       return reply.status(200).send({
         predictions,
@@ -152,7 +163,14 @@ export function registerQualityMLRoutes(
 
       const predictions = await pipeline.applyPredictionsBatch(
         getTenantId(request),
-        bodyResult.data,
+        {
+          ...(typeof bodyResult.data.limit === "number"
+            ? { limit: bodyResult.data.limit }
+            : {}),
+          ...(bodyResult.data.assetIds
+            ? { assetIds: bodyResult.data.assetIds }
+            : {}),
+        },
       );
       return reply.status(200).send({
         predictions,

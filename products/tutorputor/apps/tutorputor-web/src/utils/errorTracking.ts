@@ -1,14 +1,32 @@
-import * as Sentry from "@sentry/browser";
-
 let initialized = false;
+type SentryBrowserModule = typeof import("@sentry/browser");
+let sentryModule: SentryBrowserModule | null = null;
 
 function getEnvironment(): string {
   return import.meta.env.MODE || "development";
 }
 
-export function initializeErrorTracking(): void {
+async function loadSentry(): Promise<SentryBrowserModule | null> {
+  if (sentryModule) {
+    return sentryModule;
+  }
+
+  try {
+    sentryModule = await import("@sentry/browser");
+    return sentryModule;
+  } catch {
+    return null;
+  }
+}
+
+export async function initializeErrorTracking(): Promise<void> {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   if (!dsn || initialized) {
+    return;
+  }
+
+  const Sentry = await loadSentry();
+  if (!Sentry) {
     return;
   }
 
@@ -34,21 +52,21 @@ export function captureClientError(
   error: unknown,
   context?: Record<string, unknown>,
 ): void {
-  if (!initialized) {
+  if (!initialized || !sentryModule) {
     return;
   }
 
-  Sentry.withScope((scope) => {
+  sentryModule.withScope((scope) => {
     if (context) {
       scope.setContext("client", context);
     }
 
     if (error instanceof Error) {
-      Sentry.captureException(error);
+      sentryModule.captureException(error);
       return;
     }
 
-    Sentry.captureMessage(String(error), "error");
+    sentryModule.captureMessage(String(error), "error");
   });
 }
 
@@ -57,16 +75,16 @@ export function captureClientMessage(
   message: string,
   context?: Record<string, unknown>,
 ): void {
-  if (!initialized) {
+  if (!initialized || !sentryModule) {
     return;
   }
 
-  Sentry.withScope((scope) => {
+  sentryModule.withScope((scope) => {
     if (context) {
       scope.setContext("client", context);
     }
 
     scope.setLevel(level);
-    Sentry.captureMessage(message, level);
+    sentryModule.captureMessage(message, level);
   });
 }

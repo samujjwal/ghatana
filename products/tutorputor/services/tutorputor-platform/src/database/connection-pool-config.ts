@@ -10,7 +10,7 @@
  * @doc.pattern Configuration
  */
 
-import { PrismaClient } from '@tutorputor/core/db';
+import { PrismaClient, createPrismaClientForUrl } from '@tutorputor/core/db';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'ConnectionPoolConfig' });
@@ -62,17 +62,7 @@ export function createPrismaWithPool(config: ConnectionPoolConfig, datasourceUrl
     throw new Error('DATABASE_URL environment variable is required');
   }
 
-  const prisma = new PrismaClient({
-    datasources: {
-      db: {
-        url,
-      },
-    },
-    log: [
-      { level: 'error', emit: 'stdout' },
-      { level: 'warn', emit: 'stdout' },
-    ],
-  });
+  const prisma = createPrismaClientForUrl(url);
 
   logger.info({
     message: 'Prisma client configured with connection pool',
@@ -261,11 +251,12 @@ export class ConnectionPoolHealthMonitor {
         WHERE datname = current_database()
       ` as Array<{ active: bigint; idle: bigint; total: bigint }>;
 
-      if (result && result.length > 0) {
+      const row = result[0];
+      if (row) {
         return {
-          activeConnections: Number(result[0].active),
-          idleConnections: Number(result[0].idle),
-          totalConnections: Number(result[0].total),
+          activeConnections: Number(row.active),
+          idleConnections: Number(row.idle),
+          totalConnections: Number(row.total),
         };
       }
 

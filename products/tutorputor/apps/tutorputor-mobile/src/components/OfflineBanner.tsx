@@ -16,7 +16,7 @@ interface OfflineBannerProps {
   isOffline: boolean;
 }
 
-export function OfflineBanner({ isOffline }: OfflineBannerProps): JSX.Element | null {
+export function OfflineBanner({ isOffline }: OfflineBannerProps): React.ReactElement | null {
   if (!isOffline) return null;
 
   return (

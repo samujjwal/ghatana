@@ -67,6 +67,9 @@ export interface GenerationMetadataLike {
   model_name?: unknown;
   tokens_used?: unknown;
   generation_time_ms?: unknown;
+  modelName?: unknown;
+  tokensUsed?: unknown;
+  generationTimeMs?: unknown;
 }
 
 type TelemetryJobEnvelope<T extends CorrelatedGenerationJobData> = {
@@ -181,24 +184,29 @@ export class ContentWorkerTelemetryPublisher {
     }
 
     const actualTokens = toFiniteNumber(metadata.tokens_used);
-    const generationTimeMs = toFiniteNumber(metadata.generation_time_ms);
+    const normalizedTokens = actualTokens ?? toFiniteNumber(metadata.tokensUsed);
+    const generationTimeMs =
+      toFiniteNumber(metadata.generation_time_ms) ??
+      toFiniteNumber(metadata.generationTimeMs);
     const model =
       typeof metadata.model_name === "string" && metadata.model_name.length > 0
         ? metadata.model_name
+        : typeof metadata.modelName === "string" && metadata.modelName.length > 0
+          ? metadata.modelName
         : undefined;
 
-    if (actualTokens == null && generationTimeMs == null && !model) {
+    if (normalizedTokens == null && generationTimeMs == null && !model) {
       return undefined;
     }
 
     const actualCostUsd =
-      actualTokens != null
-        ? roundUsd((actualTokens / 1000) * DEFAULT_COST_PER_1K_TOKENS)
+      normalizedTokens != null
+        ? roundUsd((normalizedTokens / 1000) * DEFAULT_COST_PER_1K_TOKENS)
         : undefined;
 
     return {
       ...(model ? { model } : {}),
-      ...(actualTokens != null ? { actualTokens } : {}),
+      ...(normalizedTokens != null ? { actualTokens: normalizedTokens } : {}),
       ...(actualCostUsd != null ? { actualCostUsd } : {}),
       ...(generationTimeMs != null ? { generationTimeMs } : {}),
     };

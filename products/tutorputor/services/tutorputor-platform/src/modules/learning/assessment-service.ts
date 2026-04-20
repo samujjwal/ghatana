@@ -29,7 +29,8 @@ import type {
   Difficulty,
 } from "@tutorputor/contracts/v1/types";
 import type { Prisma, TutorPrismaClient } from "@tutorputor/core/db";
-import { paginate, TenantAccessValidator } from "@tutorputor/core";
+import { paginate } from "@tutorputor/core/db/helpers/pagination";
+import { TenantAccessValidator } from "@tutorputor/core/auth/tenant-access-validator";
 
 import { aiClient } from "../../clients/ai-client";
 import { createStandaloneLogger } from "@tutorputor/core/logger";

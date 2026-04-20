@@ -19,10 +19,15 @@ export default defineConfig({
     dedupe: ["react", "react-dom", "react-router", "react-router-dom"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@ghatana/charts": path.resolve(__dirname, "../../../../platform/typescript/charts/src/index.ts"),
       "@ghatana/design-system": path.resolve(__dirname, "../../../../platform/typescript/design-system/src/index.ts"),
-      "@ghatana/theme": path.resolve(__dirname, "../../../../platform/typescript/theme/dist/index.js"),
+      "@ghatana/theme": path.resolve(__dirname, "../../../../platform/typescript/theme/src/index.ts"),
       "@ghatana/tokens": path.resolve(__dirname, "../../../../platform/typescript/tokens/dist/index.js"),
       "@ghatana/platform-utils": path.resolve(__dirname, "../../../../platform/typescript/foundation/platform-utils/dist/index.js"),
+      "@tutorputor/core": path.resolve(__dirname, "../../libs/tutorputor-core/src/index.ts"),
+      "@tutorputor/simulation/renderer/easing": path.resolve(__dirname, "../../libs/tutorputor-simulation/src/renderer/easing.ts"),
+      "@tutorputor/simulation": path.resolve(__dirname, "../../libs/tutorputor-simulation/src/index.ts"),
+      "@tutorputor/ui": path.resolve(__dirname, "../../libs/tutorputor-ui/src/index.ts"),
     },
   },
   server: {

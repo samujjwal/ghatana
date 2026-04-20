@@ -4,15 +4,14 @@ const logger = createLogger('main');
 
 import React, { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { ErrorBoundary } from '@ghatana/design-system';
 import { MinimalThemeProvider } from "./providers/MinimalThemeProvider";
 import { App } from "./App";
 import "./index.css";
 
-initializeErrorTracking();
+void initializeErrorTracking();
 
 // Simple ErrorBoundary component
-class ErrorBoundary extends React.Component<
+class AppErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; error?: Error }
 > {
@@ -79,15 +78,11 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ErrorBoundary
-      onError={({ error, errorInfo }) => {
-        logger.error('Error caught by boundary:', { error, errorInfo });
-      }}
-    >
+    <AppErrorBoundary>
       <MinimalThemeProvider storageKey="tutorputor-theme">
         <App />
       </MinimalThemeProvider>
-    </ErrorBoundary>
+    </AppErrorBoundary>
   </StrictMode>
 );
 

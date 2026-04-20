@@ -19,6 +19,7 @@ import {
 
 export interface ContentValidationJobData extends CorrelatedGenerationJobData {
   experienceId: string;
+  tenantId: string;
   checkCorrectness: boolean;
   checkCompleteness: boolean;
   checkConcreteness: boolean;
@@ -79,66 +80,56 @@ export class ContentValidationProcessor {
         throw new Error(`Experience not found: ${experienceId}`);
       }
 
-      // Build validation request
       const requestId = crypto.randomUUID();
 
-      // Adapt claims - map to what Java side likely expects
-      const claimsPayload = (experience.claims as any[]).map((c: any) => ({
-        claimRef: c.claimRef,
-        text: c.text,
-        bloomLevel: c.bloomLevel,
-      }));
-
-      const evidencesPayload = (experience.claims as any[]).flatMap((c: any) =>
-        (c.examples || []).map((e: any) => ({
-          claimRef: c.claimRef,
-          type: e.type,
-        })),
-      );
-
-      const tasksPayload = (experience.experienceTasks || []).map(
-        (task: any) => ({
-          claimRef: task.claimRef,
-          type: task.type,
-        }),
-      );
-
-      // Extract targetGrades safely - schema defines it as Json
-      // Assuming it's array of string or object with grade field
-      const targetGrades = Array.isArray(experience.targetGrades)
-        ? experience.targetGrades
-        : [];
-      const primaryGrade =
-        targetGrades.length > 0
-          ? typeof targetGrades[0] === "string"
-            ? targetGrades[0]
-            : JSON.stringify(targetGrades[0])
-          : "GRADE_6_8";
+      const experienceDetails = experience as {
+        title?: string;
+        description?: string;
+        domain?: string;
+        claims: Array<{ text?: string }>;
+      };
 
       const response = await this.grpcClient.validateContent({
         requestId,
+        tenantId: job.data.tenantId,
         experienceId,
-        content: {
-          gradeLevel: primaryGrade,
-          domain: experience.domain,
-          claims: claimsPayload,
-          evidences: evidencesPayload,
-          tasks: tasksPayload,
-        },
-        config: {
-          checkCorrectness,
-          checkCompleteness,
-          checkConcreteness,
-          checkConciseness,
-          minConfidenceThreshold,
-        },
+        title: String(experienceDetails.title ?? `Experience ${experienceId}`),
+        description: String(experienceDetails.description ?? ""),
+        claimTexts: experienceDetails.claims.map(
+          (claim) => String(claim.text ?? ""),
+        ),
+        domain: String(experienceDetails.domain ?? "TECH"),
       });
+
+      const normalizedIssues = Array.isArray(response.issues)
+        ? response.issues
+        : [];
+      const fallbackScore = Number(
+        (response as { overall_score?: number }).overall_score ?? 0,
+      );
+      const overallScore =
+        Number.isFinite(response.overallScore) && response.overallScore > 0
+          ? response.overallScore
+          : fallbackScore;
+      const responseStatus = String(
+        (response as { status?: string }).status ?? "",
+      ).toUpperCase();
+      const passed =
+        response.canPublish ||
+        responseStatus === "VALID" ||
+        responseStatus === "PASS";
+      const issueMessages = normalizedIssues.map((issue) => issue.message);
+      const suggestions = normalizedIssues
+        .map((issue) => issue.suggestion)
+        .filter((suggestion): suggestion is string => suggestion.length > 0);
+      const issueCount =
+        response.issueCount > 0 ? response.issueCount : normalizedIssues.length;
 
       this.logger.info(
         {
           jobId: job.id,
-          passed: response.report?.passed,
-          score: response.report?.overall_score,
+          passed,
+          score: overallScore,
         },
         "Content validated successfully",
       );
@@ -154,15 +145,14 @@ export class ContentValidationProcessor {
         status: "running",
         ...(responseCost ? { cost: responseCost } : {}),
         diagnostics: {
-          passed: response.report?.passed,
-          overallScore: response.report?.overall_score,
+          passed,
+          overallScore,
         },
       });
 
       // Store validation results
-      // Schema has changed: uses specific scores and ValidationStatus enum
-      const overallStatus = response.report?.passed ? "PASS" : "FAIL";
-      const rawScore = Number(response.report?.overall_score || 0);
+      const overallStatus = passed ? "PASS" : "FAIL";
+      const rawScore = Number(overallScore || 0);
       const score =
         rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
 
@@ -178,25 +168,18 @@ export class ContentValidationProcessor {
           accessibilityScore: score,
           gradefitScore: score,
 
-          issues: response.report?.issues || [],
-          suggestions: response.report?.recommendations || [],
+          issues: issueMessages,
+          suggestions,
           validatedAt: new Date(),
         },
       });
 
-      if (response.report?.passed) {
-        await this.prisma.learningExperience.update({
-          where: { id: experienceId },
-          data: {
-            status: "REVIEW",
-          },
-        });
-      } else {
+      if (!passed) {
         this.logger.warn(
           {
             jobId: job.id,
             experienceId,
-            issuesCount: response.report?.issues?.length || 0,
+            issuesCount: issueCount,
           },
           "Experience validation failed - needs improvement",
         );
@@ -214,8 +197,8 @@ export class ContentValidationProcessor {
         status: "running",
         diagnostics: {
           experienceId,
-          passed: response.report?.passed,
-          issueCount: response.report?.issues?.length || 0,
+          passed,
+          issueCount,
         },
       });
     } catch (error: unknown) {

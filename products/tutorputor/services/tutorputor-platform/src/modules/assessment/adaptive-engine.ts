@@ -12,7 +12,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 export interface DifficultyAdjustment {
   currentDifficulty: number;
@@ -57,7 +57,7 @@ export class AdaptiveDifficultyEngine {
   private config: AdaptiveConfig;
 
   constructor(
-    private readonly prisma: PrismaClient,
+    private readonly prisma: TutorPrismaClient,
     config?: Partial<AdaptiveConfig>,
   ) {
     this.config = { ...DEFAULT_ADAPTIVE_CONFIG, ...config };

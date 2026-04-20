@@ -352,7 +352,7 @@ async function recordExperiencePublishProvenance(
   actorId: string,
   validationScore: number,
 ): Promise<void> {
-  const claimRefs = experience.claims.map((claim) => claim.claimRef ?? claim.id);
+  const claimRefs = experience.claims.map((claim) => claim.id);
   const prismaWithExtras = prisma as PrismaClient & {
     experienceRevision?: {
       create: (args: unknown) => Promise<unknown>;
@@ -429,9 +429,9 @@ async function recordExperiencePublishProvenance(
     ),
     claims: experience.claims.map((claim) => ({
       id: claim.id,
-      claimRef: claim.claimRef ?? claim.id,
+      claimRef: claim.id,
       text: claim.text,
-      bloomLevel: claim.bloomLevel ?? claim.bloom,
+      bloomLevel: claim.bloom,
       taskRefs: (claim.tasks ?? []).map((task) => task.id),
       evidenceRefs: (claim.evidenceRequirements ?? []).map(
         (evidence) => evidence.id,

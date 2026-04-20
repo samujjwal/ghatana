@@ -84,7 +84,13 @@ export function registerReviewRoutes(
 
       const input: SubmitReviewDecisionInput = {
         requestId,
-        ...bodyResult.data,
+        status: bodyResult.data.status,
+        ...(bodyResult.data.decisionNote
+          ? { decisionNote: bodyResult.data.decisionNote }
+          : {}),
+        ...(bodyResult.data.regenerateJobIds
+          ? { regenerateJobIds: bodyResult.data.regenerateJobIds }
+          : {}),
       };
 
       const decision = await service.submitDecision(tenantId, reviewedBy, input);

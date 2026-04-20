@@ -4,10 +4,15 @@
  */
 package com.ghatana.aep.server.http;
 
-import com.ghatana.aep.server.http.AepHttpServer.AepHttpServerBuilder;
-import io.prometheus.client.CollectorRegistry;
+import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.event.EventCloud;
+import com.ghatana.aep.server.http.AepHttpServer;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import javax.sql.DataSource;
 import redis.clients.jedis.JedisPool;
@@ -22,10 +27,15 @@ class AepHttpServerBuilderTest {
     @Test
     void shouldBuildServerWithRequiredParameters() {
         // Arrange & Act
-        AepHttpServer server = new AepHttpServerBuilder()
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+
+        AepHttpServer server = AepHttpServer.builder()
+            .engine(mockEngine)
             .port(8080)
             .build();
-        
+
         // Assert
         assertNotNull(server);
         // The server should be constructible with minimal parameters
@@ -34,18 +44,22 @@ class AepHttpServerBuilderTest {
     @Test
     void shouldBuildServerWithAllParameters() {
         // Arrange
-        CollectorRegistry registry = new CollectorRegistry();
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+        PrometheusMeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         DataSource dataSource = mock(javax.sql.DataSource.class);
         JedisPool jedisPool = mock(redis.clients.jedis.JedisPool.class);
-        
+
         // Act
-        AepHttpServer server = new AepHttpServerBuilder()
+        AepHttpServer server = AepHttpServer.builder()
+            .engine(mockEngine)
             .port(8080)
             .prometheusRegistry(registry)
             .dataSource(dataSource)
             .jedisPool(jedisPool)
             .build();
-        
+
         // Assert
         assertNotNull(server);
     }
@@ -54,8 +68,12 @@ class AepHttpServerBuilderTest {
     void shouldRequirePortParameter() {
         // This test verifies that the builder enforces required parameters
         // The actual validation should be in the builder's build() method
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
         assertThrows(IllegalArgumentException.class, () -> {
-            new AepHttpServerBuilder()
+            AepHttpServer.builder()
+                .engine(mockEngine)
                 .build();
         });
     }
@@ -63,13 +81,15 @@ class AepHttpServerBuilderTest {
     @Test
     void shouldAllowChainingOfBuilderMethods() {
         // Arrange
-        CollectorRegistry registry = new CollectorRegistry();
-        
+        AepEngine mockEngine = mock(AepEngine.class);
+        PrometheusMeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+
         // Act - verify method chaining works
-        AepHttpServerBuilder builder = new AepHttpServerBuilder()
+        AepHttpServer.Builder builder = AepHttpServer.builder()
+            .engine(mockEngine)
             .port(8080)
             .prometheusRegistry(registry);
-        
+
         // Assert
         assertNotNull(builder);
         // If we got here without exception, chaining works
@@ -78,11 +98,15 @@ class AepHttpServerBuilderTest {
     @Test
     void shouldSupportOptionalParameters() {
         // Arrange & Act
-        AepHttpServer server = new AepHttpServerBuilder()
+        AepEngine mockEngine = mock(AepEngine.class);
+        EventCloud mockEventCloud = mock(EventCloud.class);
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud);
+        AepHttpServer server = AepHttpServer.builder()
+            .engine(mockEngine)
             .port(8080)
-            .prometheusRegistry(new CollectorRegistry()) // optional
+            .prometheusRegistry(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) // optional
             .build();
-        
+
         // Assert
         assertNotNull(server);
     }
@@ -90,7 +114,7 @@ class AepHttpServerBuilderTest {
     @Test
     void shouldHaveImmutableBuilderState() {
         // Arrange
-        AepHttpServerBuilder builder = new AepHttpServerBuilder()
+        AepHttpServer.Builder builder = AepHttpServer.builder()
             .port(8080);
         
         // Act - try to modify after setting

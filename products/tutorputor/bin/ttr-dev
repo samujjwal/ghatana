@@ -41,7 +41,7 @@ export TUTORPUTOR_ENABLE_SEED=true
 export TUTORPUTOR_ENABLE_MONITORING=false
 export TUTORPUTOR_ENABLE_KAFKA=false
 export TUTORPUTOR_ENABLE_OBJECT_STORAGE=true
-export TUTORPUTOR_ENABLE_QUEUE=false
+export TUTORPUTOR_ENABLE_QUEUE=true
 export TUTORPUTOR_ENABLE_SEARCH=false
 export QUIET_CONSOLE=true
 
@@ -59,8 +59,10 @@ export TUTORPUTOR_DATABASE_URL="${TUTORPUTOR_DATABASE_URL:-$DATABASE_URL}"
 export REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
 export JWT_SECRET="${JWT_SECRET:-test-secret-do-not-use-in-prod-1234567890}"
 export STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY:-test-stripe-secret-key-placeholder}"
-export CONTENT_WORKER_ENABLED="${CONTENT_WORKER_ENABLED:-false}"
-export CONTENT_QUEUE_DISABLED="${CONTENT_QUEUE_DISABLED:-true}"
+export CONTENT_WORKER_ENABLED="${CONTENT_WORKER_ENABLED:-true}"
+export CONTENT_QUEUE_DISABLED="${CONTENT_QUEUE_DISABLED:-false}"
+export TRUST_PROXY_AUTH_HEADERS="${TRUST_PROXY_AUTH_HEADERS:-false}"
+export TRUST_PROXY_AUTH_SHARED_SECRET="${TRUST_PROXY_AUTH_SHARED_SECRET:-tutorputor-internal-dev-proxy-secret}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -83,6 +85,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --with-queue)
             TUTORPUTOR_ENABLE_QUEUE=true
+            shift
+            ;;
+        --trusted-proxy-auth)
+            TRUST_PROXY_AUTH_HEADERS=true
             shift
             ;;
         --with-search)
@@ -109,6 +115,8 @@ Options:
   --no-apps          Don't start frontend apps
   --with-kafka       Enable Kafka messaging
   --with-queue       Enable job queues
+    --trusted-proxy-auth
+                                        Allow trusted proxy identity headers for local internal-only flows
   --with-search      Enable Elasticsearch
   --monitoring       Enable Prometheus/Grafana
   --verbose          Show all output
@@ -118,6 +126,7 @@ Examples:
   ttr dev                    # Full dev environment
   ttr dev --no-seed          # Skip seeding
   ttr dev --with-kafka       # With Kafka enabled
+    ttr dev --trusted-proxy-auth
 EOF
             exit 0
             ;;
@@ -357,13 +366,17 @@ start_services() {
     fi
     
     log_info "Starting backend services..."
+
+    if [ "$TRUST_PROXY_AUTH_HEADERS" = "true" ]; then
+        log_warn "Trusted proxy auth headers enabled for local internal-only development"
+    fi
     
     # Start platform service on the canonical direct-validation port.
     cd "${ROOT_DIR}/services/tutorputor-platform"
     if [ "$QUIET_CONSOLE" = "true" ]; then
-        PORT=${PORT_PLATFORM} pnpm dev > "${ROOT_DIR}/.logs/platform.log" 2>&1 &
+        PORT=${PORT_PLATFORM} CONTENT_WORKER_ENABLED=${CONTENT_WORKER_ENABLED} CONTENT_QUEUE_DISABLED=${CONTENT_QUEUE_DISABLED} GRPC_SERVER_ADDRESS=localhost:50051 TRUST_PROXY_AUTH_HEADERS=${TRUST_PROXY_AUTH_HEADERS} TRUST_PROXY_AUTH_SHARED_SECRET=${TRUST_PROXY_AUTH_SHARED_SECRET} pnpm dev > "${ROOT_DIR}/.logs/platform.log" 2>&1 &
     else
-        PORT=${PORT_PLATFORM} pnpm dev &
+        PORT=${PORT_PLATFORM} CONTENT_WORKER_ENABLED=${CONTENT_WORKER_ENABLED} CONTENT_QUEUE_DISABLED=${CONTENT_QUEUE_DISABLED} GRPC_SERVER_ADDRESS=localhost:50051 TRUST_PROXY_AUTH_HEADERS=${TRUST_PROXY_AUTH_HEADERS} TRUST_PROXY_AUTH_SHARED_SECRET=${TRUST_PROXY_AUTH_SHARED_SECRET} pnpm dev &
     fi
     echo $! > "${ROOT_DIR}/.logs/platform.pid"
     
@@ -371,17 +384,17 @@ start_services() {
     # here so the direct platform instance remains the only optional worker host.
     cd "${ROOT_DIR}/apps/api-gateway"
     if [ "$QUIET_CONSOLE" = "true" ]; then
-        PORT=${PORT_API_GATEWAY} CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=true pnpm dev > "${ROOT_DIR}/.logs/api-gateway.log" 2>&1 &
+        PORT=${PORT_API_GATEWAY} CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=${CONTENT_QUEUE_DISABLED} GRPC_SERVER_ADDRESS=localhost:50051 TRUST_PROXY_AUTH_HEADERS=${TRUST_PROXY_AUTH_HEADERS} TRUST_PROXY_AUTH_SHARED_SECRET=${TRUST_PROXY_AUTH_SHARED_SECRET} pnpm dev > "${ROOT_DIR}/.logs/api-gateway.log" 2>&1 &
     else
-        PORT=${PORT_API_GATEWAY} CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=true pnpm dev &
+        PORT=${PORT_API_GATEWAY} CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=${CONTENT_QUEUE_DISABLED} GRPC_SERVER_ADDRESS=localhost:50051 TRUST_PROXY_AUTH_HEADERS=${TRUST_PROXY_AUTH_HEADERS} TRUST_PROXY_AUTH_SHARED_SECRET=${TRUST_PROXY_AUTH_SHARED_SECRET} pnpm dev &
     fi
     echo $! > "${ROOT_DIR}/.logs/api-gateway.pid"
 
     # Start content generation service (Java) only when the queue stack is requested.
     if [ "$TUTORPUTOR_ENABLE_QUEUE" = "true" ] && [ -d "${ROOT_DIR}/services/tutorputor-content-generation" ]; then
         log_info "Starting content generation service..."
-        cd "${ROOT_DIR}/services/tutorputor-content-generation"
-        ./gradlew bootRun --quiet > "${ROOT_DIR}/.logs/content-gen.log" 2>&1 &
+        cd "${ROOT_DIR}"
+        ./gradlew --no-daemon :products:tutorputor:services:tutorputor-content-generation:run > "${ROOT_DIR}/.logs/content-gen.log" 2>&1 &
         echo $! > "${ROOT_DIR}/.logs/content-gen.pid"
     fi
     

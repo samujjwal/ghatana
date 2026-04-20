@@ -78,7 +78,7 @@ class AepHttpServerLearningTest {
 
             assertThat(resp.statusCode()).isEqualTo(503);
             @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).contains("not available");
+            assertThat(body.get("message").toString()).contains("not available");
         }
 
         @Test

@@ -44,7 +44,13 @@ const purchasedParamsSchema = z.object({
  * @doc.pattern Modular Plugin
  */
 export const billingRoutes: FastifyPluginAsync<{
-  service?: ReturnType<typeof createBillingService>;
+  service?: ReturnType<typeof createBillingService> & {
+    createBillingPortalSession: (args: {
+      tenantId: TenantId;
+      userId: UserId;
+      returnUrl?: string;
+    }) => Promise<{ url: string }>;
+  };
 }> = async (app, options) => {
   const prisma = app.prisma;
   const billingService = options.service ?? createBillingService(prisma);
@@ -93,7 +99,7 @@ export const billingRoutes: FastifyPluginAsync<{
       billingService.createCheckoutSession({
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
-        listingId,
+        listingId: listingId as MarketplaceListingId,
         ...(successUrl ? { successUrl } : {}),
         ...(cancelUrl ? { cancelUrl } : {}),
       }),
@@ -118,7 +124,7 @@ export const billingRoutes: FastifyPluginAsync<{
     await respondWithErrors(reply, () =>
       billingService.verifyPayment({
         tenantId: tenantId as TenantId,
-        sessionId,
+        sessionId: sessionId as CheckoutSessionId,
       }),
     );
   });
@@ -168,7 +174,7 @@ export const billingRoutes: FastifyPluginAsync<{
     const hasPurchased = await billingService.hasPurchased({
       tenantId: tenantId as TenantId,
       userId: userId as UserId,
-      moduleId,
+      moduleId: moduleId as ModuleId,
     });
 
     return reply.send({ purchased: hasPurchased });
@@ -195,6 +201,7 @@ export const billingRoutes: FastifyPluginAsync<{
     try {
       const session = await billingService.createBillingPortalSession({
         tenantId: tenantId as TenantId,
+        userId: getUserId(req) as UserId,
         returnUrl,
       });
       return reply.send(session);

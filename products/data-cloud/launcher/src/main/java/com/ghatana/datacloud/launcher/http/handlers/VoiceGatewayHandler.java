@@ -206,11 +206,11 @@ public class VoiceGatewayHandler {
 
         if (isRateLimited(tenantId)) {
             log.warn("[DC-E4] voice rate limit exceeded for tenant={}", tenantId);
-            return Promise.of(http.envelopeResponse(
+            return Promise.of(http.errorEnvelopeResponse(
                 ApiResponse.error("RATE_LIMITED",
                     "Voice endpoint rate limit exceeded. Limit: " + VOICE_RATE_LIMIT_PER_MINUTE + " requests/minute",
                     tenantId, requestId),
-                objectMapper));
+                objectMapper, 429));
         }
 
         // max 64 KB JSON body — raw audio MUST be delivered base64-encoded within this limit
@@ -241,22 +241,22 @@ public class VoiceGatewayHandler {
                         language,
                         tenantId, requestId);
                 } else {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("MISSING_UTTERANCE",
                             sttPort != null && sttPort.isAvailable()
                                 ? "Provide either 'utterance' (text) or 'audioData' (base64 audio)"
                                 : "Provide 'utterance' field (STT provider not configured — submit pre-transcribed text)",
                             tenantId, requestId),
-                        objectMapper));
+                        objectMapper, 400));
                 }
 
                 return utterancePromise.then(utterance -> {
                     if (utterance == null || utterance.isBlank()) {
-                        return Promise.of(http.envelopeResponse(
+                        return Promise.of(http.errorEnvelopeResponse(
                             ApiResponse.error("EMPTY_UTTERANCE",
                                 "Utterance resolved to empty string — audio may be silent or STT failed",
                                 tenantId, requestId),
-                            objectMapper));
+                            objectMapper, 400));
                     }
 
                     // Classify-only mode: return classification without executing the intent
@@ -289,11 +289,11 @@ public class VoiceGatewayHandler {
                             if (classified.isEmpty()) {
                                 log.info("[DC-E4] no intent found for utterance (truncated): {}",
                                     utterance.substring(0, Math.min(50, utterance.length())));
-                                return Promise.of(http.envelopeResponse(
+                                return Promise.of(http.errorEnvelopeResponse(
                                     ApiResponse.error("UNKNOWN_INTENT",
                                         "Could not match utterance to a known intent. Please rephrase.",
                                         tenantId, requestId),
-                                    objectMapper));
+                                    objectMapper, 404));
                             }
 
                             IntentClassification classification = classified.get();
@@ -307,12 +307,12 @@ public class VoiceGatewayHandler {
                             // Validate required params
                             List<String> missing = intent.missingRequiredParams(mergedParams);
                             if (!missing.isEmpty()) {
-                                return Promise.of(http.envelopeResponse(
+                                return Promise.of(http.errorEnvelopeResponse(
                                     ApiResponse.error("MISSING_PARAMETERS",
                                         "Required parameters missing: " + missing,
                                         Map.of("missing", missing, "required", intent.requiredParams()),
                                         tenantId, requestId),
-                                    objectMapper));
+                                    objectMapper, 400));
                             }
 
                             // Low-confidence gate: require explicit confirmation
@@ -435,19 +435,19 @@ public class VoiceGatewayHandler {
                         (String) input.get("language"),
                         tenantId, requestId);
                 } else {
-                    return Promise.of(http.envelopeResponse(
+                    return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error("MISSING_UTTERANCE", "utterance or audioData field is required",
                             tenantId, requestId),
-                        objectMapper));
+                        objectMapper, 400));
                 }
 
                 return utterancePromise.then(utterance -> {
                     if (utterance == null || utterance.isBlank()) {
-                        return Promise.of(http.envelopeResponse(
+                        return Promise.of(http.errorEnvelopeResponse(
                             ApiResponse.error("EMPTY_UTTERANCE",
                                 "Utterance resolved to empty string — audio may be silent or STT failed",
                                 tenantId, requestId),
-                            objectMapper));
+                            objectMapper, 400));
                     }
 
                     return classifyIntent(utterance, tenantId)

@@ -517,6 +517,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         success: true,
         accessToken,
         refreshToken,
+        redirectUri: storedState.redirectUri,
         user: {
           id: user.id as UserId,
           email: user.email,

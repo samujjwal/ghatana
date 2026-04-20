@@ -122,7 +122,7 @@ export const collaborationRoutes: FastifyPluginAsync<{
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
         authorName,
-        ...(moduleId ? { moduleId } : {}),
+        ...(moduleId ? { moduleId: moduleId as ModuleId } : {}),
         title,
         content,
       }),
@@ -145,9 +145,9 @@ export const collaborationRoutes: FastifyPluginAsync<{
     await respondWithErrors(reply, () =>
       collaborationService.listThreads({
         tenantId: tenantId as TenantId,
-        ...(moduleId ? { moduleId } : {}),
+        ...(moduleId ? { moduleId: moduleId as ModuleId } : {}),
         ...(status ? { status } : {}),
-        ...(cursor ? { cursor } : {}),
+        ...(cursor ? { cursor: cursor as ThreadId } : {}),
         limit: limit ?? 20,
       }),
     );
@@ -169,7 +169,7 @@ export const collaborationRoutes: FastifyPluginAsync<{
     await respondWithErrors(reply, () =>
       collaborationService.getThread({
         tenantId: tenantId as TenantId,
-        threadId,
+        threadId: threadId as ThreadId,
       }),
     );
   });
@@ -199,7 +199,7 @@ export const collaborationRoutes: FastifyPluginAsync<{
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
         authorName,
-        threadId,
+        threadId: threadId as ThreadId,
         content,
       }),
     );
@@ -229,8 +229,8 @@ export const collaborationRoutes: FastifyPluginAsync<{
       collaborationService.markAsAnswer({
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
-        threadId,
-        postId,
+        threadId: threadId as ThreadId,
+        postId: postId as PostId,
       }),
     );
   });
@@ -253,7 +253,7 @@ export const collaborationRoutes: FastifyPluginAsync<{
       collaborationService.closeThread({
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
-        threadId,
+        threadId: threadId as ThreadId,
       }),
     );
   });
@@ -286,7 +286,7 @@ export const collaborationRoutes: FastifyPluginAsync<{
         createdBy: userId as UserId,
         title,
         content,
-        ...(moduleId ? { moduleId } : {}),
+        ...(moduleId ? { moduleId: moduleId as ModuleId } : {}),
         ...(lessonId ? { lessonId } : {}),
         ...(studyGroupId ? { studyGroupId } : {}),
         ...(allowEditing !== undefined ? { allowEditing } : {}),
@@ -373,7 +373,10 @@ export const collaborationRoutes: FastifyPluginAsync<{
         tenantId: tenantId as TenantId,
         noteId,
         sharedBy: userId as UserId,
-        shareWith,
+        shareWith: shareWith.map((entry) => ({
+          userId: entry.userId as UserId,
+          permission: entry.permission,
+        })),
       });
       return reply.code(200).send(note);
     } catch (error) {
@@ -409,7 +412,7 @@ export const collaborationRoutes: FastifyPluginAsync<{
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
         ...(studyGroupId ? { studyGroupId } : {}),
-        ...(moduleId ? { moduleId } : {}),
+        ...(moduleId ? { moduleId: moduleId as ModuleId } : {}),
         pagination: {
           ...(cursor ? { cursor } : {}),
           limit: limit ?? 20,

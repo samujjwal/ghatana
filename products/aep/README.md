@@ -56,6 +56,7 @@ Core public families exercised by server tests include:
 
 ## Runtime Truth
 
+- **Production Run History Requirement**: Data Cloud with EventLogStore is required for durable run history in production. Without Data Cloud, run history is stored in-memory (max 1,000 entries) and will be lost on restart. A startup warning is logged when runLedger is not configured.
 - Production startup must fail closed when required secrets and DB-backed runtime dependencies are absent.
 - Governance and compliance endpoints remain operationally useful, but full production-grade durability still depends on the configured backing stores.
 - `GET /metrics` serves Prometheus text only when a Prometheus registry is wired; otherwise embedded and fixture-backed modes return JSON fallback metrics.

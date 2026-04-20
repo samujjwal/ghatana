@@ -12,7 +12,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 export interface SearchQuery {
   query: string;
@@ -142,10 +142,14 @@ export class SemanticSearchService {
       LIMIT ${limit}
     `.catch(() => []);
 
-    return results.map((r) => ({
-      contentId: r.contentId,
-      score: r.similarity,
-      metadata: JSON.parse(r.metadata) as Record<string, unknown>,
+    return results.map((row: {
+      contentId: string;
+      similarity: number;
+      metadata: string;
+    }) => ({
+      contentId: row.contentId,
+      score: row.similarity,
+      metadata: JSON.parse(row.metadata) as Record<string, unknown>,
     }));
   }
 
@@ -192,14 +196,21 @@ export class SemanticSearchService {
       LIMIT ${limit}
     `.catch(() => []);
 
-    return results.map((r) => ({
-      contentId: r.contentId,
-      score: r.rank,
+    return results.map((row: {
+      contentId: string;
+      rank: number;
+      title: string;
+      contentType: string;
+      domain: string | null;
+      description: string | null;
+    }) => ({
+      contentId: row.contentId,
+      score: row.rank,
       metadata: {
-        title: r.title,
-        contentType: r.contentType,
-        domain: r.domain,
-        description: r.description,
+        title: row.title,
+        contentType: row.contentType,
+        domain: row.domain,
+        description: row.description,
       },
     }));
   }

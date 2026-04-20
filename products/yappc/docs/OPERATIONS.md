@@ -85,6 +85,8 @@ REDIS_PASSWORD=<secure-password>
 
 # JWT (Critical - must be 32+ characters)
 YAPPC_JWT_SECRET=<secure-32-char-secret>
+# Note: For Node BFF, set JWT_ACCESS_SECRET to the same value as YAPPC_JWT_SECRET
+# Both services use HS256 algorithm and must share the same secret for token validation
 
 # Application
 YAPPC_PROFILE=production

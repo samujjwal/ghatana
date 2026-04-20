@@ -185,7 +185,7 @@ export function registerAutoRevisionRoutes(
       try {
         const experiment = await autoRevisionService.createABExperiment(
           experienceId,
-          Number.isFinite(treatmentVersion) ? treatmentVersion : 2,
+          typeof treatmentVersion === "number" ? treatmentVersion : 2,
         );
         return { success: true, data: experiment };
       } catch (error) {

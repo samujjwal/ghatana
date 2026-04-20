@@ -150,7 +150,7 @@ class AepHttpServerPatternTest {
 
             assertThat(resp.statusCode()).isEqualTo(400);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error")).isNotNull();
+            assertThat(body.get("message")).isNotNull();
         }
     }
 
@@ -189,7 +189,7 @@ class AepHttpServerPatternTest {
 
             assertThat(resp.statusCode()).isEqualTo(404);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).contains("not found");
+            assertThat(body.get("message").toString()).contains("not found");
         }
     }
 

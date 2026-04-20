@@ -175,7 +175,8 @@ class AepHttpServerAgentTest {
 
         assertThat(resp.statusCode()).isEqualTo(404);
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("error").toString()).contains("Agent not found");
+        assertThat(body.get("message")).isNotNull();
+        assertThat(body.get("message").toString()).contains("Agent not found");
     }
 
     @Test
@@ -189,7 +190,8 @@ class AepHttpServerAgentTest {
 
         assertThat(resp.statusCode()).isEqualTo(503);
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("error").toString()).contains("DataCloudClient not configured");
+        assertThat(body.get("message")).isNotNull();
+        assertThat(body.get("message").toString()).contains("DataCloudClient not configured");
     }
 
     // ==================== POST /api/v1/agents/:agentId/execute ====================
@@ -298,7 +300,8 @@ class AepHttpServerAgentTest {
 
         assertThat(resp.statusCode()).isEqualTo(503);
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("error").toString()).contains("DataCloudClient not configured");
+        assertThat(body.get("message")).isNotNull();
+        assertThat(body.get("message").toString()).contains("DataCloudClient not configured");
     }
 
     // ==================== Helpers ====================

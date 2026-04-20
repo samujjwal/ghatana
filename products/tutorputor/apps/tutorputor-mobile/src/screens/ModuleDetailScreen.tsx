@@ -22,6 +22,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { LearnStackParamList, ExploreStackParamList } from '../navigation/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createSessionHeaders } from '../storage/NativeSessionStorage';
 
 type LearnProps = NativeStackScreenProps<LearnStackParamList, 'ModuleDetail'>;
 type ExploreProps = NativeStackScreenProps<ExploreStackParamList, 'ModuleDetail'>;
@@ -46,15 +47,8 @@ interface ModuleDetail {
 }
 
 async function fetchModuleDetail(moduleId: string): Promise<ModuleDetail> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
   const response = await fetch(`/api/v1/modules/${moduleId}`, {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
   });
 
   if (!response.ok) {
@@ -66,16 +60,9 @@ async function fetchModuleDetail(moduleId: string): Promise<ModuleDetail> {
 }
 
 async function enrollInModule(moduleId: string): Promise<void> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
   const response = await fetch('/api/v1/enrollments', {
     method: 'POST',
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ moduleId }),
   });
 

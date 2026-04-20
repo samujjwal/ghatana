@@ -127,12 +127,16 @@ export class PersonalizationABTestingService {
       experimentId,
       userId,
       {
-        sessionId: input.sessionId,
-        assetId: input.assetId,
         metricValue,
         completed: input.completionRate >= 0.8,
-        masteryScore: input.masteryScore,
-        feedbackScore: input.feedbackScore,
+        ...(input.sessionId ? { sessionId: input.sessionId } : {}),
+        ...(input.assetId ? { assetId: input.assetId } : {}),
+        ...(input.masteryScore !== undefined
+          ? { masteryScore: input.masteryScore }
+          : {}),
+        ...(input.feedbackScore !== undefined
+          ? { feedbackScore: input.feedbackScore }
+          : {}),
         metadata: {
           ...input.metadata,
           engagementScore: input.engagementScore,

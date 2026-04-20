@@ -5,7 +5,8 @@
  * @doc.pattern Service
  */
 
-import { paginate, type Prisma } from "@tutorputor/core";
+import { paginate } from "@tutorputor/core/db/helpers/pagination";
+import type { Prisma } from "@tutorputor/core/db";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type {
   CollaborationService,

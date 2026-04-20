@@ -6,6 +6,7 @@
     "jsx": "react-native",
     "strict": true,
     "moduleResolution": "bundler",
+    "types": ["jest", "react", "react-native"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

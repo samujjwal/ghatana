@@ -10,6 +10,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { getSessionSnapshot } from '../storage/NativeSessionStorage';
 
 interface UserInfo {
   id: string;
@@ -55,9 +56,9 @@ interface DashboardData {
 }
 
 async function fetchDashboard(): Promise<DashboardData> {
-  // Get auth token
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
+  const session = getSessionSnapshot();
+  const token = session.accessToken;
+  const tenantId = session.tenantId ?? 'default';
 
   const response = await fetch('/api/v1/learning/dashboard', {
     headers: {

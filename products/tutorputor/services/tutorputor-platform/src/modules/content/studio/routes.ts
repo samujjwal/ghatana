@@ -287,13 +287,15 @@ export function registerContentStudioRoutes(
           ? queryResult.data.limit
           : 20;
 
-      const filter = {
+      const filter: ExperienceFilter & { tenantId: string } = {
         limit,
         offset: queryResult.data.offset ?? (page - 1) * limit,
         tenantId,
-        ...(queryResult.data.status ? { status: queryResult.data.status } : {}),
+        ...(queryResult.data.status
+          ? { status: queryResult.data.status as ExperienceStatus }
+          : {}),
         ...(queryResult.data.gradeRange
-          ? { gradeRange: queryResult.data.gradeRange }
+          ? { gradeRange: queryResult.data.gradeRange as GradeRange }
           : {}),
         ...(queryResult.data.authorId
           ? { authorId: queryResult.data.authorId }
@@ -354,11 +356,21 @@ export function registerContentStudioRoutes(
       const tenantId = getTenantId(request);
       const authorId = getUserId(request);
 
-      const experience = await contentStudioService.createExperience({
-        ...bodyResult.data,
+      const createPayload: CreateExperienceRequest & {
+        tenantId: string;
+        authorId: string;
+      } = {
+        title: bodyResult.data.title,
+        description: bodyResult.data.description ?? "",
+        gradeRange: (bodyResult.data.gradeRange as GradeRange | undefined) ?? "grade_6_8",
         tenantId,
         authorId,
-      });
+        ...(bodyResult.data.moduleId
+          ? { moduleId: bodyResult.data.moduleId }
+          : {}),
+      };
+
+      const experience = await contentStudioService.createExperience(createPayload);
 
       return reply.code(201).send({ data: experience });
     });
@@ -393,10 +405,24 @@ export function registerContentStudioRoutes(
         return reply.code(403).send({ error: "Access denied" });
       }
 
-      const updated = await contentStudioService.updateExperience(
-        id,
-        bodyResult.data,
-      );
+      const updatePayload: UpdateExperienceRequest = {
+        ...(bodyResult.data.title ? { title: bodyResult.data.title } : {}),
+        ...(bodyResult.data.description !== undefined
+          ? { description: bodyResult.data.description }
+          : {}),
+        ...(bodyResult.data.status
+          ? { status: bodyResult.data.status as ExperienceStatus }
+          : {}),
+        ...(bodyResult.data.estimatedTimeMinutes != null
+          ? { estimatedTimeMinutes: bodyResult.data.estimatedTimeMinutes }
+          : {}),
+        ...(bodyResult.data.gradeRange
+          ? { gradeRange: bodyResult.data.gradeRange as GradeRange }
+          : {}),
+        ...(bodyResult.data.userId ? { userId: bodyResult.data.userId } : {}),
+      };
+
+      const updated = await contentStudioService.updateExperience(id, updatePayload);
       return reply.send({ data: updated });
     });
 
@@ -454,10 +480,14 @@ export function registerContentStudioRoutes(
         return reply.code(403).send({ error: "Access denied" });
       }
 
-      const claims = await contentStudioService.generateClaims(
-        id,
-        bodyResult.data,
-      );
+      const claimsPayload: GenerateClaimRequest = {
+        ...(bodyResult.data.maxClaims != null
+          ? { maxClaims: bodyResult.data.maxClaims }
+          : {}),
+        ...(bodyResult.data.topic ? { topic: bodyResult.data.topic } : {}),
+      };
+
+      const claims = await contentStudioService.generateClaims(id, claimsPayload);
       return reply.send({ data: claims });
     });
 
@@ -527,7 +557,16 @@ export function registerContentStudioRoutes(
         return reply.code(403).send({ error: "Access denied" });
       }
 
-      const claim = await contentStudioService.addClaim(id, bodyResult.data);
+      const claimPayload = {
+        text: bodyResult.data.text,
+        ...(bodyResult.data.bloomLevel
+          ? { bloomLevel: bodyResult.data.bloomLevel }
+          : {}),
+        ...(bodyResult.data.contentNeeds !== undefined
+          ? { contentNeeds: bodyResult.data.contentNeeds }
+          : {}),
+      };
+      const claim = await contentStudioService.addClaim(id, claimPayload);
       return reply.code(201).send({ data: claim });
     });
 
@@ -567,7 +606,15 @@ export function registerContentStudioRoutes(
         const claim = await contentStudioService.updateClaim(
           experienceId,
           claimId,
-          bodyResult.data,
+          {
+            ...(bodyResult.data.text ? { text: bodyResult.data.text } : {}),
+            ...(bodyResult.data.bloomLevel
+              ? { bloomLevel: bodyResult.data.bloomLevel }
+              : {}),
+            ...(bodyResult.data.contentNeeds !== undefined
+              ? { contentNeeds: bodyResult.data.contentNeeds }
+              : {}),
+          },
         );
         return reply.send({ data: claim });
       },
@@ -631,7 +678,13 @@ export function registerContentStudioRoutes(
         const task = await contentStudioService.addTask(
           experienceId,
           claimId,
-          bodyResult.data,
+          {
+            prompt: bodyResult.data.prompt,
+            ...(bodyResult.data.type ? { type: bodyResult.data.type } : {}),
+            ...(bodyResult.data.instructions
+              ? { instructions: bodyResult.data.instructions }
+              : {}),
+          },
         );
         return reply.code(201).send({ data: task });
       },
@@ -674,7 +727,13 @@ export function registerContentStudioRoutes(
           experienceId,
           "",
           taskId,
-          bodyResult.data,
+          {
+            ...(bodyResult.data.prompt ? { prompt: bodyResult.data.prompt } : {}),
+            ...(bodyResult.data.type ? { type: bodyResult.data.type } : {}),
+            ...(bodyResult.data.instructions
+              ? { instructions: bodyResult.data.instructions }
+              : {}),
+          },
         );
         return reply.send({ data: task });
       },
@@ -721,7 +780,13 @@ export function registerContentStudioRoutes(
 
       const refined = await contentStudioService.refineContent(
         id,
-        request.body,
+        {
+          ...(request.body?.refinementPrompt
+            ? { refinementPrompt: request.body.refinementPrompt }
+            : {}),
+          ...(request.body?.prompt ? { prompt: request.body.prompt } : {}),
+          ...(request.body?.userId ? { userId: request.body.userId } : {}),
+        },
       );
       return reply.send({ data: refined });
     });
@@ -743,7 +808,18 @@ export function registerContentStudioRoutes(
         return reply.code(403).send({ error: "Access denied" });
       }
 
-      const adapted = await contentStudioService.adaptGrade(id, request.body);
+      const adapted = await contentStudioService.adaptGrade(
+        id,
+        {
+          ...(request.body?.gradeRange
+            ? { gradeRange: request.body.gradeRange as GradeRange }
+            : {}),
+          ...(request.body?.targetGrade
+            ? { targetGrade: request.body.targetGrade as GradeRange }
+            : {}),
+          ...(request.body?.userId ? { userId: request.body.userId } : {}),
+        },
+      );
       return reply.send({ data: adapted });
     });
 
@@ -1113,9 +1189,13 @@ export function registerContentStudioRoutes(
       }
 
       const body = bodyResult.data;
+      const queuedPayload: GenerateClaimRequest = {
+        ...(body.maxClaims != null ? { maxClaims: body.maxClaims } : {}),
+        ...(body.topic ? { topic: body.topic } : {}),
+      };
       const queued = await contentStudioService.generateClaims(
         body.experienceId,
-        body,
+        queuedPayload,
       );
       return reply.send({ data: queued });
     });

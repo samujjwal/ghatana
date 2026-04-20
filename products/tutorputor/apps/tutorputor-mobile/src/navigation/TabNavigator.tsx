@@ -44,7 +44,7 @@ export function TabNavigator(): React.ReactElement {
         name="Learn"
         component={LearnStackNavigator}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="📚" label="Learn" focused={focused} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon icon="📚" label="Learn" focused={focused} />,
           tabBarLabel: 'Learn',
         }}
       />
@@ -52,7 +52,7 @@ export function TabNavigator(): React.ReactElement {
         name="Explore"
         component={ExploreStackNavigator}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="🔍" label="Explore" focused={focused} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon icon="🔍" label="Explore" focused={focused} />,
           tabBarLabel: 'Explore',
         }}
       />
@@ -60,7 +60,7 @@ export function TabNavigator(): React.ReactElement {
         name="Profile"
         component={ProfileStackNavigator}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon="👤" label="Profile" focused={focused} />,
+          tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon icon="👤" label="Profile" focused={focused} />,
           tabBarLabel: 'Profile',
         }}
       />

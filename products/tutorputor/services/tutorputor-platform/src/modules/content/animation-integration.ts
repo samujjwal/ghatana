@@ -156,38 +156,45 @@ export class AnimationContentIntegration {
       spec: link.spec,
     } as object;
 
-    await this.prisma.claimAnimation.upsert({
+    const existingAnimation = await this.prisma.claimAnimation.findFirst({
       where: {
-        experienceId_claimRef: {
-          experienceId: link.contentId,
-          claimRef: link.claimId,
-        },
-      },
-      update: {
-        title: `Animation: ${link.metadata.concept}`,
-        description: `Type: ${link.animationType} | Difficulty: ${link.metadata.difficulty}`,
-        type:
-          link.animationType === "demonstration"
-            ? "2d"
-            : link.animationType === "exploration"
-              ? "3d"
-              : "timeline",
-        duration: link.metadata.estimatedDuration,
-        config,
-      },
-      create: {
         experienceId: link.contentId,
         claimRef: link.claimId,
-        title: `Animation: ${link.metadata.concept}`,
-        description: `Type: ${link.animationType} | Difficulty: ${link.metadata.difficulty}`,
-        type:
-          link.animationType === "demonstration"
-            ? "2d"
-            : link.animationType === "exploration"
-              ? "3d"
-              : "timeline",
-        duration: link.metadata.estimatedDuration,
-        config,
+        variantKey: "primary",
+      },
+      select: { id: true },
+    });
+
+    const animationData = {
+      manifestId: link.animationId,
+      manifestVersion: "1.0.0",
+      title: `Animation: ${link.metadata.concept}`,
+      description: `Type: ${link.animationType} | Difficulty: ${link.metadata.difficulty}`,
+      type:
+        link.animationType === "demonstration"
+          ? "2d"
+          : link.animationType === "exploration"
+            ? "3d"
+            : "timeline",
+      duration: link.metadata.estimatedDuration,
+      config,
+    };
+
+    if (existingAnimation) {
+      await this.prisma.claimAnimation.update({
+        where: { id: existingAnimation.id },
+        data: animationData,
+      });
+      return;
+    }
+
+    await this.prisma.claimAnimation.create({
+      data: {
+        experienceId: link.contentId,
+        claimRef: link.claimId,
+        variantKey: "primary",
+        isPrimary: true,
+        ...animationData,
       },
     });
   }

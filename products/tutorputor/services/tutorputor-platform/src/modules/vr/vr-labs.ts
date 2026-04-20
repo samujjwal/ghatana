@@ -7,7 +7,7 @@
  */
 
 import { randomUUID } from "crypto";
-import { PrismaClient } from "@prisma/client";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type {
   VRLabService,
   TenantId,
@@ -29,7 +29,7 @@ import type {
 } from "@tutorputor/contracts/v1";
 
 export class VRLabServiceImpl implements VRLabService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: TutorPrismaClient) {}
 
   async createLab(args: {
     tenantId: TenantId;

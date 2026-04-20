@@ -10,9 +10,9 @@
  */
 
 import type { Logger } from 'pino';
-import type { PrismaClient } from '@tutorputor/core/db';
-import type { WorkedExampleManifest } from '../../../../../contracts/v1/artifact-manifests/worked-example-manifest';
-import type { AnimationManifest } from '../../../../../contracts/v1/artifact-manifests/animation-manifest';
+import type { Prisma, PrismaClient } from '@tutorputor/core/db';
+import type { WorkedExampleManifest } from '../../../../../../contracts/v1/artifact-manifests/worked-example-manifest';
+import type { AnimationManifest } from '../../../../../../contracts/v1/artifact-manifests/animation-manifest';
 
 /**
  * Materialization result.
@@ -46,38 +46,44 @@ export class AssetMaterializer {
 
       // Convert manifest to rendered configuration
       const renderedConfig = this.renderWorkedExample(manifest);
+      const experienceId = await this.getExperienceId(claimRef);
+      const existingAsset = await this.prisma.claimExample.findFirst({
+        where: {
+          experienceId,
+          claimRef,
+        },
+        select: { id: true },
+      });
 
       // Persist to database
-      const asset = await this.prisma.claimExample.upsert({
-        where: {
-          experienceId_claimRef: {
-            experienceId: await this.getExperienceId(claimRef),
-            claimRef,
-          },
-        },
-        create: {
-          experienceId: await this.getExperienceId(claimRef),
-          claimRef,
-          manifestId: `manifest-${manifest.claimRef}`,
-          manifestVersion: '1.0.0',
-          title: manifest.learnerGoal.substring(0, 100),
-          description: manifest.pedagogicalIntent,
-          content: renderedConfig as Prisma.InputJsonValue,
-          exampleFamily: manifest.exampleFamily,
-          type: this.mapExampleFamilyToType(manifest.exampleFamily),
-          difficulty: 'INTERMEDIATE',
-          orderIndex: 1,
-          validationStatus: 'valid',
-        },
-        update: {
-          manifestVersion: '1.0.0',
-          title: manifest.learnerGoal.substring(0, 100),
-          description: manifest.pedagogicalIntent,
-          content: renderedConfig as Prisma.InputJsonValue,
-          exampleFamily: manifest.exampleFamily,
-          validationStatus: 'valid',
-        },
-      });
+      const asset = existingAsset
+        ? await this.prisma.claimExample.update({
+            where: { id: existingAsset.id },
+            data: {
+              manifestVersion: '1.0.0',
+              title: manifest.learnerGoal.substring(0, 100),
+              description: manifest.pedagogicalIntent,
+              content: renderedConfig as Prisma.InputJsonValue,
+              exampleFamily: manifest.exampleFamily,
+              validationStatus: 'valid',
+            },
+          })
+        : await this.prisma.claimExample.create({
+            data: {
+              experienceId,
+              claimRef,
+              manifestId: `manifest-${manifest.claimRef}`,
+              manifestVersion: '1.0.0',
+              title: manifest.learnerGoal.substring(0, 100),
+              description: manifest.pedagogicalIntent,
+              content: renderedConfig as Prisma.InputJsonValue,
+              exampleFamily: manifest.exampleFamily,
+              type: this.mapExampleFamilyToType(manifest.exampleFamily),
+              difficulty: 'INTERMEDIATE',
+              orderIndex: 1,
+              validationStatus: 'valid',
+            },
+          });
 
       return {
         success: true,
@@ -178,22 +184,22 @@ export class AssetMaterializer {
     return {
       problemStatement: manifest.learnerGoal,
       solution: {
-        steps: manifest.reasoningSteps.map(s => ({
-          stepNumber: s.stepNumber,
-          description: s.description,
-          hint: s.hint,
-          hasCheckpoint: s.checkpoint,
+        steps: manifest.reasoningSteps.map((step: WorkedExampleManifest['reasoningSteps'][number]) => ({
+          stepNumber: step.stepNumber,
+          description: step.description,
+          hint: step.hint,
+          hasCheckpoint: step.checkpoint,
         })),
-        explanations: manifest.explanationSteps.map(e => ({
-          stepNumber: e.stepNumber,
-          content: e.content,
+        explanations: manifest.explanationSteps.map((explanation: WorkedExampleManifest['explanationSteps'][number]) => ({
+          stepNumber: explanation.stepNumber,
+          content: explanation.content,
         })),
       },
-      keyPoints: manifest.givens.map(g => g.description),
+      keyPoints: manifest.givens.map((given: WorkedExampleManifest['givens'][number]) => given.description),
       realWorldConnection: manifest.transferPrompts[0]?.prompt,
-      misconceptions: manifest.misconceptionCheckpoints.map(m => ({
-        warning: m.warningSign,
-        guidance: m.correctiveGuidance,
+      misconceptions: manifest.misconceptionCheckpoints.map((checkpoint: WorkedExampleManifest['misconceptionCheckpoints'][number]) => ({
+        warning: checkpoint.warningSign,
+        guidance: checkpoint.correctiveGuidance,
       })),
       metadata: {
         estimatedTimeMinutes: manifest.estimatedTimeMinutes,
@@ -209,35 +215,37 @@ export class AssetMaterializer {
   private renderAnimation(manifest: AnimationManifest): Record<string, unknown> {
     return {
       scene: {
-        entities: manifest.entities.map(e => ({
-          id: e.entityId,
-          name: e.name,
-          type: e.type,
-          initialState: e.initialState,
+        entities: manifest.entities.map((entity: AnimationManifest['entities'][number]) => ({
+          id: entity.entityId,
+          name: entity.name,
+          type: entity.type,
+          initialState: entity.initialState,
         })),
-        camera: manifest.sceneGraph.find(n => n.type === 'camera')?.transform,
+        camera: manifest.sceneGraph.find((node: AnimationManifest['sceneGraph'][number]) => node.type === 'camera')?.transform,
       },
       timeline: {
-        segments: manifest.segments.map(s => ({
-          id: s.segmentId,
-          start: s.startTime,
-          end: s.endTime,
-          description: s.description,
-          pausePoints: s.pausePoints,
+        segments: manifest.segments.map((segment: AnimationManifest['segments'][number]) => ({
+          id: segment.segmentId,
+          start: segment.startTime,
+          end: segment.endTime,
+          description: segment.description,
+          pausePoints: segment.pausePoints,
         })),
         totalDuration: manifest.totalDurationSeconds,
       },
-      cueing: manifest.cueingRules.map(r => ({
-        trigger: r.trigger,
-        condition: r.condition,
-        effect: r.effect,
-        target: r.target,
+      cueing: manifest.cueingRules.map((rule: AnimationManifest['cueingRules'][number]) => ({
+        trigger: rule.trigger,
+        condition: rule.condition,
+        effect: rule.effect,
+        target: rule.target,
       })),
-      controls: manifest.learnerControls.filter(c => c.enabled).map(c => c.type),
-      narration: manifest.narrationScript?.segments.map(s => ({
-        text: s.text,
-        startTime: s.startTime,
-        duration: s.duration,
+      controls: manifest.learnerControls
+        .filter((control: AnimationManifest['learnerControls'][number]) => control.enabled)
+        .map((control: AnimationManifest['learnerControls'][number]) => control.type),
+      narration: manifest.narrationScript?.segments.map((segment: NonNullable<AnimationManifest['narrationScript']>['segments'][number]) => ({
+        text: segment.text,
+        startTime: segment.startTime,
+        duration: segment.duration,
       })),
       pacing: manifest.pacingMetadata,
     };
@@ -274,6 +282,3 @@ export class AssetMaterializer {
     return claim.experienceId;
   }
 }
-
-// Import Prisma type
-import type { Prisma } from '@tutorputor/core/db';

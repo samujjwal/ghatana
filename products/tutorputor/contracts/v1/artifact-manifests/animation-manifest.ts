@@ -24,14 +24,14 @@ export const SceneNodeSchema = z.object({
     rotation: z.tuple([z.number(), z.number(), z.number()]),
     scale: z.tuple([z.number(), z.number(), z.number()]),
   }),
-  properties: z.record(z.unknown()).optional(),
+  properties: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const AnimatedEntitySchema = z.object({
   entityId: z.string(),
   name: z.string(),
   type: z.enum(['sphere', 'cube', 'cylinder', 'arrow', 'text', 'sprite']),
-  initialState: z.record(z.unknown()),
+  initialState: z.record(z.string(), z.unknown()),
   behavior: z.object({
     movable: z.boolean().default(false),
     interactive: z.boolean().default(false),
@@ -199,9 +199,9 @@ export function createAnimationTemplate(claimRef: string): AnimationManifest {
       recommendedPauses: [],
     },
     learnerControls: [
-      { type: 'play', enabled: true },
-      { type: 'pause', enabled: true },
-      { type: 'reset', enabled: true },
+      { type: 'play', enabled: true, position: 'bottom' },
+      { type: 'pause', enabled: true, position: 'bottom' },
+      { type: 'reset', enabled: true, position: 'bottom' },
     ],
     claimMapping: [],
     variantKey: 'primary',

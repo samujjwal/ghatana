@@ -33,8 +33,8 @@ function isSimulationTemplateDifficulty(
 }
 
 const listingQuerySchema = z.object({
-  status: z.string().min(1).optional(),
-  visibility: z.string().min(1).optional(),
+  status: z.enum(["DRAFT", "ARCHIVED", "ACTIVE"]).optional(),
+  visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().positive().max(100).optional(),
 });
@@ -42,7 +42,7 @@ const listingQuerySchema = z.object({
 const createListingBodySchema = z.object({
   moduleId: z.string().min(1),
   priceCents: z.number().int().nonnegative(),
-  visibility: z.string().min(1),
+  visibility: z.enum(["PUBLIC", "PRIVATE"]),
 });
 
 const listingIdParamsSchema = z.object({
@@ -50,8 +50,8 @@ const listingIdParamsSchema = z.object({
 });
 
 const updateListingBodySchema = z.object({
-  status: z.string().min(1).optional(),
-  visibility: z.string().min(1).optional(),
+  status: z.enum(["DRAFT", "ARCHIVED", "ACTIVE"]).optional(),
+  visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
   priceCents: z.number().int().nonnegative().optional(),
 });
 
@@ -65,7 +65,7 @@ const templateQuerySchema = z.object({
   isVerified: z.enum(["true", "false"]).optional(),
   minRating: z.coerce.number().min(0).max(5).optional(),
   search: z.string().optional(),
-  sortBy: z.string().optional(),
+  sortBy: z.enum(["popularity", "rating", "newest", "mostUsed", "alphabetical"]).optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
 });
 
@@ -99,8 +99,8 @@ export const marketplaceRoutes: FastifyPluginAsync<{
       tenantId: tenantId as TenantId,
       ...(status ? { status } : {}),
       ...(visibility ? { visibility } : {}),
-      ...(cursor ? { cursor } : {}),
-      ...(limit ? { limit } : {}),
+      ...(cursor ? { cursor: cursor as MarketplaceListingId } : {}),
+      ...(typeof limit === "number" ? { limit } : {}),
     });
     reply.send(listings);
   });

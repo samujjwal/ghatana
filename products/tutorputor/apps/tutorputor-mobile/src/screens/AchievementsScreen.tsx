@@ -20,6 +20,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/types';
 import { useQuery } from '@tanstack/react-query';
+import { createSessionHeaders } from '../storage/NativeSessionStorage';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Achievements'>;
 
@@ -36,15 +37,8 @@ interface Achievement {
 }
 
 async function fetchAchievements(): Promise<Achievement[]> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
   const response = await fetch('/api/v1/gamification/achievements', {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
   });
 
   if (!response.ok) {

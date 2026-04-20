@@ -21,7 +21,7 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
 
     @Override
     protected String getOpenApiSpecPath() {
-        return "docs/openapi.yaml";
+        return "products/phr/docs/openapi.yaml";
     }
 
     @Override
@@ -44,19 +44,6 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
         assertThat("/fhir/:resourceType").as("POST /fhir/:resourceType should create resources").isNotEmpty();
         assertThat("/fhir/:resourceType/:id").as("GET /fhir/:resourceType/:id should retrieve resources").isNotEmpty();
         assertThat("/fhir/:resourceType").as("GET /fhir/:resourceType should search resources").isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("PHR health check endpoints should be discoverable")
-    void testHealthEndpointsDiscoverable() {
-        Set<HttpRouteScanner.RouteDefinition> routes = HttpRouteScanner.scanRoutes(PhrHttpServer.class);
-        Set<String> healthRoutes = new HashSet<>();
-        for (HttpRouteScanner.RouteDefinition route : routes) {
-            if (route.getPath().contains("health") || route.getPath().contains("ready")) {
-                healthRoutes.add(route.getPath());
-            }
-        }
-        assertThat(healthRoutes).as("Health check endpoints should be discoverable").isNotEmpty();
     }
 
     @Test

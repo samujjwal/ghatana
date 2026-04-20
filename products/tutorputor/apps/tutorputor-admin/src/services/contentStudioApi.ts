@@ -42,6 +42,8 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const CS = `${BASE_URL}/api/content-studio`;
 const DEV_TENANT_ID = import.meta.env.VITE_TUTORPUTOR_TENANT_ID ?? "default";
 const DEV_ADMIN_ID = "user-admin-001";
+const TRUSTED_PROXY_SECRET =
+  import.meta.env.VITE_TRUST_PROXY_AUTH_SHARED_SECRET ?? null;
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
@@ -58,6 +60,22 @@ function authHeaders(): Record<string, string> {
     headers["x-tenant-id"] = DEV_TENANT_ID;
     headers["x-user-id"] = DEV_ADMIN_ID;
     headers["x-user-role"] = "admin";
+    if (TRUSTED_PROXY_SECRET) {
+      headers["x-trusted-proxy-secret"] = TRUSTED_PROXY_SECRET;
+    }
+  }
+
+  return headers;
+}
+
+export function getContentStudioAuthHeaders(
+  includeContentType: boolean = true,
+): Record<string, string> {
+  const headers = authHeaders();
+
+  if (!includeContentType) {
+    const { ["Content-Type"]: _contentType, ...rest } = headers;
+    return rest;
   }
 
   return headers;

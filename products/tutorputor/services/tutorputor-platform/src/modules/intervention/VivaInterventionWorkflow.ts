@@ -462,7 +462,9 @@ export class VivaInterventionWorkflow {
     if (entry) {
       entry.result = result;
       entry.conductedAt = new Date();
-      entry.notes = notes;
+      if (notes !== undefined) {
+        entry.notes = notes;
+      }
       this.emit("viva:completed", entry);
     }
   }

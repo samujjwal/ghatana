@@ -235,14 +235,18 @@ export function createConsentEnforcement(options: ConsentEnforcementOptions) {
     request: FastifyRequest,
     reply: FastifyReply,
   ): Promise<void> {
-    const user = (request as any).user;
-    if (!user?.id || !user?.tenantId) {
+    const user = (request as FastifyRequest & {
+      user?: { id?: string; sub?: string; userId?: string; tenantId?: string; role?: string };
+    }).user;
+    const userId = user?.id ?? user?.sub ?? user?.userId;
+
+    if (!userId || !user?.tenantId) {
       // No authenticated user → skip consent check (auth middleware will handle)
       return;
     }
 
     // Exempt roles
-    if (exemptRoles.includes(user.role)) {
+    if (user.role && exemptRoles.includes(user.role)) {
       return;
     }
 
@@ -252,7 +256,7 @@ export function createConsentEnforcement(options: ConsentEnforcementOptions) {
       return;
     }
 
-    const granted = await fetchGrantedConsent(user.tenantId, user.id);
+    const granted = await fetchGrantedConsent(user.tenantId, userId);
 
     const missing = required.filter((cat) => !granted.has(cat));
     if (missing.length > 0) {

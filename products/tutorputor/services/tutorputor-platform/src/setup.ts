@@ -15,6 +15,11 @@ import {
 } from "./core/observability/metrics.js";
 import { setupErrorTracking } from "./core/observability/error-tracking.js";
 import { setupRateLimit } from "./core/middleware/rate-limit.js";
+import { createConsentEnforcement } from "./core/middleware/consent-enforcement.js";
+import {
+  canUseTrustedProxyAuth,
+  hasTrustedProxyIdentityHeaders,
+} from "./core/http/trustedProxyAuth.js";
 import { initializeContentWorker } from "./startup/content-worker-init.js";
 
 // Core Modules
@@ -51,7 +56,13 @@ let redisClient: Redis | null = null;
 
 export function getRedisClient(): Redis {
   if (!redisClient) {
-    redisClient = new Redis(REDIS_URL, {
+    redisClient = new (Redis as unknown as new (
+      url: string,
+      options: {
+        maxRetriesPerRequest: number;
+        retryStrategy: (times: number) => number | null;
+      },
+    ) => Redis)(REDIS_URL, {
       maxRetriesPerRequest: 3,
       retryStrategy: (times: number) => {
         if (times > 3) {
@@ -66,7 +77,15 @@ export function getRedisClient(): Redis {
 
 export function closeRedisClient(): void {
   if (redisClient) {
-    redisClient.quit();
+    const redisWithLifecycle = redisClient as Redis & {
+      disconnect?: () => void;
+      quit?: () => Promise<unknown>;
+    };
+    if (typeof redisWithLifecycle.disconnect === "function") {
+      redisWithLifecycle.disconnect();
+    } else {
+      void redisWithLifecycle.quit?.();
+    }
     redisClient = null;
   }
 }
@@ -119,7 +138,14 @@ function resolveCorsOrigin(): string | string[] | RegExp[] {
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0);
 
-  return normalizedOrigins.length === 1 ? normalizedOrigins[0] : normalizedOrigins;
+  const firstOrigin = normalizedOrigins[0];
+  if (!firstOrigin) {
+    throw new Error(
+      "[startup] CORS_ORIGIN must contain at least one non-empty origin.",
+    );
+  }
+
+  return normalizedOrigins.length === 1 ? firstOrigin : normalizedOrigins;
 }
 
 function isPublicLtiRoute(method: string, url: string): boolean {
@@ -262,7 +288,11 @@ export async function setupPlatform(
       url.startsWith("/api/v1/") || url.startsWith("/api/content-studio/");
     if (!isGuarded) return;
     // Public auth sub-routes (only under /api/v1/)
-    if (url.startsWith("/api/v1/auth/sso/") || url === "/api/v1/auth/health")
+    if (
+      url.startsWith("/api/v1/auth/sso/") ||
+      url === "/api/v1/auth/health" ||
+      url === "/api/v1/auth/refresh"
+    )
       return;
     // Public LTI interoperability routes are invoked by external LMS platforms.
     // Restrict the public surface to expected method + route pairs.
@@ -278,29 +308,48 @@ export async function setupPlatform(
     const trustedTenantId = req.headers["x-tenant-id"];
     const trustedUserRole = req.headers["x-user-role"];
     const trustedUserId = req.headers["x-user-id"];
+    const normalizedTrustedTenantId =
+      typeof trustedTenantId === "string" ? trustedTenantId : undefined;
+    const normalizedTrustedUserRole =
+      typeof trustedUserRole === "string" ? trustedUserRole : undefined;
+    const normalizedTrustedUserId =
+      typeof trustedUserId === "string" ? trustedUserId : undefined;
     const hasTrustedProxyContext =
-      !authorizationHeader &&
-      typeof trustedTenantId === "string" &&
-      trustedTenantId.length > 0 &&
-      typeof trustedUserRole === "string" &&
-      trustedUserRole.length > 0;
+      hasTrustedProxyIdentityHeaders(req) &&
+      canUseTrustedProxyAuth(req);
 
     if (hasTrustedProxyContext) {
+      const trustedUser: {
+        id?: string;
+        sub?: string;
+        userId?: string;
+        tenantId?: string;
+        role?: string;
+      } = {};
+
+      if (normalizedTrustedUserId) {
+        trustedUser.id = normalizedTrustedUserId;
+        trustedUser.sub = normalizedTrustedUserId;
+        trustedUser.userId = normalizedTrustedUserId;
+      }
+      if (normalizedTrustedTenantId) {
+        trustedUser.tenantId = normalizedTrustedTenantId;
+      }
+      if (normalizedTrustedUserRole) {
+        trustedUser.role = normalizedTrustedUserRole;
+      }
+
       (
         req as typeof req & {
           user?: {
+            id?: string;
             sub?: string;
             userId?: string;
             tenantId?: string;
             role?: string;
           };
         }
-      ).user = {
-        sub: typeof trustedUserId === "string" ? trustedUserId : undefined,
-        userId: typeof trustedUserId === "string" ? trustedUserId : undefined,
-        tenantId: trustedTenantId,
-        role: trustedUserRole,
-      };
+      ).user = trustedUser;
       return;
     }
 
@@ -316,6 +365,9 @@ export async function setupPlatform(
       });
     }
   });
+
+  const consentEnforcement = createConsentEnforcement({ prisma });
+  app.addHook("preHandler", consentEnforcement.preHandler);
 
   // Register All Modules
   // Canonical prefix strategy: all routes exposed under /api/v1/
@@ -429,7 +481,7 @@ export async function setupPlatform(
   // Subscription payments: /api/v1/payments/...
   const stripeKey = requireEnv(
     "STRIPE_SECRET_KEY",
-    "sk_test_PLACEHOLDER12345678901234",
+    "stripe_test_placeholder_secret",
   );
   validateStripeKey(stripeKey);
   const stripe = new Stripe(stripeKey, {
@@ -452,7 +504,12 @@ export async function setupPlatform(
   app.log.info("✅ Feature flags module registered");
 
   // Observability: /api/v1/admin/observability/metrics, /api/v1/admin/observability/alerts
-  registerObservabilityRoutes(app, { prisma });
+  await app.register(
+    async (fastify) => {
+      registerObservabilityRoutes(fastify, { prisma });
+    },
+    { prefix: "/api/v1/admin/observability" },
+  );
   app.log.info("✅ Observability routes registered");
 
   const shouldStartContentWorker =

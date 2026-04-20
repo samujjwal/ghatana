@@ -10,7 +10,7 @@
  * @doc.pattern Configuration
  */
 
-import { PrismaClient } from '@tutorputor/core/db';
+import { PrismaClient, createPrismaClientForUrl } from '@tutorputor/core/db';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'ReadReplicaConfig' });
@@ -29,26 +29,16 @@ export interface ReadReplicaConfig {
  * Create Prisma client with read replica support
  */
 export function createPrismaWithReplicas(config: ReadReplicaConfig): PrismaClient {
-  const datasources: Record<string, string> = {
-    db: config.primaryUrl,
+  const prisma = createPrismaClientForUrl(config.primaryUrl);
+  const observablePrisma = prisma as PrismaClient & {
+    $on: (
+      event: 'query',
+      callback: (event: { query: string; duration: number; params: string }) => void,
+    ) => void;
   };
 
-  // Add replica datasources
-  config.replicaUrls.forEach((url, index) => {
-    datasources[`replica_${index}`] = url;
-  });
-
-  const prisma = new PrismaClient({
-    datasources,
-    log: [
-      { level: 'query', emit: 'event' },
-      { level: 'error', emit: 'stdout' },
-      { level: 'warn', emit: 'stdout' },
-    ],
-  });
-
   // Log queries for monitoring
-  prisma.$on('query', (e) => {
+  observablePrisma.$on('query', (e) => {
     logger.debug({
       message: 'Database query',
       query: e.query,
@@ -175,9 +165,7 @@ export async function checkReplicaHealth(prisma: PrismaClient, config: ReadRepli
   for (const replicaUrl of config.replicaUrls) {
     try {
       const start = Date.now();
-      const replicaPrisma = new PrismaClient({
-        datasources: { db: replicaUrl },
-      });
+      const replicaPrisma = createPrismaClientForUrl(replicaUrl);
       await replicaPrisma.$queryRaw`SELECT 1`;
       await replicaPrisma.$disconnect();
       

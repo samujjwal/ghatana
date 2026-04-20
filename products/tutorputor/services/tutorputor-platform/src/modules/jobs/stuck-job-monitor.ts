@@ -12,7 +12,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@tutorputor/core/db";
 import type { JobNotificationService } from "./notification-service";
 
 export interface StuckJobThresholds {
@@ -50,7 +50,7 @@ export const DEFAULT_STUCK_THRESHOLDS: StuckJobThresholds = {
 export class StuckJobMonitor {
   private heartbeats: Map<string, JobHeartbeat> = new Map();
   private thresholds: StuckJobThresholds;
-  private checkInterval?: NodeJS.Timeout;
+  private checkInterval: NodeJS.Timeout | undefined;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -159,10 +159,12 @@ export class StuckJobMonitor {
           tenantId: job.tenantId,
           jobType: job.jobType,
           startedAt: new Date(job.startedAt),
-          lastHeartbeatAt: job.lastHeartbeatAt ? new Date(job.lastHeartbeatAt) : undefined,
           stuckDurationMinutes,
           severity,
           previousEscalations: job.previousEscalations,
+          ...(job.lastHeartbeatAt
+            ? { lastHeartbeatAt: new Date(job.lastHeartbeatAt) }
+            : {}),
         };
 
         stuckJobs.push(stuckJob);
@@ -186,8 +188,10 @@ export class StuckJobMonitor {
       tenantId: stuckJob.tenantId,
       jobType: stuckJob.jobType,
       stuckDurationMinutes: stuckJob.stuckDurationMinutes,
-      lastHeartbeat: stuckJob.lastHeartbeatAt,
       severity: stuckJob.severity === "escalated" ? "critical" : stuckJob.severity,
+      ...(stuckJob.lastHeartbeatAt
+        ? { lastHeartbeat: stuckJob.lastHeartbeatAt }
+        : {}),
     });
 
     // Increment escalation count

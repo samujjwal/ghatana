@@ -49,7 +49,7 @@ const createRequestBodySchema = z.object({
   domain: z.string().trim().min(1),
   conceptId: z.string().trim().min(1).optional(),
   targetGrades: z.array(z.string().trim().min(1)).optional(),
-  requestConfig: z.record(z.unknown()).optional(),
+  requestConfig: z.record(z.string(), z.unknown()).optional(),
 });
 
 const listQuerySchema = z.object({
@@ -63,7 +63,7 @@ const streamQuerySchema = z.object({
 });
 
 const resultsBodySchema = z.object({
-  results: z.array(z.record(z.unknown())).min(1),
+  results: z.array(z.record(z.string(), z.unknown())).min(1),
 });
 
 const inferIntentBodySchema = z.object({
@@ -75,6 +75,31 @@ const validationErrorResponse = (issues: z.ZodIssue[]) => ({
   error: "Invalid request",
   details: issues,
 });
+
+function toJobExecutionResults(
+  results: Array<Record<string, unknown>>,
+): JobExecutionResult[] {
+  return results.map((result) => ({
+    jobId: String(result.jobId ?? ""),
+    status: result.status === "failed" ? "failed" : "completed",
+    ...(typeof result.outputAssetId === "string"
+      ? { outputAssetId: result.outputAssetId }
+      : {}),
+    ...(result.outputData && typeof result.outputData === "object"
+      ? { outputData: result.outputData as Record<string, unknown> }
+      : {}),
+    ...(result.diagnostics && typeof result.diagnostics === "object"
+      ? { diagnostics: result.diagnostics as Record<string, unknown> }
+      : {}),
+    ...(typeof result.errorMessage === "string"
+      ? { errorMessage: result.errorMessage }
+      : {}),
+    durationMs:
+      typeof result.durationMs === "number" && Number.isFinite(result.durationMs)
+        ? result.durationMs
+        : 0,
+  }));
+}
 
 // =============================================================================
 // Register
@@ -477,7 +502,7 @@ export function registerGenerationRoutes(
       try {
         const summary = await executionService.recordBatchResults(
           requestId,
-          results as JobExecutionResult[],
+          toJobExecutionResults(results),
         );
         return reply.send(summary);
       } catch (err: unknown) {

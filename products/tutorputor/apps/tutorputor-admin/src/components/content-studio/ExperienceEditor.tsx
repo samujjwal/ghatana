@@ -13,6 +13,7 @@
 import { useState, useCallback } from 'react';
 import type { ExperienceStatus } from '@tutorputor/contracts/v1/content-studio';
 import { Button } from '@ghatana/design-system';
+import { getContentStudioAuthHeaders } from '../../services/contentStudioApi';
 import {
     Plus,
     CheckCircle,
@@ -171,7 +172,7 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
         try {
             const response = await fetch(`/api/content-studio/experiences/${experience.id}/refine`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getContentStudioAuthHeaders(),
                 body: JSON.stringify({
                     refinementPrompt,
                     // Include simulation data to preserve it
@@ -199,6 +200,7 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
         try {
             const response = await fetch(`/api/content-studio/experiences/${experience.id}/validate`, {
                 method: 'POST',
+                headers: getContentStudioAuthHeaders(false),
             });
 
             if (!response.ok) throw new Error('Validation failed');
@@ -601,7 +603,7 @@ export function ExperienceEditor({ experience, validation, onExperienceUpdated, 
                             try {
                                 const response = await fetch(`/api/content-studio/experiences/${experience.id}`, {
                                     method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json', 'x-tenant-id': 'default' },
+                                    headers: getContentStudioAuthHeaders(),
                                     body: JSON.stringify({
                                         title: experience.title,
                                         description: experience.description,

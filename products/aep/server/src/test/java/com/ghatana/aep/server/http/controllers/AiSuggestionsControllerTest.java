@@ -165,7 +165,7 @@ class AiSuggestionsControllerTest {
 
             assertThat(response.getCode()).isEqualTo(500);
             Map<String, Object> body = parseBody(response);
-            assertThat(body.get("error").toString()).contains("Failed to generate suggestions");
+            assertThat(body.get("message").toString()).contains("Failed to generate suggestions");
         }
 
         @Test

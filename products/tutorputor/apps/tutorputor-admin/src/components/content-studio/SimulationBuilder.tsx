@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { RiskBadge, ConfidenceIndicator, type RiskLevel } from './RiskBadge';
+import { getContentStudioAuthHeaders } from '../../services/contentStudioApi';
 
 interface SimulationDraft {
     id: string;
@@ -75,10 +76,7 @@ export function SimulationBuilder({
         try {
             const response = await fetch('/api/content-studio/ai/generate-simulation', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-tenant-id': 'default',
-                },
+                headers: getContentStudioAuthHeaders(),
                 body: JSON.stringify({
                     description,
                     conceptName: experienceTitle,

@@ -79,9 +79,28 @@ export function registerKnowledgeBaseRoutes(
       };
     }
     const factRequest = factRequestResult.data;
+    const verifyFactRequest = {
+      claim: factRequest.claim,
+      domain: factRequest.domain,
+      ...(factRequest.context
+        ? {
+            context: {
+              ...(factRequest.context.gradeRange
+                ? { gradeRange: factRequest.context.gradeRange }
+                : {}),
+              ...(factRequest.context.subject
+                ? { subject: factRequest.context.subject }
+                : {}),
+              ...(factRequest.context.relatedConcepts
+                ? { relatedConcepts: factRequest.context.relatedConcepts }
+                : {}),
+            },
+          }
+        : {}),
+    };
 
     try {
-      const result = await knowledgeBaseService.verifyFact(factRequest);
+      const result = await knowledgeBaseService.verifyFact(verifyFactRequest);
       return { success: true, data: result };
     } catch (error) {
       fastify.log.error(error);
@@ -206,10 +225,28 @@ export function registerKnowledgeBaseRoutes(
       };
     }
     const validationRequest = validationRequestResult.data;
+    const validateRequest = {
+      content: validationRequest.content,
+      contentType: validationRequest.contentType,
+      domain: validationRequest.domain,
+      gradeRange: validationRequest.gradeRange,
+      ...(validationRequest.context
+        ? {
+            context: {
+              ...(validationRequest.context.learningObjectives
+                ? { learningObjectives: validationRequest.context.learningObjectives }
+                : {}),
+              ...(validationRequest.context.prerequisites
+                ? { prerequisites: validationRequest.context.prerequisites }
+                : {}),
+            },
+          }
+        : {}),
+    };
 
     try {
       const result =
-        await knowledgeBaseService.validateContent(validationRequest);
+        await knowledgeBaseService.validateContent(validateRequest);
       return { success: true, data: result };
     } catch (error) {
       fastify.log.error(error);

@@ -38,8 +38,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Voice Gateway Endpoints (DC-E4)")
-class DataCloudHttpServerVoiceTest extends EventloopTestBase {
+@DisplayName("VoiceGatewayHandler – Contract Tests (DC-E4)")
+class VoiceGatewayHandlerTest extends EventloopTestBase {
 
     private DataCloudClient mockClient;
     private VoiceGatewayHandler handler;

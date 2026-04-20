@@ -7,11 +7,10 @@
  * @doc.pattern UnitTest
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PushNotificationService } from '../PushNotificationService';
 
 // Mock React Native Platform
-vi.mock('react-native', () => ({
+jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
   },

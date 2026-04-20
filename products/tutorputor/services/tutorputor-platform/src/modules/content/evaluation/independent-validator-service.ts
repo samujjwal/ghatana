@@ -13,6 +13,7 @@
 
 import { createHash } from "node:crypto";
 import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma } from "@tutorputor/core/db";
 import type {
   KnowledgeBaseService,
   ValidationCheck,
@@ -188,7 +189,7 @@ export class IndependentGeneratedContentValidator {
         accessibilityScore,
         gradefitScore,
         overallStatus,
-        checks: validation.checks,
+        checks: validation.checks as unknown as Prisma.InputJsonValue,
         issues: validation.checks
           .filter((check) => !check.passed)
           .map((check) => ({
@@ -197,16 +198,17 @@ export class IndependentGeneratedContentValidator {
             score: check.score,
             severity:
               check.type === "factual_accuracy" ? "error" : "warning",
-          })),
-        suggestions: validation.recommendations,
-        simulationHealthReport:
-          request.contentType === "simulation"
-            ? {
+          })) as unknown as Prisma.InputJsonValue,
+        suggestions: validation.recommendations as unknown as Prisma.InputJsonValue,
+        ...(request.contentType === "simulation"
+          ? {
+              simulationHealthReport: {
                 riskLevel: validation.riskLevel,
                 validatorVersion: this.validatorsVersion,
                 contentType: request.contentType,
-              }
-            : undefined,
+              } as Prisma.InputJsonValue,
+            }
+          : {}),
       },
     });
 
@@ -214,6 +216,16 @@ export class IndependentGeneratedContentValidator {
     const requiresHumanReview = overallStatus !== "PASS";
 
     if (requiresHumanReview) {
+      const reviewMetadata = {
+        contentType: request.contentType,
+        validatorVersion: this.validatorsVersion,
+        validationRecordId: validationRecord.id,
+        score: validation.score,
+        recommendations: validation.recommendations,
+        ...(request.assetId ? { assetId: request.assetId } : {}),
+        ...(request.metadata ? { requestMetadata: request.metadata } : {}),
+      } as unknown as Prisma.InputJsonValue;
+
       const reviewQueue = await this.prisma.reviewQueue.create({
         data: {
           tenantId: request.tenantId,
@@ -222,15 +234,7 @@ export class IndependentGeneratedContentValidator {
           riskLevel: mapRiskLevel(validation.riskLevel),
           triggerReason:
             validation.riskLevel === "high" ? "high_risk" : "low_confidence",
-          metadata: {
-            assetId: request.assetId,
-            contentType: request.contentType,
-            validatorVersion: this.validatorsVersion,
-            validationRecordId: validationRecord.id,
-            score: validation.score,
-            recommendations: validation.recommendations,
-            ...(request.metadata ? { requestMetadata: request.metadata } : {}),
-          },
+          metadata: reviewMetadata,
         },
       });
 

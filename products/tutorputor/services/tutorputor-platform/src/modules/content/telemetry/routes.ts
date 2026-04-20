@@ -48,7 +48,7 @@ const trackEventBodySchema = z.object({
   score: z.number().optional(),
   feedbackLabel: z.string().trim().min(1).optional(),
   feedbackScore: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   occurredAt: z.string().datetime().optional(),
 });
 
@@ -94,10 +94,28 @@ export function registerTelemetryRoutes(
       const tenantId = getTenantId(request);
       const userId = getUserId(request);
 
-      const event = await service.trackEvent(tenantId, {
-        ...bodyResult.data,
+      const eventInput: TrackExplorerEventInput = {
+        eventType: bodyResult.data.eventType,
+        ...(bodyResult.data.sessionId ? { sessionId: bodyResult.data.sessionId } : {}),
+        ...(bodyResult.data.query ? { query: bodyResult.data.query } : {}),
+        ...(bodyResult.data.assetId ? { assetId: bodyResult.data.assetId } : {}),
+        ...(bodyResult.data.assetType ? { assetType: bodyResult.data.assetType } : {}),
+        ...(bodyResult.data.position !== undefined
+          ? { position: bodyResult.data.position }
+          : {}),
+        ...(bodyResult.data.score !== undefined ? { score: bodyResult.data.score } : {}),
+        ...(bodyResult.data.feedbackLabel
+          ? { feedbackLabel: bodyResult.data.feedbackLabel }
+          : {}),
+        ...(bodyResult.data.feedbackScore !== undefined
+          ? { feedbackScore: bodyResult.data.feedbackScore }
+          : {}),
+        ...(bodyResult.data.metadata ? { metadata: bodyResult.data.metadata } : {}),
+        ...(bodyResult.data.occurredAt ? { occurredAt: bodyResult.data.occurredAt } : {}),
         ...(userId ? { userId } : {}),
-      });
+      };
+
+      const event = await service.trackEvent(tenantId, eventInput);
 
       return reply.status(201).send(event);
     },

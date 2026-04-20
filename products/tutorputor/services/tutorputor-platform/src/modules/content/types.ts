@@ -80,6 +80,7 @@ export interface ContentAsset {
   legacyExperienceId?: string;
   reviewState?: string;
   searchableText?: string;
+  estimatedTimeMinutes?: number;
 }
 
 export interface ContentBlock {

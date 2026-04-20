@@ -25,6 +25,8 @@ export interface AnimationGenerationJobData extends CorrelatedGenerationJobData 
   animationType: string;
   durationSeconds: number;
   complexity?: string;
+  domain?: string;
+  gradeLevel?: string;
 }
 
 export class AnimationGenerationProcessor {
@@ -44,6 +46,8 @@ export class AnimationGenerationProcessor {
       animationType,
       durationSeconds,
       complexity,
+      domain,
+      gradeLevel,
     } = job.data;
 
     this.logger.info(
@@ -67,9 +71,14 @@ export class AnimationGenerationProcessor {
         claimRef,
         animationType,
         durationSeconds,
+        domain: domain ?? "TECH",
+        gradeLevel: gradeLevel ?? "GRADE_6_8",
       });
 
-      const animation = response?.animation;
+      const animation =
+        (response?.animation as Record<string, unknown> | undefined) ??
+        (response?.manifest as Record<string, unknown> | undefined) ??
+        null;
       if (!animation) {
         throw new Error("No animation specification returned");
       }
@@ -96,8 +105,16 @@ export class AnimationGenerationProcessor {
         animation,
         durationSeconds,
       );
+      const manifestId = String(
+        animation.manifestId ??
+          animation.manifest_id ??
+          animation.animation_id ??
+          animation.animationId ??
+          `manifest-${experienceId}-${claimRef}`,
+      );
+      const manifestVersion = String(animation.version ?? "1.0.0");
       const persistedType = this.mapAnimationType(
-        animation.type ?? animationType,
+        String(animation.type ?? animationType),
       );
       const persistedTitle = String(
         animation.title || `Animation for ${claimRef}`,
@@ -115,14 +132,19 @@ export class AnimationGenerationProcessor {
 
       await this.prisma.claimAnimation.upsert({
         where: {
-          experienceId_claimRef: {
+          experienceId_claimRef_variantKey: {
             experienceId,
             claimRef,
+            variantKey: "primary",
           },
         },
         create: {
           experienceId,
           claimRef,
+          manifestId,
+          manifestVersion,
+          variantKey: "primary",
+          isPrimary: true,
           title: persistedTitle,
           description: persistedDescription,
           type: persistedType,
@@ -130,6 +152,9 @@ export class AnimationGenerationProcessor {
           config: persistedConfig as any,
         },
         update: {
+          manifestId,
+          manifestVersion,
+          isPrimary: true,
           title: persistedTitle,
           description: persistedDescription,
           type: persistedType,

@@ -159,7 +159,7 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
     try {
       const classroom = await teacherService.getClassroom({
         tenantId,
-        classroomId,
+        classroomId: classroomId as ClassroomId,
       });
       return reply.code(200).send(classroom);
     } catch (error) {
@@ -202,8 +202,8 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
     try {
       const classroom = await teacherService.addStudentToClassroom({
         tenantId,
-        classroomId,
-        studentId,
+        classroomId: classroomId as ClassroomId,
+        studentId: studentId as UserId,
         displayName,
         ...(email ? { email } : {}),
       });
@@ -244,8 +244,8 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
       try {
         const classroom = await teacherService.removeStudentFromClassroom({
           tenantId,
-          classroomId,
-          studentId,
+          classroomId: classroomId as ClassroomId,
+          studentId: studentId as UserId,
         });
         return reply.code(200).send(classroom);
       } catch (error) {
@@ -290,8 +290,8 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
       const dueAtIso = dueAt ? new Date(dueAt).toISOString() : undefined;
       const classroom = await teacherService.assignModule({
         tenantId,
-        classroomId,
-        moduleId,
+        classroomId: classroomId as ClassroomId,
+        moduleId: moduleId as ModuleId,
         ...(dueAtIso ? { dueAt: dueAtIso } : {}),
       });
       return reply.code(200).send(classroom);
@@ -327,7 +327,7 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
     try {
       const progress = await teacherService.getClassroomProgress({
         tenantId,
-        classroomId,
+        classroomId: classroomId as ClassroomId,
       });
       return reply.code(200).send(progress);
     } catch (error) {

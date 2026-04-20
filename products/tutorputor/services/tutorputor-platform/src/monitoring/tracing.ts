@@ -10,7 +10,7 @@
  * @doc.pattern Infrastructure
  */
 
-import { trace, context, propagation, Span, SpanStatusCode, SpanKind } from '@opentelemetry/api';
+import { trace, context, propagation, Span, SpanStatusCode, SpanKind, type Attributes, type AttributeValue } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
@@ -24,6 +24,46 @@ const logger = createStandaloneLogger({ component: 'Tracing' });
 const OTLP_ENDPOINT = process.env.OTLP_ENDPOINT || 'http://localhost:4317';
 const SERVICE_NAME = process.env.SERVICE_NAME || 'tutorputor-platform';
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
+
+function toAttributeValue(value: unknown): AttributeValue | undefined {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.every((item): item is string => typeof item === 'string')) {
+      return value;
+    }
+    if (value.every((item): item is number => typeof item === 'number')) {
+      return value;
+    }
+    if (value.every((item): item is boolean => typeof item === 'boolean')) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function toAttributes(attributes?: Record<string, unknown>): Attributes | undefined {
+  if (!attributes) {
+    return undefined;
+  }
+
+  const normalized: Attributes = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    const attributeValue = toAttributeValue(value);
+    if (attributeValue !== undefined) {
+      normalized[key] = attributeValue;
+    }
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
 
 /**
  * Initialize OpenTelemetry tracing
@@ -88,7 +128,10 @@ export async function withSpan<T>(
 export function addSpanAttributes(attributes: Record<string, unknown>): void {
   const span = trace.getActiveSpan();
   if (span) {
-    span.setAttributes(attributes);
+    const normalizedAttributes = toAttributes(attributes);
+    if (normalizedAttributes) {
+      span.setAttributes(normalizedAttributes);
+    }
   }
 }
 
@@ -98,7 +141,7 @@ export function addSpanAttributes(attributes: Record<string, unknown>): void {
 export function addSpanEvent(name: string, attributes?: Record<string, unknown>): void {
   const span = trace.getActiveSpan();
   if (span) {
-    span.addEvent(name, attributes);
+    span.addEvent(name, toAttributes(attributes));
   }
 }
 

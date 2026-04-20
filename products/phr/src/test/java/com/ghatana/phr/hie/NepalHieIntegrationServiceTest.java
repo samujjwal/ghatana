@@ -23,6 +23,8 @@ class NepalHieIntegrationServiceTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
+        // Set DEGRADED mode to allow tests to pass without DataCloud dependency
+        System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
         server = new PhrFhirR4Server(mockContext());
         runPromise(server::start);
         runPromise(() -> server.createResource("Patient", patientJson()));

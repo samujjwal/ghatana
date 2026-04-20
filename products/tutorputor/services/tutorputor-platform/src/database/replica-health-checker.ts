@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@tutorputor/core/db';
+import { PrismaClient, createPrismaClientForUrl } from '@tutorputor/core/db';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'ReplicaHealthChecker' });
@@ -156,9 +156,7 @@ export class ReplicaHealthChecker {
     const start = Date.now();
     
     try {
-      const prisma = new PrismaClient({
-        datasources: { db: url },
-      });
+      const prisma = createPrismaClientForUrl(url);
       
       await prisma.$queryRaw`SELECT 1`;
       await prisma.$disconnect();

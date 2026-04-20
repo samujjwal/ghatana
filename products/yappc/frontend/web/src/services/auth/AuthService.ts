@@ -160,12 +160,18 @@ export class AuthService {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    logger.warn('Invalid credentials', 'auth', { email: credentials.email });
+                    logger.warn('Authentication failed - invalid credentials', 'auth', { 
+                        email: credentials.email,
+                        timestamp: new Date().toISOString(),
+                    });
                     return { success: false, error: 'Invalid email or password' };
                 }
 
                 if (response.status === 423) {
-                    logger.warn('Account locked', 'auth', { email: credentials.email });
+                    logger.warn('Authentication failed - account locked', 'auth', { 
+                        email: credentials.email,
+                        timestamp: new Date().toISOString(),
+                    });
                     return { success: false, error: 'Account temporarily locked' };
                 }
 
@@ -503,7 +509,13 @@ export class AuthService {
      */
     private saveSession(session: AuthSession): void {
         try {
-            localStorage.setItem('auth-session', JSON.stringify(session));
+            // Check if cookies are being used (httpOnly cookies are set by backend)
+            const hasCookie = document.cookie.includes('accessToken');
+            
+            // Only save to localStorage if cookies are not being used (backward compatibility)
+            if (!hasCookie) {
+                localStorage.setItem('auth-session', JSON.stringify(session));
+            }
         } catch (error) {
             logger.error('Failed to save session to storage', 'auth', {
                 error: error instanceof Error ? error.message : String(error)
@@ -577,7 +589,7 @@ export class AuthService {
     }
 
     /**
-     * Setup automatic session refresh
+     * Setup automatic session refresh with activity tracking
      */
     private setupSessionRefresh(): void {
         if (this.sessionTimeout) {
@@ -604,6 +616,13 @@ export class AuthService {
         this.sessionTimeout = setTimeout(() => {
             void this.refreshToken();
         }, refreshDelay);
+        
+        // Log security event for session refresh setup
+        logger.info('Session refresh scheduled', 'auth', {
+            userId: this.currentSession.user.id,
+            refreshDelay,
+            expiresAt: this.currentSession.expiresAt,
+        });
     }
 
     /**

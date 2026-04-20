@@ -141,16 +141,24 @@ export class EvidenceBundleGenerator {
               sourceType,
               sourceUrl: result.sourceUrl,
               sourceTitle: content.title,
-              sourcePublisher: content.publisher,
-              sourcePublicationDate: content.publicationDate,
               excerpt: content.content.substring(0, 500), // First 500 chars
-              structuredFact: (this.extractStructuredFact(content.content, claimText) as Record<string, unknown> | undefined),
               supportKind: this.detectSupportKind(content.content, claimText),
               credibilityScore: this.calculateCredibilityScore(content, sourceType),
               retrievedAt: new Date(),
               freshnessStatus: 'CURRENT',
               verificationState: 'UNVERIFIED',
-              contradictionNotes: undefined,
+              ...(content.publisher ? { sourcePublisher: content.publisher } : {}),
+              ...(content.publicationDate
+                ? { sourcePublicationDate: content.publicationDate }
+                : {}),
+              ...(this.extractStructuredFact(content.content, claimText)
+                ? {
+                    structuredFact: this.extractStructuredFact(
+                      content.content,
+                      claimText,
+                    ) as Record<string, unknown>,
+                  }
+                : {}),
             };
 
             allEvidence.push(evidence);
@@ -239,7 +247,12 @@ export class EvidenceBundleGenerator {
 
     // Find the most relevant sentence (simple heuristic: longest sentence with claim keywords)
     const claimKeywords = claimText.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
-    let bestSentence = sentences[0];
+    const firstSentence = sentences[0];
+    if (!firstSentence) {
+      return null;
+    }
+
+    let bestSentence = firstSentence;
     let bestScore = 0;
 
     for (const sentence of sentences) {
@@ -436,6 +449,32 @@ export class EvidenceBundleGenerator {
 
     // Save evidences
     for (const evidence of bundle.evidences) {
+      const persistencePayload = {
+        sourceType: evidence.sourceType,
+        sourceTitle: evidence.sourceTitle,
+        supportKind: evidence.supportKind,
+        retrievedAt: evidence.retrievedAt,
+        freshnessStatus: evidence.freshnessStatus,
+        verificationState: evidence.verificationState,
+        ...(evidence.sourceUrl ? { sourceUrl: evidence.sourceUrl } : {}),
+        ...(evidence.sourcePublisher
+          ? { sourcePublisher: evidence.sourcePublisher }
+          : {}),
+        ...(evidence.sourcePublicationDate
+          ? { sourcePublicationDate: evidence.sourcePublicationDate }
+          : {}),
+        ...(evidence.excerpt ? { excerpt: evidence.excerpt } : {}),
+        ...(evidence.structuredFact
+          ? { structuredFact: evidence.structuredFact as Prisma.InputJsonValue }
+          : {}),
+        ...(evidence.credibilityScore != null
+          ? { credibilityScore: evidence.credibilityScore }
+          : {}),
+        ...(evidence.contradictionNotes
+          ? { contradictionNotes: evidence.contradictionNotes }
+          : {}),
+      };
+
       await this.prisma.learningEvidence.upsert({
         where: {
           experienceId_evidenceRef: {
@@ -447,35 +486,9 @@ export class EvidenceBundleGenerator {
           experienceId,
           evidenceRef: evidence.evidenceRef,
           claimRef: evidence.claimRef,
-          sourceType: evidence.sourceType,
-          sourceUrl: evidence.sourceUrl,
-          sourceTitle: evidence.sourceTitle,
-          sourcePublisher: evidence.sourcePublisher,
-          sourcePublicationDate: evidence.sourcePublicationDate,
-          excerpt: evidence.excerpt,
-          structuredFact: evidence.structuredFact as Prisma.InputJsonValue,
-          supportKind: evidence.supportKind,
-          credibilityScore: evidence.credibilityScore,
-          retrievedAt: evidence.retrievedAt,
-          freshnessStatus: evidence.freshnessStatus,
-          verificationState: evidence.verificationState,
-          contradictionNotes: evidence.contradictionNotes,
+          ...persistencePayload,
         },
-        update: {
-          sourceType: evidence.sourceType,
-          sourceUrl: evidence.sourceUrl,
-          sourceTitle: evidence.sourceTitle,
-          sourcePublisher: evidence.sourcePublisher,
-          sourcePublicationDate: evidence.sourcePublicationDate,
-          excerpt: evidence.excerpt,
-          structuredFact: evidence.structuredFact as Prisma.InputJsonValue,
-          supportKind: evidence.supportKind,
-          credibilityScore: evidence.credibilityScore,
-          retrievedAt: evidence.retrievedAt,
-          freshnessStatus: evidence.freshnessStatus,
-          verificationState: evidence.verificationState,
-          contradictionNotes: evidence.contradictionNotes,
-        },
+        update: persistencePayload,
       });
     }
 

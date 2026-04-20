@@ -56,20 +56,14 @@ export class TeacherAnalyticsService {
       classroomId,
     });
 
-    const [classroom, enrollments, attempts] = await Promise.all([
+    const [classroom, classroomMembers] = await Promise.all([
       this.prisma.classroom.findUnique({
         where: { id: classroomId },
         select: { id: true, title: true },
       }),
-      this.prisma.enrollment.findMany({
-        where: { tenantId, classroom: { id: classroomId } },
-        include: { user: { select: { id: true, displayName: true } } },
-      }),
-      this.prisma.assessmentAttempt.findMany({
-        where: {
-          tenantId,
-          user: { enrollments: { some: { classroom: { id: classroomId } } } },
-        },
+      this.prisma.classroomMember.findMany({
+        where: { classroomId },
+        select: { userId: true },
       }),
     ]);
 
@@ -77,15 +71,40 @@ export class TeacherAnalyticsService {
       throw new Error('Classroom not found');
     }
 
-    const totalStudents = enrollments.length;
-    const activeStudents = enrollments.filter((e) => e.status === 'IN_PROGRESS').length;
-    const averageProgress = enrollments.reduce((sum, e) => sum + (e.progressPercent || 0), 0) / totalStudents || 0;
-    const averageScore = attempts.reduce((sum, a) => sum + (a.scorePercent || 0), 0) / attempts.length || 0;
-    const completionRate = enrollments.filter((e) => e.status === 'COMPLETED').length / totalStudents || 0;
+    const memberIds = classroomMembers.map((member) => member.userId);
 
-    const atRiskStudents = this.calculateAtRiskCount(enrollments, attempts);
-    const topPerformers = this.getTopPerformers(enrollments, attempts);
-    const strugglingStudents = this.getStrugglingStudents(enrollments, attempts);
+    const [enrollments, users, attempts] = memberIds.length === 0
+      ? [[], [], []]
+      : await Promise.all([
+          this.prisma.enrollment.findMany({
+            where: { tenantId, userId: { in: memberIds } },
+          }),
+          this.prisma.user.findMany({
+            where: { tenantId, id: { in: memberIds } },
+            select: { id: true, displayName: true },
+          }),
+          this.prisma.assessmentAttempt.findMany({
+            where: { tenantId, userId: { in: memberIds } },
+          }),
+        ]);
+
+    const usersById = new Map(
+      users.map((user) => [user.id, user.displayName ?? ''])
+    );
+    const enrollmentsWithUser = enrollments.map((enrollment) => ({
+      ...enrollment,
+      user: { displayName: usersById.get(enrollment.userId) ?? '' },
+    }));
+
+    const totalStudents = memberIds.length;
+    const activeStudents = enrollmentsWithUser.filter((e) => e.status === 'IN_PROGRESS').length;
+    const averageProgress = enrollmentsWithUser.reduce((sum, e) => sum + (e.progressPercent || 0), 0) / totalStudents || 0;
+    const averageScore = attempts.reduce((sum, a) => sum + (a.scorePercent || 0), 0) / attempts.length || 0;
+    const completionRate = enrollmentsWithUser.filter((e) => e.status === 'COMPLETED').length / totalStudents || 0;
+
+    const atRiskStudents = this.calculateAtRiskCount(enrollmentsWithUser, attempts);
+    const topPerformers = this.getTopPerformers(enrollmentsWithUser, attempts);
+    const strugglingStudents = this.getStrugglingStudents(enrollmentsWithUser, attempts);
     const moduleProgress = await this.calculateModuleProgress(tenantId, classroomId);
     const assignmentPerformance = await this.calculateAssignmentPerformance(tenantId, classroomId);
 

@@ -22,6 +22,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ExploreStackParamList } from '../navigation/types';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { createSessionHeaders } from '../storage/NativeSessionStorage';
 
 type Props = NativeStackScreenProps<ExploreStackParamList, 'Marketplace'>;
 
@@ -37,15 +38,8 @@ interface MarketplaceListing {
 }
 
 async function fetchMarketplaceListings(): Promise<MarketplaceListing[]> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
   const response = await fetch('/api/v1/integration/marketplace/listings', {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
   });
 
   if (!response.ok) {
@@ -57,16 +51,9 @@ async function fetchMarketplaceListings(): Promise<MarketplaceListing[]> {
 }
 
 async function createCheckoutSession(listingId: string): Promise<{ paymentUrl: string }> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
   const response = await fetch('/api/v1/integration/billing/checkout', {
     method: 'POST',
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ listingId }),
   });
 

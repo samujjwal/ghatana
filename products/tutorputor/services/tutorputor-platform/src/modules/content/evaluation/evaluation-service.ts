@@ -122,7 +122,7 @@ function countEvidenceSignals(value: unknown): number {
     ...asArray(output["assessments"]),
   ].length;
 
-  const claimEvidence = asArray(output["claims"]).reduce((count, claim) => {
+  const claimEvidence = asArray(output["claims"]).reduce<number>((count, claim) => {
     const claimRecord = asRecord(claim);
     if (!claimRecord) {
       return count;
@@ -975,7 +975,9 @@ export class EvaluationService {
     const outputData = (job.outputData as Record<string, unknown> | null) ?? {};
     const jobType = (job.jobType as string).toLowerCase();
     const assetId = resolveAssetId({
-      outputAssetId: job.outputAssetId,
+      ...(job.outputAssetId !== undefined
+        ? { outputAssetId: job.outputAssetId }
+        : {}),
       outputData,
     });
     const gradeLevel = (

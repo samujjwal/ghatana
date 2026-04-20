@@ -20,8 +20,8 @@
     },
     "./renderer/easing": {
       "types": "./src/renderer/easing.d.ts",
-      "import": "./src/renderer/easing.js",
-      "default": "./src/renderer/easing.js"
+      "import": "./src/renderer/easing.ts",
+      "default": "./src/renderer/easing.ts"
     },
     "./physics": {
       "types": "./dist/physics/index.d.ts",
@@ -54,6 +54,7 @@
     "d3": "^7.9.0",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
+    "ioredis": "^5.10.1",
     "jotai": "^2.19.1",
     "konva": "^10.2.5",
     "pixi.js": "^8.17.1",

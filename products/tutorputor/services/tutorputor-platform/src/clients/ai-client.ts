@@ -78,6 +78,41 @@ export interface GradeAssessmentResponse {
   passed: boolean;
 }
 
+export interface GradeResponseRequest {
+  question: string;
+  response: string;
+  rubric?: {
+    criteria: Array<{
+      name: string;
+      description: string;
+      maxPoints: number;
+    }>;
+  };
+  modelAnswer?: string;
+  context?: {
+    domain?: string;
+    difficulty?: string;
+    learningObjectives?: string[];
+  };
+}
+
+export interface GradeResponseResult {
+  scorePercent: number;
+  earnedPoints: number;
+  maxPoints: number;
+  confidence: number;
+  strengths: string[];
+  improvements: string[];
+  comments: string;
+  rubricScores?: Array<{
+    criterion: string;
+    score: number;
+    maxPoints: number;
+    feedback: string;
+  }>;
+  model: string;
+}
+
 export interface AssessmentItemChoiceProto {
   id: string;
   label: string;
@@ -468,6 +503,54 @@ export class AiClient {
       request,
     );
     return result as GradeAssessmentResponse | null;
+  }
+
+  async gradeResponse(
+    request: GradeResponseRequest,
+  ): Promise<GradeResponseResult | null> {
+    const maxPoints =
+      request.rubric?.criteria.reduce(
+        (sum, criterion) => sum + criterion.maxPoints,
+        0,
+      ) ?? 10;
+
+    const result = await this.gradeAssessment({
+      assessment_id: 'single-response-grading',
+      student_id: 'ai-grading',
+      answers: [
+        {
+          question_id: 'single-item',
+          text_response: request.response,
+          selected_option_id: '',
+          question_text: request.question,
+        },
+      ],
+    });
+
+    if (!result) {
+      return null;
+    }
+
+    const firstFeedback = result.feedback[0];
+    const strengths =
+      firstFeedback?.is_correct && firstFeedback.feedback_text
+        ? [firstFeedback.feedback_text]
+        : [];
+    const improvements =
+      firstFeedback && !firstFeedback.is_correct && firstFeedback.feedback_text
+        ? [firstFeedback.feedback_text]
+        : [];
+
+    return {
+      scorePercent: result.total_score,
+      earnedPoints: (result.total_score / 100) * maxPoints,
+      maxPoints,
+      confidence: result.passed ? 0.85 : 0.6,
+      strengths,
+      improvements,
+      comments: result.overall_comments,
+      model: 'tutorputor-grading-v1',
+    };
   }
 
   async generateAssessmentItems(

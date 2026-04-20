@@ -228,6 +228,9 @@ export class EvidenceBundleBuilder {
       for (let j = i + 1; j < this.evidences.length; j++) {
         const a = this.evidences[i];
         const b = this.evidences[j];
+        if (!a || !b) {
+          continue;
+        }
 
         // Direct contradiction in support kind
         if (a.supportKind === 'SUPPORTS' && b.supportKind === 'CONTRADICTS') {
@@ -333,7 +336,7 @@ export class EvidenceBundleBuilder {
       status => this.evidences.some(e => e.freshnessStatus === status)
     ) || 'CURRENT';
 
-    return {
+    const bundle: EvidenceBundle = {
       bundleId: this.bundleId,
       claimRef: this.claimRef,
       domain: this.domain,
@@ -343,11 +346,16 @@ export class EvidenceBundleBuilder {
       coverageScore: this.coverageScore,
       coverageGaps: [...this.coverageGaps],
       contradictionDetected: this.contradictionReport?.hasContradictions ?? false,
-      contradictionReport: this.contradictionReport,
       freshnessOverall,
       sourceDistribution: sourceDistribution as Record<EvidenceSourceType, number>,
       generatedAt: new Date(),
     };
+
+    if (this.contradictionReport) {
+      bundle.contradictionReport = this.contradictionReport;
+    }
+
+    return bundle;
   }
 
   /**
@@ -363,7 +371,7 @@ export class EvidenceBundleBuilder {
     };
 
     const lowerDomain = this.domain.toLowerCase();
-    return domainSources[lowerDomain] || domainSources['default'];
+    return domainSources[lowerDomain] ?? ['KHAN_ACADEMY', 'OPENSTAX'];
   }
 }
 
@@ -410,17 +418,25 @@ export function fromPrismaEvidence(
     evidenceRef: prisma.evidenceRef,
     claimRef: prisma.claimRef,
     sourceType: prisma.sourceType as EvidenceSourceType,
-    sourceUrl: prisma.sourceUrl ?? undefined,
     sourceTitle: prisma.sourceTitle,
-    sourcePublisher: prisma.sourcePublisher ?? undefined,
-    sourcePublicationDate: prisma.sourcePublicationDate ?? undefined,
-    excerpt: prisma.excerpt ?? undefined,
-    structuredFact: (prisma.structuredFact as Record<string, unknown>) ?? undefined,
     supportKind: prisma.supportKind as SupportKind,
-    credibilityScore: prisma.credibilityScore ?? undefined,
     retrievedAt: prisma.retrievedAt,
     freshnessStatus: prisma.freshnessStatus as EvidenceFreshnessStatus,
     verificationState: prisma.verificationState as EvidenceVerificationState,
-    contradictionNotes: prisma.contradictionNotes ?? undefined,
+    ...(prisma.sourceUrl ? { sourceUrl: prisma.sourceUrl } : {}),
+    ...(prisma.sourcePublisher ? { sourcePublisher: prisma.sourcePublisher } : {}),
+    ...(prisma.sourcePublicationDate
+      ? { sourcePublicationDate: prisma.sourcePublicationDate }
+      : {}),
+    ...(prisma.excerpt ? { excerpt: prisma.excerpt } : {}),
+    ...(prisma.structuredFact
+      ? { structuredFact: prisma.structuredFact as Record<string, unknown> }
+      : {}),
+    ...(prisma.credibilityScore != null
+      ? { credibilityScore: prisma.credibilityScore }
+      : {}),
+    ...(prisma.contradictionNotes
+      ? { contradictionNotes: prisma.contradictionNotes }
+      : {}),
   };
 }

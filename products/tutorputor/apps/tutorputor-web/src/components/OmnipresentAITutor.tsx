@@ -20,6 +20,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import { useProactiveHelp } from "../hooks/useProactiveHelp";
+import { useAuth } from "../contexts/AuthContext";
 import { createLogger } from '../utils/logger.js';
 const logger = createLogger('OmnipresentAITutor');
 
@@ -107,6 +108,7 @@ const MinimizeIcon = () => (
 export function OmnipresentAITutor() {
   const location = useLocation();
   const params = useParams<{ slug?: string; assessmentId?: string }>();
+  const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -247,7 +249,7 @@ export function OmnipresentAITutor() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-tenant-id": "default",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           question,

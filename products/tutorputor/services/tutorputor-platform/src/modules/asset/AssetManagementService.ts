@@ -172,7 +172,10 @@ export class AssetManagementService {
   private async initializeGCS(): Promise<void> {
     try {
       // Dynamic import for GCS
-      const { Storage } = await import("@google-cloud/storage");
+      const importGcs = new Function(
+        'return import("@google-cloud/storage")',
+      ) as () => Promise<{ Storage: new () => unknown }>;
+      const { Storage } = await importGcs();
       this.storageClient = new Storage();
     } catch (error) {
       throw new Error(
@@ -186,7 +189,12 @@ export class AssetManagementService {
    */
   private async initializeAzure(): Promise<void> {
     try {
-      const { BlobServiceClient } = await import("@azure/storage-blob");
+      const importAzureBlob = new Function(
+        'return import("@azure/storage-blob")',
+      ) as () => Promise<{
+        BlobServiceClient: { fromConnectionString: (connectionString: string) => unknown };
+      }>;
+      const { BlobServiceClient } = await importAzureBlob();
       this.storageClient = BlobServiceClient.fromConnectionString(
         process.env.AZURE_STORAGE_CONNECTION_STRING ?? "",
       );
@@ -263,7 +271,7 @@ export class AssetManagementService {
       });
 
       const url = await getSignedUrl(
-        this.storageClient as { send: (cmd: unknown) => Promise<unknown> },
+        this.storageClient as never,
         command,
         { expiresIn: 300 },
       );
@@ -349,28 +357,30 @@ export class AssetManagementService {
    */
   private generateLocalUploadUrl(
     assetId: string,
-    key: string,
+    _key: string,
     request: Omit<AssetUploadRequest, "stream">,
   ): Promise<AssetUploadResult> {
     // For local storage, we return a server endpoint to upload to
+    const asset: AssetMetadata = {
+      id: assetId,
+      type: request.type,
+      originalFilename: request.filename,
+      mimeType: request.mimeType,
+      sizeBytes: request.sizeBytes,
+      status: "pending",
+      checksum: "",
+      tags: request.tags ?? [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      uploadedBy: request.uploadedBy,
+      ...(request.tenantId ? { tenantId: request.tenantId } : {}),
+      ...(request.moduleId ? { moduleId: request.moduleId } : {}),
+    };
+
     return Promise.resolve({
       success: true,
       uploadUrl: `/api/assets/upload/${assetId}`,
-      asset: {
-        id: assetId,
-        type: request.type,
-        originalFilename: request.filename,
-        mimeType: request.mimeType,
-        sizeBytes: request.sizeBytes,
-        status: "pending",
-        checksum: "",
-        tags: request.tags ?? [],
-        tenantId: request.tenantId,
-        moduleId: request.moduleId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        uploadedBy: request.uploadedBy,
-      },
+      asset,
     });
   }
 
@@ -443,7 +453,7 @@ export class AssetManagementService {
     // This is a placeholder implementation
     const variantId = `${asset.id}-${size.suffix}`;
 
-    return {
+    const variant: AssetVariant = {
       id: variantId,
       assetId: asset.id,
       variantType: "thumbnail",
@@ -451,12 +461,15 @@ export class AssetManagementService {
       height: size.height,
       sizeBytes: Math.floor(asset.sizeBytes * 0.1), // Estimate: 10% of original
       url: `${this.config.baseUrl}/thumbnails/${asset.id}-${size.suffix}.jpg`,
-      cdnUrl: this.config.cdnUrl
-        ? `${this.config.cdnUrl}/thumbnails/${asset.id}-${size.suffix}.jpg`
-        : undefined,
       processingTimeMs: Date.now() - startTime,
       quality: 85,
     };
+
+    if (this.config.cdnUrl) {
+      variant.cdnUrl = `${this.config.cdnUrl}/thumbnails/${asset.id}-${size.suffix}.jpg`;
+    }
+
+    return variant;
   }
 
   /**
@@ -468,7 +481,7 @@ export class AssetManagementService {
   ): Promise<AssetVariant | null> {
     const variantId = `${asset.id}-webp`;
 
-    return {
+    const variant: AssetVariant = {
       id: variantId,
       assetId: asset.id,
       variantType: "webp",
@@ -476,12 +489,15 @@ export class AssetManagementService {
       height: asset.height ?? 0,
       sizeBytes: Math.floor(asset.sizeBytes * 0.6), // Estimate: 60% of original
       url: `${this.config.baseUrl}/optimized/${asset.id}.webp`,
-      cdnUrl: this.config.cdnUrl
-        ? `${this.config.cdnUrl}/optimized/${asset.id}.webp`
-        : undefined,
       processingTimeMs: Date.now() - startTime,
       quality: 90,
     };
+
+    if (this.config.cdnUrl) {
+      variant.cdnUrl = `${this.config.cdnUrl}/optimized/${asset.id}.webp`;
+    }
+
+    return variant;
   }
 
   /**
@@ -544,8 +560,9 @@ export class AssetManagementService {
       .filter((v) => v.variantType === "thumbnail")
       .sort((a, b) => b.width - a.width);
 
-    if (thumbnails.length > 0) {
-      return thumbnails[0];
+    const largestThumbnail = thumbnails[0];
+    if (largestThumbnail) {
+      return largestThumbnail;
     }
 
     // Fall back to original

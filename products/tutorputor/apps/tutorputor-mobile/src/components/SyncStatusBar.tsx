@@ -13,7 +13,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useOfflineState } from '../hooks/useOffline';
 
-export function SyncStatusBar(): JSX.Element | null {
+export function SyncStatusBar(): React.ReactElement | null {
   const { pendingMutations, syncStatus } = useOfflineState();
 
   if (syncStatus === 'idle' && pendingMutations === 0) {

@@ -9,7 +9,7 @@ Data Cloud is the data foundation product for Ghatana. It owns entity storage, e
 | Entity CRUD, batch, history, export, validation | Implemented | Deployment-validated | Active in the launcher HTTP surface and covered by launcher tests plus local runbooks |
 | Event append/query | Implemented | Deployment-validated | Includes offset lookup and streaming support in the launcher runtime |
 | Pipeline metadata and checkpoints | Implemented | Verified in integration | CRUD and checkpoint storage are active in the launcher HTTP surface |
-| Workflow execution and logs | Implemented | Verified in integration | Execution snapshots and logs persist through Data Cloud storage, but orchestration remains single-process plugin execution rather than distributed scheduling |
+| Workflow execution and logs | Implemented | Verified in integration | Execution snapshots and logs persist through Data Cloud storage with real provider integration tests |
 | Agent memory persistence | Implemented | Verified locally | TTL-aware memory APIs are live |
 | Context layer | Implemented | Verified in integration | Includes snapshot support and RAG endpoint |
 | Lineage API | Implemented | Verified in integration | Collection lineage and impact endpoints are live |
@@ -18,6 +18,7 @@ Data Cloud is the data foundation product for Ghatana. It owns entity storage, e
 | SDK generation | Implemented | Verified locally | Java, TypeScript, and Python SDKs generate from OpenAPI during the SDK build |
 | Analytics, reports, AI models, feature store | Implemented | Verified locally | Some routes degrade when backing services are absent; inspect `/api/v1/capabilities` for runtime truth |
 | AI assist, voice, learning, plugin lifecycle | Implemented | Verified locally | Optional-service quality and availability depend on runtime capability registration |
+| Data fabric topology visualization | Preview | UI demo only | Uses hardcoded demo metrics; real fabric metrics API in development |
 | Sovereign durable profile | Implemented | Verified in integration | `DATACLOUD_PROFILE=sovereign` runs file-backed H2 entity and event storage with restart persistence |
 | Auto-compaction for embedded durable storage | Implemented | Verified in integration | Tombstone-based compaction runs on a configurable schedule and can be gated via autonomy |
 
@@ -57,6 +58,7 @@ The Data Cloud UI is intentionally narrower than the full backend contract set. 
 | SQL Workspace | Live primary launcher | Uses `/api/v1/analytics/suggest`, `/analytics/query`, `/analytics/explain`, and optional federated execution when capability registry marks it active |
 | Smart Workflow Builder | Live with governed review | Intent-to-draft generation, confidence/fallback metadata, review messaging, and persistence into the canonical pipelines surface are launcher-backed |
 | Workflows | Live for CRUD and execution visibility | Pipeline CRUD, execution history, and optimisation hints are launcher-backed; distributed orchestration is still out of scope |
+| Data Fabric | Preview/demo only | Uses hardcoded demo metrics; real fabric metrics API in development |
 | Trust Center | Partial but action-backed | Retention classification, purge preview, redaction, compliance refresh, audit visibility, derived operator recommendations, and explicit lifecycle-truth cards are wired; broader policy CRUD lifecycle remains incomplete |
 | Alerts | Live operator triage surface | Alert list, acknowledge, resolve, grouping, suggestions, rules, and SSE stream are launcher-backed; the route remains operator-facing rather than primary-user-facing |
 
@@ -99,6 +101,7 @@ Use this section as the current reality map for what works today.
 
 ### Roadmap journeys
 
+- Real fabric metrics API for Data Fabric (currently uses demo data)
 - Broader build-graph and browser-level evidence hardening for the now-live workflow-draft and alerts journeys.
 - Broader policy CRUD lifecycle beyond the currently wired governance actions.
 

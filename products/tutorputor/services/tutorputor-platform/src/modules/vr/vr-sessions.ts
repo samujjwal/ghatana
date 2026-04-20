@@ -7,7 +7,7 @@
  */
 
 import { randomUUID } from "crypto";
-import { PrismaClient } from "@prisma/client";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type {
   VRSessionService,
   TenantId,
@@ -27,7 +27,7 @@ import type {
 } from "@tutorputor/contracts/v1";
 
 export class VRSessionServiceImpl implements VRSessionService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: TutorPrismaClient) {}
 
   async startSession(args: {
     tenantId: TenantId;

@@ -9,11 +9,15 @@
  * @doc.layer platform
  * @doc.pattern Service
  */
-
-import { Prisma } from '@tutorputor/core/db';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'DatabaseMetricsService' });
+
+interface QueryOperationParams {
+  model?: string;
+  action?: string;
+  args?: unknown;
+}
 
 export interface DatabaseMetrics {
   queryCount: number;
@@ -58,8 +62,7 @@ export class DatabaseMetricsService {
    * Create Prisma query logging middleware
    */
   createQueryMiddleware() {
-    return Prisma.defineExtension((prisma) => {
-      return prisma.$use(async (params, next) => {
+    return async <T>(params: QueryOperationParams, next: (params: QueryOperationParams) => Promise<T>): Promise<T> => {
         const startTime = Date.now();
 
         try {
@@ -78,14 +81,13 @@ export class DatabaseMetricsService {
           this.recordError(params, duration, error);
           throw error;
         }
-      });
-    });
+      };
   }
 
   /**
    * Record query metrics
    */
-  private recordQuery(params: Prisma.MiddlewareParams, duration: number): void {
+  private recordQuery(params: QueryOperationParams, duration: number): void {
     this.metrics.queryCount++;
     this.metrics.totalQueryTime += duration;
     this.metrics.avgQueryTime = this.metrics.totalQueryTime / this.metrics.queryCount;
@@ -94,7 +96,7 @@ export class DatabaseMetricsService {
   /**
    * Record slow query
    */
-  private recordSlowQuery(params: Prisma.MiddlewareParams, duration: number): void {
+  private recordSlowQuery(params: QueryOperationParams, duration: number): void {
     this.metrics.slowQueryCount++;
 
     const slowQuery: SlowQuery = {
@@ -123,7 +125,7 @@ export class DatabaseMetricsService {
   /**
    * Record query error
    */
-  private recordError(params: Prisma.MiddlewareParams, duration: number, error: unknown): void {
+  private recordError(params: QueryOperationParams, duration: number, error: unknown): void {
     this.metrics.errors++;
 
     logger.error({

@@ -17,7 +17,7 @@ import type {
   AnimatedEntity,
   AnimationSegment,
   CueingRule,
-} from '../../../../../contracts/v1/artifact-manifests/animation-manifest';
+} from '../../../../../../contracts/v1/artifact-manifests/animation-manifest';
 import type { EvidenceBundle } from '../../knowledge-base/evidence-bundle';
 import { ManifestValidator } from '../manifest-validator';
 
@@ -123,8 +123,10 @@ export class AnimationManifestGenerator {
         totalDurationSeconds: duration,
         cueingRules,
         pacingMetadata,
-        narrationScript,
-        subtitles: narrationScript ? this.generateSubtitles(narrationScript) : undefined,
+        ...(narrationScript ? { narrationScript } : {}),
+        ...(narrationScript
+          ? { subtitles: this.generateSubtitles(narrationScript) }
+          : {}),
         learnerControls: this.generateLearnerControls(),
         claimMapping,
         createdAt: new Date().toISOString(),
@@ -183,7 +185,7 @@ export class AnimationManifestGenerator {
 
     for (let i = 0; i < entityCount; i++) {
       const entityId = `entity-${i + 1}`;
-      const type = entityTypes[i % entityTypes.length];
+      const type = entityTypes[i % entityTypes.length] ?? 'sphere';
 
       entities.push({
         entityId,
@@ -204,7 +206,6 @@ export class AnimationManifestGenerator {
       sceneGraph.push({
         nodeId: `node-${entityId}`,
         type: 'entity',
-        parentId: undefined,
         transform: {
           position: [i * 2 - entityCount, 0, 0],
           rotation: [0, 0, 0],
@@ -229,7 +230,7 @@ export class AnimationManifestGenerator {
     };
 
     const colors = domainColors[domain.toLowerCase()] ?? ['#3498DB', '#E74C3C', '#2ECC71', '#F39C12'];
-    return colors[index % colors.length];
+    return colors[index % colors.length] ?? '#3498DB';
   }
 
   /**
@@ -238,6 +239,8 @@ export class AnimationManifestGenerator {
   private generateSegments(duration: number, pacing: string, claimText: string): AnimationSegment[] {
     const segmentCount = pacing === 'slow' ? 4 : pacing === 'medium' ? 3 : 2;
     const segmentDuration = duration / segmentCount;
+    const segmentSpeed: 'slow' | 'normal' | 'fast' =
+      pacing === 'slow' || pacing === 'fast' ? pacing : 'normal';
 
     const segments: AnimationSegment[] = [
       {
@@ -256,7 +259,7 @@ export class AnimationManifestGenerator {
         description: `Main concept: ${claimText}`,
         conceptsIllustrated: ['core concept', 'relationships'],
         pausePoints: [segmentDuration * 0.4, segmentDuration * 0.6],
-        speed: pacing,
+        speed: segmentSpeed,
       },
       {
         segmentId: 'conclusion',
@@ -294,12 +297,13 @@ export class AnimationManifestGenerator {
 
     // Focus on key entity at conclusion
     const conclusionSegment = segments.find(s => s.segmentId === 'conclusion');
-    if (conclusionSegment && entities.length > 0) {
+    const firstEntity = entities[0];
+    if (conclusionSegment && firstEntity) {
       rules.push({
         trigger: 'time',
         condition: `t >= ${conclusionSegment.startTime}`,
         effect: 'focus',
-        target: entities[0].entityId,
+        target: firstEntity.entityId,
         duration: 3,
       });
     }
@@ -373,7 +377,7 @@ export class AnimationManifestGenerator {
   /**
    * Generate learner controls.
    */
-  private generateLearnerControls(): Array<{ type: 'play' | 'pause' | 'rewind' | 'speed' | 'fullscreen' | 'reset'; enabled: boolean; position?: 'bottom' | 'top' | 'overlay' }> {
+  private generateLearnerControls(): Array<{ type: 'play' | 'pause' | 'rewind' | 'speed' | 'fullscreen' | 'reset'; enabled: boolean; position: 'bottom' | 'top' | 'overlay' }> {
     return [
       { type: 'play', enabled: true, position: 'bottom' },
       { type: 'pause', enabled: true, position: 'bottom' },
@@ -421,8 +425,8 @@ export class AnimationManifestGenerator {
         recommendedPauses: [],
       },
       learnerControls: [
-        { type: 'play', enabled: true },
-        { type: 'pause', enabled: true },
+        { type: 'play', enabled: true, position: 'bottom' },
+        { type: 'pause', enabled: true, position: 'bottom' },
       ],
       claimMapping: [],
       variantKey: 'primary',

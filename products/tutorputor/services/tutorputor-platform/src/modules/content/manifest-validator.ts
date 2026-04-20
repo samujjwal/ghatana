@@ -12,10 +12,12 @@
 import type { Logger } from 'pino';
 import {
   WorkedExampleManifestSchema,
-  AnimationManifestSchema,
   type WorkedExampleManifest,
+} from '../../../../../contracts/v1/artifact-manifests/worked-example-manifest';
+import {
+  AnimationManifestSchema,
   type AnimationManifest,
-} from '../../../../contracts/v1/artifact-manifests';
+} from '../../../../../contracts/v1/artifact-manifests/animation-manifest';
 
 /**
  * Validation result.
@@ -44,6 +46,14 @@ export interface ValidationWarning {
 export class ManifestValidator {
   constructor(private readonly logger: Logger) {}
 
+  private mapSchemaIssue(issue: { path: PropertyKey[]; message: string }): ValidationError {
+    return {
+      path: issue.path.map((segment) => String(segment)).join('.'),
+      message: issue.message,
+      code: 'SCHEMA_VIOLATION',
+    };
+  }
+
   /**
    * Validate a worked example manifest.
    */
@@ -55,11 +65,7 @@ export class ManifestValidator {
       return { valid: true, errors: [], warnings };
     }
 
-    const errors: ValidationError[] = result.error.errors.map(err => ({
-      path: err.path.join('.'),
-      message: err.message,
-      code: 'SCHEMA_VIOLATION',
-    }));
+    const errors: ValidationError[] = result.error.issues.map((issue) => this.mapSchemaIssue(issue));
 
     return { valid: false, errors, warnings: [] };
   }
@@ -75,11 +81,7 @@ export class ManifestValidator {
       return { valid: true, errors: [], warnings };
     }
 
-    const errors: ValidationError[] = result.error.errors.map(err => ({
-      path: err.path.join('.'),
-      message: err.message,
-      code: 'SCHEMA_VIOLATION',
-    }));
+    const errors: ValidationError[] = result.error.issues.map((issue) => this.mapSchemaIssue(issue));
 
     return { valid: false, errors, warnings: [] };
   }

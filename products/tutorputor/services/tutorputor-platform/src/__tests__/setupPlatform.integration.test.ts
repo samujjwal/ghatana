@@ -17,6 +17,11 @@ import {
 } from "vitest";
 import { FastifyInstance } from "fastify";
 import { PrismaClient } from "@prisma/client";
+
+vi.mock("@sentry/profiling-node", () => ({
+  nodeProfilingIntegration: () => ({ name: "mock-sentry-profiling" }),
+}));
+
 import { createServer } from "../setup";
 
 /**
@@ -100,6 +105,9 @@ function createMockPrisma() {
       findUnique: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: "user1", tenantId: "tenant1" }),
     },
+    userConsent: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     tenant: {
       findUnique: vi.fn().mockResolvedValue({ id: "tenant1" }),
     },
@@ -109,11 +117,64 @@ function createMockPrisma() {
   } as unknown as PrismaClient;
 }
 
+async function createIsolatedServer(
+  jwtSecret: string,
+  env: Record<string, string | undefined>,
+): Promise<FastifyInstance> {
+  const originalValues = new Map<string, string | undefined>();
+
+  for (const [key, value] of Object.entries(env)) {
+    originalValues.set(key, process.env[key]);
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+
+  try {
+    const app = await createServer({
+      prisma: createMockPrisma(),
+      redis: createMockRedis() as any,
+      jwtSecret,
+    });
+    await app.ready();
+    return app;
+  } catch (error) {
+    for (const [key, value] of originalValues.entries()) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+    throw error;
+  }
+}
+
+async function closeIsolatedServer(
+  app: FastifyInstance,
+  env: Record<string, string | undefined>,
+): Promise<void> {
+  await app.close();
+
+  for (const [key, value] of Object.entries(env)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+}
+
 describe("Tutorputor Platform Startup & Auth (Integration)", () => {
   let fixture: TestFixture;
   const JWT_SECRET = "test-secret-key-min-32-chars-long!!";
+  const originalStripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
   beforeAll(async () => {
+    process.env.STRIPE_SECRET_KEY = "stripe_test_placeholder_secret";
+
     // Mock dependencies
     const redis = createMockRedis();
     const prisma = createMockPrisma();
@@ -140,6 +201,14 @@ describe("Tutorputor Platform Startup & Auth (Integration)", () => {
       return { decorated: !!(request.server as any).redis };
     });
 
+    app.get("/api/v1/analytics/test-consent", async () => {
+      return { ok: true };
+    });
+
+    app.get("/api/v1/ai/test-consent", async () => {
+      return { ok: true };
+    });
+
     await app.ready();
 
     fixture = { app, prisma, redis };
@@ -147,6 +216,13 @@ describe("Tutorputor Platform Startup & Auth (Integration)", () => {
 
   afterAll(async () => {
     await fixture.app.close();
+
+    if (originalStripeSecretKey === undefined) {
+      delete process.env.STRIPE_SECRET_KEY;
+      return;
+    }
+
+    process.env.STRIPE_SECRET_KEY = originalStripeSecretKey;
   });
 
   beforeEach(() => {
@@ -216,6 +292,154 @@ describe("Tutorputor Platform Startup & Auth (Integration)", () => {
   });
 
   describe("Auth Guard - Standard Routes", () => {
+    it("does not accept trusted identity headers without explicit opt-in outside test mode", async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      const originalTrustedHeaders = process.env.TRUST_PROXY_AUTH_HEADERS;
+      const originalTrustedSecret = process.env.TRUST_PROXY_AUTH_SHARED_SECRET;
+
+      process.env.NODE_ENV = "development";
+      delete process.env.TRUST_PROXY_AUTH_HEADERS;
+      delete process.env.TRUST_PROXY_AUTH_SHARED_SECRET;
+
+      const app = await createServer({
+        prisma: createMockPrisma(),
+        redis: createMockRedis() as any,
+        jwtSecret: JWT_SECRET,
+      });
+      await app.ready();
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/learning/dashboard",
+        headers: {
+          "x-tenant-id": "tenant-1",
+          "x-user-id": "user-1",
+          "x-user-role": "admin",
+        },
+      });
+
+      expect(response.statusCode).toBe(401);
+
+      await app.close();
+      process.env.NODE_ENV = originalNodeEnv;
+      process.env.TRUST_PROXY_AUTH_HEADERS = originalTrustedHeaders;
+      process.env.TRUST_PROXY_AUTH_SHARED_SECRET = originalTrustedSecret;
+    });
+
+    it("allows trusted identity headers only when explicitly enabled with a matching shared secret", async () => {
+      const originalTrustedHeaders = process.env.TRUST_PROXY_AUTH_HEADERS;
+      const originalTrustedSecret = process.env.TRUST_PROXY_AUTH_SHARED_SECRET;
+      const originalNodeEnv = process.env.NODE_ENV;
+      const env = {
+        NODE_ENV: "development",
+        TRUST_PROXY_AUTH_HEADERS: "true",
+        TRUST_PROXY_AUTH_SHARED_SECRET: "internal-secret",
+      };
+
+      const app = await createIsolatedServer(JWT_SECRET, env);
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/auth/me",
+        headers: {
+          "x-tenant-id": "tenant-1",
+          "x-user-id": "user-1",
+          "x-user-role": "admin",
+          "x-trusted-proxy-secret": "internal-secret",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual(
+        expect.objectContaining({
+          id: "user-1",
+          tenantId: "tenant-1",
+          role: "admin",
+        }),
+      );
+
+      await closeIsolatedServer(app, {
+        NODE_ENV: originalNodeEnv,
+        TRUST_PROXY_AUTH_HEADERS: originalTrustedHeaders,
+        TRUST_PROXY_AUTH_SHARED_SECRET: originalTrustedSecret,
+      });
+    });
+
+    it("rejects trusted identity headers when the shared secret is missing or wrong", async () => {
+      const originalTrustedHeaders = process.env.TRUST_PROXY_AUTH_HEADERS;
+      const originalTrustedSecret = process.env.TRUST_PROXY_AUTH_SHARED_SECRET;
+      const originalNodeEnv = process.env.NODE_ENV;
+      const env = {
+        NODE_ENV: "development",
+        TRUST_PROXY_AUTH_HEADERS: "true",
+        TRUST_PROXY_AUTH_SHARED_SECRET: "internal-secret",
+      };
+
+      const app = await createIsolatedServer(JWT_SECRET, env);
+
+      const missingSecretResponse = await app.inject({
+        method: "GET",
+        url: "/api/v1/auth/me",
+        headers: {
+          "x-tenant-id": "tenant-1",
+          "x-user-id": "user-1",
+          "x-user-role": "admin",
+        },
+      });
+      expect(missingSecretResponse.statusCode).toBe(401);
+
+      const wrongSecretResponse = await app.inject({
+        method: "GET",
+        url: "/api/v1/auth/me",
+        headers: {
+          "x-tenant-id": "tenant-1",
+          "x-user-id": "user-1",
+          "x-user-role": "admin",
+          "x-trusted-proxy-secret": "wrong-secret",
+        },
+      });
+      expect(wrongSecretResponse.statusCode).toBe(401);
+
+      await closeIsolatedServer(app, {
+        NODE_ENV: originalNodeEnv,
+        TRUST_PROXY_AUTH_HEADERS: originalTrustedHeaders,
+        TRUST_PROXY_AUTH_SHARED_SECRET: originalTrustedSecret,
+      });
+    });
+
+    it("does not fall back to trusted identity headers when a bearer token is present", async () => {
+      const originalTrustedHeaders = process.env.TRUST_PROXY_AUTH_HEADERS;
+      const originalTrustedSecret = process.env.TRUST_PROXY_AUTH_SHARED_SECRET;
+      const originalNodeEnv = process.env.NODE_ENV;
+      const env = {
+        NODE_ENV: "development",
+        TRUST_PROXY_AUTH_HEADERS: "true",
+        TRUST_PROXY_AUTH_SHARED_SECRET: "internal-secret",
+      };
+
+      const app = await createIsolatedServer(JWT_SECRET, env);
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/v1/auth/me",
+        headers: {
+          authorization: "Bearer malformed.token",
+          "x-tenant-id": "tenant-1",
+          "x-user-id": "user-1",
+          "x-user-role": "admin",
+          "x-trusted-proxy-secret": "internal-secret",
+        },
+      });
+
+      expect(response.statusCode).toBe(401);
+
+      await closeIsolatedServer(app, {
+        NODE_ENV: originalNodeEnv,
+        TRUST_PROXY_AUTH_HEADERS: originalTrustedHeaders,
+        TRUST_PROXY_AUTH_SHARED_SECRET: originalTrustedSecret,
+      });
+    });
+
     it("blocks unauthenticated requests to /api/v1/learning/* routes", async () => {
       const response = await fixture.app.inject({
         method: "GET",
@@ -355,6 +579,106 @@ describe("Tutorputor Platform Startup & Auth (Integration)", () => {
 
       // Should not be 401 Unauthorized (exempt from auth guard)
       expect(response.statusCode).not.toBe(401);
+    });
+  });
+
+  describe("Consent Enforcement", () => {
+    it("blocks consent-gated AI routes when ai_processing consent is missing", async () => {
+      const token = createTestJWT(
+        { userId: "user1", tenantId: "tenant1" },
+        JWT_SECRET,
+      );
+
+      const response = await fixture.app.inject({
+        method: "GET",
+        url: "/api/v1/ai/test-consent",
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(451);
+      expect(JSON.parse(response.body)).toEqual(
+        expect.objectContaining({
+          error: "Consent Required",
+          missingConsent: expect.arrayContaining(["ai_processing"]),
+        }),
+      );
+    });
+
+    it("allows consent-gated AI routes when ai_processing consent is granted", async () => {
+      (fixture.prisma as any).userConsent.findMany.mockResolvedValueOnce([
+        { category: "ai_processing" },
+      ]);
+
+      const token = createTestJWT(
+        { userId: "user3", tenantId: "tenant1" },
+        JWT_SECRET,
+      );
+
+      const response = await fixture.app.inject({
+        method: "GET",
+        url: "/api/v1/ai/test-consent",
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ ok: true });
+    });
+
+    it("exempts admin callers from consent enforcement on AI routes", async () => {
+      const token = createTestJWT(
+        { userId: "admin-user", tenantId: "tenant1", role: "admin" },
+        JWT_SECRET,
+      );
+
+      const response = await fixture.app.inject({
+        method: "GET",
+        url: "/api/v1/ai/test-consent",
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ ok: true });
+    });
+
+    it("blocks consent-gated analytics routes when consent is missing", async () => {
+      const token = createTestJWT(
+        { userId: "user1", tenantId: "tenant1" },
+        JWT_SECRET,
+      );
+
+      const response = await fixture.app.inject({
+        method: "GET",
+        url: "/api/v1/analytics/test-consent",
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(451);
+      expect(JSON.parse(response.body)).toEqual(
+        expect.objectContaining({
+          error: "Consent Required",
+          missingConsent: expect.arrayContaining(["analytics"]),
+        }),
+      );
+    });
+
+    it("allows consent-gated analytics routes when consent is granted", async () => {
+      (fixture.prisma as any).userConsent.findMany.mockResolvedValueOnce([
+        { category: "analytics" },
+      ]);
+
+      const token = createTestJWT(
+        { userId: "user2", tenantId: "tenant1" },
+        JWT_SECRET,
+      );
+
+      const response = await fixture.app.inject({
+        method: "GET",
+        url: "/api/v1/analytics/test-consent",
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ ok: true });
     });
   });
 

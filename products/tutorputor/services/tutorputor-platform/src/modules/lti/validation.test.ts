@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { AuthorizationError, ValidationError } from "@tutorputor/core";
+import { AuthorizationError, ValidationError } from "@tutorputor/core/errors";
 import { LTIValidator } from "./validation.js";
 import type { LtiLaunchService } from "@tutorputor/contracts/v1/services";
 

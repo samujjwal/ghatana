@@ -15,12 +15,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { database } from './storage/SQLiteStorage';
+import { getSessionSnapshot, installNativeSessionStorageShim } from './storage/NativeSessionStorage';
 import { syncService } from './services/BackgroundSyncService';
 import { useNetworkStatus } from './hooks/useOffline';
 
 import { TabNavigator } from './navigation/TabNavigator';
 import { OfflineBanner } from './components/OfflineBanner';
 import { SyncStatusBar } from './components/SyncStatusBar';
+
+type RuntimeProcess = {
+  env?: Record<string, string | undefined>;
+};
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -36,7 +41,7 @@ const queryClient = new QueryClient({
 /**
  * Main App Component
  */
-export function App(): JSX.Element {
+export function App(): React.ReactElement {
   const [isReady, setIsReady] = useState(false);
   const { isConnected } = useNetworkStatus();
 
@@ -44,17 +49,20 @@ export function App(): JSX.Element {
   useEffect(() => {
     async function initialize() {
       try {
+        installNativeSessionStorageShim();
+
         // Initialize SQLite database
         await database.init();
         
         // Initialize sync service
-        const apiBaseUrl = process.env.API_BASE_URL || 'https://api.tutorputor.com';
+        const apiBaseUrl = (
+          (globalThis as typeof globalThis & { process?: RuntimeProcess }).process
+            ?.env?.API_BASE_URL
+        ) || 'https://api.tutorputor.com';
         await syncService.init({
           apiBaseUrl,
           getAuthToken: async () => {
-            // MOBILE_PLATFORM: Implement secure storage (e.g., Keychain on iOS, Keystore on Android)
-            // For web/desktop PWA, use localStorage/sessionStorage
-            return localStorage.getItem('auth_token') ?? null;
+            return getSessionSnapshot().accessToken;
           },
           maxConcurrent: 3,
           retryBaseDelayMs: 1000,

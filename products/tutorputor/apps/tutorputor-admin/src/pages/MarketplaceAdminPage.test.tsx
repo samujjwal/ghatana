@@ -47,7 +47,7 @@ describe('MarketplaceAdminPage', () => {
         } as Response);
       }
 
-      if (pathname === '/auth/logout' && method === 'POST') {
+      if (pathname === '/api/v1/auth/logout' && method === 'POST') {
         return Promise.resolve({
           ok: true,
           status: 204,

@@ -25,6 +25,14 @@ interface ProactiveHelpState {
   suggestedAction: string;
 }
 
+export interface ProactiveHelpController extends ProactiveHelpState {
+  dismissHelp: () => void;
+  acceptHelp: () => void;
+  recordActivity: () => void;
+  recordError: () => void;
+  recordAttempt: () => void;
+}
+
 interface UseProactiveHelpOptions {
   enabled?: boolean;
   taskType?: "lesson" | "quiz" | "exercise" | "general";
@@ -70,7 +78,7 @@ const SUGGESTIONS: Record<string, string[]> = {
   ],
 };
 
-export function useProactiveHelp(options: UseProactiveHelpOptions = {}): ProactiveHelpState {
+export function useProactiveHelp(options: UseProactiveHelpOptions = {}): ProactiveHelpController {
   const { enabled = true, taskType = "general", moduleId, lessonId } = options;
 
   const [state, setState] = useState<ProactiveHelpState>({
@@ -283,17 +291,10 @@ export function useProactiveHelp(options: UseProactiveHelpOptions = {}): Proacti
 
   return {
     ...state,
-    // Expose actions for manual control
     dismissHelp,
     acceptHelp,
     recordActivity,
     recordError,
     recordAttempt,
-  } as ProactiveHelpState & {
-    dismissHelp: () => void;
-    acceptHelp: () => void;
-    recordActivity: () => void;
-    recordError: () => void;
-    recordAttempt: () => void;
   };
 }

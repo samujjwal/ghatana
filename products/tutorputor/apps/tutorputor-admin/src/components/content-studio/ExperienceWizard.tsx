@@ -13,6 +13,7 @@
 import { useState, useCallback } from 'react';
 import { Sparkles, BookOpen, Target, Loader2, Clock } from 'lucide-react';
 import { Button } from '@ghatana/design-system';
+import { getContentStudioAuthHeaders } from '../../services/contentStudioApi';
 
 // Types
 interface GradeAdaptation {
@@ -87,7 +88,7 @@ export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps)
         try {
             const response = await fetch('/api/content-studio/experiences/search-similar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-tenant-id': 'default' },
+                headers: getContentStudioAuthHeaders(),
                 body: JSON.stringify({ query: searchQuery, limit: 5 }),
             });
 
@@ -131,7 +132,7 @@ export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps)
             // Always generate for all grade levels
             const aiResponse = await fetch('/api/content-studio/ai/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getContentStudioAuthHeaders(),
                 body: JSON.stringify({
                     prompt: query,
                     generateForAllGrades: true, // Always generate for all grades
@@ -160,7 +161,7 @@ export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps)
 
             const response = await fetch('/api/content-studio/experiences', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-tenant-id': 'default' },
+                headers: getContentStudioAuthHeaders(),
                 body: JSON.stringify({
                     title: generatedTitle,
                     description: query,

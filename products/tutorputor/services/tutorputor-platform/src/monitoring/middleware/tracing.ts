@@ -11,8 +11,25 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import type { Span } from '@opentelemetry/api';
 import { trace, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { addSpanAttributes, addSpanEvent } from '../tracing.js';
+
+type RequestUser = {
+  id?: string;
+  email?: string;
+};
+
+type TracedRequest = FastifyRequest & {
+  user?: string | object | Buffer;
+  tenantId?: string;
+  span?: Span;
+  startedAt?: number;
+};
+
+function isRequestUser(value: string | object | Buffer | undefined): value is RequestUser {
+  return !!value && typeof value === 'object' && !Buffer.isBuffer(value);
+}
 
 /**
  * Tracing middleware for Fastify
@@ -21,6 +38,7 @@ export async function tracingMiddleware(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  const tracedRequest = request as TracedRequest;
   const tracer = trace.getTracer(process.env.SERVICE_NAME || 'tutorputor-platform');
   const spanName = `${request.method} ${request.url}`;
 
@@ -39,16 +57,16 @@ export async function tracingMiddleware(
   });
 
   // Add user context if available
-  if (request.user) {
+  if (isRequestUser(tracedRequest.user)) {
     span.setAttributes({
-      'user.id': request.user.id,
-      'user.email': request.user.email,
+      ...(tracedRequest.user.id ? { 'user.id': tracedRequest.user.id } : {}),
+      ...(tracedRequest.user.email ? { 'user.email': tracedRequest.user.email } : {}),
     });
   }
 
   // Add tenant context if available
-  if (request.tenantId) {
-    span.setAttribute('tenant.id', request.tenantId);
+  if (tracedRequest.tenantId) {
+    span.setAttribute('tenant.id', tracedRequest.tenantId);
   }
 
   // Add request ID for correlation
@@ -56,7 +74,8 @@ export async function tracingMiddleware(
   span.setAttribute('request.id', requestId);
 
   // Attach span to request context
-  request.span = span as any;
+  tracedRequest.span = span;
+  tracedRequest.startedAt = Date.now();
 
   // Log request start
   addSpanEvent('request.start', {
@@ -80,7 +99,9 @@ export async function tracingMiddleware(
 
     addSpanEvent('request.end', {
       statusCode: reply.statusCode,
-      duration: reply.getResponseTime(),
+      duration: tracedRequest.startedAt
+        ? Date.now() - tracedRequest.startedAt
+        : 0,
     });
 
     span.end();

@@ -14,9 +14,20 @@ import type { PrismaClient } from '@tutorputor/core/db';
 import type {
   WorkedExampleManifest,
   ExampleFamily,
-} from '../../../../../contracts/v1/artifact-manifests/worked-example-manifest';
+} from '../../../../../../contracts/v1/artifact-manifests/worked-example-manifest';
 import type { EvidenceBundle } from '../../knowledge-base/evidence-bundle';
 import { ManifestValidator } from '../manifest-validator';
+
+function toManifestValue(value: unknown): string | number | boolean {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+  return value == null ? '' : JSON.stringify(value);
+}
 
 /**
  * Options for worked example generation.
@@ -205,7 +216,8 @@ export class WorkedExampleGenerator {
       'case-study': `Analyze how "${claimText}" applies in specific contexts`,
     };
 
-    return templates[exampleFamily];
+    const fallbackGoal = `Solve problems involving "${claimText}" step by step`;
+    return templates[exampleFamily] ?? fallbackGoal;
   }
 
   /**
@@ -215,7 +227,7 @@ export class WorkedExampleGenerator {
     return bundle.evidences.slice(0, 3).map((e, i) => ({
       id: `given-${i + 1}`,
       description: e.excerpt?.substring(0, 100) ?? `Evidence ${e.evidenceRef}`,
-      value: e.structuredFact?.value ?? e.sourceTitle,
+      value: toManifestValue(e.structuredFact?.value ?? e.sourceTitle ?? ''),
     }));
   }
 
@@ -379,7 +391,7 @@ export class WorkedExampleGenerator {
       'case-study': 'Deepen understanding through contextual analysis',
     };
 
-    return intents[exampleFamily];
+    return intents[exampleFamily] ?? 'Demonstrate problem-solving process explicitly';
   }
 
   /**

@@ -140,7 +140,7 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
             // Regression test: Metrics aggregation should accurately reflect evaluation results
             // This verifies the metrics pipeline is correctly calculating accuracy, precision, recall, F1
             
-            AIAssistService.AIEvaluationResult result1 = new AIAssistService.AIEvaluationResult(
+            AIEvaluationResult result1 = new AIEvaluationResult(
                 "eval-1",
                 "tenant-1",
                 "user-1",
@@ -156,7 +156,7 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
                 Map.of()
             );
 
-            AIAssistService.AIEvaluationResult result2 = new AIAssistService.AIEvaluationResult(
+            AIEvaluationResult result2 = new AIEvaluationResult(
                 "eval-2",
                 "tenant-1",
                 "user-1",
@@ -192,14 +192,14 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
             // Regression test: Time range filtering should correctly scope metrics queries
             // This verifies metrics are being aggregated over the correct time windows
             
-            AIAssistService.TimeRange[] ranges = AIAssistService.TimeRange.values();
+            TimeRange[] ranges = TimeRange.values();
             
             assertThat(ranges).containsExactly(
-                AIAssistService.TimeRange.LAST_HOUR,
-                AIAssistService.TimeRange.LAST_DAY,
-                AIAssistService.TimeRange.LAST_WEEK,
-                AIAssistService.TimeRange.LAST_MONTH,
-                AIAssistService.TimeRange.ALL_TIME
+                TimeRange.LAST_HOUR,
+                TimeRange.LAST_DAY,
+                TimeRange.LAST_WEEK,
+                TimeRange.LAST_MONTH,
+                TimeRange.ALL_TIME
             );
         }
     }

@@ -1005,7 +1005,7 @@ public class AiAssistHandler {
             ),
             "suggestedFixes", List.of(
                 Map.of("stepId", "all", "issue", "Add error handling", "fix", "Ensure each step has a failure branch", "priority", "medium"),
-                Map.of("stepId", "source", "issue": "Validate input", "fix": "Add input validation step at pipeline entry", "priority", "high")
+                Map.of("stepId", "source", "issue", "Validate input", "fix", "Add input validation step at pipeline entry", "priority", "high")
             ),
             "stepRecommendations", stepCount > 0 
                 ? List.of(Map.of("stepId", "step-1", "recommendation", "Review step configuration for completeness"))

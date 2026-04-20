@@ -20,8 +20,8 @@ import { Button } from '@ghatana/design-system';
  */
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
   }
 }
 
@@ -95,7 +95,7 @@ interface VoiceInputProps {
   /**
    * Optional: Custom input element
    */
-  inputComponent?: React.ComponentType<any>;
+  inputComponent?: React.ComponentType<Record<string, unknown>>;
   /**
    * Optional: Props to pass to custom input component
    */
@@ -142,7 +142,7 @@ function useBrowserSpeechRecognition() {
   }) => {
     if (!isSupported) return;
 
-    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!recognitionRef.current) {
       const newRecognition = new SpeechRecognitionClass();
@@ -339,7 +339,7 @@ export const VoiceTextarea: React.FC<VoiceInputProps & {
   rows = 3,
   ...props
 }) => {
-  const TextareaComponent = 'textarea' as unknown as React.ComponentType<any>;
+  const TextareaComponent = 'textarea' as unknown as React.ComponentType<Record<string, unknown>>;
   return (
     <VoiceInput
       {...props}

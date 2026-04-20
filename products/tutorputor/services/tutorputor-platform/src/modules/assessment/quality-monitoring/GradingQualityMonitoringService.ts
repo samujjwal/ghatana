@@ -35,6 +35,19 @@ export interface QualityAlert {
   timestamp: string;
 }
 
+type ReviewTaskMetricsRecord = {
+  status: string;
+  aiGradingResult: { scorePercent?: number; confidence?: number } | null;
+  reviewedScore: number | null;
+};
+
+type ReviewTaskMetricsDelegate = {
+  findMany(args: {
+    where: Record<string, unknown>;
+    take?: number;
+  }): Promise<ReviewTaskMetricsRecord[]>;
+};
+
 export class GradingQualityMonitoringService {
   private readonly ACCURACY_THRESHOLD = 0.8;
   private readonly AGREEMENT_THRESHOLD = 0.85;
@@ -68,7 +81,7 @@ export class GradingQualityMonitoringService {
     });
 
     // Fetch review tasks for agreement calculation
-    const reviewTasks = await this.prisma.gradingReviewTask.findMany({
+    const reviewTasks = await this.getReviewTaskDelegate().findMany({
       where: {
         tenantId,
         status: 'completed',
@@ -271,13 +284,26 @@ export class GradingQualityMonitoringService {
     return 500; // 500ms average
   }
 
+  private getReviewTaskDelegate(): ReviewTaskMetricsDelegate {
+    const prismaWithDelegate = this.prisma as PrismaClient & {
+      gradingReviewTask?: ReviewTaskMetricsDelegate;
+    };
+
+    if (!prismaWithDelegate.gradingReviewTask) {
+      throw new Error('gradingReviewTask delegate is unavailable. Regenerate Tutorputor Prisma client or align grading quality monitoring with the current assessment review schema.');
+    }
+
+    return prismaWithDelegate.gradingReviewTask;
+  }
+
   private async calculateTrends(tenantId: string): Promise<Array<{ date: string; accuracy: number; agreement: number }>> {
     // Generate last 7 days of trend data
-    const trends = [];
+    const trends: Array<{ date: string; accuracy: number; agreement: number }> = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const datePart = date.toISOString().split('T')[0] ?? date.toISOString();
       trends.push({
-        date: date.toISOString().split('T')[0],
+        date: datePart,
         accuracy: 0.8 + Math.random() * 0.1, // Placeholder
         agreement: 0.85 + Math.random() * 0.1, // Placeholder
       });

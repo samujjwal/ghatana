@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ProfileStackParamList } from '../navigation/types';
+import { clearSession } from '../storage/NativeSessionStorage';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Settings'>;
 
@@ -37,8 +38,7 @@ export function SettingsScreen({ navigation }: Props): React.ReactElement {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign Out', style: 'destructive', onPress: () => {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('tenant_id');
+          clearSession();
           // Navigate to login or reload
         }},
       ]

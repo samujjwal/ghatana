@@ -74,9 +74,10 @@ describe('AnimationGenerationProcessor', () => {
         expect(prisma.claimAnimation.upsert).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: {
-                    experienceId_claimRef: {
+                    experienceId_claimRef_variantKey: {
                         experienceId: 'exp-1',
                         claimRef: 'C1',
+                        variantKey: 'primary',
                     },
                 },
                 create: expect.objectContaining({

@@ -101,9 +101,9 @@ export * from "./organisms/DynamicForm";
 export * from "./organisms/ActivityFeed";
 export { DataGrid } from "./organisms/DataGrid";
 
-// NOTE: @ghatana/data-grid has been removed from design-system dependencies to break a circular dependency.
-// If you need the core data-grid, import it directly: import { DataGrid } from '@ghatana/data-grid'
-// The design-system DataGrid component provides feature-rich table functionality with stats, CRUD, and multiple display modes.
+// NOTE: design-system provides its own DataGrid component with stats, CRUD, and multiple display modes.
+// The circular dependency with @ghatana/data-grid has been resolved by removing the peerDependency.
+// If you need the core data-grid package, import it directly: import { DataGrid } from '@ghatana/data-grid'
 export * from "./organisms/StatsDashboard";
 export * from "./organisms/AppListContainer";
 

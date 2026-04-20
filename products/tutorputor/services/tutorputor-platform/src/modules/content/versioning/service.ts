@@ -12,7 +12,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 export interface VersionSnapshot {
   versionId: string;
@@ -152,16 +152,26 @@ export class ContentVersioningService {
     `.catch(() => [{ count: 0 }]);
 
     return {
-      versions: versions.map((v) => ({
-        versionId: v.id,
-        contentId: v.contentId,
-        contentType: v.contentType,
-        versionNumber: v.versionNumber,
-        createdAt: v.createdAt,
-        createdBy: v.createdBy,
-        snapshot: v.snapshot ? JSON.parse(v.snapshot) : {},
-        changeSummary: v.changeSummary,
-        isMajorVersion: v.isMajorVersion,
+      versions: versions.map((version: {
+        id: string;
+        contentId: string;
+        contentType: string;
+        versionNumber: number;
+        changeSummary: string;
+        isMajorVersion: boolean;
+        createdBy: string;
+        createdAt: Date;
+        snapshot: string | null;
+      }) => ({
+        versionId: version.id,
+        contentId: version.contentId,
+        contentType: version.contentType,
+        versionNumber: version.versionNumber,
+        createdAt: version.createdAt,
+        createdBy: version.createdBy,
+        snapshot: version.snapshot ? JSON.parse(version.snapshot) : {},
+        changeSummary: version.changeSummary,
+        isMajorVersion: version.isMajorVersion,
       })),
       total: totalResult[0]?.count ?? 0,
     };
@@ -379,7 +389,7 @@ export class ContentVersioningService {
       SET ${setClause}, "updatedAt" = NOW()
       WHERE id = ${contentId}
         AND "tenantId" = ${tenantId}
-    `.catch((err) => {
+    `.catch((err: Error) => {
       throw new Error(`Failed to restore content: ${err.message}`);
     });
   }

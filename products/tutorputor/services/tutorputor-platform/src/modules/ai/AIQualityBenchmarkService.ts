@@ -200,9 +200,15 @@ export class AIQualityBenchmarkService {
       return null;
     }
 
-    const content = this.contentItems.get(remaining[0]);
+    const nextContentId = remaining[0];
+    if (!nextContentId) {
+      session.endTime = new Date();
+      return null;
+    }
+
+    const content = this.contentItems.get(nextContentId);
     if (content) {
-      session.currentIndex = session.assignedContentIds.indexOf(remaining[0]);
+      session.currentIndex = session.assignedContentIds.indexOf(nextContentId);
     }
 
     return content ?? null;
@@ -280,6 +286,14 @@ export class AIQualityBenchmarkService {
 
       if (dimRatings.length > 0) {
         const sorted = [...dimRatings].sort((a, b) => a - b);
+        const firstRating = sorted[0];
+        const lastRating = sorted[sorted.length - 1];
+        const medianRating = sorted[Math.floor(sorted.length / 2)] ?? firstRating;
+
+        if (firstRating == null || lastRating == null || medianRating == null) {
+          continue;
+        }
+
         const sum = sorted.reduce((a, b) => a + b, 0);
         const mean = sum / sorted.length;
         const variance =
@@ -288,10 +302,10 @@ export class AIQualityBenchmarkService {
 
         ratingsByDimension[dim] = {
           average: parseFloat(mean.toFixed(2)),
-          median: sorted[Math.floor(sorted.length / 2)] ?? sorted[0],
+          median: medianRating,
           stdDev: parseFloat(Math.sqrt(variance).toFixed(2)),
-          min: sorted[0] as Rating,
-          max: sorted[sorted.length - 1] as Rating,
+          min: firstRating,
+          max: lastRating,
           count: sorted.length,
         };
       }
@@ -398,14 +412,30 @@ export class AIQualityBenchmarkService {
 
       for (let i = 0; i < evaluators_list.length; i++) {
         for (let j = i + 1; j < evaluators_list.length; j++) {
-          const ratings1 = evaluators_list[i][1];
-          const ratings2 = evaluators_list[j][1];
+          const evaluatorEntry1 = evaluators_list[i];
+          const evaluatorEntry2 = evaluators_list[j];
+          if (!evaluatorEntry1 || !evaluatorEntry2) {
+            continue;
+          }
+
+          const ratings1 = evaluatorEntry1[1];
+          const ratings2 = evaluatorEntry2[1];
+          if (!ratings1 || !ratings2) {
+            continue;
+          }
+
           const minLen = Math.min(ratings1.length, ratings2.length);
 
           if (minLen > 0) {
             let agreement = 0;
             for (let k = 0; k < minLen; k++) {
-              const diff = Math.abs(ratings1[k] - ratings2[k]);
+              const rating1 = ratings1[k];
+              const rating2 = ratings2[k];
+              if (rating1 == null || rating2 == null) {
+                continue;
+              }
+
+              const diff = Math.abs(rating1 - rating2);
               agreement += 1 - diff / 4; // Normalize to 0-1
             }
             pairwiseAgreements += agreement / minLen;
@@ -539,11 +569,16 @@ export class AIQualityBenchmarkService {
       );
     }
 
+    const firstContent = allContent[0];
+    if (!firstContent) {
+      throw new Error('Benchmark report cannot be generated without content samples');
+    }
+
     return {
       id: `benchmark-${Date.now()}`,
       model,
       promptVersion,
-      startDate: startDate ?? allContent[0].metadata.timestamp,
+      startDate: startDate ?? firstContent.metadata.timestamp,
       endDate: endDate ?? new Date(),
       totalSamples: allContent.length,
       totalEvaluators: new Set(allRatings.map((r) => r.evaluatorId)).size,
@@ -613,7 +648,7 @@ export class AIQualityBenchmarkService {
             rating.rating,
             rating.confidence,
             rating.flags.join(";"),
-            `"${(rating.comments ?? "").replace(/"/g, """)}"`,
+            `"${(rating.comments ?? "").replace(/"/g, '""')}"`,
             rating.timeSpentSeconds,
             rating.timestamp.toISOString(),
           ].join(","),

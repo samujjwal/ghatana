@@ -934,32 +934,38 @@ async function learningRoutes(
       });
 
       if (decision.adapted) {
-        await analyticsService.recordEvent({
-          tenantId,
-          event: {
-            type: "ai_tutor_message",
-            userId,
-            timestamp: request.body.occurredAt,
-            payload: {
-              source: "session_adaptation",
-              sessionId: request.params.sessionId,
-              assetId: request.body.assetId,
-              trigger: decision.trigger,
-              reason: decision.reason,
-              recommendation: decision.recommendation,
-              eventType: request.body.eventType,
-              variant: decision.variant
-                ? {
+        const learningEvent: LearningEventInput = {
+          type: "ai_tutor_message",
+          userId,
+          ...(request.body.occurredAt ? { timestamp: request.body.occurredAt } : {}),
+          payload: {
+            source: "session_adaptation",
+            sessionId: request.params.sessionId,
+            ...(request.body.assetId ? { assetId: request.body.assetId } : {}),
+            ...(decision.trigger ? { trigger: decision.trigger } : {}),
+            ...(decision.reason ? { reason: decision.reason } : {}),
+            ...(decision.recommendation
+              ? { recommendation: decision.recommendation }
+              : {}),
+            eventType: request.body.eventType,
+            ...(decision.variant
+              ? {
+                  variant: {
                     variantId: decision.variant.variantId,
                     family: decision.variant.family,
                     key: decision.variant.key,
                     strategy: decision.variant.metadata.strategy,
-                  }
-                : undefined,
-              observedSignals: decision.observedSignals,
-              adapted: true,
-            },
+                  },
+                }
+              : {}),
+            observedSignals: decision.observedSignals,
+            adapted: true,
           },
+        };
+
+        await analyticsService.recordEvent({
+          tenantId,
+          event: learningEvent,
         });
       }
 

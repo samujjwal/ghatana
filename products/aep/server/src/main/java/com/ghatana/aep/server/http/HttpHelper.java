@@ -5,6 +5,7 @@
 package com.ghatana.aep.server.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import io.activej.http.HttpRequest;
@@ -25,7 +26,7 @@ import java.util.Map;
  */
 public final class HttpHelper {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.getDefaultMapper();
 
     private HttpHelper() {}
 

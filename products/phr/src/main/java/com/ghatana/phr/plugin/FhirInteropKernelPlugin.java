@@ -126,17 +126,28 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     }
 
     /**
-     * Resolve DataCloud operation mode from environment or use default.
+     * Resolve DataCloud operation mode from environment or system property or use default.
      * STRICT mode (default): Fail fast on missing dependencies, suitable for production.
      * DEGRADED mode: Allow graceful degradation with fallbacks, suitable for development.
      */
     private DependencyMode resolveDataCloudMode() {
+        // Check system property first (for testability)
+        String modeProp = System.getProperty(DATACLOUD_MODE_ENV);
+        if (modeProp != null && !modeProp.isEmpty()) {
+            try {
+                return DependencyMode.valueOf(modeProp.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                LOG.warn("Invalid {} system property value: {}; using default: {}", DATACLOUD_MODE_ENV, modeProp, DATACLOUD_MODE_DEFAULT);
+            }
+        }
+        
+        // Fall back to environment variable
         String modeEnv = System.getenv(DATACLOUD_MODE_ENV);
         if (modeEnv != null && !modeEnv.isEmpty()) {
             try {
                 return DependencyMode.valueOf(modeEnv.toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOG.warn("Invalid {} value: {}; using default: {}", DATACLOUD_MODE_ENV, modeEnv, DATACLOUD_MODE_DEFAULT);
+                LOG.warn("Invalid {} environment variable value: {}; using default: {}", DATACLOUD_MODE_ENV, modeEnv, DATACLOUD_MODE_DEFAULT);
             }
         }
         return DependencyMode.valueOf(DATACLOUD_MODE_DEFAULT);

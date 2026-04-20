@@ -482,8 +482,8 @@ export function aiCostTrackingMiddleware() {
         totalTokens: inputTokens,
         latencyMs: latency,
         operation: request.routeOptions.url || request.url || "unknown",
-        tenantId: requestUser?.tenantId,
         success: reply.statusCode < 400,
+        ...(requestUser?.tenantId ? { tenantId: requestUser.tenantId } : {}),
       });
     });
   };

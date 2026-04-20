@@ -21,14 +21,17 @@
     "paths": {
       "@/*": ["./src/*"],
       "@ghatana/design-system": [
-        "../../../../platform/typescript/design-system/src/index.ts"
+        "../../../../platform/typescript/design-system"
       ],
-      "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
+      "@ghatana/charts": [
+        "../../../../platform/typescript/charts"
+      ],
+      "@ghatana/theme": ["../../../../platform/typescript/theme"],
       "@ghatana/tokens": [
-        "../../../../platform/typescript/tokens/src/index.ts"
+        "../../../../platform/typescript/tokens"
       ],
       "@ghatana/platform-utils": [
-        "../../../../platform/typescript/foundation/platform-utils/src/index.ts"
+        "../../../../platform/typescript/foundation/platform-utils"
       ],
       "@tutorputor/core": ["../../libs/tutorputor-core/src/index.ts"],
       "@tutorputor/core/*": ["../../libs/tutorputor-core/src/*"],

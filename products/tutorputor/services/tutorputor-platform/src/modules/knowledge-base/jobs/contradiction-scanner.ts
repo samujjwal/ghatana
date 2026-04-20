@@ -95,6 +95,9 @@ export class ContradictionScanner {
       for (let j = i + 1; j < evidences.length; j++) {
         const a = evidences[i];
         const b = evidences[j];
+        if (!a || !b) {
+          continue;
+        }
 
         // Check for direct support/opposition contradiction
         if (a.supportKind === 'SUPPORTS' && b.supportKind === 'CONTRADICTS') {

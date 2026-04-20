@@ -80,7 +80,7 @@ class AepHttpServerComplianceTest {
 
             assertThat(resp.statusCode()).isEqualTo(503);
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class);
-            assertThat(respBody.get("error").toString()).contains("not available");
+            assertThat(respBody.get("message").toString()).contains("not available");
         }
 
         @Test

@@ -13,7 +13,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 export interface TrashItem {
   itemId: string;
@@ -293,7 +293,15 @@ export class ContentRestoreService {
     `.catch(() => [{ count: 0 }]);
 
     return {
-      items: items.map((item) => ({
+      items: items.map((item: {
+        itemId: string;
+        itemType: string;
+        title: string;
+        deletedAt: Date;
+        deletedBy: string;
+        originalData: string;
+        expiresAt: Date;
+      }) => ({
         itemId: item.itemId,
         itemType: item.itemType as TrashItem["itemType"],
         title: item.title,
@@ -377,7 +385,10 @@ export class ContentRestoreService {
 
     return {
       deleted: expiredItems.length,
-      items: expiredItems.map((i) => ({ itemId: i.itemId, itemType: i.itemType })),
+      items: expiredItems.map((item: { itemId: string; itemType: string }) => ({
+        itemId: item.itemId,
+        itemType: item.itemType,
+      })),
     };
   }
 
@@ -423,7 +434,7 @@ export class ContentRestoreService {
     }
 
     return {
-      totalItems: stats.reduce((sum, s) => sum + Number(s.count), 0),
+      totalItems: stats.reduce((sum: number, stat: { itemType: string; count: number }) => sum + Number(stat.count), 0),
       byType,
       expiringSoon: Number(expiringSoon[0]?.count ?? 0),
       recentlyDeleted: Number(recentlyDeleted[0]?.count ?? 0),

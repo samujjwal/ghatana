@@ -349,41 +349,65 @@ export class HybridSearchService {
       title: raw.title as string,
       assetType: (raw.assetType as string).toLowerCase() as ContentAssetType,
       domain: raw.domain as string,
-      conceptId: (raw.conceptId as string) ?? undefined,
+      ...((raw.conceptId as string | null | undefined)
+        ? { conceptId: raw.conceptId as string }
+        : {}),
       status: (raw.status as string).toLowerCase() as ContentAsset["status"],
       currentVersion: raw.currentVersion as number,
-      qualityScore: (raw.qualityScore as number) ?? undefined,
-      semanticIndexStatus:
-        ((
-          raw.semanticIndexStatus as string | null | undefined
-        )?.toLowerCase() as ContentAsset["semanticIndexStatus"]) ?? undefined,
-      recommendationStatus:
-        ((
-          raw.recommendationStatus as string | null | undefined
-        )?.toLowerCase() as ContentAsset["recommendationStatus"]) ?? undefined,
-      tags: (raw.tags as string[]) ?? undefined,
+      ...((raw.qualityScore as number | null | undefined) !== undefined &&
+      raw.qualityScore !== null
+        ? { qualityScore: raw.qualityScore as number }
+        : {}),
+      ...((raw.semanticIndexStatus as string | null | undefined)
+        ? {
+            semanticIndexStatus: (
+              raw.semanticIndexStatus as string
+            ).toLowerCase() as NonNullable<ContentAsset["semanticIndexStatus"]>,
+          }
+        : {}),
+      ...((raw.recommendationStatus as string | null | undefined)
+        ? {
+            recommendationStatus: (
+              raw.recommendationStatus as string
+            ).toLowerCase() as NonNullable<ContentAsset["recommendationStatus"]>,
+          }
+        : {}),
+      ...(Array.isArray(raw.tags) ? { tags: raw.tags as string[] } : {}),
       targetGrades: Array.isArray(raw.targetGrades)
         ? (raw.targetGrades as string[])
         : [],
-      difficultyLevel: (raw.difficultyLevel as string) ?? undefined,
+      ...((raw.difficultyLevel as string | null | undefined)
+        ? { difficultyLevel: raw.difficultyLevel as string }
+        : {}),
       authorId: raw.authorId as string,
-      lastEditedBy: (raw.lastEditedBy as string) ?? undefined,
-      publishedAt: raw.publishedAt
-        ? (raw.publishedAt as Date).toISOString()
-        : undefined,
+      ...((raw.lastEditedBy as string | null | undefined)
+        ? { lastEditedBy: raw.lastEditedBy as string }
+        : {}),
+      ...(raw.publishedAt
+        ? { publishedAt: (raw.publishedAt as Date).toISOString() }
+        : {}),
       createdAt: raw.createdAt
         ? (raw.createdAt as Date).toISOString()
         : new Date().toISOString(),
       updatedAt: raw.updatedAt
         ? (raw.updatedAt as Date).toISOString()
         : new Date().toISOString(),
-      promptHash: (raw.promptHash as string) ?? undefined,
+      ...((raw.promptHash as string | null | undefined)
+        ? { promptHash: raw.promptHash as string }
+        : {}),
       riskLevel: (
         (raw.riskLevel as string | null | undefined) ?? "LOW"
       ).toUpperCase() as ContentAsset["riskLevel"],
-      confidenceScore: (raw.confidenceScore as number) ?? undefined,
-      legacyModuleId: (raw.legacyModuleId as string) ?? undefined,
-      legacyExperienceId: (raw.legacyExperienceId as string) ?? undefined,
+      ...((raw.confidenceScore as number | null | undefined) !== undefined &&
+      raw.confidenceScore !== null
+        ? { confidenceScore: raw.confidenceScore as number }
+        : {}),
+      ...((raw.legacyModuleId as string | null | undefined)
+        ? { legacyModuleId: raw.legacyModuleId as string }
+        : {}),
+      ...((raw.legacyExperienceId as string | null | undefined)
+        ? { legacyExperienceId: raw.legacyExperienceId as string }
+        : {}),
     };
   }
 }

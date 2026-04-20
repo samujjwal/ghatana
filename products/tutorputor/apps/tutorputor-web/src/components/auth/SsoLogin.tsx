@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Button, Spinner, Badge } from "@ghatana/design-system";
+import { Button, Spinner, Badge } from "../ui";
 import type { IdentityProviderConfig } from "@tutorputor/contracts/v1/types";
 
 // ===========================================================================
@@ -188,15 +188,17 @@ export function SsoProviderList({
         setError(null);
 
         const response = await fetch(
-          `/auth/providers?tenantSlug=${encodeURIComponent(tenantSlug)}`
+          `/api/v1/auth/sso/providers?tenantSlug=${encodeURIComponent(tenantSlug)}`
         );
 
         if (!response.ok) {
           throw new Error("Failed to fetch identity providers");
         }
 
-        const data = await response.json();
-        setProviders(data.providers || []);
+        const data = (await response.json()) as
+          | { providers?: SsoProvider[] }
+          | SsoProvider[];
+        setProviders(Array.isArray(data) ? data : (data.providers || []));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -450,8 +452,8 @@ export function LoginPage({
     const redirectUri = encodeURIComponent(
       new URL(safeRedirectPath, window.location.origin).toString()
     );
-    window.location.href = `/auth/login/${providerId}?redirect_uri=${redirectUri}`;
-  }, [redirectPath]);
+    window.location.href = `/api/v1/auth/sso/login/${providerId}?tenantSlug=${encodeURIComponent(tenantSlug)}&redirect_uri=${redirectUri}`;
+  }, [redirectPath, tenantSlug]);
 
   const handleRetry = useCallback(() => {
     setError(null);

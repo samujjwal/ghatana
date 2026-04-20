@@ -12,7 +12,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 export type JobStatus = "pending" | "processing" | "completed" | "failed" | "cancelled" | "stuck";
 
@@ -87,10 +87,13 @@ export class JobNotificationService {
       jobType,
       status,
       message,
-      details,
       timestamp: new Date(),
       severity,
     };
+
+    if (details) {
+      notification.details = details;
+    }
 
     // Send through preferred channels
     for (const channel of preferences.channels) {
@@ -213,14 +216,16 @@ export class JobNotificationService {
       WHERE "userId" = ${userId}
     `.catch(() => []);
 
-    if (prefs.length > 0) {
+    const storedPreferences = prefs[0];
+
+    if (storedPreferences) {
       return {
         userId,
-        channels: JSON.parse(prefs[0].channels) as NotificationChannel[],
-        jobCompletion: prefs[0].jobCompletion,
-        jobFailure: prefs[0].jobFailure,
-        queueFailures: prefs[0].queueFailures,
-        stuckJobs: prefs[0].stuckJobs,
+        channels: JSON.parse(storedPreferences.channels) as NotificationChannel[],
+        jobCompletion: storedPreferences.jobCompletion,
+        jobFailure: storedPreferences.jobFailure,
+        queueFailures: storedPreferences.queueFailures,
+        stuckJobs: storedPreferences.stuckJobs,
       };
     }
 
@@ -293,16 +298,28 @@ export class JobNotificationService {
       LIMIT ${limit}
     `.catch(() => []);
 
-    return notifications.map((n) => ({
-      jobId: n.job_id,
-      userId: n.user_id,
-      tenantId: n.tenant_id,
-      jobType: n.job_type,
-      status: n.status as JobStatus,
-      message: n.message,
-      details: n.details ? JSON.parse(n.details) : undefined,
-      timestamp: n.created_at,
-      severity: n.severity as JobNotification["severity"],
+    return notifications.map((notification: {
+      job_id: string;
+      user_id: string;
+      tenant_id: string;
+      job_type: string;
+      status: string;
+      message: string;
+      details: string;
+      created_at: Date;
+      severity: string;
+    }) => ({
+      jobId: notification.job_id,
+      userId: notification.user_id,
+      tenantId: notification.tenant_id,
+      jobType: notification.job_type,
+      status: notification.status as JobStatus,
+      message: notification.message,
+      ...(notification.details
+        ? { details: JSON.parse(notification.details) as Record<string, unknown> }
+        : {}),
+      timestamp: notification.created_at,
+      severity: notification.severity as JobNotification["severity"],
     }));
   }
 

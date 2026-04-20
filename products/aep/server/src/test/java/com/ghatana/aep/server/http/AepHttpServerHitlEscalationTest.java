@@ -83,7 +83,7 @@ class AepHttpServerHitlEscalationTest {
             HttpResponse<String> resp = post("/api/v1/hitl/r-001/escalate", "{}");
 
             assertThat(resp.statusCode()).isEqualTo(501);
-            assertThat(mapper.readValue(resp.body(), Map.class).get("error").toString())
+            assertThat(mapper.readValue(resp.body(), Map.class).get("message").toString())
                 .contains("HITL queue not configured");
         }
 

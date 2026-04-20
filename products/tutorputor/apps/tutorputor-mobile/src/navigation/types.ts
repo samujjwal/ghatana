@@ -45,7 +45,7 @@ export type ProfileStackParamList = {
 // Legacy Root Stack (for backward compatibility)
 export type RootStackParamList = {
   Home: undefined;
-  Modules: { category?: string };
+  Modules: { category?: string } | undefined;
   ModuleDetail: { moduleId: string };
   Lesson: { moduleId: string; lessonId: string };
   Quiz: { moduleId: string; quizId: string };

@@ -19,16 +19,11 @@ import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'OllamaAIProxyService' });
 
-type Citation = {
-  title: string;
-  url: string;
-  source: string;
-};
-
 import type {
   TenantId,
   UserId,
   ModuleId,
+  TutorCitation,
   TutorResponsePayload,
 } from "@tutorputor/contracts/v1/types";
 import type {
@@ -226,7 +221,11 @@ Provide a helpful educational response.`;
       const normalized = args.userInput.toLowerCase().trim();
       
       // First, try rule-based classification for speed
-      const ruleBased = this.classifyIntentRuleBased(normalized, args.context);
+      const ruleBased = this.classifyIntentRuleBased(
+        normalized,
+        args.userInput,
+        args.context,
+      );
       if (ruleBased.confidence > 0.8) {
         return ruleBased;
       }
@@ -288,14 +287,21 @@ Classify this intent.`;
   /**
    * Rule-based intent classification for common patterns
    */
-  private classifyIntentRuleBased(input: string, context?: string): ParsedIntent {
+  private classifyIntentRuleBased(
+    input: string,
+    originalInput: string,
+    context?: string,
+  ): ParsedIntent {
     const createPatterns = ["create", "make", "build", "new simulation", "generate", "design"];
     const modifyPatterns = ["change", "modify", "update", "edit", "adjust", "tweak"];
     const runPatterns = ["run", "start", "execute", "play", "launch", "begin"];
     const analyzePatterns = ["analyze", "results", "data", "graph", "plot", "statistics"];
     const explainPatterns = ["explain", "what is", "how does", "why", "concept", "meaning"];
 
-    const scores: Record<string, number> = {
+    const scores: Record<
+      'CREATE_SIMULATION' | 'MODIFY_SIMULATION' | 'RUN_SIMULATION' | 'ANALYZE_SIMULATION' | 'EXPLAIN_CONCEPT',
+      number
+    > = {
       CREATE_SIMULATION: 0,
       MODIFY_SIMULATION: 0,
       RUN_SIMULATION: 0,
@@ -320,10 +326,10 @@ Classify this intent.`;
         type: maxType[0] as ParsedIntent["type"],
         confidence: Math.min(maxType[1], 1),
         params: {
-          domain,
+          ...(domain ? { domain } : {}),
           topic: this.extractTopic(input),
         } as IntentParams,
-        originalInput: args.userInput,
+        originalInput,
         normalizedInput: input,
       };
     }
@@ -332,7 +338,7 @@ Classify this intent.`;
       type: "unknown",
       confidence: 0,
       params: {} as IntentParams,
-      originalInput: args.userInput,
+      originalInput,
       normalizedInput: input,
     };
   }
@@ -489,9 +495,9 @@ Generate a complete learning unit structure.`;
       textSearch = textSearch.replace(/\s+/g, " ").trim();
 
       return {
-        domain,
-        difficulty,
-        tags,
+        ...(domain ? { domain } : {}),
+        ...(difficulty ? { difficulty } : {}),
+        ...(tags.length > 0 ? { tags } : {}),
         textSearch: textSearch || query,
       };
     } catch (error) {
@@ -594,8 +600,9 @@ Respond ONLY with valid JSON in this format:
       
       if (inQuestions) {
         const match = trimmed.match(/^\d+[.\)]\s*(.+)$/);
-        if (match) {
-          questions.push(match[1]);
+        const questionText = match?.[1];
+        if (questionText) {
+          questions.push(questionText);
         } else if (trimmed.endsWith("?")) {
           questions.push(trimmed);
         }
@@ -605,16 +612,22 @@ Respond ONLY with valid JSON in this format:
     return questions.slice(0, 3);
   }
 
-  private extractCitations(answer: string): Citation[] {
-    const citations: Citation[] = [];
+  private extractCitations(answer: string): TutorCitation[] {
+    const citations: TutorCitation[] = [];
     const citationRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     let match;
 
     while ((match = citationRegex.exec(answer)) !== null) {
+      const label = match[1];
+      const id = match[2];
+      if (!label || !id) {
+        continue;
+      }
+
       citations.push({
-        title: match[1],
-        url: match[2],
-        source: "reference",
+        type: 'content_block',
+        id,
+        label,
       });
     }
 

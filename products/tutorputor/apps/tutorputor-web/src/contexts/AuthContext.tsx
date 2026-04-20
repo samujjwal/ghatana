@@ -33,6 +33,23 @@ interface AuthContextValue extends AuthState {
   refreshToken: () => Promise<void>;
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const normalizedPayload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      '=',
+    );
+
+    return JSON.parse(atob(paddedPayload)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 interface AuthProviderProps {
@@ -55,51 +72,110 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Parse JWT token to extract user information
    */
   const parseToken = useCallback((token: string): AuthUser | null => {
-    try {
-      const parts = token.split('.');
-      if (parts.length !== 3) return null;
-
-      const payload = JSON.parse(atob(parts[1]));
-      
-      return {
-        id: payload.sub || payload.userId,
-        email: payload.email || 'unknown',
-        displayName: payload.name || payload.displayName || 'User',
-        role: payload.role || 'student',
-        tenantId: payload.tenantId || payload.tenant,
-      };
-    } catch (error) {
-      console.error('Failed to parse JWT token:', error);
+    const payload = decodeJwtPayload(token);
+    if (!payload) {
       return null;
     }
+
+    const id = typeof payload.sub === 'string'
+      ? payload.sub
+      : typeof payload.userId === 'string'
+        ? payload.userId
+        : null;
+    const tenantId = typeof payload.tenantId === 'string'
+      ? payload.tenantId
+      : typeof payload.tenant === 'string'
+        ? payload.tenant
+        : null;
+
+    if (!id || !tenantId) {
+      return null;
+    }
+
+    return {
+      id,
+      email: typeof payload.email === 'string' ? payload.email : 'unknown',
+      displayName:
+        typeof payload.name === 'string'
+          ? payload.name
+          : typeof payload.displayName === 'string'
+            ? payload.displayName
+            : 'User',
+      role: typeof payload.role === 'string' ? payload.role : 'student',
+      tenantId,
+    };
+  }, []);
+
+  const fetchCurrentUser = useCallback(async (token: string): Promise<AuthUser | null> => {
+    const response = await fetch('/api/v1/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const user = (await response.json()) as Partial<AuthUser>;
+    if (!user.id || !user.tenantId || !user.email || !user.displayName || !user.role) {
+      return null;
+    }
+
+    return user as AuthUser;
   }, []);
 
   /**
    * Initialize auth state from localStorage
    */
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const callbackAccessToken = params.get('accessToken');
+    const callbackRefreshToken = params.get('refreshToken');
+
+    if (callbackAccessToken) {
+      localStorage.setItem('auth_token', callbackAccessToken);
+    }
+    if (callbackRefreshToken) {
+      localStorage.setItem('refresh_token', callbackRefreshToken);
+    }
+    if (callbackAccessToken || callbackRefreshToken) {
+      params.delete('accessToken');
+      params.delete('refreshToken');
+      const nextSearch = params.toString();
+      window.history.replaceState(
+        {},
+        '',
+        `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`,
+      );
+    }
+
     const token = localStorage.getItem('auth_token');
     if (token) {
-      const user = parseToken(token);
-      if (user) {
-        setState({
-          user,
-          token,
-          isLoading: false,
-          isAuthenticated: true,
-        });
-        // Store tenant_id for API clients
-        localStorage.setItem('tenant_id', user.tenantId);
-      } else {
-        // Invalid token, clear it
+      void (async () => {
+        const parsedUser = parseToken(token);
+        const user = (await fetchCurrentUser(token)) ?? parsedUser;
+
+        if (user) {
+          setState({
+            user,
+            token,
+            isLoading: false,
+            isAuthenticated: true,
+          });
+          localStorage.setItem('tenant_id', user.tenantId);
+          return;
+        }
+
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
         setState({
           user: null,
           token: null,
           isLoading: false,
           isAuthenticated: false,
         });
-      }
+      })();
     } else {
       setState({
         user: null,
@@ -108,13 +184,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isAuthenticated: false,
       });
     }
-  }, [parseToken]);
+  }, [fetchCurrentUser, parseToken]);
 
   /**
    * Login with token
    */
   const login = useCallback(async (token: string) => {
-    const user = parseToken(token);
+    const parsedUser = parseToken(token);
+    const user = (await fetchCurrentUser(token)) ?? parsedUser;
     if (!user) {
       throw new Error('Invalid token');
     }
@@ -128,12 +205,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isLoading: false,
       isAuthenticated: true,
     });
-  }, [parseToken]);
+  }, [fetchCurrentUser, parseToken]);
 
   /**
    * Logout user
    */
   const logout = useCallback(() => {
+    const refreshTokenValue = localStorage.getItem('refresh_token');
+    if (refreshTokenValue) {
+      void fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: refreshTokenValue }),
+      });
+    }
+
     localStorage.removeItem('auth_token');
     localStorage.removeItem('tenant_id');
     localStorage.removeItem('refresh_token');
@@ -150,20 +238,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Refresh token
    */
   const refreshToken = useCallback(async () => {
-    const currentToken = localStorage.getItem('auth_token');
-    if (!currentToken) {
-      throw new Error('No token to refresh');
+    const storedRefreshToken = localStorage.getItem('refresh_token');
+    if (!storedRefreshToken) {
+      throw new Error('No refresh token available');
     }
 
-    // Call refresh endpoint
     const response = await fetch('/api/v1/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${currentToken}`,
       },
       body: JSON.stringify({
-        refreshToken: localStorage.getItem('refresh_token'),
+        refreshToken: storedRefreshToken,
       }),
     });
 
@@ -171,7 +257,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error('Failed to refresh token');
     }
 
-    const data = await response.json();
+    const data = await response.json() as { accessToken: string; refreshToken?: string };
     await login(data.accessToken);
     
     if (data.refreshToken) {

@@ -25,6 +25,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { LearnStackParamList } from '../navigation/types';
 import { useNetworkStatus } from '../hooks/useOffline';
+import { createSessionHeaders } from '../storage/NativeSessionStorage';
 
 type Props = NativeStackScreenProps<LearnStackParamList, 'AITutor'>;
 
@@ -66,16 +67,9 @@ export function AITutorScreen({ navigation }: Props): React.ReactElement {
     setIsLoading(true);
 
     try {
-      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
       const response = await fetch('/api/v1/ai/tutor/query', {
         method: 'POST',
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'X-Tenant-ID': tenantId || 'default',
-          'Content-Type': 'application/json',
-        },
+        headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           question: userMessage.content,
         }),

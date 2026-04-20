@@ -9,6 +9,8 @@ import com.ghatana.core.pipeline.NaturalLanguagePipelineService;
 import com.ghatana.pipeline.registry.model.PipelineRegistration;
 import com.ghatana.pipeline.registry.repository.PipelineRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.activej.bytebuf.ByteBuf;
+import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -53,10 +55,11 @@ class PipelineControllerNLQTest {
         String body = objectMapper.writeValueAsString(payload);
         
         HttpRequest request = mock(HttpRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.POST);
         when(request.loadBody()).thenReturn(Promise.of(
-            io.activej.common.bytebuf.ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
         ));
-        
+
         PipelineRegistration savedPipeline = PipelineRegistration.builder()
             .id(UUID.randomUUID().toString())
             .name("Fraud Detection Pipeline")
@@ -66,9 +69,9 @@ class PipelineControllerNLQTest {
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .build();
-        
-        when(mockRepository.save(any())).thenReturn(Promise.of(savedPipeline));
-        
+
+        when(mockRepository.save(any(PipelineRegistration.class))).thenReturn(Promise.of(savedPipeline));
+
         // Act
         Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
         HttpResponse response = responsePromise.getResult();
@@ -86,14 +89,15 @@ class PipelineControllerNLQTest {
         String body = objectMapper.writeValueAsString(payload);
         
         HttpRequest request = mock(HttpRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.POST);
         when(request.loadBody()).thenReturn(Promise.of(
-            io.activej.common.bytebuf.ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
         ));
-        
+
         // Act
         Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
         HttpResponse response = responsePromise.getResult();
-        
+
         // Assert
         assertNotNull(response);
         assertEquals(400, response.getCode());
@@ -107,14 +111,15 @@ class PipelineControllerNLQTest {
         String body = objectMapper.writeValueAsString(payload);
         
         HttpRequest request = mock(HttpRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.POST);
         when(request.loadBody()).thenReturn(Promise.of(
-            io.activej.common.bytebuf.ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
         ));
-        
+
         // Act
         Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
         HttpResponse response = responsePromise.getResult();
-        
+
         // Assert
         assertNotNull(response);
         assertEquals(400, response.getCode());
@@ -131,14 +136,15 @@ class PipelineControllerNLQTest {
         String body = objectMapper.writeValueAsString(payload);
         
         HttpRequest request = mock(HttpRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.POST);
         when(request.loadBody()).thenReturn(Promise.of(
-            io.activej.common.bytebuf.ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
         ));
-        
+
         // Act
         Promise<HttpResponse> responsePromise = controllerWithoutNLQ.handle(request, "/nlq");
         HttpResponse response = responsePromise.getResult();
-        
+
         // Assert
         assertNotNull(response);
         assertEquals(501, response.getCode());
@@ -154,7 +160,7 @@ class PipelineControllerNLQTest {
         
         HttpRequest request = mock(HttpRequest.class);
         when(request.loadBody()).thenReturn(Promise.of(
-            io.activej.common.bytebuf.ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
         ));
         
         // Act
@@ -178,10 +184,11 @@ class PipelineControllerNLQTest {
         String body = objectMapper.writeValueAsString(payload);
         
         HttpRequest request = mock(HttpRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.POST);
         when(request.loadBody()).thenReturn(Promise.of(
-            io.activej.common.bytebuf.ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
         ));
-        
+
         PipelineRegistration savedPipeline = PipelineRegistration.builder()
             .id(UUID.randomUUID().toString())
             .name("Process Events Pipeline")
@@ -191,18 +198,18 @@ class PipelineControllerNLQTest {
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .build();
-        
-        when(mockRepository.save(any())).thenReturn(Promise.of(savedPipeline));
-        
+
+        when(mockRepository.save(any(PipelineRegistration.class))).thenReturn(Promise.of(savedPipeline));
+
         // Act
         Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
         HttpResponse response = responsePromise.getResult();
-        
+
         // Assert
         assertNotNull(response);
         assertEquals(201, response.getCode());
-        verify(mockRepository).save(argThat(pipeline -> 
-            pipeline.config() != null && pipeline.config().contains("transaction.created")
+        verify(mockRepository).save(argThat((PipelineRegistration pipeline) ->
+            pipeline.getConfig() != null && pipeline.getConfig().contains("transaction.created")
         ));
     }
 }

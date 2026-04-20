@@ -13,7 +13,7 @@
  * @doc.layer product
  * @doc.pattern Service
  */
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@tutorputor/core/db";
 
 export type AlertSeverity = "info" | "warning" | "critical";
 export type AlertStatus = "active" | "acknowledged" | "resolved";
@@ -345,19 +345,32 @@ export class AlertService {
       LIMIT ${limit}
     `.catch(() => []);
 
-    return result.map((r) => ({
-      alertId: r.id,
-      ruleId: r.ruleId,
-      severity: r.severity as AlertSeverity,
-      title: r.title,
-      message: r.message,
-      metricValue: r.metricValue,
-      threshold: r.threshold,
-      status: r.status as AlertStatus,
-      triggeredAt: r.triggeredAt,
-      acknowledgedAt: r.acknowledgedAt ?? undefined,
-      acknowledgedBy: r.acknowledgedBy ?? undefined,
-      resolvedAt: r.resolvedAt ?? undefined,
+    return result.map((row: {
+      id: string;
+      ruleId: string;
+      severity: string;
+      title: string;
+      message: string;
+      metricValue: number;
+      threshold: number;
+      status: string;
+      triggeredAt: Date;
+      acknowledgedAt: Date | null;
+      acknowledgedBy: string | null;
+      resolvedAt: Date | null;
+    }) => ({
+      alertId: row.id,
+      ruleId: row.ruleId,
+      severity: row.severity as AlertSeverity,
+      title: row.title,
+      message: row.message,
+      metricValue: row.metricValue,
+      threshold: row.threshold,
+      status: row.status as AlertStatus,
+      triggeredAt: row.triggeredAt,
+      acknowledgedAt: row.acknowledgedAt ?? undefined,
+      acknowledgedBy: row.acknowledgedBy ?? undefined,
+      resolvedAt: row.resolvedAt ?? undefined,
       metadata: undefined,
     }));
   }

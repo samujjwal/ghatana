@@ -22,6 +22,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { LearnStackParamList } from '../navigation/types';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { createSessionHeaders } from '../storage/NativeSessionStorage';
 
 type Props = NativeStackScreenProps<LearnStackParamList, 'Quiz'>;
 
@@ -40,15 +41,8 @@ interface Quiz {
 }
 
 async function fetchQuiz(moduleId: string, quizId: string): Promise<Quiz> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
   const response = await fetch(`/api/v1/assessments/${quizId}`, {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
   });
 
   if (!response.ok) {
@@ -60,16 +54,9 @@ async function fetchQuiz(moduleId: string, quizId: string): Promise<Quiz> {
 }
 
 async function submitQuizAnswers(quizId: string, answers: Record<string, number>): Promise<{ score: number; passed: boolean }> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  const tenantId = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_id') : 'default';
-
   const response = await fetch(`/api/v1/assessments/${quizId}/submit`, {
     method: 'POST',
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Tenant-ID': tenantId || 'default',
-      'Content-Type': 'application/json',
-    },
+    headers: createSessionHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ answers }),
   });
 

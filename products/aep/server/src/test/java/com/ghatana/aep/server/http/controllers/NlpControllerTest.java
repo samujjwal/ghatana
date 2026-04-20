@@ -78,7 +78,7 @@ class NlpControllerTest {
 
             assertThat(response.getCode()).isEqualTo(400);
             Map<String, Object> body = parseBody(response);
-            assertThat(body.get("error").toString()).contains("query");
+            assertThat(body.get("message").toString()).contains("query");
         }
 
         @Test

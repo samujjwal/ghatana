@@ -1,14 +1,22 @@
 import * as Sentry from "@sentry/node";
-import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import type { FastifyInstance, FastifyError } from "fastify";
 import { errorHandler } from "../middleware/error-handler.js";
+
+async function loadProfilingIntegration(): Promise<Array<ReturnType<typeof Sentry.httpIntegration>>> {
+  try {
+    const profilingModule = await import("@sentry/profiling-node");
+    return [profilingModule.nodeProfilingIntegration()];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Setup error tracking with Sentry.
  *
  * ✅ PRODUCTION-GRADE: Comprehensive error tracking with context
  */
-export function setupErrorTracking(app: FastifyInstance) {
+export async function setupErrorTracking(app: FastifyInstance): Promise<void> {
   const dsn = process.env.SENTRY_DSN;
 
   if (!dsn) {
@@ -16,10 +24,12 @@ export function setupErrorTracking(app: FastifyInstance) {
     return;
   }
 
+  const integrations = await loadProfilingIntegration();
+
   Sentry.init({
     dsn,
     environment: process.env.NODE_ENV || "development",
-    integrations: [nodeProfilingIntegration()],
+    integrations,
     tracesSampleRate: parseFloat(
       process.env.SENTRY_TRACES_SAMPLE_RATE || "0.1",
     ),

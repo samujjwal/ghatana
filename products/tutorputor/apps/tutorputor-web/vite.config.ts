@@ -4,6 +4,9 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: ["scheduler", "react-dom", "react-dom/client"],
+  },
   server: {
     host: '127.0.0.1',
     port: 3201,
@@ -19,28 +22,21 @@ export default defineConfig({
     dedupe: ["react", "react-dom", "react-router", "react-router-dom"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@ghatana/charts": path.resolve(__dirname, "../../../../platform/typescript/charts/dist/index.js"),
       "@ghatana/design-system": path.resolve(__dirname, "../../../../platform/typescript/design-system/src/index.ts"),
-      "@ghatana/theme": path.resolve(__dirname, "../../../../platform/typescript/theme/dist/index.js"),
+      "@ghatana/theme": path.resolve(__dirname, "../../../../platform/typescript/theme/src/index.ts"),
       "@ghatana/tokens": path.resolve(__dirname, "../../../../platform/typescript/tokens/dist/index.js"),
       "@ghatana/platform-utils": path.resolve(__dirname, "../../../../platform/typescript/foundation/platform-utils/dist/index.js"),
+      "@tutorputor/core": path.resolve(__dirname, "../../libs/tutorputor-core/src/index.ts"),
+      "@tutorputor/simulation/renderer/easing": path.resolve(__dirname, "../../libs/tutorputor-simulation/src/renderer/easing.ts"),
+      "@tutorputor/simulation": path.resolve(__dirname, "../../libs/tutorputor-simulation/src/index.ts"),
+      "@tutorputor/ui": path.resolve(__dirname, "../../libs/tutorputor-ui/src/index.ts"),
     },
-    preserveSymlinks: true
   },
   build: {
     outDir: "dist",
     sourcemap: true,
     rollupOptions: {
-      external: [
-        '@tanstack/query-core',
-        '@tanstack/query-devtools',
-        'react-router',
-        'react-router/dom',
-        '@mui/utils',
-        '@mui/material',
-        '@mui/system',
-        '@emotion/react',
-        '@emotion/styled'
-      ],
       input: {
         main: path.resolve(__dirname, "index.html"),
         sw: path.resolve(__dirname, "src/sw.ts"),

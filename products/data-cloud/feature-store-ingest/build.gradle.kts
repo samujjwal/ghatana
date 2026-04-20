@@ -95,8 +95,8 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                // Config + exception hierarchy fully tested; raised from 0.050 (2026-04-02)
-                minimum = "0.150".toBigDecimal()
+                // COP-TEST-1: raised from 0.15 to 0.50
+                minimum = "0.50".toBigDecimal()
             }
         }
         rule {

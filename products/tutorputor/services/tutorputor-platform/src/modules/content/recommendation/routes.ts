@@ -472,7 +472,11 @@ export function registerRecommendationRoutes(
       const result = await remediationService.applyRankedExperienceInterventions(
         tenantId,
         paramsResult.data.experienceId,
-        bodyResult.data,
+        {
+          ...(typeof bodyResult.data.limit === "number"
+            ? { limit: bodyResult.data.limit }
+            : {}),
+        },
       );
       return reply.send({ data: result });
     },
@@ -557,7 +561,17 @@ export function registerRecommendationRoutes(
       const tenantId = getTenantId(request);
       const result = await remediationService.rankTenantPortfolioInterventions(
         tenantId,
-        queryResult.data,
+        {
+          ...(typeof queryResult.data.experienceLimit === "number"
+            ? { experienceLimit: queryResult.data.experienceLimit }
+            : {}),
+          ...(typeof queryResult.data.interventionsPerExperience === "number"
+            ? {
+                interventionsPerExperience:
+                  queryResult.data.interventionsPerExperience,
+              }
+            : {}),
+        },
       );
       return reply.send({ data: result });
     },
@@ -587,7 +601,20 @@ export function registerRecommendationRoutes(
       const tenantId = getTenantId(request);
       const result = await remediationService.applyTenantPortfolioInterventions(
         tenantId,
-        bodyResult.data,
+        {
+          ...(typeof bodyResult.data.experienceLimit === "number"
+            ? { experienceLimit: bodyResult.data.experienceLimit }
+            : {}),
+          ...(typeof bodyResult.data.interventionsPerExperience === "number"
+            ? {
+                interventionsPerExperience:
+                  bodyResult.data.interventionsPerExperience,
+              }
+            : {}),
+          ...(typeof bodyResult.data.maxActions === "number"
+            ? { maxActions: bodyResult.data.maxActions }
+            : {}),
+        },
       );
       return reply.send({ data: result });
     },
@@ -622,7 +649,20 @@ export function registerRecommendationRoutes(
       const result = await remediationService.applyExperienceRemediation(
         tenantId,
         paramsResult.data.experienceId,
-        bodyResult.data,
+        {
+          ...(typeof bodyResult.data.autoPromoteExperiments === "boolean"
+            ? {
+                autoPromoteExperiments:
+                  bodyResult.data.autoPromoteExperiments,
+              }
+            : {}),
+          ...(typeof bodyResult.data.recomputeRecommendations === "boolean"
+            ? {
+                recomputeRecommendations:
+                  bodyResult.data.recomputeRecommendations,
+              }
+            : {}),
+        },
       );
       return reply.send({ data: result });
     },

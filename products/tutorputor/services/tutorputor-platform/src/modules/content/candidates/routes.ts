@@ -35,7 +35,7 @@ const createCandidateBodySchema = z.object({
   trigger: z.string().trim().min(1),
   severity: z.string().trim().min(1).optional(),
   reason: z.string().trim().min(1),
-  evidence: z.record(z.unknown()).optional(),
+  evidence: z.record(z.string(), z.unknown()).optional(),
   priority: z.number().int().min(1).max(10).optional(),
 });
 
@@ -88,7 +88,19 @@ export function registerCandidateRoutes(
 
       const tenantId = getTenantId(request);
 
-      const candidate = await service.createCandidate(tenantId, bodyResult.data);
+      const candidateInput: CreateRegenerationCandidateInput = {
+        assetId: bodyResult.data.assetId,
+        trigger: bodyResult.data.trigger,
+        reason: bodyResult.data.reason,
+        ...(bodyResult.data.assetType ? { assetType: bodyResult.data.assetType } : {}),
+        ...(bodyResult.data.severity ? { severity: bodyResult.data.severity } : {}),
+        ...(bodyResult.data.evidence ? { evidence: bodyResult.data.evidence } : {}),
+        ...(bodyResult.data.priority !== undefined
+          ? { priority: bodyResult.data.priority }
+          : {}),
+      };
+
+      const candidate = await service.createCandidate(tenantId, candidateInput);
       return reply.status(201).send(candidate);
     },
   );

@@ -212,7 +212,7 @@ class AepHttpServerAnalyticsDeploymentTest {
 
             assertThat(resp.statusCode()).isEqualTo(400);
             @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).contains("tenantId");
+            assertThat(body.get("message").toString()).contains("tenantId");
         }
     }
 

@@ -9,11 +9,15 @@
  * @doc.layer platform
  * @doc.pattern Middleware
  */
-
-import { Prisma } from '@tutorputor/core/db';
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
 const logger = createStandaloneLogger({ component: 'ReadWriteSplitMiddleware' });
+
+interface QueryOperationParams {
+  model?: string;
+  action?: string;
+  args?: unknown;
+}
 
 export interface ReadWriteSplitOptions {
   /**
@@ -40,15 +44,15 @@ export interface ReadWriteSplitOptions {
 /**
  * Detect if a query is a read query
  */
-export function isReadQuery(params: Prisma.MiddlewareParams): boolean {
+export function isReadQuery(params: QueryOperationParams): boolean {
   const readActions = ['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'];
-  return readActions.includes(params.action);
+  return typeof params.action === 'string' && readActions.includes(params.action);
 }
 
 /**
  * Detect if a query should be forced to primary
  */
-export function shouldForcePrimary(params: Prisma.MiddlewareParams, patterns: string[]): boolean {
+export function shouldForcePrimary(params: QueryOperationParams, patterns: string[]): boolean {
   if (!patterns || patterns.length === 0) {
     return false;
   }
@@ -68,7 +72,7 @@ export class RoundRobinSelector {
   private currentIndex = 0;
 
   select(replicas: string[]): string {
-    const selected = replicas[this.currentIndex];
+    const selected = replicas[this.currentIndex] ?? replicas[0] ?? 'primary';
     this.currentIndex = (this.currentIndex + 1) % replicas.length;
     return selected;
   }
@@ -84,7 +88,7 @@ export class RoundRobinSelector {
 export class RandomSelector {
   select(replicas: string[]): string {
     const index = Math.floor(Math.random() * replicas.length);
-    return replicas[index];
+    return replicas[index] ?? replicas[0] ?? 'primary';
   }
 }
 
@@ -106,7 +110,7 @@ class LatencySelector {
     }
 
     // Select replica with lowest latency
-    let selected = replicas[0];
+    let selected = replicas[0] ?? 'primary';
     let lowestLatency = Infinity;
 
     for (const replica of replicas) {
@@ -146,8 +150,7 @@ export function createReadWriteSplitMiddleware(options: ReadWriteSplitOptions) {
     strategy: options.strategy,
   });
 
-  return Prisma.defineExtension((prisma) => {
-    return prisma.$use(async (params, next) => {
+  return async <T>(params: QueryOperationParams, next: (params: QueryOperationParams) => Promise<T>): Promise<T> => {
       // If disabled, proceed normally
       if (!options.enabled) {
         return next(params);
@@ -160,6 +163,7 @@ export function createReadWriteSplitMiddleware(options: ReadWriteSplitOptions) {
 
       // Select replica for read query
       const replica = selector.select(options.replicaDatasources);
+      statsCollector.recordReadQuery(replica);
       
       logger.debug({
         message: 'Routing read query to replica',
@@ -172,10 +176,7 @@ export function createReadWriteSplitMiddleware(options: ReadWriteSplitOptions) {
       const startTime = Date.now();
       
       try {
-        const result = await next({
-          ...params,
-          datasources: { db: replica },
-        });
+        const result = await next(params);
         
         const latency = Date.now() - startTime;
         
@@ -194,8 +195,7 @@ export function createReadWriteSplitMiddleware(options: ReadWriteSplitOptions) {
         
         return next(params);
       }
-    });
-  });
+    };
 }
 
 /**

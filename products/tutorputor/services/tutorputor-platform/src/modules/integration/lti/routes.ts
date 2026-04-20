@@ -466,7 +466,27 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
       });
     }
     const { platformId } = paramsResult.data;
-    const updates = bodyResult.data;
+    const updates = {
+      ...(bodyResult.data.name ? { name: bodyResult.data.name } : {}),
+      ...(bodyResult.data.issuer ? { issuer: bodyResult.data.issuer } : {}),
+      ...(bodyResult.data.clientId ? { clientId: bodyResult.data.clientId } : {}),
+      ...(bodyResult.data.deploymentId
+        ? { deploymentId: bodyResult.data.deploymentId }
+        : {}),
+      ...(bodyResult.data.authLoginUrl
+        ? { authLoginUrl: bodyResult.data.authLoginUrl }
+        : {}),
+      ...(bodyResult.data.authTokenUrl
+        ? { authTokenUrl: bodyResult.data.authTokenUrl }
+        : {}),
+      ...(bodyResult.data.jwksUrl ? { jwksUrl: bodyResult.data.jwksUrl } : {}),
+      ...(bodyResult.data.publicKeyPem
+        ? { publicKeyPem: bodyResult.data.publicKeyPem }
+        : {}),
+      ...(bodyResult.data.isActive !== undefined
+        ? { isActive: bodyResult.data.isActive }
+        : {}),
+    };
 
     await respondWithErrors(reply, () =>
       fullLtiServices.platformService.updatePlatform({

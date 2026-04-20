@@ -128,11 +128,25 @@ class RetryExhaustionTest extends EventloopTestBase {
         void jitterPreventsThunderingHerd() {
             Duration baseDelay = Duration.ofMillis(1000);
 
-            // With jitter, delays should vary
-            Duration delay1 = calculateBackoffWithJitter(1, baseDelay);
-            Duration delay2 = calculateBackoffWithJitter(1, baseDelay);
+            // With jitter, delays should vary across multiple calls
+            // We run multiple iterations since Math.random() could theoretically
+            // return the same value twice (though unlikely)
+            boolean foundVariation = false;
+            Duration firstDelay = calculateBackoffWithJitter(1, baseDelay);
 
-            assertThat(delay1).isNotEqualTo(delay2);
+            for (int i = 0; i < 10; i++) {
+                Duration delay = calculateBackoffWithJitter(1, baseDelay);
+                // Jitter adds 0-30% to the base delay, so delays should be in range [1000, 1300]
+                assertThat(delay.toMillis()).isBetween(1000L, 1300L);
+                if (!delay.equals(firstDelay)) {
+                    foundVariation = true;
+                }
+            }
+
+            // At least one delay should differ from the first (with 10 iterations, highly probable)
+            assertThat(foundVariation)
+                .as("Jitter should produce variation in delays across multiple calls")
+                .isTrue();
         }
     }
 

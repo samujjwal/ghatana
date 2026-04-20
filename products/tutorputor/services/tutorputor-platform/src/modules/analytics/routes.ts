@@ -27,18 +27,23 @@ export function createAnalyticsRoutes(prisma: TutorPrismaClient): Router {
   router.get('/export', async (req, res) => {
     try {
       const { tenantId, format, scope, scopeId, startDate, endDate, anonymize } = req.query;
-      
-      const result = await dataExportService.exportData({
+      const exportRequest = {
         tenantId: tenantId as string,
         format: (format as 'csv' | 'excel' | 'json') || 'csv',
         scope: (scope as 'tenant' | 'classroom' | 'student' | 'assessment') || 'tenant',
-        scopeId: scopeId as string,
-        dateRange: startDate && endDate ? {
-          startDate: startDate as string,
-          endDate: endDate as string,
-        } : undefined,
-        anonymize: anonymize === 'true',
-      });
+        ...(scopeId ? { scopeId: scopeId as string } : {}),
+        ...(startDate && endDate
+          ? {
+              dateRange: {
+                startDate: startDate as string,
+                endDate: endDate as string,
+              },
+            }
+          : {}),
+        ...(anonymize === 'true' ? { anonymize: true } : {}),
+      };
+      
+      const result = await dataExportService.exportData(exportRequest);
 
       res.setHeader('Content-Type', format === 'json' ? 'application/json' : 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);

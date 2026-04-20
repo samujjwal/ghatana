@@ -1,5 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
+import { CredentialService } from "../../credentials/service.js";
+import { createCredential } from "../../credentials/models/credential.js";
 import {
   getTenantId,
   getUserId,
@@ -33,6 +35,7 @@ const generateCertificateBodySchema = z.object({
  */
 export const credentialsRoutes: FastifyPluginAsync = async (app) => {
   const prisma = app.prisma;
+  const credentialService = new CredentialService(prisma);
   /**
    * GET /badges
    * List available badges
@@ -72,7 +75,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
-      const userBadges = await prisma.userBadge.findMany({
+      const userBadges = await prisma.badgeEarned.findMany({
         where: { tenantId, userId },
         include: { badge: true },
         orderBy: { earnedAt: "desc" },
@@ -109,16 +112,17 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     };
 
     try {
-      const userBadge = await prisma.userBadge.create({
+      const userBadge = await prisma.badgeEarned.create({
         data: {
           tenantId,
           userId,
           badgeId,
-          reason,
-          awardedBy: adminUserId,
         },
         include: { badge: true },
       });
+      if (reason) {
+        app.log.info({ tenantId, userId, badgeId, awardedBy: adminUserId, reason }, "Badge awarded with reason");
+      }
       return reply.code(201).send(userBadge);
     } catch (error) {
       app.log.error(error, "Failed to award badge");
@@ -138,9 +142,11 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     const userId = getUserId(request) as UserId;
 
     try {
-      const certificates = await prisma.certificate.findMany({
-        where: { tenantId, userId },
-        orderBy: { issuedAt: "desc" },
+      const certificates = await credentialService.findByUser(userId, {
+        page: 1,
+        limit: 100,
+        tenantId,
+        type: "certificate",
       });
       return reply.code(200).send(certificates);
     } catch (error) {
@@ -169,15 +175,24 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     const { moduleId, completionDate } = bodyResult.data;
 
     try {
-      const certificate = await prisma.certificate.create({
-        data: {
+      const certificate = await credentialService.create(
+        createCredential({
+          type: "certificate",
           tenantId,
           userId,
-          moduleId,
-          issuedAt: completionDate ? new Date(completionDate) : new Date(),
-          certificateUrl: `/certificates/${userId}/${moduleId}`,
-        },
-      });
+          name: `Certificate for module ${moduleId}`,
+          description: `Awarded for completing module ${moduleId}`,
+          certificate: {
+            courseId: moduleId,
+            completionDate: completionDate
+              ? new Date(completionDate)
+              : new Date(),
+          },
+          metadata: {
+            category: "domain_expertise",
+          },
+        }),
+      );
       return reply.code(201).send(certificate);
     } catch (error) {
       app.log.error(error, "Failed to generate certificate");

@@ -173,20 +173,40 @@ export class DataExportService {
     startDate: Date,
     endDate: Date,
   ): Promise<Record<string, unknown>[]> {
-    const enrollments = await this.prisma.enrollment.findMany({
-      where: {
-        tenantId,
-        classroom: { id: classroomId },
-        startedAt: { gte: startDate, lte: endDate },
-      },
-      include: { user: { select: { id: true, email: true, displayName: true } } },
+    const classroomMembers = await this.prisma.classroomMember.findMany({
+      where: { classroomId },
       take: 5000,
     });
 
+    const memberIds = classroomMembers.map((member) => member.userId);
+    if (memberIds.length === 0) {
+      return [];
+    }
+
+    const [enrollments, users] = await Promise.all([
+      this.prisma.enrollment.findMany({
+        where: {
+          tenantId,
+          userId: { in: memberIds },
+          startedAt: { gte: startDate, lte: endDate },
+        },
+        take: 5000,
+      }),
+      this.prisma.user.findMany({
+        where: {
+          tenantId,
+          id: { in: memberIds },
+        },
+        select: { id: true, email: true, displayName: true },
+      }),
+    ]);
+
+    const usersById = new Map(users.map((user) => [user.id, user]));
+
     return enrollments.map((e) => ({
       userId: e.userId,
-      email: e.user?.email,
-      displayName: e.user?.displayName,
+      email: usersById.get(e.userId)?.email,
+      displayName: usersById.get(e.userId)?.displayName,
       moduleId: e.moduleId,
       progressPercent: e.progressPercent,
       status: e.status,
@@ -300,7 +320,9 @@ export class DataExportService {
 
   private toCSV(data: Record<string, unknown>[]): string {
     if (data.length === 0) return '';
-    const headers = Object.keys(data[0]);
+    const firstRow = data[0];
+    if (!firstRow) return '';
+    const headers = Object.keys(firstRow);
     const headerRow = headers.join(',');
     const dataRows = data.map((row) =>
       headers.map((h) => JSON.stringify(row[h] ?? '')).join(','),
@@ -314,7 +336,7 @@ export class DataExportService {
   }
 
   private generateFilename(request: ExportRequest, exportId: string): string {
-    const date = new Date().toISOString().split('T')[0];
+    const date = new Date().toISOString().split('T')[0] ?? 'unknown-date';
     return `tutorputor-${request.scope}-${request.format}-${date}-${exportId}.${request.format}`;
   }
 }

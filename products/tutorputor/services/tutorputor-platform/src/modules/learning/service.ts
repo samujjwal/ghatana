@@ -177,7 +177,7 @@ export function createLearningService(
         currentProgress: enrollment.progressPercent,
         requestedProgress: nextProgress,
         timeSpentSecondsDelta,
-        constraints,
+        ...(constraints ? { constraints } : {}),
       });
       const totalTime = Math.max(
         0,

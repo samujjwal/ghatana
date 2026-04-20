@@ -6,7 +6,7 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { TutorPrismaClient } from '@tutorputor/core/db';
 import type {
   VRAnalyticsService,
   TenantId,
@@ -15,7 +15,7 @@ import type {
 import type { VRLabId, VRLabAnalytics, VRDeviceType, VRSessionId } from '@tutorputor/contracts/v1';
 
 export class VRAnalyticsServiceImpl implements VRAnalyticsService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: TutorPrismaClient) {}
 
   async getLabAnalytics(args: {
     tenantId: TenantId;

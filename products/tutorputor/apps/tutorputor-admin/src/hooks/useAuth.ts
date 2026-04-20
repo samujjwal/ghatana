@@ -37,6 +37,22 @@ const DEV_TENANT_ID =
   import.meta.env.VITE_TUTORPUTOR_TENANT_ID ||
   (import.meta.env.DEV ? "default" : null);
 
+function getSafeStorage(): Pick<Storage, "getItem" | "removeItem"> {
+  const storage = window.localStorage;
+  if (
+    storage &&
+    typeof storage.getItem === "function" &&
+    typeof storage.removeItem === "function"
+  ) {
+    return storage;
+  }
+
+  return {
+    getItem: () => null,
+    removeItem: () => undefined,
+  };
+}
+
 export function useAuth() {
   const [auth, setAuth] = useAtom(authAtom);
   const [isChecked, setIsChecked] = useState(false);
@@ -45,15 +61,29 @@ export function useAuth() {
     if (isChecked) return;
 
     async function checkAuth() {
+      const storage = getSafeStorage();
+      const storedAccessToken = storage.getItem("auth_token");
+      const storedRefreshToken = storage.getItem("refresh_token");
+
       try {
-        const response = await fetch("/api/v1/auth/me");
+        const response = await fetch("/api/v1/auth/me", {
+          headers: storedAccessToken
+            ? { Authorization: `Bearer ${storedAccessToken}` }
+            : undefined,
+        });
         if (response.ok) {
-          const data = await response.json();
-          setAuthToken(data.accessToken ?? null);
+          const data = (await response.json()) as UserSummary & {
+            accessToken?: string;
+            user?: UserSummary;
+            tenantId?: TenantId;
+          };
+          const resolvedUser = data.user ?? data;
+          const resolvedToken = data.accessToken ?? storedAccessToken ?? null;
+          setAuthToken(resolvedToken);
           setAuth({
-            user: data.user ?? data,
-            tenantId: data.tenantId,
-            accessToken: data.accessToken,
+            user: resolvedUser,
+            tenantId: (data.tenantId ?? resolvedUser.tenantId ?? DEV_TENANT_ID ?? null) as TenantId | null,
+            accessToken: resolvedToken,
             isLoading: false,
           });
         } else if (
@@ -127,8 +157,18 @@ export function useAuth() {
     logout: async () => {
       await fetch("/api/v1/auth/logout", {
         method: "POST",
-        headers: { Authorization: `Bearer ${auth.accessToken ?? ""}` },
+        headers: {
+          "Content-Type": "application/json",
+          ...(auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          refreshToken: getSafeStorage().getItem("refresh_token"),
+        }),
       });
+      const storage = getSafeStorage();
+      storage.removeItem("auth_token");
+      storage.removeItem("refresh_token");
+      storage.removeItem("tenant_id");
       setAuthToken(null);
       setAuth({
         user: null,

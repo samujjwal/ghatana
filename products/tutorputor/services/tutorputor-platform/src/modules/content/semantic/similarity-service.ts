@@ -89,7 +89,7 @@ export class ContentSimilarityService {
       domain: options?.domain,
     });
 
-    const highestSimilarity = matches.length > 0 ? matches[0].similarityScore : 0;
+    const highestSimilarity = matches[0]?.similarityScore ?? 0;
 
     // Determine recommended action based on similarity
     let recommendedAction: "proceed" | "review" | "block" = "proceed";
@@ -163,7 +163,7 @@ export class ContentSimilarityService {
         assessment: 0.90,
         default: this.DEFAULT_DUPLICATE_THRESHOLD,
       };
-      return typeThresholds[contentType] ?? typeThresholds.default;
+      return typeThresholds[contentType] ?? this.DEFAULT_DUPLICATE_THRESHOLD;
     }
 
     return this.DEFAULT_DUPLICATE_THRESHOLD;
@@ -201,7 +201,7 @@ export class ContentSimilarityService {
       chunkSource: string;
       assetTitle: string;
       assetType: string;
-      vector: Buffer;
+      vector: Uint8Array;
       domain: string | null;
       similarity: number;
     }>
@@ -324,9 +324,15 @@ export class ContentSimilarityService {
     let normB = 0;
 
     for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
+      const valueA = a[i];
+      const valueB = b[i];
+      if (valueA == null || valueB == null) {
+        continue;
+      }
+
+      dotProduct += valueA * valueB;
+      normA += valueA * valueA;
+      normB += valueB * valueB;
     }
 
     const magnitude = Math.sqrt(normA) * Math.sqrt(normB);

@@ -333,6 +333,12 @@ export function DataFabricPage(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full bg-white" data-testid="data-fabric-page">
+      {/* Preview Banner */}
+      <div className="px-6 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-800 flex items-center">
+        <span className="font-semibold mr-2">Preview:</span>
+        <span>This page uses demo data. Real fabric metrics API coming soon.</span>
+      </div>
+
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <div>

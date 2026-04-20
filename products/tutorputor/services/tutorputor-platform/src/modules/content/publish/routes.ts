@@ -82,10 +82,14 @@ export function registerPublishRoutes(
       const publishedBy = getUserId(request);
       const { assetId } = paramsResult.data;
 
-      const result = await service.publishAsset(tenantId, publishedBy, {
+      const publishInput: PublishAssetInput = {
         assetId,
-        ...bodyResult.data,
-      });
+        ...(bodyResult.data.bypassEvaluationCheck !== undefined
+          ? { bypassEvaluationCheck: bodyResult.data.bypassEvaluationCheck }
+          : {}),
+      };
+
+      const result = await service.publishAsset(tenantId, publishedBy, publishInput);
 
       const status = result.published ? 200 : 422;
       return reply.status(status).send(result);

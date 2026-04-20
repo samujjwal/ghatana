@@ -1,14 +1,32 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
+import { canUseTrustedProxyAuth } from "./trustedProxyAuth.js";
 
 type HttpError = Error & { statusCode: number; code: string };
 
 /** Shape of the JWT payload as decoded by @fastify/jwt into req.user */
 interface JwtUser {
+  id?: string;
   sub?: string;
   userId?: string;
   tenantId?: string;
   role?: string;
   email?: string;
+}
+
+function getTrustedHeader(
+  req: FastifyRequest,
+  headerName: "x-tenant-id" | "x-user-id" | "x-user-role",
+): string | null {
+  if (!canUseTrustedProxyAuth(req)) {
+    return null;
+  }
+
+  const headerValue = req.headers[headerName];
+  if (!headerValue) {
+    return null;
+  }
+
+  return Array.isArray(headerValue) ? headerValue[0] ?? null : headerValue;
 }
 
 /**
@@ -19,16 +37,16 @@ export function getTenantId(req: FastifyRequest): string {
   const user = (req as FastifyRequest & { user?: JwtUser }).user;
   if (user?.tenantId) return user.tenantId;
 
-  // Fallback: API gateway header for trusted proxy deployments
-  const tenantId = req.headers["x-tenant-id"];
+  const tenantId = getTrustedHeader(req, "x-tenant-id");
   if (!tenantId) {
     throw createHttpError(
       401,
       "UNAUTHORIZED",
-      "Missing tenant context: no JWT tenantId claim or x-tenant-id header",
+      "Missing tenant context: no JWT tenantId claim or trusted proxy tenant header",
     );
   }
-  return (Array.isArray(tenantId) ? tenantId[0] : tenantId) as string;
+
+  return tenantId;
 }
 
 /**
@@ -38,17 +56,18 @@ export function getUserId(req: FastifyRequest): string {
   const user = (req as FastifyRequest & { user?: JwtUser }).user;
   if (user?.sub) return user.sub;
   if (user?.userId) return user.userId;
+  if (user?.id) return user.id;
 
-  // Fallback: API gateway header for trusted proxy deployments
-  const userId = req.headers["x-user-id"];
+  const userId = getTrustedHeader(req, "x-user-id");
   if (!userId) {
     throw createHttpError(
       401,
       "UNAUTHORIZED",
-      "Missing user context: no JWT sub claim or x-user-id header",
+      "Missing user context: no JWT subject claim or trusted proxy user header",
     );
   }
-  return (Array.isArray(userId) ? userId[0] : userId) as string;
+
+  return userId;
 }
 
 /**
@@ -58,12 +77,12 @@ export function getUserRole(req: FastifyRequest): string | null {
   const user = (req as FastifyRequest & { user?: JwtUser }).user;
   if (user?.role) return user.role;
 
-  const userRole = req.headers["x-user-role"];
+  const userRole = getTrustedHeader(req, "x-user-role");
   if (!userRole) {
     return null;
   }
 
-  return (Array.isArray(userRole) ? userRole[0] : userRole) as string;
+  return userRole;
 }
 
 /**
@@ -95,7 +114,6 @@ export async function respondWithErrors<T>(
     const result = await fn();
     reply.send(result);
   } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const err = error as Record<string, unknown>;
     const statusCode =
       typeof err.statusCode === "number" ? err.statusCode : 500;
