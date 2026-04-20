@@ -2,9 +2,7 @@ You are a principal product architect, staff full-stack engineer, AI/ML-native s
 
 Your task is to perform a **deep, evidence-based, end-to-end, production-grade audit** of the following target scope:
 
-- **Product or products under audit:** [PRODUCT_NAME_OR_LIST]
-- **Optional product family / portfolio context:** [PORTFOLIO_OR_PLATFORM_CONTEXT]
-- **Optional key repositories / services / apps / environments:** [REPOS_SERVICES_ENVIRONMENTS]
+- **Product or products under audit:** [tutorputor, tutorputor-content-generation]
 
 Your job is to determine whether the specified product or set of products is truly:
 

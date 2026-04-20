@@ -391,17 +391,19 @@ public class HttpHandlerSupport {
     }
 
     /**
-     * Serialises an {@link ApiResponse} canonical envelope and returns it as a
-     * 200 OK HTTP response with CORS and Content-Type headers set.
+     * Serialises an {@link ApiResponse} canonical envelope and returns it as an
+     * HTTP response with appropriate status code: 200 for success, 400 for client errors.
+     * CORS and Content-Type headers are set.
      *
      * @param envelope  the response envelope to serialise
      * @param mapper    Jackson ObjectMapper
-     * @return 200 OK response with JSON body
+     * @return HTTP response with JSON body (200 for success, 400 for errors)
      */
     public HttpResponse envelopeResponse(ApiResponse envelope, ObjectMapper mapper) {
         try {
             String json = envelope.toJson(mapper);
-            return HttpResponse.ok200()
+            int statusCode = envelope.isSuccess() ? 200 : 400;
+            return HttpResponse.ofCode(statusCode)
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))

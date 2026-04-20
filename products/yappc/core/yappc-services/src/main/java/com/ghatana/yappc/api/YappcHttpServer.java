@@ -110,6 +110,27 @@ public class YappcHttpServer extends HttpServerLauncher {
 
     public static void main(String[] args) throws Exception {
         log.info("Starting YAPPC HTTP Server...");
+        
+        // Production startup guard: fail fast if task execution is enabled but no real CI/CD adapter is configured
+        boolean enableTaskExecution = Boolean.parseBoolean(System.getenv().getOrDefault("ENABLE_TASK_EXECUTION", "false"));
+        if (enableTaskExecution) {
+            String githubToken = System.getenv("GITHUB_TOKEN");
+            String githubRepo = System.getenv("GITHUB_REPO");
+            
+            if (githubToken == null || githubToken.isBlank() || githubRepo == null || githubRepo.isBlank()) {
+                log.error("PRODUCTION STARTUP GUARD FAILED: ENABLE_TASK_EXECUTION=true but no real CI/CD adapter is configured.");
+                log.error("Required environment variables:");
+                log.error("  - GITHUB_TOKEN: GitHub personal access token");
+                log.error("  - GITHUB_REPO: Repository in format 'owner/repo'");
+                log.error("Either configure a real CI/CD adapter or set ENABLE_TASK_EXECUTION=false");
+                System.exit(1);
+            }
+            
+            log.info("Production startup guard passed: ENABLE_TASK_EXECUTION=true with real CI/CD adapter configured");
+        } else {
+            log.info("Task execution disabled (ENABLE_TASK_EXECUTION=false) - using NoOpCiCdAdapter");
+        }
+        
         Launcher launcher = new YappcHttpServer();
         launcher.launch(args);
     }

@@ -14,19 +14,32 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Multi-tenant isolation integration tests for Data Cloud.
+ * Component tests for multi-tenant isolation logic.
  *
- * <p>Ensures that data written by one tenant is never visible to another tenant,
- * that tenant-scoped operations are independent, and that cross-tenant access
- * is correctly rejected.
+ * <p>Tests tenant scoping, access rejection, and concurrent write isolation using a
+ * custom in-memory MultiTenantDataStore. This verifies the isolation logic but does NOT
+ * exercise the real EntityStore or Data Cloud launcher security filter chain.
+ *
+ * <p>NOTE: This is a COMPONENT test, not an integration test. It uses a custom in-memory
+ * data store (MultiTenantDataStore) unrelated to the real EntityStore persistence stack.
+ * Real multi-tenant isolation integration tests should exercise the launcher's
+ * TenantContextFilter and EntityStore against a real database.
+ *
+ * <p>TODO: Add real integration tests that:
+ * <ul>
+ *   <li>Exercise the launcher TenantContextFilter with real HTTP requests</li>
+ *   <li>Test EntityStore tenant isolation against a real database (PostgreSQL/sovereign)</li>
+ *   <li>Verify cross-tenant access rejection at the HTTP handler level</li>
+ *   <li>Test concurrent multi-tenant operations against durable storage</li>
+ * </ul>
  *
  * @doc.type    class
- * @doc.purpose Multi-tenant isolation integration: data scoping, access rejection, concurrent writes
+ * @doc.purpose Component test for multi-tenant isolation logic (not real persistence integration)
  * @doc.layer   product
- * @doc.pattern IntegrationTest
+ * @doc.pattern ComponentTest
  */
-@DisplayName("Multi-Tenant Isolation Integration Tests")
-class MultiTenantIsolationTest extends EventloopTestBase {
+@DisplayName("Multi-Tenant Isolation Component Tests (In-Memory Store)")
+class MultiTenantIsolationComponentTest extends EventloopTestBase {
 
     private MultiTenantDataStore store;
 

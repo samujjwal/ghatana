@@ -1,17 +1,15 @@
 /**
  * Error state components for consistent error display.
  *
- * Designed for cross-product reuse. Copied from AEP with voice announcements.
+ * Designed for cross-product reuse.
  *
  * @doc.type component
- * @doc.purpose Display consistent error states for various error types with voice announcements
+ * @doc.purpose Display consistent error states for various error types
  * @doc.layer frontend
  */
 
 import React from 'react';
 import { AlertCircle, RefreshCw, XCircle, Lock, Clock, FileText } from 'lucide-react';
-import { useSpeechSynthesis } from '@audio-video/ui';
-import { useConsent } from '../privacy/ConsentManager';
 
 /**
  * ErrorBanner component props
@@ -28,10 +26,6 @@ interface ErrorBannerProps {
    * Optional: Show detailed error information
    */
   showDetails?: boolean;
-  /**
-   * Optional: Enable voice announcement
-   */
-  enableVoice?: boolean;
   className?: string;
 }
 
@@ -39,26 +33,16 @@ interface ErrorBannerProps {
  * ErrorBanner component
  *
  * Displays an error in a banner format with appropriate icon and styling
- * based on the error type. Includes retry and dismiss actions. Voice announcements
- * are enabled when consent is granted.
+ * based on the error type. Includes retry and dismiss actions.
  */
-export const ErrorBanner: React.FC<ErrorBannerProps> = ({
+export const ErrorBanner = ({
   error,
   onDismiss,
   onRetry,
   message,
   showDetails = false,
-  enableVoice = true,
   className = '',
-}) => {
-  const { speak } = useSpeechSynthesis();
-  const { consentGranted: voiceConsent } = useConsent('voice_processing');
-
-  React.useEffect(() => {
-    if (enableVoice && voiceConsent && error && message) {
-      speak(`Error: ${message}`);
-    }
-  }, [enableVoice, voiceConsent, error, message, speak]);
+}: ErrorBannerProps) => {
 
   if (!error) return null;
 
@@ -130,18 +114,13 @@ interface ErrorPageProps {
    * Optional: Show back to home button
    */
   showHomeButton?: boolean;
-  /**
-   * Optional: Enable voice announcement
-   */
-  enableVoice?: boolean;
 }
 
 /**
  * ErrorPage component
  *
  * Full-page error display for critical errors that prevent normal operation.
- * Provides clear messaging and recovery actions. Voice announcements are enabled
- * when consent is granted.
+ * Provides clear messaging and recovery actions.
  */
 export const ErrorPage: React.FC<ErrorPageProps> = ({
   error,
@@ -149,17 +128,7 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
   title,
   subtitle,
   showHomeButton = true,
-  enableVoice = true,
 }) => {
-  const { speak } = useSpeechSynthesis();
-  const { consentGranted: voiceConsent } = useConsent('voice_processing');
-
-  React.useEffect(() => {
-    if (enableVoice && voiceConsent && error) {
-      speak(`Error page: ${error.message}`);
-    }
-  }, [enableVoice, voiceConsent, error, speak]);
-
   if (!error) return null;
 
   const getErrorTitle = () => {
@@ -240,10 +209,6 @@ interface EmptyStateProps {
    * Optional: Action button
    */
   action?: React.ReactNode;
-  /**
-   * Optional: Enable voice announcement
-   */
-  enableVoice?: boolean;
   className?: string;
 }
 
@@ -251,24 +216,14 @@ interface EmptyStateProps {
  * EmptyState component
  *
  * Displays a consistent empty state when no data is available.
- * Voice announcements are enabled when consent is granted.
  */
-export const EmptyState: React.FC<EmptyStateProps> = ({
+export const EmptyState = ({
   icon,
   title,
   description,
   action,
-  enableVoice = true,
   className = '',
-}) => {
-  const { speak } = useSpeechSynthesis();
-  const { consentGranted: voiceConsent } = useConsent('voice_processing');
-
-  React.useEffect(() => {
-    if (enableVoice && voiceConsent) {
-      speak(`Empty state: ${title}`);
-    }
-  }, [enableVoice, voiceConsent, title, speak]);
+}: EmptyStateProps) => {
 
   const defaultIcon = (
     <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-3">

@@ -2,6 +2,8 @@ package com.ghatana.auth.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.auth.core.port.JwtTokenProvider;
+import com.ghatana.auth.service.AuthenticationService;
+import com.ghatana.platform.domain.auth.AuthResult;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.UserPrincipal;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -84,6 +86,7 @@ public class AuthHttpHandler {
     private static final Logger logger = LoggerFactory.getLogger(AuthHttpHandler.class);
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationService authenticationService;
     private final MetricsCollector metrics;
     private final ObjectMapper objectMapper;
 
@@ -91,12 +94,14 @@ public class AuthHttpHandler {
      * Creates AuthHttpHandler.
      *
      * @param jwtTokenProvider the JWT token provider
+     * @param authenticationService the authentication service for credential verification
      * @param metrics the metrics collector
      * @param objectMapper the JSON object mapper
      * @throws IllegalArgumentException if any parameter is null
      */
-    public AuthHttpHandler(JwtTokenProvider jwtTokenProvider, MetricsCollector metrics, ObjectMapper objectMapper) {
+    public AuthHttpHandler(JwtTokenProvider jwtTokenProvider, AuthenticationService authenticationService, MetricsCollector metrics, ObjectMapper objectMapper) {
         this.jwtTokenProvider = Objects.requireNonNull(jwtTokenProvider, "jwtTokenProvider cannot be null");
+        this.authenticationService = Objects.requireNonNull(authenticationService, "authenticationService cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
     }
@@ -135,7 +140,7 @@ public class AuthHttpHandler {
                     String password = (String) payload.get("password");
                     String tenantIdStr = (String) payload.getOrDefault("tenantId", "tenant-123");
 
-                    // Validate credentials (would call AuthenticationService in production)
+                    // Validate credentials format
                     if (email == null || email.isEmpty() || password == null || password.isEmpty()) {
                         metrics.incrementCounter("auth.login.failed", "reason", "INVALID_CREDENTIALS");
                         return Promise.of(createJsonResponse(400, Map.of(
@@ -146,40 +151,53 @@ public class AuthHttpHandler {
 
                     TenantId tenantId = TenantId.of(tenantIdStr);
 
-                    // Create principal for token generation
-                    UserPrincipal principal = UserPrincipal.builder()
-                            .userId(email)
-                            .email(email)
-                            .tenantId(tenantId)
-                            .roles(Set.of("USER"))
-                            .build();
+                    // Call authentication service for real credential verification
+                    return authenticationService.authenticate(tenantId, email, password)
+                            .then(authResult -> {
+                                if (authResult.isFailure()) {
+                                    metrics.incrementCounter("auth.login.failed", "reason", "AUTHENTICATION_FAILED");
+                                    logger.warn("Authentication failed for email: {}", email);
+                                    return Promise.of(createJsonResponse(401, Map.of(
+                                            "error", "UNAUTHORIZED",
+                                            "message", authResult.getErrorMessage()
+                                    )));
+                                }
 
-                    // Generate tokens
-                    return jwtTokenProvider.generateToken(tenantId, principal, Duration.ofHours(1))
-                            .map(token -> {
-                                metrics.incrementCounter("auth.login.success", "tenant", tenantId.value());
+                                // Authentication successful - create principal from AuthResult
+                                UserPrincipal principal = UserPrincipal.builder()
+                                        .userId(authResult.getSession().getUserId().value())
+                                        .email(email)
+                                        .tenantId(tenantId)
+                                        .roles(Set.of("USER"))
+                                        .build();
 
-                                Map<String, Object> response = new HashMap<>();
-                                response.put("accessToken", token);
-                                response.put("refreshToken", token);
-                                response.put("tokenType", "Bearer");
-                                response.put("expiresIn", 3600);
+                                // Generate JWT tokens
+                                return jwtTokenProvider.generateToken(tenantId, principal, Duration.ofHours(1))
+                                        .map(token -> {
+                                            metrics.incrementCounter("auth.login.success", "tenant", tenantId.value());
 
-                                Map<String, Object> user = new HashMap<>();
-                                user.put("userId", email);
-                                user.put("email", email);
-                                user.put("tenantId", tenantId.value());
-                                user.put("roles", new String[]{"USER"});
-                                response.put("user", user);
+                                            Map<String, Object> response = new HashMap<>();
+                                            response.put("accessToken", token);
+                                            response.put("refreshToken", token);
+                                            response.put("tokenType", "Bearer");
+                                            response.put("expiresIn", 3600);
 
-                                return createJsonResponse(200, response);
-                            }, err -> {
-                                metrics.incrementCounter("auth.login.failed", "reason", "TOKEN_ISSUE_FAILED");
-                                logger.error("Failed to generate token", err);
-                                return createJsonResponse(500, Map.of(
-                                        "error", "INTERNAL_ERROR",
-                                        "message", "Failed to generate token"
-                                ));
+                                            Map<String, Object> user = new HashMap<>();
+                                            user.put("userId", authResult.getSession().getUserId().value());
+                                            user.put("email", email);
+                                            user.put("tenantId", tenantId.value());
+                                            user.put("roles", new String[]{"USER"});
+                                            response.put("user", user);
+
+                                            return createJsonResponse(200, response);
+                                        }, err -> {
+                                            metrics.incrementCounter("auth.login.failed", "reason", "TOKEN_ISSUE_FAILED");
+                                            logger.error("Failed to generate token", err);
+                                            return createJsonResponse(500, Map.of(
+                                                    "error", "INTERNAL_ERROR",
+                                                    "message", "Failed to generate token"
+                                            ));
+                                        });
                             });
                 } catch (Exception e) {
                     logger.error("Failed to parse login request", e);

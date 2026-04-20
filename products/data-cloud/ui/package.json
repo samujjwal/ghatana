@@ -21,13 +21,11 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@audio-video/ui": "workspace:*",
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",
-    "@ghatana/wizard": "workspace:*",
     "@ghatana/wizard": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",

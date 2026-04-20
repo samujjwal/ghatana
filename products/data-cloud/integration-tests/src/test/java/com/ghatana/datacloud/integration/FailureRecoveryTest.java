@@ -1,8 +1,13 @@
 /**
  * @doc.type class
- * @doc.purpose Test failure recovery, retries, and fallback mechanisms
+ * @doc.purpose Component test for platform resilience primitives (circuit breaker, DLQ, retry)
  * @doc.layer products
- * @doc.pattern Test
+ * @doc.pattern ComponentTest
+ *
+ * NOTE: This is a COMPONENT test, not an integration test. It exercises platform resilience
+ * primitives in isolation but does NOT test Data Cloud runtime behavior against durable providers.
+ * Real failure recovery integration tests should exercise the launcher against real EntityStore,
+ * EventLogStore, and external service failures with proper backpressure and timeout semantics.
  */
 package com.ghatana.datacloud.integration;
 
@@ -16,12 +21,21 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Failure Recovery Tests
+ * Component tests for platform resilience primitives.
  *
- * Test failure recovery, retries, and fallback mechanisms.
+ * <p>Tests CircuitBreaker, DeadLetterQueue, and fallback mechanisms at the component level.
+ * These tests verify primitive behavior but do NOT exercise Data Cloud runtime integration
+ * with durable storage or external service failures.
+ *
+ * <p>TODO: Add real integration tests that:
+ * <ul>
+ *   <li>Exercise launcher HTTP handlers against real EntityStore/EventLogStore failures</li>
+ *   <li>Test backpressure and timeout behavior under real network/partition conditions</li>
+ *   <li>Verify retry and circuit breaker behavior at the HTTP handler level</li>
+ * </ul>
  */
-@DisplayName("Failure Recovery Tests")
-class FailureRecoveryTest {
+@DisplayName("Failure Recovery Component Tests (Platform Primitives)")
+class FailureRecoveryComponentTest {
 
     @Test
     @DisplayName("Should handle retry logic")

@@ -4,103 +4,71 @@
  */
 package com.ghatana.aep.server.http;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.platform.core.util.JsonUtils;
-import io.activej.http.*;
+import com.ghatana.platform.http.server.response.ErrorResponse;
+import com.ghatana.platform.http.server.response.ResponseBuilder;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Map;
 
 /**
  * Shared HTTP helper methods for AEP controllers.
  *
+ * <p>Delegates to platform ResponseBuilder and ErrorResponse for JSON response construction.
+ * Retains AEP-specific tenant resolution utilities.
+ *
  * @doc.type class
- * @doc.purpose Shared JSON response and tenant resolution utilities
+ * @doc.purpose Shared JSON response and tenant resolution utilities (delegates to platform HTTP)
  * @doc.layer product
  * @doc.pattern Utility
  */
 public final class HttpHelper {
 
-    private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
-
     private HttpHelper() {}
 
     /**
      * Creates a 200 JSON response from a Map payload.
+     * Delegates to platform ResponseBuilder.
      */
     public static HttpResponse jsonResponse(Map<String, Object> data) {
-        try {
-            String json = MAPPER.writeValueAsString(data);
-            return HttpResponse.ok200()
-                .withHeader(HttpHeaders.CONTENT_TYPE,
-                    HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
-                .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
-            } catch (JsonProcessingException e) {
-            return HttpResponse.ofCode(500)
-                .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
-                .build();
-        }
+        return ResponseBuilder.ok()
+            .json(data)
+            .build();
     }
 
     /**
      * Creates an error JSON response with the given HTTP status code.
+     * Delegates to platform ResponseBuilder and ErrorResponse.
      */
     public static HttpResponse errorResponse(int code, String message) {
-        try {
-            String safeMessage = message != null
-                ? message.replace("\\", "\\\\").replace("\"", "\\\"")
-                : "error";
-            String json = MAPPER.writeValueAsString(Map.of(
-                "error", safeMessage,
-                "code", code,
-                "timestamp", Instant.now().toString()
-            ));
-            return HttpResponse.ofCode(code)
-                .withHeader(HttpHeaders.CONTENT_TYPE,
-                    HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
-                .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
-        } catch (JsonProcessingException e) {
-            return HttpResponse.ofCode(code)
-                .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
-                .build();
-        }
+        return ResponseBuilder.status(code)
+            .json(ErrorResponse.of(code, message))
+            .build();
     }
 
     /**
      * Creates an error JSON response with additional payload fields.
+     * Delegates to platform ResponseBuilder and ErrorResponse.
      */
     public static HttpResponse errorResponse(int code, String message, Map<String, Object> fields) {
-        try {
-            java.util.LinkedHashMap<String, Object> payload = new java.util.LinkedHashMap<>();
-            payload.put("error", message);
-            payload.put("code", code);
-            payload.put("timestamp", Instant.now().toString());
-            if (fields != null) {
-                payload.putAll(fields);
-            }
-            String json = MAPPER.writeValueAsString(payload);
-            return HttpResponse.ofCode(code)
-                .withHeader(HttpHeaders.CONTENT_TYPE,
-                    HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
-                .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
-        } catch (JsonProcessingException e) {
-            return errorResponse(code, message);
+        ErrorResponse.Builder builder = ErrorResponse.builder()
+            .status(code)
+            .message(message);
+        
+        if (fields != null && !fields.isEmpty()) {
+            builder.detailsMap(fields);
         }
+        
+        return ResponseBuilder.status(code)
+            .json(builder.build())
+            .build();
     }
 
     /**
      * Resolves tenant ID from X-Tenant-Id header or tenantId query parameter.
      */
     public static String resolveTenantId(HttpRequest request) {
-        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+        String fromHeader = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"));
         if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
         String fromQuery = request.getQueryParameter("tenantId");
         return (fromQuery != null && !fromQuery.isBlank()) ? fromQuery : "default";
@@ -116,12 +84,5 @@ public final class HttpHelper {
             tenantId = v != null ? String.valueOf(v) : null;
         }
         return (tenantId == null || tenantId.isBlank()) ? "default" : tenantId;
-    }
-
-    /**
-     * Returns the shared ObjectMapper instance.
-     */
-    public static ObjectMapper mapper() {
-        return MAPPER;
     }
 }

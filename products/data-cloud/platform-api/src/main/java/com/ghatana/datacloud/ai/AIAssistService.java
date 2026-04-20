@@ -11,6 +11,62 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Time range for metrics queries.
+ *
+ * @doc.type enum
+ * @doc.purpose Define time windows for metric aggregation
+ * @doc.layer product
+ */
+public enum TimeRange {
+    LAST_HOUR,
+    LAST_DAY,
+    LAST_WEEK,
+    LAST_MONTH,
+    ALL_TIME
+}
+
+/**
+ * AI evaluation metrics for measuring pipeline quality.
+ *
+ * @doc.type record
+ * @doc.purpose Track AI evaluation quality metrics
+ * @doc.layer product
+ */
+public record AIEvaluationMetrics(
+    double accuracy,
+    double precision,
+    double recall,
+    double f1Score,
+    double latencyMs,
+    int totalEvaluations,
+    int successfulEvaluations,
+    Instant timestamp
+) {}
+
+/**
+ * AI evaluation result for regression tracking.
+ *
+ * @doc.type record
+ * @doc.purpose Record individual AI evaluation outcomes
+ * @doc.layer product
+ */
+public record AIEvaluationResult(
+    String evaluationId,
+    String tenantId,
+    String userId,
+    String modelVersion,
+    String taskType,
+    String input,
+    String output,
+    String expectedOutput,
+    boolean passed,
+    double confidence,
+    double latencyMs,
+    Instant timestamp,
+    Map<String, Object> metadata
+) {}
+
+/**
  * Service for AI assistance and query processing.
  *
  * @doc.type interface
@@ -97,6 +153,22 @@ public interface AIAssistService {
      * @return promise of status
      */
     Promise<ServiceStatus> getStatus();
+
+    /**
+     * Get AI evaluation metrics for measuring pipeline quality.
+     *
+     * @param timeRange time range for metrics
+     * @return promise of evaluation metrics
+     */
+    Promise<AIEvaluationMetrics> getEvaluationMetrics(TimeRange timeRange);
+
+    /**
+     * Record AI evaluation result for regression tracking.
+     *
+     * @param result evaluation result to record
+     * @return promise completing when recorded
+     */
+    Promise<Void> recordEvaluationResult(AIEvaluationResult result);
 
     /**
      * Query context.

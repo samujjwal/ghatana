@@ -6,15 +6,21 @@ import java.util.*;
 /**
  * Whisper-based speech-to-text transcription engine.
  *
- * <p>Implements Whisper model integration for multi-format audio transcription.
- * Supports PCM, WAV, MP3, FLAC, OGG, and AAC input formats.
- * Performs confidence scoring, language detection, and speaker diarization.
+ * <p><b>DEPRECATED - LLM_FALLBACK is the only supported STT mode</b><br>
+ * This class is not implemented. Use {@link com.ghatana.audio.video.multimodal.adapter.GrpcSttClientAdapter}
+ * with {@code SttMode.LLM_FALLBACK} for transcription via AI Inference Service.
+ *
+ * <p>The real Whisper ONNX/JNI integration is not yet available. All transcription
+ * requests should use the LLM fallback mode which provides transcription through
+ * the Ghatana AI Inference Service.
  *
  * @doc.type    class
- * @doc.purpose Whisper STT engine: multi-format audio transcription with confidence scoring
+ * @doc.purpose Whisper STT engine (DEPRECATED - use LLM_FALLBACK mode instead)
  * @doc.layer   product
  * @doc.pattern Engine
+ * @deprecated Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public class WhisperTranscriptionEngine {
 
     /** Supported audio input formats. */
@@ -51,21 +57,15 @@ public class WhisperTranscriptionEngine {
      * @param format     input audio format
      * @param language   BCP-47 language hint (null = auto-detect)
      * @return transcription result
-     * @throws TranscriptionException if audio data cannot be decoded or transcribed
+     * @throws UnsupportedOperationException always - this engine is not implemented
+     * @deprecated Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription
      */
+    @Deprecated
     public TranscriptionResult transcribe(byte[] audioData, AudioFormat format, String language) {
-        validate(audioData, format);
-        long start = System.nanoTime();
-
-        String decoded = decode(audioData, format);
-        String detectedLanguage = language != null ? language : detectLanguage(decoded);
-        double confidence = computeConfidence(decoded);
-        List<SpeakerSegment> segments = diarizationEnabled
-                ? diarize(decoded, detectedLanguage)
-                : List.of();
-
-        Duration elapsed = Duration.ofNanos(System.nanoTime() - start);
-        return new TranscriptionResult(decoded, confidence, detectedLanguage, segments, format, elapsed);
+        throw new UnsupportedOperationException(
+                "WhisperTranscriptionEngine is not implemented. " +
+                "Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription via AI Inference Service. " +
+                "See: https://ghatana.dev/docs/audio-video/stt#supported-modes");
     }
 
     /**

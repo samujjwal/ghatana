@@ -13,6 +13,7 @@ dependencies {
     api(libs.bundles.logging.core)
     compileOnly(libs.bundles.dev.tools)
     testCompileOnly(libs.bundles.dev.tools)
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.bundles.testing.core)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.jmh.core)

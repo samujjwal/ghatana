@@ -3,7 +3,7 @@ package com.ghatana.phr.hie;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.phr.api.FhirApiResponse;
+import com.ghatana.phr.api.PhrApiResponse;
 import com.ghatana.phr.fhir.server.FhirBundleSupport;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import io.activej.promise.Promise;
@@ -90,10 +90,10 @@ public class NepalHieIntegrationService implements KernelLifecycleAware {
     private Promise<NepalHieSyncResult> submitBuiltSummary(
         String patientId,
         String correlationId,
-        FhirApiResponse patientResponse,
-        FhirApiResponse observationResponse,
-        FhirApiResponse medicationResponse,
-        FhirApiResponse immunizationResponse
+        PhrApiResponse patientResponse,
+        PhrApiResponse observationResponse,
+        PhrApiResponse medicationResponse,
+        PhrApiResponse immunizationResponse
     ) {
         String bundle = buildPatientSummaryBundle(patientResponse, observationResponse, medicationResponse, immunizationResponse);
         String hl7Message = messageBuilder.buildPatientSummaryMessage(patientId, correlationId, bundle, config);
@@ -109,10 +109,10 @@ public class NepalHieIntegrationService implements KernelLifecycleAware {
     }
 
     private String buildPatientSummaryBundle(
-        FhirApiResponse patientResponse,
-        FhirApiResponse observationResponse,
-        FhirApiResponse medicationResponse,
-        FhirApiResponse immunizationResponse
+        PhrApiResponse patientResponse,
+        PhrApiResponse observationResponse,
+        PhrApiResponse medicationResponse,
+        PhrApiResponse immunizationResponse
     ) {
         try {
             List<String> payloads = new ArrayList<>();

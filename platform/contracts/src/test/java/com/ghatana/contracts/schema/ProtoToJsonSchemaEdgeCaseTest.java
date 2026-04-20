@@ -41,7 +41,9 @@ class ProtoToJsonSchemaEdgeCaseTest extends BaseProtoTest {
         this.generator = new ProtoToJsonSchemaGenerator();
 
         // Create an empty descriptor set for testing
-        FileDescriptorSet.newBuilder().build().writeTo(new FileOutputStream(descriptorFile));
+        try (FileOutputStream out = new FileOutputStream(descriptorFile)) {
+            FileDescriptorSet.newBuilder().build().writeTo(out);
+        }
     }
 
     @Test

@@ -19,6 +19,11 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
 
+    // Testcontainers for real provider integration tests
+    testImplementation("org.testcontainers:testcontainers:1.19.3")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
+    testImplementation("org.testcontainers:postgresql:1.19.3")
+
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

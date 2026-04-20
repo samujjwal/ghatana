@@ -21,7 +21,7 @@ class NepalHieControllerTest extends EventloopTestBase {
         };
         NepalHieController controller = new NepalHieController(service);
 
-        NepalHieApiResponse response = runPromise(() -> controller.submitPatientSummary("patient-1", "corr-4"));
+        PhrApiResponse response = runPromise(() -> controller.submitPatientSummary("patient-1", "corr-4"));
 
         assertEquals(202, response.statusCode());
         assertTrue(response.body().contains("\"acknowledgementCode\":\"AA\""));

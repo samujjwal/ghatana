@@ -45,7 +45,9 @@ class ProtoToJsonSchemaGeneratorTest extends BaseProtoTest {
         this.descriptorFile = tempDir.resolve("test.desc").toFile();
 
         // Create an empty descriptor set for testing
-        FileDescriptorSet.newBuilder().build().writeTo(new FileOutputStream(descriptorFile));
+        try (FileOutputStream out = new FileOutputStream(descriptorFile)) {
+            FileDescriptorSet.newBuilder().build().writeTo(out);
+        }
 
         this.generator = new ProtoToJsonSchemaGenerator();
     }
@@ -82,16 +84,14 @@ class ProtoToJsonSchemaGeneratorTest extends BaseProtoTest {
 
         // Then
         assertThat(nonExistentDir).as("Output directory should be created").exists().isDirectory();
-
-        // Clean up
-        nonExistentDir.delete();
+        // Note: Cleanup handled by @TempDir
     }
 
     @Test
     @DisplayName("should throw exception when descriptor file doesn't exist")
     void shouldThrowExceptionWhenDescriptorFileMissing() {
         // Given
-        File nonExistentFile = new File("nonexistent.desc");
+        File nonExistentFile = new File(outputDir, "nonexistent.desc");
 
         // When/Then
         assertThatThrownBy(
@@ -99,7 +99,8 @@ class ProtoToJsonSchemaGeneratorTest extends BaseProtoTest {
                                 generator.run(
                                         ProtoToJsonSchemaGenerator.Config.parse(
                                                 new String[] {
-                                                    "--descriptorSet=nonexistent.desc",
+                                                    "--descriptorSet="
+                                                            + nonExistentFile.getAbsolutePath(),
                                                     "--outDir=" + outputDir.getAbsolutePath(),
                                                     "--messages=",
                                                     "--bundleName=bundle.schema.json"

@@ -147,14 +147,14 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                minimum = "0.20".toBigDecimal()  // P0.3.1: raised from 0.00; raise to 0.50 in Phase 2
+                minimum = "0.50".toBigDecimal()  // P1-3: raised from 0.20 to 0.50
             }
         }
         rule {
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.10".toBigDecimal()  // P0.3.1: raised from 0.00
+                minimum = "0.30".toBigDecimal()  // P1-3: raised from 0.10 to 0.30
             }
         }
     }

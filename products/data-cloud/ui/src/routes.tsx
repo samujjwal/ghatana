@@ -48,6 +48,9 @@ const SqlWorkspacePage = React.lazy(() =>
 const TrustCenter = React.lazy(() =>
   import('./pages/TrustCenter').then((m) => ({ default: m.TrustCenter }))
 );
+const OperationsConsole = React.lazy(() =>
+  import('./pages/OperationsConsolePage').then((m) => ({ default: m.OperationsConsolePage }))
+);
 const InsightsPage = React.lazy(() =>
   import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage }))
 );
@@ -275,6 +278,12 @@ export const routes: RouteObject[] = [
       {
         path: 'alerts',
         element: withSuspense(AlertsPage),
+      },
+
+      // Operations Console - Operator-facing diagnostics and tools
+      {
+        path: 'operations',
+        element: withSuspense(OperationsConsole),
       },
 
       // AEP Integration Pages

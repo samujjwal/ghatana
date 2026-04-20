@@ -101,11 +101,9 @@ export * from "./organisms/DynamicForm";
 export * from "./organisms/ActivityFeed";
 export { DataGrid } from "./organisms/DataGrid";
 
-// Re-export low-level DataGrid from platform data-grid for simple table use cases
-// The design-system DataGrid is feature-rich with stats, CRUD, and multiple display modes
-// Use the re-exported DataGridCore for simple accessible tables
-export { DataGrid as DataGridCore } from "@ghatana/data-grid";
-export type { DataGridProps as DataGridCoreProps } from "@ghatana/data-grid";
+// NOTE: @ghatana/data-grid has been removed from design-system dependencies to break a circular dependency.
+// If you need the core data-grid, import it directly: import { DataGrid } from '@ghatana/data-grid'
+// The design-system DataGrid component provides feature-rich table functionality with stats, CRUD, and multiple display modes.
 export * from "./organisms/StatsDashboard";
 export * from "./organisms/AppListContainer";
 

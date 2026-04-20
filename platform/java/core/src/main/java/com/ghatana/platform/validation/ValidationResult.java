@@ -12,13 +12,18 @@ import java.util.List;
 /**
  * Immutable result of a validation operation.
  *
+ * <p><b>DEPRECATED</b> - Use {@link com.ghatana.platform.core.validation.ValidationResult} instead.
+ * This class is deprecated and will be removed in a future release.
+ *
  * <p>Encapsulates the outcome of validation with support for multiple errors.
  *
  * @doc.type class
- * @doc.purpose Aggregated result of one or more validation checks
+ * @doc.purpose Aggregated result of one or more validation checks (DEPRECATED)
  * @doc.layer platform
  * @doc.pattern ValueObject
+ * @deprecated Use {@link com.ghatana.platform.core.validation.ValidationResult} instead
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public class ValidationResult {
     private final boolean valid;
     private final List<ValidationError> errors;

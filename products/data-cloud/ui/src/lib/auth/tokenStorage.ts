@@ -29,10 +29,12 @@
 
 const TOKEN_KEY = 'auth_token';
 const EXPIRY_KEY = 'auth_token_expiry';
+const REFRESH_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes before expiry
 
 /** In-memory cache — cleared when the page is refreshed. */
 let memoryToken: string | null = null;
 let memoryExpiry: number | null = null;
+let refreshCallback: ((token: string) => Promise<string>) | null = null;
 
 /**
  * TokenStorage provides a layered, security-conscious store for auth tokens.
@@ -120,6 +122,46 @@ export const TokenStorage = {
     if (!memoryExpiry) return null;
     const remaining = memoryExpiry - Date.now();
     return remaining > 0 ? remaining : null;
+  },
+
+  /**
+   * Register a callback for token refresh. The callback should return a new token.
+   * This is called when the token is near expiry (within REFRESH_THRESHOLD_MS).
+   */
+  setRefreshCallback(callback: (token: string) => Promise<string>): void {
+    refreshCallback = callback;
+  },
+
+  /**
+   * Check if token needs refresh and trigger refresh if callback is registered.
+   * Returns true if refresh was triggered, false otherwise.
+   */
+  async checkAndRefresh(): Promise<boolean> {
+    const remaining = this.expiresIn();
+    if (!remaining || remaining > REFRESH_THRESHOLD_MS || !refreshCallback) {
+      return false;
+    }
+
+    const currentToken = this.get();
+    if (!currentToken) return false;
+
+    try {
+      const newToken = await refreshCallback(currentToken);
+      this.set(newToken);
+      return true;
+    } catch (error) {
+      console.error('[TokenStorage] Token refresh failed:', error);
+      this.clear();
+      return false;
+    }
+  },
+
+  /**
+   * Returns true if the token will expire within the threshold and needs refresh.
+   */
+  needsRefresh(): boolean {
+    const remaining = this.expiresIn();
+    return remaining !== null && remaining <= REFRESH_THRESHOLD_MS;
   },
 };
 

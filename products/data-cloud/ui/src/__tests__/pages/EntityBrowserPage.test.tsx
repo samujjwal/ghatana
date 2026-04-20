@@ -27,18 +27,6 @@ vi.mock('../../lib/api/user-activity', () => ({
   logActivity: vi.fn(),
 }));
 
-vi.mock('@audio-video/ui', () => ({
-  useSpeechSynthesis: vi.fn(() => ({
-    speak: vi.fn(),
-  })),
-}));
-
-vi.mock('../../components/privacy/ConsentManager', () => ({
-  useConsent: vi.fn(() => ({
-    consentGranted: true,
-  })),
-}));
-
 vi.mock('../../components/security/RBACGuard', () => ({
   RBACGuard: ({ children, fallback }: { children?: React.ReactNode; fallback?: React.ReactNode }) => <>{children ?? fallback}</>,
 }));

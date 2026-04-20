@@ -162,6 +162,56 @@ export function deriveQueryPlanGuardrails(
   return guardrails;
 }
 
+export interface QueryRewriteSuggestion {
+  original: string;
+  rewritten: string;
+  reason: string;
+  severity: 'suggestion' | 'safety' | 'performance';
+}
+
+export function suggestQueryRewrites(
+  sql: string,
+  inferredScope: InferredQueryScope,
+): QueryRewriteSuggestion[] {
+  const suggestions: QueryRewriteSuggestion[] = [];
+  const normalized = sql.trim();
+
+  // Suggest LIMIT for unbounded SELECT *
+  if (/\bselect\s+\*/i.test(normalized) && !/\blimit\b/i.test(normalized)) {
+    const rewritten = normalized.replace(/(\bselect\s+\*\s+from)/i, '$1') + ' LIMIT 1000';
+    suggestions.push({
+      original: normalized,
+      rewritten,
+      reason: 'Added LIMIT 1000 to prevent wide scans and reduce cost.',
+      severity: 'safety',
+    });
+  }
+
+  // Suggest time window if inferred and not present
+  if (inferredScope.timeWindow && !/\bwhere\b/i.test(normalized)) {
+    const timeClause = `WHERE timestamp >= NOW() - INTERVAL '${inferredScope.timeWindow}'`;
+    const rewritten = normalized.replace(/(\bfrom\s+\w+)/i, `$1 ${timeClause}`);
+    suggestions.push({
+      original: normalized,
+      rewritten,
+      reason: `Added time window filter based on inferred intent: ${inferredScope.timeWindow}.`,
+      severity: 'suggestion',
+    });
+  }
+
+  // Suggest column list instead of SELECT *
+  if (/\bselect\s+\*/i.test(normalized)) {
+    suggestions.push({
+      original: normalized,
+      rewritten: normalized.replace(/\bselect\s+\*/i, 'SELECT <specific_columns>'),
+      reason: 'Replace SELECT * with specific columns to reduce data transfer and improve query performance.',
+      severity: 'performance',
+    });
+  }
+
+  return suggestions;
+}
+
 function extractCollectionHints(
   collections: SchemaItem[],
   recentActivity: UserActivityItem[],
@@ -235,6 +285,17 @@ export function inferAnalyticsScope(
     };
   }
 
+  if (collections.length === 1) {
+    return {
+      collectionName: collections[0].name,
+      timeWindow: inferTimeWindow(intent),
+      confidence: 'medium',
+      ambiguous: false,
+      reason: `Only one collection is available in this workspace (${collections[0].name}).`,
+      candidates: [collections[0].name],
+    };
+  }
+
   const recentHints = extractCollectionHints(collections, recentActivity, continueWorking);
   if (recentHints.length > 0) {
     return {
@@ -246,17 +307,6 @@ export function inferAnalyticsScope(
         ? `Using your recent collection context (${recentHints[0]}).`
         : `Recent activity points to several collections (${recentHints.join(', ')}).`,
       candidates: recentHints,
-    };
-  }
-
-  if (collections.length === 1) {
-    return {
-      collectionName: collections[0].name,
-      timeWindow: inferTimeWindow(intent),
-      confidence: 'medium',
-      ambiguous: false,
-      reason: `Only one collection is available in this workspace (${collections[0].name}).`,
-      candidates: [collections[0].name],
     };
   }
 

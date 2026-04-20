@@ -3,10 +3,16 @@ package com.ghatana.securitygateway.launcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.auth.adapter.memory.InMemorySessionStore;
+import com.ghatana.auth.adapter.memory.InMemoryTokenStore;
+import com.ghatana.auth.adapter.memory.InMemoryUserRepository;
 import com.ghatana.auth.http.AuthHttpHandler;
+import com.ghatana.auth.service.AuthenticationService;
+import com.ghatana.auth.service.impl.AuthenticationServiceImpl;
 import com.ghatana.auth.service.impl.JwtTokenProviderImpl;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.platform.security.crypto.PasswordHasher;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpServer;
@@ -35,11 +41,29 @@ public final class SecurityGatewayLauncher {
     public static void main(String[] args) throws Exception {
         SecurityGatewayLauncherConfig config = SecurityGatewayLauncherConfig.from(args);
         MetricsCollector metrics = new NoopMetricsCollector();
+        
+        // Create in-memory implementations for authentication
+        InMemoryUserRepository userRepository = new InMemoryUserRepository();
+        InMemorySessionStore sessionStore = new InMemorySessionStore();
+        InMemoryTokenStore tokenStore = new InMemoryTokenStore();
+        PasswordHasher passwordHasher = new PasswordHasher();
+        
+        // Create authentication service with real credential verification
+        AuthenticationService authenticationService = new AuthenticationServiceImpl(
+                userRepository,
+                sessionStore,
+                tokenStore,
+                passwordHasher,
+                metrics
+        );
+        
         JwtTokenProviderImpl tokenProvider = new JwtTokenProviderImpl(metrics);
         ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .registerModule(new Jdk8Module());
-        AuthHttpHandler authHttpHandler = new AuthHttpHandler(tokenProvider, metrics, objectMapper);
+        
+        // Wire authentication service into HTTP handler
+        AuthHttpHandler authHttpHandler = new AuthHttpHandler(tokenProvider, authenticationService, metrics, objectMapper);
 
         Eventloop eventloop = Eventloop.create();
         RoutingServlet servlet = RoutingServlet.builder(eventloop)

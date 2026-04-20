@@ -17,8 +17,6 @@ import { apiClient } from '../lib/api/client';
 import { collectionsApi } from '../lib/api/collections';
 import { useSelection } from '../hooks/useSelection';
 import { logActivity } from '../lib/api/user-activity';
-import { useSpeechSynthesis } from '@audio-video/ui';
-import { useConsent } from '../components/privacy/ConsentManager';
 import { RBACGuard } from '../components/security/RBACGuard';
 import { Check, Mic, Trash2 } from 'lucide-react';
 
@@ -462,8 +460,6 @@ export function EntityBrowserPage(): React.ReactElement {
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [aiDismissed, setAiDismissed] = useState(false);
-  const { speak } = useSpeechSynthesis();
-  const { consentGranted: voiceConsent } = useConsent('voice_processing');
 
   const { data: namespaces = [], isLoading: nsLoading } = useQuery({
     queryKey: ['dc', 'entities', 'namespaces'],
@@ -527,11 +523,6 @@ export function EntityBrowserPage(): React.ReactElement {
     onSuccess: (_, { ids }) => {
       qc.invalidateQueries({ queryKey: ['dc', 'entities', namespace] });
       clearSelection();
-      
-      // TTS feedback for bulk delete
-      if (voiceConsent) {
-        speak(`Deleted ${ids.length} entities`);
-      }
     },
   });
 

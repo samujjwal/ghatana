@@ -4071,6 +4071,8 @@ paths:
       responses:
         "200":
           { description: Classification result with retention days and expiry }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/retention/policy:
     get:
@@ -4085,6 +4087,9 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Retention policy details }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/retention/purge:
     post:
@@ -4101,6 +4106,8 @@ paths:
               $ref: "#/components/schemas/RetentionPurgeRequest"
       responses:
         "200": { description: Purge scheduled or dry-run estimation }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/privacy/redact:
     post:
@@ -4117,6 +4124,8 @@ paths:
               $ref: "#/components/schemas/PrivacyRedactionRequest"
       responses:
         "200": { description: Redaction result with list of redacted fields }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/privacy/verify:
     get:
@@ -4132,6 +4141,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/privacy/pii-fields:
     get:
@@ -4142,6 +4153,8 @@ paths:
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
         "200": { description: Global and tenant-specific PII field registry }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   /api/v1/governance/compliance/summary:
     get:
@@ -4152,6 +4165,8 @@ paths:
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
         "200": { description: Compliance dashboard summary }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
 
   # ── Runtime capability registry and autonomy ─────────────────────────────
 

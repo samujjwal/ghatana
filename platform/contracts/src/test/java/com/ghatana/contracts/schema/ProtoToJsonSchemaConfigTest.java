@@ -39,8 +39,8 @@ class ProtoToJsonSchemaConfigTest {
         ProtoToJsonSchemaGenerator.Config config = ProtoToJsonSchemaGenerator.Config.parse(args);
 
         // Then
-        assertThat(config.descriptorSet().toString()).isEqualTo("path/to/descriptor.desc");
-        assertThat(config.outDir().toString()).isEqualTo("output/dir");
+        assertThat(config.descriptorSet()).isEqualTo(Path.of("path/to/descriptor.desc"));
+        assertThat(config.outDir()).isEqualTo(Path.of("output/dir"));
         assertThat(config.messages())
                 .containsExactlyInAnyOrder("com.example.Message1", "com.example.Message2");
         assertThat(config.bundleName()).isEqualTo("custom.bundle.json");
@@ -56,8 +56,8 @@ class ProtoToJsonSchemaConfigTest {
         ProtoToJsonSchemaGenerator.Config config = ProtoToJsonSchemaGenerator.Config.parse(args);
 
         // Then
-        assertThat(config.descriptorSet().toString()).isEqualTo("path/to/descriptor.desc");
-        assertThat(config.outDir().toString()).isEqualTo("output/dir");
+        assertThat(config.descriptorSet()).isEqualTo(Path.of("path/to/descriptor.desc"));
+        assertThat(config.outDir()).isEqualTo(Path.of("output/dir"));
         assertThat(config.messages()).isEmpty();
         assertThat(config.bundleName()).isEqualTo("bundle.schema.json");
     }

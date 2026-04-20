@@ -191,7 +191,7 @@ class DataCloudHttpServerGovernanceTest {
             String body = mapper.writeValueAsString(Map.of("tier", "standard"));
             HttpResponse<String> resp = post("/api/v1/governance/retention/classify", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(400);
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("error");
             Map<String, Object> error = (Map<String, Object>) respBody.get("error");
@@ -212,7 +212,7 @@ class DataCloudHttpServerGovernanceTest {
             ));
             HttpResponse<String> resp = post("/api/v1/governance/retention/classify", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(400);
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("error");
             Map<String, Object> error = (Map<String, Object>) respBody.get("error");
@@ -285,7 +285,7 @@ class DataCloudHttpServerGovernanceTest {
 
             HttpResponse<String> resp = get("/api/v1/governance/retention/policy");
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(400);
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("error");
         }
@@ -445,7 +445,7 @@ class DataCloudHttpServerGovernanceTest {
             String body = mapper.writeValueAsString(Map.of("collection", "old_events"));
             HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(400);
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("error");
             Map<String, Object> error = (Map<String, Object>) respBody.get("error");
@@ -564,7 +564,7 @@ class DataCloudHttpServerGovernanceTest {
             String body = mapper.writeValueAsString(Map.of("collection", "user_profiles"));
             HttpResponse<String> resp = post("/api/v1/governance/privacy/redact", body);
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(400);
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("error");
             Map<String, Object> error = (Map<String, Object>) respBody.get("error");

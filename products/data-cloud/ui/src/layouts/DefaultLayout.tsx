@@ -66,6 +66,12 @@ interface NavItem {
 /**
  * Navigation sections for Data Cloud
  * Simplified structure - reduced from 14 to 8 items (Phase 3)
+ *
+ * NOTE: Settings is demoted from navigation and only accessible via direct link (/settings)
+ * because it's a boundary shell with no writable backed features. See unsupportedSurfaceRegistry.
+ *
+ * P2-1: Collapsed operator-only surfaces (Events, Alerts) into Insights section.
+ * These remain accessible via direct link and are consolidated under Intelligence for operators.
  */
 const navSections: NavSection[] = [
     {
@@ -82,13 +88,8 @@ const navSections: NavSection[] = [
         items: [
             { to: '/insights', label: 'Insights', icon: <Brain className="h-4 w-4" />, minimumShellRole: 'operator' },
             { to: '/trust', label: 'Trust', icon: <Shield className="h-4 w-4" />, minimumShellRole: 'operator' },
-        ],
-    },
-    {
-        title: 'System',
-        items: [
             { to: '/events', label: 'Events', icon: <Activity className="h-4 w-4" />, minimumShellRole: 'operator' },
-            { to: '/settings', label: 'Settings', icon: <Settings className="h-4 w-4" />, minimumShellRole: 'admin' },
+            { to: '/alerts', label: 'Alerts', icon: <Bell className="h-4 w-4" />, minimumShellRole: 'operator' },
         ],
     },
 ];

@@ -3,8 +3,17 @@ package com.ghatana.auth.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.auth.core.port.JwtTokenProvider;
 import com.ghatana.auth.core.port.JwtClaims;
+import com.ghatana.auth.service.AuthenticationService;
+import com.ghatana.platform.domain.auth.AuthResult;
+import com.ghatana.platform.domain.auth.Session;
+import com.ghatana.platform.domain.auth.Token;
 import com.ghatana.platform.domain.auth.UserPrincipal;
 import com.ghatana.platform.domain.auth.TenantId;
+import com.ghatana.platform.domain.auth.UserId;
+import com.ghatana.platform.domain.auth.SessionId;
+import com.ghatana.platform.domain.auth.TokenId;
+import com.ghatana.platform.domain.auth.TokenType;
+import com.ghatana.platform.domain.auth.ClientId;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -43,6 +52,7 @@ class AuthHttpHandlerTest extends EventloopTestBase {
 
     private AuthHttpHandler handler;
     private JwtTokenProvider jwtTokenProvider;
+    private AuthenticationService authenticationService;
     private MetricsCollector metrics;
     private ObjectMapper objectMapper;
 
@@ -54,14 +64,42 @@ class AuthHttpHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         jwtTokenProvider = mock(JwtTokenProvider.class);
+        authenticationService = mock(AuthenticationService.class);
         metrics = new NoopMetricsCollector();
         objectMapper = new ObjectMapper();
-        handler = new AuthHttpHandler(jwtTokenProvider, metrics, objectMapper);
+        handler = new AuthHttpHandler(jwtTokenProvider, authenticationService, metrics, objectMapper);
     }
 
     @Test
     @DisplayName("Should generate tokens when login is successful")
         void shouldGenerateTokensWhenLoginSuccessful() throws Exception {
+        // Mock successful authentication
+        Instant now = Instant.now();
+        Session session = Session.builder()
+                .tenantId(TenantId.of(TEST_TENANT_ID))
+                .sessionId(SessionId.of(UUID.randomUUID().toString()))
+                .userId(UserId.of(TEST_USER_ID))
+                .createdAt(now)
+                .expiresAt(now.plus(Duration.ofHours(8)))
+                .lastAccessedAt(now)
+                .ipAddress("127.0.0.1")
+                .userAgent("test")
+                .valid(true)
+                .build();
+        Token token = Token.builder()
+                .tenantId(TenantId.of(TEST_TENANT_ID))
+                .tokenId(TokenId.random())
+                .tokenType(TokenType.ACCESS_TOKEN)
+                .userId(UserId.of(TEST_USER_ID))
+                .clientId(ClientId.of("default"))
+                .issuedAt(now)
+                .expiresAt(now.plus(Duration.ofHours(1)))
+                .tokenValue(UUID.randomUUID().toString())
+                .build();
+        AuthResult authResult = AuthResult.success(session, token);
+
+        when(authenticationService.authenticate(any(TenantId.class), anyString(), anyString()))
+                .thenReturn(Promise.of(authResult));
         when(jwtTokenProvider.generateToken(any(TenantId.class), any(UserPrincipal.class), any(Duration.class)))
                 .thenReturn(Promise.of(TEST_TOKEN));
 
@@ -84,6 +122,8 @@ class AuthHttpHandlerTest extends EventloopTestBase {
         assertThat(payload.get("expiresIn").asInt()).isEqualTo(3600);
         assertThat(payload.get("user").get("email").asText()).isEqualTo(TEST_EMAIL);
 
+        verify(authenticationService, times(1))
+                .authenticate(any(TenantId.class), eq(TEST_EMAIL), eq("password123"));
         verify(jwtTokenProvider, times(1))
                 .generateToken(any(TenantId.class), any(UserPrincipal.class), any(Duration.class));
     }
@@ -91,7 +131,34 @@ class AuthHttpHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("Should default tenant when login payload omits tenantId")
         void shouldDefaultTenantWhenLoginPayloadOmitsTenantId() throws Exception {
-        when(jwtTokenProvider.generateToken(any(TenantId.class), any(UserPrincipal.class), any(Duration.class)))
+        // Mock successful authentication
+        Instant now = Instant.now();
+        Session session = Session.builder()
+                .tenantId(TenantId.of("tenant-123"))
+                .sessionId(SessionId.of(UUID.randomUUID().toString()))
+                .userId(UserId.of(TEST_USER_ID))
+                .createdAt(now)
+                .expiresAt(now.plus(Duration.ofHours(8)))
+                .lastAccessedAt(now)
+                .ipAddress("127.0.0.1")
+                .userAgent("test")
+                .valid(true)
+                .build();
+        Token token = Token.builder()
+                .tenantId(TenantId.of("tenant-123"))
+                .tokenId(TokenId.random())
+                .tokenType(TokenType.ACCESS_TOKEN)
+                .userId(UserId.of(TEST_USER_ID))
+                .clientId(ClientId.of("default"))
+                .issuedAt(now)
+                .expiresAt(now.plus(Duration.ofHours(1)))
+                .tokenValue(UUID.randomUUID().toString())
+                .build();
+        AuthResult authResult = AuthResult.success(session, token);
+
+        when(authenticationService.authenticate(eq(TenantId.of("tenant-123")), anyString(), anyString()))
+                .thenReturn(Promise.of(authResult));
+        when(jwtTokenProvider.generateToken(eq(TenantId.of("tenant-123")), any(UserPrincipal.class), any(Duration.class)))
                 .thenReturn(Promise.of(TEST_TOKEN));
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/login")
@@ -104,12 +171,40 @@ class AuthHttpHandlerTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> handler.handleLogin(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        verify(authenticationService).authenticate(eq(TenantId.of("tenant-123")), eq(TEST_EMAIL), eq("password123"));
         verify(jwtTokenProvider).generateToken(eq(TenantId.of("tenant-123")), any(UserPrincipal.class), any(Duration.class));
     }
 
     @Test
     @DisplayName("Should return 500 when token generation fails")
         void shouldReturn500WhenTokenGenerationFails() throws Exception {
+        // Mock successful authentication
+        Instant now = Instant.now();
+        Session session = Session.builder()
+                .tenantId(TenantId.of(TEST_TENANT_ID))
+                .sessionId(SessionId.of(UUID.randomUUID().toString()))
+                .userId(UserId.of(TEST_USER_ID))
+                .createdAt(now)
+                .expiresAt(now.plus(Duration.ofHours(8)))
+                .lastAccessedAt(now)
+                .ipAddress("127.0.0.1")
+                .userAgent("test")
+                .valid(true)
+                .build();
+        Token token = Token.builder()
+                .tenantId(TenantId.of(TEST_TENANT_ID))
+                .tokenId(TokenId.random())
+                .tokenType(TokenType.ACCESS_TOKEN)
+                .userId(UserId.of(TEST_USER_ID))
+                .clientId(ClientId.of("default"))
+                .issuedAt(now)
+                .expiresAt(now.plus(Duration.ofHours(1)))
+                .tokenValue(UUID.randomUUID().toString())
+                .build();
+        AuthResult authResult = AuthResult.success(session, token);
+
+        when(authenticationService.authenticate(any(TenantId.class), anyString(), anyString()))
+                .thenReturn(Promise.of(authResult));
         when(jwtTokenProvider.generateToken(any(TenantId.class), any(UserPrincipal.class), any(Duration.class)))
                 .thenReturn(Promise.ofException(new RuntimeException("Token generation failed")));
 
@@ -575,23 +670,56 @@ class AuthHttpHandlerTest extends EventloopTestBase {
         }
 
     @Test
+    @DisplayName("Should reject login when authentication fails with invalid credentials")
+        void shouldRejectLoginWhenAuthenticationFailsWithInvalidCredentials() throws Exception {
+        when(authenticationService.authenticate(any(TenantId.class), anyString(), anyString()))
+                .thenReturn(Promise.of(AuthResult.failure("Invalid email or password")));
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/login")
+                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                        "email", TEST_EMAIL,
+                        "password", "wrongpassword",
+                        "tenantId", TEST_TENANT_ID
+                )))
+                .build();
+
+        HttpResponse response = runPromise(() -> handler.handleLogin(request));
+
+        assertThat(response.getCode()).isEqualTo(401);
+        com.fasterxml.jackson.databind.JsonNode payload = objectMapper.readTree(response.getBody().getArray());
+        assertThat(payload.get("error").asText()).isEqualTo("UNAUTHORIZED");
+        assertThat(payload.get("message").asText()).isEqualTo("Invalid email or password");
+
+        verify(authenticationService, times(1))
+                .authenticate(any(TenantId.class), eq(TEST_EMAIL), eq("wrongpassword"));
+        verifyNoInteractions(jwtTokenProvider);
+    }
+
+    @Test
     @DisplayName("Should throw NullPointerException when JWT provider is null")
         void shouldThrowExceptionWhenJwtTokenProviderNull() throws Exception {
-        assertThatThrownBy(() -> new AuthHttpHandler(null, metrics, objectMapper))
+        assertThatThrownBy(() -> new AuthHttpHandler(null, authenticationService, metrics, objectMapper))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("Should throw NullPointerException when authenticationService is null")
+        void shouldThrowExceptionWhenAuthenticationServiceNull() throws Exception {
+        assertThatThrownBy(() -> new AuthHttpHandler(jwtTokenProvider, null, metrics, objectMapper))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     @DisplayName("Should throw NullPointerException when metrics is null")
         void shouldThrowExceptionWhenMetricsNull() throws Exception {
-        assertThatThrownBy(() -> new AuthHttpHandler(jwtTokenProvider, null, objectMapper))
+        assertThatThrownBy(() -> new AuthHttpHandler(jwtTokenProvider, authenticationService, null, objectMapper))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     @DisplayName("Should throw NullPointerException when ObjectMapper is null")
         void shouldThrowExceptionWhenObjectMapperNull() throws Exception {
-        assertThatThrownBy(() -> new AuthHttpHandler(jwtTokenProvider, metrics, null))
+        assertThatThrownBy(() -> new AuthHttpHandler(jwtTokenProvider, authenticationService, metrics, null))
                 .isInstanceOf(NullPointerException.class);
     }
 }

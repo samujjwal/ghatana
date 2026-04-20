@@ -20,15 +20,15 @@ export const dataFabricMetricsBoundary = {
 } satisfies UnsupportedSurfaceDefinition;
 
 export const alertsSurfaceBoundary = {
-  title: 'Alerts Surface Not Available',
+  title: 'Alerts',
   summary:
-    'The current Data Cloud launcher does not expose live alert management routes. This page remains directly reachable for roadmap continuity, but alert triage, grouping, suggestions, and rule management are not in this deployment.',
+    'Alerts are live and launcher-backed. This page provides alert triage, grouping, suggestions, and rule management.',
   details: [
-    'Default navigation and search no longer promote alerts as a primary workflow.',
-    'The page remains direct-link accessible so operators can verify the boundary honestly.',
-    'Alert route activation should only happen after canonical list, acknowledge, resolve, and stream routes exist.',
+    'Backend routes for alert list, acknowledge, resolve, grouping, suggestions, rules, and streaming are live.',
+    'This surface is operator-facing and hidden from primary-user discovery per route truth matrix.',
+    'Default navigation and search do not promote alerts as a primary workflow.',
   ],
-  state: 'not-in-deployment',
+  state: 'live',
 } satisfies UnsupportedSurfaceDefinition;
 
 export const smartWorkflowGenerationBoundary = {

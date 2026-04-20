@@ -9,11 +9,16 @@ import java.util.Set;
 /**
  * Request-scoped security context carrying authenticated principal and tenant.
  *
+ * <p><b>DEPRECATED</b> - Use {@link com.ghatana.platform.security.SecurityContext} instead.
+ * This interface is deprecated and will be removed in a future release.
+ *
  * @doc.type interface
- * @doc.purpose Security context for request-scoped auth state
+ * @doc.purpose Security context for request-scoped auth state (DEPRECATED)
  * @doc.layer product
  * @doc.pattern Context
+ * @deprecated Use {@link com.ghatana.platform.security.SecurityContext} instead
  */
+@Deprecated(since = "1.0", forRemoval = true)
 public interface SecurityContext {
 
     Optional<UserPrincipal> getUserPrincipal();

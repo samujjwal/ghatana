@@ -4,6 +4,12 @@
  * Centralizes tenant context and session-adjacent bootstrap concerns so the
  * UI can fail fast instead of silently falling back to ambiguous defaults.
  *
+ * IMPORTANT: Shell role is for UI disclosure ONLY, not authorization.
+ * - Shell role controls which navigation items and surfaces are visible in the UI
+ * - Shell role does NOT provide security authorization or access control
+ * - Backend auth/authorization is enforced independently via JWT/API key validation
+ * - Changing shell role in the UI only changes what is shown, not what is permitted
+ *
  * @doc.type service
  * @doc.purpose Tenant and session bootstrap state
  * @doc.layer frontend
@@ -30,6 +36,18 @@ export const SHELL_ROLE_LABELS: Record<ShellRole, string> = {
   'primary-user': 'Primary User',
   operator: 'Operator',
   admin: 'Admin',
+};
+
+/**
+ * Shell role descriptions for UI display.
+ *
+ * These descriptions clarify that shell role is for UI disclosure only,
+ * not for security authorization.
+ */
+export const SHELL_ROLE_DESCRIPTIONS: Record<ShellRole, string> = {
+  'primary-user': 'Primary user mode for data exploration and analytics',
+  operator: 'Operator mode for diagnostics and trust workflows (UI disclosure only)',
+  admin: 'Admin mode for operational controls (UI disclosure only)',
 };
 
 function normalizeShellRole(value: string | null | undefined): ShellRole {
@@ -118,6 +136,7 @@ export interface SessionSnapshot {
   isAuthenticated: boolean;
   requiresTenantBootstrap: boolean;
   shellRole: ShellRole;
+  sessionExpiringSoon: boolean;
 }
 
 export const SessionBootstrap = {
@@ -130,6 +149,7 @@ export const SessionBootstrap = {
       isAuthenticated: TokenStorage.isAuthenticated(),
       requiresTenantBootstrap: tenantId === null,
       shellRole: this.getShellRole(),
+      sessionExpiringSoon: TokenStorage.needsRefresh(),
     };
   },
 

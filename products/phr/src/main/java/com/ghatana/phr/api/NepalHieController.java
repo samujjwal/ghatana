@@ -22,9 +22,9 @@ public final class NepalHieController {
         this.integrationService = integrationService;
     }
 
-    public Promise<NepalHieApiResponse> submitPatientSummary(String patientId, String correlationId) {
+    public Promise<PhrApiResponse> submitPatientSummary(String patientId, String correlationId) {
         return integrationService.submitPatientSummary(patientId, correlationId)
-            .map(result -> NepalHieApiResponse.json(result.accepted() ? 202 : 502, serialize(result)));
+            .map(result -> PhrApiResponse.json(result.accepted() ? 202 : 502, serialize(result)));
     }
 
     private String serialize(NepalHieSyncResult result) {

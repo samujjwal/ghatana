@@ -19,15 +19,15 @@ public final class FhirController {
         this.server = server;
     }
 
-    public Promise<FhirApiResponse> createResource(String resourceType, String resourceJson) {
+    public Promise<PhrApiResponse> createResource(String resourceType, String resourceJson) {
         return server.createResource(resourceType, resourceJson);
     }
 
-    public Promise<FhirApiResponse> getResource(String resourceType, String resourceId) {
+    public Promise<PhrApiResponse> getResource(String resourceType, String resourceId) {
         return server.getResource(resourceType, resourceId);
     }
 
-    public Promise<FhirApiResponse> searchResources(String resourceType, Map<String, String> searchParams) {
+    public Promise<PhrApiResponse> searchResources(String resourceType, Map<String, String> searchParams) {
         return server.searchResources(resourceType, searchParams);
     }
 }

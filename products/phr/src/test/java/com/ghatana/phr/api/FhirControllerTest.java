@@ -37,7 +37,7 @@ class FhirControllerTest extends EventloopTestBase {
     @Test
     @DisplayName("creates a MedicationRequest and returns FHIR content headers")
     void createsMedicationRequest() throws Exception {
-        FhirApiResponse response = runPromise(() -> controller.createResource("MedicationRequest", medicationRequestJson()));
+        PhrApiResponse response = runPromise(() -> controller.createResource("MedicationRequest", medicationRequestJson()));
 
         JsonNode root = JSON_MAPPER.readTree(response.body());
         assertThat(response.statusCode()).isEqualTo(201);
@@ -50,7 +50,7 @@ class FhirControllerTest extends EventloopTestBase {
     void returnsSearchBundle() throws Exception {
         runPromise(() -> controller.createResource("Immunization", immunizationJson("imm-1", "patient-1")));
 
-        FhirApiResponse response = runPromise(() -> controller.searchResources("Immunization", Map.of("patient", "patient-1")));
+        PhrApiResponse response = runPromise(() -> controller.searchResources("Immunization", Map.of("patient", "patient-1")));
 
         JsonNode root = JSON_MAPPER.readTree(response.body());
         assertThat(response.statusCode()).isEqualTo(200);

@@ -2,7 +2,7 @@ package com.ghatana.phr.fhir.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.phr.api.FhirApiResponse;
+import com.ghatana.phr.api.PhrApiResponse;
 import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,10 +36,10 @@ class PhrFhirR4ServerTest extends EventloopTestBase {
     @Test
     @DisplayName("creates and reads Patient resources through the server surface")
     void createsAndReadsPatientResource() throws Exception {
-        FhirApiResponse createResponse = runPromise(() -> server.createResource("Patient", patientJson()));
+        PhrApiResponse createResponse = runPromise(() -> server.createResource("Patient", patientJson()));
         JsonNode created = JSON_MAPPER.readTree(createResponse.body());
 
-        FhirApiResponse readResponse = runPromise(() -> server.getResource("Patient", created.path("id").asText()));
+        PhrApiResponse readResponse = runPromise(() -> server.getResource("Patient", created.path("id").asText()));
 
         assertThat(createResponse.statusCode()).isEqualTo(201);
         assertThat(readResponse.statusCode()).isEqualTo(200);
@@ -52,7 +52,7 @@ class PhrFhirR4ServerTest extends EventloopTestBase {
         runPromise(() -> server.createResource("Observation", observationJson("obs-1", "patient-1", "2160-0")));
         runPromise(() -> server.createResource("Observation", observationJson("obs-2", "patient-2", "718-7")));
 
-        FhirApiResponse response = runPromise(() -> server.searchResources(
+        PhrApiResponse response = runPromise(() -> server.searchResources(
             "Observation",
             Map.of("subject", "patient-1", "code", "2160-0")
         ));
@@ -67,7 +67,7 @@ class PhrFhirR4ServerTest extends EventloopTestBase {
     @Test
     @DisplayName("returns OperationOutcome for unsupported resource type")
     void rejectsUnsupportedResourceType() throws Exception {
-        FhirApiResponse response = runPromise(() -> server.createResource("Encounter", "{\"resourceType\":\"Encounter\"}"));
+        PhrApiResponse response = runPromise(() -> server.createResource("Encounter", "{\"resourceType\":\"Encounter\"}"));
 
         JsonNode outcome = JSON_MAPPER.readTree(response.body());
         assertThat(response.statusCode()).isEqualTo(404);

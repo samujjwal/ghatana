@@ -102,6 +102,7 @@
     "zod": "^4.3.6"
   },
   "peerDependencies": {
+    "@ghatana/data-grid": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",
     "@tanstack/react-query": "^5.0.0",

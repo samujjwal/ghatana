@@ -34,20 +34,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * End-to-end workflow integration tests for Data Cloud.
+ * Component tests for workflow execution through the runtime plugin.
  *
  * <p>Exercises the collection → pipeline → workflow execution → entity persistence →
- * event publication path using the real workflow runtime plugin instead of an in-test
- * workflow engine double.
+ * event publication path using the real workflow runtime plugin but with an in-memory
+ * DataCloudClient and mocked EntityStore/EventLogStore.
+ *
+ * <p>NOTE: This is a COMPONENT test, not an end-to-end integration test. It uses an
+ * InMemoryDataCloudClient and mocks for EntityStore/EventLogStore instead of real
+ * durable providers. It does NOT prove:
+ * <ul>
+ *   <li>Durable workflow execution across process boundaries</li>
+ *   <li>Real database persistence semantics</li>
+ *   <li>Real event streaming behavior</li>
+ *   <li>Recovery from actual failures</li>
+ * </ul>
+ *
+ * <p>TODO: Add real integration tests that:
+ * <ul>
+ *   <li>Exercise workflow execution against real EntityStore and EventLogStore</li>
+ *   <li>Test durable execution state across launcher restarts with real database</li>
+ *   <li>Verify event publication to real Kafka/event streaming infrastructure</li>
+ *   <li>Test recovery from real failures (network, database, plugin crashes)</li>
+ * </ul>
  *
  * @doc.type class
- * @doc.purpose End-to-end workflow integration through the real Data Cloud runtime plugin path
+ * @doc.purpose Component test for workflow runtime plugin (not real persistence integration)
  * @doc.layer product
- * @doc.pattern IntegrationTest
+ * @doc.pattern ComponentTest
  */
-@DisplayName("End-to-End Workflow Integration Tests")
+@DisplayName("End-to-End Workflow Component Tests (In-Memory Client)")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class EndToEndWorkflowTest extends EventloopTestBase {
+class EndToEndWorkflowComponentTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "e2e-tenant";
     private static final String COLLECTION_NAME = "e2e_collection";

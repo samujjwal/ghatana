@@ -18,16 +18,22 @@ import java.util.regex.Pattern;
 
 /**
  * @doc.type class
- * @doc.purpose gRPC-backed {@link SttClientAdapter} with AI Inference HTTP fallback.
- *              Calls the STT gRPC service when proto stubs are compiled; falls back
- *              to the Ghatana AI Inference Service for LLM-assisted transcription
- *              whenever gRPC stubs are unavailable or the STT service is unreachable.
+ * @doc.purpose STT client adapter with AI Inference HTTP fallback (LLM_FALLBACK mode only supported).
+ *              GRPC mode is not yet implemented. Use LLM_FALLBACK mode for transcription
+ *              via Ghatana AI Inference Service.
  * @doc.layer product
  * @doc.pattern Service
  *
- * <p>When gRPC proto stubs are generated from {@code stt_service.proto}, replace
- * the {@link #transcribeViaAiInference(byte[])} invocation with a direct
- * {@code SttServiceGrpc.newBlockingStub(channel).transcribe(...)} call.
+ * <p><b>Supported Mode:</b> Only {@link SttMode#LLM_FALLBACK} is currently supported.
+ * The GRPC mode requires Whisper gRPC service implementation and proto stub generation.
+ * Set environment variable {@code ENABLE_STT_GRPC=true} only when implementing real Whisper gRPC integration.
+ *
+ * <p><b>LLM_FALLBACK Mode:</b> Transcribes audio via AI Inference Service using base64-encoded
+ * audio samples. The LLM provides transcription text with confidence scores. This is the
+ * recommended and only supported mode for production use.
+ *
+ * <p>When implementing GRPC mode, generate proto stubs from {@code stt_service.proto} and
+ * replace the {@link #transcribeViaAiInference(byte[])} invocation with direct gRPC calls.
  */
 public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
 
@@ -48,6 +54,10 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
 
     /**
      * STT mode enumeration
+     *
+     * <p><b>Note:</b> GRPC mode is not yet implemented. Use LLM_FALLBACK for transcription
+     * via AI Inference Service. Set environment variable ENABLE_STT_GRPC=false to prevent
+     * accidental GRPC mode selection.
      */
     public enum SttMode {
         GRPC,
@@ -65,13 +75,26 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
      * @param host the Whisper gRPC service host
      * @param port the Whisper gRPC service port
      * @param sttMode the configured STT mode (GRPC, LLM_FALLBACK, or NOP)
+     * @throws IllegalArgumentException if GRPC mode is requested but ENABLE_STT_GRPC is not true
      */
     public GrpcSttClientAdapter(String host, int port, SttMode sttMode) {
+        boolean enableSttGrpc = Boolean.parseBoolean(System.getenv().getOrDefault("ENABLE_STT_GRPC", "false"));
+        
+        if (sttMode == SttMode.GRPC && !enableSttGrpc) {
+            LOG.error("GRPC mode requested but ENABLE_STT_GRPC is not set to true. " +
+                    "GRPC mode is not implemented. Use LLM_FALLBACK mode instead. " +
+                    "Set ENABLE_STT_GRPC=true only when implementing real Whisper gRPC integration.");
+            throw new IllegalArgumentException(
+                    "GRPC mode is not yet implemented. Set ENABLE_STT_GRPC=true only when implementing " +
+                    "real Whisper gRPC integration. Use SttMode.LLM_FALLBACK for transcription via AI Inference Service.");
+        }
+        
         this.channel = ManagedChannelBuilder.forAddress(host, port)
                 .usePlaintext()
                 .build();
-        this.configuredMode = sttMode;
-        LOG.info("STT gRPC client connected to {}:{} with mode {}", host, port, sttMode);
+        this.configuredMode = sttMode == SttMode.GRPC ? SttMode.LLM_FALLBACK : sttMode;
+        LOG.info("STT gRPC client connected to {}:{} with mode {} (GRPC mode not implemented, using {})", 
+                host, port, sttMode, this.configuredMode);
     }
 
     /**
