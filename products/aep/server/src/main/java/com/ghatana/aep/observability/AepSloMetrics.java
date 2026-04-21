@@ -86,6 +86,12 @@ public final class AepSloMetrics {
 
     private final AtomicLong totalRuns = new AtomicLong(0);
     private final AtomicLong failedRuns = new AtomicLong(0);
+        private final AtomicLong replayAttempts = new AtomicLong(0);
+        private final AtomicLong replaySucceeded = new AtomicLong(0);
+        private final AtomicLong replayFailed = new AtomicLong(0);
+        private final AtomicLong agentExecutionAttempts = new AtomicLong(0);
+        private final AtomicLong agentExecutionSucceeded = new AtomicLong(0);
+        private final AtomicLong agentExecutionFailed = new AtomicLong(0);
 
     private final MetricsCollector metricsCollector;
     private final MeterRegistry meterRegistry;
@@ -233,13 +239,16 @@ public final class AepSloMetrics {
      * @param pipelineId  pipeline tag
      */
     public void recordReplayAttempt(boolean success, @NotNull String tenantId, @NotNull String pipelineId) {
+        replayAttempts.incrementAndGet();
         metricsCollector.incrementCounter(REPLAY_ATTEMPTS,
                 "tenant", tenantId, "pipeline", pipelineId);
         if (success) {
+            replaySucceeded.incrementAndGet();
             metricsCollector.incrementCounter(REPLAY_SUCCEEDED,
                     "tenant", tenantId, "pipeline", pipelineId);
             log.debug("[slo] replay-success tenant={} pipeline={}", tenantId, pipelineId);
         } else {
+            replayFailed.incrementAndGet();
             metricsCollector.incrementCounter(REPLAY_FAILED,
                     "tenant", tenantId, "pipeline", pipelineId);
             log.debug("[slo] replay-failed tenant={} pipeline={}", tenantId, pipelineId);
@@ -257,6 +266,8 @@ public final class AepSloMetrics {
             @NotNull String tenantId,
             @NotNull String agentId,
             long durationMs) {
+        agentExecutionAttempts.incrementAndGet();
+        agentExecutionSucceeded.incrementAndGet();
         metricsCollector.incrementCounter(AGENT_EXECUTION_ATTEMPTS,
                 "tenant", tenantId, "agent", agentId);
         metricsCollector.incrementCounter(AGENT_EXECUTION_SUCCEEDED,
@@ -282,6 +293,8 @@ public final class AepSloMetrics {
             @NotNull String category,
             boolean retryable,
             long durationMs) {
+        agentExecutionAttempts.incrementAndGet();
+        agentExecutionFailed.incrementAndGet();
         metricsCollector.incrementCounter(AGENT_EXECUTION_ATTEMPTS,
                 "tenant", tenantId, "agent", agentId);
         metricsCollector.incrementCounter(AGENT_EXECUTION_FAILED,
@@ -309,13 +322,57 @@ public final class AepSloMetrics {
     public Map<String, Object> runCountSnapshot() {
         long total = totalRuns.get();
         long failed = failedRuns.get();
+        long completed = Math.max(0, total - failed);
         double rate = total == 0 ? 0.0 : (double) failed / total;
+        double successRate = total == 0 ? 0.0 : (double) completed / total;
         return Map.of(
+                "completed", completed,
                                 "total", total,
                                 "failed", failed,
+                "successRate", successRate,
                                 "failureRate", rate,
+                "completedRuns", completed,
                 "totalRuns", total,
                 "failedRuns", failed,
+                "runSuccessRate", successRate,
                 "runFailureRate", rate);
+    }
+
+    /**
+     * Returns a point-in-time snapshot of replay attempt outcomes.
+     *
+     * @return immutable map with replay-attempt counters and rates
+     */
+    public Map<String, Object> replaySnapshot() {
+        long attempts = replayAttempts.get();
+        long succeeded = replaySucceeded.get();
+        long failed = replayFailed.get();
+        double successRate = attempts == 0 ? 0.0 : (double) succeeded / attempts;
+        double failureRate = attempts == 0 ? 0.0 : (double) failed / attempts;
+        return Map.of(
+                "attempts", attempts,
+                "succeeded", succeeded,
+                "failed", failed,
+                "successRate", successRate,
+                "failureRate", failureRate);
+    }
+
+    /**
+     * Returns a point-in-time snapshot of agent execution outcomes.
+     *
+     * @return immutable map with agent execution counters and rates
+     */
+    public Map<String, Object> agentExecutionSnapshot() {
+        long attempts = agentExecutionAttempts.get();
+        long succeeded = agentExecutionSucceeded.get();
+        long failed = agentExecutionFailed.get();
+        double successRate = attempts == 0 ? 0.0 : (double) succeeded / attempts;
+        double failureRate = attempts == 0 ? 0.0 : (double) failed / attempts;
+        return Map.of(
+                "attempts", attempts,
+                "succeeded", succeeded,
+                "failed", failed,
+                "successRate", successRate,
+                "failureRate", failureRate);
     }
 }

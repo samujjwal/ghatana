@@ -42,7 +42,7 @@ describe('ConsentManager', () => {
     );
 
     expect(screen.getByText('Consent Required')).toBeInTheDocument();
-    expect(screen.getByText(/voice input for speech recognition/i)).toBeInTheDocument();
+    expect(screen.getByText(/requires your consent for voice_processing/i)).toBeInTheDocument();
   });
 
   it('grants consent when Allow button is clicked', async () => {
@@ -95,7 +95,7 @@ describe('ConsentManager', () => {
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
-  it('shows fallback message when consent is denied and requireConsent is false', () => {
+  it('renders a provided fallback when consent is denied and requireConsent is false', () => {
     localStorage.setItem('consent_voice_processing', JSON.stringify({
       id: 'test-id',
       userId: 'current',
@@ -105,12 +105,12 @@ describe('ConsentManager', () => {
     }));
 
     render(
-      <ConsentManager purpose="voice_processing" onConsentChange={() => {}}>
+      <ConsentManager purpose="voice_processing" onConsentChange={() => {}} fallback={<div>Consent needed</div>}>
         <div>Protected Content</div>
       </ConsentManager>
     );
 
-    expect(screen.getByText(/requires your consent/i)).toBeInTheDocument();
+    expect(screen.getByText('Consent needed')).toBeInTheDocument();
   });
 
   it('handles expired consent correctly', () => {

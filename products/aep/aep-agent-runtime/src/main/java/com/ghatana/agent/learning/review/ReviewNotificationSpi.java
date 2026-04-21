@@ -43,11 +43,19 @@ public interface ReviewNotificationSpi {
     void onItemRejected(@NotNull ReviewItem item);
 
     /**
+     * Called when a review item is escalated.
+     *
+     * @param item the escalated review item
+     */
+    void onItemEscalated(@NotNull ReviewItem item);
+
+    /**
      * No-op implementation for when notifications are not needed.
      */
     ReviewNotificationSpi NOOP = new ReviewNotificationSpi() {
         @Override public void onItemEnqueued(@NotNull ReviewItem item) {}
         @Override public void onItemApproved(@NotNull ReviewItem item) {}
         @Override public void onItemRejected(@NotNull ReviewItem item) {}
+        @Override public void onItemEscalated(@NotNull ReviewItem item) {}
     };
 }

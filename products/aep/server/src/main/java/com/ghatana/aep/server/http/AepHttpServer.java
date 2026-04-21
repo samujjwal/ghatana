@@ -86,13 +86,19 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.sql.Connection;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 import org.slf4j.MDC;
@@ -107,6 +113,10 @@ import org.slf4j.MDC;
 public class AepHttpServer {
 
     private static final Logger log = LoggerFactory.getLogger(AepHttpServer.class);
+    private static final String KAFKA_BOOTSTRAP_SERVERS_SETTING = "KAFKA_BOOTSTRAP_SERVERS";
+    private static final double HEAP_WARNING_RATIO = 0.85d;
+    private static final double HEAP_CRITICAL_RATIO = 0.95d;
+    private static final int CONNECTIVITY_PROBE_TIMEOUT_MILLIS = 750;
 
     private final AepEngine engine;
     private final int port;
@@ -191,6 +201,7 @@ public class AepHttpServer {
     private final DataSource dataSource;
     @Nullable
     private final JedisPool jedisPool;
+    private final MetricsCollector metricsCollector;
 
     /**
      * Whether pipelines are backed by Data-Cloud durable storage.
@@ -201,6 +212,9 @@ public class AepHttpServer {
     /** In-memory circular buffer of recent pipeline runs (event-loop thread only). */
     private final java.util.Deque<Map<String, Object>> recentRuns = new java.util.ArrayDeque<>();
     private static final int MAX_RECENT_RUNS = 1_000;
+    private static final String PIPELINE_UPDATE_CONFLICTS = "aep.pipeline.update.conflicts";
+    private static final String PIPELINE_VERSION_CONFLICT_CODE = "PIPELINE_VERSION_CONFLICT";
+    private static final String PIPELINE_VERSION_REQUIRED_CODE = "PIPELINE_VERSION_REQUIRED";
 
     /** P0-4: In-memory set of processed idempotency keys for deduplication. */
     private final java.util.Set<String> processedIdempotencyKeys = new java.util.HashSet<>();
@@ -543,11 +557,16 @@ public class AepHttpServer {
         this.prometheusRegistry = prometheusRegistry;
         this.dataSource = dataSource;
         this.jedisPool = jedisPool;
+        this.metricsCollector = metricsCollector != null
+            ? metricsCollector
+            : MetricsCollectorFactory.createNoop();
         this.engine = engine;
         this.port = port;
         this.agentDataCloud = agentDataCloud;
         this.humanReviewQueue = humanReviewQueue;
-        this.complianceService = agentDataCloud != null ? new AepComplianceService(agentDataCloud) : null;
+        this.complianceService = agentDataCloud != null
+            ? new AepComplianceService(agentDataCloud, List.of(reportCleanupHook()))
+            : null;
         this.consentService = new DefaultConsentService();
         // P3-18: Initialize PII scanner for event data validation
         this.piiScanner = new PIIScanner();
@@ -556,7 +575,7 @@ public class AepHttpServer {
         this.analyticsStore = agentDataCloud != null ? new DataCloudAnalyticsStore(agentDataCloud) : null;
         this.queryService = agentDataCloud != null ? new AepQueryService(agentDataCloud, integrationMeterRegistry) : null;
         this.reportingService = agentDataCloud != null ? new AepReportingService(agentDataCloud, integrationMeterRegistry) : null;
-        this.sloMetrics = new AepSloMetrics(metricsCollector);
+        this.sloMetrics = new AepSloMetrics(this.metricsCollector);
         EventCloudRunLedger runLedger = (agentDataCloud != null && agentDataCloud.eventLogStore() != null)
             ? new EventCloudRunLedger(agentDataCloud.eventLogStore())
             : null;
@@ -567,7 +586,7 @@ public class AepHttpServer {
         this.objectMapper = JsonUtils.getDefaultMapper();
         DeploymentOrchestrator orchestrator = new DeploymentOrchestrator(
             new EventCloudDeploymentEventPublisher(engine.eventCloud()),
-            metricsCollector);
+            this.metricsCollector);
         this.deploymentAdapter = new DeploymentHttpAdapter(orchestrator);
         if (agentDataCloud != null) {
             this.pipelineRepository = new DataCloudPipelineStore(agentDataCloud);
@@ -607,6 +626,10 @@ public class AepHttpServer {
             this::databaseHealthStatus);
         this.healthController.addDependencyCheck("redis",
             this::redisHealthStatus);
+        this.healthController.addDependencyCheck("event-loop",
+            this::eventLoopHealthStatus);
+        this.healthController.addDependencyCheck("heap-memory",
+            this::heapMemoryHealthStatus);
         this.healthController.addDependencyCheck("governance",
             () -> "ok");
         this.healthController.addDependencyCheck("lifecycle",
@@ -625,6 +648,7 @@ public class AepHttpServer {
         this.healthController.addDeepDependencyCheck("execution-history",
             () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
         this.healthController.addAsyncDeepDependencyCheck("data-cloud.connectivity", this::dataCloudConnectivityStatus);
+        this.healthController.addAsyncDeepDependencyCheck("kafka.connectivity", this::kafkaConnectivityStatus);
         // P0-2: Removed discarded PipelineController instantiation - pipeline routes are handled inline
         this.agentController = new AgentController(this.engine, this.agentDataCloud, this.sloMetrics);
         this.marketplaceController = new AgentMarketplaceController(this.agentDataCloud);
@@ -643,7 +667,11 @@ public class AepHttpServer {
             () -> new ArrayList<>(this.recentRuns));
         this.deploymentController = new DeploymentController(this.deploymentAdapter);
         this.hitlController = new HitlController(this.humanReviewQueue,
-            (tenantId, data) -> sseController.publishSseTo(tenantId, "hitl.update", data));
+            (tenantId, data) -> sseController.publishSseTo(tenantId, "hitl.update", data),
+            this.sloMetrics,
+            this.metricsCollector,
+            resolveHitlEscalationTimeoutSeconds(),
+            resolveHitlTimeoutPolicies());
         CompositeEvaluationGate evaluationGate = CompositeEvaluationGate.defaultGates();
         EpisodeLearningPipeline learningPipeline = agentDataCloud != null
             ? new EpisodeLearningPipeline(agentDataCloud, evaluationGate, humanReviewQueue)
@@ -860,14 +888,20 @@ public class AepHttpServer {
 
         // Wrap the router with the OWASP security filter (headers, CORS, rate limiting, payload size)
         String allowedOrigins = System.getenv().getOrDefault("AEP_CORS_ORIGINS", "*");
-        AepSecurityFilter securityFilter = new AepSecurityFilter(router, allowedOrigins);
+        String trustedProxyCidrs = System.getenv().getOrDefault("AEP_TRUSTED_PROXY_CIDRS", "");
+        AepSecurityFilter securityFilter = new AepSecurityFilter(
+            router,
+            allowedOrigins,
+            trustedProxyCidrs,
+            metricsCollector);
         SessionFilter sessionFilter = new SessionFilter(securityFilter);
 
         // Wrap with authentication filter - enforces JWT auth when AEP_JWT_SECRET is set
         // Public endpoints (/health, /ready, /live, /info, /metrics, /events/stream) bypass auth
         AepAuthFilter authFilter = new AepAuthFilter(sessionFilter);
+        AsyncServlet observedServlet = applyRequestTraceObservation(authFilter);
 
-        server = HttpServer.builder(eventloop, authFilter)
+        server = HttpServer.builder(eventloop, observedServlet)
             .withListenPort(port)
             .build();
 
@@ -970,6 +1004,8 @@ public class AepHttpServer {
     private Promise<HttpResponse> handleGetSloMetrics(HttpRequest request) {
         Map<String, Object> body = new java.util.LinkedHashMap<>();
         body.put("runCounts", sloMetrics.runCountSnapshot());
+        body.put("replay", sloMetrics.replaySnapshot());
+        body.put("agentExecution", sloMetrics.agentExecutionSnapshot());
         body.put("metricsLink", "/metrics");
         body.put("timestamp", Instant.now().toString());
         return Promise.of(jsonResponse(body));
@@ -997,37 +1033,245 @@ public class AepHttpServer {
         }
     }
 
-    // ==================== Correlation ID Helpers (P1-7) ====================
+    private String eventLoopHealthStatus() {
+        if (eventloop == null || serverThread == null) {
+            return "initializing";
+        }
+        return serverThread.isAlive() ? "ok" : "unhealthy";
+    }
+
+    private String heapMemoryHealthStatus() {
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        if (maxMemory <= 0) {
+            return "unknown";
+        }
+
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        double usageRatio = (double) usedMemory / maxMemory;
+        if (usageRatio >= HEAP_CRITICAL_RATIO) {
+            return String.format(Locale.ROOT, "critical: %.1f%% heap used", usageRatio * 100.0);
+        }
+        if (usageRatio >= HEAP_WARNING_RATIO) {
+            return String.format(Locale.ROOT, "warning: %.1f%% heap used", usageRatio * 100.0);
+        }
+        return "ok";
+    }
+
+    private Promise<String> kafkaConnectivityStatus() {
+        String bootstrapServers = resolveRuntimeSetting(KAFKA_BOOTSTRAP_SERVERS_SETTING);
+        if (bootstrapServers == null || bootstrapServers.isBlank()) {
+            return Promise.of("disabled");
+        }
+        return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> probeBootstrapConnectivity(bootstrapServers));
+    }
+
+    private String probeBootstrapConnectivity(String bootstrapServers) {
+        String[] brokers = bootstrapServers.split(",");
+        List<String> failures = new ArrayList<>();
+        for (String broker : brokers) {
+            String trimmed = broker.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            int separator = trimmed.lastIndexOf(':');
+            if (separator <= 0 || separator == trimmed.length() - 1) {
+                return "misconfigured";
+            }
+            String host = trimmed.substring(0, separator);
+            int portNumber;
+            try {
+                portNumber = Integer.parseInt(trimmed.substring(separator + 1));
+            } catch (NumberFormatException exception) {
+                return "misconfigured";
+            }
+
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(host, portNumber), CONNECTIVITY_PROBE_TIMEOUT_MILLIS);
+                return "ok";
+            } catch (Exception exception) {
+                failures.add(trimmed + "=" + exception.getClass().getSimpleName());
+            }
+        }
+
+        if (failures.isEmpty()) {
+            return "misconfigured";
+        }
+        return "error: " + String.join(", ", failures);
+    }
+
+    @Nullable
+    private String resolveRuntimeSetting(String key) {
+        String systemProperty = System.getProperty(key);
+        if (systemProperty != null && !systemProperty.isBlank()) {
+            return systemProperty;
+        }
+        String environmentValue = System.getenv(key);
+        return environmentValue == null || environmentValue.isBlank() ? null : environmentValue;
+    }
+
+    private AepComplianceService.ErasureCleanupHook reportCleanupHook() {
+        return (tenantId, subjectId, report) -> {
+            if (patternStore != null) {
+                patternStore.invalidateCache();
+            }
+            return Promise.of(null);
+        };
+    }
+
+    // ==================== Request Tracing Helpers ====================
 
     private static final String CORRELATION_ID_HEADER = "X-Correlation-ID";
+    private static final String TRACEPARENT_HEADER = "traceparent";
+    private static final String TRACESTATE_HEADER = "tracestate";
     private static final String CORRELATION_ID_MDC_KEY = "correlationId";
+    private static final String TRACE_ID_MDC_KEY = "traceId";
 
-    /**
-     * Extract or generate a correlation ID and set it in MDC for logging.
-     * Call this at the start of request processing.
-     */
-    private void setCorrelationId(HttpRequest request) {
+    private AsyncServlet applyRequestTraceObservation(AsyncServlet delegate) {
+        return request -> {
+            initializeRequestTrace(request);
+            try {
+                return delegate.serve(request)
+                    .whenComplete((response, error) -> clearRequestTrace());
+            } catch (Exception exception) {
+                clearRequestTrace();
+                return Promise.ofException(exception);
+            }
+        };
+    }
+
+    private RequestTraceContext initializeRequestTrace(HttpRequest request) {
         String correlationId = request.getHeader(HttpHeaders.of(CORRELATION_ID_HEADER));
         if (correlationId == null || correlationId.isBlank()) {
             correlationId = UUID.randomUUID().toString();
         }
+        ParsedTraceParent traceParent = parseTraceParent(request.getHeader(HttpHeaders.of(TRACEPARENT_HEADER)));
+        String traceId = traceParent != null ? traceParent.traceId() : newTraceId();
+        String spanId = newSpanId();
+        boolean sampled = traceParent == null || traceParent.sampled();
+        String tracestate = request.getHeader(HttpHeaders.of(TRACESTATE_HEADER));
+        RequestTraceContext traceContext = new RequestTraceContext(
+            correlationId,
+            traceId,
+            spanId,
+            sampled,
+            tracestate);
+        request.attach(RequestTraceContext.class, traceContext);
+        RequestTraceSupport.setCurrent(new RequestTraceSupport.TraceHeaders(
+            traceContext.correlationId(),
+            traceContext.traceId(),
+            traceContext.spanId(),
+            traceContext.sampled(),
+            traceContext.tracestate()));
         MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
+        MDC.put(TRACE_ID_MDC_KEY, traceId);
+        return traceContext;
     }
 
-    /**
-     * Clear the correlation ID from MDC.
-     * Call this at the end of request processing.
-     */
-    private void clearCorrelationId() {
+    private void clearRequestTrace() {
+        RequestTraceSupport.clearCurrent();
         MDC.remove(CORRELATION_ID_MDC_KEY);
+        MDC.remove(TRACE_ID_MDC_KEY);
+    }
+
+    private static ParsedTraceParent parseTraceParent(String headerValue) {
+        if (headerValue == null || headerValue.isBlank()) {
+            return null;
+        }
+        String[] parts = headerValue.trim().split("-");
+        if (parts.length < 4 || parts[1].length() != 32 || parts[2].length() != 16) {
+            return null;
+        }
+        boolean sampled;
+        try {
+            sampled = (Integer.parseInt(parts[3], 16) & 0x01) == 0x01;
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+        return new ParsedTraceParent(parts[1], parts[2], sampled);
+    }
+
+    private static String newTraceId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private static String newSpanId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    }
+
+    private long resolveHitlEscalationTimeoutSeconds() {
+        String configured = System.getProperty("AEP_HITL_ESCALATION_TIMEOUT_SECONDS");
+        if (configured == null || configured.isBlank()) {
+            configured = System.getenv("AEP_HITL_ESCALATION_TIMEOUT_SECONDS");
+        }
+        if (configured == null || configured.isBlank()) {
+            return HitlController.DEFAULT_ESCALATION_TIMEOUT_SECONDS;
+        }
+        try {
+            long parsed = Long.parseLong(configured.trim());
+            return parsed > 0 ? parsed : HitlController.DEFAULT_ESCALATION_TIMEOUT_SECONDS;
+        } catch (NumberFormatException exception) {
+            log.warn("Invalid AEP_HITL_ESCALATION_TIMEOUT_SECONDS value '{}'; using default {}",
+                configured,
+                HitlController.DEFAULT_ESCALATION_TIMEOUT_SECONDS);
+            return HitlController.DEFAULT_ESCALATION_TIMEOUT_SECONDS;
+        }
+    }
+
+    private Map<String, HitlController.TenantHitlPolicy> resolveHitlTimeoutPolicies() {
+        String configured = System.getProperty("AEP_HITL_TIMEOUT_POLICIES");
+        if (configured == null || configured.isBlank()) {
+            configured = System.getenv("AEP_HITL_TIMEOUT_POLICIES");
+        }
+        if (configured == null || configured.isBlank()) {
+            return Map.of();
+        }
+
+        Map<String, HitlController.TenantHitlPolicy> policies = new LinkedHashMap<>();
+        for (String rawEntry : configured.split(";")) {
+            String entry = rawEntry.trim();
+            if (entry.isEmpty()) {
+                continue;
+            }
+            int separatorIndex = entry.indexOf('=');
+            if (separatorIndex <= 0 || separatorIndex == entry.length() - 1) {
+                log.warn("Ignoring invalid AEP_HITL_TIMEOUT_POLICIES entry '{}'", entry);
+                continue;
+            }
+
+            String tenantKey = entry.substring(0, separatorIndex).trim();
+            String[] parts = entry.substring(separatorIndex + 1).trim().split(":", 4);
+            try {
+                long thresholdSeconds = Long.parseLong(parts[0].trim());
+                HitlController.OverdueAction overdueAction = parts.length > 1
+                    ? HitlController.OverdueAction.from(parts[1])
+                    : HitlController.OverdueAction.ESCALATE;
+                String destinationType = parts.length > 2 ? trimToNull(parts[2]) : null;
+                String destination = parts.length > 3 ? trimToNull(parts[3]) : null;
+                policies.put(tenantKey, new HitlController.TenantHitlPolicy(
+                    thresholdSeconds,
+                    overdueAction,
+                    destinationType,
+                    destination));
+            } catch (NumberFormatException exception) {
+                log.warn("Ignoring invalid HITL timeout threshold entry '{}'", entry);
+            }
+        }
+        return policies.isEmpty() ? Map.of() : Collections.unmodifiableMap(policies);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     // ==================== Event Processing Endpoints ====================
 
     @SuppressWarnings("unchecked")
     private Promise<HttpResponse> handleProcessEvent(HttpRequest request) {
-        // P1-7: Set correlation ID for request tracing
-        setCorrelationId(request);
         Instant receivedAt = Instant.now();
         return request.loadBody().then(buf -> {
             try {
@@ -1096,19 +1340,25 @@ public class AepHttpServer {
                             });
                     })
                     .whenComplete((result, error) -> {
-                        // P1-7: Clear correlation ID after request completes
-                        clearCorrelationId();
                     });
             } catch (Exception e) {
                 log.error("Error processing event", e);
-                clearCorrelationId();
                 return Promise.of(errorResponse(400, "Invalid event data: " + e.getMessage()));
             }
         }, e -> {
             log.error("Failed to read event body", e);
-            clearCorrelationId();
             return Promise.of(errorResponse(400, "Failed to read request body"));
         });
+    }
+
+    private record ParsedTraceParent(String traceId, String parentSpanId, boolean sampled) {
+    }
+
+    private record RequestTraceContext(String correlationId,
+                                       String traceId,
+                                       String spanId,
+                                       boolean sampled,
+                                       @Nullable String tracestate) {
     }
 
     private Promise<HttpResponse> handleProcessBatch(HttpRequest request) {
@@ -1266,6 +1516,30 @@ public class AepHttpServer {
                         }
 
                         PipelineRegistration existing = optExisting.get();
+                        Integer expectedVersion = resolveExpectedPipelineVersion(request, updateData);
+                        if (expectedVersion == null) {
+                            return Promise.of(jsonResponse(428, Map.of(
+                                "error", "Pipeline updates require an expected version via request body version, expectedVersion, or If-Match header",
+                                "errorCode", PIPELINE_VERSION_REQUIRED_CODE,
+                                "pipelineId", pipelineId,
+                                "currentVersion", existing.getVersion(),
+                                "suggestion", "Reload the latest pipeline and retry the update with the current version.",
+                                "timestamp", Instant.now().toString()
+                            )));
+                        }
+                        if (expectedVersion.intValue() != existing.getVersion()) {
+                            recordPipelineUpdateConflict(tenantId, pipelineId, expectedVersion.intValue(), existing.getVersion());
+                            return Promise.of(jsonResponse(409, Map.of(
+                                "error", "Pipeline update conflict: the pipeline has been modified since the caller last loaded it",
+                                "errorCode", PIPELINE_VERSION_CONFLICT_CODE,
+                                "pipelineId", pipelineId,
+                                "expectedVersion", expectedVersion.intValue(),
+                                "currentVersion", existing.getVersion(),
+                                "suggestion", "Reload the latest pipeline definition, merge your changes, and retry with the new version.",
+                                "timestamp", Instant.now().toString()
+                            )));
+                        }
+
                         Pipeline updatePatch = mapToPipeline(updateData, tenantId);
                         updatePatch.setName(updatePatch.getName() != null ? updatePatch.getName() : existing.getName());
                         updatePatch.setTenantId(existing.getTenantId());
@@ -1594,16 +1868,14 @@ public class AepHttpServer {
     private Promise<HttpResponse> handleListPipelineRuns(HttpRequest request) {
         String tenantId = resolveTenantId(request);
         String pipelineFilter = request.getQueryParameter("pipelineId");
-        List<Map<String, Object>> runs = recentRuns.stream()
-            .filter(r -> tenantId.equals(r.get("tenantId")))
-            .filter(r -> pipelineFilter == null || pipelineFilter.equals(r.get("pipelineId")))
-            .collect(java.util.stream.Collectors.toList());
-        return Promise.of(jsonResponse(Map.of(
-            "runs", runs,
-            "count", runs.size(),
-            "tenantId", tenantId,
-            "timestamp", Instant.now().toString()
-        )));
+        return listRunsForTenant(tenantId, pipelineFilter)
+            .map(runs -> jsonResponse(Map.of(
+                "runs", runs,
+                "count", runs.size(),
+                "tenantId", tenantId,
+                "timestamp", Instant.now().toString()
+            )))
+            .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to list runs: " + e.getMessage())));
     }
 
     /**
@@ -1816,6 +2088,43 @@ public class AepHttpServer {
         return value != null ? String.valueOf(value) : null;
     }
 
+    private Integer resolveExpectedPipelineVersion(HttpRequest request, Map<String, Object> payload) {
+        Object expectedVersionValue = payload.get("expectedVersion");
+        if (expectedVersionValue instanceof Number number) {
+            return number.intValue();
+        }
+
+        Object versionValue = payload.get("version");
+        if (versionValue instanceof Number number) {
+            return number.intValue();
+        }
+
+        String ifMatch = request.getHeader(HttpHeaders.of("If-Match"));
+        if (ifMatch == null || ifMatch.isBlank()) {
+            return null;
+        }
+
+        String normalized = ifMatch.trim();
+        if (normalized.startsWith("\"") && normalized.endsWith("\"") && normalized.length() > 1) {
+            normalized = normalized.substring(1, normalized.length() - 1);
+        }
+        try {
+            return Integer.parseInt(normalized);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private void recordPipelineUpdateConflict(String tenantId, String pipelineId, int expectedVersion, int currentVersion) {
+        metricsCollector.incrementCounter(
+            PIPELINE_UPDATE_CONFLICTS,
+            "tenant", tenantId,
+            "pipeline", pipelineId,
+            "expected_version", Integer.toString(expectedVersion),
+            "current_version", Integer.toString(currentVersion)
+        );
+    }
+
     private Promise<List<Map<String, Object>>> readRunEvidence(String tenantId, String runId) {
         if (runLedger == null) {
             return Promise.of(List.of());
@@ -1851,6 +2160,79 @@ public class AepHttpServer {
                     .compareTo(String.valueOf(left.getOrDefault("timestamp", ""))))
                 .limit(limit)
                 .toList());
+    }
+
+    private Promise<List<Map<String, Object>>> listRunsForTenant(String tenantId, @Nullable String pipelineFilter) {
+        List<Map<String, Object>> inMemoryRuns = recentRuns.stream()
+            .filter(run -> tenantId.equals(run.get("tenantId")))
+            .filter(run -> pipelineFilter == null || pipelineFilter.equals(run.get("pipelineId")))
+            .map(run -> (Map<String, Object>) new java.util.LinkedHashMap<String, Object>(run))
+            .collect(java.util.stream.Collectors.toList());
+
+        if (runLedger == null) {
+            return Promise.of(sortRunsDescending(inMemoryRuns));
+        }
+
+        return runLedger.readRunEvents(tenantId, Offset.zero(), 2_000)
+            .map(entries -> mergeRunSummaries(
+                summarizePersistedRuns(tenantId, pipelineFilter, entries),
+                inMemoryRuns));
+    }
+
+    private List<Map<String, Object>> summarizePersistedRuns(String tenantId,
+                                                             @Nullable String pipelineFilter,
+                                                             List<EventEntry> entries) {
+        Map<String, List<Map<String, Object>>> evidenceByRunId = new LinkedHashMap<>();
+        for (EventEntry entry : entries) {
+            Map<String, Object> event = toLedgerEvent(entry);
+            String runId = asString(event.get("runId"));
+            if (runId == null || runId.isBlank()) {
+                continue;
+            }
+            evidenceByRunId.computeIfAbsent(runId, ignored -> new ArrayList<>()).add(event);
+        }
+
+        return sortRunsDescending(evidenceByRunId.entrySet().stream()
+            .map(entry -> reconstructRunDetail(entry.getKey(), tenantId, entry.getValue(), Map.of()))
+            .filter(run -> pipelineFilter == null || pipelineFilter.equals(run.get("pipelineId")))
+            .map(run -> (Map<String, Object>) new java.util.LinkedHashMap<String, Object>(run))
+            .collect(java.util.stream.Collectors.toList()));
+    }
+
+    private List<Map<String, Object>> mergeRunSummaries(List<Map<String, Object>> persistedRuns,
+                                                        List<Map<String, Object>> inMemoryRuns) {
+        Map<String, Map<String, Object>> runsById = new LinkedHashMap<>();
+        for (Map<String, Object> persistedRun : persistedRuns) {
+            String runId = asString(persistedRun.get("runId"));
+            if (runId != null && !runId.isBlank()) {
+                runsById.put(runId, new java.util.LinkedHashMap<>(persistedRun));
+            }
+        }
+        for (Map<String, Object> inMemoryRun : inMemoryRuns) {
+            String runId = asString(inMemoryRun.get("runId"));
+            if (runId == null || runId.isBlank()) {
+                continue;
+            }
+            Map<String, Object> merged = new java.util.LinkedHashMap<>(runsById.getOrDefault(runId, Map.of()));
+            merged.putAll(inMemoryRun);
+            runsById.put(runId, merged);
+        }
+        return sortRunsDescending(new ArrayList<>(runsById.values()));
+    }
+
+    private List<Map<String, Object>> sortRunsDescending(List<Map<String, Object>> runs) {
+        return runs.stream()
+            .sorted((left, right) -> runSortTimestamp(right).compareTo(runSortTimestamp(left)))
+            .toList();
+    }
+
+    private String runSortTimestamp(Map<String, Object> run) {
+        String completedAt = asString(run.get("completedAt"));
+        if (completedAt != null && !completedAt.isBlank()) {
+            return completedAt;
+        }
+        String startedAt = asString(run.get("startedAt"));
+        return startedAt != null ? startedAt : "";
     }
 
     private Map<String, Object> toLedgerEvent(EventEntry entry) {
@@ -2028,15 +2410,19 @@ public class AepHttpServer {
     }
 
     private HttpResponse jsonResponse(Map<String, Object> data) {
+        return jsonResponse(200, data);
+    }
+
+    private HttpResponse jsonResponse(int code, Map<String, Object> data) {
         try {
             String json = objectMapper.writeValueAsString(data);
-            return HttpResponse.ok200()
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(500)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
@@ -2050,13 +2436,13 @@ public class AepHttpServer {
                 "code", code,
                 "timestamp", Instant.now().toString()
             ));
-            return HttpResponse.ofCode(code)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(code)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }

@@ -185,6 +185,30 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("escalate persists the updated status and notifies listeners")
+    void escalatePersistsUpdatedStatus() {
+        ReviewItem item = ReviewItem.builder()
+            .reviewId("review-escalate")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
+            .confidenceScore(0.55)
+            .build();
+
+        when(dataCloudClient.findById(eq(DataCloudHumanReviewQueue.STORAGE_TENANT),
+                eq(DataCloudHumanReviewQueue.COLLECTION), eq("review-escalate")))
+            .thenReturn(Promise.of(Optional.of(entityFrom(item, ReviewStatus.PENDING, null, null))));
+        when(dataCloudClient.save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT),
+                eq(DataCloudHumanReviewQueue.COLLECTION), any()))
+            .thenReturn(Promise.of(entityFrom(item, ReviewStatus.ESCALATED, null, Instant.now())));
+
+        ReviewItem escalated = runPromise(() -> queue.escalate("review-escalate"));
+
+        assertThat(escalated.getStatus()).isEqualTo(ReviewStatus.ESCALATED);
+        verify(notificationSpi).onItemEscalated(escalated);
+    }
+
+    @Test
     @DisplayName("getPending marks explicitly expired items as EXPIRED and excludes them")
     void getPendingExpiresElapsedItems() {
         Instant createdAt = Instant.now().minusSeconds(3600);

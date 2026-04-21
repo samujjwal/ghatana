@@ -28,6 +28,7 @@ describe('DefaultLayout navigation progressive disclosure', () => {
     expect(labels).toContain('Insights');
     expect(labels).toContain('Trust');
     expect(labels).toContain('Events');
-    expect(labels).toContain('Settings');
+    expect(labels).toContain('Alerts');
+    expect(labels).not.toContain('Settings');
   });
 });

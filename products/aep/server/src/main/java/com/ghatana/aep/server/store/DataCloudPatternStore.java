@@ -347,6 +347,13 @@ public final class DataCloudPatternStore implements PatternRepository {
     }
 
     /**
+     * Clears the in-process metadata cache.
+     */
+    public void invalidateCache() {
+        cache.clear();
+    }
+
+    /**
      * Deletes a pattern within a specific tenant scope.
      *
      * @param tenantId tenant identifier

@@ -142,6 +142,7 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
                     new IllegalStateException("Review item " + reviewId + " cannot be escalated from state: " + item.getStatus()));
         }
         item.markEscalated();
+        notificationSpi.onItemEscalated(item);
         return Promise.of(item);
     }
 

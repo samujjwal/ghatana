@@ -83,8 +83,40 @@ class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
                 Map.of("X-Tenant-ID", "acme", "X-Request-ID", "req-tenant-42"));
 
         assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.headers().firstValue("X-Request-ID")).hasValue("req-tenant-42");
+        assertThat(response.headers().firstValue("X-Correlation-ID")).hasValue("req-tenant-42");
+        assertThat(response.headers().firstValue("traceparent")).hasValueSatisfying(value ->
+                assertThat(value).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]"));
         verify(mockClient).save(eq("acme"), eq("orders"), any());
         verify(mockClient).appendEvent(eq("acme"), any());
+    }
+
+    @Test
+    @DisplayName("preserves inbound trace id and request id on response headers")
+    void preservesInboundTraceAndRequestIdOnResponses() throws Exception {
+        DataCloudClient.Entity saved = DataCloudClient.Entity.of(
+                "ent-901",
+                "orders",
+                Map.of("status", "processing"));
+        when(mockClient.save(eq("acme"), eq("orders"), any())).thenReturn(Promise.of(saved));
+        when(mockClient.appendEvent(eq("acme"), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(5)));
+
+        startServer();
+
+        String traceId = "0123456789abcdef0123456789abcdef";
+        HttpResponse<String> response = postJson(
+                "/api/v1/entities/orders",
+                Map.of("status", "processing"),
+                Map.of(
+                        "X-Tenant-ID", "acme",
+                        "X-Request-ID", "req-trace-900",
+                        "traceparent", "00-" + traceId + "-1111222233334444-01"));
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.headers().firstValue("X-Request-ID")).hasValue("req-trace-900");
+        assertThat(response.headers().firstValue("traceparent")).hasValueSatisfying(value ->
+                assertThat(value).startsWith("00-" + traceId + "-"));
+        assertThat(response.headers().firstValue("X-Parent-Span-Id")).hasValue("1111222233334444");
     }
 
     @Test

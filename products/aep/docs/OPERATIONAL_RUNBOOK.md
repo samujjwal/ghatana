@@ -51,6 +51,19 @@ kubectl get configmaps -n aep-production
 
 ### 1.2 Deployment Steps (Kubernetes)
 
+**Ingress proxy trust configuration:**
+```bash
+# Preserve client-aware rate limiting only for trusted ingress hops
+kubectl set env deployment/aep -n aep-production \
+  AEP_TRUSTED_PROXY_CIDRS="10.0.0.0/8,192.168.0.0/16"
+```
+
+Leave `AEP_TRUSTED_PROXY_CIDRS` unset for direct-service or embedded/library deployments that do not sit behind a trusted reverse proxy. When unset, AEP ignores `X-Forwarded-For` and rate-limits on the actual peer address instead.
+
+Proxy validation metrics are exposed via `/metrics`:
+- `aep_security_proxy_forwarded_accepted_total`
+- `aep_security_proxy_forwarded_rejected_total{reason="untrusted_proxy|no_trusted_proxy_configured|invalid_forwarded_for"}`
+
 **Step 1: Build and Push Container Image**
 ```bash
 # Build Docker image

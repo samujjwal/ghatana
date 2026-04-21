@@ -13,9 +13,12 @@ This document is the human-readable companion to the canonical contract in `prod
 
 ## UI Surface Truth Notes
 
+- Canonical route-truth source: `products/data-cloud/ROUTE_TRUTH_MATRIX_2026-04-17.md`.
 - The current primary UI flows map to `/`, `/data`, `/pipelines`, and `/query`.
 - `/trust`, `/insights`, `/events`, and `/settings` are disclosed by shell role rather than promoted to every user by default.
-- `/alerts` remains an explicit unsupported operator surface until live alert list, acknowledge, resolve, and stream routes exist in the launcher.
+- `/alerts` is a live operator-facing triage surface backed by launcher alert list, acknowledge, resolve, grouping, suggestion, rule, and stream routes, but it remains hidden from primary-user discovery.
+- `/fabric` remains a preview-only operator surface.
+- `/settings` remains an explicit admin-only boundary page rather than a general end-user settings workflow.
 - Collection CRUD in the current UI is backed by entity endpoints such as `/api/v1/entities/dc_collections`; older `/api/v1/collections` CRUD examples should be treated as deprecated compatibility routes, not the primary runtime contract.
 
 ## Core Examples

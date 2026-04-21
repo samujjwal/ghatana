@@ -21,6 +21,15 @@ public record PostgresEntityStoreConfig(
     long idleTimeoutMs,
     long maxLifetimeMs
 ) {
+    private static final String JDBC_URL_PROPERTY = "datacloud.db.url";
+    private static final String USERNAME_PROPERTY = "datacloud.db.user";
+    private static final String PASSWORD_PROPERTY = "datacloud.db.password";
+    private static final String MAX_POOL_SIZE_PROPERTY = "datacloud.db.poolMaxSize";
+    private static final String MIN_IDLE_PROPERTY = "datacloud.db.poolMinIdle";
+    private static final String CONNECTION_TIMEOUT_PROPERTY = "datacloud.db.connectionTimeoutMs";
+    private static final String IDLE_TIMEOUT_PROPERTY = "datacloud.db.idleTimeoutMs";
+    private static final String MAX_LIFETIME_PROPERTY = "datacloud.db.maxLifetimeMs";
+
     private static final int DEFAULT_MAX_POOL_SIZE = 16;
     private static final int DEFAULT_MIN_IDLE = 2;
     private static final long DEFAULT_CONNECTION_TIMEOUT_MS = 30_000L;
@@ -80,9 +89,9 @@ public record PostgresEntityStoreConfig(
     }
 
     public static Optional<PostgresEntityStoreConfig> fromEnvironmentIfPresent() {
-        String jdbcUrl = firstPresent("DATACLOUD_DB_URL", "DC_DB_URL");
-        String username = firstPresent("DATACLOUD_DB_USER", "DC_DB_USER");
-        String password = firstPresent("DATACLOUD_DB_PASSWORD", "DC_DB_PASSWORD");
+        String jdbcUrl = firstPresent(JDBC_URL_PROPERTY, "DATACLOUD_DB_URL", "DC_DB_URL");
+        String username = firstPresent(USERNAME_PROPERTY, "DATACLOUD_DB_USER", "DC_DB_USER");
+        String password = firstPresent(PASSWORD_PROPERTY, "DATACLOUD_DB_PASSWORD", "DC_DB_PASSWORD");
         if (jdbcUrl == null || username == null || password == null) {
             return Optional.empty();
         }
@@ -91,16 +100,16 @@ public record PostgresEntityStoreConfig(
             jdbcUrl,
             username,
             password,
-            envInt("DATACLOUD_DB_POOL_MAX_SIZE", "DC_DB_POOL_MAX_SIZE", DEFAULT_MAX_POOL_SIZE),
-            envInt("DATACLOUD_DB_POOL_MIN_IDLE", "DC_DB_POOL_MIN_IDLE", DEFAULT_MIN_IDLE),
-            envLong("DATACLOUD_DB_CONN_TIMEOUT_MS", "DC_DB_CONN_TIMEOUT_MS", DEFAULT_CONNECTION_TIMEOUT_MS),
-            envLong("DATACLOUD_DB_IDLE_TIMEOUT_MS", "DC_DB_IDLE_TIMEOUT_MS", DEFAULT_IDLE_TIMEOUT_MS),
-            envLong("DATACLOUD_DB_MAX_LIFETIME_MS", "DC_DB_MAX_LIFETIME_MS", DEFAULT_MAX_LIFETIME_MS)
+            envInt(MAX_POOL_SIZE_PROPERTY, "DATACLOUD_DB_POOL_MAX_SIZE", "DC_DB_POOL_MAX_SIZE", DEFAULT_MAX_POOL_SIZE),
+            envInt(MIN_IDLE_PROPERTY, "DATACLOUD_DB_POOL_MIN_IDLE", "DC_DB_POOL_MIN_IDLE", DEFAULT_MIN_IDLE),
+            envLong(CONNECTION_TIMEOUT_PROPERTY, "DATACLOUD_DB_CONN_TIMEOUT_MS", "DC_DB_CONN_TIMEOUT_MS", DEFAULT_CONNECTION_TIMEOUT_MS),
+            envLong(IDLE_TIMEOUT_PROPERTY, "DATACLOUD_DB_IDLE_TIMEOUT_MS", "DC_DB_IDLE_TIMEOUT_MS", DEFAULT_IDLE_TIMEOUT_MS),
+            envLong(MAX_LIFETIME_PROPERTY, "DATACLOUD_DB_MAX_LIFETIME_MS", "DC_DB_MAX_LIFETIME_MS", DEFAULT_MAX_LIFETIME_MS)
         ));
     }
 
-    private static int envInt(String primary, String fallback, int defaultValue) {
-        String value = firstPresent(primary, fallback);
+    private static int envInt(String primaryProperty, String primaryEnv, String fallbackEnv, int defaultValue) {
+        String value = firstPresent(primaryProperty, primaryEnv, fallbackEnv);
         if (value == null) {
             return defaultValue;
         }
@@ -111,8 +120,8 @@ public record PostgresEntityStoreConfig(
         }
     }
 
-    private static long envLong(String primary, String fallback, long defaultValue) {
-        String value = firstPresent(primary, fallback);
+    private static long envLong(String primaryProperty, String primaryEnv, String fallbackEnv, long defaultValue) {
+        String value = firstPresent(primaryProperty, primaryEnv, fallbackEnv);
         if (value == null) {
             return defaultValue;
         }
@@ -123,8 +132,13 @@ public record PostgresEntityStoreConfig(
         }
     }
 
-    private static String firstPresent(String primary, String fallback) {
-        return normalize(Optional.ofNullable(System.getenv(primary)).orElse(System.getenv(fallback)));
+    private static String firstPresent(String propertyName, String primaryEnv, String fallbackEnv) {
+        String propertyValue = normalize(System.getProperty(propertyName));
+        if (propertyValue != null) {
+            return propertyValue;
+        }
+
+        return normalize(Optional.ofNullable(System.getenv(primaryEnv)).orElse(System.getenv(fallbackEnv)));
     }
 
     private static String normalize(String value) {

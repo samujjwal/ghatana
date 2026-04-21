@@ -30,7 +30,8 @@ describe('route truth matrix', () => {
   });
 
   it('keeps unsupported routes out of default discovery surfaces', () => {
-    expect(shellSource).not.toContain("label: 'Alerts'");
+    expect(shellSource).toContain("label: 'Alerts'");
+    expect(shellSource).toContain("minimumShellRole: 'operator'");
     expect(shellSource).not.toContain("label: 'Fabric'");
     expect(globalSearchSource).not.toContain("id: 'nav-alerts'");
     expect(globalSearchSource).toContain("id: 'nav-query'");

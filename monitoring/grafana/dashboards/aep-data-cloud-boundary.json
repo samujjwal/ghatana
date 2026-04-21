@@ -1,0 +1,76 @@
+{
+  "id": null,
+  "uid": "aep-datacloud-boundary-001",
+  "title": "AEP + Data Cloud Boundary Signals",
+  "description": "Cross-product dashboard for shared request/latency/error signals at the AEP and Data Cloud integration boundary.",
+  "tags": ["aep", "data-cloud", "boundary", "ghatana"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Request Rate By Service",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"aep-service-manager|data-cloud-platform\"}[5m])) by (job)",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "p95 Latency By Service",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=~\"aep-service-manager|data-cloud-platform\"}[5m])) by (job, le))",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "5xx Error Rate By Service",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"aep-service-manager|data-cloud-platform\",status=~\"5..\"}[5m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"aep-service-manager|data-cloud-platform\"}[5m])) by (job), 1)",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Service Availability",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "up{job=~\"aep-service-manager|data-cloud-platform\"}",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,8 @@ import com.ghatana.agent.learning.review.DataCloudHumanReviewQueue;
 import com.ghatana.agent.learning.review.ReviewItem;
 import com.ghatana.aep.server.store.DataCloudPipelineStore;
 import com.ghatana.datacloud.DataCloud;
+import com.ghatana.datacloud.DataCloud.DataCloudConfig;
+import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.pipeline.registry.model.Pipeline;
 import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
@@ -14,6 +16,7 @@ import com.ghatana.platform.domain.auth.TenantId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -24,6 +27,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("AepHttpServer – Data-Cloud Integration")
 class AepHttpServerDataCloudIntegrationTest {
+
+    @TempDir
+    Path tempDir;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -102,6 +109,99 @@ class AepHttpServerDataCloudIntegrationTest {
         assertThat(get.statusCode()).isEqualTo(200);
         Map<?, ?> getBody = mapper.readValue(get.body(), Map.class);
         assertThat(((Map<?, ?>) getBody.get("pattern")).get("id")).isEqualTo(createdId);
+    }
+
+    @Test
+    @DisplayName("run history persists across restart with sovereign Data-Cloud and stays queryable through /api/v1/runs")
+    void runHistoryPersistsAcrossRestartWithSovereignDataCloud() throws Exception {
+        DataCloudConfig config = sovereignConfig("runs-persist");
+        dataCloud = DataCloud.create(config);
+
+        int firstPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, firstPort, null, dataCloud);
+        server.start();
+        waitForServerReady(firstPort);
+
+        HttpResponse<String> processResponse = post(firstPort, "/api/v1/events", mapper.writeValueAsString(Map.of(
+            "tenantId", "tenant-runs",
+            "type", "purchase.completed",
+            "payload", Map.of("orderId", "order-1", "amount", 42)
+        )));
+
+        assertThat(processResponse.statusCode()).isEqualTo(200);
+        Map<?, ?> processBody = mapper.readValue(processResponse.body(), Map.class);
+        String runId = String.valueOf(processBody.get("eventId"));
+
+        assertThat(waitForRunCount(firstPort, "tenant-runs", 1).body()).contains(runId);
+
+        server.stop();
+        engine.close();
+        dataCloud.close();
+        server = null;
+        engine = null;
+        dataCloud = null;
+
+        dataCloud = DataCloud.create(config);
+        int secondPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, secondPort, null, dataCloud);
+        server.start();
+        waitForServerReady(secondPort);
+
+        HttpResponse<String> runsResponse = waitForRunCount(secondPort, "tenant-runs", 1);
+        assertThat(runsResponse.statusCode()).isEqualTo(200);
+        Map<?, ?> runsBody = mapper.readValue(runsResponse.body(), Map.class);
+        assertThat(((Number) runsBody.get("count")).intValue()).isEqualTo(1);
+        assertThat(((List<?>) runsBody.get("runs")).toString()).contains(runId, "SUCCEEDED");
+
+        HttpResponse<String> detailResponse = get(secondPort, "/api/v1/runs/" + runId, "tenant-runs");
+        assertThat(detailResponse.statusCode()).isEqualTo(200);
+        Map<?, ?> detailBody = mapper.readValue(detailResponse.body(), Map.class);
+        assertThat(detailBody.get("runId")).isEqualTo(runId);
+        assertThat(detailBody.get("tenantId")).isEqualTo("tenant-runs");
+        assertThat(detailBody.get("status")).isEqualTo("SUCCEEDED");
+    }
+
+    @Test
+    @DisplayName("run history remains tenant-isolated after restart with sovereign Data-Cloud")
+    void runHistoryRemainsTenantIsolatedAfterRestart() throws Exception {
+        DataCloudConfig config = sovereignConfig("runs-isolation");
+        dataCloud = DataCloud.create(config);
+
+        int firstPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, firstPort, null, dataCloud);
+        server.start();
+        waitForServerReady(firstPort);
+
+        String tenantARunId = processEvent(firstPort, "tenant-a", "invoice.generated", Map.of("invoiceId", "inv-a"));
+        String tenantBRunId = processEvent(firstPort, "tenant-b", "invoice.generated", Map.of("invoiceId", "inv-b"));
+
+        server.stop();
+        engine.close();
+        dataCloud.close();
+        server = null;
+        engine = null;
+        dataCloud = null;
+
+        dataCloud = DataCloud.create(config);
+        int secondPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, secondPort, null, dataCloud);
+        server.start();
+        waitForServerReady(secondPort);
+
+        HttpResponse<String> tenantARuns = waitForRunCount(secondPort, "tenant-a", 1);
+        HttpResponse<String> tenantBRuns = waitForRunCount(secondPort, "tenant-b", 1);
+
+        assertThat(tenantARuns.statusCode()).isEqualTo(200);
+        assertThat(tenantBRuns.statusCode()).isEqualTo(200);
+        assertThat(tenantARuns.body()).contains(tenantARunId).doesNotContain(tenantBRunId);
+        assertThat(tenantBRuns.body()).contains(tenantBRunId).doesNotContain(tenantARunId);
+
+        HttpResponse<String> crossTenantDetail = get(secondPort, "/api/v1/runs/" + tenantARunId, "tenant-b");
+        assertThat(crossTenantDetail.statusCode()).isEqualTo(404);
     }
 
     @Test
@@ -229,6 +329,103 @@ class AepHttpServerDataCloudIntegrationTest {
     }
 
     @Test
+    @DisplayName("pipeline updates reject stale versions with a structured 409 conflict")
+    void pipelineUpdateRejectsStaleVersion() throws Exception {
+        dataCloud = DataCloud.embedded();
+
+        String pipelineId = "pipeline-conflict-1";
+        DataCloudPipelineStore pipelineStore = new DataCloudPipelineStore(dataCloud);
+        Pipeline existing = new Pipeline();
+        existing.setId(pipelineId);
+        existing.setTenantId(TenantId.of("tenant-pipeline"));
+        existing.setName("conflict-pipeline");
+        existing.setVersion(3);
+        existing.setActive(true);
+        existing.setConfig("{\"stages\":[{\"name\":\"step1\"}]}");
+        existing.setCreatedBy("test");
+        existing.setUpdatedBy("test");
+        pipelineStore.save(existing).getResult();
+
+        int port = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, port, null, dataCloud);
+        server.start();
+        waitForServerReady(port);
+
+        HttpResponse<String> updateResp = put(
+            port,
+            "/api/v1/pipelines/" + pipelineId,
+            mapper.writeValueAsString(Map.of(
+                "id", pipelineId,
+                "tenantId", "tenant-pipeline",
+                "name", "conflict-pipeline-updated",
+                "version", 2,
+                "stages", List.of()
+            )),
+            "tenant-pipeline",
+            "\"2\"");
+
+        assertThat(updateResp.statusCode()).isEqualTo(409);
+        Map<?, ?> conflictBody = mapper.readValue(updateResp.body(), Map.class);
+        assertThat(conflictBody.get("errorCode")).isEqualTo("PIPELINE_VERSION_CONFLICT");
+        assertThat(((Number) conflictBody.get("expectedVersion")).intValue()).isEqualTo(2);
+        assertThat(((Number) conflictBody.get("currentVersion")).intValue()).isEqualTo(3);
+
+        HttpResponse<String> getPipeline = get(port,
+            "/api/v1/pipelines/" + pipelineId,
+            "tenant-pipeline");
+        assertThat(getPipeline.statusCode()).isEqualTo(200);
+        Map<?, ?> pipelineBody = mapper.readValue(getPipeline.body(), Map.class);
+        assertThat(((Number) pipelineBody.get("version")).intValue()).isEqualTo(3);
+        assertThat(pipelineBody.get("name")).isEqualTo("conflict-pipeline");
+    }
+
+    @Test
+    @DisplayName("pipeline updates succeed when the caller supplies the current version")
+    void pipelineUpdateSucceedsWithCurrentVersion() throws Exception {
+        dataCloud = DataCloud.embedded();
+
+        String pipelineId = "pipeline-conflict-2";
+        DataCloudPipelineStore pipelineStore = new DataCloudPipelineStore(dataCloud);
+        Pipeline existing = new Pipeline();
+        existing.setId(pipelineId);
+        existing.setTenantId(TenantId.of("tenant-pipeline"));
+        existing.setName("current-pipeline");
+        existing.setVersion(3);
+        existing.setActive(true);
+        existing.setConfig("{\"stages\":[{\"name\":\"step1\"}]}");
+        existing.setCreatedBy("test");
+        existing.setUpdatedBy("test");
+        pipelineStore.save(existing).getResult();
+
+        int port = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, port, null, dataCloud);
+        server.start();
+        waitForServerReady(port);
+
+        HttpResponse<String> existingResp = get(port,
+            "/api/v1/pipelines/" + pipelineId,
+            "tenant-pipeline");
+        assertThat(existingResp.statusCode()).isEqualTo(200);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> updatePayload = mapper.readValue(existingResp.body(), Map.class);
+        updatePayload.put("description", "Current pipeline description updated");
+
+        HttpResponse<String> updateResp = put(
+            port,
+            "/api/v1/pipelines/" + pipelineId,
+            mapper.writeValueAsString(updatePayload),
+            "tenant-pipeline",
+            "\"3\"");
+
+        assertThat(updateResp.statusCode()).isEqualTo(200);
+        Map<?, ?> updatedBody = mapper.readValue(updateResp.body(), Map.class);
+        assertThat(((Number) updatedBody.get("version")).intValue()).isEqualTo(4);
+        assertThat(updatedBody.get("description")).isEqualTo("Current pipeline description updated");
+    }
+
+    @Test
     @DisplayName("pending HITL reviews persist across server restart when Data-Cloud is configured")
     void pendingHitlReviewsPersistAcrossServerRestart() throws Exception {
         dataCloud = DataCloud.embedded();
@@ -272,6 +469,65 @@ class AepHttpServerDataCloudIntegrationTest {
         assertThat(((List<?>) secondBody.get("pending")).toString()).contains("review-persist-1");
     }
 
+    @Test
+    @DisplayName("GDPR erasure removes subject records from embedded Data-Cloud collections")
+    void gdprErasureRemovesSubjectRecordsFromEmbeddedDataCloud() throws Exception {
+        dataCloud = DataCloud.embedded();
+
+        String tenantId = "tenant-gdpr";
+        String subjectId = "subject-erase-1";
+        List<String> collections = List.of(
+            "aep_patterns",
+            "aep_pipelines",
+            "agent-registry",
+            "dc_memory",
+            "aep_audit"
+        );
+
+        for (String collection : collections) {
+            dataCloud.save(tenantId, collection, Map.of(
+                "id", collection + "-record",
+                "name", "record-" + collection,
+                "_subjectId", subjectId,
+                "collection", collection
+            )).getResult();
+        }
+
+        int port = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, port, null, dataCloud);
+        server.start();
+        waitForServerReady(port);
+
+        HttpResponse<String> eraseResponse = post(port, "/api/v1/compliance/gdpr/erasure", mapper.writeValueAsString(Map.of(
+            "tenantId", tenantId,
+            "subjectId", subjectId
+        )));
+
+        assertThat(eraseResponse.statusCode()).isEqualTo(200);
+        Map<?, ?> report = mapper.readValue(eraseResponse.body(), Map.class);
+        assertThat(report.get("operationType")).isEqualTo("GDPR_ERASURE");
+        assertThat(report.get("success")).isEqualTo(true);
+        assertThat(((Number) report.get("total")).longValue()).isEqualTo(collections.size());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Number> breakdown = (Map<String, Number>) report.get("breakdown");
+        for (String collection : collections) {
+            assertThat(breakdown).containsKey(collection);
+            assertThat(breakdown.get(collection).longValue()).isEqualTo(1L);
+
+            List<DataCloudClient.Entity> remaining = dataCloud.query(
+                tenantId,
+                collection,
+                DataCloudClient.Query.builder()
+                    .filter(DataCloudClient.Filter.eq("_subjectId", subjectId))
+                    .limit(10)
+                    .build()
+            ).getResult();
+            assertThat(remaining).isEmpty();
+        }
+    }
+
     private HttpResponse<String> get(int port, String path) throws Exception {
         return get(port, path, null);
     }
@@ -300,6 +556,55 @@ class AepHttpServerDataCloudIntegrationTest {
         return httpClient.send(
             builder.POST(HttpRequest.BodyPublishers.ofString(body)).build(),
             HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> put(int port, String path, String body, String tenantId, String ifMatch) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("Content-Type", "application/json");
+        if (tenantId != null) {
+            builder.header("X-Tenant-Id", tenantId);
+        }
+        if (ifMatch != null) {
+            builder.header("If-Match", ifMatch);
+        }
+        return httpClient.send(
+            builder.PUT(HttpRequest.BodyPublishers.ofString(body)).build(),
+            HttpResponse.BodyHandlers.ofString());
+    }
+
+    private DataCloudConfig sovereignConfig(String directoryName) {
+        return DataCloudConfig.builder()
+            .profile(DataCloudProfile.SOVEREIGN)
+            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve(directoryName).toString()))
+            .build();
+    }
+
+    private String processEvent(int port, String tenantId, String eventType, Map<String, Object> payload) throws Exception {
+        HttpResponse<String> response = post(port, "/api/v1/events", mapper.writeValueAsString(Map.of(
+            "tenantId", tenantId,
+            "type", eventType,
+            "payload", payload
+        )));
+        assertThat(response.statusCode()).isEqualTo(200);
+        return String.valueOf(mapper.readValue(response.body(), Map.class).get("eventId"));
+    }
+
+    private HttpResponse<String> waitForRunCount(int port, String tenantId, int expectedCount) throws Exception {
+        long deadline = System.currentTimeMillis() + 5_000;
+        HttpResponse<String> lastResponse = null;
+        while (System.currentTimeMillis() < deadline) {
+            lastResponse = get(port, "/api/v1/runs", tenantId);
+            if (lastResponse.statusCode() == 200) {
+                Map<?, ?> body = mapper.readValue(lastResponse.body(), Map.class);
+                if (((Number) body.get("count")).intValue() >= expectedCount) {
+                    return lastResponse;
+                }
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("Run history did not reach expected count for tenant " + tenantId
+            + "; last response=" + (lastResponse != null ? lastResponse.body() : "<none>"));
     }
 
     private static int findFreePort() throws IOException {

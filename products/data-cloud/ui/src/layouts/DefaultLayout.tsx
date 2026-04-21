@@ -37,6 +37,10 @@ import {
 import { cn, bgStyles, borderStyles, textStyles } from '../lib/theme';
 import SessionBootstrap, {
     type ShellRole,
+    SHELL_ROLE_CONTROL_LABEL,
+    SHELL_ROLE_CONTROL_TITLE,
+    SHELL_ROLE_DESCRIPTIONS,
+    SHELL_ROLE_DISCLOSURE_NOTE,
     SHELL_ROLE_LABELS,
     SHELL_ROLES,
     canAccessShellRole,
@@ -313,7 +317,7 @@ function Header({
                         <button
                             type="button"
                             className="flex h-8 items-center gap-2 rounded-full bg-gray-200 px-3 text-gray-600 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                            aria-label="Workspace mode menu"
+                            aria-label={SHELL_ROLE_CONTROL_LABEL}
                             onClick={() => setIsRoleMenuOpen((current) => !current)}
                         >
                             <span className="text-sm font-medium">{SHELL_ROLE_LABELS[shellRole]}</span>
@@ -324,10 +328,10 @@ function Header({
                             <div className="absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-800">
                                 <div className="px-2 pb-2 pt-1">
                                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                        Workspace Mode
+                                        {SHELL_ROLE_CONTROL_TITLE}
                                     </p>
                                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                        Progressive disclosure changes the shell density without changing backend permissions.
+                                        {SHELL_ROLE_DISCLOSURE_NOTE}
                                     </p>
                                 </div>
                                 <div className="space-y-1">
@@ -350,11 +354,7 @@ function Header({
                                             >
                                                 <div className="font-medium">{SHELL_ROLE_LABELS[role]}</div>
                                                 <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                                    {role === 'primary-user'
-                                                        ? 'Focus on asking questions, exploring data, and launching flows.'
-                                                        : role === 'operator'
-                                                            ? 'Reveal runtime diagnostics, trust, and operational investigation surfaces.'
-                                                            : 'Include administrative settings and full shell access.'}
+                                                    {SHELL_ROLE_DESCRIPTIONS[role]}
                                                 </div>
                                             </button>
                                         );

@@ -5,16 +5,39 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { VoiceInput, VoiceTextarea } from '../VoiceInput';
+import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 
-// Mock browser SpeechRecognition API
-const mockSpeechRecognition = vi.fn();
-(global as any).SpeechRecognition = mockSpeechRecognition;
-(global as any).webkitSpeechRecognition = mockSpeechRecognition;
+const wrapper = createAepTestWrapper();
+
+type MockRecognitionInstance = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: ReturnType<typeof vi.fn>;
+  stop: ReturnType<typeof vi.fn>;
+  onstart: (() => void) | null;
+  onresult: ((event: unknown) => void) | null;
+  onerror: ((event: unknown) => void) | null;
+  onend: (() => void) | null;
+};
+
+let recognitionFactory: (() => MockRecognitionInstance) | null = null;
+
+function MockSpeechRecognition(this: unknown): MockRecognitionInstance {
+  if (!recognitionFactory) {
+    throw new Error('SpeechRecognition factory not configured');
+  }
+
+  return recognitionFactory();
+}
 
 describe('VoiceInput', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    recognitionFactory = null;
+    (window as unknown as { SpeechRecognition: typeof MockSpeechRecognition }).SpeechRecognition = MockSpeechRecognition;
+    (window as unknown as { webkitSpeechRecognition: typeof MockSpeechRecognition }).webkitSpeechRecognition = MockSpeechRecognition;
   });
 
   afterEach(() => {
@@ -35,7 +58,8 @@ describe('VoiceInput', () => {
         value="test"
         onChange={() => {}}
         placeholder="Enter text"
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Enter text');
@@ -58,7 +82,8 @@ describe('VoiceInput', () => {
         value="test"
         onChange={() => {}}
         placeholder="Enter text"
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Enter text');
@@ -79,8 +104,8 @@ describe('VoiceInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    let recognitionInstance: any = null;
-    mockSpeechRecognition.mockImplementation(() => {
+    let recognitionInstance: MockRecognitionInstance | null = null;
+    recognitionFactory = () => {
       recognitionInstance = {
         continuous: false,
         interimResults: true,
@@ -93,7 +118,7 @@ describe('VoiceInput', () => {
         onend: null,
       };
       return recognitionInstance;
-    });
+    };
 
     const onChange = vi.fn();
     render(
@@ -101,7 +126,8 @@ describe('VoiceInput', () => {
         value=""
         onChange={onChange}
         placeholder="Enter text"
-      />
+      />,
+      { wrapper }
     );
 
     const voiceButton = screen.getByLabelText(/Start voice input/i);
@@ -122,8 +148,8 @@ describe('VoiceInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    let recognitionInstance: any = null;
-    mockSpeechRecognition.mockImplementation(() => {
+    let recognitionInstance: MockRecognitionInstance | null = null;
+    recognitionFactory = () => {
       recognitionInstance = {
         continuous: false,
         interimResults: true,
@@ -139,7 +165,7 @@ describe('VoiceInput', () => {
         onend: null,
       };
       return recognitionInstance;
-    });
+    };
 
     const onChange = vi.fn();
     render(
@@ -147,7 +173,8 @@ describe('VoiceInput', () => {
         value=""
         onChange={onChange}
         placeholder="Enter text"
-      />
+      />,
+      { wrapper }
     );
 
     const voiceButton = screen.getByLabelText(/Start voice input/i);
@@ -187,8 +214,8 @@ describe('VoiceInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    let recognitionInstance: any = null;
-    mockSpeechRecognition.mockImplementation(() => {
+    let recognitionInstance: MockRecognitionInstance | null = null;
+    recognitionFactory = () => {
       recognitionInstance = {
         continuous: false,
         interimResults: true,
@@ -203,14 +230,15 @@ describe('VoiceInput', () => {
         onend: null,
       };
       return recognitionInstance;
-    });
+    };
 
     render(
       <VoiceInput
         value=""
         onChange={() => {}}
         placeholder="Enter text"
-      />
+      />,
+      { wrapper }
     );
 
     const voiceButton = screen.getByLabelText(/Start voice input/i);
@@ -231,8 +259,8 @@ describe('VoiceInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    let recognitionInstance: any = null;
-    mockSpeechRecognition.mockImplementation(() => {
+    let recognitionInstance: MockRecognitionInstance | null = null;
+    recognitionFactory = () => {
       recognitionInstance = {
         continuous: false,
         interimResults: true,
@@ -247,14 +275,15 @@ describe('VoiceInput', () => {
         onend: null,
       };
       return recognitionInstance;
-    });
+    };
 
     render(
       <VoiceInput
         value=""
         onChange={() => {}}
         placeholder="Enter text"
-      />
+      />,
+      { wrapper }
     );
 
     const voiceButton = screen.getByLabelText(/Start voice input/i);
@@ -288,7 +317,8 @@ describe('VoiceInput', () => {
         onChange={() => {}}
         placeholder="Enter text"
         disabled
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Enter text');
@@ -308,8 +338,8 @@ describe('VoiceInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    let recognitionInstance: any = null;
-    mockSpeechRecognition.mockImplementation(() => {
+    let recognitionInstance: MockRecognitionInstance | null = null;
+    recognitionFactory = () => {
       recognitionInstance = {
         continuous: false,
         interimResults: true,
@@ -324,7 +354,7 @@ describe('VoiceInput', () => {
         onend: null,
       };
       return recognitionInstance;
-    });
+    };
 
     const onListeningStart = vi.fn();
     render(
@@ -333,7 +363,8 @@ describe('VoiceInput', () => {
         onChange={() => {}}
         placeholder="Enter text"
         onListeningStart={onListeningStart}
-      />
+      />,
+      { wrapper }
     );
 
     const voiceButton = screen.getByLabelText(/Start voice input/i);
@@ -371,7 +402,8 @@ describe('VoiceTextarea', () => {
         onChange={() => {}}
         placeholder="Enter text"
         rows={5}
-      />
+      />,
+      { wrapper }
     );
 
     const textarea = screen.getByPlaceholderText('Enter text');

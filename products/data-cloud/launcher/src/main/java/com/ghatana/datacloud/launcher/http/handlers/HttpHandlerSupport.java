@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
+import com.ghatana.datacloud.launcher.http.RequestTraceSupport;
 import com.ghatana.platform.governance.security.Principal;
 import io.activej.http.*;
 
@@ -85,7 +86,7 @@ public class HttpHandlerSupport {
     public HttpResponse jsonResponse(Map<String, Object> data) {
         try {
             String json = objectMapper.writeValueAsString(data);
-            return HttpResponse.ok200()
+            return RequestTraceSupport.applyTo(HttpResponse.ok200())
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -93,7 +94,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(500)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(500))
                 .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
@@ -109,7 +110,7 @@ public class HttpHandlerSupport {
                 "code", code,
                 "timestamp", Instant.now().toString()
             ));
-            return HttpResponse.ofCode(code)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -117,7 +118,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(code)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
@@ -130,7 +131,7 @@ public class HttpHandlerSupport {
     public HttpResponse jsonResponse(Map<String, Object> data, String correlationId) {
         try {
             String json = objectMapper.writeValueAsString(data);
-            return HttpResponse.ok200()
+            return RequestTraceSupport.applyTo(HttpResponse.ok200())
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -139,7 +140,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(500)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(500))
                 .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
                 .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -152,7 +153,7 @@ public class HttpHandlerSupport {
     public HttpResponse createdResponse(Map<String, Object> data) {
         try {
             String json = objectMapper.writeValueAsString(data);
-            return HttpResponse.ofCode(201)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(201))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -160,7 +161,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(500)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(500))
                 .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
@@ -170,7 +171,7 @@ public class HttpHandlerSupport {
      * Builds a 204 No Content response with CORS headers.
      */
     public HttpResponse noContentResponse() {
-        return HttpResponse.ofCode(204)
+        return RequestTraceSupport.applyTo(HttpResponse.ofCode(204))
             .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
             .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
             .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
@@ -187,7 +188,7 @@ public class HttpHandlerSupport {
     public HttpResponse jsonResponse(int statusCode, Map<String, Object> data) {
         try {
             String json = objectMapper.writeValueAsString(data);
-            return HttpResponse.ofCode(statusCode)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(statusCode))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -195,7 +196,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(500)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(500))
                 .withBody(("{\"error\":\"json serialization failed\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
@@ -204,7 +205,7 @@ public class HttpHandlerSupport {
     public HttpResponse jsonBodyResponse(Object data) {
         try {
             String json = objectMapper.writeValueAsString(data);
-            return HttpResponse.ok200()
+            return RequestTraceSupport.applyTo(HttpResponse.ok200())
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -212,7 +213,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(500)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(500))
                 .withBody(("{\"error\":\"json serialization failed\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
@@ -239,7 +240,7 @@ public class HttpHandlerSupport {
                 "timestamp", Instant.now().toString(),
                 "requestId", correlationId
             ));
-            return HttpResponse.ofCode(code)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -248,7 +249,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(code)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
                 .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -456,7 +457,7 @@ public class HttpHandlerSupport {
     public HttpResponse errorEnvelopeResponse(ApiResponse envelope, ObjectMapper mapper, int statusCode) {
         try {
             String json = envelope.toJson(mapper);
-            return HttpResponse.ofCode(statusCode)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(statusCode))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
@@ -465,7 +466,7 @@ public class HttpHandlerSupport {
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
-            return HttpResponse.ofCode(500)
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(500))
                 .withBody(("{\"error\":\"envelope serialisation failed\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }

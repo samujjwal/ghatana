@@ -642,7 +642,7 @@ export function IntelligentHub(): React.ReactElement {
             {
               id: 'mode',
               title: 'Stay in primary mode until you need deeper controls',
-              description: 'Switch the workspace mode in the header to reveal operator and admin surfaces progressively.',
+              description: 'Switch the workspace view in the header to disclose operator and admin surfaces without changing backend permissions.',
               icon: <Layers className="h-4 w-4 text-green-600" />,
               iconClassName: 'bg-green-100 dark:bg-green-900/50',
             },

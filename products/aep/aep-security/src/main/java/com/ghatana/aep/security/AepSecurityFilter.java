@@ -4,6 +4,8 @@
  */
 package com.ghatana.aep.security;
 
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
@@ -20,9 +22,14 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * OWASP-aligned HTTP security filter for the AEP HTTP server.
@@ -58,6 +65,12 @@ public final class AepSecurityFilter implements AsyncServlet {
     private static final int RATE_LIMIT_REQUESTS = 200;
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
 
+    /** Counter incremented when a trusted proxy supplied a valid X-Forwarded-For client IP. */
+    public static final String FORWARDED_HEADER_ACCEPTED = "aep.security.proxy.forwarded.accepted";
+
+    /** Counter incremented when X-Forwarded-For is ignored or malformed. */
+    public static final String FORWARDED_HEADER_REJECTED = "aep.security.proxy.forwarded.rejected";
+
     // ── Security header values (constants to avoid allocation per request) ──────
     private static final String HSTS_VALUE =
             "max-age=31536000; includeSubDomains; preload";
@@ -70,9 +83,12 @@ public final class AepSecurityFilter implements AsyncServlet {
 
     // ── CORS ────────────────────────────────────────────────────────────────────
     private final String allowedOrigins;
+    private final List<IpRange> trustedProxyRanges;
+    private final MetricsCollector metricsCollector;
 
     // ── Downstream ──────────────────────────────────────────────────────────────
     private final AsyncServlet next;
+    private final Function<HttpRequest, String> remoteAddressResolver;
 
     // ── Shared platform limiter ─────────────────────────────────────────────────
     private final RateLimiter rateLimiter;
@@ -84,8 +100,67 @@ public final class AepSecurityFilter implements AsyncServlet {
      * @param allowedOrigins comma-separated list of allowed CORS origins, or {@code "*"}
      */
     public AepSecurityFilter(AsyncServlet next, String allowedOrigins) {
+        this(next, allowedOrigins, "", MetricsCollectorFactory.createNoop());
+    }
+
+    /**
+     * Constructs a security filter with the given CORS policy and metrics collector.
+     *
+     * @param next downstream servlet (router)
+     * @param allowedOrigins comma-separated list of allowed CORS origins, or {@code "*"}
+     * @param metricsCollector metrics collector for security decision counters
+     */
+    public AepSecurityFilter(AsyncServlet next, String allowedOrigins, MetricsCollector metricsCollector) {
+        this(next, allowedOrigins, "", metricsCollector);
+    }
+
+    /**
+     * Constructs a security filter with the given CORS policy and trusted-proxy list.
+     *
+     * @param next downstream servlet (router)
+     * @param allowedOrigins comma-separated list of allowed CORS origins, or {@code "*"}
+     * @param trustedProxyCidrs comma-separated exact IPs or CIDR ranges allowed to supply X-Forwarded-For
+     */
+    public AepSecurityFilter(AsyncServlet next, String allowedOrigins, String trustedProxyCidrs) {
+        this(next, allowedOrigins, trustedProxyCidrs, MetricsCollectorFactory.createNoop());
+        }
+
+        /**
+         * Constructs a security filter with the given CORS policy, trusted-proxy list, and metrics.
+         *
+         * @param next downstream servlet (router)
+         * @param allowedOrigins comma-separated list of allowed CORS origins, or {@code "*"}
+         * @param trustedProxyCidrs comma-separated exact IPs or CIDR ranges allowed to supply X-Forwarded-For
+         * @param metricsCollector metrics collector for proxy validation decisions
+         */
+        public AepSecurityFilter(AsyncServlet next,
+                     String allowedOrigins,
+                     String trustedProxyCidrs,
+                     MetricsCollector metricsCollector) {
+        this(next, allowedOrigins, trustedProxyCidrs, AepSecurityFilter::resolveRemoteAddress, metricsCollector);
+    }
+
+    AepSecurityFilter(AsyncServlet next,
+                      String allowedOrigins,
+                      String trustedProxyCidrs,
+                      Function<HttpRequest, String> remoteAddressResolver) {
+        this(next, allowedOrigins, trustedProxyCidrs, remoteAddressResolver, MetricsCollectorFactory.createNoop());
+        }
+
+        AepSecurityFilter(AsyncServlet next,
+                  String allowedOrigins,
+                  String trustedProxyCidrs,
+                  Function<HttpRequest, String> remoteAddressResolver,
+                  MetricsCollector metricsCollector) {
         this.next = next;
         this.allowedOrigins = allowedOrigins != null ? allowedOrigins : "*";
+        this.trustedProxyRanges = parseTrustedProxyRanges(trustedProxyCidrs);
+        this.remoteAddressResolver = remoteAddressResolver != null
+                ? remoteAddressResolver
+                : AepSecurityFilter::resolveRemoteAddress;
+        this.metricsCollector = metricsCollector != null
+            ? metricsCollector
+            : MetricsCollectorFactory.createNoop();
         this.rateLimiter = DefaultRateLimiter.create(
                 RateLimiterConfig.builder()
                         .maxRequestsPerMinute(RATE_LIMIT_REQUESTS)
@@ -250,14 +325,141 @@ public final class AepSecurityFilter implements AsyncServlet {
     // =========================================================================
 
     private String clientIp(HttpRequest request) {
-        // Honour X-Forwarded-For when running behind a proxy / ingress
+        String remoteIp = normalizeAddress(remoteAddressResolver.apply(request));
+
+        // Honour X-Forwarded-For only when the immediate caller is a configured trusted proxy.
         String xff = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
-        if (xff != null) {
-            // Take the first (leftmost) address — that is the real client IP
-            int comma = xff.indexOf(',');
-            return (comma > 0 ? xff.substring(0, comma) : xff).trim();
+        if (xff != null && !xff.isBlank()) {
+            if (isTrustedProxy(remoteIp)) {
+                int comma = xff.indexOf(',');
+                String forwardedClient = normalizeAddress(comma > 0 ? xff.substring(0, comma) : xff);
+                if (forwardedClient != null) {
+                    recordForwardedHeaderAccepted();
+                    return forwardedClient;
+                }
+                recordForwardedHeaderRejected("invalid_forwarded_for");
+            } else {
+                recordForwardedHeaderRejected(trustedProxyRanges.isEmpty()
+                        ? "no_trusted_proxy_configured"
+                        : "untrusted_proxy");
+                log.debug("Ignoring X-Forwarded-For from untrusted remote address='{}'", remoteIp);
+            }
         }
-        return "unknown";
+        return remoteIp != null ? remoteIp : "unknown";
+    }
+
+    private void recordForwardedHeaderAccepted() {
+        metricsCollector.incrementCounter(FORWARDED_HEADER_ACCEPTED);
+    }
+
+    private void recordForwardedHeaderRejected(String reason) {
+        metricsCollector.incrementCounter(FORWARDED_HEADER_REJECTED, "reason", reason);
+    }
+
+    private boolean isTrustedProxy(String remoteIp) {
+        if (remoteIp == null || trustedProxyRanges.isEmpty()) {
+            return false;
+        }
+        return trustedProxyRanges.stream().anyMatch(range -> range.matches(remoteIp));
+    }
+
+    private static List<IpRange> parseTrustedProxyRanges(String trustedProxyCidrs) {
+        if (trustedProxyCidrs == null || trustedProxyCidrs.isBlank()) {
+            return List.of();
+        }
+
+        List<IpRange> ranges = new ArrayList<>();
+        for (String rawEntry : trustedProxyCidrs.split(",")) {
+            String entry = rawEntry.trim();
+            if (entry.isEmpty()) {
+                continue;
+            }
+            try {
+                ranges.add(IpRange.parse(entry));
+            } catch (IllegalArgumentException ex) {
+                log.warn("Ignoring invalid trusted proxy entry='{}': {}", entry, ex.getMessage());
+            }
+        }
+        return List.copyOf(ranges);
+    }
+
+    private static String resolveRemoteAddress(HttpRequest request) {
+        try {
+            InetAddress remoteAddress = request.getRemoteAddress();
+            return remoteAddress != null ? remoteAddress.toString() : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static String normalizeAddress(String address) {
+        if (address == null) {
+            return null;
+        }
+
+        String trimmed = address.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        String normalized = trimmed;
+        if (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        if (normalized.startsWith("[") && normalized.contains("]")) {
+            normalized = normalized.substring(1, normalized.indexOf(']'));
+        } else {
+            int colonIndex = normalized.lastIndexOf(':');
+            if (colonIndex > 0 && normalized.indexOf(':') == colonIndex) {
+                normalized = normalized.substring(0, colonIndex);
+            }
+        }
+        return normalized.isBlank() ? null : normalized;
+    }
+
+    private record IpRange(byte[] networkBytes, int prefixLength) {
+        private static IpRange parse(String raw) {
+            String[] parts = raw.split("/");
+            try {
+                InetAddress address = InetAddress.getByName(parts[0].trim());
+                int prefix = parts.length == 2
+                        ? Integer.parseInt(parts[1].trim())
+                        : address.getAddress().length * Byte.SIZE;
+                int maxBits = address.getAddress().length * Byte.SIZE;
+                if (prefix < 0 || prefix > maxBits) {
+                    throw new IllegalArgumentException("prefix length out of range");
+                }
+                return new IpRange(address.getAddress(), prefix);
+            } catch (UnknownHostException | NumberFormatException ex) {
+                throw new IllegalArgumentException("invalid IP or CIDR", ex);
+            }
+        }
+
+        private boolean matches(String candidate) {
+            try {
+                byte[] candidateBytes = InetAddress.getByName(candidate).getAddress();
+                if (candidateBytes.length != networkBytes.length) {
+                    return false;
+                }
+
+                int fullBytes = prefixLength / Byte.SIZE;
+                int remainingBits = prefixLength % Byte.SIZE;
+                for (int index = 0; index < fullBytes; index++) {
+                    if (candidateBytes[index] != networkBytes[index]) {
+                        return false;
+                    }
+                }
+
+                if (remainingBits == 0) {
+                    return true;
+                }
+
+                int mask = 0xFF << (Byte.SIZE - remainingBits);
+                return (candidateBytes[fullBytes] & mask) == (networkBytes[fullBytes] & mask);
+            } catch (UnknownHostException ex) {
+                return false;
+            }
+        }
     }
 
     // =========================================================================

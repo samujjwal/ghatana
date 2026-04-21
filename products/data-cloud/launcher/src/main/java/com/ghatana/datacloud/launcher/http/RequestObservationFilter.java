@@ -61,8 +61,8 @@ public final class RequestObservationFilter {
             }
             final String effectiveTenantId = tenantId;
             TraceParent traceParent = parseTraceParent(request.getHeader(HttpHeaders.of("traceparent")));
-            String traceId = traceParent != null ? traceParent.traceId() : requestId;
-            String requestSpanId = UUID.randomUUID().toString();
+            String traceId = traceParent != null ? traceParent.traceId() : newTraceId();
+            String requestSpanId = newSpanId();
             boolean sampled = traceParent != null ? traceParent.sampled() : shouldSample(requestId, samplingRate);
 
             RequestMetadataAttachment metadata = new RequestMetadataAttachment(
@@ -75,17 +75,27 @@ public final class RequestObservationFilter {
                 path,
                 sampled);
             request.attach(RequestMetadataAttachment.class, metadata);
+            RequestTraceSupport.setCurrent(new RequestTraceSupport.TraceHeaders(
+                metadata.requestId(),
+                metadata.traceId(),
+                metadata.requestSpanId(),
+                metadata.parentSpanId(),
+                metadata.sampled()));
 
             if (httpSupport.isStrictTenantResolution() && requiresTenant(path)) {
                 if (!httpSupport.hasExplicitTenantCandidate(request)) {
-                    return Promise.of(httpSupport.errorResponse(401,
+                    HttpResponse response = httpSupport.errorResponse(401,
                         "X-Tenant-Id header or tenantId parameter required",
-                        requestId));
+                        requestId);
+                    RequestTraceSupport.clearCurrent();
+                    return Promise.of(response);
                 }
                 if (effectiveTenantId == null) {
-                    return Promise.of(httpSupport.errorResponse(400,
+                    HttpResponse response = httpSupport.errorResponse(400,
                         "Invalid tenant identifier format",
-                        requestId));
+                        requestId);
+                    RequestTraceSupport.clearCurrent();
+                    return Promise.of(response);
                 }
             }
 
@@ -105,6 +115,7 @@ public final class RequestObservationFilter {
                 responsePromise = delegate.serve(request);
             } catch (Exception exception) {
                 context.close();
+                RequestTraceSupport.clearCurrent();
                 exportRequestSpan(metadata, 500, System.nanoTime() - startNanos, exception);
                 return Promise.ofException(exception);
             }
@@ -135,6 +146,7 @@ public final class RequestObservationFilter {
                 recordBusinessMetrics(metadata, statusCode, durationNanos / 1_000_000L);
                 exportRequestSpan(metadata, statusCode, durationNanos, error);
                 context.close();
+                RequestTraceSupport.clearCurrent();
             });
         };
     }
@@ -246,6 +258,14 @@ public final class RequestObservationFilter {
         long bucket = Integer.toUnsignedLong(seed.hashCode()) % 10_000L;
         long threshold = Math.round(rate * 10_000L);
         return bucket < threshold;
+    }
+
+    private static String newTraceId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private static String newSpanId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
     private static TraceParent parseTraceParent(String traceparentHeader) {

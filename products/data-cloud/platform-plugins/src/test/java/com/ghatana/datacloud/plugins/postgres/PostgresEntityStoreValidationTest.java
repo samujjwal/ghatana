@@ -3,6 +3,7 @@ package com.ghatana.datacloud.plugins.postgres;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("PostgresEntityStore Validation Tests")
 class PostgresEntityStoreValidationTest extends EventloopTestBase {
+
+    @AfterEach
+    void clearSystemPropertyOverrides() {
+        System.clearProperty("datacloud.db.url");
+        System.clearProperty("datacloud.db.user");
+        System.clearProperty("datacloud.db.password");
+        System.clearProperty("datacloud.db.poolMaxSize");
+        System.clearProperty("datacloud.db.poolMinIdle");
+        System.clearProperty("datacloud.db.connectionTimeoutMs");
+        System.clearProperty("datacloud.db.idleTimeoutMs");
+        System.clearProperty("datacloud.db.maxLifetimeMs");
+    }
 
     @Test
     @DisplayName("config normalizes blanks and applies defaults")
@@ -70,6 +83,30 @@ class PostgresEntityStoreValidationTest extends EventloopTestBase {
         assertThatThrownBy(config::createDataSource)
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("PostgresEntityStore requires DATACLOUD_DB_URL");
+    }
+
+    @Test
+    @DisplayName("config resolves embedded provider settings from system properties")
+    void configResolvesEmbeddedProviderSettingsFromSystemProperties() {
+        System.setProperty("datacloud.db.url", "jdbc:postgresql://localhost:5432/property-db");
+        System.setProperty("datacloud.db.user", "property-user");
+        System.setProperty("datacloud.db.password", "property-secret");
+        System.setProperty("datacloud.db.poolMaxSize", "9");
+        System.setProperty("datacloud.db.poolMinIdle", "3");
+        System.setProperty("datacloud.db.connectionTimeoutMs", "1200");
+        System.setProperty("datacloud.db.idleTimeoutMs", "2400");
+        System.setProperty("datacloud.db.maxLifetimeMs", "3600");
+
+        PostgresEntityStoreConfig config = PostgresEntityStoreConfig.fromEnvironmentIfPresent().orElseThrow();
+
+        assertThat(config.jdbcUrl()).isEqualTo("jdbc:postgresql://localhost:5432/property-db");
+        assertThat(config.username()).isEqualTo("property-user");
+        assertThat(config.password()).isEqualTo("property-secret");
+        assertThat(config.maxPoolSize()).isEqualTo(9);
+        assertThat(config.minIdle()).isEqualTo(3);
+        assertThat(config.connectionTimeoutMs()).isEqualTo(1200L);
+        assertThat(config.idleTimeoutMs()).isEqualTo(2400L);
+        assertThat(config.maxLifetimeMs()).isEqualTo(3600L);
     }
 
     @Test

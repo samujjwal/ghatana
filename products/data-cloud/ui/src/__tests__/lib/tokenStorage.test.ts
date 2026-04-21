@@ -90,6 +90,32 @@ describe('TokenStorage', () => {
       TokenStorage.set('valid-token');
       expect(TokenStorage.isAuthenticated()).toBe(true);
     });
+
+    it('treats cookie-backed sessions as authenticated without exposing a token', () => {
+      TokenStorage.enableCookieSession();
+
+      expect(TokenStorage.isAuthenticated()).toBe(true);
+      expect(TokenStorage.get()).toBeNull();
+      expect(TokenStorage.authMode()).toBe('cookie-session');
+    });
+  });
+
+  describe('auth mode', () => {
+    it('switches back to header-token mode when an explicit token is set', () => {
+      TokenStorage.enableCookieSession();
+      TokenStorage.set('header-token');
+
+      expect(TokenStorage.authMode()).toBe('header-token');
+      expect(TokenStorage.get()).toBe('header-token');
+    });
+
+    it('clears the cookie-backed session marker on clear()', () => {
+      TokenStorage.enableCookieSession();
+      TokenStorage.clear();
+
+      expect(TokenStorage.authMode()).toBe('anonymous');
+      expect(TokenStorage.isAuthenticated()).toBe(false);
+    });
   });
 
   describe('sessionStorage resilience', () => {

@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
+import com.ghatana.datacloud.launcher.http.RequestTraceSupport;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -134,5 +135,31 @@ class HttpHandlerSupportTenantResolutionTest {
         HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper());
 
         assertThat(response.getCode()).isEqualTo(503);
+    }
+
+    @Test
+    @DisplayName("adds request and trace headers to canonical envelope responses when tracing context is present")
+    void addsTraceHeadersToEnvelopeResponses() {
+        RequestTraceSupport.setCurrent(new RequestTraceSupport.TraceHeaders(
+            "req-trace-1",
+            "0123456789abcdef0123456789abcdef",
+            "1111222233334444",
+            "aaaabbbbccccdddd",
+            true
+        ));
+        try {
+            ApiResponse envelope = ApiResponse.error("ENTITY_NOT_FOUND", "entity missing", "tenant-a", "req-trace-1");
+
+            HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper());
+
+            assertThat(response.getCode()).isEqualTo(404);
+            assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isEqualTo("req-trace-1");
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("req-trace-1");
+            assertThat(response.getHeader(HttpHeaders.of("traceparent")))
+                .isEqualTo("00-0123456789abcdef0123456789abcdef-1111222233334444-01");
+            assertThat(response.getHeader(HttpHeaders.of("X-Parent-Span-Id"))).isEqualTo("aaaabbbbccccdddd");
+        } finally {
+            RequestTraceSupport.clearCurrent();
+        }
     }
 }

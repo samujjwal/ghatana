@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
-  COLLECTION_MOCK_OPENAPI_PATHS,
+  COLLECTION_RUNTIME_OPENAPI_PATHS,
   DEPRECATED_COLLECTION_ROUTE_REDIRECTS,
 } from '../../mocks/deprecatedRoutes';
 
@@ -23,7 +23,7 @@ const playwrightMocksSource = readFileSync(
 
 describe('OpenAPI-driven collection mocks', () => {
   it('keeps canonical collection mock routes anchored to documented OpenAPI paths', () => {
-    COLLECTION_MOCK_OPENAPI_PATHS.forEach((openApiPath) => {
+    COLLECTION_RUNTIME_OPENAPI_PATHS.forEach((openApiPath) => {
       expect(canonicalOpenApi).toContain(`${openApiPath}:`);
     });
   });

@@ -131,7 +131,8 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
                 item.markEscalated();
                 return item;
             })
-            .then(this::saveUpdated);
+            .then(this::saveUpdated)
+            .whenResult(notificationSpi::onItemEscalated);
     }
 
     @Override

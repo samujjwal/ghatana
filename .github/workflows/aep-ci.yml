@@ -101,7 +101,10 @@ jobs:
           ./gradlew :products:aep:server:test \
             --no-daemon \
             --info \
+            --tests com.ghatana.aep.learning.EpisodeLearningPipelineTest \
+            --tests com.ghatana.aep.server.http.AepOpenApiSurfaceDriftTest \
             --tests com.ghatana.aep.server.grpc.AepGrpcServerTest \
+            --tests com.ghatana.aep.server.http.AepHttpServerDataCloudIntegrationTest \
             --tests com.ghatana.aep.server.http.AepHttpServerObservabilityTest \
             --tests com.ghatana.aep.server.http.AepHttpServerSessionIntegrationTest \
             --tests com.ghatana.aep.server.http.controllers.HealthControllerTest \

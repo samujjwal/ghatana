@@ -15,7 +15,7 @@
  * @doc.layer frontend
  */
 
-import { TokenStorage } from './tokenStorage';
+import { TokenStorage, type AuthMode } from './tokenStorage';
 
 const SESSION_TENANT_KEY = 'dc:session:tenantId';
 const SESSION_API_BASE_URL_KEY = 'dc:session:apiBaseUrl';
@@ -38,6 +38,13 @@ export const SHELL_ROLE_LABELS: Record<ShellRole, string> = {
   admin: 'Admin',
 };
 
+export const SHELL_ROLE_CONTROL_LABEL = 'Workspace view menu';
+
+export const SHELL_ROLE_CONTROL_TITLE = 'Workspace View';
+
+export const SHELL_ROLE_DISCLOSURE_NOTE =
+  'This control only changes which UI surfaces are disclosed. Backend authentication and authorization stay enforced independently.';
+
 /**
  * Shell role descriptions for UI display.
  *
@@ -45,9 +52,9 @@ export const SHELL_ROLE_LABELS: Record<ShellRole, string> = {
  * not for security authorization.
  */
 export const SHELL_ROLE_DESCRIPTIONS: Record<ShellRole, string> = {
-  'primary-user': 'Primary user mode for data exploration and analytics',
-  operator: 'Operator mode for diagnostics and trust workflows (UI disclosure only)',
-  admin: 'Admin mode for operational controls (UI disclosure only)',
+  'primary-user': 'Focus the UI on data exploration and analytics surfaces only.',
+  operator: 'Reveal runtime diagnostics and trust workflows without changing backend permissions.',
+  admin: 'Reveal administrative shell surfaces while backend permissions remain enforced separately.',
 };
 
 function normalizeShellRole(value: string | null | undefined): ShellRole {
@@ -134,6 +141,7 @@ export interface SessionSnapshot {
   tenantId: string | null;
   apiBaseUrl: string | null;
   isAuthenticated: boolean;
+  authMode: AuthMode;
   requiresTenantBootstrap: boolean;
   shellRole: ShellRole;
   sessionExpiringSoon: boolean;
@@ -147,6 +155,7 @@ export const SessionBootstrap = {
       tenantId,
       apiBaseUrl,
       isAuthenticated: TokenStorage.isAuthenticated(),
+      authMode: TokenStorage.authMode(),
       requiresTenantBootstrap: tenantId === null,
       shellRole: this.getShellRole(),
       sessionExpiringSoon: TokenStorage.needsRefresh(),

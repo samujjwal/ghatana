@@ -4,6 +4,8 @@
  */
 package com.ghatana.aep.security;
 
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -11,6 +13,7 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -373,6 +376,11 @@ class AepSecurityFilterTest extends EventloopTestBase {
     class RateLimitTests {
 
         private static final String TEST_IP = "192.168.0.99";
+        private static final String TRUSTED_PROXY_IP = "10.1.1.20";
+
+        private AepSecurityFilter trustedProxyFilter() {
+            return new AepSecurityFilter(nextServlet, "*", "10.0.0.0/8", request -> TRUSTED_PROXY_IP);
+        }
 
         /**
          * Returns a GET request with {@code X-Forwarded-For} set to a fixed IP.
@@ -386,7 +394,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("first 200 requests from same IP pass through (status 200)")
         void first200RequestsPassThrough() {
-            AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
+            AepSecurityFilter filter = trustedProxyFilter();
 
             HttpResponse last200 = null;
             for (int i = 0; i < 200; i++) {
@@ -400,7 +408,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("201st request from same IP within window → 429 Too Many Requests")
         void request201ExceedsRateLimitReturns429() {
-            AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
+            AepSecurityFilter filter = trustedProxyFilter();
 
             for (int i = 0; i < 200; i++) {
                 serve(filter, requestFromIp(TEST_IP));
@@ -420,7 +428,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("429 response includes Retry-After header")
         void rateLimitedResponseHasRetryAfterHeader() {
-            AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
+            AepSecurityFilter filter = trustedProxyFilter();
 
             // Loop until rate-limited (up to 300) to tolerate token-bucket refill under load
             HttpResponse resp = null;
@@ -438,7 +446,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("different IPs have independent rate-limit buckets")
         void differentIpsHaveIndependentBuckets() {
-            AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
+            AepSecurityFilter filter = trustedProxyFilter();
 
             // Exhaust the limit for IP "10.0.0.1"
             for (int i = 0; i < 201; i++) {
@@ -453,7 +461,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("XFF leftmost address is used as client IP")
         void xffLeftmostAddressUsedAsClientIp() {
-            AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
+            AepSecurityFilter filter = trustedProxyFilter();
 
             // Use a comma-chain: real client is "172.16.0.5", proxy is "10.0.0.1"
             // Loop until rate-limited (up to 300) to tolerate token-bucket refill under load.
@@ -471,6 +479,59 @@ class AepSecurityFilterTest extends EventloopTestBase {
             assertThat(resp).isNotNull();
             assertThat(resp.getCode()).isEqualTo(429);
         }
+
+        @Test
+        @DisplayName("ignores XFF when request does not arrive from a trusted proxy")
+        void ignoresSpoofedXffFromUntrustedRemote() {
+            AepSecurityFilter filter = new AepSecurityFilter(nextServlet, "*", "10.0.0.0/8", request -> "198.51.100.40");
+
+            for (int index = 0; index < 200; index++) {
+                serve(filter, requestFromIp("203.0.113.10"));
+            }
+
+            HttpResponse resp = serve(filter, requestFromIp("198.18.0.44"));
+
+            assertThat(resp.getCode()).isEqualTo(429);
+        }
+
+    @Test
+    @DisplayName("records metric when trusted proxy forwarded header is accepted")
+    void recordsMetricForAcceptedForwardedHeader() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        MetricsCollector metricsCollector = MetricsCollectorFactory.create(registry);
+        AepSecurityFilter filter = new AepSecurityFilter(
+            nextServlet,
+            "*",
+            "10.0.0.0/8",
+            request -> TRUSTED_PROXY_IP,
+            metricsCollector);
+
+        serve(filter, requestFromIp(TEST_IP));
+
+        assertThat(registry.get(AepSecurityFilter.FORWARDED_HEADER_ACCEPTED)
+            .counter()
+            .count()).isEqualTo(1.0d);
+    }
+
+    @Test
+    @DisplayName("records rejection metric when spoofed forwarded header is ignored")
+    void recordsMetricForRejectedForwardedHeader() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        MetricsCollector metricsCollector = MetricsCollectorFactory.create(registry);
+        AepSecurityFilter filter = new AepSecurityFilter(
+            nextServlet,
+            "*",
+            "10.0.0.0/8",
+            request -> "198.51.100.40",
+            metricsCollector);
+
+        serve(filter, requestFromIp("203.0.113.10"));
+
+        assertThat(registry.get(AepSecurityFilter.FORWARDED_HEADER_REJECTED)
+            .tag("reason", "untrusted_proxy")
+            .counter()
+            .count()).isEqualTo(1.0d);
+    }
     }
 
     // =========================================================================

@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,17 +134,31 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
             service.deletionRequest(TENANT, SUBJECT_ID)
         ).join();
 
-        // TODO: Service should filter by subjectId and only delete 8 records
-        // Currently service deletes ALL records (10) instead of just matching SUBJECT_ID (8)
-        // This is a known service bug that needs to be fixed in AepComplianceService
-        assertThat(report.recordsAffected()).isEqualTo(10L); // Currently deletes all, not filtered
+        assertThat(report.recordsAffected()).isEqualTo(8L);
+        assertThat(storage.get(DC_MEMORY_COLLECTION)).hasSize(1);
+        assertThat(storage.get(EVENT_LOG_COLLECTION)).hasSize(1);
+        assertThat(storage.get(DC_MEMORY_COLLECTION).get("mem-4").get("_subjectId")).isEqualTo(otherSubject);
+        assertThat(storage.get(EVENT_LOG_COLLECTION).get("audit-3").get("_subjectId")).isEqualTo(otherSubject);
+    }
 
-        // When service is fixed, these assertions should pass:
-        // assertThat(report.recordsAffected()).isEqualTo(8L);
-        // assertThat(storage.get(DC_MEMORY_COLLECTION)).hasSize(1);
-        // assertThat(storage.get(EVENT_LOG_COLLECTION)).hasSize(1);
-        // Verify the remaining records belong to the other subject
-        // assertThat(storage.get(DC_MEMORY_COLLECTION).get("mem-4").get("_subjectId")).isEqualTo(otherSubject);
+    @Test
+    @DisplayName("GDPR erasure deletes subject records across multiple result pages")
+    void gdprErasure_deletesAcrossMultiplePages() {
+        for (int index = 0; index < 550; index++) {
+            addEntity(DC_MEMORY_COLLECTION, "bulk-" + index, Map.of(
+                "_subjectId", SUBJECT_ID,
+                "type", "EPISODIC",
+                "data", "page-" + index
+            ));
+        }
+
+        AepComplianceReport report = eventloop().submit(() ->
+            service.deletionRequest(TENANT, SUBJECT_ID)
+        ).join();
+
+        assertThat(report.success()).isTrue();
+        assertThat(report.breakdown().get(DC_MEMORY_COLLECTION)).isEqualTo(553L);
+        assertThat(storage.get(DC_MEMORY_COLLECTION)).isEmpty();
     }
 
     @Test
@@ -199,7 +214,7 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
             .thenAnswer(invocation -> {
                 String collection = invocation.getArgument(1);
                 Query query = invocation.getArgument(2);
-                return Promise.of(queryCollection(collection));
+                return Promise.of(queryCollection(collection, query));
             });
 
         // Mock delete operation
@@ -268,13 +283,28 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
         storage.get(collection).put(id, entityData);
     }
 
-    private List<Entity> queryCollection(String collection) {
+    private List<Entity> queryCollection(String collection, Query query) {
         ConcurrentMap<String, Map<String, Object>> collectionStorage = storage.get(collection);
         if (collectionStorage == null) {
             return List.of();
         }
-        return collectionStorage.values().stream()
+        List<Entity> filtered = collectionStorage.values().stream()
+            .filter(data -> matchesFilters(data, query))
+            .sorted(Comparator.comparing(data -> String.valueOf(data.get("id"))))
             .map(data -> Entity.of((String) data.get("id"), collection, data))
             .toList();
+        int fromIndex = Math.min(query.offset(), filtered.size());
+        int toIndex = Math.min(fromIndex + query.limit(), filtered.size());
+        return filtered.subList(fromIndex, toIndex);
+    }
+
+    private boolean matchesFilters(Map<String, Object> data, Query query) {
+        return query.filters().stream().allMatch(filter -> {
+            Object value = data.get(filter.field());
+            if ("eq".equals(filter.operator())) {
+                return java.util.Objects.equals(value, filter.value());
+            }
+            return true;
+        });
     }
 }

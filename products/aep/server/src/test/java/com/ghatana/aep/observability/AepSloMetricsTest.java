@@ -45,8 +45,10 @@ class AepSloMetricsTest {
         @DisplayName("initial snapshot has zero runs and zero failure rate")
         void initialSnapshotIsZero() {
             Map<String, Object> snapshot = sloMetrics.runCountSnapshot();
+            assertThat((Long) snapshot.get("completedRuns")).isZero();
             assertThat((Long) snapshot.get("totalRuns")).isZero();
             assertThat((Long) snapshot.get("failedRuns")).isZero();
+            assertThat((Double) snapshot.get("runSuccessRate")).isZero();
             assertThat((Double) snapshot.get("runFailureRate")).isZero();
         }
 
@@ -57,8 +59,10 @@ class AepSloMetricsTest {
             sloMetrics.recordRunCompleted("tenant-1", "pipeline-2", 300L);
 
             Map<String, Object> snapshot = sloMetrics.runCountSnapshot();
+            assertThat((Long) snapshot.get("completedRuns")).isEqualTo(2L);
             assertThat((Long) snapshot.get("totalRuns")).isEqualTo(2L);
             assertThat((Long) snapshot.get("failedRuns")).isZero();
+            assertThat((Double) snapshot.get("runSuccessRate")).isEqualTo(1.0);
             assertThat((Double) snapshot.get("runFailureRate")).isZero();
         }
 
@@ -69,8 +73,10 @@ class AepSloMetricsTest {
             sloMetrics.recordRunFailed("tenant-1", "pipeline-1", 500L, "timeout");
 
             Map<String, Object> snapshot = sloMetrics.runCountSnapshot();
+            assertThat((Long) snapshot.get("completedRuns")).isEqualTo(1L);
             assertThat((Long) snapshot.get("totalRuns")).isEqualTo(2L);
             assertThat((Long) snapshot.get("failedRuns")).isEqualTo(1L);
+            assertThat((Double) snapshot.get("runSuccessRate")).isEqualTo(0.5);
             assertThat((Double) snapshot.get("runFailureRate")).isEqualTo(0.5);
         }
 
@@ -78,6 +84,50 @@ class AepSloMetricsTest {
         @DisplayName("failure rate is zero when no runs recorded")
         void failureRateZeroWithNoRuns() {
             assertThat((Double) sloMetrics.runCountSnapshot().get("runFailureRate")).isZero();
+        }
+    }
+
+    @Nested
+    @DisplayName("replaySnapshot")
+    class ReplaySnapshot {
+
+        @Test
+        @DisplayName("tracks replay success and failure rates")
+        void tracksReplayOutcomes() {
+            sloMetrics.recordReplayAttempt(true, "tenant-1", "pipeline-1");
+            sloMetrics.recordReplayAttempt(false, "tenant-1", "pipeline-1");
+
+            Map<String, Object> snapshot = sloMetrics.replaySnapshot();
+            assertThat((Long) snapshot.get("attempts")).isEqualTo(2L);
+            assertThat((Long) snapshot.get("succeeded")).isEqualTo(1L);
+            assertThat((Long) snapshot.get("failed")).isEqualTo(1L);
+            assertThat((Double) snapshot.get("successRate")).isEqualTo(0.5);
+            assertThat((Double) snapshot.get("failureRate")).isEqualTo(0.5);
+        }
+    }
+
+    @Nested
+    @DisplayName("agentExecutionSnapshot")
+    class AgentExecutionSnapshot {
+
+        @Test
+        @DisplayName("tracks agent execution success and failure rates")
+        void tracksAgentExecutionOutcomes() {
+            sloMetrics.recordAgentExecutionSuccess("tenant-1", "agent-1", 125L);
+            sloMetrics.recordAgentExecutionFailure(
+                "tenant-1",
+                "agent-1",
+                "AGENT_EXECUTION_TIMEOUT",
+                "transient",
+                true,
+                240L);
+
+            Map<String, Object> snapshot = sloMetrics.agentExecutionSnapshot();
+            assertThat((Long) snapshot.get("attempts")).isEqualTo(2L);
+            assertThat((Long) snapshot.get("succeeded")).isEqualTo(1L);
+            assertThat((Long) snapshot.get("failed")).isEqualTo(1L);
+            assertThat((Double) snapshot.get("successRate")).isEqualTo(0.5);
+            assertThat((Double) snapshot.get("failureRate")).isEqualTo(0.5);
         }
     }
 

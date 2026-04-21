@@ -892,9 +892,10 @@ export interface NlqParseResult {
 export async function parseNlQuery(
   query: string,
   tenantId = "default",
+  endpoint = "/api/v1/nlp/parse",
 ): Promise<NlqParseResult> {
   const { data } = await client.post<NlqParseResult>(
-    "/api/v1/nlp/parse",
+    endpoint,
     { query, tenantId },
   );
   return data;

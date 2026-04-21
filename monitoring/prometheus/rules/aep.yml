@@ -162,3 +162,92 @@ groups:
         annotations:
           summary: "AEP learning consolidation failed"
           description: "AEP {{ $labels.instance }} had {{ $value }} learning consolidation failure(s) in the last hour. Check pattern memory store connectivity."
+
+  - name: aep-runtime-trust
+    interval: 30s
+    rules:
+      - alert: AepAgentExecutionFailureRateHigh
+        expr: |
+          sum(rate(aep_slo_agent_execution_failed_total{job="aep-service-manager"}[5m]))
+          /
+          clamp_min(sum(rate(aep_slo_agent_execution_attempts_total{job="aep-service-manager"}[5m])), 1) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP agent execution failure rate > 10%"
+          description: "Agent execution failures are above 10% over the last 5 minutes. Check downstream dependencies, error categorization, and retryable execution classes."
+
+      - alert: AepReplayFailureRateHigh
+        expr: |
+          sum(rate(aep_slo_replay_failed_total{job="aep-service-manager"}[15m]))
+          /
+          clamp_min(sum(rate(aep_slo_replay_attempts_total{job="aep-service-manager"}[15m])), 1) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP replay failure rate > 5%"
+          description: "Replay attempts are failing above the expected threshold. Investigate Data Cloud event availability and replay-controller errors."
+
+      - alert: AepPipelineVersionConflictsSpike
+        expr: |
+          increase(aep_pipeline_update_conflicts_total{job="aep-service-manager"}[15m]) > 5
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP pipeline version conflicts are spiking"
+          description: "More than 5 stale pipeline update attempts were rejected in the last 15 minutes. Investigate concurrent editors or stale operator caches."
+
+      - alert: AepHitlSlaEscalationsDetected
+        expr: |
+          increase(aep_hitl_escalations_total{job="aep-service-manager",reason="sla_breach"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP auto-escalated overdue HITL items"
+          description: "AEP auto-escalated one or more overdue HITL review items in the last 15 minutes. Review human-approval capacity and escalation routing."
+
+      - alert: AepTrustedProxySpoofingDetected
+        expr: |
+          increase(aep_security_proxy_forwarded_rejected_total{job="aep-service-manager"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP rejected forwarded client IP headers"
+          description: "AEP observed rejected or untrusted X-Forwarded-For headers in the last 15 minutes. Confirm trusted proxy CIDRs and inspect potential spoofing attempts."
+
+      - alert: AepDeepHealthComponentsDegraded
+        expr: |
+          up{job="aep-service-manager"} == 1
+          and
+          (
+            process_cpu_usage{job="aep-service-manager"} > 0.90
+            or
+            (
+              jvm_memory_used_bytes{job="aep-service-manager", area="heap"}
+              /
+              jvm_memory_max_bytes{job="aep-service-manager", area="heap"}
+            ) > 0.90
+          )
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          product: aep
+        annotations:
+          summary: "AEP deep-health indicators are degraded"
+          description: "AEP remains scrapeable but sustained CPU or heap pressure suggests `/health/deep` will likely report degraded runtime state."

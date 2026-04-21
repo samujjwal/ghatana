@@ -111,8 +111,11 @@ class VoiceErrorHandlingTest {
 
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            // Either 400 or ApiResponse with error — must not 500
-            assertThat(resp.statusCode()).isLessThan(500);
+            assertThat(resp.statusCode()).isEqualTo(400);
+            Map<String, Object> resBody = parseBody(resp);
+            assertThat(resBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
+            assertThat(error.get("code")).isEqualTo("INVALID_UTTERANCE");
         }
     }
 
@@ -200,7 +203,7 @@ class VoiceErrorHandlingTest {
     class AudioInputValidationTests {
 
         @Test
-        @DisplayName("audioData with invalid base64 → returns error, not 500")
+        @DisplayName("audioData with invalid base64 → HTTP 400 with INVALID_AUDIO_DATA")
         @SuppressWarnings("unchecked")
         void invalidBase64AudioData_returnsError() throws Exception {
             String body = mapper.writeValueAsString(Map.of(
@@ -210,8 +213,11 @@ class VoiceErrorHandlingTest {
 
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            // Must not be a 500 internal server error
-            assertThat(resp.statusCode()).isLessThan(500);
+            assertThat(resp.statusCode()).isEqualTo(400);
+            Map<String, Object> resBody = parseBody(resp);
+            assertThat(resBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
+            assertThat(error.get("code")).isEqualTo("INVALID_AUDIO_DATA");
         }
 
         @Test
@@ -278,16 +284,12 @@ class VoiceErrorHandlingTest {
 
             HttpResponse<String> resp = post("/api/v1/voice/intent", body);
 
-            // Must not 500 — classify-only mode should never throw on unknown intent
-            // Returns 200 with matched=false for no match
-            assertThat(resp.statusCode()).isLessThan(500);
+            assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> resBody = parseBody(resp);
-            if (resp.statusCode() == 200) {
-                assertThat(resBody).containsKey("data");
-                @SuppressWarnings("unchecked")
-                Map<String, Object> data = (Map<String, Object>) resBody.get("data");
-                assertThat(data.get("matched")).isEqualTo(false);
-            }
+            assertThat(resBody).containsKey("data");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) resBody.get("data");
+            assertThat(data.get("matched")).isEqualTo(false);
         }
     }
 

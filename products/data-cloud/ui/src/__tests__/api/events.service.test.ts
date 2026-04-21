@@ -63,7 +63,7 @@ describe('eventsService', () => {
       timestamp: '2026-04-14T12:03:00Z',
     });
 
-    const stats = await eventsService.getStats('tenant-a');
+    const stats = await eventsService.getStats(TEST_TENANT_ID);
 
     expect(mockApiClient.get).toHaveBeenCalledWith('/events', { params: { tenantId: TEST_TENANT_ID, limit: 1000 } });
     expect(stats.total).toBe(3);
@@ -123,7 +123,7 @@ describe('eventsService', () => {
 
     eventsService.openStream({ tenantId: TEST_TENANT_ID, eventType: 'alert.triggered', tier: 'HOT' });
 
-    expect(eventSourceMock).toHaveBeenCalledWith('/api/v1/events/stream?tenantId=tenant-a&types=alert.triggered');
+    expect(eventSourceMock).toHaveBeenCalledWith(`/api/v1/events/stream?tenantId=${TEST_TENANT_ID}&types=alert.triggered`);
 
     if (OriginalEventSource) {
       vi.stubGlobal('EventSource', OriginalEventSource);

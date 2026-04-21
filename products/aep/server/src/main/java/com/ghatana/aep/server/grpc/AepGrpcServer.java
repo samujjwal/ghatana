@@ -31,17 +31,26 @@ import com.ghatana.contracts.agent.v1.ListAgentsRequestProto;
 import com.ghatana.contracts.agent.v1.ListAgentsResponseProto;
 import com.ghatana.contracts.agent.v1.MetadataProto;
 import com.google.protobuf.Empty;
+import io.grpc.ForwardingServerCall;
+import io.grpc.ForwardingServerCallListener;
+import io.grpc.Metadata;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerInterceptors;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.activej.promise.Promises;
 import com.ghatana.platform.health.HealthStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,6 +70,14 @@ public class AepGrpcServer {
     static final String EXECUTABLE_METADATA_KEY = "executable";
     static final String REGISTRATION_MODE_METADATA_KEY = "registrationMode";
     static final String REGISTRATION_MODE_MANIFEST_ONLY = "manifest-only";
+    private static final String CORRELATION_ID_MDC_KEY = "correlationId";
+    private static final String TRACE_ID_MDC_KEY = "traceId";
+    private static final Metadata.Key<String> CORRELATION_ID_METADATA =
+        Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER);
+    private static final Metadata.Key<String> TRACEPARENT_METADATA =
+        Metadata.Key.of("traceparent", Metadata.ASCII_STRING_MARSHALLER);
+    private static final Metadata.Key<String> TRACESTATE_METADATA =
+        Metadata.Key.of("tracestate", Metadata.ASCII_STRING_MARSHALLER);
 
     static final int DEFAULT_PORT = 9090;
 
@@ -95,7 +112,9 @@ public class AepGrpcServer {
      */
     public void start() throws IOException {
         server = ServerBuilder.forPort(port)
-            .addService(new AgentManagementService(agentRegistry))
+            .addService(ServerInterceptors.intercept(
+                new AgentManagementService(agentRegistry),
+                new TracingServerInterceptor()))
             .build()
             .start();
         log.info("[grpc] AEP gRPC server started on port {}", port);
@@ -304,6 +323,135 @@ public class AepGrpcServer {
             return io.activej.promise.Promise.ofException(
                 new UnsupportedOperationException(
                     "PlaceholderAgent cannot be executed directly. Use AgentExecutionService."));
+        }
+    }
+
+    private static final class TracingServerInterceptor implements ServerInterceptor {
+
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+                ServerCall<ReqT, RespT> call,
+                Metadata headers,
+                ServerCallHandler<ReqT, RespT> next) {
+            RequestTraceContext traceContext = createTraceContext(headers);
+
+            ServerCall<ReqT, RespT> tracingCall = new ForwardingServerCall.SimpleForwardingServerCall<>(call) {
+                @Override
+                public void sendHeaders(Metadata responseHeaders) {
+                    responseHeaders.put(CORRELATION_ID_METADATA, traceContext.correlationId());
+                    responseHeaders.put(TRACEPARENT_METADATA, traceContext.traceParent());
+                    if (traceContext.tracestate() != null && !traceContext.tracestate().isBlank()) {
+                        responseHeaders.put(TRACESTATE_METADATA, traceContext.tracestate());
+                    }
+                    super.sendHeaders(responseHeaders);
+                }
+            };
+
+            ServerCall.Listener<ReqT> delegateListener = withTraceContext(traceContext,
+                () -> next.startCall(tracingCall, headers));
+
+            return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(delegateListener) {
+                @Override
+                public void onMessage(ReqT message) {
+                    withTraceContext(traceContext, () -> super.onMessage(message));
+                }
+
+                @Override
+                public void onHalfClose() {
+                    withTraceContext(traceContext, super::onHalfClose);
+                }
+
+                @Override
+                public void onCancel() {
+                    withTraceContext(traceContext, super::onCancel);
+                }
+
+                @Override
+                public void onComplete() {
+                    withTraceContext(traceContext, super::onComplete);
+                }
+
+                @Override
+                public void onReady() {
+                    withTraceContext(traceContext, super::onReady);
+                }
+            };
+        }
+
+        private static RequestTraceContext createTraceContext(Metadata headers) {
+            String correlationId = headers.get(CORRELATION_ID_METADATA);
+            if (correlationId == null || correlationId.isBlank()) {
+                correlationId = UUID.randomUUID().toString();
+            }
+            ParsedTraceParent incoming = parseTraceParent(headers.get(TRACEPARENT_METADATA));
+            String traceId = incoming != null ? incoming.traceId() : newTraceId();
+            String spanId = newSpanId();
+            boolean sampled = incoming == null || incoming.sampled();
+            return new RequestTraceContext(
+                correlationId,
+                traceId,
+                spanId,
+                sampled,
+                headers.get(TRACESTATE_METADATA));
+        }
+    }
+
+    private static ParsedTraceParent parseTraceParent(String headerValue) {
+        if (headerValue == null || headerValue.isBlank()) {
+            return null;
+        }
+        String[] parts = headerValue.trim().split("-");
+        if (parts.length < 4 || parts[1].length() != 32 || parts[2].length() != 16) {
+            return null;
+        }
+        try {
+            boolean sampled = (Integer.parseInt(parts[3], 16) & 0x01) == 0x01;
+            return new ParsedTraceParent(parts[1], sampled);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private static String newTraceId() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private static String newSpanId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    }
+
+    private static void withTraceContext(RequestTraceContext traceContext, Runnable runnable) {
+        MDC.put(CORRELATION_ID_MDC_KEY, traceContext.correlationId());
+        MDC.put(TRACE_ID_MDC_KEY, traceContext.traceId());
+        try {
+            runnable.run();
+        } finally {
+            MDC.remove(CORRELATION_ID_MDC_KEY);
+            MDC.remove(TRACE_ID_MDC_KEY);
+        }
+    }
+
+    private static <T> T withTraceContext(RequestTraceContext traceContext, java.util.function.Supplier<T> supplier) {
+        MDC.put(CORRELATION_ID_MDC_KEY, traceContext.correlationId());
+        MDC.put(TRACE_ID_MDC_KEY, traceContext.traceId());
+        try {
+            return supplier.get();
+        } finally {
+            MDC.remove(CORRELATION_ID_MDC_KEY);
+            MDC.remove(TRACE_ID_MDC_KEY);
+        }
+    }
+
+    private record ParsedTraceParent(String traceId, boolean sampled) {
+    }
+
+    private record RequestTraceContext(String correlationId,
+                                       String traceId,
+                                       String spanId,
+                                       boolean sampled,
+                                       String tracestate) {
+        private String traceParent() {
+            return "00-" + traceId + "-" + spanId + "-" + (sampled ? "01" : "00");
         }
     }
 }

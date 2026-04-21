@@ -1,0 +1,116 @@
+{
+  "id": null,
+  "uid": "aep-runtime-trust-001",
+  "title": "AEP Runtime Trust",
+  "description": "Operational dashboard for AEP SLO snapshots, HITL escalation pressure, proxy trust, and optimistic concurrency signals.",
+  "tags": ["aep", "runtime", "trust", "ghatana"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Agent Execution Failure Rate",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [
+        {
+          "expr": "sum(rate(aep_slo_agent_execution_failed_total{job=\"aep-service-manager\"}[5m])) / clamp_min(sum(rate(aep_slo_agent_execution_attempts_total{job=\"aep-service-manager\"}[5m])), 1)",
+          "legendFormat": "failure rate"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Replay Success Rate",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [
+        {
+          "expr": "sum(rate(aep_slo_replay_succeeded_total{job=\"aep-service-manager\"}[15m])) / clamp_min(sum(rate(aep_slo_replay_attempts_total{job=\"aep-service-manager\"}[15m])), 1)",
+          "legendFormat": "success rate"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "HITL Escalations",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum(increase(aep_hitl_escalations_total{job=\"aep-service-manager\"}[15m])) by (reason)",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Pipeline Update Conflicts",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum(increase(aep_pipeline_update_conflicts_total{job=\"aep-service-manager\"}[15m])) by (tenant)",
+          "legendFormat": "{{tenant}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Forwarded Header Rejections",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        {
+          "expr": "sum(increase(aep_security_proxy_forwarded_rejected_total{job=\"aep-service-manager\"}[15m])) by (reason)",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Deep-Health Pressure",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.75 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "max((jvm_memory_used_bytes{job=\"aep-service-manager\", area=\"heap\"} / jvm_memory_max_bytes{job=\"aep-service-manager\", area=\"heap\"}), process_cpu_usage{job=\"aep-service-manager\"})",
+          "legendFormat": "pressure"
+        }
+      ]
+    }
+  ]
+}

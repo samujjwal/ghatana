@@ -4,6 +4,7 @@
  */
 package com.ghatana.aep.server.config;
 
+import com.ghatana.aep.config.AepConfigurationValidator;
 import com.ghatana.aep.config.EnvConfig;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -65,8 +66,11 @@ public final class AepDynamicConfigService {
     private final ConcurrentHashMap<String, String>   overlay   = new ConcurrentHashMap<>();
     private final CopyOnWriteArrayList<ChangeListener> listeners = new CopyOnWriteArrayList<>();
     private final List<ConfigChange>           changeLog = new CopyOnWriteArrayList<>();
+    private final List<ConfigAuditEntry>       auditLog = new CopyOnWriteArrayList<>();
     private final Counter                      setCounter;
     private final Counter                      validationErrorCounter;
+    private final Counter                      rollbackCounter;
+    private final Counter                      listenerFailureCounter;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Constructor
@@ -83,6 +87,8 @@ public final class AepDynamicConfigService {
         Objects.requireNonNull(meterRegistry, "meterRegistry must not be null");
         this.setCounter             = meterRegistry.counter("aep.config.set.total");
         this.validationErrorCounter = meterRegistry.counter("aep.config.set.errors");
+        this.rollbackCounter        = meterRegistry.counter("aep.config.rollback.total");
+        this.listenerFailureCounter = meterRegistry.counter("aep.config.listener.errors");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -157,6 +163,17 @@ public final class AepDynamicConfigService {
         return Collections.unmodifiableList(copy);
     }
 
+    /**
+     * Returns config audit entries applied since startup, newest first.
+     *
+     * @return unmodifiable list of config audit entries
+     */
+    public List<ConfigAuditEntry> auditHistory() {
+        List<ConfigAuditEntry> copy = new ArrayList<>(auditLog);
+        Collections.reverse(copy);
+        return Collections.unmodifiableList(copy);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     //  Write API
     // ─────────────────────────────────────────────────────────────────────────
@@ -174,33 +191,7 @@ public final class AepDynamicConfigService {
      * @throws IllegalArgumentException if the key is an integer key and {@code value} is not parseable
      */
     public void set(String key, String value) {
-        Objects.requireNonNull(key, "key must not be null");
-        if (key.isBlank()) throw new IllegalArgumentException("key must not be blank");
-        if (value == null || value.isBlank()) throw new IllegalArgumentException("value must not be blank for key: " + key);
-
-        // Validate known integer keys
-        if (isKnownIntegerKey(key)) {
-            try {
-                Integer.parseInt(value.trim());
-            } catch (NumberFormatException e) {
-                validationErrorCounter.increment();
-                throw new IllegalArgumentException(
-                        "Key '" + key + "' expects an integer value, but got: " + value, e);
-            }
-        }
-
-        String oldValue = overlay.put(key, value);
-        if (oldValue == null) {
-            // Fall back to base config for "previous value" in the change event
-            oldValue = baseConfig.get(key, null);
-        }
-
-        setCounter.increment();
-        ConfigChange change = new ConfigChange(key, oldValue, value, Instant.now());
-        changeLog.add(change);
-
-        log.info("Config override applied: key={} oldValue={} newValue={}", key, oldValue, value);
-        notifyListeners(change);
+        applyOverrides(Map.of(key, value));
     }
 
     /**
@@ -212,19 +203,7 @@ public final class AepDynamicConfigService {
      */
     public void setAll(Map<String, String> overrides) {
         Objects.requireNonNull(overrides, "overrides must not be null");
-        // Validate all first, then apply — fail-fast before partial writes
-        overrides.forEach((k, v) -> {
-            if (k == null || k.isBlank())   throw new IllegalArgumentException("key must not be blank");
-            if (v == null || v.isBlank())   throw new IllegalArgumentException("value for key '" + k + "' must not be blank");
-            if (isKnownIntegerKey(k)) {
-                try { Integer.parseInt(v.trim()); }
-                catch (NumberFormatException ex) {
-                    throw new IllegalArgumentException(
-                            "Key '" + k + "' expects an integer, but got: " + v, ex);
-                }
-            }
-        });
-        overrides.forEach(this::set);
+        applyOverrides(overrides);
     }
 
     /**
@@ -239,9 +218,17 @@ public final class AepDynamicConfigService {
         if (removed != null) {
             String nowValue = baseConfig.get(key, null);
             ConfigChange change = new ConfigChange(key, removed, nowValue, Instant.now());
-            changeLog.add(change);
-            log.info("Config override cleared: key={} (reverted to {})", key, nowValue);
-            notifyListeners(change);
+            try {
+                notifyListeners(change);
+                changeLog.add(change);
+                auditLog.add(new ConfigAuditEntry(key, removed, nowValue, AuditStatus.APPLIED, "override cleared", change.changedAt()));
+                log.info("Config override cleared: key={} (reverted to {})", key, nowValue);
+            } catch (RuntimeException exception) {
+                overlay.put(key, removed);
+                rollbackCounter.increment();
+                auditLog.add(new ConfigAuditEntry(key, removed, nowValue, AuditStatus.ROLLED_BACK, exception.getMessage(), Instant.now()));
+                throw exception;
+            }
         }
         return removed;
     }
@@ -250,8 +237,43 @@ public final class AepDynamicConfigService {
      * Clears all dynamic overrides, reverting to baseline environment config.
      */
     public void clearAll() {
-        List<String> keys = new ArrayList<>(overlay.keySet());
-        keys.forEach(this::clear);
+        Map<String, String> snapshot = new LinkedHashMap<>(overlay);
+        if (snapshot.isEmpty()) {
+            return;
+        }
+
+        List<ConfigChange> changes = new ArrayList<>();
+        Instant changedAt = Instant.now();
+        snapshot.forEach((key, value) -> {
+            overlay.remove(key);
+            changes.add(new ConfigChange(key, value, baseConfig.get(key, null), changedAt));
+        });
+
+        try {
+            for (ConfigChange change : changes) {
+                notifyListeners(change);
+                changeLog.add(change);
+                auditLog.add(new ConfigAuditEntry(
+                        change.key(),
+                        change.oldValue(),
+                        change.newValue(),
+                        AuditStatus.APPLIED,
+                        "override cleared",
+                        change.changedAt()));
+            }
+        } catch (RuntimeException exception) {
+            overlay.clear();
+            overlay.putAll(snapshot);
+            rollbackCounter.increment();
+            changes.forEach(change -> auditLog.add(new ConfigAuditEntry(
+                    change.key(),
+                    change.oldValue(),
+                    change.newValue(),
+                    AuditStatus.ROLLED_BACK,
+                    exception.getMessage(),
+                    Instant.now())));
+            throw exception;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -292,9 +314,143 @@ public final class AepDynamicConfigService {
             try {
                 listener.onConfigChanged(change.key(), change.oldValue(), change.newValue());
             } catch (Exception ex) {
-                log.error("ChangeListener threw exception for key={}: {}", change.key(), ex.getMessage(), ex);
+                listenerFailureCounter.increment();
+                log.error("ChangeListener rejected config change for key={}: {}", change.key(), ex.getMessage(), ex);
+                throw new IllegalStateException("Failed to apply config change for key '" + change.key() + "'", ex);
             }
         }
+    }
+
+    private void applyOverrides(Map<String, String> overrides) {
+        LinkedHashMap<String, String> orderedOverrides = new LinkedHashMap<>(overrides);
+        Instant changedAt = Instant.now();
+        for (Map.Entry<String, String> entry : orderedOverrides.entrySet()) {
+            validateOverride(entry.getKey(), entry.getValue(), changedAt);
+        }
+
+        Map<String, String> previousOverlayValues = new HashMap<>();
+        List<ConfigChange> changes = new ArrayList<>();
+        orderedOverrides.forEach((key, value) -> {
+            previousOverlayValues.put(key, overlay.get(key));
+            changes.add(new ConfigChange(key, get(key, null), value, changedAt));
+            overlay.put(key, value);
+        });
+
+        try {
+            for (ConfigChange change : changes) {
+                notifyListeners(change);
+            }
+        } catch (RuntimeException exception) {
+            restoreOverlay(previousOverlayValues);
+            rollbackCounter.increment();
+            changes.forEach(change -> auditLog.add(new ConfigAuditEntry(
+                    change.key(),
+                    change.oldValue(),
+                    change.newValue(),
+                    AuditStatus.ROLLED_BACK,
+                    exception.getMessage(),
+                    Instant.now())));
+            throw exception;
+        }
+
+        for (ConfigChange change : changes) {
+            setCounter.increment();
+            changeLog.add(change);
+            auditLog.add(new ConfigAuditEntry(
+                    change.key(),
+                    change.oldValue(),
+                    change.newValue(),
+                    AuditStatus.APPLIED,
+                    null,
+                    change.changedAt()));
+            log.info("Config override applied: key={} oldValue={} newValue={}", change.key(), change.oldValue(), change.newValue());
+        }
+    }
+
+    private void validateOverride(String key, String value, Instant validatedAt) {
+        Objects.requireNonNull(key, "key must not be null");
+        if (key.isBlank()) {
+            validationErrorCounter.increment();
+            throw new IllegalArgumentException("key must not be blank");
+        }
+        if (value == null || value.isBlank()) {
+            validationErrorCounter.increment();
+            auditLog.add(new ConfigAuditEntry(key, get(key, null), value, AuditStatus.REJECTED, "value must not be blank", validatedAt));
+            throw new IllegalArgumentException("value must not be blank for key: " + key);
+        }
+
+        try {
+            if (isKnownIntegerKey(key)) {
+                parseInteger(key, value);
+            }
+            switch (key) {
+                case EnvConfig.REDIS_PORT, EnvConfig.RABBITMQ_PORT -> validatePort(key, value);
+                case EnvConfig.AEP_DB_POOL_SIZE, "AEP_DB_POOL_SIZE" -> validateRange(key, value, 1, 200);
+                case EnvConfig.AEP_CONSOLIDATION_INTERVAL_HOURS, "AEP_CONSOLIDATION_INTERVAL_HOURS" -> validateRange(key, value, 1, Integer.MAX_VALUE);
+                case EnvConfig.KAFKA_BOOTSTRAP_SERVERS -> validateKafkaBootstrapServers(value);
+                case EnvConfig.APP_ENV -> validateAppEnvironment(value);
+                default -> {
+                    // no extra semantic validation for other runtime keys yet
+                }
+            }
+        } catch (IllegalArgumentException exception) {
+            validationErrorCounter.increment();
+            auditLog.add(new ConfigAuditEntry(key, get(key, null), value, AuditStatus.REJECTED, exception.getMessage(), validatedAt));
+            throw exception;
+        }
+    }
+
+    private void validatePort(String key, String value) {
+        validateRange(key, value, 1, 65_535);
+    }
+
+    private void validateRange(String key, String value, int minInclusive, int maxInclusive) {
+        int parsed = parseInteger(key, value);
+        if (parsed < minInclusive || parsed > maxInclusive) {
+            throw new IllegalArgumentException(
+                    "Key '" + key + "' must be between " + minInclusive + " and " + maxInclusive + ", but got: " + value);
+        }
+    }
+
+    private int parseInteger(String key, String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("Key '" + key + "' expects an integer value, but got: " + value, exception);
+        }
+    }
+
+    private void validateKafkaBootstrapServers(String value) {
+        String[] brokers = value.split(",");
+        if (brokers.length == 0) {
+            throw new IllegalArgumentException("KAFKA_BOOTSTRAP_SERVERS must include at least one host:port entry");
+        }
+        for (String broker : brokers) {
+            String trimmed = broker.trim();
+            if (!AepConfigurationValidator.isValidHostPort(trimmed)) {
+                throw new IllegalArgumentException(
+                        "KAFKA_BOOTSTRAP_SERVERS contains invalid broker address '" + trimmed + "'; expected host:port format");
+            }
+        }
+    }
+
+    private void validateAppEnvironment(String value) {
+        if (!"development".equalsIgnoreCase(value)
+                && !"staging".equalsIgnoreCase(value)
+                && !"production".equalsIgnoreCase(value)) {
+            throw new IllegalArgumentException(
+                    "APP_ENV must be one of development, staging, production but was: " + value);
+        }
+    }
+
+    private void restoreOverlay(Map<String, String> previousOverlayValues) {
+        previousOverlayValues.forEach((key, previousValue) -> {
+            if (previousValue == null) {
+                overlay.remove(key);
+            } else {
+                overlay.put(key, previousValue);
+            }
+        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -346,4 +502,24 @@ public final class AepDynamicConfigService {
             String  oldValue,
             String  newValue,
             Instant changedAt) {}
+
+    /**
+     * Immutable record of an applied, rejected, or rolled-back config write.
+     */
+    public record ConfigAuditEntry(
+            String key,
+            String oldValue,
+            String newValue,
+            AuditStatus status,
+            String detail,
+            Instant changedAt) {}
+
+    /**
+     * Outcome for a dynamic configuration write attempt.
+     */
+    public enum AuditStatus {
+        APPLIED,
+        REJECTED,
+        ROLLED_BACK
+    }
 }

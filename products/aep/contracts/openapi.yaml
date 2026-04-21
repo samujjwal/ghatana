@@ -159,8 +159,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/DeepHealthResponse'
 
   /metrics/slo:
     get:
@@ -173,8 +172,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/AepSloSnapshot'
 
   # ========== Event Processing ==========
   /api/v1/events:
@@ -681,6 +679,54 @@ paths:
                 type: object
                 additionalProperties: true
 
+  /api/v1/pipelines/{pipelineId}:
+    put:
+      summary: Update a pipeline with optimistic concurrency
+      description: |
+        Updates an existing pipeline definition. Callers must supply the last
+        version they observed using one of `version`, `expectedVersion`, or the
+        `If-Match` header. AEP rejects stale updates with a structured `409`
+        conflict and rejects missing concurrency tokens with `428`.
+      operationId: updatePipeline
+      tags: [Pipelines]
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/IfMatchHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PipelineUpdateRequest'
+      responses:
+        '200':
+          description: Pipeline updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineDefinition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The supplied version is stale relative to the stored pipeline version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineUpdateConflictResponse'
+        '428':
+          description: The request omitted the required optimistic concurrency token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineVersionRequiredResponse'
+
   /api/v1/agents:
     get:
       summary: List registered agents
@@ -781,18 +827,25 @@ paths:
   /api/v1/hitl/pending:
     get:
       summary: List pending review items
+      description: |
+        Returns the current pending review queue for the requested tenant.
+        Operators can optionally mark items overdue using `thresholdSeconds`
+        and apply the tenant timeout policy during the same read via
+        `autoEscalate=true`. Policies may escalate, auto-approve, or
+        auto-reject overdue items and can advertise an escalation destination.
       operationId: listHitlPending
       tags: [HITL]
       parameters:
         - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: '#/components/parameters/HitlThresholdSeconds'
+        - $ref: '#/components/parameters/HitlAutoEscalate'
       responses:
         '200':
           description: Pending review queue or truthful unconfigured response
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/HitlPendingResponse'
 
   /api/v1/hitl/{reviewId}/approve:
     post:
@@ -810,16 +863,18 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/HitlDecisionRequest'
       responses:
         '200':
           description: Review item approved
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/HitlReviewItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/v1/hitl/{reviewId}/reject:
     post:
@@ -837,20 +892,23 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/HitlDecisionRequest'
       responses:
         '200':
           description: Review item rejected
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/HitlReviewItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/v1/hitl/{reviewId}/escalate:
     post:
       summary: Escalate a review item
+      description: Manually escalates a pending review item and returns the resulting review record with escalation metadata and optional routing details.
       operationId: escalateHitlItem
       tags: [HITL]
       parameters:
@@ -864,16 +922,18 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/HitlEscalationRequest'
       responses:
         '200':
           description: Review item escalated
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/HitlEscalationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/v1/learning/episodes:
     get:
@@ -2086,6 +2146,31 @@ components:
         type: string
         default: system
 
+    IfMatchHeader:
+      name: If-Match
+      in: header
+      description: Last observed pipeline version expressed as a quoted integer ETag, for example `"3"`
+      schema:
+        type: string
+
+    HitlThresholdSeconds:
+      name: thresholdSeconds
+      in: query
+      description: Age threshold in seconds for considering a pending review item overdue; overrides the tenant-specific timeout policy for this request and otherwise defaults to the server runtime setting or 1800 seconds.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        default: 1800
+
+    HitlAutoEscalate:
+      name: autoEscalate
+      in: query
+      description: When true, overdue review items are resolved according to the tenant timeout policy during the same pending-queue read.
+      schema:
+        type: boolean
+        default: false
+
     PatternId:
       name: patternId
       in: path
@@ -2207,6 +2292,188 @@ components:
           type: string
           format: date-time
 
+    DeepHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        components:
+          type: object
+          additionalProperties: true
+
+    SnapshotCounters:
+      type: object
+      properties:
+        attempts:
+          type: integer
+          format: int64
+        succeeded:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        successRate:
+          type: number
+          format: double
+        failureRate:
+          type: number
+          format: double
+
+    RunSnapshot:
+      type: object
+      properties:
+        completed:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        successRate:
+          type: number
+          format: double
+        failureRate:
+          type: number
+          format: double
+        completedRuns:
+          type: integer
+          format: int64
+        totalRuns:
+          type: integer
+          format: int64
+        failedRuns:
+          type: integer
+          format: int64
+        runSuccessRate:
+          type: number
+          format: double
+        runFailureRate:
+          type: number
+          format: double
+
+    AepSloSnapshot:
+      type: object
+      properties:
+        runs:
+          $ref: '#/components/schemas/RunSnapshot'
+        replay:
+          $ref: '#/components/schemas/SnapshotCounters'
+        agentExecution:
+          $ref: '#/components/schemas/SnapshotCounters'
+
+    HitlDecisionRequest:
+      type: object
+      properties:
+        reviewer:
+          type: string
+        rationale:
+          type: string
+        notes:
+          type: string
+
+    HitlEscalationRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+        destinationType:
+          type: string
+        destination:
+          type: string
+
+    HitlReviewItem:
+      type: object
+      properties:
+        reviewId:
+          type: string
+        tenantId:
+          type: string
+        agentId:
+          type: string
+        proposedVersion:
+          type: string
+        type:
+          type: string
+        confidenceScore:
+          type: number
+          format: double
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+
+    HitlEscalationResponse:
+      allOf:
+        - $ref: '#/components/schemas/HitlReviewItem'
+        - type: object
+          properties:
+            escalatedAt:
+              type: string
+              format: date-time
+            reason:
+              type: string
+            policyAction:
+              type: string
+              enum: [escalate, auto_approve, auto_reject]
+            destinationType:
+              type: string
+            destination:
+              type: string
+
+    HitlPendingResponse:
+      type: object
+      properties:
+        pending:
+          type: array
+          items:
+            $ref: '#/components/schemas/HitlReviewItem'
+        count:
+          type: integer
+          format: int32
+        overdueCount:
+          type: integer
+          format: int32
+        autoEscalatedCount:
+          type: integer
+          format: int32
+        autoApprovedCount:
+          type: integer
+          format: int32
+        autoRejectedCount:
+          type: integer
+          format: int32
+        escalationTimeoutSeconds:
+          type: integer
+          format: int64
+        configured:
+          type: boolean
+        tenantId:
+          type: string
+        policyAction:
+          type: string
+          enum: [escalate, auto_approve, auto_reject]
+        escalationDestinationType:
+          type: string
+        escalationDestination:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
     # ---------- Events ----------
     EventRequest:
       type: object
@@ -2318,6 +2585,101 @@ components:
         confidence:
           type: number
           format: double
+
+    PipelineDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+        versionLabel:
+          type: string
+        versionStatus:
+          type: string
+        active:
+          type: boolean
+        config:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+
+    PipelineUpdateRequest:
+      type: object
+      required: [id, tenantId]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+          description: Last observed pipeline version. May be used instead of `expectedVersion` or `If-Match`.
+        expectedVersion:
+          type: integer
+          description: Explicit optimistic concurrency token for the update.
+        active:
+          type: boolean
+        config:
+          type: object
+          additionalProperties: true
+        updatedBy:
+          type: string
+
+    PipelineUpdateConflictResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        errorCode:
+          type: string
+          enum: [PIPELINE_VERSION_CONFLICT]
+        pipelineId:
+          type: string
+        expectedVersion:
+          type: integer
+        currentVersion:
+          type: integer
+        suggestion:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    PipelineVersionRequiredResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        errorCode:
+          type: string
+          enum: [PIPELINE_VERSION_REQUIRED]
+        pipelineId:
+          type: string
+        currentVersion:
+          type: integer
+        suggestion:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
 
     # ---------- Analytics ----------
     AnomalyDetectionRequest:

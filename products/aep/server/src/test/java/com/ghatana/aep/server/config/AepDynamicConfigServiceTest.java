@@ -169,6 +169,30 @@ class AepDynamicConfigServiceTest {
         }
 
         @Test
+        @DisplayName("should reject Kafka bootstrap servers without host-port pairs")
+        void rejectsInvalidKafkaBootstrapServers() {
+            assertThatThrownBy(() -> service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker-without-port"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("invalid broker address");
+        }
+
+        @Test
+        @DisplayName("should reject Redis port outside valid range")
+        void rejectsOutOfRangeRedisPort() {
+            assertThatThrownBy(() -> service.set(EnvConfig.REDIS_PORT, "70000"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be between 1 and 65535");
+        }
+
+        @Test
+        @DisplayName("should reject consolidation interval lower than one hour")
+        void rejectsInvalidConsolidationInterval() {
+            assertThatThrownBy(() -> service.set(EnvConfig.AEP_CONSOLIDATION_INTERVAL_HOURS, "0"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be between 1 and");
+        }
+
+        @Test
         @DisplayName("setAll should validate all entries before applying any")
         void setAllValidatesBeforeApply() {
             Map<String, String> overrides = Map.of(
@@ -204,7 +228,7 @@ class AepDynamicConfigServiceTest {
         @Test
         @DisplayName("clear should revert to base-config value")
         void revertsToBaaseAfterClear() {
-            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "override-broker");
+            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "override-broker:9092");
             service.clear(EnvConfig.KAFKA_BOOTSTRAP_SERVERS);
             assertThat(service.get(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "default"))
                     .isEqualTo("kafka1:9092");
@@ -249,11 +273,11 @@ class AepDynamicConfigServiceTest {
             service.addChangeListener((key, oldVal, newVal) ->
                     captured.add(key + ":" + oldVal + "->" + newVal));
 
-            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker");
+            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker:9092");
 
             assertThat(captured).hasSize(1);
             assertThat(captured.get(0)).contains("KAFKA_BOOTSTRAP_SERVERS");
-            assertThat(captured.get(0)).contains("new-broker");
+            assertThat(captured.get(0)).contains("new-broker:9092");
         }
 
         @Test
@@ -263,7 +287,7 @@ class AepDynamicConfigServiceTest {
             service.addChangeListener((key, oldVal, newVal) ->
                     changes.add(new AepDynamicConfigService.ConfigChange(key, oldVal, newVal, null)));
 
-            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker");
+            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker:9092");
 
             assertThat(changes.get(0).oldValue()).isEqualTo("kafka1:9092");
         }
@@ -310,16 +334,32 @@ class AepDynamicConfigServiceTest {
         }
 
         @Test
-        @DisplayName("should not propagate exceptions from a misbehaving listener")
-        void listenerExceptionDoesNotAbortOthers() {
-            List<String> capturedBySecond = new ArrayList<>();
+        @DisplayName("should roll back override when a listener rejects the change")
+        void listenerExceptionRollsBackChange() {
             service.addChangeListener((k, o, n) -> { throw new RuntimeException("bad listener"); });
-            service.addChangeListener((k, o, n) -> capturedBySecond.add(k));
 
-            // Must not throw
-            assertThatCode(() -> service.set("KEY", "value")).doesNotThrowAnyException();
-            // Second listener still ran
-            assertThat(capturedBySecond).containsExactly("KEY");
+            assertThatThrownBy(() -> service.set("KEY", "value"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Failed to apply config change");
+            assertThat(service.overlaySnapshot()).doesNotContainKey("KEY");
+        }
+
+        @Test
+        @DisplayName("setAll should roll back all overrides when a listener rejects the batch")
+        void setAllRollsBackOnListenerFailure() {
+            service.addChangeListener((k, o, n) -> {
+                if ("FEATURE_B".equals(k)) {
+                    throw new RuntimeException("reject batch");
+                }
+            });
+
+            assertThatThrownBy(() -> service.setAll(Map.of(
+                    "FEATURE_A", "enabled",
+                    "FEATURE_B", "disabled")))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("FEATURE_B");
+
+            assertThat(service.overlaySnapshot()).isEmpty();
         }
     }
 
@@ -349,6 +389,38 @@ class AepDynamicConfigServiceTest {
         void includesTimestamp() {
             service.set("KEY", "value");
             assertThat(service.changeHistory().get(0).changedAt()).isNotNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("Audit History")
+    class AuditHistoryTests {
+
+        @Test
+        @DisplayName("records rejected writes in audit history")
+        void recordsRejectedWrites() {
+            assertThatThrownBy(() -> service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker-without-port"))
+                    .isInstanceOf(IllegalArgumentException.class);
+
+            List<AepDynamicConfigService.ConfigAuditEntry> auditHistory = service.auditHistory();
+            assertThat(auditHistory).hasSize(1);
+            assertThat(auditHistory.get(0).status()).isEqualTo(AepDynamicConfigService.AuditStatus.REJECTED);
+            assertThat(auditHistory.get(0).key()).isEqualTo(EnvConfig.KAFKA_BOOTSTRAP_SERVERS);
+        }
+
+        @Test
+        @DisplayName("records rolled back writes in audit history")
+        void recordsRolledBackWrites() {
+            service.addChangeListener((k, o, n) -> { throw new RuntimeException("listener failed"); });
+
+            assertThatThrownBy(() -> service.set("FEATURE_FLAG", "enabled"))
+                    .isInstanceOf(IllegalStateException.class);
+
+            List<AepDynamicConfigService.ConfigAuditEntry> auditHistory = service.auditHistory();
+            assertThat(auditHistory).hasSize(1);
+            assertThat(auditHistory.get(0).status()).isEqualTo(AepDynamicConfigService.AuditStatus.ROLLED_BACK);
+            assertThat(auditHistory.get(0).key()).isEqualTo("FEATURE_FLAG");
+            assertThat(auditHistory.get(0).detail()).contains("Failed to apply config change");
         }
     }
 

@@ -58,6 +58,7 @@ class AepHttpServerObservabilityTest {
     private HttpClient httpClient;
     private final ObjectMapper mapper = new ObjectMapper();
     private PrometheusMeterRegistry prometheusRegistry;
+    private ServerSocket kafkaProbeSocket;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -69,6 +70,14 @@ class AepHttpServerObservabilityTest {
 
     @AfterEach
     void tearDown() {
+        System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
+        if (kafkaProbeSocket != null) {
+            try {
+                kafkaProbeSocket.close();
+            } catch (IOException ignored) {
+                // best-effort cleanup for test probe socket
+            }
+        }
         if (server != null) server.stop();
         if (prometheusRegistry != null) prometheusRegistry.close();
         if (engine != null) engine.close();
@@ -93,6 +102,35 @@ class AepHttpServerObservabilityTest {
             assertThat(body).containsKey("status");
             assertThat(body).containsKey("version");
             assertThat(body).containsKey("timestamp");
+        }
+
+        @Test
+        @DisplayName("returns correlation and trace headers for every request")
+        void returnsCorrelationAndTraceHeaders() throws Exception {
+            HttpResponse<String> resp = get("/health");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.headers().firstValue("X-Correlation-ID")).hasValueSatisfying(value ->
+                assertThat(value).isNotBlank());
+            assertThat(resp.headers().firstValue("traceparent")).hasValueSatisfying(value ->
+                assertThat(value).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]"));
+        }
+
+        @Test
+        @DisplayName("echoes inbound correlation id and preserves inbound trace id")
+        void echoesInboundCorrelationAndTraceId() throws Exception {
+            String traceId = "0123456789abcdef0123456789abcdef";
+            HttpResponse<String> resp = get("/health", Map.of(
+                "X-Correlation-ID", "corr-http-123",
+                "traceparent", "00-" + traceId + "-1111222233334444-01",
+                "tracestate", "vendor=test"
+            ));
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.headers().firstValue("X-Correlation-ID")).hasValue("corr-http-123");
+            assertThat(resp.headers().firstValue("traceparent")).hasValueSatisfying(value ->
+                assertThat(value).startsWith("00-" + traceId + "-"));
+            assertThat(resp.headers().firstValue("tracestate")).hasValue("vendor=test");
         }
 
         @Test
@@ -127,11 +165,30 @@ class AepHttpServerObservabilityTest {
             assertThat(components).containsKeys(
                 "database",
                 "redis",
+                "event-loop",
+                "heap-memory",
                 "data-cloud.entity-store",
                 "data-cloud.event-log",
                 "pipeline-storage",
                 "memory-store",
-                "execution-history");
+                "execution-history",
+                "kafka.connectivity");
+        }
+
+        @Test
+        @DisplayName("deep health probe verifies Kafka bootstrap connectivity when configured")
+        void deepHealthProbeVerifiesKafkaConnectivity() throws Exception {
+            kafkaProbeSocket = new ServerSocket(0);
+            System.setProperty("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:" + kafkaProbeSocket.getLocalPort());
+
+            HttpResponse<String> resp = get("/health/deep");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) body.get("components");
+            assertThat(components).containsEntry("kafka.connectivity", "ok");
         }
 
         @Test
@@ -220,6 +277,8 @@ class AepHttpServerObservabilityTest {
             @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKey("runCounts");
+            assertThat(body).containsKey("replay");
+            assertThat(body).containsKey("agentExecution");
             assertThat(body).containsKey("metricsLink");
             assertThat(body).containsKey("timestamp");
         }
@@ -231,7 +290,15 @@ class AepHttpServerObservabilityTest {
             Map<String, Object> body = mapper.readValue(get("/metrics/slo").body(), Map.class);
             @SuppressWarnings("unchecked")
             Map<String, Object> runCounts = (Map<String, Object>) body.get("runCounts");
-            assertThat(runCounts).containsKeys("totalRuns", "failedRuns", "runFailureRate");
+            assertThat(runCounts).containsKeys("completedRuns", "totalRuns", "failedRuns", "runSuccessRate", "runFailureRate");
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> replay = (Map<String, Object>) body.get("replay");
+            assertThat(replay).containsKeys("attempts", "succeeded", "failed", "successRate", "failureRate");
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> agentExecution = (Map<String, Object>) body.get("agentExecution");
+            assertThat(agentExecution).containsKeys("attempts", "succeeded", "failed", "successRate", "failureRate");
         }
 
         @Test
@@ -391,20 +458,28 @@ class AepHttpServerObservabilityTest {
     // ──────────────────────────────────────────────────────────────
 
     private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
+        return get(path, Map.of());
+    }
+
+    private HttpResponse<String> get(String path, Map<String, String> headers) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
             .GET()
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            .uri(URI.create("http://127.0.0.1:" + port + path));
+        headers.forEach(builder::header);
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> post(String path, String body) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
+        return post(path, body, Map.of());
+    }
+
+    private HttpResponse<String> post(String path, String body, Map<String, String> headers) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
             .POST(HttpRequest.BodyPublishers.ofString(body))
             .uri(URI.create("http://127.0.0.1:" + port + path))
-            .header("Content-Type", "application/json")
-            .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            .header("Content-Type", "application/json");
+        headers.forEach(builder::header);
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private void restartServerWithPrometheus() throws Exception {

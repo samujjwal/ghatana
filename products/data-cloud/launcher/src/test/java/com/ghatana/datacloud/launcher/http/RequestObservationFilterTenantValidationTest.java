@@ -39,7 +39,7 @@ class RequestObservationFilterTenantValidationTest extends EventloopTestBase {
         AtomicBoolean delegateCalled = new AtomicBoolean(false);
         AsyncServlet delegate = request -> {
             delegateCalled.set(true);
-            return io.activej.promise.Promise.of(HttpResponse.ok200().build());
+            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok")));
         };
 
         HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders").build();
@@ -48,6 +48,9 @@ class RequestObservationFilterTenantValidationTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(401);
         assertThat(delegateCalled.get()).isFalse();
+        assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isNotBlank();
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isNotBlank();
+        assertThat(response.getHeader(HttpHeaders.of("traceparent"))).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]");
     }
 
     @Test
@@ -64,7 +67,7 @@ class RequestObservationFilterTenantValidationTest extends EventloopTestBase {
         AtomicBoolean delegateCalled = new AtomicBoolean(false);
         AsyncServlet delegate = request -> {
             delegateCalled.set(true);
-            return io.activej.promise.Promise.of(HttpResponse.ok200().build());
+            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok")));
         };
 
         HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders")
@@ -75,6 +78,8 @@ class RequestObservationFilterTenantValidationTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(400);
         assertThat(delegateCalled.get()).isFalse();
+        assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isNotBlank();
+        assertThat(response.getHeader(HttpHeaders.of("traceparent"))).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]");
     }
 
     @Test
@@ -91,16 +96,21 @@ class RequestObservationFilterTenantValidationTest extends EventloopTestBase {
         AtomicBoolean delegateCalled = new AtomicBoolean(false);
         AsyncServlet delegate = request -> {
             delegateCalled.set(true);
-            return io.activej.promise.Promise.of(HttpResponse.ok200().build());
+            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok")));
         };
 
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders")
+        HttpRequest requestWithHeaders = HttpRequest.get(BASE_URL + "/api/v1/entities/orders")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-001")
+            .withHeader(HttpHeaders.of("X-Request-Id"), "req-dc-001")
+            .withHeader(HttpHeaders.of("traceparent"), "00-0123456789abcdef0123456789abcdef-1111222233334444-01")
             .build();
 
-        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(request));
+        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(requestWithHeaders));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isEqualTo("req-dc-001");
+        assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("req-dc-001");
+        assertThat(response.getHeader(HttpHeaders.of("traceparent"))).startsWith("00-0123456789abcdef0123456789abcdef-");
         assertThat(delegateCalled.get()).isTrue();
     }
 }

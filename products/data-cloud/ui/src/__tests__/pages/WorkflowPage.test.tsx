@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
@@ -21,8 +22,31 @@ const { mockApiClient } = vi.hoisted(() => ({
     },
 }));
 
+const { mockAi, mockCapabilities } = vi.hoisted(() => ({
+    mockAi: {
+        getPipelineOptimisationHints: vi.fn(),
+        aiQueryKeys: {
+            pipelineHints: (pipelineId: string) => ['ai', 'pipeline-hints', pipelineId],
+        },
+    },
+    mockCapabilities: {
+        useCapabilityRegistry: vi.fn(),
+        getCapabilitySignal: vi.fn(),
+    },
+}));
+
 vi.mock('../../lib/api/client', () => ({
     apiClient: mockApiClient,
+}));
+
+vi.mock('../../lib/api/ai', () => ({
+    getPipelineOptimisationHints: mockAi.getPipelineOptimisationHints,
+    aiQueryKeys: mockAi.aiQueryKeys,
+}));
+
+vi.mock('../../api/capabilities.service', () => ({
+    useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
+    getCapabilitySignal: mockCapabilities.getCapabilitySignal,
 }));
 
 import { WorkflowsPage } from '../../pages/WorkflowsPage';
@@ -52,29 +76,43 @@ describe('WorkflowPage — WorkflowsPage', () => {
             count: 1,
             timestamp: '2026-04-14T10:35:00Z',
         });
-        mockApiClient.post.mockResolvedValue({
-            pipelineId: 'wf-contract-1',
-            hints: [
-                {
-                    type: 'performance',
-                    title: 'Reduce repeated enrichment lookups',
-                    description: 'Cache repeated upstream calls to reduce end-to-end latency.',
-                    confidence: 0.92,
-                    impact: 'high',
-                    fallback: false,
-                },
-            ],
-            generatedAt: '2026-04-14T10:35:00Z',
+        mockAi.getPipelineOptimisationHints.mockResolvedValue({
+            data: {
+                pipelineId: 'wf-contract-1',
+                hints: [
+                    {
+                        type: 'performance',
+                        title: 'Reduce repeated enrichment lookups',
+                        description: 'Cache repeated upstream calls to reduce end-to-end latency.',
+                        confidence: 0.92,
+                        impact: 'high',
+                        fallback: false,
+                    },
+                ],
+                generatedAt: '2026-04-14T10:35:00Z',
+            },
         });
         mockApiClient.delete.mockResolvedValue(undefined);
+        mockCapabilities.useCapabilityRegistry.mockReturnValue({
+            data: {
+                capabilities: [{ key: 'ai.assist', status: 'active', label: 'AI Assist', summary: 'ACTIVE', rawValue: true }],
+            },
+        });
+        mockCapabilities.getCapabilitySignal.mockReturnValue({
+            key: 'ai.assist',
+            label: 'AI Assist',
+            status: 'active',
+            summary: 'ACTIVE',
+            rawValue: true,
+        });
     });
 
     it('renders the workflows shell with canonical search and filter controls', () => {
         render(<WorkflowsPage />, { wrapper: TestWrapper });
         expect(screen.getByRole('heading', { name: 'Workflows' })).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/Search workflows/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Search workflows by outcome, schedule, or owner/i)).toBeInTheDocument();
         expect(screen.getByText('All Workflows')).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: /New Workflow/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /New Pipeline/i })).toBeInTheDocument();
     });
 
     it('renders canonical pipeline payload details from the launcher route', async () => {
@@ -95,20 +133,19 @@ describe('WorkflowPage — WorkflowsPage', () => {
     });
 
     it('opens workflow details and shows canonical AI optimisation hints', async () => {
+        const user = userEvent.setup();
         render(<WorkflowsPage />, { wrapper: TestWrapper });
 
         const workflowName = await screen.findByText('Contract Pipeline');
-        fireEvent.click(workflowName.closest('tr') ?? workflowName);
+        fireEvent.click(workflowName.closest('[data-testid="workflow-item"]') ?? workflowName);
+        await user.click(await screen.findByRole('button', { name: /show pipeline details/i }));
 
-        expect(await screen.findByText('AI Optimisation Hints')).toBeInTheDocument();
+        expect(await screen.findByText('Inline AI Recommendations')).toBeInTheDocument();
         expect(screen.getByText('Reduce repeated enrichment lookups')).toBeInTheDocument();
         expect(screen.getByText(/cache repeated upstream calls/i)).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(mockApiClient.post).toHaveBeenCalledWith(
-                '/pipelines/wf-contract-1/optimise-hint',
-                {},
-            );
+            expect(mockAi.getPipelineOptimisationHints).toHaveBeenCalledWith('wf-contract-1');
         });
     });
 });

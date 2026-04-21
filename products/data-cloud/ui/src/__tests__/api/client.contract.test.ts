@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataCloudApiClient } from '@/api/client';
 import { apiClient } from '@/lib/api/client';
 import SessionBootstrap from '@/lib/auth/session';
+import { TokenStorage } from '@/lib/auth/tokenStorage';
 import {
   DATASET_CATALOG_BOUNDARY_MESSAGE,
   DATASET_DETAIL_BOUNDARY_MESSAGE,
@@ -244,5 +245,88 @@ describe('shared UI apiClient tenant propagation', () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const headers = new Headers(init.headers as HeadersInit);
     expect(headers.get('X-Tenant-ID')).toBe('tenant-contract');
+  });
+
+  it('surfaces canonical launcher error envelopes with status and nested error details', async () => {
+    fetchMock.mockResolvedValueOnce(createJsonResponse({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      body: {
+        error: {
+          code: 'INVALID_CONFIRMATION_TOKEN',
+          message: 'Confirmation token is invalid for this purge request',
+          details: {
+            confirmationToken: 'mismatch',
+          },
+        },
+        meta: {
+          requestId: 'req-123',
+        },
+      },
+    }));
+
+    await expect(apiClient.get('/governance/purge')).rejects.toMatchObject({
+      code: 'INVALID_CONFIRMATION_TOKEN',
+      message: 'Confirmation token is invalid for this purge request',
+      status: 403,
+      details: {
+        confirmationToken: 'mismatch',
+      },
+    });
+  });
+
+  it('keeps supporting legacy top-level error bodies during transition', async () => {
+    fetchMock.mockResolvedValueOnce(createJsonResponse({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      body: {
+        code: 'MISSING_COLLECTION',
+        message: 'Collection is required',
+      },
+    }));
+
+    await expect(apiClient.get('/entities')).rejects.toMatchObject({
+      code: 'MISSING_COLLECTION',
+      message: 'Collection is required',
+      status: 400,
+    });
+  });
+
+  it('defaults browser requests to credentialed cookie sessions without injecting bearer headers', async () => {
+    SessionBootstrap.setTenantId('tenant-cookie');
+    TokenStorage.enableCookieSession();
+    fetchMock.mockResolvedValueOnce(createJsonResponse({
+      body: {
+        entities: [],
+        count: 0,
+      },
+    }));
+
+    await apiClient.get('/entities/dc_collections');
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = new Headers(init.headers as HeadersInit);
+    expect(init.credentials).toBe('include');
+    expect(headers.get('Authorization')).toBeNull();
+    expect(headers.get('X-Tenant-ID')).toBe('tenant-cookie');
+  });
+
+  it('falls back to canonical auth error codes for 401 responses without explicit error codes', async () => {
+    fetchMock.mockResolvedValueOnce(createJsonResponse({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      body: {
+        message: 'Authentication required',
+      },
+    }));
+
+    await expect(apiClient.get('/entities')).rejects.toMatchObject({
+      code: 'AUTH_REQUIRED',
+      message: 'Authentication required',
+      status: 401,
+    });
   });
 });

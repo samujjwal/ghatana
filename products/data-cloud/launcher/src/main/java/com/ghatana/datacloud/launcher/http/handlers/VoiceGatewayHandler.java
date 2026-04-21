@@ -98,6 +98,8 @@ public class VoiceGatewayHandler {
     private static final double AMBIGUOUS_CONFIDENCE = 0.40;
     /** Maximum voice requests per tenant per minute. */
     static final int VOICE_RATE_LIMIT_PER_MINUTE = 30;
+    /** Maximum accepted utterance length after sanitisation. */
+    static final int MAX_UTTERANCE_LENGTH = 4096;
 
     private final DataCloudClient dataCloudClient;          // nullable — direct read-side execution skipped when absent
     private final ObjectMapper objectMapper;
@@ -251,6 +253,11 @@ public class VoiceGatewayHandler {
                 }
 
                 return utterancePromise.then(utterance -> {
+                    Optional<HttpResponse> utteranceValidationError = validateResolvedUtterance(utterance, tenantId, requestId);
+                    if (utteranceValidationError.isPresent()) {
+                        return Promise.of(utteranceValidationError.get());
+                    }
+
                     if (utterance == null || utterance.isBlank()) {
                         return Promise.of(http.errorEnvelopeResponse(
                             ApiResponse.error("EMPTY_UTTERANCE",
@@ -349,17 +356,17 @@ public class VoiceGatewayHandler {
     private Promise<String> transcribeAudio(
             String audioDataB64, String audioFormat, String language,
             String tenantId, String requestId) {
-        if (sttPort == null || !sttPort.isAvailable()) {
-            // STT provider not configured — return empty string so caller emits a structured EMPTY_UTTERANCE error
-            log.info("[DC-E4] Audio input received but STT provider not configured (tenantId={})", tenantId);
-            return Promise.of("");
-        }
         byte[] audioBytes;
         try {
             audioBytes = Base64.getDecoder().decode(audioDataB64.replaceAll("\\s", ""));
         } catch (IllegalArgumentException e) {
-            // Invalid base64 — return empty string so caller emits a structured EMPTY_UTTERANCE error
+            // Invalid base64 is a caller error and should remain distinguishable.
             log.warn("[DC-E4] Invalid base64 audioData (tenantId={}): {}", tenantId, e.getMessage());
+            return Promise.of("__INVALID_AUDIO_DATA__");
+        }
+        if (sttPort == null || !sttPort.isAvailable()) {
+            // STT provider not configured — return empty string so caller emits a structured EMPTY_UTTERANCE error
+            log.info("[DC-E4] Audio input received but STT provider not configured (tenantId={})", tenantId);
             return Promise.of("");
         }
         return sttPort.transcribe(audioBytes, audioFormat, language)
@@ -442,6 +449,11 @@ public class VoiceGatewayHandler {
                 }
 
                 return utterancePromise.then(utterance -> {
+                    Optional<HttpResponse> utteranceValidationError = validateResolvedUtterance(utterance, tenantId, requestId);
+                    if (utteranceValidationError.isPresent()) {
+                        return Promise.of(utteranceValidationError.get());
+                    }
+
                     if (utterance == null || utterance.isBlank()) {
                         return Promise.of(http.errorEnvelopeResponse(
                             ApiResponse.error("EMPTY_UTTERANCE",
@@ -804,6 +816,30 @@ public class VoiceGatewayHandler {
     private static String sanitise(String input) {
         if (input == null) return "";
         return input.replaceAll("[\\x00-\\x1F`\\\\]", "").strip();
+    }
+
+    private Optional<HttpResponse> validateResolvedUtterance(String utterance, String tenantId, String requestId) {
+        if ("__INVALID_AUDIO_DATA__".equals(utterance)) {
+            return Optional.of(http.errorEnvelopeResponse(
+                ApiResponse.error(
+                    "INVALID_AUDIO_DATA",
+                    "audioData must be valid base64-encoded audio bytes",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                400));
+        }
+        if (utterance != null && utterance.length() > MAX_UTTERANCE_LENGTH) {
+            return Optional.of(http.errorEnvelopeResponse(
+                ApiResponse.error(
+                    "INVALID_UTTERANCE",
+                    "utterance must be <= " + MAX_UTTERANCE_LENGTH + " characters after sanitisation",
+                    tenantId,
+                    requestId),
+                objectMapper,
+                400));
+        }
+        return Optional.empty();
     }
 
     private static String resolveRequestId(HttpRequest request) {

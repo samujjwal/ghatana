@@ -56,6 +56,17 @@ describe('SessionBootstrap', () => {
     expect(sessionStorage.getItem('dc:session:shellRole')).toBe('operator');
   });
 
+  it('reports cookie-backed auth mode in bootstrap snapshots', () => {
+    SessionBootstrap.setTenantId(TEST_TENANT_ID);
+    TokenStorage.enableCookieSession();
+
+    expect(SessionBootstrap.bootstrap()).toMatchObject({
+      isAuthenticated: true,
+      authMode: 'cookie-session',
+      sessionExpiringSoon: false,
+    });
+  });
+
   it('normalizes unknown shell roles back to the primary-user default', () => {
     sessionStorage.setItem('dc:session:shellRole', 'super-admin');
 

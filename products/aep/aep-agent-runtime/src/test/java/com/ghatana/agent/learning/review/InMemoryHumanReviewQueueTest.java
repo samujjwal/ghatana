@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,5 +53,33 @@ class InMemoryHumanReviewQueueTest extends EventloopTestBase {
         )))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("not pending: EXPIRED");
+    }
+
+    @Test
+    @DisplayName("escalate notifies the configured review notification SPI")
+    void escalateNotifiesReviewNotificationSpi() {
+        AtomicReference<String> escalatedReviewId = new AtomicReference<>();
+        ReviewNotificationSpi notificationSpi = new ReviewNotificationSpi() {
+            @Override public void onItemEnqueued(ReviewItem item) {}
+            @Override public void onItemApproved(ReviewItem item) {}
+            @Override public void onItemRejected(ReviewItem item) {}
+            @Override public void onItemEscalated(ReviewItem item) {
+                escalatedReviewId.set(item.getReviewId());
+            }
+        };
+
+        InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(notificationSpi);
+        ReviewItem item = ReviewItem.builder()
+            .reviewId("escalated-review")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v1")
+            .build();
+
+        runPromise(() -> queue.enqueue(item));
+        ReviewItem escalated = runPromise(() -> queue.escalate("escalated-review"));
+
+        assertThat(escalated.getStatus()).isEqualTo(ReviewStatus.ESCALATED);
+        assertThat(escalatedReviewId.get()).isEqualTo("escalated-review");
     }
 }

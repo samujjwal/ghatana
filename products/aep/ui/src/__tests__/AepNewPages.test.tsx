@@ -17,7 +17,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 
 // Pages under test
 import { AgentRegistryPage } from '@/pages/AgentRegistryPage';
@@ -34,6 +34,9 @@ import * as pipelineApi from '@/api/pipeline.api';
 
 vi.mock('@/api/aep.api');
 vi.mock('@/api/pipeline.api');
+vi.mock('@audio-video/ui', () => ({
+  useSpeechSynthesis: () => ({ speak: vi.fn() }),
+}));
 
 // ── Fixtures ──────────────────────────────────────────────────────────
 
@@ -115,10 +118,7 @@ const PATTERN: pipelineApi.PatternSummary = {
 // ── Helper ────────────────────────────────────────────────────────────
 
 function renderWithQuery(ui: React.ReactElement) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(ui, { wrapper: createAepTestWrapper() });
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -407,8 +407,8 @@ describe('LearningPage', () => {
   it('switches to Policies tab', async () => {
     const user = userEvent.setup();
     renderWithQuery(<LearningPage />);
-    await waitFor(() => screen.getByText('policies', { selector: 'button' }));
-    await user.click(screen.getByText('policies', { selector: 'button' }));
+    await waitFor(() => screen.getByRole('button', { name: /policies/i }));
+    await user.click(screen.getByRole('button', { name: /policies/i }));
     await waitFor(() => expect(screen.getByText('Auto-escalation rule')).toBeInTheDocument());
     expect(screen.getByText('PENDING REVIEW')).toBeInTheDocument();
   });
@@ -416,7 +416,7 @@ describe('LearningPage', () => {
   it('shows Approve / Reject for PENDING_REVIEW policies', async () => {
     const user = userEvent.setup();
     renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByText('policies', { selector: 'button' }));
+    await user.click(await screen.findByRole('button', { name: /policies/i }));
     await waitFor(() => screen.getByText('Approve'));
     expect(screen.getByText('Reject')).toBeInTheDocument();
   });
@@ -424,7 +424,7 @@ describe('LearningPage', () => {
   it('calls approvePolicy on Approve click', async () => {
     const user = userEvent.setup();
     renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByText('policies', { selector: 'button' }));
+    await user.click(await screen.findByRole('button', { name: /policies/i }));
     await waitFor(() => screen.getByText('Approve'));
     await user.click(screen.getByText('Approve'));
     await waitFor(() => expect(aepApi.approvePolicy).toHaveBeenCalledWith('pol-001', 'default'));
@@ -433,7 +433,7 @@ describe('LearningPage', () => {
   it('calls rejectPolicy after providing reject reason', async () => {
     const user = userEvent.setup();
     renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByText('policies', { selector: 'button' }));
+    await user.click(await screen.findByRole('button', { name: /policies/i }));
     await waitFor(() => screen.getByText('Reject'));
     await user.click(screen.getByText('Reject'));
     await user.type(screen.getByPlaceholderText(/rejection reason/i), 'Insufficient data');
@@ -446,7 +446,7 @@ describe('LearningPage', () => {
   it('calls triggerReflection on button click', async () => {
     const user = userEvent.setup();
     renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByText('policies', { selector: 'button' }));
+    await user.click(await screen.findByRole('button', { name: /policies/i }));
     await waitFor(() => screen.getByText(/trigger reflection/i));
     await user.click(screen.getByText(/trigger reflection/i));
     await waitFor(() => expect(aepApi.triggerReflection).toHaveBeenCalledWith('default'));

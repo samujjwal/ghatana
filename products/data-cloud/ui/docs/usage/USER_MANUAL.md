@@ -32,7 +32,7 @@ Admin disclosure adds:
 
 Direct-link-only boundaries:
 
-- `/alerts` remains an explicit unsupported operator surface
+- `/alerts` is a live operator triage surface that stays hidden from primary-user discovery
 - `/fabric` remains a preview-only operator surface
 
 Compatibility routes still exist for older deep links such as `/dashboard`, `/collections`, `/datasets`, `/workflows`, `/sql`, `/governance`, and `/dashboards`, but they should not be treated as the primary navigation model.
@@ -71,7 +71,7 @@ Use:
 - `/events` for event exploration
 - `/entities` for entity browsing
 - `/memory` for memory-plane inspection
-- `/fabric` for data-fabric views
+- `/fabric` only when validating preview-only data-fabric views
 - `/plugins` for plugin lifecycle pages
 
 ### Review governance and insight surfaces
@@ -80,7 +80,7 @@ Use:
 
 - `/trust` for governance and compliance views in operator mode
 - `/insights` for operator-facing analytical and runtime summary views in operator mode
-- `/alerts` only when validating the shared unsupported boundary state
+- `/alerts` for live operator alert triage, acknowledgement, resolution, and streaming workflows
 
 ## 4. Important Caveat
 

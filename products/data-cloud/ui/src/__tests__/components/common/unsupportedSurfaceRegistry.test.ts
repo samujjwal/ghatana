@@ -10,11 +10,12 @@ import {
 
 describe('unsupportedSurfaceRegistry', () => {
   it('defines canonical boundary metadata for the primary unsupported surfaces', () => {
-    expect(alertsSurfaceBoundary.state).toBe('not-in-deployment');
+    expect(alertsSurfaceBoundary.state).toBe('operator-only');
     expect(dataFabricMetricsBoundary.state).toBe('preview');
     expect(smartWorkflowGenerationBoundary.state).toBe('temporarily-unavailable');
     expect(pluginDependencyBoundary.details).toHaveLength(3);
-    expect(alertsSurfaceBoundary.title).toBe('Alerts Surface Not Available');
+    expect(alertsSurfaceBoundary.title).toBe('Alerts');
+    expect(alertsSurfaceBoundary.summary).toContain('launcher-backed');
     expect(dataFabricMetricsBoundary.summary).toContain('preview topology only');
     expect(smartWorkflowGenerationBoundary.summary).toContain('manual pipeline editor');
   });

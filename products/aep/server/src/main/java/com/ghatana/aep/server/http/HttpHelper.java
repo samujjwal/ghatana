@@ -42,7 +42,7 @@ public final class HttpHelper {
      * Delegates to platform ResponseBuilder.
      */
     public static HttpResponse jsonResponse(Map<String, Object> data) {
-        return ResponseBuilder.ok()
+        return RequestTraceSupport.applyTo(ResponseBuilder.ok())
             .json(data)
             .build();
     }
@@ -52,7 +52,7 @@ public final class HttpHelper {
      * Delegates to platform ResponseBuilder and ErrorResponse.
      */
     public static HttpResponse errorResponse(int code, String message) {
-        return ResponseBuilder.status(code)
+        return RequestTraceSupport.applyTo(ResponseBuilder.status(code))
             .json(ErrorResponse.of(code, message))
             .build();
     }
@@ -70,7 +70,7 @@ public final class HttpHelper {
             builder.detailsMap(fields);
         }
         
-        return ResponseBuilder.status(code)
+        return RequestTraceSupport.applyTo(ResponseBuilder.status(code))
             .json(builder.build())
             .build();
     }

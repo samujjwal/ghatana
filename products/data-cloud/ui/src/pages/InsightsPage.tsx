@@ -199,10 +199,16 @@ function OperatorDiagnosticsPanel({
         <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
           <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Auth Bootstrap</div>
           <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-            {sessionSnapshot.isAuthenticated ? 'Authenticated session present' : 'No auth token detected'}
+            {sessionSnapshot.isAuthenticated
+              ? sessionSnapshot.authMode === 'cookie-session'
+                ? 'Cookie-backed session present'
+                : 'Header-token session present'
+              : 'No authenticated session detected'}
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Token bootstrap uses secure client storage instead of per-page local storage reads.
+            {sessionSnapshot.authMode === 'cookie-session'
+              ? 'Browser-managed credentials are enabled; the UI does not inject bearer headers when the cookie-backed session is active.'
+              : 'Bearer fallback remains centralized in one auth store instead of per-page localStorage reads.'}
           </p>
         </article>
 

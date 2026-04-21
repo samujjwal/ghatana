@@ -379,12 +379,11 @@ class EntityEdgeCaseTest {
             HttpResponse<String> resp = getWithHeader("/api/v1/entities/orders/t-1",
                 "X-Tenant-ID", tenantId);
 
-            // Entity found for explicit tenant
-            assertThat(resp.statusCode()).isIn(200, 404);
+            assertThat(resp.statusCode()).isEqualTo(200);
         }
 
         @Test
-        @DisplayName("Requests with empty tenant-id header fall back to default tenant")
+        @DisplayName("Requests with empty tenant-id header are treated as absent and return 404 for missing entity")
         void requestWithEmptyTenantHeader_usesDefault() throws Exception {
             when(mockClient.findById(anyString(), anyString(), anyString()))
                 .thenReturn(Promise.of(Optional.empty()));
@@ -393,12 +392,11 @@ class EntityEdgeCaseTest {
             HttpResponse<String> resp = getWithHeader("/api/v1/entities/orders/any-id",
                 "X-Tenant-ID", "");
 
-            // Should not error — empty header treated as missing
-            assertThat(resp.statusCode()).isIn(200, 400, 404);
+            assertThat(resp.statusCode()).isEqualTo(404);
         }
 
         @Test
-        @DisplayName("Requests with tenant-id that is whitespace-only are handled safely")
+        @DisplayName("Requests with whitespace-only tenant-id header are treated as absent and return 404")
         void requestWithWhitespaceTenantId_handledSafely() throws Exception {
             when(mockClient.findById(anyString(), anyString(), anyString()))
                 .thenReturn(Promise.of(Optional.empty()));
@@ -407,7 +405,7 @@ class EntityEdgeCaseTest {
             HttpResponse<String> resp = getWithHeader("/api/v1/entities/orders/any-id",
                 "X-Tenant-ID", "   ");
 
-            assertThat(resp.statusCode()).isIn(200, 400, 404);
+            assertThat(resp.statusCode()).isEqualTo(404);
         }
     }
 

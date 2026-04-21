@@ -202,6 +202,22 @@ Important local-profile caveats:
 - Federated query and tier migration degrade when external services are absent.
 - Semantic search currently uses the in-process vector plugin initialized by the launcher.
 
+## EventLogStore Durability
+
+| Backend | Deployment fit | Durability guarantee | Availability posture |
+| --- | --- | --- | --- |
+| In-memory (`local`) | Developer and test-only embedded runs | None across process restart | Single process only; not production-safe |
+| Sovereign embedded H2 (`DATACLOUD_PROFILE=sovereign`) | Air-gapped and single-binary deployments | Append-only event persistence survives restart when `DATACLOUD_SOVEREIGN_DATA_DIR` points at persistent storage | Single-node durability, not multi-node HA |
+| ServiceLoader durable provider | Standard standalone or orchestrated deployments | Depends on the configured provider contract; production mode fails closed when no durable provider is registered | Availability matches the deployed provider topology |
+| Kafka EventLogStore plugin | Multi-service deployments needing durable distributed event storage | Topic-backed append durability subject to Kafka replication and retention policy | HA only when Kafka itself is deployed with replication and broker quorum |
+
+Operational guarantees:
+
+- A durable run history or workflow audit trail requires either `sovereign` or a registered durable EventLogStore provider.
+- `local` mode is explicitly non-durable and should not be treated as a production SLA.
+- Multi-node HA is a deployment property of the selected provider and its topology, not of the in-process launcher alone.
+- AEP and other embedded consumers should treat Data Cloud durability as an explicit dependency and validate the selected profile during startup.
+
 ## Configuration Highlights
 
 | Variable | Purpose |

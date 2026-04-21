@@ -3,11 +3,20 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, renderHook } from '@testing-library/react';
 import { NLQInput, useNLQParse } from '../NLQInput';
+import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
+import * as aepApi from '@/api/aep.api';
 
-// Mock fetch
-global.fetch = vi.fn();
+vi.mock('@/api/aep.api', async () => {
+  const actual = await vi.importActual<typeof import('@/api/aep.api')>('@/api/aep.api');
+  return {
+    ...actual,
+    parseNlQuery: vi.fn(),
+  };
+});
+
+const wrapper = createAepTestWrapper();
 
 describe('NLQInput', () => {
   beforeEach(() => {
@@ -25,7 +34,8 @@ describe('NLQInput', () => {
       <NLQInput
         onQuery={onQuery}
         placeholder="Ask anything..."
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -46,7 +56,8 @@ describe('NLQInput', () => {
       <NLQInput
         onQuery={onQuery}
         placeholder="Ask anything..."
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -71,21 +82,21 @@ describe('NLQInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        intent: 'search',
-        entities: [{ type: 'keyword', value: 'test', confidence: 0.9 }],
-        confidence: 0.9,
-        query: 'test query',
-      }),
+    vi.mocked(aepApi.parseNlQuery).mockResolvedValueOnce({
+      intent: 'search',
+      entities: [{ type: 'keyword', value: 'test', confidence: 0.9 }],
+      confidence: 0.9,
+      query: 'test query',
+      tenantId: 'default',
+      timestamp: new Date().toISOString(),
     });
 
     render(
       <NLQInput
         onQuery={onQuery}
         placeholder="Ask anything..."
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -95,13 +106,7 @@ describe('NLQInput', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/v1/nlp/parse',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ text: 'test query' }),
-        })
-      );
+      expect(aepApi.parseNlQuery).toHaveBeenCalledWith('test query', 'default', '/api/v1/nlp/parse');
     });
 
     await waitFor(() => {
@@ -120,14 +125,13 @@ describe('NLQInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        intent: 'search',
-        entities: [],
-        confidence: 0.3, // Below default threshold of 0.5
-        query: 'test query',
-      }),
+    vi.mocked(aepApi.parseNlQuery).mockResolvedValueOnce({
+      intent: 'search',
+      entities: [],
+      confidence: 0.3,
+      query: 'test query',
+      tenantId: 'default',
+      timestamp: new Date().toISOString(),
     });
 
     render(
@@ -135,7 +139,8 @@ describe('NLQInput', () => {
         onQuery={onQuery}
         placeholder="Ask anything..."
         confidenceThreshold={0.5}
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -161,14 +166,15 @@ describe('NLQInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+    vi.mocked(aepApi.parseNlQuery).mockRejectedValueOnce(new Error('Network error'));
 
     render(
       <NLQInput
         onQuery={onQuery}
         placeholder="Ask anything..."
         onParseError={onParseError}
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -197,18 +203,19 @@ describe('NLQInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    let resolvePromise: (value: any) => void = () => {};
-    (global.fetch as any).mockImplementationOnce(() => {
-      return new Promise((resolve) => {
+    let resolvePromise: ((value: aepApi.NlqParseResult) => void) | undefined;
+    vi.mocked(aepApi.parseNlQuery).mockImplementationOnce(
+      () => new Promise((resolve) => {
         resolvePromise = resolve;
-      });
-    });
+      }),
+    );
 
     render(
       <NLQInput
         onQuery={onQuery}
         placeholder="Ask anything..."
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -218,21 +225,20 @@ describe('NLQInput', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Processing')).toBeInTheDocument();
+      expect(screen.getByText('Processing')).toBeInTheDocument();
     });
 
-    resolvePromise({
-      ok: true,
-      json: async () => ({
+    resolvePromise?.({
         intent: 'search',
         entities: [],
         confidence: 0.9,
         query: 'test query',
-      }),
+        tenantId: 'default',
+        timestamp: new Date().toISOString(),
     });
 
     await waitFor(() => {
-      expect(screen.queryByLabelText('Processing')).not.toBeInTheDocument();
+      expect(screen.queryByText('Processing')).not.toBeInTheDocument();
     });
   });
 
@@ -243,7 +249,8 @@ describe('NLQInput', () => {
         onQuery={onQuery}
         placeholder="Ask anything..."
         disabled
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -264,14 +271,13 @@ describe('NLQInput', () => {
       expiresAt: new Date(Date.now() + 86400000).toISOString(),
     }));
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        intent: 'search',
-        entities: [],
-        confidence: 0.9,
-        query: 'test query',
-      }),
+    vi.mocked(aepApi.parseNlQuery).mockResolvedValueOnce({
+      intent: 'search',
+      entities: [],
+      confidence: 0.9,
+      query: 'test query',
+      tenantId: 'default',
+      timestamp: new Date().toISOString(),
     });
 
     render(
@@ -279,7 +285,8 @@ describe('NLQInput', () => {
         onQuery={onQuery}
         placeholder="Ask anything..."
         endpoint="/custom/nlp/endpoint"
-      />
+      />,
+      { wrapper }
     );
 
     const input = screen.getByPlaceholderText('Ask anything...');
@@ -289,48 +296,44 @@ describe('NLQInput', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/custom/nlp/endpoint',
-        expect.any(Object)
-      );
+      expect(aepApi.parseNlQuery).toHaveBeenCalledWith('test query', 'default', '/custom/nlp/endpoint');
     });
   });
 });
 
 describe('useNLQParse hook', () => {
   it('provides parse function', () => {
-    const { parse } = useNLQParse();
-    expect(typeof parse).toBe('function');
+    const { result } = renderHook(() => useNLQParse(), { wrapper });
+    expect(typeof result.current.parse).toBe('function');
   });
 
   it('provides isPending state', () => {
-    const { isPending } = useNLQParse();
-    expect(typeof isPending).toBe('boolean');
+    const { result } = renderHook(() => useNLQParse(), { wrapper });
+    expect(typeof result.current.isPending).toBe('boolean');
   });
 
   it('parses text successfully', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        intent: 'search',
-        entities: [{ type: 'keyword', value: 'test', confidence: 0.9 }],
-        confidence: 0.9,
-        query: 'test query',
-      }),
+    vi.mocked(aepApi.parseNlQuery).mockResolvedValueOnce({
+      intent: 'search',
+      entities: [{ type: 'keyword', value: 'test', confidence: 0.9 }],
+      confidence: 0.9,
+      query: 'test query',
+      tenantId: 'default',
+      timestamp: new Date().toISOString(),
     });
 
-    const { parse } = useNLQParse();
-    const result = await parse('test query');
+    const { result } = renderHook(() => useNLQParse(), { wrapper });
+    const parsed = await result.current.parse('test query');
 
-    expect(result.intent).toBe('search');
-    expect(result.confidence).toBe(0.9);
+    expect(parsed.intent).toBe('search');
+    expect(parsed.confidence).toBe(0.9);
   });
 
   it('throws error on parse failure', async () => {
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+    vi.mocked(aepApi.parseNlQuery).mockRejectedValueOnce(new Error('Network error'));
 
-    const { parse } = useNLQParse();
+    const { result } = renderHook(() => useNLQParse(), { wrapper });
 
-    await expect(parse('test query')).rejects.toThrow('NLP parse failed');
+    await expect(result.current.parse('test query')).rejects.toThrow('Network error');
   });
 });

@@ -14,11 +14,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * GDPR and CCPA data-subject rights service for the Agentic Event Processor.
@@ -64,6 +66,9 @@ public final class AepComplianceService {
     /** Page size used for bulk subject queries. */
     private static final int PAGE_SIZE = 500;
 
+    /** Prefix used when logging redacted subject identifiers. */
+    private static final String REDACTED_SUBJECT_PREFIX = "subject#";
+
     /** AEP collections that may contain personal data. Populated via {@link #registerCollection}. */
     private final CopyOnWriteArrayList<String> registeredCollections = new CopyOnWriteArrayList<>(
             List.of(
@@ -76,6 +81,12 @@ public final class AepComplianceService {
     );
 
     private final DataCloudClient client;
+    private final CopyOnWriteArrayList<ErasureCleanupHook> erasureCleanupHooks;
+
+    @FunctionalInterface
+    public interface ErasureCleanupHook {
+        Promise<Void> cleanup(String tenantId, String subjectId, AepComplianceReport report);
+    }
 
     /**
      * Creates a new compliance service.
@@ -83,7 +94,23 @@ public final class AepComplianceService {
      * @param client Data-Cloud client for data-subject operations
      */
     public AepComplianceService(DataCloudClient client) {
+        this(client, List.of());
+    }
+
+    /**
+     * Creates a new compliance service with optional post-erasure cleanup hooks.
+     *
+     * <p>Cleanup hooks are intended for process-local invalidation tasks such as clearing
+     * in-memory caches after a destructive erasure request. They remain optional so
+     * embedded/library deployments can wire only the capabilities they actually host.
+     *
+     * @param client Data-Cloud client for data-subject operations
+     * @param erasureCleanupHooks optional post-erasure cleanup hooks
+     */
+    public AepComplianceService(DataCloudClient client, List<ErasureCleanupHook> erasureCleanupHooks) {
         this.client = Objects.requireNonNull(client, "DataCloudClient must not be null");
+        this.erasureCleanupHooks = new CopyOnWriteArrayList<>(
+                erasureCleanupHooks == null ? List.of() : erasureCleanupHooks);
     }
 
     /**
@@ -108,6 +135,17 @@ public final class AepComplianceService {
         return List.copyOf(registeredCollections);
     }
 
+    /**
+     * Registers an additional cleanup hook executed after successful erasure.
+     *
+     * @param hook cleanup hook to invoke after subject erasure completes
+     */
+    public void registerErasureCleanupHook(ErasureCleanupHook hook) {
+        if (hook != null) {
+            erasureCleanupHooks.addIfAbsent(hook);
+        }
+    }
+
     // =========================================================================
     // Right of Access (GDPR Art.15 / CCPA §1798.110)
     // =========================================================================
@@ -121,7 +159,7 @@ public final class AepComplianceService {
      * @return compliance report with all data found
      */
     public Promise<AepComplianceReport> accessRequest(String tenantId, String subjectId) {
-        log.info("[compliance] GDPR access request for subjectId='{}' tenant='{}'", subjectId, tenantId);
+        log.info("[compliance] GDPR access request for {} tenant='{}'", redactSubjectId(subjectId), tenantId);
         Instant start = Instant.now();
 
         List<Promise<Long>> collectionQueries = registeredCollections.stream()
@@ -161,7 +199,7 @@ public final class AepComplianceService {
      * @return compliance report with counts of deleted records
      */
     public Promise<AepComplianceReport> deletionRequest(String tenantId, String subjectId) {
-        log.info("[compliance] GDPR erasure request for subjectId='{}' tenant='{}'", subjectId, tenantId);
+        log.info("[compliance] GDPR erasure request for {} tenant='{}'", redactSubjectId(subjectId), tenantId);
         Instant start = Instant.now();
         List<String> warnings = new CopyOnWriteArrayList<>();
 
@@ -184,6 +222,10 @@ public final class AepComplianceService {
                             "Erased " + total + " records for subject across " + registeredCollections.size() + " collections",
                             total, Map.copyOf(breakdown), List.copyOf(warnings), start, Instant.now()
                     );
+                })
+                .then(report -> runCleanupHooks(tenantId, subjectId, report, warnings), e -> {
+                    log.error("[compliance] erasure request failed: {}", e.getMessage(), e);
+                    return Promise.of(AepComplianceReport.failure("GDPR_ERASURE", tenantId, subjectId, e.getMessage()));
                 })
                 .then(Promise::of, e -> {
                     log.error("[compliance] erasure request failed: {}", e.getMessage(), e);
@@ -257,16 +299,11 @@ public final class AepComplianceService {
      * @return subject data export across all collections
      */
     public Promise<Map<String, Object>> portabilityRequest(String tenantId, String subjectId) {
-        log.info("[compliance] portability request for subjectId='{}' tenant='{}'", subjectId, tenantId);
-
-        Query query = Query.builder()
-                .filter(Filter.eq(SUBJECT_ID_FIELD, subjectId))
-                .limit(PAGE_SIZE)
-                .build();
+        log.info("[compliance] portability request for {} tenant='{}'", redactSubjectId(subjectId), tenantId);
 
         List<Promise<Map.Entry<String, List<Map<String, Object>>>>> collectionExports =
                 registeredCollections.stream()
-                        .map(collection -> client.query(tenantId, collection, query)
+                .map(collection -> queryAllSubjectRecords(tenantId, collection, subjectId)
                                 .map(entities -> Map.entry(collection,
                                         entities.stream().map(DataCloudClient.Entity::data).toList())))
                         .toList();
@@ -304,7 +341,7 @@ public final class AepComplianceService {
      * @return compliance report
      */
     public Promise<AepComplianceReport> ccpaOptOut(String tenantId, String consumerId) {
-        log.info("[compliance] CCPA opt-out for consumerId='{}' tenant='{}'", consumerId, tenantId);
+        log.info("[compliance] CCPA opt-out for {} tenant='{}'", redactSubjectId(consumerId), tenantId);
         Instant start = Instant.now();
 
         Map<String, Object> optOutRecord = new HashMap<>();
@@ -332,11 +369,7 @@ public final class AepComplianceService {
     // =========================================================================
 
     private Promise<Long> countSubjectRecords(String tenantId, String collection, String subjectId) {
-        Query query = Query.builder()
-                .filter(Filter.eq(SUBJECT_ID_FIELD, subjectId))
-                .limit(PAGE_SIZE)
-                .build();
-        return client.query(tenantId, collection, query)
+        return queryAllSubjectRecords(tenantId, collection, subjectId)
                 .map(entities -> (long) entities.size())
                 .then(Promise::of, e -> {
                     log.warn("[compliance] count failed collection='{}': {}", collection, e.getMessage());
@@ -346,28 +379,133 @@ public final class AepComplianceService {
 
     private Promise<long[]> deleteSubjectRecords(String tenantId, String collection,
                                                   String subjectId, List<String> warnings) {
+        return deleteSubjectRecordsPage(tenantId, collection, subjectId, warnings, 0L, null);
+    }
+
+    private Promise<long[]> deleteSubjectRecordsPage(String tenantId,
+                                                     String collection,
+                                                     String subjectId,
+                                                     List<String> warnings,
+                                 long deletedCount,
+                                 String previousBatchFingerprint) {
         Query query = Query.builder()
                 .filter(Filter.eq(SUBJECT_ID_FIELD, subjectId))
+                .offset(0)
                 .limit(PAGE_SIZE)
                 .build();
 
         return client.query(tenantId, collection, query)
                 .then(entities -> {
                     if (entities.isEmpty()) {
-                        return Promise.of(new long[]{0L});
+                        return Promise.of(new long[]{deletedCount});
                     }
+                String currentBatchFingerprint = fingerprint(entities);
+                if (previousBatchFingerprint != null && previousBatchFingerprint.equals(currentBatchFingerprint)) {
+                String warning = "collection='" + collection
+                    + "': repeated erasure page detected after delete; stopping to avoid infinite loop";
+                warnings.add(warning);
+                log.warn("[compliance] {}", warning);
+                return Promise.of(new long[]{deletedCount});
+                }
                     List<Promise<Void>> deletes = entities.stream()
                             .map(entity -> client.delete(tenantId, collection, entity.id()))
                             .toList();
-                    // Use Promises.all() instead of toList() — Void promises resolve to null
-                    // and List.of() rejects null elements, causing NPE in toList().
-                    return Promises.all(deletes).map(ignored -> new long[]{(long) entities.size()});
+                    return Promises.all(deletes)
+                            .then(ignored -> deleteSubjectRecordsPage(
+                                    tenantId,
+                                    collection,
+                                    subjectId,
+                                    warnings,
+                                    deletedCount + entities.size(),
+                                    currentBatchFingerprint));
                 })
                 .then(Promise::of, e -> {
                     String msg = "collection='" + collection + "': " + e.getMessage();
                     log.warn("[compliance] deletion failed {}", msg);
                     warnings.add(msg);
-                    return Promise.of(new long[]{0L});
+                    return Promise.of(new long[]{deletedCount});
                 });
+    }
+
+    private Promise<List<DataCloudClient.Entity>> queryAllSubjectRecords(String tenantId, String collection, String subjectId) {
+        return querySubjectRecordsPage(tenantId, collection, subjectId, 0, new ArrayList<>());
+    }
+
+    private Promise<List<DataCloudClient.Entity>> querySubjectRecordsPage(String tenantId,
+                                                                          String collection,
+                                                                          String subjectId,
+                                                                          int offset,
+                                                                          List<DataCloudClient.Entity> accumulator) {
+        Query query = Query.builder()
+                .filter(Filter.eq(SUBJECT_ID_FIELD, subjectId))
+                .offset(offset)
+                .limit(PAGE_SIZE)
+                .build();
+
+        return client.query(tenantId, collection, query)
+                .then(entities -> {
+                    accumulator.addAll(entities);
+                    if (entities.size() < PAGE_SIZE) {
+                        return Promise.of(List.copyOf(accumulator));
+                    }
+                    return querySubjectRecordsPage(tenantId, collection, subjectId, offset + entities.size(), accumulator);
+                });
+    }
+
+    private Promise<AepComplianceReport> runCleanupHooks(String tenantId,
+                                                         String subjectId,
+                                                         AepComplianceReport report,
+                                                         List<String> warnings) {
+        if (erasureCleanupHooks.isEmpty()) {
+            return Promise.of(report);
+        }
+
+        List<Promise<Void>> hooks = erasureCleanupHooks.stream()
+                .map(hook -> hook.cleanup(tenantId, subjectId, report)
+                        .then(Promise::of, error -> {
+                            String warning = "cleanup-hook failed: " + error.getMessage();
+                            warnings.add(warning);
+                            log.warn("[compliance] {} for {} tenant='{}'", warning, redactSubjectId(subjectId), tenantId);
+                            return Promise.of(null);
+                        }))
+                .toList();
+
+        return Promises.all(hooks)
+                .map(ignored -> warnings.isEmpty()
+                        ? report
+                        : new AepComplianceReport(
+                                report.operation(),
+                                report.tenantId(),
+                                report.subjectId(),
+                                report.success(),
+                                report.message(),
+                                report.recordsAffected(),
+                                report.breakdown(),
+                                List.copyOf(warnings),
+                            report.start(),
+                            report.end()));
+    }
+
+    private static String redactSubjectId(String subjectId) {
+        if (subjectId == null || subjectId.isBlank()) {
+            return REDACTED_SUBJECT_PREFIX + "unknown";
+        }
+        String trimmed = subjectId.trim();
+        if (trimmed.length() <= 4) {
+            return REDACTED_SUBJECT_PREFIX + Integer.toHexString(trimmed.hashCode());
+        }
+        return REDACTED_SUBJECT_PREFIX
+                + trimmed.substring(0, 2)
+                + "..."
+                + trimmed.substring(trimmed.length() - 2)
+                + "#"
+                + Integer.toHexString(trimmed.hashCode());
+    }
+
+    private static String fingerprint(List<DataCloudClient.Entity> entities) {
+        return entities.stream()
+                .map(DataCloudClient.Entity::id)
+                .sorted()
+                .collect(Collectors.joining(","));
     }
 }

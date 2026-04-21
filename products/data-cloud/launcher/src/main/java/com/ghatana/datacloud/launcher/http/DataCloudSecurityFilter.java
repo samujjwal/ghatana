@@ -30,7 +30,7 @@ import java.util.UUID;
  * <pre>
  *   CORS / rate-limit / payload-size → (this filter) →
  *     1. Pass health/metrics probes without authentication ({@link EndpointSensitivity#PUBLIC}).
- *     2. API key authentication first, JWT bearer authentication second.
+ *     2. API key authentication first, JWT bearer or auth-cookie authentication second.
  *     3. Tenant isolation setup via {@link TenantIsolationHttpFilter}.
  *     4. Policy engine check for {@link EndpointSensitivity#CRITICAL} routes.
  *     5. Async audit emission for SENSITIVE and CRITICAL routes.
@@ -81,6 +81,7 @@ public final class DataCloudSecurityFilter {
     static final String HEADER_REQUEST_ID = "X-Request-ID";
     static final String HEADER_API_KEY = "X-API-Key";
     static final String HEADER_AUTHORIZATION = "Authorization";
+    static final String AUTH_TOKEN_COOKIE = "auth_token";
     static final String DEFAULT_TENANT_CLAIM = "tenant_id";
 
     private final ApiKeyResolver apiKeyResolver;
@@ -170,13 +171,38 @@ public final class DataCloudSecurityFilter {
         }
 
         if (jwtProvider != null) {
-            String token = SecurityUtils.extractBearerToken(request.getHeader(HttpHeaders.of(HEADER_AUTHORIZATION)));
+            String token = extractJwtToken(request);
             if (token != null && !token.isBlank()) {
                 return authenticateJwt(request, tenantWrapped, token, sensitivity);
             }
         }
 
         return Promise.of(unauthorized("Missing authentication credentials"));
+    }
+
+    private String extractJwtToken(io.activej.http.HttpRequest request) {
+        String headerToken = SecurityUtils.extractBearerToken(request.getHeader(HttpHeaders.of(HEADER_AUTHORIZATION)));
+        if (headerToken != null && !headerToken.isBlank()) {
+            return headerToken;
+        }
+
+        return extractCookieValue(request.getHeader(HttpHeaders.COOKIE), AUTH_TOKEN_COOKIE);
+    }
+
+    private String extractCookieValue(String cookieHeader, String cookieName) {
+        if (cookieHeader == null || cookieHeader.isBlank()) {
+            return null;
+        }
+
+        for (String cookie : cookieHeader.split(";")) {
+            String[] nameValue = cookie.trim().split("=", 2);
+            if (nameValue.length == 2 && cookieName.equals(nameValue[0])) {
+                String value = nameValue[1].trim();
+                return value.isEmpty() ? null : value;
+            }
+        }
+
+        return null;
     }
 
     private Promise<HttpResponse> authenticateApiKey(io.activej.http.HttpRequest request,

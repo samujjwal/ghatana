@@ -134,7 +134,7 @@ class AepOpenApiSurfaceDriftTest {
     @DisplayName("contracts and server OpenAPI specs stay in sync and document exercised public routes")
     void specsStayInSyncAndCoverRequiredRoutes() throws IOException {
         String contractsSpec = normalizeSpec(Files.readString(findRepoFile("products/aep/contracts/openapi.yaml")));
-        String serverSpec = loadServerSpecFromClasspath();
+        String serverSpec = normalizeSpec(Files.readString(findRepoFile("products/aep/server/src/main/resources/openapi.yaml")));
 
         assertThat(contractsSpec).isEqualTo(serverSpec);
 
@@ -386,15 +386,6 @@ class AepOpenApiSurfaceDriftTest {
             return value;
         }
         return Character.toUpperCase(value.charAt(0)) + value.substring(1);
-    }
-
-    private static String loadServerSpecFromClasspath() throws IOException {
-        try (InputStream inputStream = AepOpenApiSurfaceDriftTest.class.getResourceAsStream("/openapi.yaml")) {
-            assertThat(inputStream)
-                .as("expected packaged server OpenAPI resource to be available on the classpath")
-                .isNotNull();
-            return normalizeSpec(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
-        }
     }
 
     private static String normalizeSpec(String spec) {

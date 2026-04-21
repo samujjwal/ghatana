@@ -1,7 +1,7 @@
 # AEP API Documentation
 
-**Version**: 2026.4.17  
-**Last Updated**: April 17, 2026
+**Version**: 2026.4.20  
+**Last Updated**: April 20, 2026
 
 ## Canonical Contract
 
@@ -85,6 +85,28 @@ The runtime may truthfully report `configured: false` with an empty set when the
 
 These routes support the operator review loop and post-run learning lifecycle.
 
+`GET /api/v1/hitl/pending` accepts the following queue-inspection controls:
+
+- `tenantId`: tenant scope for queue reads
+- `thresholdSeconds`: overdue threshold in seconds; overrides the tenant timeout policy for the current request and otherwise defaults to the server runtime setting or `1800`
+- `autoEscalate`: when `true`, overdue items are resolved during the read according to the tenant timeout policy
+
+Tenant timeout policies are configured with `AEP_HITL_TIMEOUT_POLICIES` using `tenant=thresholdSeconds:action[:destinationType[:destination]]` entries separated by `;`. Supported actions are `escalate`, `auto_approve`, and `auto_reject`.
+
+The pending-queue response includes:
+
+- `pending`: the current review items
+- `count`: total pending item count returned
+- `overdueCount`: how many items were already overdue at read time
+- `autoEscalatedCount`: how many overdue items were escalated in the same request
+- `autoApprovedCount`: how many overdue items were auto-approved by policy
+- `autoRejectedCount`: how many overdue items were auto-rejected by policy
+- `policyAction`: the timeout policy action applied for the request or tenant
+- `escalationDestinationType` and `escalationDestination`: optional routing metadata for the current tenant policy
+- `escalationTimeoutSeconds`: the threshold that was applied
+
+Manual escalation remains available through `POST /api/v1/hitl/{reviewId}/escalate`, which returns the escalated review item plus `escalatedAt`, `reason`, `policyAction`, and optional `destinationType` / `destination` metadata.
+
 ### Governance, compliance, and audit
 
 - `GET /governance/kill-switch`
@@ -105,6 +127,8 @@ These routes support the operator review loop and post-run learning lifecycle.
 
 The summary routes are the operator-friendly views used by the AEP governance UI. More detailed compliance operations remain under `/api/v1/compliance/*`.
 
+For GDPR subject operations, AEP now walks all matching Data Cloud result pages instead of stopping at the first batch. `POST /api/v1/compliance/gdpr/erasure` also runs post-erasure cleanup hooks for process-local state, including pattern metadata cache invalidation in server deployments. Embedded/library deployments keep this behavior optional and only run the cleanup hooks they wire explicitly.
+
 ### Analytics, reports, deployments, and session lifecycle
 
 - `POST /api/v1/analytics/anomalies`
@@ -117,61 +141,38 @@ The summary routes are the operator-friendly views used by the AEP governance UI
 - `DELETE /api/v1/deployments/{deploymentId}`
 - `POST /api/v1/session`
 
+## Runtime Config Surface
+
+`AepDynamicConfigService` is the runtime override layer used by server deployments and embedded/library integrations. The authoritative schema for the mutable overlay lives at:
+
+- `products/aep/docs/config/aep-dynamic-config.schema.json`
+
+The schema currently documents the validated overlay keys for:
+
+- `rabbitmq.port`
+- `redis.port`
+- `db.pool.size`
+- `consolidation.interval.hours`
+- `KAFKA_BOOTSTRAP_SERVERS`
+- `APP_ENV`
+
+Listener failures and invalid writes roll back atomically and are recorded in the service audit history. AEP does not currently expose a public admin HTTP endpoint for remote config mutation, so there is no separate OpenAPI route for this surface yet.
+
 ## Documentation Discipline
 
 - When public routes change, update both OpenAPI copies and this document in the same change.
 - The server test suite includes route/spec drift coverage for exercised public endpoints; that is the guardrail against silently stale docs.
 - If an endpoint is present but only partially backed by runtime dependencies, document that degraded behavior explicitly instead of claiming full production readiness.
 
+## SLO Snapshot
+
+`GET /metrics/slo` is the operator-friendly snapshot endpoint for runtime SLO state when you want a JSON view instead of scraping Prometheus text. The payload includes:
+
+- `runs`: completed, failed, total, success-rate, and failure-rate snapshots
+- `replay`: replay attempt, success, and failure counters plus rates
+- `agentExecution`: agent execution attempt, success, and failure counters plus rates
+
 ---
-
-## Monitoring
-
-### Get System Metrics
-
-Retrieve system-wide metrics.
-
-```http
-GET /api/monitoring/metrics
-```
-
-**Response**:
-```json
-{
-  "timestamp": "2026-03-19T14:30:00Z",
-  "pipelines": {
-    "executions_per_second": 12.5,
-    "avg_duration_ms": 145,
-    "success_rate": 0.98
-  },
-  "events": {
-    "ingestion_rate": 50.2,
-    "processing_rate": 48.7,
-    "backlog": 123
-  },
-  "system": {
-    "cpu_cores": 8,
-    "cpu_usage_percent": 45,
-    "memory_total_gb": 32,
-    "memory_used_gb": 20,
-    "disk_total_gb": 500,
-    "disk_used_gb": 190
-  }
-}
-```
-
-### Get Pipeline Metrics
-
-Retrieve metrics for a specific pipeline.
-
-```http
-GET /api/monitoring/pipelines/{pipeline_id}/metrics
-```
-
-**Query Parameters**:
-- `from` (timestamp): Start time
-- `to` (timestamp): End time
-- `granularity` (string): Time bucket (1m, 5m, 1h, 1d)
 
 ---
 

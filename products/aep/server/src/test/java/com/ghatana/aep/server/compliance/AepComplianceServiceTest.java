@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -262,6 +263,43 @@ class AepComplianceServiceTest {
             AepComplianceReport report = service.deletionRequest(TENANT, SUBJECT_ID).getResult();
 
             assertThat(report.recordsAffected()).isEqualTo(3L);
+        }
+
+        @Test
+        @DisplayName("continues deleting until all subject pages are exhausted")
+        void paginatedDeletions_deleteAllPages() {
+            when(client.query(eq(TENANT), eq("aep_patterns"), any(Query.class)))
+                    .thenReturn(
+                            Promise.of(List.of(entity("p1"), entity("p2"))),
+                            Promise.of(List.of(entity("p3"))),
+                            Promise.of(List.of()));
+            stubAllDefaultCollectionsEmpty("aep_patterns");
+            when(client.delete(eq(TENANT), eq("aep_patterns"), anyString()))
+                    .thenReturn(Promise.of(null));
+
+            AepComplianceReport report = service.deletionRequest(TENANT, SUBJECT_ID).getResult();
+
+            assertThat(report.recordsAffected()).isEqualTo(3L);
+            verify(client).delete(TENANT, "aep_patterns", "p1");
+            verify(client).delete(TENANT, "aep_patterns", "p2");
+            verify(client).delete(TENANT, "aep_patterns", "p3");
+            verify(client, times(3)).query(eq(TENANT), eq("aep_patterns"), any(Query.class));
+        }
+
+        @Test
+        @DisplayName("runs post-erasure cleanup hooks after successful deletion")
+        void postErasureCleanupHooks_areInvoked() {
+            AtomicBoolean cleanupInvoked = new AtomicBoolean(false);
+            service = new AepComplianceService(client, List.of((tenantId, subjectId, report) -> {
+                cleanupInvoked.set(true);
+                return Promise.of(null);
+            }));
+            stubAllDefaultCollectionsEmpty(new String[0]);
+
+            AepComplianceReport report = service.deletionRequest(TENANT, SUBJECT_ID).getResult();
+
+            assertThat(report.success()).isTrue();
+            assertThat(cleanupInvoked).isTrue();
         }
     }
 

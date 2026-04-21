@@ -136,8 +136,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
 
             HttpResponse<String> resp = postRaw("/api/v1/entities/products", "{}");
 
-            // empty data map is rejected with 400 by ApiInputValidator
-            assertThat(resp.statusCode()).isIn(400, 200); // depends on validator strictness
+            assertThat(resp.statusCode()).isEqualTo(400);
         }
 
         @Test

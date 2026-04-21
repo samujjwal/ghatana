@@ -65,6 +65,25 @@ class DataCloudSecurityFilterJwtTest extends EventloopTestBase {
         verify(jwtProvider).extractClaims(VALID_TOKEN);
     }
 
+        @Test
+        @DisplayName("cookie-backed JWT request passes through when Authorization header is absent")
+        void cookieBackedJwtRequestPassesThrough() {
+                AsyncServlet secured = DataCloudSecurityFilter.builder()
+                                .jwtProvider(jwtProvider)
+                                .build()
+                                .apply(OK_DELEGATE);
+
+                HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
+                                .withHeader(HttpHeaders.COOKIE, DataCloudSecurityFilter.AUTH_TOKEN_COOKIE + "=" + VALID_TOKEN)
+                                .withHeader(HttpHeaders.HOST, "localhost")
+                                .build();
+
+                int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+                assertThat(status).isEqualTo(200);
+                verify(jwtProvider).validateToken(VALID_TOKEN);
+        }
+
     @Test
     @DisplayName("invalid JWT request returns 401")
     void invalidJwtRequestReturns401() {
@@ -82,6 +101,24 @@ class DataCloudSecurityFilterJwtTest extends EventloopTestBase {
 
         assertThat(status).isEqualTo(401);
     }
+
+        @Test
+        @DisplayName("invalid JWT cookie returns 401")
+        void invalidJwtCookieReturns401() {
+                AsyncServlet secured = DataCloudSecurityFilter.builder()
+                                .jwtProvider(jwtProvider)
+                                .build()
+                                .apply(OK_DELEGATE);
+
+                HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
+                                .withHeader(HttpHeaders.COOKIE, DataCloudSecurityFilter.AUTH_TOKEN_COOKIE + "=" + INVALID_TOKEN)
+                                .withHeader(HttpHeaders.HOST, "localhost")
+                                .build();
+
+                int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+                assertThat(status).isEqualTo(401);
+        }
 
     @Test
     @DisplayName("JWT request with mismatched tenant header returns 403")

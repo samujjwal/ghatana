@@ -11,6 +11,7 @@ import com.ghatana.agent.learning.review.ReviewItem;
 import com.ghatana.agent.learning.review.ReviewItemType;
 import com.ghatana.agent.learning.review.ReviewNotificationSpi;
 import com.ghatana.aep.server.http.controllers.HitlController;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("AepHttpServer – HITL Auto-Escalation (AEP-08)")
-class AepHttpServerHitlEscalationTest {
+class AepHttpServerHitlEscalationTest extends EventloopTestBase {
 
     private AepEngine engine;
     private AepHttpServer server;
@@ -63,6 +64,7 @@ class AepHttpServerHitlEscalationTest {
 
     @AfterEach
     void tearDown() {
+        System.clearProperty("AEP_HITL_TIMEOUT_POLICIES");
         if (server != null) server.stop();
         if (engine != null) engine.close();
     }
@@ -106,6 +108,27 @@ class AepHttpServerHitlEscalationTest {
             assertThat(body.get("status")).isEqualTo("ESCALATED");
             assertThat(body.get("escalatedAt")).isNotNull();
             assertThat(body.get("reason")).isEqualTo("manual");
+        }
+
+        @Test
+        @DisplayName("manual escalation includes explicit destination metadata when provided")
+        void escalationIncludesDestinationMetadata() throws Exception {
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+            queue.enqueue(buildItem("review-esc-dest", "tenant-a", "skill-x"));
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = post(
+                "/api/v1/hitl/review-esc-dest/escalate",
+                "{\"reason\":\"manager_escalation\",\"destinationType\":\"manager\",\"destination\":\"ops-oncall\"}");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("destinationType")).isEqualTo("manager");
+            assertThat(body.get("destination")).isEqualTo("ops-oncall");
+            assertThat(body.get("policyAction")).isEqualTo("escalate");
         }
 
         @Test
@@ -221,7 +244,7 @@ class AepHttpServerHitlEscalationTest {
         @DisplayName("findOverdue returns item when threshold is 0 seconds (immediate)")
         void findOverdueReturnsItemWithZeroThreshold() throws Exception {
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
-            ReviewItem item = buildItem("overdue-review", "tenant-f", "skill-q");
+            ReviewItem item = buildItem("overdue-review", "tenant-f", "skill-q", Instant.now().minusSeconds(5));
             queue.enqueue(item);
 
             // Threshold of 0s — all pending items are overdue
@@ -235,8 +258,8 @@ class AepHttpServerHitlEscalationTest {
         @DisplayName("findOverdue scopes to specific tenant when tenantId provided")
         void findOverdueFiltersByTenant() throws Exception {
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
-            queue.enqueue(buildItem("r-tenant-1", "tenant-x", "sk-1"));
-            queue.enqueue(buildItem("r-tenant-2", "tenant-y", "sk-2"));
+            queue.enqueue(buildItem("r-tenant-1", "tenant-x", "sk-1", Instant.now().minusSeconds(5)));
+            queue.enqueue(buildItem("r-tenant-2", "tenant-y", "sk-2", Instant.now().minusSeconds(5)));
 
             // 0s threshold — all are overdue; filter to tenant-x only
             List<?>[] holder = new List<?>[1];
@@ -269,12 +292,101 @@ class AepHttpServerHitlEscalationTest {
         }
 
         @Test
+        @DisplayName("pending endpoint auto-escalates overdue items when requested")
+        void pendingEndpointAutoEscalatesOverdueItems() throws Exception {
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+            queue.enqueue(buildItem(
+                "review-overdue-http",
+                "tenant-http",
+                "skill-http",
+                Instant.now().minusSeconds(3600)));
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-http&thresholdSeconds=60&autoEscalate=true");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("overdueCount")).isEqualTo(1);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(1);
+            assertThat(body.get("escalationTimeoutSeconds")).isEqualTo(60);
+
+            HttpResponse<String> followUp = get("/api/v1/hitl/pending?tenantId=tenant-http");
+            assertThat(mapper.readValue(followUp.body(), Map.class).get("count")).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("tenant timeout policy auto-approves overdue items when configured")
+        void tenantTimeoutPolicyAutoApprovesOverdueItems() throws Exception {
+            System.setProperty("AEP_HITL_TIMEOUT_POLICIES", "tenant-policy=60:auto_approve:manager:ops-oncall");
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+            queue.enqueue(buildItem(
+                "review-auto-approve",
+                "tenant-policy",
+                "skill-http",
+                Instant.now().minusSeconds(3600)));
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-policy&autoEscalate=true");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("overdueCount")).isEqualTo(1);
+            assertThat(body.get("autoApprovedCount")).isEqualTo(1);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(0);
+            assertThat(body.get("policyAction")).isEqualTo("auto_approve");
+            assertThat(body.get("escalationDestinationType")).isEqualTo("manager");
+            assertThat(body.get("escalationDestination")).isEqualTo("ops-oncall");
+
+            ReviewItem resolved = runPromise(() -> queue.getById("review-auto-approve"));
+            assertThat(resolved).isNotNull();
+            assertThat(resolved.getStatus()).isEqualTo(com.ghatana.agent.learning.review.ReviewStatus.APPROVED);
+        }
+
+        @Test
+        @DisplayName("tenant timeout policy auto-rejects overdue items when configured")
+        void tenantTimeoutPolicyAutoRejectsOverdueItems() throws Exception {
+            System.setProperty("AEP_HITL_TIMEOUT_POLICIES", "tenant-reject=45:auto_reject:queue:compliance");
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+            queue.enqueue(buildItem(
+                "review-auto-reject",
+                "tenant-reject",
+                "skill-http",
+                Instant.now().minusSeconds(3600)));
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-reject&autoEscalate=true");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("autoRejectedCount")).isEqualTo(1);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(0);
+            assertThat(body.get("policyAction")).isEqualTo("auto_reject");
+            assertThat(body.get("escalationDestinationType")).isEqualTo("queue");
+            assertThat(body.get("escalationDestination")).isEqualTo("compliance");
+
+            ReviewItem resolved = runPromise(() -> queue.getById("review-auto-reject"));
+            assertThat(resolved).isNotNull();
+            assertThat(resolved.getStatus()).isEqualTo(com.ghatana.agent.learning.review.ReviewStatus.REJECTED);
+        }
+
+        @Test
         @DisplayName("auto-escalation fires SSE event for overdue item via scheduler callback")
         void autoEscalationFiresSseEventForOverdueItem() throws Exception {
             List<Map<?, ?>> capturedEvents = new CopyOnWriteArrayList<>();
 
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
-            ReviewItem item = buildItem("overdue-auto", "tenant-h", "skill-s");
+            ReviewItem item = buildItem("overdue-auto", "tenant-h", "skill-s", Instant.now().minusSeconds(5));
             queue.enqueue(item);
 
             // Simulate what the scheduler does: find overdue (0s threshold) and escalate each
@@ -307,6 +419,10 @@ class AepHttpServerHitlEscalationTest {
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private ReviewItem buildItem(String reviewId, String tenantId, String skillId) {
+        return buildItem(reviewId, tenantId, skillId, Instant.now());
+        }
+
+        private ReviewItem buildItem(String reviewId, String tenantId, String skillId, Instant createdAt) {
         return ReviewItem.builder()
             .reviewId(reviewId)
             .tenantId(tenantId)
@@ -314,6 +430,7 @@ class AepHttpServerHitlEscalationTest {
             .proposedVersion("v1.0")
             .itemType(ReviewItemType.POLICY)
             .confidenceScore(0.55)
+            .createdAt(createdAt)
             .build();
     }
 

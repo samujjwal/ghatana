@@ -14,8 +14,11 @@ import com.ghatana.contracts.agent.v1.ListAgentsRequestProto;
 import com.ghatana.contracts.agent.v1.ListAgentsResponseProto;
 import com.ghatana.contracts.agent.v1.MetadataProto;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
+import io.grpc.stub.MetadataUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -121,6 +125,60 @@ class AepGrpcServerTest extends EventloopTestBase {
                 AepGrpcServer.REGISTRATION_MODE_METADATA_KEY,
                 AepGrpcServer.REGISTRATION_MODE_MANIFEST_ONLY
             );
+    }
+
+    @Test
+    @DisplayName("createAgent returns correlation and trace metadata headers")
+    void createAgentReturnsCorrelationAndTraceHeaders() {
+        AtomicReference<Metadata> responseHeaders = new AtomicReference<>();
+        AtomicReference<Metadata> responseTrailers = new AtomicReference<>();
+
+        AgentManagementServiceProtoGrpc.AgentManagementServiceProtoBlockingStub tracedStub =
+            AgentManagementServiceProtoGrpc.newBlockingStub(
+                ClientInterceptors.intercept(
+                    channel,
+                    MetadataUtils.newCaptureMetadataInterceptor(responseHeaders, responseTrailers)));
+
+        tracedStub.createAgent(CreateAgentRequestProto.newBuilder()
+            .setAgent(agentManifest("agent-trace", "Agent Trace", "1.0.0", "trace test"))
+            .build());
+
+        assertThat(responseHeaders.get().get(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER)))
+            .isNotBlank();
+        assertThat(responseHeaders.get().get(Metadata.Key.of("traceparent", Metadata.ASCII_STRING_MARSHALLER)))
+            .matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]");
+    }
+
+    @Test
+    @DisplayName("createAgent preserves inbound correlation id and trace id")
+    void createAgentPreservesInboundCorrelationAndTraceId() {
+        Metadata requestHeaders = new Metadata();
+        AtomicReference<Metadata> responseHeaders = new AtomicReference<>();
+        AtomicReference<Metadata> responseTrailers = new AtomicReference<>();
+        String traceId = "fedcba9876543210fedcba9876543210";
+
+        requestHeaders.put(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER), "corr-grpc-456");
+        requestHeaders.put(Metadata.Key.of("traceparent", Metadata.ASCII_STRING_MARSHALLER),
+            "00-" + traceId + "-1111222233334444-01");
+        requestHeaders.put(Metadata.Key.of("tracestate", Metadata.ASCII_STRING_MARSHALLER), "vendor=grpc");
+
+        AgentManagementServiceProtoGrpc.AgentManagementServiceProtoBlockingStub tracedStub =
+            AgentManagementServiceProtoGrpc.newBlockingStub(
+                ClientInterceptors.intercept(
+                    channel,
+                    MetadataUtils.newAttachHeadersInterceptor(requestHeaders),
+                    MetadataUtils.newCaptureMetadataInterceptor(responseHeaders, responseTrailers)));
+
+        tracedStub.createAgent(CreateAgentRequestProto.newBuilder()
+            .setAgent(agentManifest("agent-trace-2", "Agent Trace Two", "1.0.1", "trace roundtrip"))
+            .build());
+
+        assertThat(responseHeaders.get().get(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER)))
+            .isEqualTo("corr-grpc-456");
+        assertThat(responseHeaders.get().get(Metadata.Key.of("traceparent", Metadata.ASCII_STRING_MARSHALLER)))
+            .startsWith("00-" + traceId + "-");
+        assertThat(responseHeaders.get().get(Metadata.Key.of("tracestate", Metadata.ASCII_STRING_MARSHALLER)))
+            .isEqualTo("vendor=grpc");
     }
 
     @SuppressWarnings("unchecked")

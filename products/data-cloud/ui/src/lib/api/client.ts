@@ -79,6 +79,48 @@ export class ApiClient {
         };
     }
 
+    private static isRecord(value: unknown): value is Record<string, unknown> {
+        return typeof value === 'object' && value !== null;
+    }
+
+    private static parseApiError(payload: unknown, response: Response): ApiError {
+        const fallbackCode = response.status === 401
+            ? 'AUTH_REQUIRED'
+            : response.status === 403
+                ? 'ACCESS_DENIED'
+                : 'UNKNOWN_ERROR';
+
+        if (ApiClient.isRecord(payload)) {
+            const nestedError = ApiClient.isRecord(payload.error) ? payload.error : undefined;
+            const message = typeof nestedError?.message === 'string'
+                ? nestedError.message
+                : typeof payload.message === 'string'
+                    ? payload.message
+                    : response.statusText;
+            const code = typeof nestedError?.code === 'string'
+                ? nestedError.code
+                : typeof payload.code === 'string'
+                    ? payload.code
+                    : fallbackCode;
+            const details = ApiClient.isRecord(nestedError?.details)
+                ? nestedError.details
+                : payload;
+
+            return {
+                code,
+                message,
+                details,
+                status: response.status,
+            };
+        }
+
+        return {
+            code: 'UNKNOWN_ERROR',
+            message: response.statusText,
+            status: response.status,
+        };
+    }
+
     private createHeaders(extraHeaders?: Record<string, string>): Headers {
         const headers = new Headers({
             ...this.defaultHeaders,
@@ -88,10 +130,8 @@ export class ApiClient {
         if (tenantId) {
             headers.set('X-Tenant-ID', tenantId);
         }
-        // Use TokenStorage instead of direct localStorage access.
-        // TokenStorage uses memory-first storage with sessionStorage fallback,
-        // reducing XSS token-theft risk. See lib/auth/tokenStorage.ts for the
-        // migration path to httpOnly cookies (recommended for production).
+        // Cookie-backed sessions are preferred for browser deployments.
+        // Bearer headers are only injected when an explicit token is present.
         const token = TokenStorage.get();
         if (token) {
             headers.set('Authorization', `Bearer ${token}`);
@@ -115,6 +155,7 @@ export class ApiClient {
         try {
             const response = await fetch(requestUrl.toString(), {
                 ...config,
+                credentials: config.credentials ?? 'include',
                 headers: this.createHeaders(config.headers),
                 signal: controller.signal,
             });
@@ -130,13 +171,7 @@ export class ApiClient {
                         : await response.text();
 
             if (!response.ok) {
-                const details = typeof payload === 'object' && payload !== null ? payload as Record<string, unknown> : undefined;
-                throw {
-                    code: details?.code ?? 'UNKNOWN_ERROR',
-                    message: (details?.message as string | undefined) ?? response.statusText,
-                    details,
-                    status: response.status,
-                } as ApiError;
+                throw ApiClient.parseApiError(payload, response);
             }
 
             return payload as T;

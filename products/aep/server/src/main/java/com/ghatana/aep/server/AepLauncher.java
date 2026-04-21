@@ -295,6 +295,22 @@ public class AepLauncher {
             }
             @Override public void onItemApproved(ReviewItem item) {}
             @Override public void onItemRejected(ReviewItem item) {}
+            @Override
+            public void onItemEscalated(ReviewItem item) {
+                AepHttpServer srv = httpServerRef.get();
+                if (srv != null) {
+                    srv.broadcastSseEvent(
+                        item.getTenantId(),
+                        "hitl_request_escalated",
+                        java.util.Map.of(
+                            "itemId", item.getReviewId(),
+                            "skillId", item.getSkillId(),
+                            "itemType", item.getItemType().name(),
+                            "status", item.getStatus().name()
+                        )
+                    );
+                }
+            }
         };
         if (agentDataCloud != null) {
             log.info("Creating DataCloud-backed HumanReviewQueue with SSE notification SPI");

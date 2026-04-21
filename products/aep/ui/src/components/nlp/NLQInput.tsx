@@ -14,7 +14,7 @@ import React, { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
 import { VoiceInput } from '../voice/VoiceInput';
-import { ConsentManager, useConsent } from '../privacy/ConsentManager';
+import { useConsent } from '../privacy/ConsentManager';
 import { parseNlQuery, type NlqParseResult } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
 
@@ -85,16 +85,21 @@ export const NLQInput: React.FC<NLQInputProps> = ({
   const { consentGranted } = useConsent('ai_suggestions');
   
   const { mutate: parseIntent, isPending } = useMutation({
-    mutationFn: (text: string): Promise<NlqParseResult> => parseNlQuery(text),
-    onSuccess: (data) => {
+    mutationFn: ({ text, requestEndpoint }: { text: string; requestEndpoint: string }): Promise<NlqParseResult> =>
+      parseNlQuery(text, 'default', requestEndpoint),
+    onSuccess: (data, variables) => {
       if (data.confidence >= confidenceThreshold) {
-        onQuery(query, data.intent, data.entities as Array<{ type: string; value: string; confidence: number }>);
+        onQuery(
+          variables.text,
+          data.intent,
+          data.entities as Array<{ type: string; value: string; confidence: number }>,
+        );
       } else {
-        onQuery(query);
+        onQuery(variables.text);
       }
     },
-    onError: (error) => {
-      onQuery(query);
+    onError: (error, variables) => {
+      onQuery(variables.text);
       if (onParseError) {
         onParseError(error instanceof Error ? error : new Error('NLP parse failed'));
       }
@@ -111,8 +116,8 @@ export const NLQInput: React.FC<NLQInputProps> = ({
     }
 
     // Try to parse intent
-    parseIntent(query);
-  }, [query, isPending, consentGranted, onQuery, parseIntent, confidenceThreshold]);
+    parseIntent({ text: query, requestEndpoint: endpoint });
+  }, [query, isPending, consentGranted, onQuery, parseIntent, endpoint]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
