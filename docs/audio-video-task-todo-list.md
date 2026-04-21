@@ -67,7 +67,7 @@ Status values:
 - [x] `AV-P1-04` Owner: TypeScript Engineer ETA: 2026-04-21 Status: `DONE` Notes: Added runtime boundary validators and parser functions in `@audio-video/types`; integrated validation in `@audio-video/client`; added contract and client tests for schema drift.
 - [ ] `AV-P1-05` Owner: Performance Engineer ETA: 2026-04-30 Status: `BLOCKED` Notes: Requires benchmark environment and representative runtime dependencies for STT/vision/database/cache.
 - [ ] `AV-P1-06` Owner: Platform/O11y ETA: 2026-05-01 Status: `BLOCKED` Notes: Requires cross-service deployment wiring for metrics/traces/readiness verification.
-- [ ] `AV-P1-07` Owner: Tech Lead + Backend ETA: 2026-04-30 Status: `IN_PROGRESS` Notes: Multimodal adapter routing tightened; API contract documentation + integration contract tests still pending.
+- [ ] `AV-P1-07` Owner: Tech Lead + Backend ETA: 2026-04-30 Status: `IN_PROGRESS` Notes: Multimodal adapter routing tightened; `@audio-video/client` now propagates tenant/correlation headers and has client-to-service integration coverage. API contract documentation + backend integration contract tests still pending.
 
 ---
 

@@ -21,33 +21,7 @@ services:
       timeout: 3s
       retries: 3
 
-  ai-inference-service:
-    build:
-      context: ../
-      dockerfile: shared-services/Dockerfile
-      args:
-        SERVICE_MODULE: ai-inference-service
-    ports:
-      - "8083:8080"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - MODEL_PROVIDER=${MODEL_PROVIDER:-openai}
-      - LOG_LEVEL=DEBUG
-
-  feature-store-ingest:
-    build:
-      context: ../
-      dockerfile: shared-services/Dockerfile
-      args:
-        SERVICE_MODULE: feature-store-ingest
-    ports:
-      - "8085:8080"
-    environment:
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      - LOG_LEVEL=DEBUG
-    depends_on:
-      redis:
-        condition: service_healthy
+  # feature-store-ingest: # TODO: Re-enable when service is implemented
 
   # ── Supporting infrastructure ──────────────────────────────────────
   db:

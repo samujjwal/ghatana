@@ -15,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+import java.io.IOException;
+
 /**
  * @doc.type class
  * @doc.purpose Integration tests for Audio-Video gRPC instrumentation with distributed tracing
@@ -247,6 +249,8 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                 );
             } catch (RuntimeException e) {
                 // Expected
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
 
             // Then
@@ -486,6 +490,8 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                 );
             } catch (RuntimeException e) {
                 // Expected
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
 
             // Then
@@ -509,9 +515,9 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                 );
             } catch (RuntimeException e) {
                 // Expected
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-
-            // Then
             assertThat(MDC.getCopyOfContextMap()).isEmpty();
         }
 

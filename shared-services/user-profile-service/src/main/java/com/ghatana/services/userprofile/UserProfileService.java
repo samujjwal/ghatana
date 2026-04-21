@@ -4,6 +4,8 @@ import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.http.*;
 import io.activej.inject.annotation.Provides;
 import io.activej.launchers.http.HttpServerLauncher;
@@ -12,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 
 import static io.activej.http.HttpMethod.*;
@@ -48,6 +51,7 @@ import static io.activej.http.HttpMethod.*;
 public class UserProfileService extends HttpServerLauncher {
 
     private static final Logger log = LoggerFactory.getLogger(UserProfileService.class);
+    private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper();
 
     // ─── Environment variable keys ────────────────────────────────────────────
 
@@ -148,10 +152,7 @@ public class UserProfileService extends HttpServerLauncher {
                                             .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                                             .withBody(profileToJson(profile).getBytes())
                                             .build())
-                                    .orElse(HttpResponse.ofCode(404)
-                                            .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                                            .withBody(("{\"error\":\"Profile not found for user " + sanitize(userId) + "\"}").getBytes())
-                                            .build()));
+                                    .orElse(error(404, "Profile not found for user " + userId)));
                 })
 
                 // ── PUT /profiles/:userId  (create or update)
@@ -272,83 +273,62 @@ public class UserProfileService extends HttpServerLauncher {
         }
     }
 
-    /** Serialises a {@link UserProfile} to a compact JSON string (no external library needed). */
+    /** Serialises a {@link UserProfile} to JSON using Jackson. */
     private static String profileToJson(UserProfile p) {
-        return "{" +
-                "\"userId\":"              + quote(p.userId())              + "," +
-                "\"tenantId\":"            + quote(p.tenantId())            + "," +
-                "\"email\":"               + quote(p.email())               + "," +
-                "\"displayName\":"         + quote(p.displayName())         + "," +
-                "\"avatarUrl\":"           + (p.avatarUrl() != null ? quote(p.avatarUrl()) : "null") + "," +
-                "\"preferredLanguage\":"   + quote(p.preferredLanguage())   + "," +
-                "\"timezone\":"            + quote(p.timezone())            + "," +
-                "\"theme\":"               + quote(p.theme())               + "," +
-                "\"notificationsEnabled\":" + p.notificationsEnabled()      + "," +
-                "\"createdAt\":"           + quote(p.createdAt().toString()) + "," +
-                "\"updatedAt\":"           + quote(p.updatedAt().toString()) +
-                "}";
+        try {
+            return objectMapper.writeValueAsString(p);
+        } catch (Exception e) {
+            log.error("Failed to serialize profile to JSON", e);
+            throw new IllegalStateException("Failed to serialize profile", e);
+        }
     }
 
     /**
-     * Parses a minimal JSON body into a {@link UserProfile}. Fields not present
-     * in the body keep their defaults (upsert semantics: partial update is
-     * achieved by the caller first GET-ing the profile and re-submitting it).
+     * Parses a minimal JSON body into a {@link UserProfile} using Jackson.
+     * Fields not present in the body keep their defaults (upsert semantics:
+     * partial update is achieved by the caller first GET-ing the profile
+     * and re-submitting it).
      */
     private static UserProfile parseProfileFromJson(String json, String userId, String tenantId) {
-        String email           = extractJsonString(json, "email");
-        String displayName     = extractJsonString(json, "displayName");
-        String avatarUrl       = extractJsonString(json, "avatarUrl");
-        String preferredLang   = extractJsonString(json, "preferredLanguage");
-        String timezone        = extractJsonString(json, "timezone");
-        String theme           = extractJsonString(json, "theme");
-        String notifStr        = extractJsonString(json, "notificationsEnabled");
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = objectMapper.readValue(json, Map.class);
+            
+            String email = (String) map.get("email");
+            if (email == null || email.isBlank()) {
+                throw new IllegalArgumentException("Field 'email' is required");
+            }
 
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Field 'email' is required");
+            return UserProfile.builder()
+                    .userId(userId)
+                    .tenantId(tenantId)
+                    .email(email)
+                    .displayName((String) map.get("displayName"))
+                    .avatarUrl((String) map.get("avatarUrl"))
+                    .preferredLanguage((String) map.get("preferredLanguage"))
+                    .timezone((String) map.get("timezone"))
+                    .theme((String) map.get("theme"))
+                    .notificationsEnabled(!"false".equalsIgnoreCase(String.valueOf(map.get("notificationsEnabled"))))
+                    .build();
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to parse profile from JSON", e);
+            throw new IllegalArgumentException("Invalid JSON payload", e);
         }
-
-        return UserProfile.builder()
-                .userId(userId)
-                .tenantId(tenantId)
-                .email(email)
-                .displayName(displayName)
-                .avatarUrl(avatarUrl)
-                .preferredLanguage(preferredLang)
-                .timezone(timezone)
-                .theme(theme)
-                .notificationsEnabled(!"false".equalsIgnoreCase(notifStr))
-                .build();
     }
 
     private static HttpResponse error(int code, String message) {
-        return HttpResponse.ofCode(code)
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .withBody(("{\"error\":" + quote(message) + "}").getBytes())
-                .build();
-    }
-
-    private static String quote(String s) {
-        if (s == null) return "null";
-        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
-    }
-
-    /** Safely extracts a string value from a flat JSON object (no nested objects). */
-    private static String extractJsonString(String json, String key) {
-        if (json == null) return null;
-        // Match: "key":"value"  or  "key":true/false/number
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile(
-                "\"" + key + "\"\\s*:\\s*(?:\"([^\"]*)\"|([^,}\\s]+))");
-        java.util.regex.Matcher m = p.matcher(json);
-        if (m.find()) {
-            String quoted   = m.group(1);
-            String unquoted = m.group(2);
-            return quoted != null ? quoted : unquoted;
+        try {
+            String json = objectMapper.writeValueAsString(Map.of("error", message));
+            return HttpResponse.ofCode(code)
+                    .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .withBody(json.getBytes())
+                    .build();
+        } catch (Exception e) {
+            log.error("Failed to serialize error response", e);
+            return HttpResponse.ofCode(500).build();
         }
-        return null;
     }
 
-    private static String sanitize(String s) {
-        if (s == null) return "";
-        return s.replaceAll("[^a-zA-Z0-9_\\-@.]", "");
-    }
 }

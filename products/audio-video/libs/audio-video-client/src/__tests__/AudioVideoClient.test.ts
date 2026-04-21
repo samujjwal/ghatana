@@ -14,9 +14,9 @@ import {
 
 function mockFetch(
   responses: Array<{ status: number; body: unknown } | Error>,
-): ReturnType<typeof vi.fn> {
+): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
   const calls = responses.slice();
-  const mockFn = vi.fn((): Promise<Response> => {
+  return (): Promise<Response> => {
     const next = calls.shift();
     if (!next) {
       return Promise.reject(new Error('Unexpected fetch call — no more mocked responses'));
@@ -29,8 +29,7 @@ function mockFetch(
       text: () => Promise.resolve(JSON.stringify(body)),
       json: () => Promise.resolve(body),
     } as unknown as Response);
-  });
-  return mockFn;
+  };
 }
 
 // ─── Config factory ───────────────────────────────────────────────────────────
@@ -242,6 +241,48 @@ describe('AudioVideoClient', () => {
       expect(result.success).toBe(false);
       // Should only be called once — no retries on 4xx
       expect(g).toHaveBeenCalledTimes(1);
+      g.mockRestore();
+    });
+
+    it('propagates tenant header when configured', async () => {
+      const sttResult = {
+        text: 'Tenant scoped',
+        confidence: 0.95,
+        processingTimeMs: 12,
+        language: 'en',
+        model: 'default',
+      };
+      const g = vi.spyOn(globalThis, 'fetch').mockImplementation(
+        mockFetch([{ status: 200, body: sttResult }]),
+      );
+      const client = makeClient({ tenantId: 'tenant-42' });
+
+      const response = await client.transcribe(makeSTTRequest());
+
+      expect(response.success).toBe(true);
+      const fetchOptions = g.mock.calls[0]?.[1] as RequestInit | undefined;
+      expect(fetchOptions?.headers).toMatchObject({ 'X-Tenant-Id': 'tenant-42' });
+      g.mockRestore();
+    });
+
+    it('propagates additional headers when configured', async () => {
+      const sttResult = {
+        text: 'Header check',
+        confidence: 0.95,
+        processingTimeMs: 12,
+        language: 'en',
+        model: 'default',
+      };
+      const g = vi.spyOn(globalThis, 'fetch').mockImplementation(
+        mockFetch([{ status: 200, body: sttResult }]),
+      );
+      const client = makeClient({ additionalHeaders: { 'X-Correlation-Id': 'corr-1' } });
+
+      const response = await client.transcribe(makeSTTRequest());
+
+      expect(response.success).toBe(true);
+      const fetchOptions = g.mock.calls[0]?.[1] as RequestInit | undefined;
+      expect(fetchOptions?.headers).toMatchObject({ 'X-Correlation-Id': 'corr-1' });
       g.mockRestore();
     });
   });
@@ -502,7 +543,8 @@ describe('AudioVideoClient', () => {
       const status = await client.getServiceStatus('stt');
       expect(status.status).toBe('healthy');
       expect(status.version).toBe('2.0.0');
-      expect(status.metrics.requestCount).toBe(100);
+      expect(status.metrics).toBeDefined();
+      expect(status.metrics!.requestCount).toBe(100);
       g.mockRestore();
     });
 
@@ -513,7 +555,8 @@ describe('AudioVideoClient', () => {
       const client = makeClient();
       const status = await client.getServiceStatus('stt');
       expect(status.status).toBe('unhealthy');
-      expect(status.metrics.errorRate).toBe(1);
+      expect(status.metrics).toBeDefined();
+      expect(status.metrics!.errorRate).toBe(1);
       g.mockRestore();
     });
 

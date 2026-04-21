@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: incident-service-config
+  namespace: ghatana
+  labels:
+    app: incident-service
+    component: incident-response
+data:
+  # Incident Response Configuration
+  KILL_SWITCH_CACHE_TTL_SECONDS: "60"
+  DEGRADATION_CACHE_TTL_SECONDS: "60"
+  
+  # Logging Configuration
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # Database Configuration
+  DB_POOL_SIZE: "10"
+  DB_CONNECTION_TIMEOUT_MS: "30000"
+  
+  # Redis Configuration
+  REDIS_CONNECTION_TIMEOUT_MS: "5000"

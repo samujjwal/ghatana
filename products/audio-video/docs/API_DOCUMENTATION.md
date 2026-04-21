@@ -657,6 +657,67 @@ curl -X POST https://api.audio-video.ghatana.com/api/v1/transcription/start \
 
 ---
 
+## Multimodal Service API (gRPC)
+
+**Package:** `com.ghatana.audio.video.multimodal.grpc`  
+**Proto:** `multimodal_service.proto`  
+**Service:** `MultimodalService`  
+**Port:** 50055 (configurable via `MULTIMODAL_GRPC_PORT`)
+
+All RPCs require the following metadata headers:
+- `x-tenant-id`: Tenant identifier (required)
+- `authorization`: Bearer JWT token (required)
+- `x-correlation-id`: Correlation ID for tracing (optional, generated if absent)
+
+### RPC Methods
+
+#### `ProcessMultimodal`
+Combined audio-visual analysis.
+
+**Request:** `MultimodalRequest`
+```
+audio_data   bytes          - Raw audio bytes (WAV/MP3)
+image_data   bytes          - Raw image bytes (JPEG/PNG)
+video_data   bytes          - Raw video bytes (MP4)
+text         string         - Contextual text
+analysis_types []string     - e.g. ["combined", "sentiment"]
+```
+
+**Response:** `MultimodalResponse`
+```
+combined_analysis  string        - Combined narrative result
+audio_analysis     AudioAnalysis - Transcription, sentiment, sounds
+visual_analysis    VisualAnalysis - Scene description, objects, activities
+processing_time_ms int64         - End-to-end latency in ms
+```
+
+#### `AnalyzeCrossModal`
+Alignment analysis between audio and visual streams.
+
+**Request:** `CrossModalRequest` — `audio_data`, `video_data`, `analysis_window_ms`  
+**Response:** `CrossModalResponse` — `alignment_score` [0,1], `events[]`, `summary`
+
+#### `GetInsights`
+Aggregated insight extraction.
+
+**Request:** `InsightsRequest` — `audio_data`, `video_data`, `image_data`, `text`, `insight_types`  
+**Response:** `InsightsResponse` — `overall_sentiment`, `topics[]`, `entities[]`, `actions[]`, `confidence_scores`
+
+#### `HealthCheck`
+**Request:** `HealthCheckRequest` (empty)  
+**Response:** `HealthCheckResponse` — `healthy: bool`, `message: string`
+
+### Auth failure responses
+
+| Scenario | gRPC Status |
+|---|---|
+| Missing auth header | `UNAUTHENTICATED` |
+| Invalid/expired token | `UNAUTHENTICATED` |
+| Valid token, wrong tenant scope | `PERMISSION_DENIED` |
+| Rate limit exceeded | `RESOURCE_EXHAUSTED` |
+
+---
+
 ## Support
 
 - **Documentation:** https://docs.audio-video.ghatana.com

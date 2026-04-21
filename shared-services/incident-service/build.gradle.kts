@@ -11,7 +11,7 @@
  */
 
 plugins {
-    id("java-module")
+    id("java-application")
 }
 
 dependencies {
@@ -24,10 +24,15 @@ dependencies {
 
     implementation(libs.slf4j.api)
     implementation(libs.activej.promise)
+    implementation(libs.activej.http)
     implementation(project(":platform:java:database"))
+    implementation(project(":platform:java:http"))
+    implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:config"))
     implementation(libs.jedis)
     implementation(libs.postgresql)
     implementation(libs.hikaricp)
+    testImplementation(project(":platform:java:security"))
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
@@ -41,6 +46,10 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.bundles.testing.containers)
     testImplementation(libs.bundles.testing.containers)
+}
+
+application {
+    mainClass.set("com.ghatana.platform.incident.IncidentServiceLauncher")
 }
 
 tasks.test {

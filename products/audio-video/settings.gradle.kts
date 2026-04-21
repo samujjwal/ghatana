@@ -99,6 +99,22 @@ fileTree("libs") {
     includeProject(projectName, projectDir)
 }
 
+// Include top-level audio-video submodules (e.g. audio-video-observability, benchmarks, etc.)
+fileTree(rootDir) {
+    include("*/build.gradle.kts")
+    include("*/build.gradle")
+    exclude("modules/**")
+    exclude("libs/**")
+    exclude("apps/**")
+}.forEach { buildFile ->
+    val projectDir = buildFile.parentFile
+    if (projectDir != rootDir) {
+        val relativePath = projectDir.relativeTo(rootDir).path
+        val projectName = "$productProjectPrefix:${relativePath.replace("/", ":")}"
+        includeProject(projectName, projectDir)
+    }
+}
+
 // Plugin management - use version catalog from root
 pluginManagement {
     includeBuild(File(rootDir.parentFile.parentFile, "build-logic"))

@@ -17,19 +17,19 @@ Built on **Micrometer** (metrics) and **OpenTelemetry** (tracing), with ClickHou
 
 ## Key Exports
 
-| Class | Package | Purpose |
-|-------|---------|---------|
-| `PrometheusMetricsExporter` | `metrics` | Prometheus `/metrics` endpoint integration |
-| `AgentExecutionMetrics` | `metrics` | Metrics for agent turn execution |
-| `QueueMetrics` | `metrics` | Queue depth, lag, throughput metrics |
-| `WALMetrics` | `metrics` | Write-ahead log metrics |
-| `CorrelationContext` | root | Thread-local correlation ID propagation |
-| `TraceInfo` | `trace` | Distributed trace info (trace ID, span ID) |
-| `SpanData` / `SpanDataBuilder` | `trace` | Span creation and lifecycle |
-| `TraceStorage` | `trace` | SPI for trace backends |
-| `ClickHouseTraceStorage` | `clickhouse` | ClickHouse trace storage implementation |
-| `BlockingExecutors` | `util` | Preconfigured executors for blocking I/O |
-| `PromisesCompat` | `util` | ActiveJ `Promise.ofBlocking()` compatibility bridge |
+| Class                          | Package      | Purpose                                             |
+| ------------------------------ | ------------ | --------------------------------------------------- |
+| `PrometheusMetricsExporter`    | `metrics`    | Prometheus `/metrics` endpoint integration          |
+| `AgentExecutionMetrics`        | `metrics`    | Metrics for agent turn execution                    |
+| `QueueMetrics`                 | `metrics`    | Queue depth, lag, throughput metrics                |
+| `WALMetrics`                   | `metrics`    | Write-ahead log metrics                             |
+| `CorrelationContext`           | root         | Thread-local correlation ID propagation             |
+| `TraceInfo`                    | `trace`      | Distributed trace info (trace ID, span ID)          |
+| `SpanData` / `SpanDataBuilder` | `trace`      | Span creation and lifecycle                         |
+| `TraceStorage`                 | `trace`      | SPI for trace backends                              |
+| `ClickHouseTraceStorage`       | `clickhouse` | ClickHouse trace storage implementation             |
+| `BlockingExecutors`            | `util`       | Preconfigured executors for blocking I/O            |
+| `PromisesCompat`               | `util`       | ActiveJ `Promise.ofBlocking()` compatibility bridge |
 
 ---
 
@@ -37,26 +37,26 @@ Built on **Micrometer** (metrics) and **OpenTelemetry** (tracing), with ClickHou
 
 ### ✅ Production-Ready
 
-| Feature | Support |
-|---------|---------|
-| Prometheus metrics (`/metrics`) | Stable |
-| OpenTelemetry trace export (OTLP) | Stable |
-| ClickHouse trace storage | Stable |
-| Correlation context propagation | Stable |
-| Event-loop stall detection | Stable (best-effort via eBPF) |
-| Redis health checks | Stable |
+| Feature                           | Support                       |
+| --------------------------------- | ----------------------------- |
+| Prometheus metrics (`/metrics`)   | Stable                        |
+| OpenTelemetry trace export (OTLP) | Stable                        |
+| ClickHouse trace storage          | Stable                        |
+| Correlation context propagation   | Stable                        |
+| Event-loop stall detection        | Stable (best-effort via eBPF) |
+| Redis health checks               | Stable                        |
 
 ### ⚠️ Disabled / Experimental — DO NOT USE IN PRODUCTION
 
 The following features are **disabled** because they depend on **ActiveJ DI** (`activej-inject` launcher integration), which is not API-stable in ActiveJ `6.0-rc2`:
 
-| Feature | Status | Reason | Issue |
-|---------|--------|--------|-------|
-| `ObservabilityLauncher` (ActiveJ Launcher-based auto-bootstrap) | **DISABLED** | Requires `activej-inject` DI context that conflicts with our manual wiring | Re-enable when ActiveJ DI stabilizes |
-| Automatic HTTP metrics endpoint registration via `Launcher` | **DISABLED** | Same root cause | Re-enable with `ObservabilityLauncher` |
-| `@Monitored` AOP aspect (AspectJ-based method metrics) | **PROTOTYPE** | Functional but not covered by tests; may produce inaccurate histograms | Add tests before enabling |
+| Feature                                                         | Status        | Reason                                                                 | Issue                                            |
+| --------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------- | ------------------------------------------------ |
+| `ObservabilityLauncher` (ActiveJ Launcher-based auto-bootstrap) | **ENABLED**   | Now uses manual constructor injection instead of ActiveJ DI            | Available as standalone launcher                 |
+| Automatic HTTP metrics endpoint registration via `Launcher`     | **DISABLED**  | Requires ActiveJ Launcher integration                                  | Can be added manually with ObservabilityLauncher |
+| `@Monitored` AOP aspect (AspectJ-based method metrics)          | **PROTOTYPE** | Functional but not covered by tests; may produce inaccurate histograms | Add tests before enabling                        |
 
-> **Note to developers:** If you see references to `ObservabilityLauncher` or launcher-based wiring in older code, do **not** attempt to activate them. They will fail at startup. Use the direct constructor-injection approach described below.
+> **Note to developers:** `ObservabilityLauncher` is now available as a standalone launcher that uses manual constructor injection instead of ActiveJ DI. This provides a stable, long-term solution that doesn't depend on the unstable ActiveJ DI API.
 
 ---
 

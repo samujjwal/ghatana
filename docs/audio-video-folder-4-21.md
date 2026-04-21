@@ -585,15 +585,16 @@ Rationale: TypeScript types exist but no runtime validation. Must add Zod schema
 
 **Correctness Issues:**
 
-1. ⚠️ **Retry/Timeout Logic Untested** — Client likely lacks sophisticated error handling.
+1. ⚠️ **Backend contract coverage still partial** — Client-side retries/timeouts and boundary validation are tested, but full cross-service contract coverage remains incomplete.
 
-2. ⚠️ **Tenant Header Propagation Unclear** — gRPC services expect tenant in context; unclear if client sets it.
+2. ⚠️ **Tenant propagation now client-supported** — `ServiceClientConfig` can propagate `X-Tenant-Id`; server-side enforcement remains the system-level gate.
 
 **Test Gaps:**
 
-- ❌ No test for retry logic
-- ❌ No test for timeout handling
-- ❌ No test for tenant header propagation
+- ✅ Retry logic covered in client tests
+- ✅ Timeout handling covered in client tests
+- ✅ Tenant header propagation covered in client tests
+- ✅ Client-to-service HTTP integration path covered for request headers
 - ❌ No integration test with actual gRPC services
 
 **Production Readiness: INCOMPLETE**

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: incident-service
+  namespace: ghatana
+  labels:
+    app: incident-service
+    component: incident-response
+spec:
+  type: ClusterIP
+  selector:
+    app: incident-service
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: metrics
+    protocol: TCP

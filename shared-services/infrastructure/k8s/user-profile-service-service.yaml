@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-profile-service
+  namespace: ghatana
+  labels:
+    app: user-profile-service
+    component: profile-management
+spec:
+  type: ClusterIP
+  selector:
+    app: user-profile-service
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: metrics
+    protocol: TCP

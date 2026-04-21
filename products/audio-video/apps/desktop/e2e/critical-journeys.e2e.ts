@@ -128,5 +128,99 @@ test.describe('Critical User Journeys', () => {
       await expect(page.locator('[data-testid="settings-theme"]')).toHaveValue('dark');
     });
   });
-});
 
+  // ── Auth Failure / Network Failure UX ─────────────────────────────────────
+
+  test.describe('Auth failure UX', () => {
+    test('shows sign-in prompt when auth token is missing', async ({ page, context }) => {
+      // Simulate missing auth by removing storage and blocking auth endpoint
+      await context.clearCookies();
+      await context.addInitScript(() => {
+        localStorage.removeItem('auth_token');
+        sessionStorage.clear();
+      });
+
+      await page.goto('/');
+
+      // App should surface a login / auth prompt (not a JS crash)
+      await expect(
+        page.locator('[data-testid="login-prompt"], [data-testid="auth-error"], [role="dialog"]'),
+      ).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('shows error alert when API returns 401 on STT request', async ({ page }) => {
+      // Intercept gRPC-web or HTTP API and return 401
+      await page.route('**/api/**', (route) => {
+        route.fulfill({ status: 401, body: JSON.stringify({ error: 'Unauthorized' }) });
+      });
+
+      await page.goto('/');
+      await page.waitForSelector('[data-testid="app-shell"]', { timeout: 10_000 });
+
+      await page.click('[data-testid="nav-stt"]');
+      await expect(page.locator('[data-testid="stt-panel"]')).toBeVisible();
+
+      const fileChooserPromise = page.waitForEvent('filechooser');
+      await page.click('[data-testid="stt-upload-button"]');
+      const fileChooser = await fileChooserPromise;
+      await fileChooser.setFiles({
+        name: 'test-audio.wav',
+        mimeType: 'audio/wav',
+        buffer: Buffer.alloc(512),
+      });
+
+      // Auth error should surface as accessible alert
+      await expect(page.locator('[role="alert"]')).toBeVisible({ timeout: 15_000 });
+    });
+  });
+
+  test.describe('Network failure UX', () => {
+    test('shows error when backend is unreachable during transcription', async ({ page }) => {
+      // Block all API/gRPC traffic to simulate network outage
+      await page.route('**/api/**', (route) => route.abort('connectionrefused'));
+      await page.route('**:50051/**', (route) => route.abort('connectionrefused'));
+
+      await page.goto('/');
+      await page.waitForSelector('[data-testid="app-shell"]', { timeout: 10_000 });
+
+      await page.click('[data-testid="nav-stt"]');
+      await expect(page.locator('[data-testid="stt-panel"]')).toBeVisible();
+
+      const fileChooserPromise = page.waitForEvent('filechooser');
+      await page.click('[data-testid="stt-upload-button"]');
+      const fileChooser = await fileChooserPromise;
+      await fileChooser.setFiles({
+        name: 'offline-audio.wav',
+        mimeType: 'audio/wav',
+        buffer: Buffer.alloc(512),
+      });
+
+      await expect(page.locator('[data-testid="stt-error"], [role="alert"]')).toBeVisible({
+        timeout: 15_000,
+      });
+    });
+
+    test('shows error when vision backend is unreachable', async ({ page }) => {
+      await page.route('**/api/**', (route) => route.abort('connectionrefused'));
+
+      await page.goto('/');
+      await page.waitForSelector('[data-testid="app-shell"]', { timeout: 10_000 });
+
+      await page.click('[data-testid="nav-vision"]');
+      await expect(page.locator('[data-testid="vision-panel"]')).toBeVisible();
+
+      const fileChooserPromise = page.waitForEvent('filechooser');
+      await page.click('[data-testid="vision-upload-button"]');
+      const fileChooser = await fileChooserPromise;
+      await fileChooser.setFiles({
+        name: 'offline-image.jpg',
+        mimeType: 'image/jpeg',
+        buffer: Buffer.alloc(512),
+      });
+
+      await expect(page.locator('[data-testid="vision-error"], [role="alert"]')).toBeVisible({
+        timeout: 15_000,
+      });
+    });
+  });
+});

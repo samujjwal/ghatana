@@ -22,7 +22,6 @@ import type {
   AudioVideoError,
   ProgressCallback,
   ErrorCallback,
-  SuccessCallback,
 } from '@audio-video/types';
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -40,7 +39,7 @@ function parseSTTResult(input: unknown): STTResult {
   if (typeof input.processingTimeMs !== 'number') throw new Error('Invalid STT payload: processingTimeMs');
   if (typeof input.language !== 'string') throw new Error('Invalid STT payload: language');
   if (typeof input.model !== 'string') throw new Error('Invalid STT payload: model');
-  return input as STTResult;
+  return input as unknown as STTResult;
 }
 
 function isBoundingBox(value: unknown): boolean {
@@ -64,7 +63,7 @@ function parseDetectionResult(input: unknown): DetectionResult {
       throw new Error('Invalid detection payload: objects[]');
     }
   }
-  return input as DetectionResult;
+  return input as unknown as DetectionResult;
 }
 
 function parseMultimodalResult(input: unknown): MultimodalResult {
@@ -75,7 +74,7 @@ function parseMultimodalResult(input: unknown): MultimodalResult {
   if (!Array.isArray(input.modalities) || !input.modalities.every(v => typeof v === 'string')) {
     throw new Error('Invalid multimodal payload: modalities');
   }
-  return input as MultimodalResult;
+  return input as unknown as MultimodalResult;
 }
 
 /**
@@ -87,6 +86,8 @@ export interface ServiceClientConfig {
   retries: number;
   enableLogging: boolean;
   apiKey?: string;
+  tenantId?: string;
+  additionalHeaders?: Readonly<Record<string, string>>;
   logger?: Pick<Console, 'info' | 'warn' | 'error'>;
   circuitBreaker?: Partial<CircuitBreakerConfig>;
 }
@@ -434,8 +435,12 @@ export class AudioVideoClient {
     }
 
     const url = `${config.endpoint}${path}`;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(config.additionalHeaders ?? {}),
+    };
     if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
+    if (config.tenantId) headers['X-Tenant-Id'] = config.tenantId;
 
     let lastError: Error = new Error('No attempts made');
     const maxAttempts = config.retries + 1;
