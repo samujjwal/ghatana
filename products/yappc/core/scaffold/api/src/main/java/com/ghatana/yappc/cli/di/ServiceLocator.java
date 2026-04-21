@@ -16,7 +16,6 @@
 
 package com.ghatana.yappc.cli.di;
 
-import com.ghatana.yappc.core.build.BuildGenerator;
 import com.ghatana.yappc.core.cache.LocalCacheManager;
 import com.ghatana.yappc.core.di.CoreModule;
 import com.ghatana.yappc.core.telemetry.UnifiedTelemetryProvider;
@@ -82,10 +81,6 @@ public class ServiceLocator {
 
     public TemplateEngine getTemplateEngine() {
         return injector.getInstance(TemplateEngine.class);
-    }
-
-    public BuildGenerator getBuildGenerator() {
-        return injector.getInstance(BuildGenerator.class);
     }
 
     public com.ghatana.yappc.core.security.SecurityReviewFramework getSecurityReviewFramework() {

@@ -16,7 +16,6 @@
 
 package com.ghatana.yappc.core.di;
 
-import com.ghatana.yappc.core.build.BuildGenerator;
 import com.ghatana.yappc.core.cache.LocalCacheManager;
 import com.ghatana.yappc.core.telemetry.UnifiedTelemetryProvider;
 import com.ghatana.yappc.core.template.SimpleTemplateEngine;
@@ -69,15 +68,6 @@ public class CoreModule extends AbstractModule {
     @Provides
     TemplateEngine templateEngine() {
         return new SimpleTemplateEngine();
-    }
-
-    @Provides
-    BuildGenerator buildGenerator(
-            UnifiedTelemetryProvider telemetryProvider, TemplateEngine templateEngine) {
-        return BuildGenerator.defaultProvider()
-                .withTelemetryEnabled(true)
-                .withTemplateEngine(templateEngine)
-                .build();
     }
 
     @Provides
