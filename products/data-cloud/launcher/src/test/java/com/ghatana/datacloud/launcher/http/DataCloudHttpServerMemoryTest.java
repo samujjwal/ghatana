@@ -332,7 +332,7 @@ class DataCloudHttpServerMemoryTest {
 
         assertThat(resp.statusCode()).isEqualTo(400);
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("error").toString()).containsIgnoringCase("invalid tier");
+        assertThat(body.get("message").toString()).containsIgnoringCase("invalid tier");
     }
 
     @Test

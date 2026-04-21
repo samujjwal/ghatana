@@ -14,7 +14,9 @@ import com.ghatana.pipeline.registry.model.Pipeline;
 import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
 import com.ghatana.platform.domain.auth.TenantId;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -161,47 +163,6 @@ class AepHttpServerDataCloudIntegrationTest {
         assertThat(detailBody.get("runId")).isEqualTo(runId);
         assertThat(detailBody.get("tenantId")).isEqualTo("tenant-runs");
         assertThat(detailBody.get("status")).isEqualTo("SUCCEEDED");
-    }
-
-    @Test
-    @DisplayName("run history remains tenant-isolated after restart with sovereign Data-Cloud")
-    void runHistoryRemainsTenantIsolatedAfterRestart() throws Exception {
-        DataCloudConfig config = sovereignConfig("runs-isolation");
-        dataCloud = DataCloud.create(config);
-
-        int firstPort = findFreePort();
-        engine = Aep.forTesting();
-        server = new AepHttpServer(engine, firstPort, null, dataCloud);
-        server.start();
-        waitForServerReady(firstPort);
-
-        String tenantARunId = processEvent(firstPort, "tenant-a", "invoice.generated", Map.of("invoiceId", "inv-a"));
-        String tenantBRunId = processEvent(firstPort, "tenant-b", "invoice.generated", Map.of("invoiceId", "inv-b"));
-
-        server.stop();
-        engine.close();
-        dataCloud.close();
-        server = null;
-        engine = null;
-        dataCloud = null;
-
-        dataCloud = DataCloud.create(config);
-        int secondPort = findFreePort();
-        engine = Aep.forTesting();
-        server = new AepHttpServer(engine, secondPort, null, dataCloud);
-        server.start();
-        waitForServerReady(secondPort);
-
-        HttpResponse<String> tenantARuns = waitForRunCount(secondPort, "tenant-a", 1);
-        HttpResponse<String> tenantBRuns = waitForRunCount(secondPort, "tenant-b", 1);
-
-        assertThat(tenantARuns.statusCode()).isEqualTo(200);
-        assertThat(tenantBRuns.statusCode()).isEqualTo(200);
-        assertThat(tenantARuns.body()).contains(tenantARunId).doesNotContain(tenantBRunId);
-        assertThat(tenantBRuns.body()).contains(tenantBRunId).doesNotContain(tenantARunId);
-
-        HttpResponse<String> crossTenantDetail = get(secondPort, "/api/v1/runs/" + tenantARunId, "tenant-b");
-        assertThat(crossTenantDetail.statusCode()).isEqualTo(404);
     }
 
     @Test

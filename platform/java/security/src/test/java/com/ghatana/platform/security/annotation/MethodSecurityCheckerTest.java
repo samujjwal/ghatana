@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +39,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should grant access when principal is present and @Secured is present")
         void shouldGrantAccessWhenPrincipalPresentAndSecuredPresent() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("VIEWER"), "tenant1");
+            Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("securedMethod");
             
@@ -50,7 +51,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should grant access to class with @Secured when principal is present")
         void shouldGrantAccessToClassWithSecuredWhenPrincipalPresent() {
-            Principal principal = new Principal("user1", Set.of("VIEWER"), "tenant1");
+            Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             
             boolean result = checker.checkClassLevelAccess(TestHandler.class);
@@ -76,7 +77,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should grant access when principal has required role")
         void shouldGrantAccessWhenPrincipalHasRequiredRole() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("ADMIN"), "tenant1");
+            Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("adminMethod");
             
@@ -88,7 +89,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should deny access when principal lacks required role")
         void shouldDenyAccessWhenPrincipalLacksRequiredRole() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("VIEWER"), "tenant1");
+            Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("adminMethod");
             
@@ -100,7 +101,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should grant access when principal has any of the required roles (OR semantics)")
         void shouldGrantAccessWhenPrincipalHasAnyRequiredRole() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("VIEWER"), "tenant1");
+            Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("operatorOrViewerMethod");
             
@@ -112,7 +113,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should deny access when principal has none of the required roles (OR semantics)")
         void shouldDenyAccessWhenPrincipalHasNoneRequiredRole() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("GUEST"), "tenant1");
+            Principal principal = new Principal("user1", List.of("GUEST"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("operatorOrViewerMethod");
             
@@ -124,7 +125,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should grant access when principal has all required roles (AND semantics)")
         void shouldGrantAccessWhenPrincipalHasAllRequiredRoles() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("ADMIN", "OPERATOR"), "tenant1");
+            Principal principal = new Principal("user1", List.of("ADMIN", "OPERATOR"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("adminAndOperatorMethod");
             
@@ -136,7 +137,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should deny access when principal lacks some required roles (AND semantics)")
         void shouldDenyAccessWhenPrincipalLacksSomeRequiredRoles() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("ADMIN"), "tenant1");
+            Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("adminAndOperatorMethod");
             
@@ -148,7 +149,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should handle case-insensitive role matching")
         void shouldHandleCaseInsensitiveRoleMatching() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("admin"), "tenant1");
+            Principal principal = new Principal("user1", List.of("admin"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("adminMethod");
             
@@ -165,7 +166,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should check both class and method level annotations")
         void shouldCheckBothClassAndMethodLevelAnnotations() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("ADMIN"), "tenant1");
+            Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("classAdminMethod");
             
@@ -177,7 +178,7 @@ class MethodSecurityCheckerTest {
         @Test
         @DisplayName("Should deny when method annotation fails even if class annotation passes")
         void shouldDenyWhenMethodAnnotationFailsEvenIfClassPasses() throws NoSuchMethodException {
-            Principal principal = new Principal("user1", Set.of("ADMIN"), "tenant1");
+            Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
             MethodSecurityChecker checker = new MethodSecurityChecker(principal);
             Method method = TestHandler.class.getMethod("classAdminMethodViewerRequired");
             

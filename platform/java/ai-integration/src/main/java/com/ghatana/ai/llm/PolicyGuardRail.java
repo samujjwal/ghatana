@@ -18,6 +18,9 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -202,13 +205,13 @@ public class PolicyGuardRail implements LLMGateway {
      * Builds policy input from LLM request.
      */
     private Map<String, Object> buildPolicyInput(CompletionRequest request) {
-        return Map.of(
-                "prompt", request.getPrompt(),
-                "model", request.getModel(),
-                "temperature", request.getTemperature(),
-                "maxTokens", request.getMaxTokens(),
-                "metadata", request.getMetadata() != null ? request.getMetadata() : Map.of()
-        );
+        Map<String, Object> input = new HashMap<>();
+        input.put("prompt", request.getPrompt());
+        input.put("model", request.getModel());
+        input.put("temperature", request.getTemperature());
+        input.put("maxTokens", request.getMaxTokens());
+        input.put("metadata", request.getMetadata() != null ? request.getMetadata() : Map.of());
+        return input;
     }
 
     /**

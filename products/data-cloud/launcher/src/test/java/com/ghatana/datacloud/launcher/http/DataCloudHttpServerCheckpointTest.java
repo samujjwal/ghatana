@@ -191,7 +191,7 @@ class DataCloudHttpServerCheckpointTest {
 
             assertThat(resp.statusCode()).isEqualTo(400);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error")).isNotNull();
+            assertThat(body.get("message")).isNotNull();
         }
 
         @Test
@@ -259,7 +259,7 @@ class DataCloudHttpServerCheckpointTest {
 
             assertThat(resp.statusCode()).isEqualTo(404);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).contains("missing-cp");
+            assertThat(body.get("message").toString()).contains("missing-cp");
         }
     }
 

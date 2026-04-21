@@ -71,7 +71,7 @@ class DataCloudHttpServerLearningTest {
             HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}");
             assertThat(resp.statusCode()).isEqualTo(503);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).containsIgnoringCase("not available");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test

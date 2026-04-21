@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,7 +47,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
         when(mockAuditService.recordAuditEvent(any(), any(), any(), any(), any()))
             .thenReturn(Promise.complete());
 
-        service = new TestDataService(mockContext, eventloop());
+        service = new TestDataService(mockContext, Executors.newCachedThreadPool());
     }
 
     @Test
@@ -272,6 +273,13 @@ class AbstractDataServiceTest extends EventloopTestBase {
         // Expose protected methods for testing
         public Promise<TestEntity> testCreateRecord(TestEntity entity) {
             return createRecord(DATASET_ID, entity.id(), entity, Map.of("type", "test"), "TestEntity", 1);
+        }
+
+        @Override
+        protected <T> byte[] serialize(T object, String typeName, int version) {
+            // Override to avoid blocking serialization in tests
+            // Return a dummy byte array that represents the serialized object
+            return ("serialized:" + object.toString()).getBytes();
         }
 
         public Promise<Optional<TestEntity>> testReadRecord(String id) {

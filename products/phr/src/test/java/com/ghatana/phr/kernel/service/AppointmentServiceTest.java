@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,7 +38,7 @@ class AppointmentServiceTest extends EventloopTestBase {
         dataCloud = new PhrTestInfrastructure.StubDataCloudAdapter();
         KernelContext context = PhrTestInfrastructure.createTestContext(dataCloud);
         notificationSender = new PhrNotificationTestSupport.RecordingNotificationSender();
-        service = new TestableAppointmentService(context, dataCloud, notificationSender);
+        service = new TestableAppointmentService(context, dataCloud, notificationSender, Executors.newCachedThreadPool());
         runPromise(service::start);
         runPromise(() -> service.seedAvailableSlot("slot-1", "provider-1", Instant.now().plusSeconds(3600)));
     }
@@ -142,8 +143,9 @@ class AppointmentServiceTest extends EventloopTestBase {
         private TestableAppointmentService(
                 KernelContext context,
                 PhrTestInfrastructure.StubDataCloudAdapter dataCloud,
-                PhrNotificationSender notificationSender) {
-            super(context, notificationSender);
+                PhrNotificationSender notificationSender,
+                java.util.concurrent.Executor executor) {
+            super(context, notificationSender, executor);
             this.dataCloud = dataCloud;
         }
 

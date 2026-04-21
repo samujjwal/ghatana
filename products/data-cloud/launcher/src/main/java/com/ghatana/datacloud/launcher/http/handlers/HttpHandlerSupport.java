@@ -1,11 +1,11 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.infrastructure.governance.http.dto.ErrorResponse;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
 import com.ghatana.datacloud.launcher.http.RequestTraceSupport;
 import com.ghatana.platform.governance.security.Principal;
-import com.ghatana.platform.http.server.response.ErrorResponse;
 import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
@@ -103,11 +103,48 @@ public class HttpHandlerSupport {
 
     /**
      * Builds an error response with the given HTTP status code and message.
-     * Uses platform's ErrorResponse for consistent error semantics (CROSS-P1-3).
+     * Uses data-cloud ErrorResponse for consistent error semantics.
      */
     public HttpResponse errorResponse(int code, String message) {
         try {
-            ErrorResponse errorResponse = ErrorResponse.of(code, message);
+            String errorCode;
+            switch (code) {
+                case 400:
+                    errorCode = "BAD_REQUEST";
+                    break;
+                case 401:
+                    errorCode = "UNAUTHORIZED";
+                    break;
+                case 403:
+                    errorCode = "FORBIDDEN";
+                    break;
+                case 404:
+                    errorCode = "NOT_FOUND";
+                    break;
+                case 409:
+                    errorCode = "CONFLICT";
+                    break;
+                case 429:
+                    errorCode = "RATE_LIMIT_EXCEEDED";
+                    break;
+                case 500:
+                    errorCode = "INTERNAL_SERVER_ERROR";
+                    break;
+                case 503:
+                    errorCode = "SERVICE_UNAVAILABLE";
+                    break;
+                case 504:
+                    errorCode = "GATEWAY_TIMEOUT";
+                    break;
+                default:
+                    errorCode = "ERROR";
+            }
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(code)
+                .error(errorCode)
+                .message(message)
+                .timestamp(System.currentTimeMillis())
+                .build();
             String json = objectMapper.writeValueAsString(errorResponse);
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
@@ -230,14 +267,47 @@ public class HttpHandlerSupport {
     /**
      * Builds an error response with the given HTTP status code, message, and
      * an {@code X-Request-Id} header set to {@code correlationId}.
-     * Uses platform's ErrorResponse for consistent error semantics (CROSS-P1-3).
+     * Uses data-cloud ErrorResponse for consistent error semantics.
      */
     public HttpResponse errorResponse(int code, String message, String correlationId) {
         try {
+            String errorCode;
+            switch (code) {
+                case 400:
+                    errorCode = "BAD_REQUEST";
+                    break;
+                case 401:
+                    errorCode = "UNAUTHORIZED";
+                    break;
+                case 403:
+                    errorCode = "FORBIDDEN";
+                    break;
+                case 404:
+                    errorCode = "NOT_FOUND";
+                    break;
+                case 409:
+                    errorCode = "CONFLICT";
+                    break;
+                case 429:
+                    errorCode = "RATE_LIMIT_EXCEEDED";
+                    break;
+                case 500:
+                    errorCode = "INTERNAL_SERVER_ERROR";
+                    break;
+                case 503:
+                    errorCode = "SERVICE_UNAVAILABLE";
+                    break;
+                case 504:
+                    errorCode = "GATEWAY_TIMEOUT";
+                    break;
+                default:
+                    errorCode = "ERROR";
+            }
             ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(code)
+                .error(errorCode)
                 .message(message)
-                .traceId(correlationId)
+                .timestamp(System.currentTimeMillis())
                 .build();
             String json = objectMapper.writeValueAsString(errorResponse);
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))

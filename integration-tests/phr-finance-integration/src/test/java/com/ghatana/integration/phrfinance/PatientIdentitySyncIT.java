@@ -1,5 +1,6 @@
 package com.ghatana.integration.phrfinance;
 
+import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.plugin.billing.BillingLedgerPlugin;
 import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.phr.kernel.service.BillingService;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,15 +25,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("PatientIdentitySyncIT")
 class PatientIdentitySyncIT extends EventloopTestBase {
 
+    // Test-specific subclass that overrides serialize to avoid blocking
+    private static class TestableBillingService extends BillingService {
+        public TestableBillingService(KernelContext context, BillingLedgerPlugin ledger, Executor executor) {
+            super(context, ledger, executor);
+        }
+
+        @Override
+        protected <T> byte[] serialize(T object, String typeName, int version) {
+            // Use actual TypedDataSerializer but call it synchronously
+            // The Promise.ofBlocking in AbstractDataService will handle the async wrapping
+            return com.ghatana.kernel.util.TypedDataSerializer.toBytes(object, typeName, version);
+        }
+    }
+
     @Test
     @DisplayName("encounter close keeps patient identity in ledger debit account")
     void patientIdentityIsPreservedAcrossBoundary() {
         PhrFinanceTestFixtures.StubDataCloudAdapter dataCloud = new PhrFinanceTestFixtures.StubDataCloudAdapter();
         IdentityAssertingLedgerAdapter ledger = new IdentityAssertingLedgerAdapter("patient-identity-77");
 
-        BillingService billingService = new BillingService(
+        BillingService billingService = new TestableBillingService(
             PhrFinanceTestFixtures.createTestContext(dataCloud),
-            ledger
+            ledger,
+            Executors.newCachedThreadPool()
         );
 
         runPromise(() -> billingService.start());

@@ -115,6 +115,7 @@ class AuditIntegrityServiceTest {
     void shouldVerifySingleEventHash() {
         AuditEventEntity event = createTestEvent("id-1", "tenant-1");
         String hash = service.computeChainHash(event, null);
+        event = createEntityWithHash(event, null, hash);
         
         boolean isValid = service.verifyEventHash(event, null);
         

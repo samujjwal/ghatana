@@ -156,7 +156,7 @@ class DataCloudHttpServerFederatedQueryTest {
             assertThat(response.statusCode()).isEqualTo(400);
             @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-            assertThat(body).containsKey("error");
+            assertThat(body).containsKey("message");
         }
 
         @Test

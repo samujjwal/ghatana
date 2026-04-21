@@ -192,7 +192,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
             assertThat(resp.statusCode()).isEqualTo(404);
             @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error")).isNotNull();
+            assertThat(body.get("message")).isNotNull();
         }
 
         @Test

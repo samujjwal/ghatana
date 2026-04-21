@@ -145,7 +145,9 @@ public class MethodSecurityChecker {
         boolean requireAll = annotation.requireAll();
 
         List<String> rolesList = principal.getRoles();
-        Set<String> principalRoles = rolesList != null ? new java.util.HashSet<>(rolesList) : Set.of();
+        Set<String> principalRoles = rolesList != null 
+            ? rolesList.stream().map(String::toUpperCase).collect(java.util.stream.Collectors.toSet())
+            : Set.of();
         if (principalRoles.isEmpty()) {
             log.debug("Access denied to {}: principal has no roles", context);
             return false;

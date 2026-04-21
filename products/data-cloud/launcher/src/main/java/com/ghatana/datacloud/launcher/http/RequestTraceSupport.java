@@ -32,6 +32,9 @@ public final class RequestTraceSupport {
     }
 
     public static HttpResponse.Builder applyTo(HttpResponse.Builder builder) {
+        if (builder == null) {
+            throw new IllegalArgumentException("builder must not be null");
+        }
         TraceHeaders traceHeaders = CURRENT.get();
         if (traceHeaders == null) {
             return builder;
@@ -39,8 +42,9 @@ public final class RequestTraceSupport {
         builder.withHeader(HttpHeaders.of(REQUEST_ID_HEADER), traceHeaders.requestId());
         builder.withHeader(HttpHeaders.of(CORRELATION_ID_HEADER), traceHeaders.requestId());
         builder.withHeader(HttpHeaders.of(TRACEPARENT_HEADER), traceHeaders.traceParent());
-        if (traceHeaders.parentSpanId() != null && !traceHeaders.parentSpanId().isBlank()) {
-            builder.withHeader(HttpHeaders.of(PARENT_SPAN_ID_HEADER), traceHeaders.parentSpanId());
+        String parentSpanId = traceHeaders.parentSpanId();
+        if (parentSpanId != null && !parentSpanId.isBlank()) {
+            builder.withHeader(HttpHeaders.of(PARENT_SPAN_ID_HEADER), parentSpanId);
         }
         return builder;
     }

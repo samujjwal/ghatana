@@ -74,6 +74,23 @@ public class AppointmentService extends AbstractDataService {
         );
     }
 
+    AppointmentService(KernelContext context, PhrNotificationSender notificationSender, java.util.concurrent.Executor executor) {
+        super(context, executor);
+        this.notificationSender = Objects.requireNonNull(notificationSender, "notificationSender must not be null");
+        this.createAppointmentLimiter = PhrRateLimitUtils.createLimiter(
+            CREATE_APPOINTMENT_MAX_PER_WINDOW,
+            RATE_LIMIT_WINDOW
+        );
+        this.queryAppointmentLimiter = PhrRateLimitUtils.createLimiter(
+            QUERY_APPOINTMENT_MAX_PER_WINDOW,
+            RATE_LIMIT_WINDOW
+        );
+        this.cancelAppointmentLimiter = PhrRateLimitUtils.createLimiter(
+            CANCEL_APPOINTMENT_MAX_PER_WINDOW,
+            RATE_LIMIT_WINDOW
+        );
+    }
+
     @Override
     public String getName() {
         return "appointment";

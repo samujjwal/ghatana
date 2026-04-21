@@ -77,7 +77,7 @@ class DataCloudHttpServerBrainTest {
 
             assertThat(resp.statusCode()).isEqualTo(503);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).containsIgnoringCase("not available");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
@@ -89,7 +89,7 @@ class DataCloudHttpServerBrainTest {
 
             assertThat(resp.statusCode()).isEqualTo(503);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).containsIgnoringCase("not available");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
@@ -101,7 +101,7 @@ class DataCloudHttpServerBrainTest {
 
             assertThat(resp.statusCode()).isEqualTo(503);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).containsIgnoringCase("not available");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
@@ -113,7 +113,7 @@ class DataCloudHttpServerBrainTest {
 
             assertThat(resp.statusCode()).isEqualTo(503);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).containsIgnoringCase("not available");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
     }
 

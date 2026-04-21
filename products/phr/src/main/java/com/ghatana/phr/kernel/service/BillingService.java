@@ -58,6 +58,20 @@ public class BillingService extends AbstractDataService {
         this.billingLedgerPlugin = billingLedgerPlugin;
     }
 
+    /**
+     * Creates a BillingService with Finance ledger integration enabled and a custom executor.
+     *
+     * @param context              kernel context providing DataCloudKernelAdapter
+     * @param billingLedgerPlugin  ledger plugin for cross-domain billing integration;
+     *                             may be {@code null} to disable ledger posting
+     * @param executor             executor for blocking operations (e.g., in tests)
+     */
+    public BillingService(KernelContext context, BillingLedgerPlugin billingLedgerPlugin, java.util.concurrent.Executor executor) {
+        super(context, executor);
+        this.kernelContext = context;
+        this.billingLedgerPlugin = billingLedgerPlugin;
+    }
+
     @Override
     public Promise<Void> start() {
         return super.start();

@@ -1,6 +1,7 @@
 package com.ghatana.integration.phrfinance;
 
 import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,7 +34,8 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
 
         BillingService billingService = new BillingService(
             PhrFinanceTestFixtures.createTestContext(dataCloud),
-            ledger
+            ledger,
+            Executors.newCachedThreadPool()
         );
 
         runPromise(() -> billingService.start());
@@ -127,6 +131,19 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
         @Override
         public Promise<Void> shutdown() {
             return Promise.complete();
+        }
+    }
+
+    private static class TestableBillingService extends BillingService {
+        public TestableBillingService(KernelContext context, BillingLedgerPlugin ledger, Executor executor) {
+            super(context, ledger, executor);
+        }
+
+        @Override
+        protected <T> byte[] serialize(T object, String typeName, int version) {
+            // Use actual TypedDataSerializer but call it synchronously
+            // The Promise.ofBlocking in AbstractDataService will handle the async wrapping
+            return com.ghatana.kernel.util.TypedDataSerializer.toBytes(object, typeName, version);
         }
     }
 }

@@ -6,7 +6,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
-import com.ghatana.datacloud.launcher.http.ErrorResponse;
+import com.ghatana.datacloud.infrastructure.governance.http.dto.ErrorResponse;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -44,10 +44,10 @@ class HttpHandlerSupportErrorResponseTest {
     }
 
     @Test
-    @DisplayName("errorResponse with ApiResponse preserves error structure")
-    void errorResponseWithApiResponsePreservesErrorStructure() {
-        ApiResponse apiResponse = ApiResponse.error("VALIDATION_ERROR", "Invalid input");
-        HttpResponse response = support.errorResponse(apiResponse);
+    @DisplayName("envelopeResponse with ApiResponse preserves error structure")
+    void envelopeResponseWithApiResponsePreservesErrorStructure() {
+        ApiResponse apiResponse = ApiResponse.error("VALIDATION_ERROR", "Invalid input", "test-tenant", "test-request");
+        HttpResponse response = support.envelopeResponse(apiResponse, new ObjectMapper());
         
         assertThat(response).isNotNull();
         assertThat(response.getCode()).isEqualTo(400);

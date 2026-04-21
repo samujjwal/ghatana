@@ -79,7 +79,7 @@ class DataCloudHttpServerAnalyticsTest {
                 "{\"query\":\"SELECT * FROM foo\"}");
             assertThat(resp.statusCode()).isEqualTo(503);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).containsIgnoringCase("not available");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
@@ -152,7 +152,7 @@ class DataCloudHttpServerAnalyticsTest {
             HttpResponse<String> resp = post("/api/v1/analytics/query", "{\"foo\":\"bar\"}");
             assertThat(resp.statusCode()).isEqualTo(400);
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("error").toString()).containsIgnoringCase("query");
+            assertThat(body.get("message").toString()).containsIgnoringCase("query");
         }
 
         @Test
