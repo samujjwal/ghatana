@@ -15,20 +15,22 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { Box, Typography, Surface as Paper, Switch, FormControlLabel, Divider } from '@ghatana/design-system';
-import { ReactFlowProvider, ReactFlow, Background, Controls, MiniMap, type Node, type Edge } from '@xyflow/react';
+import { ReactFlowProvider, ReactFlow, Background, Controls, MiniMap, applyEdgeChanges, applyNodeChanges, type Connection, type EdgeChange, type NodeChange, type NodeTypes } from '@xyflow/react';
 import { useAtom } from 'jotai';
 
 // Import unified components
 import { UnifiedCanvasNode, type UnifiedNodeData } from './unified/UnifiedCanvasNode';
 import { UnifiedCanvasToolbar } from './unified/UnifiedCanvasToolbar';
-import { nodesAtom, edgesAtom } from './workspace/canvasAtoms';
+import { nodesAtom, edgesAtom, type DependencyEdgeDataR } from './workspace/canvasAtoms';
 
 // Import existing components for comparison
 import { CanvasWorkspace } from './CanvasWorkspace';
+import type { LifecyclePhase } from '../../shared/types/lifecycle';
+import type { FOWStage } from '@/types/fow-stages';
 
 // Define node types for ReactFlow
-const nodeTypes = {
-    unified: UnifiedCanvasNode,
+const nodeTypes: NodeTypes = {
+    unified: UnifiedCanvasNode as NodeTypes[string],
 };
 
 interface UnifiedCanvasDemoProps {
@@ -48,46 +50,31 @@ export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
 
     // ReactFlow handlers
     const onNodesChange = useCallback(
-        (changes: unknown[]) => {
-            setNodes((nds) => {
-                // Apply changes to nodes
-                const updatedNodes = nds.map(node => {
-                    const change = changes.find(c => c.id === node.id);
-                    if (change) {
-                        return { ...node, ...change };
-                    }
-                    return node;
-                });
-                return updatedNodes;
-            });
+        (changes: NodeChange[]) => {
+            setNodes((nds) => applyNodeChanges(changes, nds) as typeof nds);
         },
         [setNodes]
     );
 
     const onEdgesChange = useCallback(
-        (changes: unknown[]) => {
-            setEdges((eds) => {
-                // Apply changes to edges
-                const updatedEdges = eds.map(edge => {
-                    const change = changes.find(c => c.id === edge.id);
-                    if (change) {
-                        return { ...edge, ...change };
-                    }
-                    return edge;
-                });
-                return updatedEdges;
-            });
+        (changes: EdgeChange[]) => {
+            setEdges((eds) => applyEdgeChanges(changes, eds) as typeof eds);
         },
         [setEdges]
     );
 
     const onConnect = useCallback(
-        (connection: unknown) => {
-            const newEdge: Edge = {
+        (connection: Connection) => {
+            if (!connection.source || !connection.target) {
+                return;
+            }
+
+            const newEdge = {
                 id: `edge-${connection.source}-${connection.target}`,
-                source: connection.source!,
-                target: connection.target!,
+                source: connection.source,
+                target: connection.target,
                 type: 'smoothstep',
+                data: {} as DependencyEdgeDataR,
             };
             setEdges((eds) => [...eds, newEdge]);
         },
@@ -124,7 +111,7 @@ export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
         <Box className="w-full h-screen relative">
             {/* Toggle between unified and original approach */}
             <Paper className="absolute p-4 flex items-center gap-4 top-[16px] right-[16px] z-[1000]">
-                <Typography as="p" className="text-sm">
+                <Typography className="text-sm">
                     Unified Canvas
                 </Typography>
                 <Switch
@@ -132,7 +119,7 @@ export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
                     onChange={(e) => setShowUnified(e.target.checked)}
                     size="sm"
                 />
-                <Typography as="p" className="text-sm">
+                <Typography className="text-sm">
                     Original
                 </Typography>
             </Paper>
@@ -168,20 +155,20 @@ export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
                 /* Original Canvas Approach (for comparison) */
                 <CanvasWorkspace
                     projectId={projectId}
-                    currentPhase={currentPhase}
-                    flowStage={flowStage}
+                    currentPhase={currentPhase as LifecyclePhase}
+                    flowStage={flowStage as FOWStage}
                 />
             )}
 
             {/* Info Panel */}
             <Paper className="absolute p-4 bottom-[16px] left-[16px] max-w-[300px] z-[1000]">
-                <Typography as="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom>
                     {showUnified ? 'Unified Canvas' : 'Original Canvas'}
                 </Typography>
                 <Divider className="my-2" />
 
                 {showUnified ? (
-                    <Typography as="p" className="text-sm" color="text.secondary">
+                    <Typography className="text-sm" color="text.secondary">
                         <strong>Unified Approach:</strong><br />
                         • Click toolbar buttons to add content<br />
                         • Edit content directly in nodes<br />
@@ -190,7 +177,7 @@ export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
                         • Drag to connect and arrange
                     </Typography>
                 ) : (
-                    <Typography as="p" className="text-sm" color="text.secondary">
+                    <Typography className="text-sm" color="text.secondary">
                         <strong>Original Approach:</strong><br />
                         • Switch between modes (navigate, sketch, diagram, code)<br />
                         • Each mode has separate overlay<br />

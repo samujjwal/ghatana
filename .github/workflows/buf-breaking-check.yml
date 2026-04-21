@@ -1,0 +1,23 @@
+name: Buf Breaking Check
+
+on:
+  pull_request:
+    paths:
+      - 'platform/contracts/src/main/proto/**'
+  push:
+    paths:
+      - 'platform/contracts/src/main/proto/**'
+
+jobs:
+  buf-breaking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: bufbuild/buf-setup-action@v1
+
+      - name: buf breaking check
+        run: buf breaking --against '.git^#HEAD'
+        working-directory: platform/contracts

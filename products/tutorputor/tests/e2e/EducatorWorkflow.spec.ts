@@ -1,312 +1,234 @@
-/**
- * Educator Workflow E2E Tests
- *
- * Covers the key workflows an educator performs in TutorPutor:
- *   1. Educator-specific route loading without errors
- *   2. Content Studio landing
- *   3. Module creation form surface
- *   4. AI-assisted content generation surface
- *   5. Simulation authoring surface (domain selection, generation prompt)
- *   6. Publishing gate UI surfaces
- *   7. Learner progress analytics accessible to educators
- *   8. Assessment management surface
- *
- * Every test is tolerance-aware: when dedicated UI elements are not present
- * (e.g., the app is behind auth in CI) the test passes defensively.
- *
- * @doc.type test
- * @doc.purpose End-to-end educator workflow validation
- * @doc.layer product
- * @doc.pattern E2E Test
- *
- * Requirement IDs: TPUT-FR-EDU-001 … TPUT-FR-EDU-008
- */
+import { expect, test, type Page } from "@playwright/test";
+import { createHmac } from "node:crypto";
 
-import { test, expect, type Page } from "@playwright/test";
+const adminUrl = process.env.ADMIN_URL ?? "http://127.0.0.1:3202";
+const gatewayUrl = process.env.GATEWAY_URL ?? "http://127.0.0.1:3200";
+const jwtSecret =
+  process.env.JWT_SECRET ?? "test-secret-do-not-use-in-prod-1234567890";
 
-// ---------------------------------------------------------------------------
-// Configuration
-// ---------------------------------------------------------------------------
+function createAdminAccessToken(): string {
+  const header = Buffer.from(
+    JSON.stringify({ alg: "HS256", typ: "JWT" }),
+  ).toString("base64url");
+  const payload = Buffer.from(
+    JSON.stringify({
+      sub: "user-admin-001",
+      email: "admin@demo.tutorputor.com",
+      name: "Sarah Admin",
+      role: "admin",
+      tenantId: "default",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    }),
+  ).toString("base64url");
+  const signature = createHmac("sha256", jwtSecret)
+    .update(`${header}.${payload}`)
+    .digest("base64url");
 
-const BASE_URL = process.env.BASE_URL ?? "http://localhost:5173";
-const PLATFORM_URL = process.env.PLATFORM_URL ?? "http://localhost:7105";
-
-// Educator-specific credentials (set via environment in real CI)
-const EDUCATOR_USER = {
-  email: process.env.EDUCATOR_EMAIL ?? "educator@test.example.com",
-  password: process.env.EDUCATOR_PASSWORD ?? "EducatorPass123!",
-};
-
-// ---------------------------------------------------------------------------
-// Helper: check if we are on an expected page (not redirected to auth)
-// ---------------------------------------------------------------------------
-function isOnTargetPage(url: string, ...fragments: string[]): boolean {
-  return fragments.some((f) => url.includes(f));
+  return `${header}.${payload}.${signature}`;
 }
 
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-001  Admin/educator routes are reachable
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-001: Educator-specific routes resolve", () => {
-  test("educator dashboard route responds without uncaught errors", async ({
+function createAuthHeaders(): Record<string, string> {
+  return {
+    Authorization: `Bearer ${createAdminAccessToken()}`,
+  };
+}
+
+async function expectNoPageErrors(
+  page: Page,
+  action: () => Promise<void>,
+): Promise<void> {
+  const errors: string[] = [];
+  page.on("pageerror", (error: Error) => {
+    errors.push(error.message);
+  });
+
+  await action();
+  const filtered = errors.filter(
+    (message) =>
+      !message.includes("ResizeObserver") && !message.includes("Non-Error"),
+  );
+  expect(filtered).toEqual([]);
+}
+
+test.describe("TutorPutor educator workflows", () => {
+  test("renders the canonical authoring workspace with publish readiness and analytics panels for a real experience", async ({
     page,
-  }) => {
-    const errors: string[] = [];
-    page.on("pageerror", (e) => errors.push(e.message));
-
-    await page.goto(`${BASE_URL}/educator`);
-    await page.waitForLoadState("networkidle");
-
-    const filtered = errors.filter(
-      (e) => !e.includes("ResizeObserver") && !e.includes("Non-Error"),
-    );
-    expect(filtered).toHaveLength(0);
-  });
-
-  test("admin panel route resolves", async ({ page }) => {
-    await page.goto(`${BASE_URL}/admin`);
-    await page.waitForLoadState("networkidle");
-    expect(page.url()).toBeTruthy();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-002  Content Studio landing
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-002: Content Studio landing", () => {
-  test("content studio route resolves", async ({ page }) => {
-    await page.goto(`${BASE_URL}/content-studio`);
-    await page.waitForLoadState("networkidle");
-    expect(page.url()).toBeTruthy();
-  });
-
-  test("content studio page has a primary call-to-action button", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/content-studio`);
-    await page.waitForLoadState("networkidle");
-
-    const onStudio = isOnTargetPage(
-      page.url(),
-      "content-studio",
-      "studio",
-      "content",
-    );
-    if (!onStudio) return;
-
-    const ctaButton = page
-      .locator(
-        'button, a[href*="create"], a[href*="new"], [data-testid*="create"]',
-      )
-      .first();
-
-    const ctaVisible = await ctaButton
-      .isVisible({ timeout: 5_000 })
-      .catch(() => false);
-    expect(ctaVisible).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-003  Module creation form surface
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-003: Module creation form", () => {
-  test("create module route is reachable", async ({ page }) => {
-    await page.goto(`${BASE_URL}/modules/create`);
-    await page.waitForLoadState("networkidle");
-    expect(page.url()).toBeTruthy();
-  });
-
-  test("module creation form has a title input when rendered", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/modules/create`);
-    await page.waitForLoadState("networkidle");
-
-    const onCreatePage = isOnTargetPage(page.url(), "create", "new", "module");
-    if (!onCreatePage) return;
-
-    const titleField = page
-      .locator(
-        'input[name="title"], input[placeholder*="title" i], [data-testid*="title"]',
-      )
-      .first();
-
-    const visible = await titleField
-      .isVisible({ timeout: 5_000 })
-      .catch(() => false);
-    expect(visible).toBe(true);
-  });
-
-  test("form submission gate prevents empty module creation", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/modules/create`);
-    await page.waitForLoadState("networkidle");
-
-    const onCreatePage = isOnTargetPage(page.url(), "create", "new", "module");
-    if (!onCreatePage) return;
-
-    const submit = page
-      .locator(
-        'button[type="submit"], button:has-text("Create"), button:has-text("Save")',
-      )
-      .first();
-    const submitVisible = await submit
-      .isVisible({ timeout: 5_000 })
-      .catch(() => false);
-    if (!submitVisible) return;
-
-    await submit.click();
-    await page.waitForTimeout(500);
-
-    // Must stay on the create page or show an error
-    const urlAfter = page.url();
-    const stayedOnCreate =
-      isOnTargetPage(urlAfter, "create", "new", "module") ||
-      (await page
-        .locator('[role="alert"], .error, [data-testid*="error"]')
-        .isVisible({ timeout: 2_000 })
-        .catch(() => false));
-
-    expect(stayedOnCreate).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-004  AI-assisted content generation surface
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-004: AI-assisted content generation", () => {
-  test("AI content generation route exists", async ({ page }) => {
-    await page.goto(`${BASE_URL}/content-studio/generate`);
-    await page.waitForLoadState("networkidle");
-    expect(page.url()).toBeTruthy();
-  });
-
-  test("generation prompt textarea is available when on the generation page", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/content-studio/generate`);
-    await page.waitForLoadState("networkidle");
-
-    const onGenPage = isOnTargetPage(page.url(), "generate", "ai", "content");
-    if (!onGenPage) return;
-
-    const promptInput = page
-      .locator('textarea, input[type="text"], [data-testid*="prompt"]')
-      .first();
-
-    const visible = await promptInput
-      .isVisible({ timeout: 5_000 })
-      .catch(() => false);
-    expect(visible).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-005  Simulation authoring surface
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-005: Simulation authoring surface", () => {
-  test("simulation authoring route is reachable", async ({ page }) => {
-    await page.goto(`${BASE_URL}/simulations/create`);
-    await page.waitForLoadState("networkidle");
-    expect(page.url()).toBeTruthy();
-  });
-
-  test("domain selector is visible on simulation creation page", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/simulations/create`);
-    await page.waitForLoadState("networkidle");
-
-    const onSimPage = isOnTargetPage(page.url(), "simulation", "create");
-    if (!onSimPage) return;
-
-    const domainSelector = page
-      .locator(
-        'select, [role="listbox"], [data-testid*="domain"], label:has-text("Domain")',
-      )
-      .first();
-
-    const visible = await domainSelector
-      .isVisible({ timeout: 5_000 })
-      .catch(() => false);
-    expect(visible).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-006  Publishing gate UI surface
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-006: Publishing gate", () => {
-  test("publish button or status indicator is present on a module detail page", async ({
-    page,
-  }) => {
-    // Visit a placeholder module detail route
-    await page.goto(`${BASE_URL}/modules/1`);
-    await page.waitForLoadState("networkidle");
-
-    const onModulesPage = isOnTargetPage(page.url(), "module");
-    if (!onModulesPage) return;
-
-    const publishEl = page
-      .locator(
-        'button:has-text("Publish"), [data-testid*="publish"], [role="status"]:has-text("draft")',
-      )
-      .first();
-
-    const visible = await publishEl
-      .isVisible({ timeout: 5_000 })
-      .catch(() => false);
-    // If the element doesn't exist, that's acceptable (module not loaded)
-    // The test verifies the selector is non-empty if publishEl was found
-    if (visible) {
-      await expect(publishEl).toBeVisible();
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-007  Learner progress analytics accessible to educators
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-007: Learner analytics surface for educators", () => {
-  test("analytics / reports route is reachable", async ({ page }) => {
-    await page.goto(`${BASE_URL}/analytics`);
-    await page.waitForLoadState("networkidle");
-    expect(page.url()).toBeTruthy();
-  });
-
-  test("learner progress endpoint on platform API returns 200 or auth error", async ({
     request,
   }) => {
-    const response = await request.get(
-      `${PLATFORM_URL}/api/v1/analytics/learner-progress`,
+    const authHeaders = createAuthHeaders();
+    const meAuthHeaders: string[] = [];
+
+    await page.addInitScript((token: string) => {
+      window.localStorage.setItem("auth_token", token);
+      window.localStorage.setItem("refresh_token", "refresh-token-admin-2");
+      window.localStorage.setItem("tenant_id", "default");
+    }, authHeaders.Authorization.replace("Bearer ", ""));
+
+    await page.route("**/api/v1/auth/me", async (route) => {
+      const authorization = route.request().headers()["authorization"];
+      if (authorization) {
+        meAuthHeaders.push(authorization);
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "user-admin-001",
+          email: "admin@demo.tutorputor.com",
+          role: "admin",
+          firstName: "Sarah",
+          lastName: "Admin",
+          fullName: "Sarah Admin",
+          tenantId: "default",
+        }),
+      });
+    });
+
+    const title = `Educator Workflow Experience ${Date.now()}`;
+    const createResponse = await request.post(
+      `${gatewayUrl}/api/content-studio/experiences`,
+      {
+        headers: authHeaders,
+        data: {
+          title,
+          description: "Educator workspace regression verification",
+          gradeRange: "grade_6_8",
+        },
+      },
     );
-    // 200 = success, 401/403 = auth needed (both correct)
-    expect([200, 401, 403, 404]).toContain(response.status());
+    expect(createResponse.ok()).toBe(true);
+
+    const createPayload = (await createResponse.json()) as {
+      data?: {
+        id?: string;
+        experience?: { id?: string };
+      };
+    };
+    const experienceId =
+      createPayload.data?.experience?.id ?? createPayload.data?.id;
+    expect(experienceId).toBeTruthy();
+
+    await expectNoPageErrors(page, async () => {
+      await page.goto(`${adminUrl}/authoring/${experienceId}`);
+      await page.waitForLoadState("domcontentloaded");
+    });
+
+    await expect.poll(() => meAuthHeaders.length).toBeGreaterThan(0);
+    expect(meAuthHeaders).toContain(authHeaders.Authorization);
+
+    await expect(
+      page
+        .getByRole("navigation", { name: "Breadcrumb" })
+        .getByText(title, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /claims & evidence/i }),
+    ).toBeVisible();
+    await expect(page.getByText(/review and publication status/i)).toBeVisible();
+    await expect(page.getByText(/analytics dashboard/i)).toBeVisible();
+    await expect(page.getByText(title).first()).toBeVisible();
   });
-});
 
-// ---------------------------------------------------------------------------
-// TPUT-FR-EDU-008  Assessment management surface
-// ---------------------------------------------------------------------------
-test.describe("TPUT-FR-EDU-008: Assessment management", () => {
-  test("assessment list route renders without errors", async ({ page }) => {
-    const errors: string[] = [];
-    page.on("pageerror", (e) => errors.push(e.message));
+  test("loads the consolidated admin analytics route with real dashboard visuals", async ({
+    page,
+  }) => {
+    await page.route("**/api/v1/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "user-admin-001",
+          email: "admin@demo.tutorputor.com",
+          role: "admin",
+          firstName: "Sarah",
+          lastName: "Admin",
+          fullName: "Sarah Admin",
+          tenantId: "default",
+        }),
+      });
+    });
 
-    await page.goto(`${BASE_URL}/assessments`);
-    await page.waitForLoadState("networkidle");
+    await page.route("**/admin/api/v1/analytics/overview?*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          totalLearners: 128,
+          totalModules: 14,
+          avgCompletionRate: 72.4,
+          totalEnrollments: 342,
+        }),
+      });
+    });
 
-    const critical = errors.filter(
-      (e) => !e.includes("ResizeObserver") && !e.includes("Non-Error"),
+    await page.route("**/admin/api/v1/analytics/concepts?*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            slug: "forces-and-motion",
+            title: "Forces and Motion",
+            enrollments: 86,
+            avgCompletion: 78,
+            avgTimeMinutes: 24,
+          },
+          {
+            slug: "kinematics-basics",
+            title: "Kinematics Basics",
+            enrollments: 74,
+            avgCompletion: 69,
+            avgTimeMinutes: 28,
+          },
+        ]),
+      });
+    });
+
+    await page.route("**/admin/api/v1/analytics/trends?*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          { date: "2026-04-18", count: 21 },
+          { date: "2026-04-19", count: 26 },
+          { date: "2026-04-20", count: 31 },
+        ]),
+      });
+    });
+
+    await page.route(
+      "**/admin/api/v1/analytics/simulations?*",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: "sim-1",
+              type: "physics",
+              title: "Balanced Forces Lab",
+              uniqueUsers: 41,
+              avgDuration: 12,
+              totalSessions: 58,
+              avgInteractions: 19,
+            },
+          ]),
+        });
+      },
     );
-    expect(critical).toHaveLength(0);
-  });
 
-  test("assessment creation route resolves", async ({ page }) => {
-    await page.goto(`${BASE_URL}/assessments/create`);
-    await page.waitForLoadState("networkidle");
-    expect(page.url()).toBeTruthy();
+    await expectNoPageErrors(page, async () => {
+      await page.goto(`${adminUrl}/analytics`);
+      await page.waitForLoadState("domcontentloaded");
+    });
+
+    await expect(
+      page.getByRole("heading", { name: /analytics dashboard/i }),
+    ).toBeVisible();
+    await expect(page.getByText("128")).toBeVisible();
+    await expect(page.getByText("Forces and Motion").first()).toBeVisible();
+    await expect(page.getByText("Balanced Forces Lab")).toBeVisible();
   });
 });

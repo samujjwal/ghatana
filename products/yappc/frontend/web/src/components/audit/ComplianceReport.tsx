@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Box, Typography, Card, CardContent, Chip, Button, Accordion, AccordionSummary, AccordionDetails, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Alert, AlertTitle, Avatar, Spinner as CircularProgress, Stack } from '@ghatana/design-system';
+import { Box, Typography, Card, CardContent, Chip, Button, Accordion, AccordionSummary, AccordionDetails, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Alert, Avatar, Spinner as CircularProgress, Stack } from '@ghatana/design-system';
 import { ChevronDown as ExpandIcon, CheckCircle as PassedIcon, XCircle as FailedIcon, AlertTriangle as WarningIcon, MinusCircle as NAIcon, HelpCircle as PendingIcon, Shield as SecurityIcon, FileText as DocumentIcon, Code as CodeIcon, Bug as TestIcon, Settings as ConfigIcon, BarChart3 as ReportIcon, Lightbulb as RecommendationIcon, Download as DownloadIcon, RefreshCw as RefreshIcon } from 'lucide-react';
 
 // ============================================================================
@@ -129,7 +129,7 @@ export function ComplianceReport({
     if (error) {
         return (
             <Alert severity="error" className="m-4">
-                <AlertTitle>Error</AlertTitle>
+                <Typography className="mb-1 font-semibold">Error</Typography>
                 {error}
             </Alert>
         );
@@ -147,10 +147,10 @@ export function ComplianceReport({
         return (
             <Box className="text-center py-16">
                 <SecurityIcon className="mb-4 text-[64px] text-gray-500 dark:text-gray-400" />
-                <Typography as="h6" gutterBottom>
+                <Typography gutterBottom className="text-lg font-semibold">
                     No Compliance Report
                 </Typography>
-                <Typography as="p" className="text-sm" color="text.secondary" className="mb-6">
+                <Typography className="mb-6 text-sm text-gray-500" color="text.secondary">
                     Run a compliance check to generate a report
                 </Typography>
                 <Button
@@ -174,12 +174,12 @@ export function ComplianceReport({
                 <CardContent>
                     <Box className="flex items-center gap-4 mb-4">
                         <Avatar
-                            className="w-[56px] h-[56px]" style={{ backgroundColor: 'frameworkInfo.color' }} >
+                            className="w-[56px] h-[56px]" style={{ backgroundColor: frameworkInfo.color }}>
                             <SecurityIcon />
                         </Avatar>
                         <Box className="flex-1">
-                            <Typography as="h5">{frameworkInfo.name} Compliance Report</Typography>
-                            <Typography as="p" className="text-sm" color="text.secondary">
+                            <Typography className="text-xl font-semibold">{frameworkInfo.name} Compliance Report</Typography>
+                            <Typography className="text-sm text-gray-500" color="text.secondary">
                                 Generated {new Date(report.generatedAt).toLocaleString()}
                             </Typography>
                         </Box>
@@ -189,7 +189,7 @@ export function ComplianceReport({
                                 startIcon={<RefreshIcon />}
                                 onClick={onRunCheck}
                                 disabled={isLoading}
-                                size="sm"
+                                size="small"
                             >
                                 Re-run
                             </Button>
@@ -197,7 +197,7 @@ export function ComplianceReport({
                                 variant="outlined"
                                 startIcon={<DownloadIcon />}
                                 onClick={onExport}
-                                size="sm"
+                                size="small"
                             >
                                 Export
                             </Button>
@@ -205,27 +205,24 @@ export function ComplianceReport({
                     </Box>
 
                     {/* Score and Status */}
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="center">
+                    <Stack direction="column" spacing={3} alignItems="center" className="md:flex-row">
                         <Box className="text-center min-w-[150px]">
-                            <Box className="relative inline-flex">
-                                <CircularProgress
-                                    variant="determinate"
-                                    value={report.score}
-                                    size={120}
-                                    thickness={4}
-                                    style={{ color: report.score >= 80
-                                                ? 'success.main'
-                                                : report.score >= 50
-                                                    ? 'warning.main'
-                                                    : 'error.main' }}
-                                />
-                                <Box
-                                    className="absolute flex items-center justify-center flex-col top-[0px] left-[0px] right-[0px] bottom-[0px]"
-                                >
-                                    <Typography as="h4" fontWeight="bold">
+                            <Box
+                                className="relative inline-flex h-[120px] w-[120px] items-center justify-center rounded-full border-8"
+                                style={{
+                                    borderColor:
+                                        report.score >= 80
+                                            ? '#16a34a'
+                                            : report.score >= 50
+                                                ? '#d97706'
+                                                : '#dc2626',
+                                }}
+                            >
+                                <Box className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <Typography className="text-2xl font-bold">
                                         {report.score}%
                                     </Typography>
-                                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                    <Typography className="text-xs text-gray-500" color="text.secondary">
                                         Score
                                     </Typography>
                                 </Box>
@@ -243,14 +240,14 @@ export function ComplianceReport({
                                 }
                                 className="text-base py-5 px-4"
                             />
-                            <Typography as="p" className="text-sm" color="text.secondary" className="mt-2">
+                            <Typography className="mt-2 text-sm text-gray-500" color="text.secondary">
                                 Overall Status
                             </Typography>
                         </Box>
                         <Box className="flex justify-center gap-6">
-                            <StatusCounter count={report.summary.passed} label="Passed" tone="success" />
-                            <StatusCounter count={report.summary.failed} label="Failed" tone="danger" />
-                            <StatusCounter count={report.summary.warnings} label="Warnings" tone="warning" />
+                            <StatusCounter count={report.summary.passed} label="Passed" color="success" />
+                            <StatusCounter count={report.summary.failed} label="Failed" color="error" />
+                            <StatusCounter count={report.summary.warnings} label="Warnings" color="warning" />
                         </Box>
                     </Stack>
                 </CardContent>
@@ -259,7 +256,7 @@ export function ComplianceReport({
             {/* Alerts */}
             {report.summary.failed > 0 && (
                 <Alert severity="error" className="mb-4">
-                    <AlertTitle>Compliance Issues Found</AlertTitle>
+                    <Typography className="mb-1 font-semibold">Compliance Issues Found</Typography>
                     {report.summary.failed} control(s) failed compliance checks. Review the findings below and take
                     corrective action.
                 </Alert>
@@ -267,14 +264,14 @@ export function ComplianceReport({
 
             {report.summary.warnings > 0 && report.summary.failed === 0 && (
                 <Alert severity="warning" className="mb-4">
-                    <AlertTitle>Partial Compliance</AlertTitle>
+                    <Typography className="mb-1 font-semibold">Partial Compliance</Typography>
                     {report.summary.warnings} control(s) have warnings. Consider addressing these to improve compliance
                     posture.
                 </Alert>
             )}
 
             {/* Checks */}
-            <Typography as="h6" gutterBottom className="mt-6">
+            <Typography gutterBottom className="mt-6 text-lg font-semibold">
                 Control Checks ({report.checks.length})
             </Typography>
 
@@ -324,10 +321,10 @@ function StatusCounter({
 }) {
     return (
         <Box className="text-center">
-            <Typography as="h4" fontWeight="bold" color={`${color}.main`}>
+            <Typography className="text-2xl font-bold" color={`${color}.main`}>
                 {count}
             </Typography>
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+            <Typography className="text-xs text-gray-500" color="text.secondary">
                 {label}
             </Typography>
         </Box>
@@ -338,54 +335,48 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
     const statusConfig = STATUS_CONFIG[check.status];
 
     return (
-        <Accordion defaultExpanded={defaultExpanded} className="mb-2">
+        <Accordion className="mb-2">
             <AccordionSummary expandIcon={<ExpandIcon />}>
                 <Box className="flex items-center gap-4 w-full pr-4">
                     <Chip
-                        size="sm"
+                        size="small"
                         icon={statusConfig.icon as React.ReactElement}
                         label={statusConfig.label}
                         color={statusConfig.color}
                     />
-                    <Typography as="p" className="text-sm font-medium font-mono">
+                    <Typography className="text-sm font-medium font-mono">
                         {check.controlId}
                     </Typography>
-                    <Typography as="p" className="text-sm" className="flex-1">
+                    <Typography className="flex-1 text-sm">
                         {check.name}
                     </Typography>
                 </Box>
             </AccordionSummary>
             <AccordionDetails>
-                <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+                <Typography className="mb-3 text-sm text-gray-500" color="text.secondary">
                     {check.description}
                 </Typography>
 
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+                <Stack direction="column" spacing={2} className="md:flex-row">
                     {/* Required Artifacts */}
                     <Box className="flex-1">
-                        <Typography as="p" className="text-sm font-medium" gutterBottom>
+                        <Typography className="text-sm font-medium" gutterBottom>
                             Required Artifacts
                         </Typography>
-                        <List dense disablePadding>
+                            <List>
                             {check.requiredArtifacts.map((artifact: string, i: number) => {
                                 const [type] = artifact.split(':');
                                 const isFound = check.foundArtifacts.some((f: string) => f.startsWith(type));
                                 return (
-                                    <ListItem key={i} disablePadding className="py-0.5">
+                                        <ListItem key={i} className="py-0.5">
                                         <ListItemIcon className="min-w-[32px]">
                                             {isFound ? (
-                                                <PassedIcon tone="success" size={16} />
+                                                <PassedIcon className="text-green-600" size={16} />
                                             ) : (
-                                                <FailedIcon tone="danger" size={16} />
+                                                <FailedIcon className="text-red-600" size={16} />
                                             )}
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary={artifact}
-                                            primaryTypographyProps={{
-                                                variant: 'body2',
-                                                color: isFound ? 'text.primary' : 'error',
-                                            }}
-                                        />
+                                        <ListItemText primary={artifact} />
                                     </ListItem>
                                 );
                             })}
@@ -394,28 +385,25 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
 
                     {/* Found Artifacts */}
                     <Box className="flex-1">
-                        <Typography as="p" className="text-sm font-medium" gutterBottom>
+                        <Typography className="text-sm font-medium" gutterBottom>
                             Found Artifacts ({check.foundArtifacts.length})
                         </Typography>
                         {check.foundArtifacts.length > 0 ? (
-                            <List dense disablePadding>
+                            <List>
                                 {check.foundArtifacts.map((artifact: string, i: number) => {
                                     const [type] = artifact.split(':');
                                     return (
-                                        <ListItem key={i} disablePadding className="py-0.5">
+                                        <ListItem key={i} className="py-0.5">
                                             <ListItemIcon className="min-w-[32px]">
                                                 {ARTIFACT_ICONS[type] || <DocumentIcon size={16} />}
                                             </ListItemIcon>
-                                            <ListItemText
-                                                primary={artifact}
-                                                primaryTypographyProps={{ variant: 'body2' }}
-                                            />
+                                            <ListItemText primary={artifact} />
                                         </ListItem>
                                     );
                                 })}
                             </List>
                         ) : (
-                            <Typography as="p" className="text-sm" color="text.secondary">
+                            <Typography className="text-sm text-gray-500" color="text.secondary">
                                 No artifacts found
                             </Typography>
                         )}
@@ -423,25 +411,22 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
 
                     {/* Recommendations */}
                     <Box className="flex-1">
-                        <Typography as="p" className="text-sm font-medium" gutterBottom>
+                        <Typography className="text-sm font-medium" gutterBottom>
                             Recommendations
                         </Typography>
                         {check.recommendations && check.recommendations.length > 0 ? (
-                            <List dense disablePadding>
+                            <List>
                                 {check.recommendations.map((rec: string, i: number) => (
-                                    <ListItem key={i} disablePadding className="py-0.5">
+                                    <ListItem key={i} className="py-0.5">
                                         <ListItemIcon className="min-w-[32px]">
-                                            <RecommendationIcon tone="info" size={16} />
+                                            <RecommendationIcon className="text-blue-600" size={16} />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary={rec}
-                                            primaryTypographyProps={{ variant: 'body2' }}
-                                        />
+                                        <ListItemText primary={rec} />
                                     </ListItem>
                                 ))}
                             </List>
                         ) : (
-                            <Typography as="p" className="text-sm" color="text.secondary">
+                            <Typography className="text-sm text-gray-500" color="text.secondary">
                                 No recommendations
                             </Typography>
                         )}
@@ -451,14 +436,11 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
                 {/* Missing Artifacts Alert */}
                 {check.missingArtifacts.length > 0 && (
                     <Alert severity="error" className="mt-4">
-                        <AlertTitle>Missing Artifacts</AlertTitle>
-                        <List dense disablePadding>
+                        <Typography className="mb-1 font-semibold">Missing Artifacts</Typography>
+                        <List>
                             {check.missingArtifacts.map((artifact: string, i: number) => (
-                                <ListItem key={i} disablePadding>
-                                    <ListItemText
-                                        primary={artifact}
-                                        primaryTypographyProps={{ variant: 'body2' }}
-                                    />
+                                <ListItem key={i}>
+                                    <ListItemText primary={artifact} />
                                 </ListItem>
                             ))}
                         </List>

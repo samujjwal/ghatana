@@ -349,9 +349,6 @@ importers:
 
   platform/typescript/data-grid:
     dependencies:
-      '@ghatana/design-system':
-        specifier: workspace:*
-        version: link:../design-system
       '@ghatana/platform-utils':
         specifier: workspace:*
         version: link:../foundation/platform-utils
@@ -1127,6 +1124,9 @@ importers:
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../platform/typescript/canvas
+      '@ghatana/domain-components':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/domain-components
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../platform/typescript/realtime
@@ -4638,6 +4638,9 @@ importers:
 
   products/yappc/frontend/apps/api:
     dependencies:
+      '@fastify/cookie':
+        specifier: latest
+        version: 11.0.2
       '@fastify/cors':
         specifier: ^11.2.0
         version: 11.2.0
@@ -38341,7 +38344,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vitest: 4.0.18(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/ui@4.0.18)(esbuild@0.27.3)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
+      vitest: 4.0.18(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/ui@4.0.18)(esbuild@0.27.3)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
     optional: true
 
   '@vitest/ui@4.1.2(vitest@4.1.2)':

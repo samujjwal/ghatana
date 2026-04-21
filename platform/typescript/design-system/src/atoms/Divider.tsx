@@ -32,6 +32,9 @@ export interface DividerProps {
      */
     className?: string;
 
+    /** MUI-compatible flex item flag. */
+    flexItem?: boolean;
+
     /** Minimal MUI-like style prop. */
     sx?: SxProps;
 
@@ -55,6 +58,7 @@ export const Divider: React.FC<DividerProps> = ({
     thickness = 'thin',
     variant = 'default',
     className,
+    flexItem = false,
     sx,
     style,
 }) => {
@@ -77,6 +81,7 @@ export const Divider: React.FC<DividerProps> = ({
                     'border-l',
                     thickness === 'medium' && 'border-l-2',
                     thickness === 'thick' && 'border-l-4',
+                    flexItem && 'self-stretch',
                     variantClasses[variant],
                     className
                 )}
@@ -92,6 +97,7 @@ export const Divider: React.FC<DividerProps> = ({
             <hr
                 className={clsx(
                     thicknessClasses[thickness],
+                    flexItem && 'w-full',
                     variantClasses[variant],
                     className
                 )}

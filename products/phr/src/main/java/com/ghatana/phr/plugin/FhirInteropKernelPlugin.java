@@ -63,6 +63,10 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
 
     @Override
     public PluginManifest getManifest() {
+        // Resolve mode to determine if DataCloud dependency is optional
+        DependencyMode mode = resolveDataCloudMode();
+        boolean dataCloudOptional = !mode.isStrict();
+        
         return PluginManifest.builder()
             .pluginId(PLUGIN_ID)
             .version(VERSION)
@@ -78,7 +82,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
             ))
             .dependency(new com.ghatana.kernel.descriptor.KernelDependency(
                 "data-storage", "1.0.0",
-                com.ghatana.kernel.descriptor.KernelDependency.DependencyType.CAPABILITY, false
+                com.ghatana.kernel.descriptor.KernelDependency.DependencyType.CAPABILITY, dataCloudOptional
             ))
             .requiredKernelVersion("1.0.0")
             .tag("healthcare")
@@ -105,24 +109,24 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
 
     @Override
     public void initialize(KernelContext context) {
-        if (!initialized.compareAndSet(false, true)) {
-            return;
-        }
         this.context = context;
-
-        // Initialize DataCloud dependency availability tracker with configured mode
-        DependencyMode datacloudMode = resolveDataCloudMode();
+        
+        // Resolve DataCloud operation mode from environment or system property
+        DependencyMode mode = resolveDataCloudMode();
         boolean datacloudAvailable = context != null && context.hasDependency(DataCloudKernelAdapter.class);
-        this.dataCloudAvailability = new DependencyAvailability("DataCloudKernelAdapter", datacloudMode, datacloudAvailable);
-
-        if (datacloudMode.isStrict() && !datacloudAvailable) {
-            LOG.warn("INITIALIZATION WARNING: DataCloud adapter not found but STRICT mode is enabled. " +
-                    "Write operations will fail. Consider using DEGRADED mode for development.");
+        
+        // Initialize DataCloud dependency availability tracker
+        this.dataCloudAvailability = new DependencyAvailability("DataCloudKernelAdapter", mode, datacloudAvailable);
+        
+        // In STRICT mode, DataCloud is required - fail fast if not available
+        if (mode.isStrict() && !datacloudAvailable) {
+            String errorMsg = "DataCloud adapter is required in STRICT mode but not available. " +
+                             "Set PHR_DATACLOUD_MODE=DEGRADED for development or ensure DataCloud adapter is registered.";
+            LOG.error("INITIALIZATION FAILED: {}", errorMsg);
+            throw new IllegalStateException(errorMsg);
         }
-
-        LOG.info("PHR FHIR Plugin initialized with DataCloud mode: {} (available: {})", datacloudMode.name(), datacloudAvailable);
-
-        registerEventHandlers();
+        
+        LOG.info("PHR FHIR Plugin initialized with DataCloud mode: {} (available: {})", mode.name(), datacloudAvailable);
     }
 
     /**

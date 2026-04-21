@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import { Menu, MenuItem } from '@ghatana/design-system';
+import { Box } from '@ghatana/design-system';
 import { Trash2 as TrashIcon, Copy as DuplicateIcon } from 'lucide-react';
 import {
     NextBestTaskCard,
@@ -23,6 +23,7 @@ import {
     type GateCriterion,
     type AISuggestion,
     type InspectorArtifact,
+    type ArtifactTemplate,
 } from './workspace';
 import { ProjectSwitcher } from './workspace/ProjectSwitcher';
 import { PanelManager } from './panels/PanelManager';
@@ -34,14 +35,15 @@ import { type ReactFlowInstance } from '@xyflow/react';
 import { type AbstractionLevel } from '../../types/abstractionLevel';
 import { type Task } from '@/services/lifecycle/api';
 import { type CanvasCommandAction } from './workspace';
+import { type CanvasInteractionMode } from './workspace/canvasSharedState';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface OverlayHandlers {
-    handleCreateArtifact: (template: unknown, position: { x: number; y: number }) => void;
-    handleUpdateArtifact: (id: string, updates: unknown) => void;
-    handleAddBlocker: (nodeId: string, blocker: unknown) => void;
-    handleAddComment: (nodeId: string, comment: unknown) => void;
+    handleCreateArtifact: (template: ArtifactTemplate, position: { x: number; y: number }) => void | Promise<void>;
+    handleUpdateArtifact: (id: string, updates: Partial<InspectorArtifact>) => void;
+    handleAddBlocker: (nodeId: string, blocker: Record<string, unknown>) => void;
+    handleAddComment: (nodeId: string, comment: string) => void;
     handleLinkArtifact: (sourceId: string, targetId: string) => void;
     handleCopyNodes?: () => void;
     handlePasteNodes?: () => void;
@@ -87,7 +89,7 @@ export interface CanvasOverlaysProps {
     commandRegistry: CanvasCommandAction[];
     zoom: OverlayZoom;
     reactFlowInstance: ReactFlowInstance | null;
-    setInteractionMode: (mode: 'navigate' | 'sketch' | 'code' | 'diagram') => void;
+    setInteractionMode: (mode: CanvasInteractionMode) => void;
     // ── Context Menu ─────────────────────────────────────────────────────
     nodeContextMenu: { x: number; y: number; nodeId: string } | null;
     setNodeContextMenu: (menu: { x: number; y: number; nodeId: string } | null) => void;
@@ -211,21 +213,24 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
 
         {/* Right-click context menu for nodes */}
         {nodeContextMenu && (
-            <Menu
-                open
-                onClose={() => setNodeContextMenu(null)}
-                anchorReference="anchorPosition"
-                anchorPosition={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
+            <Box
+                className="absolute z-50 min-w-[180px] rounded-lg border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                style={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
+                role="menu"
             >
-                <MenuItem
+                <button
+                    type="button"
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={() => {
                         setIsInspectorOpen(true);
                         setNodeContextMenu(null);
                     }}
                 >
                     Edit in Inspector
-                </MenuItem>
-                <MenuItem
+                </button>
+                <button
+                    type="button"
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={() => {
                         handlers.handleCopyNodes?.();
                         handlers.handlePasteNodes?.();
@@ -234,19 +239,20 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                 >
                     <DuplicateIcon size={14} className="mr-2" />
                     Duplicate
-                </MenuItem>
-                <MenuItem
+                </button>
+                <button
+                    type="button"
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-red-500 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-800"
                     onClick={() => {
                         setSelectedNodes([nodeContextMenu.nodeId]);
                         handlers.handleDeleteSelected();
                         setNodeContextMenu(null);
                     }}
-                    className="text-red-500 dark:text-red-400"
                 >
                     <TrashIcon size={14} className="mr-2" />
                     Delete
-                </MenuItem>
-            </Menu>
+                </button>
+            </Box>
         )}
     </>
 );

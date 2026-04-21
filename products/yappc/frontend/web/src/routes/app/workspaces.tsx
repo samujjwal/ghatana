@@ -210,7 +210,7 @@ export default function Component() {
                                             className="flex-1 px-3 py-2 text-sm font-medium text-primary-500 hover:bg-primary-50 rounded transition-colors"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                navigate(`/workspaces/${workspace.id}/settings`);
+                                                navigate('/settings');
                                             }}
                                         >
                                             <Settings className="w-4 h-4 inline mr-2" />

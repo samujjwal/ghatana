@@ -29,20 +29,6 @@ public interface LLMService {
     <T> Promise<T> generateStructured(String prompt, Class<T> schemaClass);
 
     /**
-     * Generates a structural response based on a prompt without schema validation.
-     * This method returns the raw JSON string from the LLM.
-     * Use {@link #generateStructured(String, Class)} for type-safe structured output with validation.
-     *
-     * @param prompt The input prompt.
-     * @return A Promise resolving to the raw JSON string from the LLM.
-     * @deprecated Use {@link #generateStructured(String, Class)} for type-safe structured output.
-     */
-    @Deprecated
-    default Promise<String> generateStructured(String prompt) {
-        return generate(prompt);
-    }
-
-    /**
      * Chat with system prompt and user message.
      * @param systemPrompt The system prompt
      * @param userMessage The user message

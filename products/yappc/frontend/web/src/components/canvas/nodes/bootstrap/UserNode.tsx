@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useState, useCallback } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   User,
@@ -49,7 +49,7 @@ export interface UserGoal {
   readonly priority: 'primary' | 'secondary';
 }
 
-export interface UserNodeData {
+export interface UserNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly description?: string;
   readonly userType: UserType;
@@ -68,7 +68,9 @@ export interface UserNodeData {
   readonly onOpenComments?: (nodeId: string) => void;
 }
 
-export interface UserNodeProps extends NodeProps<UserNodeData> {}
+type UserCanvasNode = Node<UserNodeData>;
+
+export interface UserNodeProps extends NodeProps<UserCanvasNode> {}
 
 // =============================================================================
 // Constants

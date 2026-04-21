@@ -60,7 +60,7 @@ export const GovernancePanel: React.FC = () => {
             {/* Team Section */}
             <Box className="mb-8">
                 <Box className="flex justify-between items-center mb-4">
-                    <Typography as="span" className="text-xs uppercase tracking-wider" color="text.secondary" fontWeight="800">
+                    <Typography className="text-xs uppercase tracking-wider" color="text.secondary" fontWeight="800">
                         Project Team
                     </Typography>
                     <Button size="sm" startIcon={<Add />} className="rounded-lg">
@@ -69,7 +69,7 @@ export const GovernancePanel: React.FC = () => {
                 </Box>
 
                 <Paper variant="outlined" className="rounded-lg overflow-hidden">
-                    <List disablePadding>
+                    <List>
                         {members.map((member, idx) => (
                             <React.Fragment key={member.id}>
                                 <ListItem
@@ -85,7 +85,7 @@ export const GovernancePanel: React.FC = () => {
                                     </ListItemAvatar>
                                     <ListItemText
                                         primary={
-                                            <Typography as="p" className="text-sm" fontWeight="700">
+                                            <Typography className="text-sm" fontWeight="700">
                                                 {member.name}
                                             </Typography>
                                         }
@@ -108,11 +108,11 @@ export const GovernancePanel: React.FC = () => {
 
             {/* Export Section */}
             <Box className="mb-8">
-                <Typography as="span" className="text-xs uppercase tracking-wider" color="text.secondary" fontWeight="800" className="mb-4 block">
+                <Typography className="mb-4 block text-xs uppercase tracking-wider" color="text.secondary" fontWeight="800">
                     Project Handoff
                 </Typography>
                 <Paper variant="outlined" className="p-4 rounded-lg">
-                    <Typography as="p" className="text-sm" color="text.secondary" className="mb-4 text-[0.8125rem]">
+                    <Typography className="mb-4 text-[0.8125rem]" color="text.secondary">
                         Export your project's technical specification for implementation or review.
                     </Typography>
                     <Stack direction="row" spacing={1}>
@@ -140,7 +140,7 @@ export const GovernancePanel: React.FC = () => {
                     {isExporting && (
                         <Box className="mt-4">
                             <LinearProgress className="rounded h-[2px]" />
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-2 block text-center">
+                            <Typography className="mt-2 block text-center text-xs text-gray-500" color="text.secondary">
                                 Generating specification documents...
                             </Typography>
                         </Box>
@@ -150,7 +150,7 @@ export const GovernancePanel: React.FC = () => {
 
             {/* Operations Section */}
             <Box>
-                <Typography as="span" className="text-xs uppercase tracking-wider" color="text.secondary" fontWeight="800" className="mb-4 block">
+                <Typography className="mb-4 block text-xs uppercase tracking-wider" color="text.secondary" fontWeight="800">
                     Operations & Deployment
                 </Typography>
 
@@ -161,21 +161,21 @@ export const GovernancePanel: React.FC = () => {
                             variant="outlined"
                             className="p-4 rounded-lg" style={{ borderLeftColor: deploy.status === 'deployed' ? 'success.main' : 'warning.main', borderLeft: '4px solidpx solid' }} >
                             <Box className="flex justify-between mb-2">
-                                <Typography as="p" className="text-sm font-medium" fontWeight="700">
+                                <Typography className="text-sm font-medium" fontWeight="700">
                                     {deploy.environment}
                                 </Typography>
-                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                <Typography className="text-xs text-gray-500" color="text.secondary">
                                     {deploy.version}
                                 </Typography>
                             </Box>
 
                             <Box className="flex items-center gap-2 mb-3">
                                 {deploy.status === 'deployed' ? (
-                                    <CloudDone tone="success" className="text-base" />
+                                    <CloudDone className="text-base text-green-600" />
                                 ) : (
-                                    <ErrorOutline tone="warning" className="text-base" />
+                                    <ErrorOutline className="text-base text-amber-600" />
                                 )}
-                                <Typography as="span" className="text-xs text-gray-500" className="capitalize">
+                                <Typography className="capitalize text-xs text-gray-500">
                                     {deploy.status.replace('-', ' ')}
                                 </Typography>
                             </Box>

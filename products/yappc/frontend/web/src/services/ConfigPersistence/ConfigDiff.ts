@@ -6,7 +6,25 @@
  * @packageDocumentation
  */
 
-import type { PageConfig } from '@yappc/config-schema';
+interface PageComponentConfig {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface PageConnections {
+  events?: unknown[];
+  data?: unknown[];
+  navigation?: unknown[];
+}
+
+interface PageConfig {
+  id: string;
+  title: string;
+  route: string;
+  layout?: string;
+  components?: PageComponentConfig[];
+  connections?: PageConnections;
+}
 
 /**
  * @doc.type service
@@ -74,8 +92,8 @@ export class ConfigDiff {
     const targetComponents = target.components || [];
 
     // Check for added components
-    targetComponents.forEach((targetComp) => {
-      const baseComp = baseComponents.find((c) => c.id === targetComp.id);
+    targetComponents.forEach((targetComp: PageComponentConfig) => {
+      const baseComp = baseComponents.find((c: PageComponentConfig) => c.id === targetComp.id);
       if (!baseComp) {
         changes.push({
           path: `components.${targetComp.id}`,
@@ -87,8 +105,8 @@ export class ConfigDiff {
     });
 
     // Check for removed components
-    baseComponents.forEach((baseComp) => {
-      const targetComp = targetComponents.find((c) => c.id === baseComp.id);
+    baseComponents.forEach((baseComp: PageComponentConfig) => {
+      const targetComp = targetComponents.find((c: PageComponentConfig) => c.id === baseComp.id);
       if (!targetComp) {
         changes.push({
           path: `components.${baseComp.id}`,
@@ -100,8 +118,8 @@ export class ConfigDiff {
     });
 
     // Check for modified components
-    targetComponents.forEach((targetComp) => {
-      const baseComp = baseComponents.find((c) => c.id === targetComp.id);
+    targetComponents.forEach((targetComp: PageComponentConfig) => {
+      const baseComp = baseComponents.find((c: PageComponentConfig) => c.id === targetComp.id);
       if (baseComp) {
         const baseStr = JSON.stringify(baseComp);
         const targetStr = JSON.stringify(targetComp);
@@ -124,9 +142,9 @@ export class ConfigDiff {
     const baseConnections = base.connections || { events: [], data: [], navigation: [] };
     const targetConnections = target.connections || { events: [], data: [], navigation: [] };
 
-    this.compareConnectionArray(baseConnections.events, targetConnections.events, 'connections.events', changes);
-    this.compareConnectionArray(baseConnections.data, targetConnections.data, 'connections.data', changes);
-    this.compareConnectionArray(baseConnections.navigation, targetConnections.navigation, 'connections.navigation', changes);
+    this.compareConnectionArray(baseConnections.events ?? [], targetConnections.events ?? [], 'connections.events', changes);
+    this.compareConnectionArray(baseConnections.data ?? [], targetConnections.data ?? [], 'connections.data', changes);
+    this.compareConnectionArray(baseConnections.navigation ?? [], targetConnections.navigation ?? [], 'connections.navigation', changes);
   }
 
   private compareConnectionArray(

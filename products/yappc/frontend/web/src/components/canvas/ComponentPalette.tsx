@@ -8,14 +8,11 @@ import {
   Typography,
   Chip,
   Stack,
-  ListItem,
-  ListItemText,
   Avatar,
-  InputAdornment,
   IconButton,
   InteractiveList as List,
 } from '@ghatana/design-system';
-import { ListItemAvatar, TextField } from '@ghatana/design-system';
+import { TextField } from '@ghatana/design-system';
 
 import { Search as SearchIcon, ChevronDown as ExpandMoreIcon, Plus as AddIcon } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -42,6 +39,13 @@ interface ComponentDef {
   tags: string[];
   testId?: string;
 }
+
+type PaletteWindow = Window & {
+  __E2E_TEST_MODE?: boolean;
+  __STORYBOOK_CLIENT_API__?: unknown;
+};
+
+type PaletteNavigator = Navigator & { webdriver?: boolean };
 
 const componentLibrary: ComponentDef[] = [
   // Architecture Components
@@ -280,7 +284,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
    *
    */
   function mergedRef(el: HTMLElement | null) {
-    setNodeRef(el as unknown);
+    setNodeRef(el);
     if (!el) return;
     try {
       el.setAttribute('data-dndkit-payload', JSON.stringify(component));
@@ -290,27 +294,37 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   }
 
   return (
-    <ListItem
+    <Box
       ref={mergedRef}
       data-testid={`palette-item-${component.testId ?? component.type}`}
       aria-label={`${component.label} palette item`}
-      style={style}
       {...listeners}
       {...attributes}
       onPointerDown={handleAutomationPointerDown}
       onClick={handleClick}
-      className="rounded-lg mb-1 px-4" style={{ cursor: isDragging ? 'grabbing' : 'grab', transition: 'all 0.2s ease-in-out' }} >
-      <ListItemAvatar data-testid={`palette-item-${component.testId ?? component.type}-icon`}>
-        <Avatar className="w-[48px] h-[48px] text-[1.5em] bg-transparent">
+      className="mb-1 flex items-center rounded-lg px-4 py-2"
+      style={{
+        ...style,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        transition: 'all 0.2s ease-in-out',
+      }}
+      role="button"
+      tabIndex={automationSafe ? -1 : 0}
+    >
+      <Box
+        data-testid={`palette-item-${component.testId ?? component.type}-icon`}
+        className="mr-3"
+      >
+        <Avatar className="h-[48px] w-[48px] bg-transparent text-[1.5em]">
           {component.icon}
         </Avatar>
-      </ListItemAvatar>
-      <ListItemText
-        primary={component.label}
-        secondary={component.description}
-        primaryTypographyProps={{ fontSize: '0.9em', fontWeight: 'medium' }}
-        secondaryTypographyProps={{ fontSize: '0.75em', color: 'text.secondary' }}
-      />
+      </Box>
+      <Box className="min-w-0 flex-1">
+        <Typography className="text-[0.9em] font-medium">{component.label}</Typography>
+        <Typography className="text-[0.75em]" color="text.secondary">
+          {component.description}
+        </Typography>
+      </Box>
       <IconButton
         size="small"
         tabIndex={automationSafe ? -1 : 0}
@@ -322,7 +336,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       >
         <AddIcon size={16} />
       </IconButton>
-    </ListItem>
+    </Box>
   );
 };
 
@@ -358,9 +372,9 @@ const detectAutomationEnvironment = (): boolean => {
     return false;
   }
 
-  const globalFlag = Boolean((window as unknown).__E2E_TEST_MODE);
+  const globalFlag = Boolean((window as PaletteWindow).__E2E_TEST_MODE);
   const webdriver =
-    typeof navigator !== 'undefined' && Boolean((navigator as unknown).webdriver);
+    typeof navigator !== 'undefined' && Boolean((navigator as PaletteNavigator).webdriver);
 
   return globalFlag || webdriver;
 };
@@ -405,7 +419,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
   // loops in the Storybook iframe. Detect common Storybook globals and the
   // default Storybook port as a pragmatic guard.
   if (typeof window !== 'undefined') {
-    const win = window as unknown;
+    const win = window as PaletteWindow;
     const isStorybook = Boolean(win.__STORYBOOK_CLIENT_API__) || window.location.port === '6006';
     if (isStorybook) {
       // eslint-disable-next-line no-console
@@ -418,7 +432,6 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
   // eslint-disable-next-line no-console
   console.debug('[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['Architecture', 'Pages']);
   const [automationSafe, setAutomationSafe] = useState<boolean>(detectAutomationEnvironment);
   const [recentlyUsed, setRecentlyUsed] = useState<ComponentDef[]>([]);
 
@@ -470,14 +483,6 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
     }, {} as Record<string, ComponentDef[]>);
   }, [filteredComponents]);
 
-  const handleCategoryToggle = (category: string) => {
-    setExpandedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(cat => cat !== category)
-        : [...prev, category]
-    );
-  };
-
   const handleAddToCanvas = (component: ComponentDef) => {
     // Add at center of canvas by default
     onAddComponent(component, { x: 250, y: 200 });
@@ -504,15 +509,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
           placeholder="Search components..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            inputProps: { tabIndex: automationSafe ? -1 : 0 },
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon size={16} />
-              </InputAdornment>
-            ),
-            style: { fontSize: '0.875rem', borderRadius: 8 },
-          }}
+          tabIndex={automationSafe ? -1 : 0}
         />
       </Box>
 
@@ -550,14 +547,10 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
           Object.entries(componentsByCategory).map(([category, components]) => (
             <Accordion
               key={category}
-              expanded={expandedCategories.includes(category)}
-              onChange={() => handleCategoryToggle(category)}
               className="shadow-none border-b border-solid border-gray-200 dark:border-gray-700"
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
-                tabIndex={automationSafe ? -1 : 0}
-                className="px-4 py-[10px] [&_.MuiAccordionSummary-content]:my-2"
               >
                 <Box className="flex items-center justify-between w-full">
                   <Typography variant="body2" className="font-semibold text-[0.8125rem]">
@@ -571,7 +564,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
                   />
                 </Box>
               </AccordionSummary>
-              <AccordionDetails className="py-0">
+              <AccordionDetails>
                 <List className="py-0">
                   {components.map((component) => (
                     <DraggableComponent

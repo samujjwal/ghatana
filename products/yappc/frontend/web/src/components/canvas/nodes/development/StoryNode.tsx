@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useCallback, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   Layers,
@@ -61,7 +61,7 @@ export interface StoryAssignee {
   readonly avatarUrl?: string;
 }
 
-export interface StoryNodeData {
+export interface StoryNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly key: string;
   readonly description?: string;
@@ -90,7 +90,9 @@ export interface StoryNodeData {
   readonly onToggleTask?: (nodeId: string, taskId: string) => void;
 }
 
-export interface StoryNodeProps extends NodeProps<StoryNodeData> {}
+type StoryCanvasNode = Node<StoryNodeData>;
+
+export interface StoryNodeProps extends NodeProps<StoryCanvasNode> {}
 
 // =============================================================================
 // Constants

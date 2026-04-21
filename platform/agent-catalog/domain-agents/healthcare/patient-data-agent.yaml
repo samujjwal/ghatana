@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: patient-data-agent
 name: Patient Data Processing Agent
 namespace: platform.domain.healthcare

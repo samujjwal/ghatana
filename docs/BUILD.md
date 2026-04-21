@@ -103,7 +103,7 @@ Conventions established in the 2026-03 AEP audit. Apply these in `products/aep/`
 Keep engine runtime behavior in `com.ghatana.aep` and subpackages:
 `config`, `cache`, `consent`, `delivery`, `error`, `health`, `lifecycle`, `metrics`, `ratelimit`, `tracing`, `version`
 
-Keep product-specific adapter code in `aep-event-cloud` and `aep-connectors`. Do not push transport logic into `aep-engine`.
+Keep product-specific adapter code in `aep-event-cloud` and `platform:java:messaging`. Do not push transport logic into `aep-engine`.
 
 ### Builder APIs
 

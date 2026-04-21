@@ -1,15 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, CardContent, CardHeader, Input } from '@ghatana/design-system';
-import { demoDashboard } from '../mockData';
+import { fetchDashboardData } from '../api/phrApi';
+import type { AppointmentSummary } from '../types';
 
 export function AppointmentsPage(): React.ReactElement {
+  const [appointments, setAppointments] = useState<AppointmentSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDashboardData()
+      .then(data => setAppointments(data.appointments))
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load appointments'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="loading">Loading appointments...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+
   return (
     <div className="two-column-layout">
       <Card>
         <CardHeader title="Upcoming appointments" subheader="Schedule and reschedule visits" />
         <CardContent>
           <div className="stack gap-md">
-            {demoDashboard.appointments.map((appointment) => (
+            {appointments.map((appointment) => (
               <div key={appointment.id} className="data-card">
                 <div>
                   <strong>{appointment.provider}</strong>

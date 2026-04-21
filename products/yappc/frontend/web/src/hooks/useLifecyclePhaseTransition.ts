@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { LifecyclePhase } from '@/types/lifecycle';
 import { useParams } from 'react-router';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { getRouteForPhase } from '@/types/lifecycle';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';

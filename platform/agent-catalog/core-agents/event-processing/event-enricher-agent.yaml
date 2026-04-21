@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: event-enricher-agent
 name: Event Enricher Agent
 namespace: platform.event-processing

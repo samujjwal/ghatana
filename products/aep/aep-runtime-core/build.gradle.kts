@@ -67,7 +67,7 @@ sourceSets.test {
         "com/ghatana/aep/config/ConfigurationPipelineIntegrationTest.java",
         "com/ghatana/aep/config/PipelineMaterializerTest.java",
 
-        // ── HttpIngressStrategy not present in aep-connectors ────────────────
+        // ── HttpIngressStrategy connector test ────────────────
         "com/ghatana/aep/connector/strategy/ConnectorConfigTest.java",
 
         // ── feature module classes AepFeatureStoreClient etc not implemented ─

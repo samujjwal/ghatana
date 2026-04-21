@@ -79,7 +79,6 @@ jobs:
           ./gradlew \
             :products:aep:aep-engine:test \
             :products:aep:aep-runtime-core:test \
-            :products:aep:aep-connectors:test \
             :products:aep:orchestrator:test \
             --no-daemon --continue
 

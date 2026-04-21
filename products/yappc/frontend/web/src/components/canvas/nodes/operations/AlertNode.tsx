@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { 
   Bell, 
   BellOff, 
@@ -44,7 +44,7 @@ export interface AlertChannel {
   name: string;
 }
 
-export interface AlertNodeData {
+export interface AlertNodeData extends Record<string, unknown> {
   id: string;
   name: string;
   description?: string;
@@ -64,7 +64,9 @@ export interface AlertNodeData {
   trend?: 'up' | 'down' | 'stable';
 }
 
-export type AlertNodeProps = NodeProps<AlertNodeData>;
+type AlertCanvasNode = Node<AlertNodeData>;
+
+export type AlertNodeProps = NodeProps<AlertCanvasNode>;
 
 // ============================================================================
 // CONSTANTS

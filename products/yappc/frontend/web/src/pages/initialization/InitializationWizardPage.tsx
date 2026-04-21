@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { useAtom, useSetAtom } from 'jotai';
 import {
   ConfigurationWizard,

@@ -21,6 +21,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))
+    api(project(":platform:java:policy-as-code"))
     // NOTE: http dependency added for HttpServerBuilder, ResponseBuilder
     implementation(project(":platform:java:http"))
 

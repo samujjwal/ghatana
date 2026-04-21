@@ -6,7 +6,7 @@
 import { UnifiedRegistry } from './UnifiedRegistry';
 
 import type { ComponentDefinition } from './types';
-import type { RegistryEntry } from './UnifiedRegistry';
+import type { RegistryEntry } from '@yappc/core/types';
 
 // Namespace constants for different canvas types
 export const REGISTRY_NAMESPACES = {

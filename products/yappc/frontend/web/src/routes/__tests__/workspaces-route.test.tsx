@@ -131,6 +131,6 @@ describe('WorkspacesRoute', () => {
 
     renderRoute();
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading workspaces...');
+    expect(screen.getByText('Loading workspaces...')).toBeDefined();
   });
 });

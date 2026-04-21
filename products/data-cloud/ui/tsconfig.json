@@ -36,7 +36,7 @@
       "@ghatana/tokens": ["../../../platform/typescript/tokens"],
       "@ghatana/wizard": ["node_modules/@ghatana/wizard/src/index.ts"],
       "@ghatana/platform-utils": [
-        "../../../platform/typescript/foundation/platform-utils"
+        "../../../platform/typescript/platform-utils/src/index.ts"
       ],
       "@ghatana/privacy-ui": [
         "../../../platform/typescript/privacy-ui/src"

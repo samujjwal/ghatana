@@ -18,8 +18,86 @@ import {
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
-import { RequirementTransform } from '@yappc/config-compiler';
-import type { IntentConfig, RequirementConfig } from '@yappc/config-schema';
+interface IntentConfig {
+  id: string;
+  intent: string;
+  author: string;
+  tags: string[];
+}
+
+interface AcceptanceCriteria {
+  id: string;
+  criteria: string;
+  priority: 'must' | 'should' | 'could';
+  status: 'pending' | 'in-progress' | 'completed' | 'blocked';
+}
+
+interface RequirementConfig {
+  id: string;
+  version: string;
+  title: string;
+  description: string;
+  type: 'functional' | 'non-functional' | 'constraint' | 'user-story';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  status: 'draft' | 'proposed' | 'approved' | 'in-progress' | 'completed' | 'rejected';
+  acceptanceCriteria: AcceptanceCriteria[];
+  intentId?: string;
+  linkedPageIds: string[];
+  linkedComponentIds: string[];
+  createdAt: string;
+  updatedAt: string;
+  author: string;
+  assignee?: string;
+  tags: string[];
+}
+
+function validateTransformation(intentConfig: IntentConfig): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!intentConfig.id) {
+    errors.push('IntentConfig must have an id');
+  }
+
+  if (!intentConfig.intent) {
+    errors.push('IntentConfig must have an intent');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+async function transformIntentToRequirements(intentConfig: IntentConfig): Promise<RequirementConfig[]> {
+  const now = new Date().toISOString();
+
+  return [
+    {
+      id: `req-${Date.now()}`,
+      version: '1.0.0',
+      title: `Requirement for: ${intentConfig.intent.substring(0, 50)}${intentConfig.intent.length > 50 ? '...' : ''}`,
+      description: `Derived from intent: ${intentConfig.intent}`,
+      type: 'functional',
+      priority: 'high',
+      status: 'draft',
+      acceptanceCriteria: [
+        {
+          id: `ac-${Date.now()}`,
+          criteria: 'Implement the described functionality',
+          priority: 'must',
+          status: 'pending',
+        },
+      ],
+      intentId: intentConfig.id,
+      linkedPageIds: [],
+      linkedComponentIds: [],
+      createdAt: now,
+      updatedAt: now,
+      author: intentConfig.author,
+      tags: intentConfig.tags,
+    },
+  ];
+}
 
 /**
  * @doc.type component
@@ -41,15 +119,13 @@ export const RequirementExtractor: React.FC<RequirementExtractorProps> = ({
   const [requirements, setRequirements] = useState<RequirementConfig[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const requirementTransform = new RequirementTransform();
-
   const handleExtractRequirements = useCallback(async () => {
     if (!intentConfig) return;
 
     setError(null);
     setIsExtracting(true);
 
-    const validation = requirementTransform.validateTransformation(intentConfig);
+    const validation = validateTransformation(intentConfig);
     if (!validation.valid) {
       setError(validation.errors.join(', '));
       setIsExtracting(false);
@@ -57,16 +133,16 @@ export const RequirementExtractor: React.FC<RequirementExtractorProps> = ({
     }
 
     try {
-      const extracted = await requirementTransform.transformIntentToRequirements(intentConfig);
+      const extracted = await transformIntentToRequirements(intentConfig);
       setRequirements(extracted);
-      setExpandedIds(new Set(extracted.map((r) => r.id)));
+      setExpandedIds(new Set(extracted.map((requirement: RequirementConfig) => requirement.id)));
       onRequirementsExtracted?.(extracted);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to extract requirements');
     } finally {
       setIsExtracting(false);
     }
-  }, [intentConfig, requirementTransform, onRequirementsExtracted]);
+  }, [intentConfig, onRequirementsExtracted]);
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -115,7 +191,7 @@ export const RequirementExtractor: React.FC<RequirementExtractorProps> = ({
       )}
 
       {requirements.length > 0 && (
-        <Stack spacing={2} mt={3}>
+        <Stack spacing={2} className="mt-3">
           <Typography variant="subtitle1">
             Extracted Requirements ({requirements.length})
           </Typography>
@@ -168,7 +244,7 @@ export const RequirementExtractor: React.FC<RequirementExtractorProps> = ({
                           Acceptance Criteria
                         </Typography>
                         <Stack spacing={1}>
-                          {req.acceptanceCriteria.map((ac, idx) => (
+                          {req.acceptanceCriteria.map((ac: AcceptanceCriteria, idx: number) => (
                             <Typography key={ac.id || idx} variant="body2">
                               • {ac.criteria}
                             </Typography>
@@ -179,7 +255,7 @@ export const RequirementExtractor: React.FC<RequirementExtractorProps> = ({
 
                     {req.tags && req.tags.length > 0 && (
                       <Stack direction="row" spacing={1} flexWrap="wrap">
-                        {req.tags.map((tag) => (
+                        {req.tags.map((tag: string) => (
                           <Typography
                             key={tag}
                             variant="caption"

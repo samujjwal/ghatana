@@ -23,7 +23,7 @@ import {
     type NodeChange, type EdgeChange, type Connection,
 } from '@xyflow/react';
 import { useGateStatus, useNextBestTask, useDerivedPersona, useArtifacts } from '@/hooks/useLifecycleData';
-import { lifecycleAPI } from '@/services/lifecycle/api';
+import { lifecycleAPI, type AIRecommendation } from '@/services/lifecycle/api';
 import { LifecyclePhase } from '@/types/lifecycle';
 import { FOWStage } from '@/types/fow-stages';
 import {
@@ -35,7 +35,10 @@ import {
     canvasAnnouncementAtom, copiedNodesAtom,
     cameraAtom,
     sortedCommandsAtom, prefersDarkModeAtom, visibleNodeIdsAtom,
+    getZonePlacementPosition,
+    type ArtifactTemplate,
 } from './workspace';
+import { type DependencyEdgeDataR } from './workspace/canvasAtoms';
 import {
     canUndoCommandAtom, canRedoCommandAtom, undoCommandAtom, redoCommandAtom, executeCommandAtom,
     AddEdgeCommand, AddNodeCommand,
@@ -70,6 +73,23 @@ export interface CanvasWorkspaceProps {
     projectId: string;
     currentPhase: LifecyclePhase;
     flowStage: FOWStage;
+}
+
+const ARTIFACT_TEMPLATE_TYPES: ArtifactTemplate['type'][] = [
+    'brief',
+    'user-story',
+    'requirement',
+    'design',
+    'mockup',
+    'api-spec',
+    'code',
+    'test',
+    'deployment',
+    'metric',
+];
+
+function isArtifactTemplateType(value: unknown): value is ArtifactTemplate['type'] {
+    return typeof value === 'string' && ARTIFACT_TEMPLATE_TYPES.includes(value as ArtifactTemplate['type']);
 }
 
 // ============================================================================
@@ -296,20 +316,20 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             // Allow ALL changes through — including position changes during drag.
             // Previously we filtered dragging:true position changes, which broke
             // real-time guide updates and incremental spatial index diffs.
-            setNodesAtom(nds => applyNodeChanges(changes, nds));
+            setNodesAtom(nds => applyNodeChanges(changes, nds) as typeof nds);
         },
         [setNodesAtom],
     );
 
     const onEdgesChange = useCallback(
-        (changes: EdgeChange[]) => setEdgesAtom(eds => applyEdgeChanges(changes, eds)),
+        (changes: EdgeChange[]) => setEdgesAtom(eds => applyEdgeChanges(changes, eds) as typeof eds),
         [setEdgesAtom],
     );
 
     const onConnect = useCallback(
         (connection: Connection) => {
             if (interactionMode !== 'navigate') return;
-            const newEdge: Edge<DependencyEdgeData> = {
+            const newEdge: Edge<DependencyEdgeDataR> = {
                 id: `edge-${connection.source}-${connection.target}`,
                 source: connection.source!,
                 target: connection.target!,
@@ -381,9 +401,9 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const { nodeTypes, edgeTypes } = useCanvasRegistry();
 
-    const generatedEdges: Edge<DependencyEdgeData>[] = useMemo(() => {
+    const generatedEdges: Edge<DependencyEdgeDataR>[] = useMemo(() => {
         if (!artifacts) return [];
-        const list: Edge<DependencyEdgeData>[] = [];
+        const list: Edge<DependencyEdgeDataR>[] = [];
         artifacts.forEach(a => {
             a.linkedArtifacts?.forEach(linkedId => {
                 list.push({
@@ -464,15 +484,17 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 // Map server artifact to InspectorArtifact shape
                 setSelectedArtifact({
                     id: artifact.id,
-                    type: artifact.type,
+                    type: isArtifactTemplateType(artifact.type) ? artifact.type : 'brief',
                     title: artifact.title,
                     description: artifact.description,
-                    status: artifact.status,
+                    status: artifact.status === 'approved' ? 'complete' : artifact.status === 'review' ? 'review' : 'pending',
                     phase: artifact.phase,
                     persona: artifact.createdBy,
                     linkedArtifacts: artifact.linkedArtifacts ?? [],
                     blockers: [],
                     comments: [],
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
                 });
                 setIsInspectorOpen(true);
             }
@@ -494,7 +516,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const handleStartTask = useCallback(() => {
         if (!nextTask) return;
-        const taskNodeId = nextTask.id || nextTask.artifactId;
+        const taskNodeId = nextTask.id;
         if (taskNodeId && reactFlowInstance) {
             const taskNode = generatedNodes.find(n => n.id === taskNodeId);
             if (taskNode) {
@@ -517,13 +539,18 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                     persona: activePersona || personaData?.persona,
                     recentActivity: [query],
                 });
-                return recs.map((r: Record<string, unknown>) => ({
-                    id: (r.id as string) || `ai-${Date.now()}`,
-                    type: (r.type as string) || 'suggestion',
-                    title: (r.title as string) || (r.action as string),
-                    description: (r.description as string) || (r.reasoning as string),
-                    confidence: (r.confidence as number) || 0.8,
-                    action: r.action as string,
+                return recs.map((recommendation: AIRecommendation) => ({
+                    id: recommendation.id || `ai-${Date.now()}`,
+                    type: recommendation.type === 'task'
+                        ? 'next-action'
+                        : recommendation.type === 'insight'
+                            ? 'insight'
+                            : recommendation.type === 'enhancement'
+                                ? 'optimization'
+                                : 'unblock',
+                    title: recommendation.title,
+                    description: recommendation.description,
+                    priority: recommendation.priority,
                 }));
             } catch {
                 return [];
@@ -551,10 +578,36 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         return (
             <Box className="w-full h-full flex items-center justify-center flex-col">
                 <CircularProgress />
-                <Typography as="p" className="mt-4">Loading workspace…</Typography>
+                <Typography className="mt-4">Loading workspace…</Typography>
             </Box>
         );
     }
+
+    const normalizeTemplate = (template: object): ArtifactTemplate => {
+        const candidate = template as Partial<ArtifactTemplate> & {
+            type?: unknown;
+            label?: unknown;
+            description?: unknown;
+            icon?: unknown;
+            defaultTitle?: unknown;
+            phase?: unknown;
+        };
+
+        return {
+            type: isArtifactTemplateType(candidate.type) ? candidate.type : 'brief',
+            icon: typeof candidate.icon === 'string' ? candidate.icon : '📄',
+            label: typeof candidate.label === 'string' ? candidate.label : 'Artifact',
+            description: typeof candidate.description === 'string' ? candidate.description : '',
+            phase: Object.values(LifecyclePhase).includes(candidate.phase as LifecyclePhase)
+                ? (candidate.phase as LifecyclePhase)
+                : currentPhase,
+            defaultTitle: typeof candidate.defaultTitle === 'string'
+                ? candidate.defaultTitle
+                : typeof candidate.label === 'string'
+                    ? candidate.label
+                    : 'New Artifact',
+        };
+    };
 
     return (
         <ReactFlowProvider>
@@ -582,7 +635,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 <CanvasErrorBoundary label="Left Panel">
                     <UnifiedLeftPanel
                         projectId={projectId}
-                        onDragStart={dragDrop.setDraggedTemplate}
+                        onDragStart={(template) => dragDrop.setDraggedTemplate(template)}
                         onAddComponent={(template) => {
                             let position = { x: 400, y: 300 };
                             if (reactFlowInstance) {
@@ -595,7 +648,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                                     y: center.y + (Math.random() * 100 - 50),
                                 };
                             }
-                            handlers.handleCreateArtifact(template, position);
+                            handlers.handleCreateArtifact(normalizeTemplate(template), position);
                         }}
                         nodes={nodes}
                         edges={edges}

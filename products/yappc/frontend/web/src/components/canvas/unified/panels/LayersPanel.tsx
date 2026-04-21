@@ -25,6 +25,27 @@ import { TextField, Collapse } from '@ghatana/design-system';
 import { Search } from 'lucide-react';
 import type { RailPanelProps, LayerNode } from '../UnifiedLeftRail.types';
 
+type CanvasNodeRecord = {
+  id: string;
+  type: string;
+  hidden?: boolean;
+  data?: {
+    label?: string;
+    title?: string;
+    text?: string;
+    locked?: boolean;
+  };
+};
+
+function isCanvasNodeRecord(value: unknown): value is CanvasNodeRecord {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return typeof record.id === 'string' && typeof record.type === 'string';
+}
+
 /**
  * Layers Panel Component
  */
@@ -40,9 +61,14 @@ export function LayersPanel({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [localSearch, setLocalSearch] = useState('');
 
+  const canvasNodes = useMemo(
+    () => nodes.filter(isCanvasNodeRecord),
+    [nodes]
+  );
+
   // Build hierarchical layer structure
   const layerTree = useMemo<LayerNode[]>(() => {
-    return nodes.map((node) => ({
+    return canvasNodes.map((node) => ({
       id: node.id,
       name:
         node.data?.label ||
@@ -54,7 +80,7 @@ export function LayersPanel({
       locked: node.data?.locked || false,
       nodeData: node,
     }));
-  }, [nodes]);
+  }, [canvasNodes]);
 
   // Filter by search
   const filteredLayers = useMemo(() => {
@@ -140,20 +166,15 @@ export function LayersPanel({
     <Box className="flex flex-col h-full">
       {/* Search & Stats */}
       <Box className="p-4 pb-2">
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search layers..."
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-            <InputAdornment position="start">
-              <Search size={16} />
-            </InputAdornment>
-          ),
-        }}
-      />
+        <Box className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
+          <Search size={16} className="text-gray-500" />
+          <input
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="Search layers..."
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+          />
+        </Box>
         <Box
           className="mt-2 flex justify-between items-center"
         >
@@ -197,7 +218,7 @@ export function LayersPanel({
 
             {/* Layer Items */}
             <Collapse in={expandedGroups.has(type)}>
-              <List dense disablePadding className="pl-4">
+              <List className="pl-4">
                 {layers.map((layer) => {
                   const isSelected = selectedNodeIds.includes(layer.id);
                   const isHovered = hoveredNode === layer.id;
@@ -205,7 +226,6 @@ export function LayersPanel({
                   return (
                     <ListItem
                       key={layer.id}
-                      dense
                       onMouseEnter={() => setHoveredNode(layer.id)}
                       onMouseLeave={() => setHoveredNode(null)}
                       className={`rounded mb-1 border border-solid ${isSelected ? 'bg-gray-100 dark:bg-gray-800 border-blue-600' : 'bg-transparent border-transparent'}`}
@@ -217,12 +237,14 @@ export function LayersPanel({
                       </ListItemIcon>
 
                       <ListItemText
-                        primary={layer.name}
-                        primaryTypographyProps={{
-                          noWrap: true,
-                          variant: 'body2',
-                          sx: { opacity: layer.visible ? 1 : 0.5 },
-                        }}
+                        primary={
+                          <Typography
+                            variant="body2"
+                            className={layer.visible ? 'truncate' : 'truncate opacity-50'}
+                          >
+                            {layer.name}
+                          </Typography>
+                        }
                         onClick={() => handleSelectLayer(layer.id)}
                         className="cursor-pointer flex-1"
                       />

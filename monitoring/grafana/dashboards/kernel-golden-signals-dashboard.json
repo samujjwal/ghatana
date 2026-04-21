@@ -1,0 +1,81 @@
+{
+  "dashboard": {
+    "title": "Platform Kernel Golden Signals",
+    "panels": [
+      {
+        "title": "Kernel Request Rate (Traffic)",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{service=\"platform-kernel\"}[5m])",
+            "legendFormat": "{{method}} {{status}}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "title": "Kernel Latency (p95, p99)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{service=\"platform-kernel\"}[5m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{service=\"platform-kernel\"}[5m]))",
+            "legendFormat": "p99"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "title": "Kernel Error Rate",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{service=\"platform-kernel\",status=~\"5..\"}[5m]) / rate(http_server_requests_seconds_count{service=\"platform-kernel\"}[5m])",
+            "legendFormat": "Error Rate"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "title": "Kernel CPU Usage",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{service=\"platform-kernel\"}[5m])",
+            "legendFormat": "CPU Usage"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "title": "Kernel Memory Usage",
+        "targets": [
+          {
+            "expr": "jvm_memory_used_bytes{service=\"platform-kernel\",area=\"heap\"} / jvm_memory_max_bytes{service=\"platform-kernel\",area=\"heap\"}",
+            "legendFormat": "Heap Usage %"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "title": "Kernel Plugin Load Time",
+        "targets": [
+          {
+            "expr": "kernel_plugin_load_duration_seconds{service=\"platform-kernel\"}",
+            "legendFormat": "{{plugin_id}}"
+          }
+        ],
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 36,
+    "version": 1,
+    "uid": "kernel-golden-signals"
+  }
+}

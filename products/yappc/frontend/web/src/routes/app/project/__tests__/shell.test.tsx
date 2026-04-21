@@ -107,11 +107,20 @@ describe('Project shell — navigation tabs', () => {
 
   it('renders the tab bar with all expected tabs', () => {
     render(<Layout />);
-    const tabs = ['Canvas', 'Workspace', 'Lifecycle', 'Deploy', 'Settings'];
+    const tabs = ['Overview', 'Canvas', 'Workspace', 'Lifecycle', 'Deploy', 'Settings'];
     for (const label of tabs) {
       expect(screen.getByText(label)).toBeDefined();
     }
     expect(screen.queryByText('Preview')).toBeNull();
+  });
+
+  it('renders an Overview tab linking to the project root route', () => {
+    render(<Layout />);
+    const overviewTab = screen
+      .getAllByRole('tab')
+      .find((el) => el.textContent?.includes('Overview'));
+    expect(overviewTab).toBeDefined();
+    expect(overviewTab?.getAttribute('href')).toContain('/p/proj-42/');
   });
 
   it('renders a Lifecycle tab linking to the lifecycle route', () => {

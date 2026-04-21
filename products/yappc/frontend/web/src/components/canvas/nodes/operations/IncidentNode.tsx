@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { 
   AlertTriangle, 
   AlertOctagon, 
@@ -51,7 +51,7 @@ export interface IncidentResponder {
   avatarUrl?: string;
 }
 
-export interface IncidentNodeData {
+export interface IncidentNodeData extends Record<string, unknown> {
   id: string;
   number: number;
   title: string;
@@ -75,7 +75,9 @@ export interface IncidentNodeData {
   hasPostMortem: boolean;
 }
 
-export type IncidentNodeProps = NodeProps<IncidentNodeData>;
+type IncidentCanvasNode = Node<IncidentNodeData>;
+
+export type IncidentNodeProps = NodeProps<IncidentCanvasNode>;
 
 // ============================================================================
 // CONSTANTS

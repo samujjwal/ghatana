@@ -30,7 +30,7 @@ export interface IComplianceControlRepository {
  * Production: Replace with TypeORM repository
  */
 export class InMemoryComplianceControlRepository implements IComplianceControlRepository {
-  private controls: Map<string, unknown> = new Map();
+  private controls: Map<string, Partial<ComplianceControl>> = new Map();
 
   async save(control: ComplianceControl): Promise<void> {
     control.validate();
@@ -44,24 +44,24 @@ export class InMemoryComplianceControlRepository implements IComplianceControlRe
 
   async findByFramework(framework: ComplianceFramework): Promise<ComplianceControl[]> {
     return Array.from(this.controls.values())
-      .filter((c: unknown) => c.framework === framework)
-      .map((c: unknown) => ComplianceControl.fromJSON(c));
+      .filter((control) => control.framework === framework)
+      .map((control) => ComplianceControl.fromJSON(control));
   }
 
   async findByStatus(status: ControlStatus): Promise<ComplianceControl[]> {
     return Array.from(this.controls.values())
-      .filter((c: unknown) => c.status === status)
-      .map((c: unknown) => ComplianceControl.fromJSON(c));
+      .filter((control) => control.status === status)
+      .map((control) => ComplianceControl.fromJSON(control));
   }
 
   async findOverdueAssessments(): Promise<ComplianceControl[]> {
     return Array.from(this.controls.values())
-      .map((c: unknown) => ComplianceControl.fromJSON(c))
-      .filter((c) => c.isAssessmentOverdue());
+      .map((control) => ComplianceControl.fromJSON(control))
+      .filter((control) => control.isAssessmentOverdue());
   }
 
   async findAll(): Promise<ComplianceControl[]> {
-    return Array.from(this.controls.values()).map((c: unknown) => ComplianceControl.fromJSON(c));
+    return Array.from(this.controls.values()).map((control) => ComplianceControl.fromJSON(control));
   }
 
   async update(control: ComplianceControl): Promise<void> {

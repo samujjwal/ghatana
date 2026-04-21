@@ -52,7 +52,7 @@ describe('lifecycle phase preview routes', () => {
     expect(response.json()).toMatchObject({
       projectId: 'project-1',
       currentPhase: 'INTENT',
-      nextPhase: 'SHAPE',
+      nextPhase: 'CONTEXT',
       canAdvance: true,
       readiness: 100,
       estimatedReadyIn: 'Ready now',
@@ -86,7 +86,7 @@ describe('lifecycle phase preview routes', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       currentPhase: 'INTENT',
-      nextPhase: 'SHAPE',
+      nextPhase: 'CONTEXT',
       canAdvance: false,
       readiness: 33,
       estimatedReadyIn: '~2 days',
@@ -95,7 +95,7 @@ describe('lifecycle phase preview routes', () => {
       blockers: [
         'Missing approved artifact: Problem Statement',
         'Missing approved artifact: Success Criteria',
-        'At least 2 approved artifacts are required before advancing from INTENT to SHAPE.',
+        'At least 2 approved artifacts are required before advancing from INTENT to CONTEXT.',
       ],
     });
   });
@@ -112,12 +112,13 @@ describe('lifecycle phase preview routes', () => {
       received: 'not-a-phase',
       validPhases: [
         'INTENT',
-        'SHAPE',
-        'VALIDATE',
-        'GENERATE',
-        'RUN',
+        'CONTEXT',
+        'PLAN',
+        'EXECUTE',
+        'VERIFY',
         'OBSERVE',
-        'IMPROVE',
+        'LEARN',
+        'INSTITUTIONALIZE',
       ],
     });
   });
@@ -132,18 +133,23 @@ describe('lifecycle phase preview routes', () => {
 
     const response = await app.inject({
       method: 'GET',
-      url: '/api/phases/IMPROVE/next?projectId=project-4',
+      url: '/api/phases/INSTITUTIONALIZE/next?projectId=project-4',
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
-      currentPhase: 'IMPROVE',
+      currentPhase: 'INSTITUTIONALIZE',
       nextPhase: null,
       canAdvance: false,
       estimatedReadyIn: null,
       estimatedReadyInHours: null,
       predictionConfidence: null,
-      blockers: ['Project is already at the final lifecycle phase.'],
+      blockers: [
+        'Project is already at the final lifecycle phase.',
+        'Missing approved artifact: Standards Update',
+        'Missing approved artifact: Reusable Playbook',
+        'Missing approved artifact: Adoption Plan',
+      ],
     });
   });
 });

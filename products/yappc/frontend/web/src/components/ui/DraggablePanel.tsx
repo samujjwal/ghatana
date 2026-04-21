@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Box, Surface as Paper, Typography, IconButton, useTheme } from '@ghatana/design-system';
+import { Box, Surface as Paper, Typography, IconButton } from '@ghatana/design-system';
 import { GripVertical as DragIndicator, X as Close, Minimize2 as Minimize, Maximize as OpenInFull } from 'lucide-react';
-import type { MouseEvent, ReactNode } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
+
+type PanelElevation = 0 | 1 | 2 | 3 | 4 | 6 | 8 | 12 | 16 | 24;
 
 export interface DraggablePanelProps {
     title?: string;
@@ -10,7 +12,7 @@ export interface DraggablePanelProps {
     width?: number | string;
     onClose?: () => void;
     id: string; // Unique ID for persisting position
-    elevation?: number;
+    elevation?: PanelElevation;
     className?: string;
 }
 
@@ -38,7 +40,6 @@ export function DraggablePanel({
     const [isMinimised, setIsMinimised] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const panelRef = useRef<HTMLDivElement>(null);
-    const theme = useTheme();
 
     // Handle window resize to keep panel on screen
     useEffect(() => {
@@ -95,7 +96,7 @@ export function DraggablePanel({
         };
     }, [isDragging, dragOffset, id, position]);
 
-    const handleDragStart = (e: MouseEvent) => {
+    const handleDragStart = (e: ReactMouseEvent) => {
         if (e.target instanceof HTMLButtonElement || e.target instanceof SVGElement) return; // Don't drag if clicking buttons
 
         setIsDragging(true);
@@ -111,16 +112,22 @@ export function DraggablePanel({
             ref={panelRef}
             elevation={elevation}
             className="fixed"
+            style={{ left: position.x, top: position.y, width }}
         >
             {/* Drag Handle Header */}
             <Box
                 onMouseDown={handleDragStart}
-                className="p-2 flex items-center justify-between border-gray-200 dark:border-gray-700 select-none" style={{ cursor: isDragging ? 'grabbing' : 'grab', backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', borderBottom: isMinimised ? 'none' : '1px solid' }}
+                className="flex items-center justify-between border-gray-200 p-2 select-none dark:border-gray-700"
+                style={{
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    backgroundColor: 'rgba(0,0,0,0.02)',
+                    borderBottom: isMinimised ? 'none' : '1px solid',
+                }}
             >
                 <Box className="flex items-center gap-2">
                     <DragIndicator className="text-gray-500 dark:text-gray-400 text-base" />
                     {title && (
-                        <Typography as="p" className="text-sm font-medium" fontWeight="bold" noWrap className="max-w-[150px]">
+                        <Typography className="max-w-[150px] truncate text-sm font-semibold">
                             {title}
                         </Typography>
                     )}

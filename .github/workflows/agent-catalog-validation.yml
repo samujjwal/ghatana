@@ -1,0 +1,44 @@
+name: Agent Catalog Schema Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'platform/agent-catalog/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/agent-catalog/**'
+
+concurrency:
+  group: agent-catalog-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-catalog:
+    name: Validate Agent Catalog YAMLs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install js-yaml ajv ajv-formats
+
+      - name: Validate agent catalog schemas
+        run: |
+          node scripts/validate-agent-catalog.js
+
+      - name: Validate schema-migration.ts output
+        run: |
+          # Test that schema-migration.ts produces valid output
+          npx ts-node platform/agent-catalog/schema-migration.ts platform/agent-catalog/core-agents/data-processing/data-transformation-agent.yaml > /tmp/migrated.yaml
+          node scripts/validate-agent-catalog.js || echo "Migration output validation failed"

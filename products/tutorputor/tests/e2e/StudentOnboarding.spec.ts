@@ -1,178 +1,349 @@
-/**
- * Student Onboarding E2E Tests
- *
- * Covers the complete student onboarding journey:
- *   1. Registration flow
- *   2. Email verification (if applicable)
- *   3. Initial profile setup
- *   4. Welcome/onboarding screens
- *   5. First module discovery
- *   6. Dashboard first-visit experience
- *
- * @doc.type test
- * @doc.purpose End-to-end student onboarding validation
- * @doc.layer product
- * @doc.pattern E2E Test
- */
+import { expect, test, type Page } from "@playwright/test";
 
-import { test, expect, type Page } from '@playwright/test';
+const learnerBaseUrl = process.env.BASE_URL ?? "http://127.0.0.1:3201";
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
+function createLearnerJwt(overrides: Record<string, unknown> = {}): string {
+  const header = Buffer.from(
+    JSON.stringify({ alg: "HS256", typ: "JWT" }),
+  ).toString("base64url");
+  const payload = Buffer.from(
+    JSON.stringify({
+      sub: "learner-onboarding-001",
+      email: "onboarding.learner@example.com",
+      name: "Avery Learner",
+      role: "student",
+      tenantId: "tenant-school",
+      ...overrides,
+    }),
+  ).toString("base64url");
 
-const TEST_USER = {
-  email: `onboard-${Date.now()}@example.com`,
-  password: 'SecurePassword123!',
-  firstName: 'Test',
-  lastName: 'Student',
-};
+  return `${header}.${payload}.signature`;
+}
 
-test.describe('Student Onboarding E2E Tests', () => {
-  test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+async function expectNoPageErrors(
+  page: Page,
+  action: () => Promise<void>,
+): Promise<void> {
+  const errors: string[] = [];
+  page.on("pageerror", (error: Error) => {
+    errors.push(error.message);
   });
 
-  test('should complete registration flow', async ({ page }) => {
-    await page.goto(`${BASE_URL}/register`);
-    
-    // Fill registration form
-    await page.fill('input[name="email"], input[type="email"]', TEST_USER.email);
-    await page.fill('input[name="password"], input[type="password"]', TEST_USER.password);
-    await page.fill('input[name="firstName"]', TEST_USER.firstName);
-    await page.fill('input[name="lastName"]', TEST_USER.lastName);
-    
-    // Submit registration
-    await page.click('button[type="submit"], [data-testid="register-button"]');
-    
-    // Should redirect to dashboard or show verification screen
-    await page.waitForLoadState('networkidle');
-    
-    const url = page.url();
-    const isDashboard = url.includes('/dashboard') || url.includes('/home');
-    const isVerification = url.includes('verify') || url.includes('confirm');
-    
-    expect(isDashboard || isVerification).toBeTruthy();
+  await action();
+  expect(errors).toEqual([]);
+}
+
+test.describe("TutorPutor student onboarding", () => {
+  test("bootstraps the canonical first-sign-in flow and first-visit learner dashboard", async ({
+    page,
+  }) => {
+    const accessToken = createLearnerJwt();
+    const refreshToken = "refresh-token-onboarding-1";
+
+    await page.route("**/api/v1/auth/sso/providers?*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          providers: [
+            {
+              id: "google-workspace",
+              displayName: "Google Workspace",
+              type: "oidc",
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.route(
+      "**/api/v1/auth/sso/login/google-workspace?*",
+      async (route) => {
+        await route.fulfill({
+          status: 302,
+          headers: {
+            location: `${learnerBaseUrl}/dashboard?accessToken=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}`,
+          },
+          body: "",
+        });
+      },
+    );
+
+    await page.route("**/api/v1/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "learner-onboarding-001",
+          email: "onboarding.learner@example.com",
+          displayName: "Avery Learner",
+          role: "student",
+          tenantId: "tenant-school",
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/learning/dashboard", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "learner-onboarding-001",
+            email: "onboarding.learner@example.com",
+            displayName: "Avery Learner",
+          },
+          currentEnrollments: [],
+          recommendedModules: [
+            {
+              id: "module-onboarding-1",
+              title: "Forces and Motion",
+              slug: "forces-and-motion",
+              description: "Explore balanced and unbalanced forces.",
+              tags: ["physics"],
+              domain: "PHYSICS",
+              difficulty: "beginner",
+              estimatedMinutes: 20,
+            },
+          ],
+          stats: {
+            totalEnrollments: 0,
+            completedModules: 0,
+            averageProgress: 0,
+          },
+        }),
+      });
+    });
+
+    await page.route(
+      "**/api/v1/recommendations/personalized?limit=6",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              modules: [
+                {
+                  id: "module-onboarding-1",
+                  title: "Forces and Motion",
+                  slug: "forces-and-motion",
+                  description: "Explore balanced and unbalanced forces.",
+                  tags: ["physics"],
+                  domain: "PHYSICS",
+                  difficultyLevel: "beginner",
+                  estimatedTimeMinutes: 20,
+                  isAiRecommended: true,
+                  recommendationReason:
+                    "A strong first module for new learners starting physics.",
+                  matchScore: 0.88,
+                },
+              ],
+            },
+          }),
+        });
+      },
+    );
+
+    await page.route("**/api/v1/analytics/summary", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          totalLearningTimeMinutes: 45,
+          totalCompletedAssessments: 1,
+          averageAssessmentScore: 92,
+          activeLearningStreakDays: 3,
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/analytics/usage-trends?*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          { date: "2026-04-18", minutes: 10 },
+          { date: "2026-04-19", minutes: 15 },
+          { date: "2026-04-20", minutes: 20 },
+        ]),
+      });
+    });
+
+    await page.route("**/api/v1/analytics/at-risk", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await expectNoPageErrors(page, async () => {
+      await page.goto(`${learnerBaseUrl}/login?redirect=/dashboard&tenant=school`);
+      await page.waitForLoadState("domcontentloaded");
+    });
+
+    await expect(
+      page.getByRole("heading", { name: /sign in to tutorputor/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /sign in with google workspace/i }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("button", { name: /sign in with google workspace/i })
+      .click();
+    await page.waitForURL(/\/dashboard$/);
+
+    await expect(
+      page.getByRole("heading", { name: /hello, avery/i }),
+    ).toBeVisible();
+    await expect(page.getByText(/start something new/i)).toBeVisible();
+    await expect(page.getByText("Forces and Motion")).toBeVisible();
+    await expect(
+      page.getByText(/a strong first module for new learners/i),
+    ).toBeVisible();
+
+    await expect.poll(async () => {
+      return page.evaluate(() => window.location.search);
+    }).toBe("");
+    await expect.poll(async () => {
+      return page.evaluate(() => window.localStorage.getItem("auth_token"));
+    }).toBe(accessToken);
+    await expect.poll(async () => {
+      return page.evaluate(() => window.localStorage.getItem("refresh_token"));
+    }).toBe(refreshToken);
+    await expect.poll(async () => {
+      return page.evaluate(() => window.localStorage.getItem("tenant_id"));
+    }).toBe("tenant-school");
+
+    await page.getByRole("link", { name: "Analytics" }).click();
+    await page.waitForURL(/\/analytics$/);
+    await expect(
+      page.getByRole("heading", { name: "Learning Analytics" }),
+    ).toBeVisible();
   });
 
-  test('should setup initial profile', async ({ page }) => {
-    // Navigate to profile setup (assuming user is logged in or this is part of registration)
-    await page.goto(`${BASE_URL}/profile/setup`);
-    
-    // Fill profile information
-    const gradeLevel = page.locator('select[name="gradeLevel"], [data-testid="grade-level"]');
-    if (await gradeLevel.count() > 0) {
-      await gradeLevel.selectOption('9');
-    }
-    
-    const interests = page.locator('input[name="interests"], [data-testid="interests"]');
-    if (await interests.count() > 0) {
-      await interests.fill('math, science');
-    }
-    
-    // Save profile
-    const saveButton = page.locator('button:has-text("Save"), [data-testid="save-profile"]');
-    if (await saveButton.count() > 0) {
-      await saveButton.click();
-      await page.waitForLoadState('networkidle');
-    }
-    
-    // Should show success or redirect to dashboard
-    const successMessage = page.locator('[data-testid="success"], .success-message');
-    const dashboardRedirect = page.url().includes('/dashboard');
-    
-    expect(await successMessage.count() > 0 || dashboardRedirect).toBeTruthy();
-  });
+  test("guides a newly authenticated learner from dashboard discovery to module exploration", async ({
+    page,
+  }) => {
+    const accessToken = createLearnerJwt();
 
-  test('should display welcome/onboarding screens', async ({ page }) => {
-    await page.goto(BASE_URL);
-    
-    // Check for welcome modal or onboarding overlay
-    const welcomeModal = page.locator('[data-testid="welcome-modal"], .welcome-modal, .onboarding-overlay');
-    
-    if (await welcomeModal.count() > 0) {
-      // Should have welcome content
-      await expect(welcomeModal).toBeVisible();
-      
-      // Should have dismiss or continue button
-      const continueButton = page.locator('button:has-text("Continue"), button:has-text("Get Started"), [data-testid="onboarding-continue"]');
-      if (await continueButton.count() > 0) {
-        await continueButton.click();
-      }
-    }
-  });
+    await page.addInitScript((token: string) => {
+      window.localStorage.setItem("auth_token", token);
+      window.localStorage.setItem("tenant_id", "tenant-school");
+    }, accessToken);
 
-  test('should enable first module discovery', async ({ page }) => {
-    await page.goto(`${BASE_URL}/modules`);
-    
-    // Should show module catalogue
-    await page.waitForLoadState('networkidle');
-    
-    const moduleGrid = page.locator('[data-testid="module-grid"], .module-grid, .catalogue');
-    await expect(moduleGrid).toBeVisible();
-    
-    // Should have at least one module card
-    const moduleCard = page.locator('[data-testid="module-card"], .module-card');
-    const cardCount = await moduleCard.count();
-    
-    if (cardCount > 0) {
-      // Click first module to view details
-      await moduleCard.first().click();
-      await page.waitForLoadState('networkidle');
-      
-      // Should show module details
-      const moduleDetail = page.locator('[data-testid="module-detail"], .module-detail');
-      expect(await moduleDetail.count() > 0).toBeTruthy();
-    }
-  });
+    await page.route("**/api/v1/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "learner-onboarding-001",
+          email: "onboarding.learner@example.com",
+          displayName: "Avery Learner",
+          role: "student",
+          tenantId: "tenant-school",
+        }),
+      });
+    });
 
-  test('should complete first module enrollment', async ({ page }) => {
-    await page.goto(`${BASE_URL}/modules`);
-    await page.waitForLoadState('networkidle');
-    
-    const moduleCard = page.locator('[data-testid="module-card"], .module-card');
-    const cardCount = await moduleCard.count();
-    
-    if (cardCount > 0) {
-      await moduleCard.first().click();
-      await page.waitForLoadState('networkidle');
-      
-      // Look for enroll button
-      const enrollButton = page.locator('button:has-text("Enroll"), button:has-text("Start"), [data-testid="enroll-button"]');
-      
-      if (await enrollButton.count() > 0) {
-        await enrollButton.click();
-        await page.waitForLoadState('networkidle');
-        
-        // Should show enrollment confirmation or redirect to module content
-        const confirmation = page.locator('[data-testid="enrollment-confirmation"], .success-message');
-        const moduleContent = page.url().includes('/content') || page.url().includes('/learn');
-        
-        expect(await confirmation.count() > 0 || moduleContent).toBeTruthy();
-      }
-    }
-  });
+    await page.route("**/api/v1/learning/dashboard", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "learner-onboarding-001",
+            email: "onboarding.learner@example.com",
+            displayName: "Avery Learner",
+          },
+          currentEnrollments: [],
+          recommendedModules: [],
+          stats: {
+            totalEnrollments: 0,
+            completedModules: 0,
+            averageProgress: 0,
+          },
+        }),
+      });
+    });
 
-  test('should show dashboard first-visit experience', async ({ page }) => {
-    // Navigate to dashboard (assuming user is logged in)
-    await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
-    
-    // Should show dashboard
-    const dashboard = page.locator('[data-testid="dashboard"], .dashboard');
-    await expect(dashboard).toBeVisible();
-    
-    // Check for first-visit elements (tutorials, tooltips, welcome banners)
-    const tutorial = page.locator('[data-testid="tutorial"], .tutorial, [data-testid="first-visit"]');
-    const welcomeBanner = page.locator('[data-testid="welcome-banner"], .welcome-banner');
-    
-    const hasFirstVisitElements = await tutorial.count() > 0 || await welcomeBanner.count() > 0;
-    
-    // First visit elements are optional but good to have
-    if (hasFirstVisitElements) {
-      // Should be able to dismiss first-visit elements
-      const dismissButton = page.locator('button:has-text("Skip"), button:has-text("Dismiss"), [data-testid="dismiss"]');
-      if (await dismissButton.count() > 0) {
-        await dismissButton.click();
-      }
-    }
+    await page.route(
+      "**/api/v1/recommendations/personalized?limit=6",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ data: { modules: [] } }),
+        });
+      },
+    );
+
+    await page.route("**/api/v1/search**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          modules: [
+            {
+              id: "module-kinematics-1",
+              title: "Kinematics Basics",
+              slug: "kinematics-basics",
+              description: "Understand speed, velocity, and acceleration.",
+              domain: "PHYSICS",
+              estimatedMinutes: 30,
+              tags: ["physics", "motion"],
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/modules/kinematics-basics", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          module: {
+            id: "module-kinematics-1",
+            title: "Kinematics Basics",
+            slug: "kinematics-basics",
+            description: "Understand speed, velocity, and acceleration.",
+            difficulty: "beginner",
+            estimatedTimeMinutes: 30,
+            learningObjectives: [
+              "Describe speed and velocity",
+              "Interpret acceleration in motion graphs",
+            ],
+            contentBlocks: [],
+          },
+          userEnrollment: null,
+        }),
+      });
+    });
+
+    await expectNoPageErrors(page, async () => {
+      await page.goto(`${learnerBaseUrl}/dashboard`);
+      await page.waitForLoadState("domcontentloaded");
+    });
+
+    await expect(
+      page.getByRole("heading", { name: /hello, avery/i }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /browse modules/i })).toBeVisible();
+
+    await page.getByRole("link", { name: /browse modules/i }).click();
+    await page.waitForURL(/\/search$/);
+    await expect(page.locator("main")).toBeVisible();
+
+    await page.goto(`${learnerBaseUrl}/modules/kinematics-basics`);
+    await page.waitForLoadState("domcontentloaded");
+    await expect(
+      page.getByRole("heading", { name: /kinematics basics/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/understand speed, velocity, and acceleration/i),
+    ).toBeVisible();
   });
 });

@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useCallback, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   Sparkles,
@@ -38,7 +38,7 @@ export type FeaturePhase = 'mvp' | 'v2' | 'future';
 export type FeaturePriority = 'high' | 'medium' | 'low';
 export type FeatureStatus = 'identified' | 'confirmed' | 'rejected';
 
-export interface FeatureNodeData {
+export interface FeatureNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly description?: string;
   readonly phase: FeaturePhase;
@@ -58,7 +58,9 @@ export interface FeatureNodeData {
   readonly onOpenComments?: (nodeId: string) => void;
 }
 
-export interface FeatureNodeProps extends NodeProps<FeatureNodeData> {}
+type FeatureCanvasNode = Node<FeatureNodeData>;
+
+export interface FeatureNodeProps extends NodeProps<FeatureCanvasNode> {}
 
 // =============================================================================
 // Constants

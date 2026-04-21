@@ -15,8 +15,8 @@ describe('phaseTransitionAPI', () => {
   it('requests the next phase preview for a project', async () => {
     const response: PhaseTransitionPreview = {
       projectId: 'project-1',
-      currentPhase: LifecyclePhase.GENERATE,
-      nextPhase: LifecyclePhase.RUN,
+      currentPhase: LifecyclePhase.EXECUTE,
+      nextPhase: LifecyclePhase.VERIFY,
       canAdvance: true,
       readiness: 100,
       blockers: [],
@@ -31,14 +31,15 @@ describe('phaseTransitionAPI', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => response,
+      text: async () => JSON.stringify(response),
     } as Response);
 
     await expect(
-      phaseTransitionAPI.getNextPhase(LifecyclePhase.GENERATE, 'project-1')
+      phaseTransitionAPI.getNextPhase(LifecyclePhase.EXECUTE, 'project-1')
     ).resolves.toEqual(response);
 
     expect(fetchSpy).toHaveBeenCalledWith(
-      expect.stringContaining('/api/phases/GENERATE/next?projectId=project-1'),
+      expect.stringContaining('/api/phases/EXECUTE/next?projectId=project-1'),
       expect.objectContaining({
         method: 'GET',
       })
@@ -50,6 +51,7 @@ describe('phaseTransitionAPI', () => {
       ok: false,
       status: 400,
       json: async () => ({ error: 'Invalid phase' }),
+      text: async () => JSON.stringify({ error: 'Invalid phase' }),
     } as Response);
 
     await expect(

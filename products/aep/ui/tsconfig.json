@@ -21,13 +21,13 @@
       "@ghatana/design-system": [
         "../../../platform/typescript/design-system/src/index.ts"
       ],
-      "@ghatana/canvas-core": [
+      "@ghatana/canvas": [
         "../../../platform/typescript/canvas/src/index.ts"
       ],
       "@ghatana/theme": ["../../../platform/typescript/theme/src"],
       "@ghatana/tokens": ["../../../platform/typescript/tokens/src"],
       "@ghatana/platform-utils": [
-        "../../../platform/typescript/foundation/platform-utils/src/index.ts"
+        "../../../platform/typescript/platform-utils/src/index.ts"
       ],
       "@ghatana/realtime": [
         "../../../platform/typescript/realtime/src/index.ts"

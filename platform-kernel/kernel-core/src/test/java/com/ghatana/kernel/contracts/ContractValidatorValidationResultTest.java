@@ -1,6 +1,7 @@
 package com.ghatana.kernel.contracts;
 
-import com.ghatana.platform.validation.ValidationError;
+import com.ghatana.platform.core.validation.ValidationResult;
+import com.ghatana.platform.core.validation.ValidationResult.Violation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +22,7 @@ class ContractValidatorValidationResultTest {
         assertThat(result.valid()).isFalse();
         assertThat(result.errors()).containsExactly("missing schema", "invalid version");
         assertThat(result.getErrors())
-            .extracting(ValidationError::getCode, ValidationError::getMessage)
+            .extracting(Violation::field, Violation::message)
             .containsExactly(
                 org.assertj.core.groups.Tuple.tuple("CONTRACT_VALIDATION_FAILED", "missing schema"),
                 org.assertj.core.groups.Tuple.tuple("CONTRACT_VALIDATION_FAILED", "invalid version"));
@@ -31,9 +32,7 @@ class ContractValidatorValidationResultTest {
     @Test
     @DisplayName("typed core results should round-trip through kernel validation results")
     void typedCoreResultsShouldRoundTrip() {
-        com.ghatana.platform.validation.ValidationResult coreResult =
-            com.ghatana.platform.validation.ValidationResult.failure(
-                new ValidationError("SCHEMA_EMPTY", "Schema must not be empty", "subjects", null));
+        ValidationResult coreResult = ValidationResult.invalid("subjects", "Schema must not be empty");
 
         ContractValidator.ValidationResult result =
             ContractValidator.ValidationResult.fromCoreValidationResult(coreResult);
@@ -41,8 +40,8 @@ class ContractValidatorValidationResultTest {
         assertThat(result.valid()).isFalse();
         assertThat(result.errors()).containsExactly("Schema must not be empty");
         assertThat(result.getErrors()).singleElement().satisfies(error -> {
-            assertThat(error.getCode()).isEqualTo("SCHEMA_EMPTY");
-            assertThat(error.getPath()).isEqualTo("subjects");
+            assertThat(error.field()).isEqualTo("subjects");
+            assertThat(error.message()).isEqualTo("Schema must not be empty");
         });
         assertThat(result.toCoreValidationResult()).isSameAs(coreResult);
     }

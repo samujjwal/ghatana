@@ -372,11 +372,15 @@ export const gateAPI = {
    */
   transitionStage: async (
     projectId: string,
+    fromStage: FOWStage,
     targetStage: FOWStage
   ): Promise<{ success: boolean; currentStage: FOWStage }> => {
     return fetchAPI(`/projects/${projectId}/stages/transition`, {
       method: 'POST',
-      body: JSON.stringify({ targetStage }),
+      body: JSON.stringify({
+        fromStage,
+        toStage: targetStage,
+      }),
     });
   },
 };

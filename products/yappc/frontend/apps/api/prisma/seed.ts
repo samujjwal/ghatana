@@ -337,7 +337,7 @@ async function main() {
       createdById: adminUser.id,
       type: ProjectType.FULL_STACK,
       status: ProjectStatus.ACTIVE,
-      lifecyclePhase: 'RUN', // Production deployment
+      lifecyclePhase: 'VERIFY', // Production verification and release readiness
       isDefault: true,
       aiSummary:
         'High-priority e-commerce platform with microservices architecture',
@@ -358,7 +358,7 @@ async function main() {
       createdById: devUser.id,
       type: ProjectType.MOBILE,
       status: ProjectStatus.ACTIVE,
-      lifecyclePhase: 'SHAPE', // Active development in canvas
+      lifecyclePhase: 'CONTEXT', // Active development in canvas and architecture shaping
       isDefault: true,
       aiSummary: 'Cross-platform mobile app using React Native',
       aiHealthScore: 85,
@@ -373,7 +373,7 @@ async function main() {
       createdById: adminUser.id,
       type: ProjectType.UI,
       status: ProjectStatus.DRAFT,
-      lifecyclePhase: 'VALIDATE', // In validation phase
+      lifecyclePhase: 'PLAN', // In validation and planning phase
       isDefault: true,
       aiSummary: 'React-based admin panel with real-time analytics',
       aiHealthScore: 65,
@@ -388,7 +388,7 @@ async function main() {
       createdById: securityUser.id,
       type: ProjectType.BACKEND,
       status: ProjectStatus.ACTIVE,
-      lifecyclePhase: 'IMPROVE', // Continuous improvement
+      lifecyclePhase: 'LEARN', // Continuous learning and improvement
       isDefault: true,
       aiSummary: 'Comprehensive security assessment of all production systems',
       aiHealthScore: 92,

@@ -2,7 +2,10 @@
 
 **Status**: ACTIVE  
 **Version**: 1.0.0  
-**Date**: March 26, 2026
+**Date**: March 26, 2026  
+**Last Updated**: 2026-04-20 (post-audit Phase 3 remediation)
+
+> **Authoritative Entry Point:** For the complete repository-wide engineering standards including package naming, see [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md). This document provides historical context and migration guidance for package naming conventions.
 
 ---
 
@@ -10,21 +13,29 @@
 
 All TypeScript modules use the `@ghatana/` scope with consistent naming:
 
+> **Authoritative Source:** The complete canonical package registry is maintained in [LIBRARY_GOVERNANCE.md](./LIBRARY_GOVERNANCE.md). This table provides a quick reference.
+
 | Module | Canonical Package Name | Status |
 |--------|----------------------|--------|
-| Design System | `@ghatana/design-system` | ✅ Standard |
-| Charts | `@ghatana/charts` | ✅ Standard |
-| Canvas | `@ghatana/canvas` | ✅ Standard |
-| Platform Utils | `@ghatana/platform-utils` | ✅ Standard |
-| Realtime | `@ghatana/realtime` | ✅ Standard |
-| Theme | `@ghatana/theme` | ✅ Standard |
-| Tokens | `@ghatana/tokens` | ✅ Standard |
-| i18n | `@ghatana/i18n` | ✅ Standard |
-| API | `@ghatana/api` | ✅ Standard |
-| SSO Client | `@ghatana/sso-client` | ✅ Standard |
-| Platform Shell | `@ghatana/platform-shell` | ✅ Standard |
-| UI Integration | `@ghatana/ui-integration` | ✅ Standard |
-| Accessibility Audit | `@ghatana/accessibility-audit` | ✅ Standard |
+| Design System | `@ghatana/design-system` | ✅ Active |
+| Platform Utils | `@ghatana/platform-utils` | ✅ Active |
+| Canvas | `@ghatana/canvas` | ✅ Active |
+| Code Editor | `@ghatana/code-editor` | ✅ Active |
+| Config | `@ghatana/config` | ✅ Active |
+| State | `@ghatana/state` | ✅ Active |
+| Forms | `@ghatana/forms` | ✅ Active |
+| Data Grid | `@ghatana/data-grid` | ✅ Active |
+| Wizard | `@ghatana/wizard` | ✅ Active |
+| Charts | `@ghatana/charts` | ✅ Active |
+| Tokens | `@ghatana/tokens` | ✅ Active |
+| Theme | `@ghatana/theme` | ✅ Active |
+| i18n | `@ghatana/i18n` | ✅ Active |
+| Realtime | `@ghatana/realtime` | ✅ Active |
+| Events | `@ghatana/events` | ✅ Active |
+| API | `@ghatana/api` | ✅ Active |
+| SSO Client | `@ghatana/sso-client` | ✅ Active |
+| Domain Components | `@ghatana/domain-components` | ✅ Active |
+| Accessibility | `@ghatana/accessibility` | ✅ Active |
 
 ---
 
@@ -32,12 +43,17 @@ All TypeScript modules use the `@ghatana/` scope with consistent naming:
 
 The following package names are **DEPRECATED** and should not be used:
 
-| Deprecated Name | Use Instead | Removal Date |
-|----------------|-------------|--------------|
-| `@ghatana/ui` | `@ghatana/design-system` | v3.0.0 |
-| `@ghatana/utils` | `@ghatana/platform-utils` | v3.0.0 |
-| `@ghatana/dcmaar-*` | Canonical names above | v3.0.0 |
-| `@ghatana/yappc-*` | Canonical names above | v3.0.0 |
+> **Authoritative Source:** The complete deprecation list is maintained in [LIBRARY_GOVERNANCE.md](./LIBRARY_GOVERNANCE.md). Migrate consumers directly to the canonical package.
+
+| Deprecated Package | Canonical Replacement | Migration |
+|--------------------|-----------------------|-----------|
+| `@ghatana/accessibility-audit` | `@ghatana/accessibility` | Replace import |
+| `@ghatana/audit-components` | `@ghatana/accessibility` | Replace import |
+| `@ghatana/canvas-core` | `@ghatana/canvas` or `@ghatana/canvas/core` | Replace import |
+| `@ghatana/canvas-react` | `@ghatana/canvas` or `@ghatana/canvas/react` | Replace import |
+| `@ghatana/canvas-plugins` | `@ghatana/canvas` or `@ghatana/canvas/plugins` | Replace import |
+| `@ghatana/canvas-tools` | `@ghatana/canvas` or `@ghatana/canvas/tools` | Replace import |
+| `@ghatana/canvas-chrome` | `@ghatana/canvas` or `@ghatana/canvas/chrome` | Replace import |
 
 ---
 
@@ -47,10 +63,13 @@ The following package names are **DEPRECATED** and should not be used:
 
 1. **Search for deprecated imports**:
    ```bash
-   grep -r "@ghatana/ui" src/
-   grep -r "@ghatana/utils" src/
-   grep -r "@ghatana/dcmaar" src/
-   grep -r "@ghatana/yappc" src/
+   grep -r "@ghatana/accessibility-audit" src/
+   grep -r "@ghatana/audit-components" src/
+   grep -r "@ghatana/canvas-core" src/
+   grep -r "@ghatana/canvas-react" src/
+   grep -r "@ghatana/canvas-plugins" src/
+   grep -r "@ghatana/canvas-tools" src/
+   grep -r "@ghatana/canvas-chrome" src/
    ```
 
 2. **Update package.json**:
@@ -58,7 +77,9 @@ The following package names are **DEPRECATED** and should not be used:
    {
      "dependencies": {
        "@ghatana/design-system": "^1.0.0",
-       "@ghatana/platform-utils": "^1.0.0"
+       "@ghatana/platform-utils": "^1.0.0",
+       "@ghatana/canvas": "^1.0.0",
+       "@ghatana/accessibility": "^1.0.0"
      }
    }
    ```
@@ -68,10 +89,14 @@ The following package names are **DEPRECATED** and should not be used:
    // Before
    import { Button } from '@ghatana/ui';
    import { cn } from '@ghatana/utils';
-   
+   import { Canvas } from '@ghatana/canvas-core';
+   import { AuditLog } from '@ghatana/accessibility-audit';
+
    // After
    import { Button } from '@ghatana/design-system';
-  import { cn } from '@ghatana/platform-utils';
+   import { cn } from '@ghatana/platform-utils';
+   import { Canvas } from '@ghatana/canvas';
+   import { AuditLog } from '@ghatana/accessibility';
    ```
 
 ---
@@ -101,34 +126,9 @@ The following package names are **DEPRECATED** and should not be used:
 
 ## Backward Compatibility
 
-### Deprecation Window
+### Fix-Forward Policy
 
-- **Deprecate in version N**: Add deprecation warnings
-- **Remove in version N+2**: Two major versions later
-
-### Example Timeline
-
-- v1.0.0: Introduce `@ghatana/design-system`
-- v1.5.0: Deprecate `@ghatana/ui` with warnings
-- v2.0.0: Continue support with warnings
-- v3.0.0: Remove `@ghatana/ui` completely
-
----
-
-## Package Aliases (Temporary)
-
-For backward compatibility, package aliases are configured in `package.json`:
-
-```json
-{
-  "name": "@ghatana/ui",
-  "version": "1.5.0",
-  "deprecated": "Use @ghatana/design-system instead",
-  "dependencies": {
-    "@ghatana/design-system": "^1.0.0"
-  }
-}
-```
+Following platform governance, deprecated packages are removed without compatibility shims. Consumers must migrate directly to the canonical package. See [LIBRARY_GOVERNANCE.md](./LIBRARY_GOVERNANCE.md) for the complete fix-forward deprecation policy.
 
 ---
 
@@ -150,8 +150,16 @@ jobs:
       - uses: actions/checkout@v3
       - name: Check for deprecated package names
         run: |
-          if grep -r "@ghatana/ui" src/; then
-            echo "ERROR: Found deprecated @ghatana/ui imports"
+          if grep -r "@ghatana/accessibility-audit" src/; then
+            echo "ERROR: Found deprecated @ghatana/accessibility-audit imports"
+            exit 1
+          fi
+          if grep -r "@ghatana/audit-components" src/; then
+            echo "ERROR: Found deprecated @ghatana/audit-components imports"
+            exit 1
+          fi
+          if grep -r "@ghatana/canvas-core" src/; then
+            echo "ERROR: Found deprecated @ghatana/canvas-core imports"
             exit 1
           fi
 ```
@@ -164,10 +172,13 @@ module.exports = {
   rules: {
     'no-restricted-imports': ['error', {
       patterns: [
-        '@ghatana/ui',
-        '@ghatana/utils',
-        '@ghatana/dcmaar-*',
-        '@ghatana/yappc-*'
+        '@ghatana/accessibility-audit',
+        '@ghatana/audit-components',
+        '@ghatana/canvas-core',
+        '@ghatana/canvas-react',
+        '@ghatana/canvas-plugins',
+        '@ghatana/canvas-tools',
+        '@ghatana/canvas-chrome'
       ]
     }]
   }
@@ -195,5 +206,4 @@ For questions about package naming:
 
 ---
 
-**Last Updated**: March 26, 2026  
-**Next Review**: June 2026
+**Last Updated**: 2026-04-20 (aligned with LIBRARY_GOVERNANCE.md)

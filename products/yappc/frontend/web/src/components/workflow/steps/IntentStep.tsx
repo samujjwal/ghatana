@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, Chip, IconButton, Button, InteractiveList as List, ListItem, ListItemText, ListItemText as ListItemSecondaryAction, Divider, Alert, Grid } from '@ghatana/design-system';
+import { Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, Chip, IconButton, Button, InteractiveList as List, ListItem, ListItemText, ListItemSecondaryAction, Divider, Alert, Grid } from '@ghatana/design-system';
 import { Plus as AddIcon, Trash2 as DeleteIcon } from 'lucide-react';
 import { useAtomValue, useSetAtom } from 'jotai';
 
@@ -151,14 +151,14 @@ export function IntentStep() {
     return (
         <Grid container spacing={3}>
             {/* Main Form Column */}
-            <Grid size={{ xs: 12, md: 8 }}>
+            <Grid item xs={12} md={8}>
                 <Box className="max-w-[800px]">
                     {/* Workflow Type */}
                     <Box className="mb-8">
-                        <Typography as="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom>
                             Workflow Type
                         </Typography>
-                        <FormControl fullWidth size="sm">
+                        <FormControl fullWidth size="small">
                             <InputLabel>Select type</InputLabel>
                             <Select
                                 value={currentData.workflowType ?? 'FEATURE'}
@@ -176,8 +176,8 @@ export function IntentStep() {
                                     ...types.map((type) => (
                                         <MenuItem key={type.value} value={type.value} className="pl-8">
                                             <Box>
-                                                <Typography as="p" className="text-sm">{type.label}</Typography>
-                                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                                <Typography component="p" className="text-sm">{type.label}</Typography>
+                                                <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                                     {type.description}
                                                 </Typography>
                                             </Box>
@@ -192,20 +192,17 @@ export function IntentStep() {
 
                     {/* Goal Statement */}
                     <Box className="mb-8">
-                        <Typography as="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom>
                             Goal Statement
                         </Typography>
-                        <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+                        <Typography component="p" color="text.secondary" className="mb-4 text-sm">
                             Clearly describe what you want to achieve. Be specific and actionable.
                         </Typography>
-                        <TextField
-                            fullWidth
-                            multiline
-                            rows={4}
+                        <textarea
+                            className="min-h-[112px] w-full rounded border border-gray-300 p-3 text-sm"
                             placeholder="Example: Implement user authentication with OAuth 2.0 to allow users to sign in with their Google or GitHub accounts..."
                             value={currentData.goalStatement ?? ''}
-                            onChange={(e) => handleChange('goalStatement', e.target.value)}
-                            variant="outlined"
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('goalStatement', e.target.value)}
                         />
                     </Box>
 
@@ -213,10 +210,10 @@ export function IntentStep() {
 
                     {/* Success Criteria */}
                     <Box>
-                        <Typography as="h6" gutterBottom>
+                        <Typography variant="h6" gutterBottom>
                             Success Criteria
                         </Typography>
-                        <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+                        <Typography component="p" color="text.secondary" className="mb-4 text-sm">
                             Define measurable criteria that determine when this work is complete.
                         </Typography>
 
@@ -224,11 +221,15 @@ export function IntentStep() {
                         <Box className="flex gap-2 mb-4">
                             <TextField
                                 fullWidth
-                                size="sm"
+                                size="small"
                                 placeholder="Add a success criterion..."
                                 value={newCriteria}
                                 onChange={(e) => setNewCriteria(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleAddCriteria()}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleAddCriteria();
+                                    }
+                                }}
                             />
                             <Button
                                 variant="outlined"
@@ -252,15 +253,15 @@ export function IntentStep() {
                                         <ListItem className="px-0">
                                             <Chip
                                                 label={index + 1}
-                                                size="sm"
-                                                tone="primary"
+                                                size="small"
+                                                color="primary"
                                                 className="mr-4"
                                             />
                                             <ListItemText primary={criteria} />
                                             <ListItemSecondaryAction>
                                                 <IconButton
                                                     edge="end"
-                                                    size="sm"
+                                                    size="small"
                                                     onClick={() => handleRemoveCriteria(index)}
                                                 >
                                                     <DeleteIcon size={16} />
@@ -277,7 +278,7 @@ export function IntentStep() {
             </Grid>
 
             {/* Context Panel Column */}
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid item xs={12} md={4}>
                 <Box className="sticky top-[16px]">
                     <CategoryContextPanel
                         category={currentCategory}

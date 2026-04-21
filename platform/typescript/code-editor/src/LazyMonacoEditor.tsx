@@ -22,6 +22,7 @@
  */
 
 import React, { Suspense, lazy, useState, useEffect } from 'react';
+import type * as Monaco from 'monaco-editor';
 
 // ============================================================================
 // Types
@@ -33,8 +34,8 @@ export interface LazyMonacoEditorProps {
   theme?: 'vs-light' | 'vs-dark';
   height?: string | number;
   onChange?: (value: string) => void;
-  onMount?: (editor: any) => void;
-  options?: Record<string, any>;
+  onMount?: (editor: Monaco.editor.IStandaloneCodeEditor) => void;
+  options?: Monaco.editor.IStandaloneEditorConstructionOptions;
 }
 
 // ============================================================================
@@ -154,7 +155,7 @@ export const LazyMonacoEditor: React.FC<LazyMonacoEditorProps> = ({
     };
   }, [isLoaded]);
 
-  const handleMount = (editor: any, monaco: any) => {
+  const handleMount = (editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
     setIsLoaded(true);
     
     // Configure Monaco for optimal performance

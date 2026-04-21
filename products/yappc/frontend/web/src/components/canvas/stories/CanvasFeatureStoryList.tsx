@@ -81,6 +81,11 @@ const matchSearch = (story: CanvasFeatureStory, term: string) => {
 const slugifyStatus = (status: string) =>
   status.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
+const getStatusChipTone = (status: string): 'success' | 'warning' | 'danger' | 'default' | 'info' => {
+  const color = getStatusChipColor(status);
+  return color === 'error' ? 'danger' : color;
+};
+
 const aggregateStatusCounts = (stories: CanvasFeatureStory[]) => {
   const counts = new Map<string, { label: string; count: number }>();
   stories.forEach((story) => {
@@ -254,16 +259,11 @@ export function CanvasFeatureStoryList({
   return (
     <Box data-testid={dataTestId}>
       <Stack spacing={3}>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
-          alignItems={{ md: 'center' }}
-        >
+        <Box className="flex flex-col gap-2 md:flex-row md:items-center">
           <Tabs
             value={activeTabValue}
             onChange={(_event, value) => setActiveCategoryId(value)}
-            variant="scrollable"
-            allowScrollButtonsMobile
+            variant="underline"
             aria-label="Canvas feature story categories"
             data-testid="canvas-feature-story-tabs"
           >
@@ -272,55 +272,46 @@ export function CanvasFeatureStoryList({
                 key={tab.id}
                 value={tab.id}
                 label={tab.label}
-                id={`canvas-feature-tab-${tab.id}`}
               />
             ))}
           </Tabs>
-          <TextField
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label="Search canvas feature stories"
-            size="sm"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon size={16} aria-hidden />
-                </InputAdornment>
-              ),
-            }}
-            inputProps={{ 'data-testid': 'canvas-feature-story-search-input' }}
-            className="min-w-full md:min-w-[320px]"
+          <Box
+            className="flex min-w-full items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900 md:min-w-[320px]"
             data-testid="canvas-feature-story-search"
-          />
+          >
+            <SearchIcon size={16} aria-hidden className="text-gray-500" />
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label="Search canvas feature stories"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            />
+          </Box>
           {progressOptions.length ? (
-            <TextField
-              select
-              SelectProps={{ native: true }}
-              label="Progress status"
-              size="sm"
-              value={progressFilter}
-              onChange={(event) => {
-                const next = event.target.value;
-                updateProgressFilter(next);
-              }}
-              className="min-w-full md:min-w-[200px]"
+            <label
+              className="flex min-w-full flex-col gap-1 text-sm text-text-primary md:min-w-[200px]"
               data-testid="canvas-feature-story-progress-filter"
-              inputProps={{
-                'data-testid': 'canvas-feature-story-progress-filter-input',
-              }}
             >
-              <option value={ALL_PROGRESS_VALUE}>All statuses</option>
-              {progressOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </TextField>
+              <span>Progress status</span>
+              <select
+                value={progressFilter}
+                onChange={(event) => updateProgressFilter(event.target.value)}
+                className="min-h-9 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                data-testid="canvas-feature-story-progress-filter-input"
+              >
+                <option value={ALL_PROGRESS_VALUE}>All statuses</option>
+                {progressOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           ) : null}
-        </Stack>
+        </Box>
 
-        <Typography as="p" className="text-sm" color="text.secondary">
+        <Typography className="text-sm" color="text.secondary">
           Showing {filteredStories.length} of{' '}
           {tabs.find((tab) => tab.id === activeTabValue)?.count ??
             filteredStories.length}{' '}
@@ -335,7 +326,7 @@ export function CanvasFeatureStoryList({
         {progressOptions.length ? (
           <Stack spacing={1}>
             <Box>
-              <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+              <Typography className="text-xs text-gray-500" color="text.secondary">
                 Status summary (all stories)
               </Typography>
               <Stack
@@ -352,11 +343,7 @@ export function CanvasFeatureStoryList({
                       key={`all-${option.value}`}
                       label={`${option.label}: ${count}`}
                       size="sm"
-                      tone={
-                        getStatusChipColor(option.label) === 'error'
-                          ? 'danger'
-                          : (getStatusChipColor(option.label) as unknown)
-                      }
+                      tone={getStatusChipTone(option.label)}
                       variant={count > 0 ? 'filled' : 'outlined'}
                       data-testid={`canvas-feature-story-status-summary-all-status-${slug}`}
                     />
@@ -366,7 +353,7 @@ export function CanvasFeatureStoryList({
             </Box>
 
             <Box>
-              <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+              <Typography className="text-xs text-gray-500" color="text.secondary">
                 Status summary (visible list)
               </Typography>
               <Stack
@@ -384,11 +371,7 @@ export function CanvasFeatureStoryList({
                       key={`filtered-${option.value}`}
                       label={`${option.label}: ${count}`}
                       size="sm"
-                      tone={
-                        getStatusChipColor(option.label) === 'error'
-                          ? 'danger'
-                          : (getStatusChipColor(option.label) as unknown)
-                      }
+                      tone={getStatusChipTone(option.label)}
                       variant={count > 0 ? 'filled' : 'outlined'}
                       data-testid={`canvas-feature-story-status-summary-filtered-status-${slug}`}
                     />
@@ -416,7 +399,7 @@ export function CanvasFeatureStoryList({
             ))}
           </Stack>
         ) : (
-          <Alert severity="info" variant="outlined">
+          <Alert severity="info">
             No stories match the current category and search filter. Try
             switching categories or clearing the search term.
           </Alert>

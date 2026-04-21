@@ -62,8 +62,9 @@ public class TenantQuotaManager {
     private final DataSource dataSource;
     private final MeterRegistry meterRegistry;
     private final ExecutorService blockingExecutor;
+    private final DistributedRateLimiter distributedRateLimiter;
 
-    // In-memory quota tracking
+    // In-memory quota tracking (fallback when distributed rate limiter unavailable)
     private final Map<String, TenantQuotaConfig> tenantQuotas = new ConcurrentHashMap<>();
     private final Map<String, AtomicInteger> currentConnections = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> requestsLastMinute = new ConcurrentHashMap<>();
@@ -75,9 +76,15 @@ public class TenantQuotaManager {
     private final io.micrometer.core.instrument.Counter quotaViolations;
 
     public TenantQuotaManager(DataSource dataSource, MeterRegistry meterRegistry) {
+        this(dataSource, meterRegistry, null);
+    }
+
+    public TenantQuotaManager(DataSource dataSource, MeterRegistry meterRegistry, 
+                             DistributedRateLimiter distributedRateLimiter) {
         this.dataSource = dataSource;
         this.meterRegistry = meterRegistry;
         this.blockingExecutor = JpaThreadPoolConfig.fromEnvironment().createExecutorService();
+        this.distributedRateLimiter = distributedRateLimiter;
 
         // Initialize metrics
         this.quotaCheckTime = Timer.builder("datacloud.quota.check.time")
@@ -210,9 +217,8 @@ public class TenantQuotaManager {
         Instant start = Instant.now();
 
         return getTenantQuota(tenantId)
-            .map(config -> {
-                QuotaCheckResult result = performQuotaCheck(tenantId, operationType, resourceAmount, config);
-
+            .then(config -> performQuotaCheck(tenantId, operationType, resourceAmount, config))
+            .then(result -> {
                 // Record metrics
                 quotaCheckTime.record(Duration.between(start, Instant.now()));
 
@@ -223,19 +229,19 @@ public class TenantQuotaManager {
                     alertOnQuotaViolation(tenantId, operationType, result);
                 }
 
-                return result;
+                return Promise.of(result);
             });
     }
 
-    private QuotaCheckResult performQuotaCheck(String tenantId, String operationType,
+    private Promise<QuotaCheckResult> performQuotaCheck(String tenantId, String operationType,
                                                 long resourceAmount, TenantQuotaConfig config) {
 
         switch (operationType.toUpperCase()) {
             case "STORAGE":
-                return checkStorageQuota(tenantId, resourceAmount, config);
+                return Promise.of(checkStorageQuota(tenantId, resourceAmount, config));
 
             case "CONNECTION":
-                return checkConnectionQuota(tenantId, config);
+                return Promise.of(checkConnectionQuota(tenantId, config));
 
             case "REQUEST":
                 return checkRequestQuota(tenantId, config);
@@ -244,13 +250,13 @@ public class TenantQuotaManager {
                 return checkEventQuota(tenantId, resourceAmount, config);
 
             case "COLLECTION":
-                return checkCollectionQuota(tenantId, config);
+                return Promise.of(checkCollectionQuota(tenantId, config));
 
             case "ENTITY":
-                return checkEntityQuota(tenantId, resourceAmount, config);
+                return Promise.of(checkEntityQuota(tenantId, resourceAmount, config));
 
             default:
-                return new QuotaCheckResult(true, null, 0, 0);
+                return Promise.of(new QuotaCheckResult(true, null, 0, 0));
         }
     }
 
@@ -304,38 +310,60 @@ public class TenantQuotaManager {
         return new QuotaCheckResult(true, null, currentCount, config.getMaxConcurrentConnections());
     }
 
-    private QuotaCheckResult checkRequestQuota(String tenantId, TenantQuotaConfig config) {
+    private Promise<QuotaCheckResult> checkRequestQuota(String tenantId, TenantQuotaConfig config) {
+        if (distributedRateLimiter != null) {
+            return distributedRateLimiter.checkRequestRateLimit(tenantId, config.getMaxRequestsPerMinute())
+                .then(result -> Promise.of(new QuotaCheckResult(
+                    result.isAllowed(),
+                    result.getReason(),
+                    result.getCurrentUsage(),
+                    result.getLimit()
+                )));
+        }
+
+        // Fallback to in-memory rate limiting
         AtomicLong current = requestsLastMinute.computeIfAbsent(tenantId, k -> new AtomicLong(0));
         long currentCount = current.incrementAndGet();
 
         if (currentCount > config.getMaxRequestsPerMinute()) {
-            return new QuotaCheckResult(
+            return Promise.of(new QuotaCheckResult(
                 false,
                 "Rate limit exceeded. Requests last minute: " + currentCount +
                 ", Limit: " + config.getMaxRequestsPerMinute() + "/min",
                 currentCount,
                 config.getMaxRequestsPerMinute()
-            );
+            ));
         }
 
-        return new QuotaCheckResult(true, null, currentCount, config.getMaxRequestsPerMinute());
+        return Promise.of(new QuotaCheckResult(true, null, currentCount, config.getMaxRequestsPerMinute()));
     }
 
-    private QuotaCheckResult checkEventQuota(String tenantId, long eventCount, TenantQuotaConfig config) {
+    private Promise<QuotaCheckResult> checkEventQuota(String tenantId, long eventCount, TenantQuotaConfig config) {
+        if (distributedRateLimiter != null) {
+            return distributedRateLimiter.checkEventRateLimit(tenantId, eventCount, config.getMaxEventsPerSecond())
+                .then(result -> Promise.of(new QuotaCheckResult(
+                    result.isAllowed(),
+                    result.getReason(),
+                    result.getCurrentUsage(),
+                    result.getLimit()
+                )));
+        }
+
+        // Fallback to in-memory rate limiting
         AtomicLong current = eventsLastSecond.computeIfAbsent(tenantId, k -> new AtomicLong(0));
         long currentCount = current.addAndGet(eventCount);
 
         if (currentCount > config.getMaxEventsPerSecond()) {
-            return new QuotaCheckResult(
+            return Promise.of(new QuotaCheckResult(
                 false,
                 "Event quota exceeded. Events this second: " + currentCount +
                 ", Limit: " + config.getMaxEventsPerSecond() + "/sec",
                 currentCount,
                 config.getMaxEventsPerSecond()
-            );
+            ));
         }
 
-        return new QuotaCheckResult(true, null, currentCount, config.getMaxEventsPerSecond());
+        return Promise.of(new QuotaCheckResult(true, null, currentCount, config.getMaxEventsPerSecond()));
     }
 
     private QuotaCheckResult checkCollectionQuota(String tenantId, TenantQuotaConfig config) {

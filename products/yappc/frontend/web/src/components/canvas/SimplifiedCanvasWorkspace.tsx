@@ -12,7 +12,7 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Spinner as CircularProgress, Typography } from '@ghatana/design-system';
-import { ReactFlowProvider, ReactFlow, Background, Controls, MiniMap, type Node, type Edge, MarkerType, applyNodeChanges, applyEdgeChanges, type NodeChange, type EdgeChange, type Connection } from '@xyflow/react';
+import { ReactFlowProvider, ReactFlow, Background, Controls, MiniMap, MarkerType, applyNodeChanges, applyEdgeChanges, type Edge, type EdgeTypes, type NodeChange, type EdgeChange, type Connection, type NodeTypes } from '@xyflow/react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useGateStatus, useNextBestTask, useDerivedPersona, useArtifacts, useCreateArtifact } from '@/hooks/useLifecycleData';
 import { LifecyclePhase } from '@/types/lifecycle';
@@ -35,6 +35,17 @@ import { SketchToolbar } from './toolbar/SketchToolbar';
 import { MermaidDiagram } from './diagram/MermaidDiagram';
 import { DiagramToolbar } from './toolbar/DiagramToolbar';
 import { UnifiedPlaygroundToolbar } from './UnifiedPlaygroundToolbar';
+
+type CanvasDependencyEdgeData = DependencyEdgeData & Record<string, unknown>;
+
+type ArtifactDependency = {
+    id: string;
+};
+
+type ArtifactWithDependencies = {
+    id: string;
+    dependencies?: ArtifactDependency[];
+};
 
 export interface SimplifiedCanvasWorkspaceProps {
     projectId: string;
@@ -77,7 +88,7 @@ export const SimplifiedCanvasWorkspace: React.FC<SimplifiedCanvasWorkspaceProps>
         return (
             <Box className="w-full h-full flex items-center justify-center flex-col">
                 <CircularProgress />
-                <Typography as="p" className="mt-4">Loading workspace…</Typography>
+                <Typography className="mt-4">Loading workspace…</Typography>
             </Box>
         );
     }
@@ -85,24 +96,28 @@ export const SimplifiedCanvasWorkspace: React.FC<SimplifiedCanvasWorkspaceProps>
     // ReactFlow change handlers
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => {
-            setNodesAtom((nds) => applyNodeChanges(changes, nds));
+            setNodesAtom((nds) => applyNodeChanges(changes, nds) as typeof nds);
         },
         [setNodesAtom]
     );
 
     const onEdgesChange = useCallback(
         (changes: EdgeChange[]) => {
-            setEdgesAtom((eds) => applyEdgeChanges(changes, eds));
+            setEdgesAtom((eds) => applyEdgeChanges(changes, eds) as typeof eds);
         },
         [setEdgesAtom]
     );
 
     const onConnect = useCallback(
         (connection: Connection) => {
-            const newEdge: Edge<DependencyEdgeData> = {
+            if (!connection.source || !connection.target) {
+                return;
+            }
+
+            const newEdge: Edge<CanvasDependencyEdgeData> = {
                 id: `edge-${connection.source}-${connection.target}`,
-                source: connection.source!,
-                target: connection.target!,
+                source: connection.source,
+                target: connection.target,
                 type: 'dependency',
                 markerEnd: {
                     type: MarkerType.ArrowClosed,
@@ -113,31 +128,33 @@ export const SimplifiedCanvasWorkspace: React.FC<SimplifiedCanvasWorkspaceProps>
                     type: 'requires'
                 }
             };
-            setEdgesAtom((eds) => [...eds, newEdge]);
+            setEdgesAtom((eds) => [...eds, newEdge as typeof eds[number]]);
         },
         [setEdgesAtom]
     );
 
     // Node types registry - Enhanced unified nodes
-    const nodeTypes = useMemo(() => ({
+    const nodeTypes = useMemo<NodeTypes>(() => ({
         artifact: ArtifactNode,
         simpleUnified: SimpleUnifiedNode,
         enhancedUnified: EnhancedUnifiedNode,
-    }), []);
+    }) as NodeTypes, []);
 
     // Edge types registry
-    const edgeTypes = useMemo(() => ({
+    const edgeTypes = useMemo<EdgeTypes>(() => ({
         dependency: DependencyEdge,
-    }), []);
+    }) as EdgeTypes, []);
 
     // Create dependency edges from artifact relationships
-    const generatedEdges: Edge<DependencyEdgeData>[] = useMemo(() => {
+    const generatedEdges = useMemo(() => {
         if (!artifacts) return [];
 
-        return artifacts
+        const artifactItems = artifacts as ArtifactWithDependencies[];
+
+        return artifactItems
             .filter(artifact => artifact.dependencies && artifact.dependencies.length > 0)
             .flatMap(artifact =>
-                artifact.dependencies.map(dep => ({
+                artifact.dependencies!.map((dep: ArtifactDependency) => ({
                     id: `edge-${dep.id}-${artifact.id}`,
                     source: dep.id,
                     target: artifact.id,
@@ -150,7 +167,7 @@ export const SimplifiedCanvasWorkspace: React.FC<SimplifiedCanvasWorkspaceProps>
                         label: 'requires',
                         type: 'requires'
                     }
-                }))
+                }) as Edge<CanvasDependencyEdgeData>)
             );
     }, [artifacts]);
 

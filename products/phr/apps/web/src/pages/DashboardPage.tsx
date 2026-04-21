@@ -1,9 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { demoDashboard } from '../mockData';
+import { fetchDashboardData } from '../api/phrApi';
+import type { DashboardData } from '../types';
 
 export function DashboardPage(): React.ReactElement {
-  const { patient, consents, appointments, labs, medications } = demoDashboard;
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDashboardData()
+      .then(setData)
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load dashboard data'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="loading">Loading dashboard...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+  if (!data) return <div className="error">No data available</div>;
+
+  const { patient, consents, appointments, labs, medications } = data;
 
   return (
     <div className="stack gap-lg">

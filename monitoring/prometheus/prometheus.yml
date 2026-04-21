@@ -128,3 +128,39 @@ scrape_configs:
           tech: 'nodejs'
     metrics_path: '/metrics'
     scrape_interval: 15s
+
+  # PHR healthcare platform (port 8080)
+  - job_name: 'phr-platform'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          service: 'phr-platform'
+          product: 'phr'
+          layer: 'platform'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Finance trading platform (port 8081)
+  - job_name: 'finance-platform'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+        labels:
+          service: 'finance-platform'
+          product: 'finance'
+          layer: 'platform'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Platform Kernel (port 9000)
+  - job_name: 'platform-kernel'
+    static_configs:
+      - targets: ['host.docker.internal:9000']
+        labels:
+          service: 'platform-kernel'
+          product: 'kernel'
+          layer: 'kernel'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s

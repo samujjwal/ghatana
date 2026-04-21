@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: cost-optimization-agent
 name: Cost Optimization Agent
 namespace: platform.governance

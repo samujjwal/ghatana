@@ -85,31 +85,38 @@ export function ActionsToolbar({
         handleMoreClose();
     };
 
+    const renderActionButton = (action: Action, withLabel: boolean) => {
+        const ActionIcon = action.icon;
+        return (
+            <Button
+                key={action.id}
+                variant="ghost"
+                size="sm"
+                onClick={action.onClick}
+                disabled={action.disabled}
+                aria-label={action.label}
+            >
+                <span className="flex items-center gap-2">
+                    <ActionIcon />
+                    {withLabel ? <span>{action.label}</span> : null}
+                    {action.badge !== undefined && action.badge > 0 ? (
+                        <Badge variant="error" label={action.badge.toString()} size="sm" />
+                    ) : null}
+                </span>
+            </Button>
+        );
+    };
+
     return (
         <div className={cn('flex items-center gap-2', className)} role="toolbar" aria-label="Actions toolbar">
             {/* Context Actions */}
             {inlineActions.length > 0 && (
                 <div className="hidden md:flex items-center gap-1">
                     {inlineActions.map((action) => {
-                        const ActionIcon = action.icon;
-                        const button = (
-                            <Button
-                                key={action.id}
-                                variant="ghost"
-                                size="sm"
-                                icon={<ActionIcon />}
-                                iconPosition={showLabels ? 'left' : undefined}
-                                onClick={action.onClick}
-                                disabled={action.disabled}
-                                badge={action.badge}
-                                aria-label={action.label}
-                            >
-                                {showLabels && action.label}
-                            </Button>
-                        );
+                        const button = renderActionButton(action, showLabels);
 
                         return action.tooltip ? (
-                            <Tooltip key={action.id} title={action.tooltip} arrow>
+                            <Tooltip key={action.id} title={action.tooltip}>
                                 <span>{button}</span>
                             </Tooltip>
                         ) : (
@@ -122,7 +129,7 @@ export function ActionsToolbar({
             {/* Overflow Menu */}
             {(overflowActions.length > 0 || contextActions.length > 0) && (
                 <>
-                    <Tooltip title="More actions" arrow>
+                    <Tooltip title="More actions">
                         <IconButton
                             size="sm"
                             onClick={handleMoreClick}
@@ -134,7 +141,7 @@ export function ActionsToolbar({
                     </Tooltip>
 
                     {overflowActions.length > 0 && (
-                        <Tooltip title="More actions" arrow>
+                        <Tooltip title="More actions">
                             <IconButton
                                 size="sm"
                                 onClick={handleMoreClick}
@@ -146,13 +153,9 @@ export function ActionsToolbar({
                         </Tooltip>
                     )}
 
-                    <Menu
-                        anchorEl={moreMenuAnchor}
-                        open={Boolean(moreMenuAnchor)}
-                        onClose={handleMoreClose}
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    >
+                    {moreMenuAnchor ? (
+                    <div className="relative">
+                    <div className="absolute right-0 top-2 z-20 min-w-[240px] rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
                         {/* Mobile: Show all context actions */}
                         <div className="md:hidden">
                             {contextActions.map((action, index) => {
@@ -206,7 +209,15 @@ export function ActionsToolbar({
                                 );
                             })}
                         </div>
-                    </Menu>
+                    </div>
+                    <button
+                        type="button"
+                        className="fixed inset-0 cursor-default"
+                        aria-label="Close actions menu"
+                        onClick={handleMoreClose}
+                    />
+                    </div>
+                    ) : null}
                 </>
             )}
 
@@ -219,41 +230,48 @@ export function ActionsToolbar({
             <div className="flex items-center gap-1">
                 {/* New Button */}
                 {onNew && (
-                    <Tooltip title="Create new" arrow>
+                    <Tooltip title="Create new">
                         <Button
                             variant="ghost"
                             size="sm"
-                            icon={<Add />}
                             onClick={onNew}
                             aria-label="Create new"
-                        />
+                        >
+                            <Add />
+                        </Button>
                     </Tooltip>
                 )}
 
                 {/* Search Button */}
                 {onSearch && (
-                    <Tooltip title="Search" arrow>
+                    <Tooltip title="Search">
                         <Button
                             variant="ghost"
                             size="sm"
-                            icon={<Search />}
                             onClick={onSearch}
                             aria-label="Search"
-                        />
+                        >
+                            <Search />
+                        </Button>
                     </Tooltip>
                 )}
 
                 {/* Notifications Button */}
                 {onNotifications && (
-                    <Tooltip title="Notifications" arrow>
+                    <Tooltip title="Notifications">
                         <Button
                             variant="ghost"
                             size="sm"
-                            icon={<Notifications />}
                             onClick={onNotifications}
-                            badge={notificationCount}
                             aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
-                        />
+                        >
+                            <span className="flex items-center gap-2">
+                                <Notifications />
+                                {notificationCount > 0 ? (
+                                    <Badge variant="error" label={notificationCount.toString()} size="sm" />
+                                ) : null}
+                            </span>
+                        </Button>
                     </Tooltip>
                 )}
             </div>
@@ -262,25 +280,10 @@ export function ActionsToolbar({
             {globalActions.length > 0 && (
                 <div className="hidden lg:flex items-center gap-1">
                     {globalActions.map((action) => {
-                        const ActionIcon = action.icon;
-                        const button = (
-                            <Button
-                                key={action.id}
-                                variant="ghost"
-                                size="sm"
-                                icon={<ActionIcon />}
-                                iconPosition={showLabels ? 'left' : undefined}
-                                onClick={action.onClick}
-                                disabled={action.disabled}
-                                badge={action.badge}
-                                aria-label={action.label}
-                            >
-                                {showLabels && action.label}
-                            </Button>
-                        );
+                        const button = renderActionButton(action, showLabels);
 
                         return action.tooltip ? (
-                            <Tooltip key={action.id} title={action.tooltip} arrow>
+                            <Tooltip key={action.id} title={action.tooltip}>
                                 <span>{button}</span>
                             </Tooltip>
                         ) : (

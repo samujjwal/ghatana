@@ -10,7 +10,12 @@
  * @doc.pattern Service Layer
  */
 
-import { FLOWStage, FLOWStageConfig, FLOW_STAGE_CONFIGS, GateDefinition, GateResult, ArtifactType } from '@/types/flowStages';
+import {
+    FOWStage,
+    FOW_STAGE_CONFIGS,
+    type GateResult,
+    type ArtifactType,
+} from '@/types/fow-stages';
 import { Artifact } from './api';
 
 // ============================================================================

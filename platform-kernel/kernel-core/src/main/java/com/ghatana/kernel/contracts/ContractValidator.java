@@ -4,7 +4,8 @@
  */
 package com.ghatana.kernel.contracts;
 
-import com.ghatana.platform.validation.ValidationError;
+import com.ghatana.platform.core.validation.ValidationResult;
+import com.ghatana.platform.core.validation.ValidationResult.Violation;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,15 +30,14 @@ public interface ContractValidator {
     /**
      * Validation result: either valid or carrying error messages.
      */
-    record ValidationResult(com.ghatana.platform.validation.ValidationResult coreResult) {
+    record ValidationResult(com.ghatana.platform.core.validation.ValidationResult coreResult) {
 
         public ValidationResult {
             Objects.requireNonNull(coreResult, "coreResult");
         }
 
         /** Successful validation. */
-        public static final ValidationResult OK = new ValidationResult(
-            com.ghatana.platform.validation.ValidationResult.success());
+        public static final ValidationResult OK = new ValidationResult(com.ghatana.platform.core.validation.ValidationResult.valid());
 
         /**
          * Compatibility accessor preserving the historical record shape.
@@ -50,22 +50,22 @@ public interface ContractValidator {
          * Compatibility accessor preserving the historical string-only error view.
          */
         public List<String> errors() {
-            return getErrors().stream()
-                .map(ValidationError::getMessage)
+            return coreResult.violations().stream()
+                .map(Violation::message)
                 .collect(Collectors.toUnmodifiableList());
         }
 
         /**
          * Returns the canonical typed validation errors backing this result.
          */
-        public List<ValidationError> getErrors() {
-            return coreResult.getErrors();
+        public List<Violation> getErrors() {
+            return coreResult.violations();
         }
 
         /**
          * Returns the canonical core validation result.
          */
-        public com.ghatana.platform.validation.ValidationResult toCoreValidationResult() {
+        public com.ghatana.platform.core.validation.ValidationResult toCoreValidationResult() {
             return coreResult;
         }
 
@@ -73,42 +73,43 @@ public interface ContractValidator {
          * Returns a failed result with the given errors.
          */
         public static ValidationResult failed(List<String> errors) {
-            return fromValidationErrors(errors.stream()
-                .map(ValidationResult::toValidationError)
-                .collect(Collectors.toUnmodifiableList()));
+            List<Violation> violations = errors.stream()
+                .map(error -> new Violation("CONTRACT_VALIDATION_FAILED", error))
+                .collect(Collectors.toList());
+            return new ValidationResult(com.ghatana.platform.core.validation.ValidationResult.of(violations));
         }
 
         /**
          * Returns a failed result with a single error message.
          */
         public static ValidationResult failed(String error) {
-            return failed(toValidationError(error));
+            return new ValidationResult(com.ghatana.platform.core.validation.ValidationResult.invalid("CONTRACT_VALIDATION_FAILED", error));
         }
 
         /**
          * Returns a failed result with typed validation errors.
          */
-        public static ValidationResult failed(ValidationError... errors) {
-            return new ValidationResult(com.ghatana.platform.validation.ValidationResult.failure(errors));
+        public static ValidationResult failed(Violation... errors) {
+            return new ValidationResult(com.ghatana.platform.core.validation.ValidationResult.of(List.of(errors)));
         }
 
         /**
          * Returns a failed result with typed validation errors.
          */
-        public static ValidationResult fromValidationErrors(List<ValidationError> errors) {
-            return new ValidationResult(com.ghatana.platform.validation.ValidationResult.failure(errors));
+        public static ValidationResult fromValidationErrors(List<Violation> errors) {
+            return new ValidationResult(com.ghatana.platform.core.validation.ValidationResult.of(errors));
         }
 
         /**
          * Creates a kernel validation result from the canonical core validation result.
          */
         public static ValidationResult fromCoreValidationResult(
-                com.ghatana.platform.validation.ValidationResult coreResult) {
+                com.ghatana.platform.core.validation.ValidationResult coreResult) {
             return new ValidationResult(coreResult);
         }
 
-        private static ValidationError toValidationError(String error) {
-            return new ValidationError("CONTRACT_VALIDATION_FAILED", error);
+        private static Violation toValidationError(String error) {
+            return new Violation("CONTRACT_VALIDATION_FAILED", error);
         }
     }
 

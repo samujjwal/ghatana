@@ -7,7 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.config.interpolation.VariableResolver;
 import com.ghatana.platform.config.registry.ConfigRegistry;
 import com.ghatana.platform.config.YamlConfigSource;
-import com.ghatana.platform.validation.ValidationResult;
+import com.ghatana.platform.core.validation.ValidationResult;
 import com.ghatana.platform.config.watcher.ConfigReloadWatcher;
 import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
@@ -148,13 +148,13 @@ public class OrganizationConfigLoader {
     public Promise<ValidationResult> validateWithSchema(String configFileName, Path schemaPath) {
         Path configPath = baseDir.resolve(configFileName);
         if (!Files.exists(configPath)) {
-            return Promise.of(ValidationResult.failure("Config file not found: " + configPath));
+            return Promise.of(ValidationResult.invalid("config", "Config file not found: " + configPath));
         }
         if (schemaPath != null && !Files.exists(schemaPath)) {
-            return Promise.of(ValidationResult.failure("Schema file not found: " + schemaPath));
+            return Promise.of(ValidationResult.invalid("schema", "Schema file not found: " + schemaPath));
         }
         // Basic existence validation; full schema validation is a future enhancement
-        return Promise.of(ValidationResult.success());
+        return Promise.of(ValidationResult.valid());
     }
 
     /**

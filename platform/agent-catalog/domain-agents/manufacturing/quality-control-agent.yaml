@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: quality-control-agent
 name: Manufacturing Quality Control Agent
 namespace: platform.domain.manufacturing

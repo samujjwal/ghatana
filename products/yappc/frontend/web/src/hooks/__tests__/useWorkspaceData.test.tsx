@@ -83,4 +83,49 @@ describe('useWorkspaceData failure handling', () => {
       "Expected JSON but got 'text/html'"
     );
   });
+
+  it('accepts the wrapped workspace list envelope from the mounted API', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            workspaces: [
+              {
+                id: 'ws-1',
+                name: 'Workspace One',
+                description: 'Primary workspace',
+                ownerId: 'user-1',
+                isDefault: true,
+                aiTags: [],
+                createdAt: '2026-04-20T10:00:00.000Z',
+                updatedAt: '2026-04-20T10:00:00.000Z',
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+            },
+          }
+        )
+      )
+    );
+
+    const { result } = renderHook(() => useWorkspaces(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual([
+      expect.objectContaining({
+        id: 'ws-1',
+        name: 'Workspace One',
+      }),
+    ]);
+  });
 });

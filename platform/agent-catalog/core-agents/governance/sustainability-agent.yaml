@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: sustainability-agent
 name: Sustainability Agent
 namespace: platform.governance

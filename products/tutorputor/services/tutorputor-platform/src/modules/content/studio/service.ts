@@ -20,6 +20,7 @@ import type {
   ExperienceStatus as ContractExperienceStatus,
   ValidationCheck,
 } from "@tutorputor/contracts/v1/content-studio";
+import type { IndependentGeneratedContentValidator } from "../evaluation/independent-validator-service.js";
 import {
   getContentGenerationQueue,
   type ContentGenerationQueueLike,
@@ -141,6 +142,14 @@ type ExperienceAnalyticsSummary = {
     harmlessnessScore: number | null;
     suggestions: unknown[];
   } | null;
+  latestIndependentValidation: {
+    status: "PASS" | "WARN" | "FAIL";
+    validatedAt: string;
+    score: number | null;
+    validatorVersion: string | null;
+    recommendations: unknown[];
+    issues: unknown[];
+  } | null;
   recentEvents: ExperienceTimelineEvent[];
 } & Record<string, unknown>;
 
@@ -162,7 +171,22 @@ type GenerationProgress = {
 export interface ContentStudioConfig {
   openaiApiKey: string;
   model?: string;
+  independentValidator?: Pick<
+    IndependentGeneratedContentValidator,
+    "validateGeneratedContent"
+  >;
 }
+
+type ExtendedExperienceValidationResult = ExperienceValidationResult & {
+  independentValidation?: {
+    status: "PASS" | "WARN" | "FAIL";
+    score: number;
+    validatorVersion: string;
+    requiresHumanReview: boolean;
+    reviewQueueId?: string;
+    recommendations: string[];
+  };
+};
 
 export type HealthAwareContentStudioService = Omit<
   ContentStudioService,
@@ -364,7 +388,7 @@ async function recordExperiencePublishProvenance(
   prisma: PrismaClient,
   experience: LearningExperience,
   actorId: string,
-  validationScore: number,
+  validation: ExtendedExperienceValidationResult,
 ): Promise<void> {
   const claimRefs = experience.claims.map((claim) => claim.id);
   const prismaWithExtras = prisma as PrismaClient & {
@@ -401,9 +425,22 @@ async function recordExperiencePublishProvenance(
         | null
       >;
     };
+    validationRecordExtended?: {
+      findFirst: (args: unknown) => Promise<
+        | {
+            overallStatus: "PASS" | "WARN" | "FAIL";
+            validatorsVersion: string | null;
+            suggestions: unknown;
+            issues: unknown;
+            authorityScore: number | null;
+            validatedAt: Date;
+          }
+        | null
+      >;
+    };
   };
 
-  const [bundleMetadata, latestGenerationLog] = await Promise.all([
+  const [bundleMetadata, latestGenerationLog, latestIndependentValidation] = await Promise.all([
     claimRefs.length > 0
       ? prismaWithExtras.evidenceBundleMetadata?.findMany({
           where: {
@@ -422,6 +459,18 @@ async function recordExperiencePublishProvenance(
         modelVersion: true,
         guardrailsVersion: true,
         createdAt: true,
+      },
+    }),
+    prismaWithExtras.validationRecordExtended?.findFirst({
+      where: { experienceId: experience.id },
+      orderBy: { validatedAt: "desc" },
+      select: {
+        overallStatus: true,
+        validatorsVersion: true,
+        suggestions: true,
+        issues: true,
+        authorityScore: true,
+        validatedAt: true,
       },
     }),
   ]);
@@ -476,7 +525,26 @@ async function recordExperiencePublishProvenance(
     validation: {
       source: "content_studio.validateExperience",
       version: "heuristic-v2",
-      score: validationScore,
+      score: validation.score,
+      status: validation.status,
+      canPublish: validation.canPublish,
+      independentValidation:
+        validation.independentValidation ??
+        (latestIndependentValidation == null
+          ? null
+          : {
+              status: latestIndependentValidation.overallStatus,
+              validatorVersion: latestIndependentValidation.validatorsVersion,
+              score: latestIndependentValidation.authorityScore,
+              validatedAt:
+                latestIndependentValidation.validatedAt.toISOString(),
+              suggestions: Array.isArray(latestIndependentValidation.suggestions)
+                ? latestIndependentValidation.suggestions
+                : [],
+              issues: Array.isArray(latestIndependentValidation.issues)
+                ? latestIndependentValidation.issues
+                : [],
+            }),
     },
     publishedBy: actorId,
     publishedAt: new Date().toISOString(),
@@ -801,6 +869,63 @@ export function createContentStudioService(
   _config: ContentStudioConfig,
 ): HealthAwareContentStudioService {
   const queue: ContentGenerationQueueLike = getContentGenerationQueue();
+  const independentValidator = _config.independentValidator;
+
+  function buildIndependentValidationContent(
+    experience: {
+      title?: string | null;
+      intentProblem?: string | null;
+      intentMotivation?: string | null;
+      claims: Array<Record<string, unknown>>;
+      experienceTasks: Array<Record<string, unknown>>;
+    },
+  ): string {
+    const claimLines = experience.claims.map((claim, index) => {
+      const claimText =
+        (typeof claim.statement === "string" && claim.statement.length > 0
+          ? claim.statement
+          : typeof claim.text === "string" && claim.text.length > 0
+            ? claim.text
+            : `Claim ${index + 1}`) ?? `Claim ${index + 1}`;
+      const bloomLevel =
+        typeof claim.bloomLevel === "string"
+          ? claim.bloomLevel
+          : typeof claim.bloom === "string"
+            ? claim.bloom
+            : "unclassified";
+      const exampleCount = Array.isArray(claim.examples) ? claim.examples.length : 0;
+      const simulationCount = Array.isArray(claim.simulations)
+        ? claim.simulations.length
+        : 0;
+      const animationCount = Array.isArray(claim.animations)
+        ? claim.animations.length
+        : 0;
+
+      return `Claim ${index + 1}: ${claimText}\nBloom: ${bloomLevel}\nArtifacts: examples=${exampleCount}, simulations=${simulationCount}, animations=${animationCount}`;
+    });
+
+    const taskLines = experience.experienceTasks.map((task, index) => {
+      const prompt =
+        typeof task.prompt === "string" && task.prompt.length > 0
+          ? task.prompt
+          : typeof task.instructions === "string" &&
+              task.instructions.length > 0
+            ? task.instructions
+            : `Task ${index + 1}`;
+      const claimRef = typeof task.claimRef === "string" ? task.claimRef : "unlinked";
+      return `Task ${index + 1} [${claimRef}]: ${prompt}`;
+    });
+
+    return [
+      `Title: ${experience.title ?? "Untitled experience"}`,
+      `Problem: ${experience.intentProblem ?? ""}`,
+      `Motivation: ${experience.intentMotivation ?? ""}`,
+      claimLines.join("\n\n"),
+      taskLines.length > 0 ? `Tasks:\n${taskLines.join("\n")}` : "Tasks: none",
+    ]
+      .filter((section) => section.trim().length > 0)
+      .join("\n\n");
+  }
 
   async function checkHealth(): Promise<boolean> {
     try {
@@ -1194,7 +1319,7 @@ export function createContentStudioService(
   async function validateExperience(
     id: string,
     _request?: ValidateExperienceInput,
-  ): Promise<ExperienceValidationResult> {
+  ): Promise<ExtendedExperienceValidationResult> {
     const experience = await prisma.learningExperience.findUnique({
       where: { id },
       include: {
@@ -1295,6 +1420,9 @@ export function createContentStudioService(
     );
     const requiresManualReview =
       lowConfidenceBundles.length > 0 || contradictoryBundles.length > 0;
+    let independentValidation:
+      | ExtendedExperienceValidationResult["independentValidation"]
+      | undefined;
 
     // --------------------------------------------------------------------------
     // Pillar scoring (0–100 per pillar)
@@ -1347,20 +1475,6 @@ export function createContentStudioService(
     const allClaimsMeetBaseline = claimChecks.every(
       (c) => c.hasTasks && c.hasArtifacts,
     );
-    const canPublish =
-      claimCount > 0 &&
-      allClaimsMeetBaseline &&
-      orphanTaskRefs.length === 0 &&
-      overallScore >= 60 &&
-      !requiresManualReview;
-    const overallStatus = canPublish
-      ? "PASS"
-      : contradictoryBundles.length > 0
-        ? "FAIL"
-        : overallScore >= 45
-        ? "WARN"
-        : "FAIL";
-
     // --------------------------------------------------------------------------
     // Build human-readable check items
     // --------------------------------------------------------------------------
@@ -1505,6 +1619,86 @@ export function createContentStudioService(
       checks.push(evidenceContradictionCheck);
     }
 
+    if (independentValidator) {
+      const independentResult = await independentValidator.validateGeneratedContent(
+        {
+          tenantId: experience.tenantId,
+          experienceId: id,
+          actorId: _request?.userId ?? "system",
+          content: buildIndependentValidationContent(experience),
+          contentType: "explanation",
+          domain:
+            typeof experience.domain === "string" && experience.domain.length > 0
+              ? experience.domain
+              : inferDomain(
+                  experience.title ?? "",
+                  experience.intentProblem ?? undefined,
+                ),
+          gradeRange:
+            Array.isArray(experience.targetGrades) &&
+            typeof experience.targetGrades[0] === "string"
+              ? String(experience.targetGrades[0])
+              : "GRADE_6_8",
+          metadata: {
+            source: "content_studio.validateExperience",
+            claimCount,
+          },
+        },
+      );
+
+      independentValidation = {
+        status: independentResult.overallStatus,
+        score: independentResult.score,
+        validatorVersion: independentResult.validatorVersion,
+        requiresHumanReview: independentResult.requiresHumanReview,
+        reviewQueueId: independentResult.reviewQueueId,
+        recommendations: independentResult.recommendations,
+      };
+
+      checks.push({
+        checkId: "independent-validator",
+        pillar: "safety",
+        name: "Independent Content Validation",
+        passed: independentResult.overallStatus === "PASS",
+        severity:
+          independentResult.overallStatus === "FAIL"
+            ? "error"
+            : independentResult.overallStatus === "WARN"
+              ? "warning"
+              : "info",
+        message:
+          independentResult.overallStatus === "PASS"
+            ? `Independent validator passed (${independentResult.score}/100).`
+            : `Independent validator returned ${independentResult.overallStatus} (${independentResult.score}/100).`,
+        suggestion:
+          independentResult.recommendations.length > 0
+            ? independentResult.recommendations.join(" ")
+            : independentResult.requiresHumanReview
+              ? "Route the experience for manual review before publishing."
+              : undefined,
+      });
+    }
+
+    const canPublish =
+      claimCount > 0 &&
+      allClaimsMeetBaseline &&
+      orphanTaskRefs.length === 0 &&
+      overallScore >= 60 &&
+      !requiresManualReview &&
+      independentValidation?.status !== "FAIL" &&
+      independentValidation?.requiresHumanReview !== true;
+    const overallStatus = canPublish
+      ? "PASS"
+      : independentValidation?.status === "FAIL"
+        ? "FAIL"
+      : independentValidation?.status === "WARN"
+        ? "WARN"
+      : contradictoryBundles.length > 0
+        ? "FAIL"
+        : overallScore >= 45
+          ? "WARN"
+          : "FAIL";
+
     const gradeCheck: ValidationCheck = {
       checkId: "grade-adaptation",
       pillar: "accessibility",
@@ -1544,6 +1738,9 @@ export function createContentStudioService(
       status: overallStatus,
       canPublish,
       score: overallScore,
+      independentValidationStatus: independentValidation?.status ?? null,
+      independentValidatorVersion:
+        independentValidation?.validatorVersion ?? null,
     });
 
     return {
@@ -1563,6 +1760,7 @@ export function createContentStudioService(
         accessibility: accessibilityScore,
       } as any,
       validatedAt: new Date(),
+      ...(independentValidation ? { independentValidation } : {}),
     };
   }
 
@@ -1601,7 +1799,8 @@ export function createContentStudioService(
         (check) =>
           !check.passed &&
           (check.checkId === "evidence-bundle-confidence" ||
-            check.checkId === "evidence-bundle-contradictions"),
+            check.checkId === "evidence-bundle-contradictions" ||
+            check.checkId === "independent-validator"),
       );
 
       if (reviewReasonChecks.length > 0) {
@@ -1642,7 +1841,7 @@ export function createContentStudioService(
         prisma,
         publishedExperience,
         userId || "publisher",
-        validation.score,
+        validation,
       );
     }
 
@@ -1924,7 +2123,23 @@ export function createContentStudioService(
   async function getExperienceAnalytics(
     id: string,
   ): Promise<ExperienceAnalyticsSummary> {
-    const [analytics, latestValidation, recentEvents] = await Promise.all([
+    const prismaWithExtendedValidation = prisma as PrismaClient & {
+      validationRecordExtended?: {
+        findFirst: (args: unknown) => Promise<
+          | {
+              overallStatus: "PASS" | "WARN" | "FAIL";
+              validatedAt: Date;
+              validatorsVersion: string | null;
+              authorityScore: number | null;
+              suggestions: unknown;
+              issues: unknown;
+            }
+          | null
+        >;
+      };
+    };
+
+    const [analytics, latestValidation, latestIndependentValidation, recentEvents] = await Promise.all([
       prisma.experienceAnalytics.findUnique({
         where: { experienceId: id },
       }),
@@ -1932,6 +2147,18 @@ export function createContentStudioService(
         where: { experienceId: id },
         orderBy: { validatedAt: "desc" },
       }),
+      prismaWithExtendedValidation.validationRecordExtended?.findFirst({
+        where: { experienceId: id },
+        orderBy: { validatedAt: "desc" },
+        select: {
+          overallStatus: true,
+          validatedAt: true,
+          validatorsVersion: true,
+          authorityScore: true,
+          suggestions: true,
+          issues: true,
+        },
+      }) ?? Promise.resolve(null),
       prisma.experienceEvent.findMany({
         where: { experienceId: id },
         orderBy: { createdAt: "desc" },
@@ -1972,6 +2199,23 @@ export function createContentStudioService(
             harmlessnessScore: latestValidation.harmlessnessScore,
             suggestions: Array.isArray(latestValidation.suggestions)
               ? latestValidation.suggestions
+              : [],
+          }
+        : null,
+      latestIndependentValidation: latestIndependentValidation
+        ? {
+            status: latestIndependentValidation.overallStatus,
+            validatedAt:
+              latestIndependentValidation.validatedAt instanceof Date
+                ? latestIndependentValidation.validatedAt.toISOString()
+                : String(latestIndependentValidation.validatedAt),
+            score: latestIndependentValidation.authorityScore,
+            validatorVersion: latestIndependentValidation.validatorsVersion,
+            recommendations: Array.isArray(latestIndependentValidation.suggestions)
+              ? latestIndependentValidation.suggestions
+              : [],
+            issues: Array.isArray(latestIndependentValidation.issues)
+              ? latestIndependentValidation.issues
               : [],
           }
         : null,

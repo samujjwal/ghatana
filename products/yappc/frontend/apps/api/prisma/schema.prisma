@@ -163,7 +163,7 @@ model Project {
   description      String?
   type             ProjectType
   status           ProjectStatus  @default(DRAFT)
-  lifecyclePhase   LifecyclePhase @default(SHAPE)
+  lifecyclePhase   LifecyclePhase @default(INTENT)
 
   /// Is this the default project in owner workspace (auto-created)
   isDefault Boolean @default(false)
@@ -386,7 +386,7 @@ enum ProjectStatus {
 
 ///
 /// Lifecycle phase enumeration.
-/// Represents the 7-phase YAPPC product lifecycle.
+/// Represents the canonical 8-phase YAPPC product lifecycle.
 /// @doc.type enum
 /// @doc.purpose Lifecycle phase classification
 /// @doc.layer product
@@ -394,12 +394,13 @@ enum ProjectStatus {
 ///
 enum LifecyclePhase {
   INTENT
-  SHAPE
-  VALIDATE
-  GENERATE
-  RUN
+  CONTEXT
+  PLAN
+  EXECUTE
+  VERIFY
   OBSERVE
-  IMPROVE
+  LEARN
+  INSTITUTIONALIZE
 }
 
 // ============================================================================
@@ -1452,7 +1453,7 @@ model LifecycleArtifact {
   description     String?
   content         String?
   status          String         @default("draft")
-  phase           LifecyclePhase @default(SHAPE)
+  phase           LifecyclePhase @default(INTENT)
   flowStage       Int            @default(1)
   createdBy       String         @default("system")
   linkedArtifacts String[]       @default([])
@@ -1486,7 +1487,7 @@ model LifecycleItem {
   status          String         @default("TODO")
   priority        String         @default("MEDIUM")
   estimatedEffort Int?
-  phase           LifecyclePhase @default(SHAPE)
+  phase           LifecyclePhase @default(INTENT)
   flowStage       Int            @default(1)
   assignedPersona String?
 
@@ -1517,7 +1518,7 @@ model LifecycleAIInsight {
   confidence  Float          @default(0.5)
   severity    String         @default("INFO")
   status      String         @default("PENDING")
-  phase       LifecyclePhase @default(SHAPE)
+  phase       LifecyclePhase @default(INTENT)
   flowStage   Int            @default(1)
   agentName   String         @default("AI Assistant")
   metadata    Json           @default("{}")

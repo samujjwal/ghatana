@@ -18,7 +18,25 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { PlanStepData, RiskAssessment } from '@yappc/core/types';
+interface PlanTask {
+    id: string;
+    title: string;
+    status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+    assignee?: string;
+}
+
+interface RiskAssessment {
+    level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    factors: string[];
+    mitigations: string[];
+    hasRollbackPlan: boolean;
+    rollbackPlan?: string;
+}
+
+interface PlanStepData {
+    tasks?: PlanTask[];
+    riskAssessment?: RiskAssessment;
+}
 
 // ============================================================================
 // CONSTANTS
@@ -46,7 +64,7 @@ export function PlanStep() {
     const [newMitigation, setNewMitigation] = React.useState('');
 
     // Get current data (draft or saved)
-    const baseData = draftData ?? workflow?.steps.plan.data;
+    const baseData = (draftData ?? workflow?.steps.plan.data) as PlanStepData | null;
     const currentData: PlanStepData = {
         tasks: baseData?.tasks ?? [],
         riskAssessment: {
@@ -130,10 +148,10 @@ export function PlanStep() {
             {/* Execution Plan */}
             <Card className="mb-6">
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography className="text-lg font-medium" gutterBottom fontWeight={600}>
                         Execution Plan
                     </Typography>
-                    <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+                    <Typography className="mb-4 text-sm text-gray-500" color="text.secondary">
                         Break down the work into ordered tasks.
                     </Typography>
 
@@ -141,7 +159,7 @@ export function PlanStep() {
                         <Box className="flex gap-2">
                             <TextField
                                 fullWidth
-                                size="sm"
+                                size="small"
                                 placeholder="Task title"
                                 value={newTaskTitle}
                                 onChange={(e) => setNewTaskTitle(e.target.value)}
@@ -157,7 +175,7 @@ export function PlanStep() {
                         </Box>
                         <TextField
                             fullWidth
-                            size="sm"
+                            size="small"
                             placeholder="Task description (optional)"
                             value={newTaskDesc}
                             onChange={(e) => setNewTaskDesc(e.target.value)}
@@ -168,11 +186,11 @@ export function PlanStep() {
                         <Alert severity="info">No tasks defined yet. Add tasks to build your execution plan.</Alert>
                     ) : (
                         <List>
-                            {(currentData.tasks ?? []).map((task, index) => (
+                            {(currentData.tasks ?? []).map((task: PlanTask, index: number) => (
                                 <React.Fragment key={task.id}>
                                     <ListItem className="px-0">
                                         <ListItemIcon className="min-w-[32px]">
-                                            <DragIcon color="action" className="cursor-grab" />
+                                            <DragIcon className="cursor-grab text-gray-500" />
                                         </ListItemIcon>
                                         <Chip
                                             label={index + 1}
@@ -187,7 +205,7 @@ export function PlanStep() {
                                         <ListItemSecondaryAction>
                                             <IconButton
                                                 edge="end"
-                                                size="sm"
+                                                size="small"
                                                 onClick={() => handleRemoveTask(task.id)}
                                             >
                                                 <DeleteIcon size={16} />
@@ -206,14 +224,14 @@ export function PlanStep() {
             <Card>
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <WarningIcon tone="warning" />
-                        <Typography as="p" className="text-lg font-medium" fontWeight={600}>
+                        <WarningIcon className="text-amber-600" />
+                        <Typography className="text-lg font-medium" fontWeight={600}>
                             Risk Assessment
                         </Typography>
                     </Box>
 
                     {/* Risk Level */}
-                    <FormControl fullWidth size="sm" className="mb-6">
+                    <FormControl fullWidth size="small" className="mb-6">
                         <InputLabel>Risk Level</InputLabel>
                         <Select
                             value={riskAssessment.level}
@@ -235,9 +253,9 @@ export function PlanStep() {
                     </FormControl>
 
                     {/* Risk Factors */}
-                    <Accordion defaultExpanded>
+                    <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography as="p" className="text-sm" fontWeight={500}>
+                            <Typography className="text-sm font-medium">
                                 Risk Factors ({riskAssessment.factors.length})
                             </Typography>
                         </AccordionSummary>
@@ -245,7 +263,7 @@ export function PlanStep() {
                             <Box className="flex gap-2 mb-4">
                                 <TextField
                                     fullWidth
-                                    size="sm"
+                                    size="small"
                                     placeholder="Add a risk factor..."
                                     value={newRiskFactor}
                                     onChange={(e) => setNewRiskFactor(e.target.value)}
@@ -253,7 +271,7 @@ export function PlanStep() {
                                 />
                                 <Button
                                     variant="outlined"
-                                    size="sm"
+                                    size="small"
                                     onClick={handleAddRiskFactor}
                                     disabled={!newRiskFactor.trim()}
                                 >
@@ -278,7 +296,7 @@ export function PlanStep() {
                     {/* Mitigations */}
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography as="p" className="text-sm" fontWeight={500}>
+                            <Typography className="text-sm font-medium">
                                 Mitigations ({riskAssessment.mitigations.length})
                             </Typography>
                         </AccordionSummary>
@@ -286,7 +304,7 @@ export function PlanStep() {
                             <Box className="flex gap-2 mb-4">
                                 <TextField
                                     fullWidth
-                                    size="sm"
+                                    size="small"
                                     placeholder="Add a mitigation..."
                                     value={newMitigation}
                                     onChange={(e) => setNewMitigation(e.target.value)}
@@ -294,7 +312,7 @@ export function PlanStep() {
                                 />
                                 <Button
                                     variant="outlined"
-                                    size="sm"
+                                    size="small"
                                     onClick={handleAddMitigation}
                                     disabled={!newMitigation.trim()}
                                 >
@@ -319,15 +337,13 @@ export function PlanStep() {
                     {/* Rollback Plan */}
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography as="p" className="text-sm" fontWeight={500}>
+                            <Typography className="text-sm font-medium">
                                 Rollback Plan
                             </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <TextField
-                                fullWidth
-                                multiline
-                                rows={3}
+                            <textarea
+                                className="min-h-[96px] w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-gray-700"
                                 placeholder="Describe the rollback strategy if something goes wrong..."
                                 value={riskAssessment.rollbackPlan ?? ''}
                                 onChange={(e) => handleRiskChange('rollbackPlan', e.target.value)}

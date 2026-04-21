@@ -1,5 +1,6 @@
 package com.ghatana.products.finance.bff;
 
+import com.ghatana.finance.kernel.service.PortfolioManagementService;
 import com.ghatana.finance.service.Transaction;
 import com.ghatana.finance.service.TransactionResult;
 import com.ghatana.finance.service.TransactionService;
@@ -28,15 +29,16 @@ class FinanceBFFTest {
 
     @Mock
     private KernelContext context;
-
     @Mock
     private TransactionService transactionService;
+    @Mock
+    private PortfolioManagementService portfolioManagementService;
 
     private FinanceBFF financeBff;
 
     @BeforeEach
     void setUp() {
-        financeBff = new FinanceBFF(context);
+        financeBff = new FinanceBFF(context, transactionService, portfolioManagementService);
     }
 
     @Test
@@ -95,6 +97,74 @@ class FinanceBFFTest {
         );
 
         assertEquals("userId must not be blank", exception.getMessage());
+    }
+
+    @Test
+    void composesTradeDataWithServiceIntegrationWhenAvailable() {
+        financeBff.start();
+        
+        var tradeData = financeBff.getTradeData("advisor-1", "trade-123");
+        
+        assertTrue(tradeData != null);
+    }
+
+    @Test
+    void composesPortfolioDataWithServiceIntegrationWhenAvailable() {
+        financeBff.start();
+        
+        when(portfolioManagementService.getPortfolio("portfolio-123")).thenAnswer(invocation -> {
+            return io.activej.promise.Promise.of(java.util.Optional.of(new PortfolioManagementService.Portfolio(
+                "portfolio-123", "advisor-1", "Growth Portfolio", "Test portfolio",
+                "USD", java.math.BigDecimal.valueOf(500000.0), "ACTIVE",
+                java.time.Instant.now(), java.time.Instant.now()
+            )));
+        });
+        
+        var portfolioData = financeBff.getPortfolioData("advisor-1", "portfolio-123");
+        
+        assertTrue(portfolioData != null);
+    }
+
+    @Test
+    void throwsErrorWhenTransactionServiceUnavailableForTradeData() {
+        financeBff = new FinanceBFF(context, null, portfolioManagementService);
+        financeBff.start();
+        
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> financeBff.getTradeData("advisor-1", "trade-123")
+        );
+        
+        assertEquals("TransactionService is not available. Cannot compose trade data without transaction service.", exception.getMessage());
+    }
+
+    @Test
+    void throwsErrorWhenPortfolioServiceUnavailableForPortfolioData() {
+        financeBff = new FinanceBFF(context, transactionService, null);
+        financeBff.start();
+        
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> financeBff.getPortfolioData("advisor-1", "portfolio-123")
+        );
+        
+        assertEquals("PortfolioManagementService is not available. Cannot compose portfolio data without portfolio service.", exception.getMessage());
+    }
+
+    @Test
+    void throwsErrorWhenPortfolioNotFound() {
+        financeBff.start();
+        
+        when(portfolioManagementService.getPortfolio("portfolio-123")).thenAnswer(invocation -> {
+            return io.activej.promise.Promise.of(java.util.Optional.empty());
+        });
+        
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> financeBff.getPortfolioData("advisor-1", "portfolio-123")
+        );
+        
+        assertEquals("Portfolio not found: portfolio-123", exception.getMessage());
     }
 
     private static Transaction createTransaction() {

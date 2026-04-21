@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,7 +46,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
         when(mockAuditService.recordAuditEvent(any(), any(), any(), any(), any()))
             .thenReturn(Promise.complete());
 
-        service = new TestDataService(mockContext);
+        service = new TestDataService(mockContext, eventloop());
     }
 
     @Test
@@ -252,6 +253,10 @@ class AbstractDataServiceTest extends EventloopTestBase {
 
         public TestDataService(KernelContext context) {
             super(context);
+        }
+
+        public TestDataService(KernelContext context, Executor executor) {
+            super(context, executor);
         }
 
         @Override

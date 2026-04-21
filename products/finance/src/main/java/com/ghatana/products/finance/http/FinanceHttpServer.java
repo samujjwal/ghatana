@@ -28,13 +28,15 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * ActiveJ HTTP server exposing the Finance product's transaction API.
+ * ActiveJ HTTP server exposing the Finance product's transaction and ledger API.
  *
  * <h2>Endpoints</h2>
  * <pre>
- *   POST  /api/v1/finance/transactions          — Submit and process a transaction
- *   GET   /api/v1/finance/transactions/:id      — Retrieve transaction by ID (idempotency query)
- *   GET   /api/v1/finance/health                — Service health check
+ *   POST  /api/v1/finance/ledger/postings              — Post a ledger transaction
+ *   GET   /api/v1/finance/ledger/postings/:entryId     — Get ledger posting status
+ *   POST  /api/v1/finance/transactions                 — Submit and process a transaction
+ *   GET   /api/v1/finance/transactions/:id             — Retrieve transaction by ID (idempotency query)
+ *   GET   /api/v1/finance/health                       — Service health check
  * </pre>
  *
  * <p>All endpoints require {@code X-Tenant-ID} to be set (enforced by the upstream
@@ -45,7 +47,7 @@ import java.util.UUID;
  * binding is handled by the product entry-point.
  *
  * @doc.type class
- * @doc.purpose Finance HTTP server exposing transaction and health endpoints
+ * @doc.purpose Finance HTTP server exposing transaction, ledger, and health endpoints
  * @doc.layer product
  * @doc.pattern Controller, Adapter
  * @author Ghatana Finance Team
@@ -113,12 +115,16 @@ public final class FinanceHttpServer implements KernelLifecycleAware {
      * @return routing servlet; never null
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(Eventloop.create())
-                .with(HttpMethod.POST, "/transactions", this::handlePostTransaction)
-                .with(HttpMethod.GET, "/transactions/:id", this::handleGetTransaction)
-                .with(HttpMethod.GET, "/health", this::handleHealth)
-            .with(HttpMethod.GET, "/ready", this::handleReady)
-                .build();
+        RoutingServlet.Builder builder = RoutingServlet.builder(Eventloop.create());
+        
+        // Transaction endpoints
+        builder
+            .with(HttpMethod.POST, "/transactions", this::handlePostTransaction)
+            .with(HttpMethod.GET, "/transactions/:id", this::handleGetTransaction)
+            .with(HttpMethod.GET, "/health", this::handleHealth)
+            .with(HttpMethod.GET, "/ready", this::handleReady);
+        
+        return builder.build();
     }
 
     // -------------------------------------------------------------------------

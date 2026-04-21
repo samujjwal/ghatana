@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useCallback, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   Calendar,
@@ -53,7 +53,7 @@ export interface SprintBurndown {
   readonly actual: number;
 }
 
-export interface SprintNodeData {
+export interface SprintNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly number: number;
   readonly goal?: string;
@@ -79,7 +79,9 @@ export interface SprintNodeData {
   readonly onAddStory?: (nodeId: string) => void;
 }
 
-export interface SprintNodeProps extends NodeProps<SprintNodeData> {}
+type SprintCanvasNode = Node<SprintNodeData>;
+
+export interface SprintNodeProps extends NodeProps<SprintCanvasNode> {}
 
 // =============================================================================
 // Constants

@@ -11,7 +11,7 @@
  */
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Box, Typography, Button, Surface as Paper, Alert, AlertTitle } from '@ghatana/design-system';
+import { Box, Typography, Button, Surface as Paper, Alert } from '@ghatana/design-system';
 import { RefreshCw as RefreshIcon, Bug as BugReportIcon, Home as HomeIcon, ArrowLeft as ArrowBackIcon } from 'lucide-react';
 
 // ============================================================================
@@ -138,20 +138,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     if (variant === 'minimal') {
       return (
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          minHeight="200px"
-          p={3}
-          textAlign="center"
-        >
+        <Box className="flex min-h-[200px] flex-col items-center justify-center p-3 text-center">
           <BugReportIcon className="mb-4 text-5xl text-red-600" />
-          <Typography as="h6" gutterBottom>
+          <Typography gutterBottom className="text-lg font-semibold">
             Something went wrong
           </Typography>
-          <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+          <Typography className="mb-4 text-sm text-gray-500" color="text.secondary">
             {customMessage || 'An unexpected error occurred. Please try again.'}
           </Typography>
           {enableReset && (
@@ -171,41 +163,41 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <Paper elevation={3} className="p-6 m-4">
           <Alert severity="error" className="mb-4">
-            <AlertTitle>Error Occurred</AlertTitle>
+            <Typography className="mb-1 font-semibold">Error Occurred</Typography>
             {customMessage || 'An unexpected error occurred while rendering this component.'}
           </Alert>
 
-          <Typography as="h6" gutterBottom>
+          <Typography gutterBottom className="text-lg font-semibold">
             Error Details
           </Typography>
 
           <Box className="mb-4">
-            <Typography as="p" className="text-sm" color="text.secondary">
+            <Typography className="text-sm text-gray-500" color="text.secondary">
               Error ID: <code>{errorId}</code>
             </Typography>
-            <Typography as="p" className="text-sm" color="text.secondary">
+            <Typography className="text-sm text-gray-500" color="text.secondary">
               Time: {new Date().toLocaleString()}
             </Typography>
           </Box>
 
           {showDetails && error && (
             <Box className="mb-4">
-              <Typography as="p" className="text-sm font-medium" gutterBottom>
+              <Typography className="text-sm font-medium" gutterBottom>
                 Error Message:
               </Typography>
               <Paper className="p-4 bg-gray-100 dark:bg-gray-800">
-                <Typography as="p" className="text-sm" component="pre" className="text-sm">
+                <Typography component="pre" className="text-sm">
                   {error.message}
                 </Typography>
               </Paper>
 
               {error.stack && (
                 <>
-                  <Typography as="p" className="text-sm font-medium" gutterBottom className="mt-4">
+                  <Typography className="mt-4 text-sm font-medium" gutterBottom>
                     Stack Trace:
                   </Typography>
                   <Paper className="p-4 overflow-auto bg-gray-100 dark:bg-gray-800 max-h-[200px]">
-                    <Typography as="p" className="text-sm" component="pre" className="text-xs">
+                    <Typography component="pre" className="text-xs">
                       {error.stack}
                     </Typography>
                   </Paper>
@@ -214,11 +206,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
               {errorInfo?.componentStack && (
                 <>
-                  <Typography as="p" className="text-sm font-medium" gutterBottom className="mt-4">
+                  <Typography className="mt-4 text-sm font-medium" gutterBottom>
                     Component Stack:
                   </Typography>
                   <Paper className="p-4 overflow-auto bg-gray-100 dark:bg-gray-800 max-h-[200px]">
-                    <Typography as="p" className="text-sm" component="pre" className="text-xs">
+                    <Typography component="pre" className="text-xs">
                       {errorInfo.componentStack}
                     </Typography>
                   </Paper>
@@ -227,7 +219,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </Box>
           )}
 
-          <Box display="flex" gap={2} flexWrap="wrap">
+          <Box className="flex flex-wrap gap-2">
             {enableReset && (
               <Button
                 variant="solid"
@@ -253,7 +245,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </Button>
             <Button
               variant="outlined"
-              tone="danger"
               startIcon={<RefreshIcon />}
               onClick={this.handleReload}
             >
@@ -266,25 +257,17 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     // Default variant
     return (
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        minHeight="400px"
-        p={3}
-        textAlign="center"
-      >
+      <Box className="flex min-h-[400px] flex-col items-center justify-center p-3 text-center">
         <BugReportIcon className="mb-6 text-[64px] text-red-600" />
-        <Typography as="h4" gutterBottom>
+        <Typography gutterBottom className="text-2xl font-semibold">
           Oops! Something went wrong
         </Typography>
-        <Typography as="p" color="text.secondary" className="mb-6 max-w-[600px]">
+        <Typography color="text.secondary" className="mb-6 max-w-[600px] text-gray-500">
           {customMessage || 
             'We encountered an unexpected error. Our team has been notified and is working to fix this issue.'}
         </Typography>
         
-        <Box display="flex" gap={2} flexWrap="wrap" justifyContent="center">
+        <Box className="flex flex-wrap justify-center gap-2">
           {enableReset && (
             <Button
               variant="solid"
@@ -307,11 +290,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
         {process.env.NODE_ENV === 'development' && (
           <Box className="mt-8 text-left max-w-[800px]">
-            <Typography as="h6" gutterBottom>
+            <Typography gutterBottom className="text-lg font-semibold">
               Development Details
             </Typography>
             <Paper className="p-4 bg-gray-100 dark:bg-gray-800">
-              <Typography as="p" className="text-sm" component="pre" className="text-sm">
+              <Typography component="pre" className="text-sm">
                 Error ID: {errorId}
                 {error && `\n\nError: ${error.message}`}
                 {errorInfo && `\n\nComponent Stack:\n${errorInfo.componentStack}`}
@@ -364,8 +347,12 @@ export const AIErrorBoundary: React.FC<{
         console.error(`AI Error in ${operation}:`, error, errorInfo);
         
         // Track AI errors for analytics
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'ai_error', {
+        const analytics = (globalThis as typeof globalThis & {
+          gtag?: (command: string, eventName: string, params: Record<string, string>) => void;
+        }).gtag;
+
+        if (analytics) {
+          analytics('event', 'ai_error', {
             operation,
             error_message: error.message,
           });

@@ -67,8 +67,15 @@ const ConfigSchema = z.object({
 
   // Feature Flags
   CONTENT_WORKER_ENABLED: z.coerce.boolean().default(true),
+  REQUIRE_CONTENT_WORKER: z.coerce.boolean().default(false),
+  QUEUE_ENABLED: z.coerce.boolean().default(true),
   AI_PROXY_ENABLED: z.coerce.boolean().default(true),
   SIMULATION_ENABLED: z.coerce.boolean().default(true),
+
+  // Queue Configuration
+  QUEUE_CONCURRENCY: z.coerce.number().default(5),
+  QUEUE_RETRY_ATTEMPTS: z.coerce.number().default(3),
+  QUEUE_RETRY_DELAY_MS: z.coerce.number().default(1000),
 
   // Platform Shared Services (optional — graceful degradation when absent)
   /** Base URL of the Ghatana auth-gateway service (e.g. http://auth-gateway:8080) */
@@ -159,8 +166,15 @@ export function loadConfig(): Config {
 
     // Feature Flags
     CONTENT_WORKER_ENABLED: process.env.CONTENT_WORKER_ENABLED,
+    REQUIRE_CONTENT_WORKER: process.env.REQUIRE_CONTENT_WORKER,
+    QUEUE_ENABLED: process.env.QUEUE_ENABLED,
     AI_PROXY_ENABLED: process.env.AI_PROXY_ENABLED,
     SIMULATION_ENABLED: process.env.SIMULATION_ENABLED,
+
+    // Queue Configuration
+    QUEUE_CONCURRENCY: process.env.QUEUE_CONCURRENCY,
+    QUEUE_RETRY_ATTEMPTS: process.env.QUEUE_RETRY_ATTEMPTS,
+    QUEUE_RETRY_DELAY_MS: process.env.QUEUE_RETRY_DELAY_MS,
 
     // Platform Shared Services
     AUTH_GATEWAY_URL: process.env.AUTH_GATEWAY_URL,
@@ -246,7 +260,7 @@ export function getConfig(): Config {
 /**
  * Check if a feature is enabled
  */
-export function isFeatureEnabled(feature: keyof Pick<Config, 'CONTENT_WORKER_ENABLED' | 'AI_PROXY_ENABLED' | 'SIMULATION_ENABLED'>): boolean {
+export function isFeatureEnabled(feature: keyof Pick<Config, 'CONTENT_WORKER_ENABLED' | 'REQUIRE_CONTENT_WORKER' | 'QUEUE_ENABLED' | 'AI_PROXY_ENABLED' | 'SIMULATION_ENABLED'>): boolean {
   return getConfig()[feature];
 }
 

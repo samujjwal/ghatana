@@ -10,8 +10,8 @@
  */
 
 import React from 'react';
-import { Box, Typography, Avatar, Tooltip, Stack, Divider } from '@ghatana/design-system';
-import { Pencil as Edit, Plus as Add, Trash2 as Delete, CheckCircle, History, User as Person, Bug as BugReport, Rocket as RocketLaunch } from 'lucide-react';
+import { Box, Typography, Avatar } from '@ghatana/design-system';
+import { Pencil as Edit, Plus as Add, Trash2 as Delete, CheckCircle, History, User as Person, Bug as BugReport } from 'lucide-react';
 
 export interface AuditEvent {
     id: string;
@@ -38,7 +38,7 @@ const EVENT_ICONS: Record<AuditEvent['type'], React.ReactNode> = {
     ARTIFACT_DELETED: <Delete size={16} />,
     TASK_COMPLETED: <CheckCircle size={16} />,
     VERSION_CREATED: <History size={16} />,
-    COMMENT_ADDED: <Typography as="span" className="text-xs text-gray-500">💬</Typography>,
+    COMMENT_ADDED: <span className="text-xs text-gray-500">💬</span>,
     SYSTEM_ALERT: <BugReport size={16} />,
 };
 
@@ -67,7 +67,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
     if (loading) {
         return (
             <Box className="p-6 text-center">
-                <Typography as="p" className="text-sm" color="text.secondary">Loading activity...</Typography>
+                <Typography className="text-sm" color="text.secondary">Loading activity...</Typography>
             </Box>
         );
     }
@@ -76,7 +76,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
         return (
             <Box className="p-8 text-center opacity-[0.6]">
                 <History className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
-                <Typography as="p" className="text-sm" color="text.secondary">No activity recorded yet.</Typography>
+                <Typography className="text-sm" color="text.secondary">No activity recorded yet.</Typography>
             </Box>
         );
     }
@@ -102,15 +102,15 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
                     {/* Content */}
                     <Box>
                         <Box className="flex justify-between items-start mb-1">
-                            <Typography as="p" className="text-sm font-medium" fontWeight="700" className="leading-tight">
+                            <Typography className="text-sm font-medium leading-tight" fontWeight="700">
                                 {event.title}
                             </Typography>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.disabled" className="whitespace-nowrap ml-2">
+                            <Typography className="ml-2 whitespace-nowrap text-xs text-gray-500" color="text.disabled">
                                 {formatRelativeTime(event.timestamp)}
                             </Typography>
                         </Box>
 
-                        <Typography as="p" className="text-sm" color="text.secondary" className="mb-2 text-[0.8125rem]">
+                        <Typography className="mb-2 text-[0.8125rem]" color="text.secondary">
                             {event.description}
                         </Typography>
 
@@ -121,7 +121,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
                             >
                                 <Person className="text-[10px]" />
                             </Avatar>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-gray-500" color="text.secondary">
                                 {event.user.name} • {event.user.role}
                             </Typography>
                         </Box>

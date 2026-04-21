@@ -8,7 +8,8 @@
  */
 
 import React from 'react';
-import { Box, Typography, Surface as Paper, Chip, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Collapse, IconButton, Tooltip, alpha } from '@ghatana/design-system';
+import { Box, Typography, Surface as Paper, Chip, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Collapse, IconButton, Tooltip } from '@ghatana/design-system';
+import { alpha } from '@mui/material/styles';
 import { ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Shield as SecurityIcon, Gavel as GavelIcon, Bug as BugIcon, Hammer as BuildIcon, CloudUpload as DeployIcon, HeartPulse as OpsIcon, Brain as IdeaIcon, Building2 as ArchIcon, TrendingUp as OptimizeIcon, GraduationCap as LearnIcon, CheckCircle as CheckIcon, AlertTriangle as WarningIcon, Info as InfoIcon } from 'lucide-react';
 
 import type { WorkflowCategory, WorkflowStep } from '@yappc/core/types';
@@ -350,7 +351,6 @@ export function CategoryContextPanel({
 
     return (
         <Paper
-            variant="flat"
             className="border border-solid border-gray-200 dark:border-gray-700" style={{ borderLeft: `4px solid ${config.color}`, backgroundColor: alpha(config.color, 0.05), color: config.color }}
         >
             {/* Header */}
@@ -363,10 +363,10 @@ export function CategoryContextPanel({
                     {config.icon}
                 </Box>
                 <Box className="flex-1">
-                    <Typography as="p" className="text-lg font-medium" className="font-semibold">
+                    <Typography component="p" className="text-lg font-semibold">
                         {config.label} Workflow
                     </Typography>
-                    <Typography as="p" className="text-sm" color="text.secondary">
+                    <Typography component="p" className="text-sm" color="text.secondary">
                         {config.description}
                     </Typography>
                 </Box>
@@ -383,48 +383,42 @@ export function CategoryContextPanel({
                     {stepGuidance && (
                         <Box className="mb-4">
                             <Typography
-                                as="p" className="text-sm font-medium"
-                                className="mb-2 flex items-center gap-2"
+                                component="p"
+                                className="mb-2 flex items-center gap-2 text-sm font-medium"
                             >
-                                <InfoIcon size={16} tone="primary" />
+                                <InfoIcon size={16} className="text-blue-600" />
                                 Focus for {currentStep} Step
                             </Typography>
-                            <Typography as="p" className="text-sm" className="mb-4 text-gray-500 dark:text-gray-400">
+                            <Typography component="p" className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                                 {stepGuidance.focus}
                             </Typography>
 
                             {/* Checkpoints */}
-                            <Typography as="span" className="text-xs text-gray-500" className="font-semibold block mb-2">
+                            <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
                                 Checkpoints
                             </Typography>
-                            <List dense className="py-0 mb-4">
+                            <List className="py-0 mb-4">
                                 {stepGuidance.checkpoints.map((checkpoint, idx) => (
                                     <ListItem key={idx} className="py-0.5 px-0">
                                         <ListItemIcon className="min-w-[28px]">
                                             <CheckIcon size={16} className="text-green-600" />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary={checkpoint}
-                                            primaryTypographyProps={{ variant: 'body2' }}
-                                        />
+                                        <ListItemText primary={<Typography variant="body2">{checkpoint}</Typography>} />
                                     </ListItem>
                                 ))}
                             </List>
 
                             {/* Anti-patterns */}
-                            <Typography as="span" className="text-xs text-gray-500" className="font-semibold block mb-2">
+                            <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
                                 Anti-patterns to Avoid
                             </Typography>
-                            <List dense className="py-0">
+                            <List className="py-0">
                                 {stepGuidance.antiPatterns.map((antiPattern, idx) => (
                                     <ListItem key={idx} className="py-0.5 px-0">
                                         <ListItemIcon className="min-w-[28px]">
                                             <WarningIcon size={16} className="text-amber-600" />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary={antiPattern}
-                                            primaryTypographyProps={{ variant: 'body2' }}
-                                        />
+                                        <ListItemText primary={<Typography variant="body2">{antiPattern}</Typography>} />
                                     </ListItem>
                                 ))}
                             </List>
@@ -432,7 +426,7 @@ export function CategoryContextPanel({
                             {/* Tools */}
                             {stepGuidance.tools && stepGuidance.tools.length > 0 && (
                                 <Box className="mt-4">
-                                    <Typography as="span" className="text-xs text-gray-500" className="font-semibold block mb-2">
+                                    <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
                                         Recommended Tools
                                     </Typography>
                                     <Box className="flex gap-1 flex-wrap">
@@ -440,7 +434,7 @@ export function CategoryContextPanel({
                                             <Chip
                                                 key={idx}
                                                 label={tool}
-                                                size="sm"
+                                                size="small"
                                                 variant="outlined"
                                             />
                                         ))}
@@ -452,7 +446,7 @@ export function CategoryContextPanel({
 
                     {/* Key Metrics */}
                     <Box className="mb-4">
-                        <Typography as="span" className="text-xs text-gray-500" className="font-semibold block mb-2">
+                        <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
                             Key Metrics
                         </Typography>
                         <Box className="flex gap-1 flex-wrap">
@@ -460,7 +454,7 @@ export function CategoryContextPanel({
                                 <Chip
                                     key={idx}
                                     label={metric}
-                                    size="sm"
+                                    size="small"
                                     style={{ backgroundColor: alpha(config.color, 0.1) }}
                                 />
                             ))}
@@ -469,7 +463,7 @@ export function CategoryContextPanel({
 
                     {/* Typical Agents */}
                     <Box>
-                        <Typography as="span" className="text-xs text-gray-500" className="font-semibold block mb-2">
+                        <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
                             Active Agents
                         </Typography>
                         <Box className="flex gap-1 flex-wrap">
@@ -477,7 +471,7 @@ export function CategoryContextPanel({
                                 <Tooltip key={idx} title={`Agent: ${agent}`}>
                                     <Chip
                                         label={agent}
-                                        size="sm"
+                                        size="small"
                                         variant="outlined"
                                         className="text-[0.7rem]"
                                     />

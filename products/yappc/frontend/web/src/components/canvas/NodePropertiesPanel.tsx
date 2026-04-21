@@ -10,18 +10,29 @@ import {
   Button,
   Select,
   FormControl,
-  InputLabel,
-  Slider,
   Divider,
   IconButton,
   Chip,
+    MenuItem,
 } from '@ghatana/design-system';
-import { TextField, MenuItem } from '@ghatana/design-system';
-import { X as Close, Trash2 as Delete, Palette as ColorLens } from 'lucide-react';
+import { X as Close, Trash2 as Delete } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 
+type EditableNodeData = {
+    text?: string;
+    color?: string;
+    fontSize?: number;
+    title?: string;
+    width?: number;
+    height?: number;
+    shape?: string;
+    label?: string;
+    url?: string;
+    alt?: string;
+};
+
 interface NodePropertiesPanelProps {
-    selectedNode: Node | null;
+        selectedNode: Node<Record<string, unknown>> | null;
     onNodeUpdate: (nodeId: string, updates: unknown) => void;
     onNodeDelete: (nodeId: string) => void;
     onClose: () => void;
@@ -33,11 +44,11 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
     onNodeDelete,
     onClose,
 }) => {
-    const [localData, setLocalData] = useState<unknown>({});
+    const [localData, setLocalData] = useState<EditableNodeData>({});
 
     useEffect(() => {
         if (selectedNode) {
-            setLocalData({ ...selectedNode.data });
+            setLocalData(selectedNode.data as EditableNodeData);
         }
     }, [selectedNode]);
 
@@ -58,20 +69,80 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
         setLocalData(prev => ({ ...prev, color }));
     };
 
+    const updateLocalData = (updates: Partial<EditableNodeData>) => {
+        setLocalData(prev => ({ ...prev, ...updates }));
+    };
+
+    const renderLabeledInput = (
+        label: string,
+        value: string | number,
+        onChange: (value: string) => void,
+        type: 'text' | 'number' | 'color' | 'url' = 'text',
+        placeholder?: string,
+    ) => (
+        <Box className="mb-4">
+            <Typography variant="body2" className="mb-1 font-medium">
+                {label}
+            </Typography>
+            <input
+                type={type}
+                value={value}
+                placeholder={placeholder}
+                onChange={(event) => onChange(event.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            />
+        </Box>
+    );
+
+    const renderLabeledTextArea = (
+        label: string,
+        value: string,
+        onChange: (value: string) => void,
+        rows = 4,
+    ) => (
+        <Box className="mb-4">
+            <Typography variant="body2" className="mb-1 font-medium">
+                {label}
+            </Typography>
+            <textarea
+                rows={rows}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            />
+        </Box>
+    );
+
+    const renderRangeInput = (
+        label: string,
+        value: number,
+        min: number,
+        max: number,
+        onChange: (value: number) => void,
+    ) => (
+        <Box className="mb-4">
+            <Typography variant="body2" className="mb-1 font-medium">
+                {label}: {value}
+            </Typography>
+            <input
+                type="range"
+                value={value}
+                min={min}
+                max={max}
+                onChange={(event) => onChange(Number(event.target.value))}
+                className="w-full"
+            />
+        </Box>
+    );
+
     const renderStickyNoteControls = () => (
         <>
-            <TextField
-                label="Text"
-                multiline
-                rows={4}
-                value={localData.text || ''}
-                onChange={(e) => setLocalData(prev => ({ ...prev, text: e.target.value }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledTextArea('Text', localData.text || '', (value) => updateLocalData({ text: value }))}
 
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Color</InputLabel>
+            <FormControl fullWidth>
+                <Typography variant="body2" className="mb-1 font-medium">
+                    Color
+                </Typography>
                 <Select
                     value={localData.color || '#fff9c4'}
                     onChange={(e) => handleColorChange(e.target.value)}
@@ -88,54 +159,22 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
 
     const renderTextControls = () => (
         <>
-            <TextField
-                label="Text"
-                value={localData.text || ''}
-                onChange={(e) => setLocalData(prev => ({ ...prev, text: e.target.value }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledInput('Text', localData.text || '', (value) => updateLocalData({ text: value }))}
 
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Font Size</InputLabel>
-                <Slider
-                    value={localData.fontSize || 16}
-                    onChange={(e) => setLocalData(prev => ({ ...prev, fontSize: e.target.value }))}
-                    min={10}
-                    max={48}
-                    marks={[
-                        { value: 12, label: '12' },
-                        { value: 16, label: '16' },
-                        { value: 20, label: '20' },
-                        { value: 24, label: '24' },
-                        { value: 32, label: '32' },
-                    ]}
-                />
-            </FormControl>
+            {renderRangeInput('Font Size', localData.fontSize || 16, 10, 48, (value) => updateLocalData({ fontSize: value }))}
 
-            <TextField
-                label="Color"
-                type="color"
-                value={localData.color || '#333'}
-                onChange={(e) => setLocalData(prev => ({ ...prev, color: e.target.value }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledInput('Color', localData.color || '#333', (value) => updateLocalData({ color: value }), 'color')}
         </>
     );
 
     const renderFrameControls = () => (
         <>
-            <TextField
-                label="Title"
-                value={localData.title || ''}
-                onChange={(e) => setLocalData(prev => ({ ...prev, title: e.target.value }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledInput('Title', localData.title || '', (value) => updateLocalData({ title: value }))}
 
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Background Color</InputLabel>
+            <FormControl fullWidth>
+                <Typography variant="body2" className="mb-1 font-medium">
+                    Background Color
+                </Typography>
                 <Select
                     value={localData.color || '#e3f2fd'}
                     onChange={(e) => handleColorChange(e.target.value)}
@@ -148,33 +187,21 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
                 </Select>
             </FormControl>
 
-            <TextField
-                label="Width"
-                type="number"
-                value={localData.width || 400}
-                onChange={(e) => setLocalData(prev => ({ ...prev, width: parseInt(e.target.value) }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledInput('Width', localData.width || 400, (value) => updateLocalData({ width: Number.parseInt(value, 10) || 0 }), 'number')}
 
-            <TextField
-                label="Height"
-                type="number"
-                value={localData.height || 300}
-                onChange={(e) => setLocalData(prev => ({ ...prev, height: parseInt(e.target.value) }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledInput('Height', localData.height || 300, (value) => updateLocalData({ height: Number.parseInt(value, 10) || 0 }), 'number')}
         </>
     );
 
     const renderShapeControls = () => (
         <>
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Shape Type</InputLabel>
+            <FormControl fullWidth>
+                <Typography variant="body2" className="mb-1 font-medium">
+                    Shape Type
+                </Typography>
                 <Select
                     value={localData.shape || 'rectangle'}
-                    onChange={(e) => setLocalData(prev => ({ ...prev, shape: e.target.value }))}
+                    onChange={(e) => updateLocalData({ shape: e.target.value })}
                 >
                     <MenuItem value="rectangle">Rectangle</MenuItem>
                     <MenuItem value="circle">Circle</MenuItem>
@@ -182,16 +209,12 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
                 </Select>
             </FormControl>
 
-            <TextField
-                label="Label"
-                value={localData.label || ''}
-                onChange={(e) => setLocalData(prev => ({ ...prev, label: e.target.value }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledInput('Label', localData.label || '', (value) => updateLocalData({ label: value }))}
 
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Fill Color</InputLabel>
+            <FormControl fullWidth>
+                <Typography variant="body2" className="mb-1 font-medium">
+                    Fill Color
+                </Typography>
                 <Select
                     value={localData.color || '#e3f2fd'}
                     onChange={(e) => handleColorChange(e.target.value)}
@@ -208,40 +231,10 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
 
     const renderImageControls = () => (
         <>
-            <TextField
-                label="Image URL"
-                value={localData.url || ''}
-                onChange={(e) => setLocalData(prev => ({ ...prev, url: e.target.value }))}
-                fullWidth
-                margin="normal"
-                placeholder="https://example.com/image.jpg"
-            />
-
-            <TextField
-                label="Alt Text"
-                value={localData.alt || ''}
-                onChange={(e) => setLocalData(prev => ({ ...prev, alt: e.target.value }))}
-                fullWidth
-                margin="normal"
-            />
-
-            <TextField
-                label="Width"
-                type="number"
-                value={localData.width || 200}
-                onChange={(e) => setLocalData(prev => ({ ...prev, width: parseInt(e.target.value) }))}
-                fullWidth
-                margin="normal"
-            />
-
-            <TextField
-                label="Height"
-                type="number"
-                value={localData.height || 150}
-                onChange={(e) => setLocalData(prev => ({ ...prev, height: parseInt(e.target.value) }))}
-                fullWidth
-                margin="normal"
-            />
+            {renderLabeledInput('Image URL', localData.url || '', (value) => updateLocalData({ url: value }), 'url', 'https://example.com/image.jpg')}
+            {renderLabeledInput('Alt Text', localData.alt || '', (value) => updateLocalData({ alt: value }))}
+            {renderLabeledInput('Width', localData.width || 200, (value) => updateLocalData({ width: Number.parseInt(value, 10) || 0 }), 'number')}
+            {renderLabeledInput('Height', localData.height || 150, (value) => updateLocalData({ height: Number.parseInt(value, 10) || 0 }), 'number')}
         </>
     );
 
@@ -253,7 +246,7 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
             case 'text':
                 return renderTextControls();
             case 'frame':
-                return renderControls();
+                return renderFrameControls();
             case 'rectangle':
             case 'circle':
             case 'diamond':

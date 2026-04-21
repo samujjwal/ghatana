@@ -7,6 +7,8 @@ import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
+import com.ghatana.platform.security.annotation.RequiresRole;
+import com.ghatana.platform.security.annotation.Secured;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -32,11 +34,17 @@ import java.util.function.BiConsumer;
  * .with(HttpMethod.POST, "/api/v1/entities/:collection", entityHandler::handleSaveEntity)
  * }</pre>
  *
+ * <h2>Security</h2>
+ * All entity operations require authentication. Role-based access control is enforced
+ * at the HTTP filter level (DataCloudSecurityFilter) based on the endpoint sensitivity
+ * and user roles. Write operations require EDITOR or higher role.
+ *
  * @doc.type class
  * @doc.purpose Entity CRUD, batch, export, and anomaly HTTP handlers
  * @doc.layer product
  * @doc.pattern Handler
  */
+@Secured
 public class EntityCrudHandler {
 
     private static final Logger log = LoggerFactory.getLogger(EntityCrudHandler.class);

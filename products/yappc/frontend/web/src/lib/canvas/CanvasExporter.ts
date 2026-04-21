@@ -13,6 +13,18 @@ import { HierarchicalNode } from './HierarchyManager';
 import type { Connection } from './NodeManipulation';
 import type { DrawingStroke } from './DrawingManager';
 
+interface Html2CanvasWindow extends Window {
+  html2canvas?: (
+    element: HTMLElement,
+    options: {
+      scale: number;
+      backgroundColor: string;
+      logging: boolean;
+      useCORS: boolean;
+    }
+  ) => Promise<HTMLCanvasElement>;
+}
+
 export interface CanvasExportData {
   nodes: HierarchicalNode[];
   connections: Connection[];
@@ -156,10 +168,11 @@ export class CanvasExporter {
     } = {}
   ): Promise<string> {
     const { scale = 2, backgroundColor = '#ffffff' } = options;
+    const browserWindow = typeof window !== 'undefined' ? (window as Html2CanvasWindow) : undefined;
 
     // Use html2canvas if available
-    if (typeof window !== 'undefined' && (window as unknown).html2canvas) {
-      const canvas = await (window as unknown).html2canvas(canvasElement, {
+    if (browserWindow?.html2canvas) {
+      const canvas = await browserWindow.html2canvas(canvasElement, {
         scale,
         backgroundColor,
         logging: false,
@@ -239,8 +252,12 @@ export class CanvasExporter {
     const { width, height } = node.size;
 
     const fillColor = this.getNodeColor(node);
-    const strokeColor = node.data.borderColor || '#d0d0d0';
-    const text = node.data.text || node.data.label || 'Node';
+    const strokeColor = typeof node.data.borderColor === 'string' ? node.data.borderColor : '#d0d0d0';
+    const text = typeof node.data.text === 'string'
+      ? node.data.text
+      : typeof node.data.label === 'string'
+        ? node.data.label
+        : 'Node';
 
     return `    <g id="node-${node.id}">
       <rect x="${x}" y="${y}" width="${width}" height="${height}" 
@@ -287,15 +304,17 @@ export class CanvasExporter {
       })
       .join(' ');
 
-    return `    <path d="${pathData}" stroke="${stroke.color}" stroke-width="${stroke.size}" 
+    return `    <path d="${pathData}" stroke="${stroke.color}" stroke-width="${stroke.width}" 
           fill="none" stroke-linecap="round" stroke-linejoin="round"/>\n`;
   }
 
   private getNodeColor(node: HierarchicalNode): string {
-    if (node.type === 'sticky') return node.data.color || '#fef3c7';
+    if (node.type === 'sticky') {
+      return typeof node.data.color === 'string' ? node.data.color : '#fef3c7';
+    }
     if (node.type === 'code') return '#1e1e1e';
     if (node.type === 'text') return '#fafafa';
-    return node.data.backgroundColor || '#ffffff';
+    return typeof node.data.backgroundColor === 'string' ? node.data.backgroundColor : '#ffffff';
   }
 
   private escapeXML(text: string): string {

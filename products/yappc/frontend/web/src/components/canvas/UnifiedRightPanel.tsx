@@ -5,7 +5,7 @@
  * @doc.pattern Component
  */
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Box, Tabs, Tab, Surface as Paper, IconButton, Typography, Badge, Divider, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Chip, Button, LinearProgress, Alert, Collapse, Spinner as CircularProgress } from '@ghatana/design-system';
 import { X as Close, Lightbulb, Sparkles as AutoAwesome, CheckCircle, Code, AlertTriangle as Warning, AlertCircle as ErrorIcon, Info, Play as PlayArrow, RefreshCw as Refresh, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
 import { Fade } from '@ghatana/design-system';
@@ -110,7 +110,7 @@ export function UnifiedRightPanel({
     const [tabValue, setTabValue] = useState(initialTab);
 
     // Update tab when initialTab changes (to allow controlling from parent)
-    useMemo(() => {
+    useEffect(() => {
         if (initialTab !== undefined) {
             setTabValue(initialTab);
         }
@@ -136,10 +136,10 @@ export function UnifiedRightPanel({
             {/* Header */}
             <Box
                 className="flex items-center p-2 border-gray-200 dark:border-gray-700 border-b" >
-                <Typography as="p" className="text-lg font-medium" fontWeight={600} className="grow pl-2">
+                <Typography component="p" className="grow pl-2 text-lg font-medium">
                     Assistant
                 </Typography>
-                <IconButton size="sm" onClick={onClose}>
+                <IconButton size="small" onClick={onClose}>
                     <Close size={16} />
                 </IconButton>
             </Box>
@@ -148,40 +148,12 @@ export function UnifiedRightPanel({
             <Tabs
                 value={tabValue}
                 onChange={(_, v) => setTabValue(v)}
-                variant="fullWidth"
+                variant="underline"
                 className="border-gray-200 dark:border-gray-700 border-b" >
-                <Tab
-                    icon={
-                        <Badge badgeContent={incompleteGuidance} tone="primary" max={9}>
-                            <Lightbulb size={16} />
-                        </Badge>
-                    }
-                    label="Guide"
-                    className="text-[11px]"
-                />
-                <Tab
-                    icon={
-                        <Badge badgeContent={suggestionCount} tone="secondary" max={9}>
-                            <AutoAwesome size={16} />
-                        </Badge>
-                    }
-                    label="AI"
-                    className="text-[11px]"
-                />
-                <Tab
-                    icon={
-                        <Badge badgeContent={errorCount} tone="danger" max={9}>
-                            <CheckCircle size={16} />
-                        </Badge>
-                    }
-                    label="Validate"
-                    className="text-[11px]"
-                />
-                <Tab
-                    icon={<Code size={16} />}
-                    label="Generate"
-                    className="text-[11px]"
-                />
+                <Tab label={`Guide (${incompleteGuidance})`} />
+                <Tab label={`AI (${suggestionCount})`} />
+                <Tab label={`Validate (${errorCount})`} />
+                <Tab label="Generate" />
             </Tabs>
 
             {/* Tab Panels */}
@@ -240,7 +212,7 @@ function GuidancePanel({
 
     return (
         <Box>
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mb-4 block">
+            <Typography component="span" className="mb-4 block text-xs text-gray-500" color="text.secondary">
                 {items.filter(i => !i.completed).length} tips for {currentPhase} phase
             </Typography>
 
@@ -249,7 +221,7 @@ function GuidancePanel({
                     No guidance yet for this phase
                 </Alert>
             ) : (
-                <List disablePadding>
+                <List>
                     {items.map(item => (
                         <Box key={item.id}>
                             <ListItem
@@ -258,29 +230,24 @@ function GuidancePanel({
                             >
                                 <ListItemIcon className="min-w-[32px]">
                                     {item.completed ? (
-                                        <CheckCircle size={16} tone="success" />
+                                        <CheckCircle size={16} className="text-green-600" />
                                     ) : (
-                                        <Lightbulb size={16} tone="primary" />
+                                        <Lightbulb size={16} className="text-blue-600" />
                                     )}
                                 </ListItemIcon>
                                 <ListItemText
-                                    primary={item.title}
-                                    primaryTypographyProps={{
-                                        variant: 'body2',
-                                        fontWeight: item.completed ? 400 : 500,
-                                        sx: { textDecoration: item.completed ? 'line-through' : 'none' },
-                                    }}
+                                    primary={<Typography variant="body2" className={item.completed ? 'line-through' : ''} fontWeight={item.completed ? 400 : 500}>{item.title}</Typography>}
                                 />
                                 {expandedId === item.id ? <ExpandLess /> : <ExpandMore />}
                             </ListItem>
                             <Collapse in={expandedId === item.id}>
                                 <Box className="pl-10 pr-2 pb-2">
-                                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                    <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                         {item.description}
                                     </Typography>
                                     {!item.completed && onComplete && (
                                         <Button
-                                            size="sm"
+                                            size="small"
                                             onClick={() => onComplete(item.id)}
                                             className="mt-2"
                                         >
@@ -308,11 +275,11 @@ function SuggestionsPanel({
     const getIcon = (type: Suggestion['type']) => {
         switch (type) {
             case 'improvement':
-                return <AutoAwesome size={16} tone="primary" />;
+                return <AutoAwesome size={16} className="text-blue-600" />;
             case 'warning':
-                return <Warning size={16} tone="warning" />;
+                return <Warning size={16} className="text-amber-600" />;
             case 'info':
-                return <Info size={16} tone="info" />;
+                return <Info size={16} className="text-cyan-600" />;
         }
     };
 
@@ -323,25 +290,25 @@ function SuggestionsPanel({
                     No suggestions yet. Looking good.
                 </Alert>
             ) : (
-                <List disablePadding>
+                <List>
                     {suggestions.map(suggestion => (
                         <ListItem
                             key={suggestion.id}
                             className="px-2 py-2 mb-2 rounded flex-col items-start bg-gray-100" >
                             <Box className="flex items-start w-full gap-2">
                                 {getIcon(suggestion.type)}
-                                <Typography as="p" className="text-sm" className="grow">
+                                <Typography component="p" className="grow text-sm">
                                     {suggestion.message}
                                 </Typography>
                                 {onDismiss && (
-                                    <IconButton size="sm" onClick={() => onDismiss(suggestion.id)}>
+                                    <IconButton size="small" onClick={() => onDismiss(suggestion.id)}>
                                         <Close className="text-sm" />
                                     </IconButton>
                                 )}
                             </Box>
                             {suggestion.action && (
                                 <Button
-                                    size="sm"
+                                    size="small"
                                     onClick={suggestion.action}
                                     className="mt-2 ml-6"
                                 >
@@ -371,11 +338,11 @@ function ValidationPanel({
     const getIcon = (severity: ValidationIssue['severity']) => {
         switch (severity) {
             case 'error':
-                return <ErrorIcon size={16} tone="danger" />;
+                return <ErrorIcon size={16} className="text-red-600" />;
             case 'warning':
-                return <Warning size={16} tone="warning" />;
+                return <Warning size={16} className="text-amber-600" />;
             case 'info':
-                return <Info size={16} tone="info" />;
+                return <Info size={16} className="text-cyan-600" />;
         }
     };
 
@@ -387,10 +354,10 @@ function ValidationPanel({
             {/* Score indicator */}
             {score !== undefined && (
                 <Box className="mb-4 text-center">
-                    <Typography as="h3" fontWeight={700} color={score >= 80 ? 'success.main' : score >= 50 ? 'warning.main' : 'error.main'}>
+                    <Typography variant="h3" fontWeight={700} color={score >= 80 ? 'success.main' : score >= 50 ? 'warning.main' : 'error.main'}>
                         {score}
                     </Typography>
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                    <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                         Validation Score
                     </Typography>
                 </Box>
@@ -415,7 +382,7 @@ function ValidationPanel({
             {/* Validate button */}
             <Button
                 fullWidth
-                variant="solid"
+                variant="contained"
                 onClick={onValidate}
                 disabled={isValidating}
                 startIcon={isValidating ? <Refresh className="spin" /> : <CheckCircle />}
@@ -430,7 +397,7 @@ function ValidationPanel({
             {issues.length === 0 ? (
                 <Alert severity="success">No validation issues found.</Alert>
             ) : (
-                <List disablePadding>
+                <List>
                     {issues.map(issue => (
                         <ListItem
                             key={issue.id}
@@ -438,16 +405,16 @@ function ValidationPanel({
                             <Box className="flex items-start w-full gap-2">
                                 {getIcon(issue.severity)}
                                 <Box className="grow">
-                                    <Typography as="p" className="text-sm">{issue.message}</Typography>
+                                    <Typography component="p" className="text-sm">{issue.message}</Typography>
                                     {issue.location && (
-                                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                        <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                             {issue.location}
                                         </Typography>
                                     )}
                                 </Box>
                             </Box>
                             {issue.autoFix && (
-                                <Button size="sm" onClick={issue.autoFix} className="mt-2 ml-6">
+                                <Button size="small" onClick={issue.autoFix} className="mt-2 ml-6">
                                     Auto-fix
                                 </Button>
                             )}
@@ -477,8 +444,8 @@ function GenerationPanel({
             {!isGenerating && (
                 <Button
                     fullWidth
-                    variant="solid"
-                    tone="secondary"
+                    variant="contained"
+                    color="secondary"
                     onClick={onGenerate}
                     startIcon={<PlayArrow />}
                     className="mb-4"
@@ -492,12 +459,12 @@ function GenerationPanel({
                 <>
                     <Box className="mb-4">
                         <Box className="flex justify-between mb-2">
-                            <Typography as="p" className="text-sm">Generating...</Typography>
-                            <Typography as="p" className="text-sm">{status.progress}%</Typography>
+                            <Typography component="p" className="text-sm">Generating...</Typography>
+                            <Typography component="p" className="text-sm">{status.progress}%</Typography>
                         </Box>
                         <LinearProgress variant="determinate" value={status.progress} />
                         {status.currentFile && (
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-1 block">
+                            <Typography component="span" className="mt-1 block text-xs text-gray-500" color="text.secondary">
                                 {status.currentFile}
                             </Typography>
                         )}
@@ -506,7 +473,7 @@ function GenerationPanel({
                     <Button
                         fullWidth
                         variant="outlined"
-                        tone="danger"
+                        color="error"
                         onClick={onCancel}
                         className="mb-4"
                     >
@@ -518,7 +485,7 @@ function GenerationPanel({
             <Divider className="mb-4" />
 
             {/* Files list */}
-            <Typography as="p" className="text-sm font-medium" className="mb-2">
+            <Typography component="p" className="mb-2 text-sm font-medium">
                 Generated Files
             </Typography>
 
@@ -527,25 +494,23 @@ function GenerationPanel({
             )}
 
             {status?.files && status.files.length > 0 && (
-                <List disablePadding>
+                <List>
                     {status.files.map(file => (
                         <ListItem
                             key={file.name}
                             className="px-2 py-1 rounded"
                         >
                             <ListItemIcon className="min-w-[28px]">
-                                {file.status === 'complete' && <CheckCircle size={16} tone="success" />}
+                                {file.status === 'complete' && <CheckCircle size={16} className="text-green-600" />}
                                 {file.status === 'generating' && (
-                                    <CircularProgress size={16} />
+                                    <CircularProgress />
                                 )}
                                 {file.status === 'pending' && <Code size={16} color="disabled" />}
-                                {file.status === 'error' && <ErrorIcon size={16} tone="danger" />}
+                                {file.status === 'error' && <ErrorIcon size={16} className="text-red-600" />}
                             </ListItemIcon>
                             <ListItemText
-                                primary={file.name}
-                                primaryTypographyProps={{ variant: 'body2' }}
+                                primary={<Typography variant="body2">{file.name}</Typography>}
                                 secondary={file.error}
-                                secondaryTypographyProps={{ color: 'error' }}
                             />
                         </ListItem>
                     ))}

@@ -20,7 +20,18 @@ import {
     showAISuggestionsAtom,
 } from '../../stores/workflow.store';
 
-import type { WorkflowAuditEntry, AuditAction } from '@yappc/core/types';
+import type { WorkflowAuditEntry } from '@yappc/core/types';
+type AuditAction =
+    | 'CREATED'
+    | 'STEP_STARTED'
+    | 'STEP_COMPLETED'
+    | 'STEP_REVISITED'
+    | 'DATA_UPDATED'
+    | 'AI_SUGGESTION_ACCEPTED'
+    | 'AI_SUGGESTION_REJECTED'
+    | 'STATUS_CHANGED'
+    | 'OWNER_CHANGED';
+
 
 // ============================================================================
 // TYPES
@@ -99,14 +110,13 @@ function formatTimestamp(timestamp: string): string {
 // ============================================================================
 
 export function EvidencePanel() {
-    const theme = useTheme();
-    const [tabValue, setTabValue] = React.useState(0);
+    const [tabValue, setTabValue] = React.useState<'audit' | 'ai'>('audit');
 
     const auditEntries = useAtomValue(workflowAuditAtom);
     const aiSuggestion = useAtomValue(currentAISuggestionAtom);
     const showAISuggestions = useAtomValue(showAISuggestionsAtom);
 
-    const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    const handleTabChange = (_: React.SyntheticEvent, newValue: 'audit' | 'ai') => {
         setTabValue(newValue);
     };
 
@@ -116,26 +126,16 @@ export function EvidencePanel() {
             <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
-                variant="fullWidth"
+                variant="underline"
                 className="border-gray-200 dark:border-gray-700 border-b" >
-                <Tab
-                    icon={<HistoryIcon size={16} />}
-                    iconPosition="start"
-                    label="Audit"
-                    className="min-h-[48px]"
-                />
-                <Tab
-                    icon={<AIIcon size={16} />}
-                    iconPosition="start"
-                    label="AI"
-                    className="min-h-[48px]"
-                />
+                <Tab value="audit" label="Audit" />
+                <Tab value="ai" label="AI" />
             </Tabs>
 
             {/* Audit Trail Tab */}
-            <TabPanel value={tabValue} index={0}>
-                {auditEntries.length === 0 ? (
-                    <Box className="text-center py-8">
+            {tabValue === 'audit' && (
+                auditEntries.length === 0 ? (
+                    <Box className="py-8 text-center">
                         <HistoryIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
                         <Typography color="text.secondary">
                             No audit entries yet
@@ -144,151 +144,132 @@ export function EvidencePanel() {
                 ) : (
                     <List className="p-0">
                         {auditEntries.map((entry, index) => {
-                            const ActionIcon = ACTION_ICONS[entry.action] || InfoIcon;
+                            const action = entry.action in ACTION_ICONS
+                                ? (entry.action as AuditAction)
+                                : 'STATUS_CHANGED';
+                            const ActionIcon = ACTION_ICONS[action];
 
                             return (
                                 <React.Fragment key={entry.id}>
-                                    <ListItem
-                                        alignItems="flex-start"
-                                        className="px-0 py-3"
-                                    >
+                                    <ListItem className="px-0 py-3">
                                         <ListItemIcon className="min-w-[40px]">
-                                            <Avatar
-                                                className="w-[28px] h-[28px]" style={{ backgroundColor: theme.palette.action.hover }} >
-                                                <ActionIcon
-                                                    className="text-gray-500 dark:text-gray-400 text-base"
-                                                />
+                                            <Avatar className="h-[28px] w-[28px] bg-gray-100 dark:bg-gray-800">
+                                                <ActionIcon className="text-base text-gray-500 dark:text-gray-400" />
                                             </Avatar>
                                         </ListItemIcon>
                                         <ListItemText
                                             primary={
                                                 <Box className="flex items-center gap-2">
-                                                    <Typography as="p" className="text-sm" fontWeight={500}>
-                                                        {ACTION_LABELS[entry.action]}
+                                                    <Typography className="text-sm font-medium">
+                                                        {ACTION_LABELS[action]}
                                                     </Typography>
-                                                    {entry.step && (
-                                                        <Chip
-                                                            label={entry.step}
-                                                            size="sm"
-                                                            className="capitalize h-[18px] text-[10px]"
-                                                        />
-                                                    )}
                                                 </Box>
                                             }
                                             secondary={
                                                 <>
-                                                    <Typography
-                                                        as="span" className="text-xs text-gray-500"
-                                                        color="text.secondary"
-                                                        component="span"
-                                                        className="block mt-1"
-                                                    >
-                                                        by {entry.userName}
+                                                    <Typography className="mt-1 block text-xs text-gray-500" color="text.secondary">
+                                                        Audit entry {entry.id}
                                                     </Typography>
-                                                    <Typography as="span" className="text-xs text-gray-500" color="text.disabled" component="span" className="block">
-                                                        {formatTimestamp(entry.timestamp)}
+                                                    <Typography className="block text-xs text-gray-500" color="text.disabled">
+                                                        {formatTimestamp(entry.at)}
                                                     </Typography>
                                                 </>
                                             }
                                         />
                                     </ListItem>
-                                    {index < auditEntries.length - 1 && (
-                                        <Divider component="li" />
-                                    )}
+                                    {index < auditEntries.length - 1 && <Divider />}
                                 </React.Fragment>
                             );
                         })}
                     </List>
-                )}
-            </TabPanel>
+                )
+            )}
 
             {/* AI Suggestions Tab */}
-            <TabPanel value={tabValue} index={1}>
-                {!showAISuggestions ? (
-                    <Box className="text-center py-8">
-                        <AIIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
-                        <Typography color="text.secondary">
-                            AI suggestions are disabled
-                        </Typography>
-                    </Box>
-                ) : aiSuggestion ? (
-                    <Card variant="outlined">
-                        <CardContent>
-                            <Box className="flex items-center gap-2 mb-2">
-                                <SuggestionIcon tone="primary" size={16} />
-                                <Typography as="p" className="text-sm font-medium" tone="primary">
-                                    AI Suggestion
-                                </Typography>
-                                <Chip
-                                    label={`${Math.round(aiSuggestion.confidence * 100)}% confidence`}
-                                    size="sm"
-                                    variant="outlined"
-                                    className="ml-auto"
-                                />
-                            </Box>
-                            <Typography as="p" className="text-sm" color="text.secondary">
-                                {aiSuggestion.content}
+            {tabValue === 'ai' && (
+                <>
+                    {!showAISuggestions ? (
+                        <Box className="py-8 text-center">
+                            <AIIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
+                            <Typography color="text.secondary">
+                                AI suggestions are disabled
                             </Typography>
-                        </CardContent>
-                        {aiSuggestion.actions && aiSuggestion.actions.length > 0 && (
-                            <CardActions>
-                                {aiSuggestion.actions.map((action, index) => (
-                                    <Button
-                                        key={index}
+                        </Box>
+                    ) : aiSuggestion ? (
+                        <Card variant="outlined">
+                            <CardContent>
+                                <Box className="mb-2 flex items-center gap-2">
+                                    <SuggestionIcon className="text-blue-600" size={16} />
+                                    <Typography className="text-sm font-medium text-blue-600">
+                                        AI Suggestion
+                                    </Typography>
+                                    <Chip
+                                        label={`${Math.round(aiSuggestion.confidence * 100)}% confidence`}
                                         size="sm"
-                                        variant={action.action === 'ACCEPT' ? 'contained' : 'text'}
-                                        color={
-                                            action.action === 'ACCEPT'
-                                                ? 'primary'
-                                                : action.action === 'REJECT'
-                                                    ? 'error'
-                                                    : 'inherit'
-                                        }
-                                    >
-                                        {action.label}
-                                    </Button>
-                                ))}
-                            </CardActions>
-                        )}
-                    </Card>
-                ) : (
-                    <Box className="text-center py-8">
-                        <AIIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
-                        <Typography color="text.secondary" gutterBottom>
-                            No suggestions right now
-                        </Typography>
-                        <Typography as="span" className="text-xs text-gray-500" color="text.disabled">
-                            AI will provide suggestions as you work through the workflow
-                        </Typography>
-                    </Box>
-                )}
+                                        variant="outlined"
+                                        className="ml-auto"
+                                    />
+                                </Box>
+                                <Typography className="text-sm text-gray-500" color="text.secondary">
+                                    {aiSuggestion.content}
+                                </Typography>
+                            </CardContent>
+                            {aiSuggestion.actions && aiSuggestion.actions.length > 0 && (
+                                <CardActions>
+                                    {aiSuggestion.actions.map((action, index) => (
+                                        <Button
+                                            key={index}
+                                            size="sm"
+                                            variant={action.action === 'ACCEPT' ? 'contained' : 'text'}
+                                            color={
+                                                action.action === 'ACCEPT'
+                                                    ? 'primary'
+                                                    : action.action === 'REJECT'
+                                                        ? 'error'
+                                                        : 'inherit'
+                                            }
+                                        >
+                                            {action.label}
+                                        </Button>
+                                    ))}
+                                </CardActions>
+                            )}
+                        </Card>
+                    ) : (
+                        <Box className="py-8 text-center">
+                            <AIIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
+                            <Typography color="text.secondary" gutterBottom>
+                                No suggestions right now
+                            </Typography>
+                            <Typography className="text-xs text-gray-500" color="text.disabled">
+                                AI will provide suggestions as you work through the workflow
+                            </Typography>
+                        </Box>
+                    )}
 
-                {/* AI Capabilities Info */}
-                <Box className="mt-6">
-                    <Typography as="p" className="text-sm font-medium" gutterBottom>
-                        AI Capabilities
-                    </Typography>
-                    <List dense className="p-0">
-                        {[
-                            'Intent clarification',
-                            'Context retrieval',
-                            'Plan generation',
-                            'Anomaly detection',
-                            'Pattern extraction',
-                        ].map((capability) => (
-                            <ListItem key={capability} className="px-0 py-1">
-                                <ListItemIcon className="min-w-[28px]">
-                                    <CheckIcon size={16} tone="success" />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={capability}
-                                    primaryTypographyProps={{ variant: 'caption' }}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
-                </Box>
-            </TabPanel>
+                    <Box className="mt-6">
+                        <Typography className="text-sm font-medium" gutterBottom>
+                            AI Capabilities
+                        </Typography>
+                        <List className="p-0">
+                            {[
+                                'Intent clarification',
+                                'Context retrieval',
+                                'Plan generation',
+                                'Anomaly detection',
+                                'Pattern extraction',
+                            ].map((capability) => (
+                                <ListItem key={capability} className="px-0 py-1">
+                                    <ListItemIcon className="min-w-[28px]">
+                                        <CheckIcon size={16} className="text-green-600" />
+                                    </ListItemIcon>
+                                    <ListItemText primary={capability} />
+                                </ListItem>
+                            ))}
+                        </List>
+                    </Box>
+                </>
+            )}
         </Box>
     );
 }

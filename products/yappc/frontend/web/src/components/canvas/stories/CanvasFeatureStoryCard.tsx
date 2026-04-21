@@ -154,7 +154,6 @@ const CanvasFeatureStoryCardComponent = forwardRef<
     return (
       <Paper
         ref={ref}
-        variant="flat"
         variant="outlined"
         role="article"
         aria-labelledby={cardTitleId}
@@ -174,7 +173,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
         className={`border border-solid ${interactive ? 'hover:border-blue-600 hover:shadow-md' : ''} focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-4`}
         {...paperProps}
       >
-        <Stack spacing={2} divider={<Divider flexItem aria-hidden />}>
+        <Stack spacing={2} divider={<Divider aria-hidden />}>
           <Stack
             direction="row"
             justifyContent="space-between"
@@ -184,22 +183,19 @@ const CanvasFeatureStoryCardComponent = forwardRef<
             <Box>
               {showCategoryLabel ? (
                 <Typography
-                  as="span" className="text-xs uppercase tracking-wider"
-                  component="p"
+                  className="text-xs uppercase tracking-wider"
                   color="text.secondary"
-                  className="uppercase"
                   data-testid={`canvas-feature-story-category-${story.categoryId}`}
                 >
                   {story.categoryTitle}
                 </Typography>
               ) : null}
-              <Typography as="h6" component="h3" id={cardTitleId}>
+              <Typography variant="h6" id={cardTitleId}>
                 {story.title}
               </Typography>
               <Typography
-                as="p" className="text-sm"
+                className="mt-1 text-sm"
                 color="text.secondary"
-                className="mt-1"
               >
                 {story.narrative}
               </Typography>
@@ -234,10 +230,10 @@ const CanvasFeatureStoryCardComponent = forwardRef<
 
           {story.progress?.summary ? (
             <Box>
-              <Typography as="p" className="text-sm font-medium" component="h4" gutterBottom>
+              <Typography className="text-sm font-medium" gutterBottom>
                 Recent Updates
               </Typography>
-              <Typography as="p" className="text-sm" color="text.secondary">
+              <Typography className="text-sm" color="text.secondary">
                 <span
                   style={{
                     fontStyle:
@@ -257,32 +253,22 @@ const CanvasFeatureStoryCardComponent = forwardRef<
           ) : null}
 
           <Box>
-            <Typography as="p" className="text-sm font-medium" component="h4" gutterBottom>
+            <Typography className="text-sm font-medium" gutterBottom>
               Acceptance Criteria
             </Typography>
             <List
-              dense
-              disablePadding
               aria-label={`Acceptance criteria for ${story.title}`}
               data-testid={`canvas-feature-story-${story.id}-criteria`}
             >
               {story.acceptanceCriteria.map((criterion) => (
                 <ListItem
                   key={criterion.id}
-                  disableGutters
-                  alignItems="flex-start"
+                  disablePadding
+                  style={{ alignItems: 'flex-start' }}
                 >
                   <ListItemText
-                    primary={criterion.title ?? criterion.summary}
-                    secondary={criterion.title ? criterion.summary : undefined}
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 600,
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'body2',
-                      color: 'text.secondary',
-                    }}
+                    primary={<Typography className="text-sm font-semibold">{criterion.title ?? criterion.summary}</Typography>}
+                    secondary={criterion.title ? <Typography className="text-sm text-gray-600">{criterion.summary}</Typography> : undefined}
                   />
                 </ListItem>
               ))}
@@ -290,17 +276,15 @@ const CanvasFeatureStoryCardComponent = forwardRef<
           </Box>
 
           <Box>
-            <Typography as="p" className="text-sm font-medium" component="h4" gutterBottom>
+            <Typography className="text-sm font-medium" gutterBottom>
               Tests
             </Typography>
             <List
-              dense
-              disablePadding
               aria-label={`Tests validating ${story.title}`}
               data-testid={`canvas-feature-story-${story.id}-tests`}
             >
               {story.tests.map((test) => (
-                <ListItem key={test.id} disableGutters alignItems="flex-start">
+                <ListItem key={test.id} disablePadding style={{ alignItems: 'flex-start' }}>
                   <Stack spacing={0.5} className="w-full">
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Chip
@@ -309,7 +293,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
                         tone={testTypeColor[test.type] ?? 'default'}
                         variant="outlined"
                       />
-                      <Typography as="p" className="text-sm">{test.summary}</Typography>
+                      <Typography className="text-sm">{test.summary}</Typography>
                     </Stack>
                     {renderTestTargets(test)}
                   </Stack>

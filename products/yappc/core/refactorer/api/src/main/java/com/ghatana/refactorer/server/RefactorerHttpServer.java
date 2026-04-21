@@ -2,9 +2,9 @@ package com.ghatana.refactorer.server;
 
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.server.HttpServerBuilder;
+import com.ghatana.platform.http.security.filter.TenantExtractionFilter;
 import com.ghatana.refactorer.config.RefactorerConfig;
 import com.ghatana.refactorer.server.auth.JwtAuthFilter;
-import com.ghatana.refactorer.server.auth.TenantContextFilter;
 import com.ghatana.refactorer.server.rest.DiagnoseController;
 import com.ghatana.refactorer.server.rest.JobsController;
 import com.ghatana.refactorer.server.rest.RunController;
@@ -45,7 +45,7 @@ public final class RefactorerHttpServer {
 
     private final RefactorerConfig config;
     private final JwtAuthFilter jwtAuthFilter;
-    private final TenantContextFilter tenantContextFilter;
+    private final TenantExtractionFilter tenantExtractionFilter;
     private final DiagnoseController diagnoseController;
     private final JobsController jobsController;
     private final RunController runController;
@@ -53,13 +53,13 @@ public final class RefactorerHttpServer {
     public RefactorerHttpServer(
             RefactorerConfig config,
             JwtAuthFilter jwtAuthFilter,
-            TenantContextFilter tenantContextFilter,
+            TenantExtractionFilter tenantExtractionFilter,
             DiagnoseController diagnoseController,
             JobsController jobsController,
             RunController runController) {
         this.config = config;
         this.jwtAuthFilter = jwtAuthFilter;
-        this.tenantContextFilter = tenantContextFilter;
+        this.tenantExtractionFilter = tenantExtractionFilter;
         this.diagnoseController = diagnoseController;
         this.jobsController = jobsController;
         this.runController = runController;
@@ -135,7 +135,7 @@ public final class RefactorerHttpServer {
                 // Security filter (JWT authentication)
                 .addFilter((request, next) -> jwtAuthFilter.filter(request, next))
                 // Tenant context extraction (runs AFTER JWT auth to use tenant from JWT if available)
-                .addFilter((request, next) -> tenantContextFilter.filter(request, next))
+                .addFilter((request, next) -> tenantExtractionFilter.apply(request, next))
                 // Global error handler filter
                 .addFilter((request, next)
                         -> // Execute next in chain and map exceptions to a friendly HTTP response.

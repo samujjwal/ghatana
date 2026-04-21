@@ -331,6 +331,12 @@ describe('Canvas Integration Tests', () => {
       expect(screen.getByText('Alex')).toBeInTheDocument();
       expect(screen.getByText('Sam')).toBeInTheDocument();
     });
+
+    it('shows explicit local-only sync status for the mounted canvas', () => {
+      renderWithProviders(<UnifiedCanvasComplete />);
+
+      expect(screen.getByTestId('canvas-sync-status')).toHaveTextContent('Local draft only');
+    });
   });
 
   describe('AI Status Bar Integration', () => {

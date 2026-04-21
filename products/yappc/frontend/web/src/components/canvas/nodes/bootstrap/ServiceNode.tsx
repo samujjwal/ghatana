@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useState, useCallback } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   Server,
@@ -42,7 +42,7 @@ export interface ServiceEndpoint {
   readonly description?: string;
 }
 
-export interface ServiceNodeData {
+export interface ServiceNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly description?: string;
   readonly serviceType: ServiceType;
@@ -62,7 +62,9 @@ export interface ServiceNodeData {
   readonly onOpenComments?: (nodeId: string) => void;
 }
 
-export interface ServiceNodeProps extends NodeProps<ServiceNodeData> {}
+type ServiceCanvasNode = Node<ServiceNodeData>;
+
+export interface ServiceNodeProps extends NodeProps<ServiceCanvasNode> {}
 
 // =============================================================================
 // Constants
@@ -192,8 +194,8 @@ export const ServiceNode = memo<ServiceNodeProps>(({ id, data, selected }) => {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {data.requiresAuth && <Lock className="w-3.5 h-3.5 text-amber-600" title="Requires Auth" />}
-          {data.isPublic && <Globe className="w-3.5 h-3.5 text-green-600" title="Public" />}
+          {data.requiresAuth && <span title="Requires Auth"><Lock className="w-3.5 h-3.5 text-amber-600" /></span>}
+          {data.isPublic && <span title="Public"><Globe className="w-3.5 h-3.5 text-green-600" /></span>}
           <div className="relative">
             <button
               onClick={(e) => {

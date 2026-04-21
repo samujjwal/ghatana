@@ -12,8 +12,26 @@
 import React from 'react';
 import { Box, Button, Typography } from '@ghatana/design-system';
 import { Lightbulb, Code, Palette, GitBranch as AccountTree, FileText as Description } from 'lucide-react';
-import type { CanvasMode } from '../../../types/canvas';
-import type { LifecyclePhase } from '../../../theme/phaseTheme';
+
+type CanvasMode =
+    | 'plan'
+    | 'code'
+    | 'design'
+    | 'brainstorm'
+    | 'diagram'
+    | 'test'
+    | 'deploy'
+    | 'observe';
+
+type LifecyclePhase =
+    | 'intent'
+    | 'shape'
+    | 'validate'
+    | 'generate'
+    | 'run'
+    | 'observe'
+    | 'improve'
+    | 'build';
 
 interface EmptyStateConfig {
     title: string;
@@ -25,6 +43,81 @@ interface EmptyStateConfig {
         icon: React.ReactNode;
     }>;
 }
+
+const createFallbackConfig = (icon: React.ReactNode): Record<CanvasMode, EmptyStateConfig> => ({
+    plan: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Create Frame', action: 'frame', icon: <AccountTree /> },
+            { label: 'Add Text', action: 'text', icon: <Description /> },
+        ],
+    },
+    code: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Create Build', action: 'build', icon: <Code /> },
+            { label: 'Add Service', action: 'service', icon: <AccountTree /> },
+        ],
+    },
+    design: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Create Frame', action: 'frame', icon: <Palette /> },
+            { label: 'Add Design Note', action: 'design-note', icon: <Lightbulb /> },
+        ],
+    },
+    brainstorm: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Add Sticky Note', action: 'sticky', icon: <Description /> },
+            { label: 'Start Mind Map', action: 'mindmap', icon: <AccountTree /> },
+        ],
+    },
+    diagram: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Add Node', action: 'node', icon: <AccountTree /> },
+            { label: 'Create Connector', action: 'connector', icon: <Code /> },
+        ],
+    },
+    test: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Add Test Case', action: 'test-case', icon: <Description /> },
+            { label: 'Define Scenario', action: 'scenario', icon: <Lightbulb /> },
+        ],
+    },
+    deploy: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Add Environment', action: 'environment', icon: <AccountTree /> },
+            { label: 'Define Pipeline', action: 'pipeline', icon: <Code /> },
+        ],
+    },
+    observe: {
+        title: 'Start Your Journey',
+        subtitle: 'Select a tool from the toolbar or drop a file here',
+        icon,
+        suggestions: [
+            { label: 'Add Metric', action: 'metric', icon: <Code /> },
+            { label: 'Create Dashboard', action: 'dashboard', icon: <AccountTree /> },
+        ],
+    },
+});
 
 const EMPTY_STATE_CONFIG: Record<LifecyclePhase, Record<CanvasMode, EmptyStateConfig>> = {
     intent: {
@@ -275,11 +368,11 @@ const EMPTY_STATE_CONFIG: Record<LifecyclePhase, Record<CanvasMode, EmptyStateCo
         },
     },
     // Minimal configs for other phases
-    validate: {} as unknown,
-    generate: {} as unknown,
-    run: {} as unknown,
-    observe: {} as unknown,
-    improve: {} as unknown,
+    validate: createFallbackConfig(<Lightbulb className="text-5xl" />),
+    generate: createFallbackConfig(<Code className="text-5xl" />),
+    run: createFallbackConfig(<AccountTree className="text-5xl" />),
+    observe: createFallbackConfig(<Code className="text-5xl" />),
+    improve: createFallbackConfig(<Palette className="text-5xl" />),
 };
 
 interface DynamicEmptyStateProps {
@@ -305,7 +398,8 @@ export const DynamicEmptyState: React.FC<DynamicEmptyStateProps> = ({
 
     return (
         <Box
-            className="absolute text-center pointer-events-none top-[50%] left-[50%] z-[5] max-w-[500px]" style={{ transform: 'translate(-50%' }} >
+            className="absolute left-[50%] top-[50%] z-[5] max-w-[500px] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none"
+        >
             <Box className="mb-4 opacity-[0.3]">
                 {config.icon}
             </Box>

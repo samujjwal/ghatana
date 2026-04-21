@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { 
   Activity, 
   BarChart2, 
@@ -37,7 +37,7 @@ export interface MetricThreshold {
   label?: string;
 }
 
-export interface MetricNodeData {
+export interface MetricNodeData extends Record<string, unknown> {
   id: string;
   name: string;
   description?: string;
@@ -58,7 +58,9 @@ export interface MetricNodeData {
   dataSource?: string;
 }
 
-export type MetricNodeProps = NodeProps<MetricNodeData>;
+type MetricCanvasNode = Node<MetricNodeData>;
+
+export type MetricNodeProps = NodeProps<MetricCanvasNode>;
 
 // ============================================================================
 // CONSTANTS

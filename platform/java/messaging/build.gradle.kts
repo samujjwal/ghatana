@@ -2,7 +2,7 @@ plugins {
     id("java-module")
 }
 
-description = "Platform Messaging - Unified messaging and connector abstractions (merged from connectors + aep-connectors)"
+description = "Platform Messaging - Unified messaging and connector abstractions"
 
 dependencies {
     // Core platform dependencies

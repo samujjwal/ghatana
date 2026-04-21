@@ -6,10 +6,6 @@ const workspaceAliases = {
     __dirname,
     "../../../platform/typescript/design-system/src/index.ts",
   ),
-  "@ghatana/canvas-core": resolve(
-    __dirname,
-    "../../../platform/typescript/canvas/src/index.ts",
-  ),
   "@ghatana/canvas": resolve(
     __dirname,
     "../../../platform/typescript/canvas/src/index.ts",
@@ -28,7 +24,7 @@ const workspaceAliases = {
   ),
   "@ghatana/platform-utils": resolve(
     __dirname,
-    "../../../platform/typescript/foundation/platform-utils/src/index.ts",
+    "../../../platform/typescript/platform-utils/src/index.ts"
   ),
   "@ghatana/domain-components": resolve(
     __dirname,

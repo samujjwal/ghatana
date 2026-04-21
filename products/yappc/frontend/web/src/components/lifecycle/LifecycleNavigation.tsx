@@ -17,15 +17,11 @@ import {
     ListItem,
     ListItemButton,
     ListItemIcon,
-    ListItemText,
     Box,
-    BottomNavigation,
-    BottomNavigationAction,
-    useTheme,
-    useMediaQuery,
+    Typography,
 } from '@ghatana/design-system';
 import { Home as HomeIcon, Activity as TimelineIcon, PenLine as CanvasIcon, ClipboardList as AssignmentIcon, Lightbulb as InsightsIcon, Shield as AuditIcon, Settings as SettingsIcon } from 'lucide-react';
-import type { ReactElement, SyntheticEvent } from 'react';
+import type { ReactElement } from 'react';
 
 // ============================================================================
 // Types
@@ -104,11 +100,10 @@ function DesktopSidebar({ open, onClose }: DesktopSidebarProps) {
 
     return (
         <Drawer
-            variant="permanent"
             open={open}
-            className="shrink-0" style={{ width: open ? 240 : 60 }}
+            onClose={onClose ?? (() => undefined)}
         >
-            <Box className="py-4">
+            <Box className="shrink-0 py-4" style={{ width: open ? 240 : 60 }}>
                 <List>
                     {NAV_ITEMS.map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
@@ -126,18 +121,16 @@ function DesktopSidebar({ open, onClose }: DesktopSidebarProps) {
                                         {item.icon}
                                     </ListItemIcon>
                                     {open && (
-                                        <ListItemText
-                                            primary={item.label}
-                                            secondary={item.description}
-                                            primaryTypographyProps={{
-                                                fontSize: 14,
-                                                fontWeight: isActive ? 600 : 400,
-                                            }}
-                                            secondaryTypographyProps={{
-                                                fontSize: 12,
-                                                noWrap: true,
-                                            }}
-                                        />
+                                        <Box className="min-w-0">
+                                            <Typography className="text-sm" style={{ fontWeight: isActive ? 600 : 400 }}>
+                                                {item.label}
+                                            </Typography>
+                                            {item.description && (
+                                                <Typography className="truncate text-xs text-gray-500 dark:text-gray-400">
+                                                    {item.description}
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     )}
                                 </ListItemButton>
                             </ListItem>
@@ -160,27 +153,23 @@ function MobileBottomNav() {
     // Find current active tab
     const activeIndex = NAV_ITEMS.findIndex(item => location.pathname.startsWith(item.path));
 
-    const handleChange = (_: SyntheticEvent, newValue: number) => {
-        navigate(NAV_ITEMS[newValue].path);
-    };
-
     // Show only primary items on mobile
     const mobileItems = NAV_ITEMS.slice(0, 5);
 
     return (
-        <BottomNavigation
-            value={activeIndex >= 0 && activeIndex < 5 ? activeIndex : 0}
-            onChange={handleChange}
-            showLabels
-            className="fixed bottom-[0px] left-[0px] right-[0px] border-gray-200 dark:border-gray-700 z-[1100] border-t" >
+        <Box className="fixed bottom-[0px] left-[0px] right-[0px] z-[1100] flex border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
             {mobileItems.map((item) => (
-                <BottomNavigationAction
+                <button
                     key={item.id}
-                    label={item.label}
-                    icon={item.icon}
-                />
+                  type="button"
+                  onClick={() => navigate(item.path)}
+                  className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs ${item === mobileItems[activeIndex] ? 'text-blue-600' : 'text-gray-600 dark:text-gray-300'}`}
+                >
+                    {item.icon}
+                    <span>{item.label}</span>
+                </button>
             ))}
-        </BottomNavigation>
+        </Box>
     );
 }
 
@@ -194,8 +183,7 @@ interface LifecycleNavigationProps {
 }
 
 export function LifecycleNavigation({ open = true, onClose }: LifecycleNavigationProps) {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
 
     if (isMobile) {
         return <MobileBottomNav />;

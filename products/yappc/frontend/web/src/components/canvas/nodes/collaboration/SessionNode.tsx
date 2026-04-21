@@ -12,7 +12,7 @@
 
 import { memo, useState, useEffect } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Users,
   Code2,
@@ -34,15 +34,58 @@ import {
   Circle,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type {
-  CollaborationSession,
-  CollaborationSessionType,
-  CollaborationSessionStatus,
-  SessionParticipant,
-  SessionParticipantRole,
-} from '@yappc/api';
 
-export interface SessionNodeData {
+type CollaborationSessionType =
+  | 'PAIR_PROGRAMMING'
+  | 'CODE_REVIEW'
+  | 'WHITEBOARD'
+  | 'DOCUMENT_EDITING'
+  | 'SCREEN_SHARE'
+  | 'MEETING';
+
+type CollaborationSessionStatus =
+  | 'SCHEDULED'
+  | 'ACTIVE'
+  | 'PAUSED'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+type SessionParticipantRole = 'HOST' | 'PARTICIPANT' | 'OBSERVER';
+
+interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+}
+
+interface SessionParticipant {
+  id: string;
+  userId: string;
+  role: SessionParticipantRole;
+  isActive: boolean;
+  user: SessionUser;
+}
+
+interface CollaborationSession {
+  id: string;
+  name: string;
+  description?: string;
+  type: CollaborationSessionType;
+  status: CollaborationSessionStatus;
+  participants: SessionParticipant[];
+  hostId: string;
+  host: SessionUser;
+  resourceType?: string;
+  resourceId?: string;
+  startedAt?: string;
+  endedAt?: string;
+  scheduledAt?: string;
+  createdAt?: string;
+  maxParticipants?: number;
+}
+
+export interface SessionNodeData extends Record<string, unknown> {
   session: CollaborationSession;
   currentUserId?: string;
   onJoin?: () => void;
@@ -52,6 +95,8 @@ export interface SessionNodeData {
   onEnd?: () => void;
   onKick?: (userId: string) => void;
 }
+
+type SessionCanvasNode = Node<SessionNodeData, 'session'>;
 
 const sessionTypeConfig: Record<
   CollaborationSessionType,
@@ -143,7 +188,7 @@ const roleColors: Record<SessionParticipantRole, string> = {
   OBSERVER: 'text-slate-400',
 };
 
-function SessionNode({ data }: NodeProps<SessionNodeData>) {
+function SessionNode({ data }: NodeProps<SessionCanvasNode>) {
   const {
     session,
     currentUserId,
@@ -164,7 +209,7 @@ function SessionNode({ data }: NodeProps<SessionNodeData>) {
 
   // Check if current user is in the session
   const currentParticipant = session.participants.find(
-    (p) => p.userId === currentUserId && p.isActive
+    (p: SessionParticipant) => p.userId === currentUserId && p.isActive
   );
   const isHost = session.hostId === currentUserId;
   const isActive = session.status === 'ACTIVE';
@@ -211,7 +256,7 @@ function SessionNode({ data }: NodeProps<SessionNodeData>) {
   };
 
   // Get active participants
-  const activeParticipants = session.participants.filter((p) => p.isActive);
+  const activeParticipants = session.participants.filter((p: SessionParticipant) => p.isActive);
 
   return (
     <div
@@ -333,7 +378,7 @@ function SessionNode({ data }: NodeProps<SessionNodeData>) {
         </div>
 
         <div className="space-y-2">
-          {activeParticipants.slice(0, 5).map((participant) => {
+          {activeParticipants.slice(0, 5).map((participant: SessionParticipant) => {
             const RoleIcon = roleIcons[participant.role];
             return (
               <div
@@ -356,10 +401,9 @@ function SessionNode({ data }: NodeProps<SessionNodeData>) {
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm truncate">{participant.user.name}</p>
                 </div>
-                <RoleIcon
-                  className={cn('w-4 h-4', roleColors[participant.role])}
-                  title={participant.role}
-                />
+                <span title={participant.role}>
+                  <RoleIcon className={cn('w-4 h-4', roleColors[participant.role])} />
+                </span>
                 {isHost && participant.userId !== currentUserId && onKick && (
                   <button
                     onClick={() => onKick(participant.userId)}
@@ -483,7 +527,9 @@ function SessionNode({ data }: NodeProps<SessionNodeData>) {
       {/* Footer */}
       <div className="px-4 py-3 bg-slate-900/50 rounded-b-lg">
         <div className="flex items-center justify-between text-xs text-slate-500">
-          <span>Created {new Date(session.createdAt).toLocaleDateString()}</span>
+          <span>
+            Created {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : 'Unknown'}
+          </span>
           <div className="flex items-center gap-1">
             {isActive && (
               <span className="flex items-center gap-1 text-green-400">

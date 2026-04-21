@@ -113,8 +113,7 @@ public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
         verify(mockContext).registerService(eq(AgentOrchestrator.class), any(FinanceAiRuntimeService.class));
         verify(mockContext).registerService(eq(ModelGovernanceService.class), any(FinanceAiRuntimeService.class));
         verify(mockContext).registerService(eq(AutonomyManager.class), any(FinanceAiRuntimeService.class));
-        verify(mockContext).registerService(eq(FinanceProductShell.class), any(FinanceProductShell.class));
-        verify(mockContext).registerService(eq(FinanceBFF.class), any(FinanceBFF.class));
+        // productShell and bff are now registered in start() after transactionService is available
     }
 
     @Test
@@ -126,6 +125,8 @@ public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
         runPromise(() -> startPromise);
 
         verify(mockContext).registerService(eq(TransactionService.class), any(TransactionService.class));
+        verify(mockContext).registerService(eq(FinanceProductShell.class), any(FinanceProductShell.class));
+        verify(mockContext).registerService(eq(FinanceBFF.class), any(FinanceBFF.class));
 
         var healthStatus = module.getHealthStatus();
         assertThat(healthStatus.isHealthy()).isTrue();

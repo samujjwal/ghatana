@@ -1,16 +1,7 @@
 /**
  * Lifecycle Explorer Route
  *
- * Provides an interactive view of all 7 lifecycle phases, artifacts, and transitions.
- * Accessible from the project's main navigation.
- *
- * @doc.type route
- * @doc.purpose Lifecycle phase and artifact navigator
- * @doc.layer product
-/**
- * Lifecycle Explorer Route
- *
- * Provides an interactive view of all 7 lifecycle phases, artifacts, and transitions.
+ * Provides an interactive view of the canonical lifecycle phases, artifacts, and transitions.
  * Accessible from the project's main navigation.
  *
  * @doc.type route
@@ -21,6 +12,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router';
+import type { LifecycleReviewStatusContract } from '@/contracts/workspace-project';
 import { LifecycleExplorer } from '../../../components/lifecycle';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { usePhaseGates } from '../../../services/canvas/lifecycle';
@@ -70,38 +62,60 @@ const buildPhaseSummary = function (
     } = params;
     if (criticalAnomalyCount > 0) {
         return {
-            headline: `AI phase summary: ${stageLabel} readiness is under active risk.`,
+            headline: `${stageLabel} readiness is under active risk.`,
             detail: `${criticalAnomalyCount} critical anomaly signal${criticalAnomalyCount === 1 ? '' : 's'} should be resolved before promotion decisions.`,
         };
     }
 
     if (topRecommendationTitle && topInsightTitle) {
         return {
-            headline: `AI phase summary: ${stageLabel} is actionable with clear next moves.`,
+            headline: `${stageLabel} is actionable with clear next moves.`,
             detail: `${topRecommendationTitle} is the current priority, while ${topInsightTitle.toLowerCase()} remains the main evidence to review.`,
         };
     }
 
     if (topRecommendationTitle) {
         return {
-            headline: `AI phase summary: ${stageLabel} has a recommended next action.`,
+            headline: `${stageLabel} has a recommended next action.`,
             detail: topRecommendationTitle,
         };
     }
 
     if (topInsightTitle) {
         return {
-            headline: `AI phase summary: ${stageLabel} has fresh lifecycle evidence to review.`,
+            headline: `${stageLabel} has fresh lifecycle evidence to review.`,
             detail: topInsightTitle,
         };
     }
 
     return {
-        headline: `AI phase summary: ${stageLabel} has limited signal coverage.`,
+        headline: `${stageLabel} has limited signal coverage.`,
         detail:
             'Capture more lifecycle evidence to generate stronger recommendations and readiness guidance.',
     };
 };
+
+function buildReviewStatus(params: {
+    canAutoAdvance?: boolean;
+    criticalAnomalyCount: number;
+    topRecommendationConfidence?: number;
+}): { status: LifecycleReviewStatusContract; label: string; detail: string } {
+    const { canAutoAdvance, criticalAnomalyCount, topRecommendationConfidence = 0 } = params;
+
+    if (canAutoAdvance && criticalAnomalyCount === 0 && topRecommendationConfidence >= 0.85) {
+        return {
+            status: 'ready-for-guided-apply',
+            label: 'Guided apply eligible',
+            detail: 'Recommendations at or above 85% confidence with no critical anomalies can use the guided apply path.',
+        };
+    }
+
+    return {
+        status: 'review-required',
+        label: 'Review required',
+        detail: 'Signals below 85% confidence or any critical anomaly stay in a human review path.',
+    };
+}
 
 export default function Component() {
     const createElement = React.createElement;
@@ -183,13 +197,13 @@ export default function Component() {
                         : 'Task queued for execution. CI/CD adapter not yet connected.';
                     setAutomationFeedback(message);
                 } else {
-                    setAutomationFeedback(`Automation started for ${nextTask.title}.`);
+                    setAutomationFeedback(`Suggested task started for ${nextTask.title}.`);
                 }
             } catch (error) {
                 setAutomationFeedback(
                     error instanceof Error
                         ? error.message
-                        : 'Unable to start workflow automation.'
+                        : 'Unable to start the suggested task.'
                 );
             }
         })();
@@ -209,18 +223,18 @@ export default function Component() {
 
                 if (result.execution?.transitioned) {
                     setAutomationFeedback(
-                        `AI one-click approval transitioned ${result.execution.previousPhase} to ${result.execution.currentPhase}.`
+                        `Guided promotion transitioned ${result.execution.previousPhase} to ${result.execution.currentPhase}.`
                     );
                 } else if (result.canAutoAdvance) {
-                    setAutomationFeedback('Automation plan refreshed. Project is ready for one-click promotion.');
+                    setAutomationFeedback('Decision support refreshed. The project is eligible for guided promotion.');
                 } else {
-                    setAutomationFeedback('Automation plan refreshed. Resolve blockers before one-click promotion.');
+                    setAutomationFeedback('Decision support refreshed. Resolve blockers before guided promotion.');
                 }
             } catch (error) {
                 setAutomationFeedback(
                     error instanceof Error
                         ? error.message
-                        : 'Unable to apply one-click lifecycle approval.'
+                        : 'Unable to apply the suggested lifecycle promotion.'
                 );
             }
         })();
@@ -435,7 +449,7 @@ export default function Component() {
                             'data-testid': 'workflow-automation-trigger',
                             onClick: handleAutomationClick,
                         },
-                        executeTask.isPending ? 'Starting automation…' : 'Start automation'
+                        executeTask.isPending ? 'Starting suggested task…' : 'Start suggested task'
                     ),
                     automationFeedback
                         ? createElement(
@@ -455,7 +469,7 @@ export default function Component() {
                     className:
                         'rounded-xl border border-dashed border-divider px-4 py-4 text-sm text-text-secondary',
                 },
-                'No workflow automation is ready for this lifecycle stage yet.'
+                'No backed lifecycle task is ready for this stage yet.'
             );
 
     const decisionSupportContent = automationPlan
@@ -471,7 +485,7 @@ export default function Component() {
                         createElement(
                             'p',
                             { className: 'text-sm font-semibold text-text-primary' },
-                            'AI decision defaults'
+                            'Decision defaults'
                         ),
                         createElement(
                             'button',
@@ -532,8 +546,8 @@ export default function Component() {
                                 'data-testid': 'ai-one-click-approval-trigger',
                             },
                             applyAutomationPlan.isPending
-                                ? 'Applying one-click approval…'
-                                : 'Apply one-click approval'
+                                ? 'Applying guided promotion…'
+                                : 'Apply guided promotion'
                         ),
                         createElement(
                             'span',
@@ -551,6 +565,12 @@ export default function Component() {
                 },
                 'Decision support will appear after lifecycle signals are available.'
             );
+
+    const reviewStatus = buildReviewStatus({
+        canAutoAdvance: automationPlan?.canAutoAdvance,
+        criticalAnomalyCount,
+        topRecommendationConfidence: topRecommendations[0]?.confidence,
+    });
 
     return createElement(
         'div',
@@ -584,7 +604,7 @@ export default function Component() {
                         createElement(
                             'p',
                             { className: 'mt-2 max-w-2xl text-sm text-text-secondary' },
-                            'Recommendations and evidence are surfaced directly in the lifecycle route so the Improve and Observe phases are visible in the live product flow.'
+                            'Recommendations and evidence are surfaced directly in the lifecycle route so the active stage stays actionable without overselling automation.'
                         )
                     ),
                     createElement(
@@ -613,7 +633,7 @@ export default function Component() {
                             className:
                                 'flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300',
                         },
-                        'AI'
+                        'LS'
                     ),
                     createElement(
                         'div',
@@ -621,7 +641,7 @@ export default function Component() {
                         createElement(
                             'h3',
                             { className: 'text-lg font-semibold text-text-primary' },
-                            'AI phase summary'
+                            'Phase summary'
                         ),
                         createElement(
                             'p',
@@ -665,12 +685,12 @@ export default function Component() {
                                 createElement(
                                     'h3',
                                     { className: 'text-lg font-semibold text-text-primary' },
-                                    'Workflow automation'
+                                    'Suggested task'
                                 ),
                                 createElement(
                                     'p',
                                     { className: 'text-sm text-text-secondary' },
-                                    'Run the next best lifecycle task directly from the active phase surface.'
+                                    'Run the next backed lifecycle task directly from the active phase surface.'
                                 )
                             )
                         ),
@@ -691,7 +711,7 @@ export default function Component() {
                                     className:
                                         'flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-sm font-semibold text-amber-600 dark:bg-amber-900/30 dark:text-amber-300',
                                 },
-                                'AI'
+                                'NX'
                             ),
                             createElement(
                                 'div',
@@ -699,12 +719,12 @@ export default function Component() {
                                 createElement(
                                     'h3',
                                     { className: 'text-lg font-semibold text-text-primary' },
-                                    'AI recommendations'
+                                    'Recommended next steps'
                                 ),
                                 createElement(
                                     'p',
                                     { className: 'text-sm text-text-secondary' },
-                                    'Next best actions for the active lifecycle phase.'
+                                    'Evidence-based actions for the active lifecycle phase.'
                                 )
                             )
                         ),
@@ -738,9 +758,19 @@ export default function Component() {
                                 createElement(
                                     'p',
                                     { className: 'text-sm text-text-secondary' },
-                                    'AI-generated defaults and progressive disclosure to reduce manual decision burden.'
+                                    'Evidence-based defaults with explicit review thresholds and progressive disclosure.'
                                 )
                             )
+                        ),
+                        createElement(
+                            'div',
+                            {
+                                className: `mb-4 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${reviewStatus.status === 'ready-for-guided-apply'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200'
+                                    : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200'}`,
+                                'data-testid': 'decision-review-threshold',
+                            },
+                            `${reviewStatus.label}: ${reviewStatus.detail}`
                         ),
                         decisionSupportContent
                     )
@@ -810,7 +840,7 @@ export default function Component() {
                                 createElement(
                                     'p',
                                     { className: 'text-sm text-text-secondary' },
-                                    'Recent AI insights and audit evidence for this project.'
+                                    'Recent lifecycle insights and audit evidence for this project.'
                                 )
                             )
                         ),

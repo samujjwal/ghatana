@@ -4,6 +4,10 @@
  */
 package com.ghatana.products.finance.shell;
 
+import com.ghatana.finance.kernel.service.PortfolioManagementService;
+import com.ghatana.finance.service.Transaction;
+import com.ghatana.finance.service.TransactionResult;
+import com.ghatana.finance.service.TransactionService;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.products.finance.FinanceApiBoundaryValidationUtils;
@@ -34,15 +38,22 @@ public final class FinanceProductShell implements KernelLifecycleAware {
     private static final Logger log = LoggerFactory.getLogger(FinanceProductShell.class);
 
     private final KernelContext context;
+    private final TransactionService transactionService;
+    private final PortfolioManagementService portfolioManagementService;
     private volatile boolean started = false;
 
     /**
      * Creates a new finance product shell.
      *
      * @param context the kernel context
+     * @param transactionService the transaction service; may be null
+     * @param portfolioManagementService the portfolio management service; may be null
      */
-    public FinanceProductShell(KernelContext context) {
+    public FinanceProductShell(KernelContext context, TransactionService transactionService, 
+                              PortfolioManagementService portfolioManagementService) {
         this.context = context;
+        this.transactionService = transactionService;
+        this.portfolioManagementService = portfolioManagementService;
     }
 
     /**
@@ -99,44 +110,53 @@ public final class FinanceProductShell implements KernelLifecycleAware {
 
         log.debug("Handling trade execution for user: {}", safeUserId);
 
-        // Build execution result with decision context and risk validation
+        if (transactionService == null) {
+            throw new IllegalStateException("TransactionService is not available. Cannot execute trade without transaction runtime.");
+        }
+
+        if (!(tradeRequest instanceof Transaction)) {
+            throw new IllegalArgumentException("tradeRequest must be an instance of Transaction");
+        }
+
+        Transaction tx = (Transaction) tradeRequest;
+        TransactionResult result = transactionService.processTransaction(tx);
+        
         List<String> checksPerformed = Arrays.asList(
-            "RISK_LIMIT_CHECK",
-            "COMPLIANCE_CHECK",
-            "POSITION_CONCENTRATION_CHECK",
-            "MARGIN_REQUIREMENT_CHECK"
+            "FRAUD_DETECTION",
+            "RATE_LIMIT_CHECK",
+            "COMPLIANCE_VALIDATION"
         );
 
         TradeExecutionResult.RiskValidation riskValidation = new TradeExecutionResult.RiskValidation(
-            true,
-            "LOW",
+            !"REJECTED".equals(result.getStatus()),
+            "REJECTED".equals(result.getStatus()) ? "HIGH" : "LOW",
             checksPerformed,
             Collections.emptyList()
         );
 
         TradeExecutionResult.DecisionContext decisionContext = new TradeExecutionResult.DecisionContext(
-            "AUTO",
-            null,
-            0.98,
-            "Trade meets all risk and compliance thresholds; approved for auto-execution",
+            "PENDING_REVIEW".equals(result.getStatus()) ? "HUMAN_APPROVED" : "AUTO",
+            "PENDING_REVIEW".equals(result.getStatus()) ? "risk-analyst" : null,
+            "REJECTED".equals(result.getStatus()) ? 0.0 : 0.95,
+            result.getMessage(),
             Instant.now()
         );
 
         TradeExecutionResult.AuditEntry auditEntry = new TradeExecutionResult.AuditEntry(
             Instant.now(),
-            "EXECUTED",
+            result.getStatus(),
             safeUserId,
-            "Trade execution completed with auto-approval"
+            "Trade execution: " + result.getMessage()
         );
 
         return TradeExecutionResult.builder()
             .executionId(UUID.randomUUID().toString())
-            .tradeId(UUID.randomUUID().toString())
+            .tradeId(tx.getId())
             .userId(safeUserId)
-            .status("COMPLETED")
-            .filledQuantity(100.0)
-            .executionPrice(150.5)
-            .executionCost(15050.0)
+            .status(result.getStatus())
+            .filledQuantity(tx.getAmount())
+            .executionPrice(0.0) // Would come from market data in full implementation
+            .executionCost(tx.getAmount())
             .timestamp(Instant.now())
             .decisionContext(decisionContext)
             .riskValidation(riskValidation)
@@ -161,48 +181,59 @@ public final class FinanceProductShell implements KernelLifecycleAware {
 
         log.debug("Handling portfolio management for user: {}", safeUserId);
 
-        // Build portfolio changes
-        List<PortfolioManagementResult.PortfolioChange> changes = Arrays.asList(
-            new PortfolioManagementResult.PortfolioChange("AAPL", "DECREASE", -10.0, 1800.0, "Reduce concentration"),
-            new PortfolioManagementResult.PortfolioChange("MSFT", "INCREASE", 15.0, 5250.0, "Increase stable growth exposure"),
-            new PortfolioManagementResult.PortfolioChange("BND", "INCREASE", 100.0, 10000.0, "Increase fixed income for stability")
-        );
+        if (portfolioManagementService == null) {
+            throw new IllegalStateException("PortfolioManagementService is not available. Cannot manage portfolio without portfolio service.");
+        }
 
-        // Build decision context
-        PortfolioManagementResult.DecisionContext decisionContext = new PortfolioManagementResult.DecisionContext(
-            "HUMAN_APPROVED",
-            "portfolio-advisor-001",
-            0.89,
-            "Rebalancing improves risk-adjusted returns while maintaining volatility targets",
-            Instant.now()
-        );
+        try {
+            String portfolioId = UUID.randomUUID().toString();
+            PortfolioManagementService.PortfolioRequest request = 
+                new PortfolioManagementService.PortfolioRequest(safeUserId, "Growth Portfolio", "Auto-created portfolio", "USD");
+            
+            PortfolioManagementService.Portfolio portfolio = 
+                portfolioManagementService.createPortfolio(request).getResult();
+            
+            List<PortfolioManagementResult.PortfolioChange> changes = Arrays.asList(
+                new PortfolioManagementResult.PortfolioChange("CASH", "INITIAL", portfolio.getTotalValue().doubleValue(), portfolio.getTotalValue().doubleValue(), "Initial portfolio creation")
+            );
 
-        // Build performance impact
-        PortfolioManagementResult.PerformanceImpact impact = new PortfolioManagementResult.PerformanceImpact(
-            0.025,   // Expected return improvement
-            0.05,    // Risk reduction
-            0.15,    // Concentration improvement
-            250.0    // Estimated rebalancing cost
-        );
+            PortfolioManagementResult.DecisionContext decisionContext = new PortfolioManagementResult.DecisionContext(
+                "AUTO",
+                null,
+                1.0,
+                "Portfolio created successfully",
+                Instant.now()
+            );
 
-        PortfolioManagementResult.AuditEntry auditEntry = new PortfolioManagementResult.AuditEntry(
-            Instant.now(),
-            "REBALANCED",
-            safeUserId,
-            "Portfolio rebalancing completed with advisor approval"
-        );
+            PortfolioManagementResult.PerformanceImpact impact = new PortfolioManagementResult.PerformanceImpact(
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            );
 
-        return PortfolioManagementResult.builder()
-            .operationId(UUID.randomUUID().toString())
-            .portfolioId(UUID.randomUUID().toString())
-            .userId(safeUserId)
-            .operationType("REBALANCE")
-            .status("COMPLETED")
-            .timestamp(Instant.now())
-            .changes(changes)
-            .decisionContext(decisionContext)
-            .performanceImpact(impact)
-            .auditTrail(Collections.singletonList(auditEntry))
-            .build();
+            PortfolioManagementResult.AuditEntry auditEntry = new PortfolioManagementResult.AuditEntry(
+                Instant.now(),
+                "CREATED",
+                safeUserId,
+                "Portfolio created via service"
+            );
+
+            return PortfolioManagementResult.builder()
+                .operationId(UUID.randomUUID().toString())
+                .portfolioId(portfolio.getId())
+                .userId(safeUserId)
+                .operationType("CREATE")
+                .status("COMPLETED")
+                .timestamp(Instant.now())
+                .changes(changes)
+                .decisionContext(decisionContext)
+                .performanceImpact(impact)
+                .auditTrail(Collections.singletonList(auditEntry))
+                .build();
+        } catch (Exception e) {
+            log.error("Portfolio management service error", e);
+            throw new IllegalStateException("Failed to manage portfolio: " + e.getMessage(), e);
+        }
     }
 }

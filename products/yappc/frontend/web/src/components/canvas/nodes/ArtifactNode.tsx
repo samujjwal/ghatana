@@ -11,8 +11,8 @@
  */
 
 import React, { memo, useState } from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
-import { Box, Card, CardContent, Typography, Chip, IconButton, Tooltip, Badge, Menu, MenuItem, ListItemIcon, ListItemText, Button } from '@ghatana/design-system';
+import { Handle, Position, NodeResizer, type Node, type NodeProps } from '@xyflow/react';
+import { Box, Card, CardContent, Typography, Chip, IconButton, Tooltip, Badge, Button } from '@ghatana/design-system';
 import { MoreVertical as MoreVert, Link as LinkIcon, Check as CheckIcon, X as CloseIcon, Code as CodeIcon, Bug as TestIcon, FileText as DocIcon, Drama as MockIcon, ArrowLeftRight as SwapIcon } from 'lucide-react';
 import { useAtomValue } from 'jotai';
 import { PersonaBadge, StatusBadge } from '../workspace/PersonaBadge';
@@ -21,7 +21,7 @@ import { LifecyclePhase } from '@/types/lifecycle';
 import { codeAssociationsAtom, canvasInteractionModeAtom, cameraZoomAtom } from '../workspace';
 import { CodePreviewPopover } from './CodePreviewPopover';
 import { TypeSelectorModal } from '../TypeSelectorModal';
-import type { CodeRelationshipType } from '../../../hooks/useCodeAssociations';
+import type { CodeAssociation, CodeRelationshipType } from '../../../hooks/useCodeAssociations';
 
 // Artifact type icons
 const ARTIFACT_ICONS: Record<string, string> = {
@@ -37,7 +37,7 @@ const ARTIFACT_ICONS: Record<string, string> = {
     'evidence': 'EVD',
 };
 
-export interface ArtifactNodeData {
+export interface ArtifactNodeData extends Record<string, unknown> {
     id: string;
     type: ArtifactType;
     title: string;
@@ -59,13 +59,15 @@ export interface ArtifactNodeData {
     onTypeChange?: (artifactId: string, newType: ArtifactType) => void;
 }
 
+type ArtifactCanvasNode = Node<ArtifactNodeData>;
+
 /**
  * ArtifactNode - ReactFlow node for lifecycle artifacts
  *
  * Wrapped in React.memo with a data-aware comparator to prevent unnecessary
  * re-renders when unrelated canvas state changes (e.g. another node is selected).
  */
-const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, selected }) => {
+const ArtifactNodeInner: React.FC<NodeProps<ArtifactCanvasNode>> = ({ id, data, selected }) => {
     const icon = ARTIFACT_ICONS[data.type] || 'ART';
     const hasBlockers = data.status === 'blocked' || (data.blockerCount && data.blockerCount > 0);
 
@@ -77,6 +79,21 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
     // Read code associations from the batch-loaded atom — no per-node HTTP call.
     const allCodeAssociations = useAtomValue(codeAssociationsAtom);
     const codeAssociations = allCodeAssociations.get(data.id) ?? [];
+    const previewAssociations: CodeAssociation[] = codeAssociations.map((association) => ({
+        id: association.id,
+        artifactId: data.id,
+        codeArtifactId: association.codeArtifactId,
+        relationship: association.relationship,
+        createdAt: '',
+        updatedAt: '',
+        codeArtifact: association.file
+            ? {
+                id: association.codeArtifactId,
+                title: association.file,
+                type: 'CODE',
+            }
+            : undefined,
+    }));
 
     // Gate resize handles to navigate mode only (not sketch / code / diagram)
     const interactionMode = useAtomValue(canvasInteractionModeAtom);
@@ -156,28 +173,28 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
                     style={{ background: 'var(--color-primary, #1976d2)', width: 10, height: 10 }}
                 />
 
-            <CardContent className="p-3 pb-3">
+            <CardContent className="relative p-3 pb-3">
                 {/* Header Row */}
                 <Box className="flex items-start gap-2 mb-2">
-                    <Typography as="h6" className="text-2xl">
+                    <Typography component="h6" className="text-2xl">
                         {icon}
                     </Typography>
                     <Box className="flex-1 min-w-0 nodrag">
                         <Typography
-                            as="p"
+                            component="p"
                             className="text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap"
                         >
                             {data.title}
                         </Typography>
                         <Typography
-                            as="span"
+                            component="span"
                             className="text-xs text-gray-500 block overflow-hidden text-ellipsis whitespace-nowrap"
                         >
                             {data.type}
                         </Typography>
                     </Box>
                     <IconButton
-                        size="sm"
+                        size="small"
                         onClick={(e) => setContextMenuAnchor(e.currentTarget)}
                         className="p-1 nodrag nopan"
                     >
@@ -188,14 +205,14 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
                     {codeAssociations.length > 0 && (
                         <Tooltip title={`${codeAssociations.length} code associations`}>
                             <IconButton
-                                size="sm"
+                                size="small"
                                 onClick={(e) => setCodePreviewAnchor(e.currentTarget)}
                                 className="p-1 relative"
                                 data-testid="code-badge"
                             >
                                 <Badge
                                     badgeContent={codeAssociations.length}
-                                    tone="primary"
+                                    color="primary"
                                     className="[&_.MuiBadge-badge]:text-[0.6rem] [&_.MuiBadge-badge]:h-[14px] [&_.MuiBadge-badge]:min-w-[14px]"
                                 >
                                     <CodeIcon className="text-base" />
@@ -205,59 +222,51 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
                     )}
                 </Box>
 
-                {/* Context Menu */}
-                <Menu
-                    anchorEl={contextMenuAnchor}
-                    open={Boolean(contextMenuAnchor)}
-                    onClose={() => setContextMenuAnchor(null)}
-                >
-                    <MenuItem onClick={() => {
-                        data.onEdit?.(data.id);
-                        setContextMenuAnchor(null);
-                    }}>
-                        <ListItemText>Edit Artifact</ListItemText>
-                    </MenuItem>
-                    <MenuItem onClick={() => {
-                        setShowTypeSelector(true);
-                        setContextMenuAnchor(null);
-                    }}>
-                        <ListItemIcon><SwapIcon size={16} /></ListItemIcon>
-                        <ListItemText>Change Content Type</ListItemText>
-                    </MenuItem>
-                    <MenuItem onClick={() => {
-                        data.onLinkCode?.(data.id, 'IMPLEMENTATION');
-                        setContextMenuAnchor(null);
-                    }}>
-                        <ListItemIcon><CodeIcon size={16} /></ListItemIcon>
-                        <ListItemText>Link Code Implementation</ListItemText>
-                    </MenuItem>
-                    <MenuItem onClick={() => {
-                        data.onLinkCode?.(data.id, 'TEST');
-                        setContextMenuAnchor(null);
-                    }}>
-                        <ListItemIcon><TestIcon size={16} /></ListItemIcon>
-                        <ListItemText>Link Test Case</ListItemText>
-                    </MenuItem>
-                    <MenuItem onClick={() => {
-                        data.onLinkCode?.(data.id, 'DOCUMENTATION');
-                        setContextMenuAnchor(null);
-                    }}>
-                        <ListItemIcon><DocIcon size={16} /></ListItemIcon>
-                        <ListItemText>Link Documentation</ListItemText>
-                    </MenuItem>
-                    <MenuItem onClick={() => {
-                        data.onLinkCode?.(data.id, 'MOCK');
-                        setContextMenuAnchor(null);
-                    }}>
-                        <ListItemIcon><MockIcon size={16} /></ListItemIcon>
-                        <ListItemText>Link Mock</ListItemText>
-                    </MenuItem>
-                </Menu>
+                {contextMenuAnchor && (
+                    <Box className="absolute right-3 top-12 z-20 flex min-w-[190px] flex-col rounded border border-gray-200 bg-white p-2 shadow-lg">
+                        <Button size="small" variant="text" onClick={() => {
+                            data.onEdit?.(data.id);
+                            setContextMenuAnchor(null);
+                        }}>
+                            Edit Artifact
+                        </Button>
+                        <Button size="small" variant="text" startIcon={<SwapIcon size={16} />} onClick={() => {
+                            setShowTypeSelector(true);
+                            setContextMenuAnchor(null);
+                        }}>
+                            Change Content Type
+                        </Button>
+                        <Button size="small" variant="text" startIcon={<CodeIcon size={16} />} onClick={() => {
+                            data.onLinkCode?.(data.id, 'IMPLEMENTATION');
+                            setContextMenuAnchor(null);
+                        }}>
+                            Link Code Implementation
+                        </Button>
+                        <Button size="small" variant="text" startIcon={<TestIcon size={16} />} onClick={() => {
+                            data.onLinkCode?.(data.id, 'TEST');
+                            setContextMenuAnchor(null);
+                        }}>
+                            Link Test Case
+                        </Button>
+                        <Button size="small" variant="text" startIcon={<DocIcon size={16} />} onClick={() => {
+                            data.onLinkCode?.(data.id, 'DOCUMENTATION');
+                            setContextMenuAnchor(null);
+                        }}>
+                            Link Documentation
+                        </Button>
+                        <Button size="small" variant="text" startIcon={<MockIcon size={16} />} onClick={() => {
+                            data.onLinkCode?.(data.id, 'MOCK');
+                            setContextMenuAnchor(null);
+                        }}>
+                            Link Mock
+                        </Button>
+                    </Box>
+                )}
 
                 {/* Code Preview Popover */}
                 <CodePreviewPopover
                     anchorEl={codePreviewAnchor}
-                    associations={codeAssociations}
+                    associations={previewAssociations}
                     onClose={() => setCodePreviewAnchor(null)}
                     onOpenCode={data.onOpenCode}
                 />
@@ -277,7 +286,7 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
                 {/* Description */}
                 {data.description && (
                     <Typography
-                        as="p" className="text-xs mb-2 overflow-hidden line-clamp-2 nodrag nopan text-gray-500"
+                        component="p" className="text-xs mb-2 overflow-hidden line-clamp-2 nodrag nopan text-gray-500"
                     >
                         {data.description}
                     </Typography>
@@ -286,11 +295,11 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
                 {/* Badges Row */}
                 <Box className="flex gap-1 flex-wrap items-center">
                     {/* Status Badge */}
-                    <StatusBadge status={data.status} size="sm" />
+                    <StatusBadge status={data.status} size="small" />
 
                     {/* Persona Badge */}
                     {data.persona && (
-                        <PersonaBadge persona={data.persona} size="sm" variant="outlined" />
+                        <PersonaBadge persona={data.persona} size="small" variant="outlined" />
                     )}
 
                     {/* Linked Count */}
@@ -299,7 +308,7 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
                             <Chip
                                 icon={<LinkIcon className="text-xs" />}
                                 label={data.linkedCount}
-                                size="sm"
+                                size="small"
                                 variant="outlined"
                                 className="h-[20px] text-[0.7rem] [&_.MuiChip-label]:px-1"
                             />
@@ -311,8 +320,8 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactNodeData>> = ({ id, data, se
                         <Tooltip title={`${data.blockerCount} blockers`}>
                             <Chip
                                 label={`! ${data.blockerCount}`}
-                                size="sm"
-                                tone="danger"
+                                size="small"
+                                color="error"
                                 className="font-bold h-[20px] text-[0.7rem]"
                             />
                         </Tooltip>

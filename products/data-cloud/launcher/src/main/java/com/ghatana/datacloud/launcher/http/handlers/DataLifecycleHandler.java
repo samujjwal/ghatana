@@ -11,6 +11,7 @@ import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -60,6 +61,7 @@ import java.util.stream.Collectors;
  * <h2>Security Classification</h2>
  * All governance routes are classified {@link com.ghatana.datacloud.launcher.http.EndpointSensitivity#CRITICAL}
  * and require policy engine approval.  All operations are fully audited.
+ * This handler requires ADMIN or OPERATOR role for all operations.
  *
  * <h2>Privacy by Design</h2>
  * <ul>
@@ -75,6 +77,7 @@ import java.util.stream.Collectors;
  * @doc.layer product
  * @doc.pattern Handler, GovernanceService
  */
+@RequiresRole({"ADMIN", "OPERATOR"})
 public class DataLifecycleHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DataLifecycleHandler.class);

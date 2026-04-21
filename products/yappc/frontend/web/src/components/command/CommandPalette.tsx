@@ -14,7 +14,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Dialog, Input as InputBase, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Box, Chip, Typography } from '@ghatana/design-system';
 import { Search as SearchIcon, Keyboard as KeyboardIcon } from 'lucide-react';
 
-import { useActions, ActionState } from '../../services/ActionRegistry';
+import { useActions, type ActionState, type ActionDefinition, type GroupedActions } from '../../services/ActionRegistry';
 
 // ============================================================================
 // Types
@@ -124,16 +124,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const { grouped, execute, formatShortcut } = useActions(state);
 
     // Flatten grouped actions for search
-    const flatActions = useMemo(() => {
-        return grouped.flatMap((group: unknown) => group.actions);
+    const flatActions = useMemo<ActionDefinition[]>(() => {
+        return grouped.flatMap((group: GroupedActions) => group.actions);
     }, [grouped]);
 
     // Filter and sort actions by search query
-    const filteredActions = useMemo(() => {
+    const filteredActions = useMemo<ActionDefinition[]>(() => {
         if (!query) return flatActions;
 
         return flatActions
-            .map((action: unknown) => ({
+            .map((action: ActionDefinition) => ({
                 action,
                 score: Math.max(
                     fuzzySearch(query, action.label),
@@ -141,9 +141,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     fuzzySearch(query, action.category),
                 ),
             }))
-            .filter(({ score }: { score: number }) => score > 0)
-            .sort((a: unknown, b: unknown) => b.score - a.score)
-            .map(({ action }: { action: unknown }) => action);
+                .filter(({ score }) => score > 0)
+                .sort((a, b) => b.score - a.score)
+                .map(({ action }) => action);
     }, [flatActions, query]);
 
     // Keyboard navigation
@@ -224,19 +224,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             <Dialog
                 open={isOpen}
                 onClose={() => setIsOpen(false)}
-                size="sm"
+                maxWidth="sm"
                 fullWidth
                 className={className}
-                PaperProps={{
-                    className: 'rounded-lg shadow-2xl',
-                    style: { marginTop: '-100px' },
-                }}
             >
                 {/* Search Input */}
                 <Box className="border-b border-grey-200 dark:border-grey-700 p-4">
                     <Box className="flex items-center gap-2">
                         <SearchIcon className="text-grey-400 w-5 h-5" />
-                        <InputBase
+                        <input
                             ref={inputRef}
                             placeholder="Search actions..."
                             value={query}
@@ -245,9 +241,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                                 setSelectedIndex(0);
                             }}
                             onKeyDown={handleKeyDown}
-                            fullWidth
                             autoFocus
-                            className="text-lg"
+                            className="w-full bg-transparent text-lg outline-none"
                         />
                         <Chip
                             icon={<KeyboardIcon className="w-3 h-3" />}
@@ -262,7 +257,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 {/* Actions List */}
                 {filteredActions.length > 0 ? (
                     <List className="max-h-96 overflow-y-auto">
-                        {filteredActions.map((action: unknown, index: number) => (
+                        {filteredActions.map((action: ActionDefinition, index: number) => (
                             <ListItemButton
                                 key={action.id}
                                 selected={index === selectedIndex}
@@ -304,7 +299,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                                 />
                                 {action.shortcut && (
                                     <Typography
-                                        as="span"
                                         className="ml-4 whitespace-nowrap text-xs text-grey-400 dark:text-grey-500"
                                     >
                                         {formatShortcut(action.shortcut)}
@@ -315,7 +309,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </List>
                 ) : (
                     <Box className="p-8 text-center">
-                        <Typography color="textSecondary" as="p" className="text-sm">
+                        <Typography color="text.secondary" className="text-sm">
                             No actions found for "{query}"
                         </Typography>
                     </Box>

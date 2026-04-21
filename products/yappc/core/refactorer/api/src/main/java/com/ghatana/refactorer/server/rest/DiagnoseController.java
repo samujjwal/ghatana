@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.core.exception.ErrorCode;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.platform.validation.ValidationService;
+import com.ghatana.platform.core.validation.ValidationService;
 import com.ghatana.refactorer.server.auth.AccessPolicy;
 import com.ghatana.refactorer.server.auth.TenantContext;
 import com.ghatana.refactorer.server.auth.TenantResolver;
@@ -86,13 +86,13 @@ public final class DiagnoseController {
                                                         logger.warn(
                                                                 "DiagnoseRequest validation failed [{}]: {}",
                                                                 correlationId,
-                                                                validationResult.getErrors());
+                                                                validationResult.violations());
 
                                                         // Map validation errors to canonical ErrorCode
                                                         // (PR 3.2)
                                                         String errorDetails
                                                         = validationResult
-                                                                .getErrors()
+                                                                .violations()
                                                                 .toString();
                                                         RestModels.ErrorResponse error
                                                         = new RestModels.ErrorResponse(

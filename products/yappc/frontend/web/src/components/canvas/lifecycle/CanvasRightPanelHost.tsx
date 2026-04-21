@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, Suspense, lazy } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { X as Close, ChevronLeft, ChevronRight } from 'lucide-react';
 
 async function loadArtifactsPanel() {

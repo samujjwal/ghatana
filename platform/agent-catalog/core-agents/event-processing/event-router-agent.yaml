@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: event-router-agent
 name: Event Router Agent
 namespace: platform.event-processing

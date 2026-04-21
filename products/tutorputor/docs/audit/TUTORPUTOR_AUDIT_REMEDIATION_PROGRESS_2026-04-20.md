@@ -42,6 +42,7 @@ The audit was partially stale by the time remediation work started. A code-to-au
 - Replaced the stale placeholder `StudentOnboarding.spec.ts` with canonical learner-browser onboarding coverage that exercises the real login entrypoint, first-visit dashboard, analytics navigation, and module exploration flow against the supported route map.
 - Replaced the stale placeholder `EducatorWorkflow.spec.ts` with canonical admin-browser coverage that validates the real authoring workspace panels for a created experience and the consolidated analytics dashboard route.
 - Expanded content-generation launcher verification with HTTP health and readiness smoke tests so the Java runtime bootstrap now has direct endpoint-level regression coverage in addition to port parsing tests.
+- Integrated the independent generated-content validator into the Content Studio validate/publish path so evaluator-driven review requirements now block direct publish, flow through the canonical validation checks, and persist into analytics plus publish provenance snapshots.
 
 ## Verification
 
@@ -66,8 +67,10 @@ The audit was partially stale by the time remediation work started. A code-to-au
 - Follow-up verification: `bash ./scripts/run-critical-journey-e2e.sh` now succeeds in default mode, brings up the local Tutorputor live E2E topology, runs `ContentStudio.spec.ts` and `LearnerJourney.spec.ts`, reports 3/3 browser tests green, and cleans up the app processes it started.
 - Follow-up verification: `cd apps/tutorputor-web && npx vitest run src/components/auth/__tests__/SsoLogin.test.tsx src/contexts/__tests__/AuthContext.test.tsx` passed with 17/17 tests green for learner auth/session coverage.
 - Follow-up verification: `npx playwright test --list StudentOnboarding.spec.ts EducatorWorkflow.spec.ts` discovered the canonical learner onboarding and educator workflow browser specs under the supported Tutorputor Playwright topology.
+- Follow-up verification: `pnpm exec playwright test StudentOnboarding.spec.ts EducatorWorkflow.spec.ts --project=chromium` passed with 4/4 canonical learner/admin browser tests green.
 - Follow-up verification: `./gradlew :products:tutorputor:services:tutorputor-content-generation:test --tests com.ghatana.tutorputor.contentgeneration.ContentGenerationLauncherTest` passed with launcher port parsing plus health/readiness smoke coverage green.
-- Total targeted test verification for this remediation slice: 128 targeted Vitest tests passed across the follow-up batches, plus 3/3 live Playwright browser tests passed.
+- Follow-up verification: `npx vitest run src/modules/content/studio/__tests__/service.test.ts src/modules/content/studio/__tests__/lu-lifecycle.test.ts` passed with 62/62 tests green for independent-validator publish gating, analytics, and provenance coverage.
+- Total targeted test verification for this remediation slice: 190 targeted Vitest tests passed across the follow-up batches, plus 7/7 live Playwright browser tests passed.
 
 ## Remaining Work
 
@@ -77,7 +80,7 @@ The following audit themes remain broader product workstreams rather than safe s
 - Deeper end-to-end coverage across mobile, web, and cross-service learning flows.
 - Broader UX and workflow simplification items identified in the audit.
 - Product-level provenance, review, and operational maturity items that require separate design slices.
-- Independent evaluator-driven publish gating is now enforced for evidence confidence and contradiction signals, but broader evaluator integration and golden-dataset validation are still separate workstreams.
+- Independent evaluator-driven publish gating is now enforced in the canonical Content Studio validate/publish path and for evidence confidence and contradiction signals, but broader golden-dataset validation and pedagogical benchmark governance are still separate workstreams.
 
 This pass closes the audit's stale E2E coverage gap for learner onboarding and educator browser workflows, and it closes the missing launcher health smoke gap for the content-generation service. The remaining items are now the genuinely broader product workstreams above rather than leftover single-file regressions.
 

@@ -127,3 +127,15 @@ tasks.register<Test>("phrReleaseGate") {
         includeTestsMatching("com.ghatana.phr.kernel.PhrKernelModuleTest")
     }
 }
+
+tasks.register<Test>("checkApiContractConformance") {
+    group = "verification"
+    description = "Validates that implemented routes match the OpenAPI specification (CI gate for contract drift)"
+    useJUnitPlatform()
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    filter {
+        includeTestsMatching("com.ghatana.phr.api.PhrApiContractConformanceTest")
+    }
+}
+

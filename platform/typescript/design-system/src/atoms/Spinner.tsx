@@ -17,7 +17,7 @@ export interface SpinnerProps extends React.SVGProps<SVGSVGElement> {
   /**
    * Diameter of the spinner.
    */
-  size?: SpinnerSize;
+  size?: SpinnerSize | number;
 
   /**
    * Stroke color.
@@ -30,7 +30,7 @@ export interface SpinnerProps extends React.SVGProps<SVGSVGElement> {
  */
 export const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>((props, ref) => {
   const { size = 'md', color = 'currentColor', className, ...rest } = props;
-  const dimension = sizeMap[size];
+  const dimension = typeof size === 'number' ? size : sizeMap[size];
 
   return (
     <svg

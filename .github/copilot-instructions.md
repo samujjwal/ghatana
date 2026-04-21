@@ -514,29 +514,39 @@ Follow the same co-located pattern as TypeScript. **Mock individual screens, not
 
 ### TypeScript Packages
 
-All TypeScript modules use the `@ghatana/` scope with canonical names only:
+All TypeScript modules use the `@ghatana/` scope with canonical names only.
 
-| Canonical Name | Purpose |
-|----------------|---------|
-| `@ghatana/design-system` | UI components and design tokens |
-| `@ghatana/platform-utils` | Shared utility functions |
-| `@ghatana/canvas` | Canvas and visualization components |
-| `@ghatana/api` | API client utilities |
-| `@ghatana/charts` | Chart components |
-| `@ghatana/realtime` | Real-time communication |
-| `@ghatana/theme` | Theme and styling |
-| `@ghatana/tokens` | Design tokens |
-| `@ghatana/i18n` | Internationalization |
-| `@ghatana/sso-client` | SSO authentication |
-| `@ghatana/platform-shell` | Platform shell components |
-| `@ghatana/ui-integration` | UI integration utilities |
-| `@ghatana/accessibility-audit` | Accessibility testing |
+**For the authoritative list of canonical platform TypeScript packages, see [platform/typescript/LIBRARY_GOVERNANCE.md](../../platform/typescript/LIBRARY_GOVERNANCE.md).**
+
+This document serves as the entry point for package governance. The LIBRARY_GOVERNANCE.md file contains the complete canonical registry with ownership, status, and deprecation information.
+
+**Key canonical packages include:**
+- `@ghatana/design-system` - UI component primitives (atoms, molecules, organisms)
+- `@ghatana/platform-utils` - Shared utilities (`cn()`, formatters, etc.)
+- `@ghatana/canvas` - Canvas/visualization components — canonical entry point
+- `@ghatana/code-editor` - Monaco editor + AST/LSP/debugging/refactoring
+- `@ghatana/config` - Environment validation, feature flags, config schemas
+- `@ghatana/state` - Shared Jotai atoms (auth, notification, tenant)
+- `@ghatana/forms` - Form primitives, field hooks, Zod validation
+- `@ghatana/data-grid` - Sortable/filterable/paginated data grid
+- `@ghatana/wizard` - Multi-step wizard navigation
+- `@ghatana/charts` - Chart components
+- `@ghatana/tokens` - Design tokens
+- `@ghatana/theme` - Theme and styling system
+- `@ghatana/i18n` - Internationalization
+- `@ghatana/realtime` - Real-time transport (EventEmitter/EventSubscription)
+- `@ghatana/events` - Canonical `PlatformEvent` type and event-related schemas
+- `@ghatana/api` - API client utilities
+- `@ghatana/sso-client` - SSO authentication client
+- `@ghatana/domain-components` - Canonical domain-specific components (privacy, security, voice, nlp, selection)
+- `@ghatana/accessibility` - Canonical accessibility audit + audit log components and hooks
 
 **Rules:**
 - Use kebab-case: `design-system`, `sso-client`
 - Be descriptive and avoid abbreviations
 - No product prefixes in package names
 - **No deprecated package names** - use canonical names only
+- See LIBRARY_GOVERNANCE.md for the complete package registry and deprecation list
 
 ### Java Utility Classes
 
@@ -1108,7 +1118,7 @@ This section is the **single canonical list** for `@ghatana/*` platform packages
 
 The following names must NOT be used in new code, and existing references must be fix-forwarded immediately (no aliases):
 
-- `@ghatana/ui` — fold into `@ghatana/design-system`.
+- `@ghatana/ui` — deprecated, use `@ghatana/design-system` directly. Package marked for removal.
 - `@ghatana/utils` — replaced by `@ghatana/platform-utils`.
 - `@ghatana/accessibility-audit` — replaced by `@ghatana/accessibility`. The folder no longer exists.
 - `@ghatana/canvas-core`, `@ghatana/canvas-plugins`, `@ghatana/canvas-tools`, `@ghatana/canvas-react`, `@ghatana/canvas-chrome` — replaced by `@ghatana/canvas` subpaths. Delete the deprecated facade packages, do not keep them as re-export shims.

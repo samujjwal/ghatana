@@ -1,8 +1,7 @@
 /**
  * Profile Route
  *
- * Displays and allows editing of the current user's profile information,
- * including display name, email, and avatar.
+ * Displays the current user's profile information using the supported auth API.
  *
  * @doc.type route
  * @doc.purpose Current user profile view and edit
@@ -11,18 +10,17 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { User, Mail, Save, Camera } from 'lucide-react';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { parseJsonResponse } from '@/lib/http';
 import { useCurrentUser } from '../providers/AuthProvider';
 import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
 
 interface UserProfile {
     id: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
-    avatarUrl?: string;
+    avatar?: string;
     role?: string;
     createdAt?: string;
 }
@@ -43,13 +41,12 @@ const labelCls = 'block text-xs font-medium text-fg-muted mb-1';
  */
 export default function Component() {
     const currentUser = useCurrentUser();
-    const queryClient = useQueryClient();
 
     // ── Fetch full profile from API ────────────────────────────────────────────
     const { data: profile, isLoading } = useQuery<UserProfile>({
         queryKey: ['user-profile'],
         queryFn: async () => {
-            const res = await fetch('/api/users/me');
+            const res = await fetch('/api/auth/me');
             if (!res.ok) throw new Error('Failed to load profile');
             return parseJsonResponse<UserProfile>(res, 'profile load');
         },
@@ -66,43 +63,15 @@ export default function Component() {
 
     useEffect(() => {
         if (profile) {
+            const [firstName = '', ...rest] = profile.name.split(' ');
             setForm({
-                firstName: profile.firstName ?? '',
-                lastName: profile.lastName ?? '',
+                firstName,
+                lastName: rest.join(' '),
                 email: profile.email ?? '',
-                avatarUrl: profile.avatarUrl ?? '',
+                avatarUrl: profile.avatar ?? '',
             });
         }
     }, [profile]);
-
-    // ── Save mutation ──────────────────────────────────────────────────────────
-    const saveMutation = useMutation({
-        mutationFn: async (updates: ProfileFormState) => {
-            const res = await fetch('/api/users/me', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates),
-            });
-            if (!res.ok) {
-                throw new Error(await readErrorResponse(res, 'Failed to update profile'));
-            }
-            return parseJsonResponse<UserProfile>(res, 'profile update');
-        },
-        onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-        },
-    });
-
-    const [saveSuccess, setSaveSuccess] = useState(false);
-
-    const handleSave = () => {
-        saveMutation.mutate(form, {
-            onSuccess: () => {
-                setSaveSuccess(true);
-                setTimeout(() => setSaveSuccess(false), 3000);
-            },
-        });
-    };
 
     // ── Derive initials for avatar fallback ────────────────────────────────────
     const initials =
@@ -158,10 +127,7 @@ export default function Component() {
                         <button
                             className="absolute -bottom-1 -right-1 rounded-full bg-surface-raised border border-border p-1 hover:bg-surface-muted transition-colors"
                             title="Change avatar"
-                            onClick={() => {
-                                const url = window.prompt('Enter new avatar URL:');
-                                if (url) setForm(prev => ({ ...prev, avatarUrl: url }));
-                            }}
+                            disabled
                         >
                             <Camera className="h-3 w-3 text-fg-muted" />
                         </button>
@@ -190,7 +156,7 @@ export default function Component() {
                                     id="profile-first-name"
                                     className={`${inputCls} pl-9`}
                                     value={form.firstName}
-                                    onChange={e => setForm(prev => ({ ...prev, firstName: e.target.value }))}
+                                    readOnly
                                     placeholder="First name"
                                 />
                             </div>
@@ -203,7 +169,7 @@ export default function Component() {
                                 id="profile-last-name"
                                 className={inputCls}
                                 value={form.lastName}
-                                onChange={e => setForm(prev => ({ ...prev, lastName: e.target.value }))}
+                                readOnly
                                 placeholder="Last name"
                             />
                         </div>
@@ -220,23 +186,15 @@ export default function Component() {
                                 type="email"
                                 className={`${inputCls} pl-9`}
                                 value={form.email}
-                                onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+                                readOnly
                                 placeholder="you@example.com"
                             />
                         </div>
                     </div>
 
-                    {saveMutation.isError && (
-                        <p className="text-sm text-error-600" role="alert">
-                            Failed to save profile. Please try again.
-                        </p>
-                    )}
-
-                    {saveSuccess && (
-                        <p className="text-sm text-success-600" role="status">
-                            Profile updated successfully.
-                        </p>
-                    )}
+                    <p className="text-sm text-fg-muted" role="status">
+                        Profile data is available, but edits are disabled until the backed profile update API is restored.
+                    </p>
                 </div>
 
                 {/* Footer actions */}
@@ -245,11 +203,12 @@ export default function Component() {
                         className="rounded-lg border border-border px-4 py-2 text-sm text-fg-muted hover:bg-surface-muted transition-colors"
                         onClick={() => {
                             if (profile) {
+                                const [firstName = '', ...rest] = profile.name.split(' ');
                                 setForm({
-                                    firstName: profile.firstName ?? '',
-                                    lastName: profile.lastName ?? '',
+                                    firstName,
+                                    lastName: rest.join(' '),
                                     email: profile.email ?? '',
-                                    avatarUrl: profile.avatarUrl ?? '',
+                                    avatarUrl: profile.avatar ?? '',
                                 });
                             }
                         }}
@@ -258,11 +217,10 @@ export default function Component() {
                     </button>
                     <button
                         className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark transition-colors disabled:opacity-60"
-                        onClick={handleSave}
-                        disabled={saveMutation.isPending}
+                        disabled
                     >
                         <Save className="h-4 w-4" />
-                        {saveMutation.isPending ? 'Saving…' : 'Save Changes'}
+                        Editing Unavailable
                     </button>
                 </div>
             </div>

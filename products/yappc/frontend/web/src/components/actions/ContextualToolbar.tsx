@@ -11,12 +11,12 @@
  */
 
 import React, { useMemo, useCallback } from 'react';
-import { Tooltip, Divider, Menu, MenuItem, ListItemIcon, ListItemText, IconButton, ToggleButtonGroup as ButtonGroup, Button } from '@ghatana/design-system';
+import { Tooltip, Divider, MenuItem, ListItemIcon, ListItemText, IconButton, ToggleButtonGroup as ButtonGroup, Button } from '@ghatana/design-system';
 import { Undo2 as UndoIcon, Redo2 as RedoIcon, Copy as CopyIcon, ClipboardPaste as PasteIcon, Trash2 as DeleteIcon, BoxSelect as SelectAllIcon, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, Maximize2 as FitScreenIcon, Grid3x3 as GridIcon, Sparkles as AiIcon, Code as CodeIcon, Eye as PreviewIcon, CloudUpload as DeployIcon, MoreVertical as MoreIcon, Keyboard as KeyboardIcon, Save as SaveIcon, Plus as AddIcon, Minus as RemoveIcon, Layers as LayersIcon, AlignLeft as AlignLeftIcon, AlignCenter as AlignCenterIcon, AlignRight as AlignRightIcon, AlignStartVertical as AlignTopIcon, AlignCenterVertical as AlignMiddleIcon, AlignEndVertical as AlignBottomIcon, Lock as LockIcon, LockOpen as UnlockIcon, Users as GroupIcon, GitFork as UngroupIcon } from 'lucide-react';
 
-import { useActions, ActionDefinition, ActionCategory, ActionState } from '../services/ActionRegistry';
-import { useWorkflowContext, useSelectionContext, useCapabilitiesContext } from '../context/WorkflowContextProvider';
-import { LifecyclePhase, PHASE_LABELS } from '../types/lifecycle';
+import { useActions, type ActionDefinition, type ActionCategory, type ActionState } from '../../services/ActionRegistry';
+import { useSelectionContext, useCapabilitiesContext } from '../../context/WorkflowContextProvider';
+import { LifecyclePhase, PHASE_LABELS } from '../../types/lifecycle';
 
 // ============================================================================
 // Types
@@ -183,12 +183,13 @@ const ToolbarSection: React.FC<ToolbarSectionProps> = ({ title, children }) => {
 const PhaseIndicator: React.FC<{ phase: LifecyclePhase }> = ({ phase }) => {
     const phaseColors: Record<LifecyclePhase, string> = {
         [LifecyclePhase.INTENT]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300',
-        [LifecyclePhase.SHAPE]: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300',
-        [LifecyclePhase.VALIDATE]: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
-        [LifecyclePhase.GENERATE]: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
-        [LifecyclePhase.RUN]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
+        [LifecyclePhase.CONTEXT]: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300',
+        [LifecyclePhase.PLAN]: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+        [LifecyclePhase.EXECUTE]: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
+        [LifecyclePhase.VERIFY]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
         [LifecyclePhase.OBSERVE]: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300',
-        [LifecyclePhase.IMPROVE]: 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300',
+        [LifecyclePhase.LEARN]: 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300',
+        [LifecyclePhase.INSTITUTIONALIZE]: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-300',
     };
 
     return (
@@ -229,8 +230,8 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
     handlers = {},
 }) => {
     const { actions, execute, formatShortcut } = useActions(state);
-    const { selectedIds, selectionType } = useSelectionContext();
-    const { capabilities } = useCapabilitiesContext();
+    const { elements, type: selectionType } = useSelectionContext();
+    const capabilities = useCapabilitiesContext();
 
     const [moreMenuAnchor, setMoreMenuAnchor] = React.useState<null | HTMLElement>(null);
 
@@ -273,10 +274,10 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
     // Selection info display
     const selectionInfo = useMemo(() => {
         if (!state.hasSelection) return null;
-        const count = selectedIds.length;
+        const count = elements.length;
         const type = selectionType === 'node' ? 'node' : selectionType === 'edge' ? 'edge' : 'item';
         return `${count} ${type}${count > 1 ? 's' : ''} selected`;
-    }, [state.hasSelection, selectedIds, selectionType]);
+    }, [state.hasSelection, elements, selectionType]);
 
     return (
         <div
@@ -293,7 +294,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
             {showPhaseIndicator && state.currentPhase && (
                 <>
                     <PhaseIndicator phase={state.currentPhase} />
-                    <Divider orientation="vertical" flexItem className="mx-1" />
+                    <Divider orientation="vertical" className="mx-1 self-stretch" />
                 </>
             )}
 
@@ -315,7 +316,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                 />
             </ToolbarSection>
 
-            <Divider orientation="vertical" flexItem className="mx-1" />
+            <Divider orientation="vertical" className="mx-1 self-stretch" />
 
             {/* Selection Actions - Only show when there's a selection */}
             {state.hasSelection && (
@@ -334,7 +335,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                             onClick={() => handlers.delete?.()}
                             variant="danger"
                         />
-                        {selectedIds.length > 1 && (
+                        {elements.length > 1 && (
                             <ToolbarButton
                                 icon={<GroupIcon className="w-4 h-4" />}
                                 label="Group"
@@ -353,9 +354,9 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                     </ToolbarSection>
 
                     {/* Alignment Actions - Only for multiple selection */}
-                    {selectedIds.length > 1 && !compact && (
+                    {elements.length > 1 && !compact && (
                         <>
-                            <Divider orientation="vertical" flexItem className="mx-1" />
+                            <Divider orientation="vertical" className="mx-1 self-stretch" />
                             <ToolbarSection title="Align">
                                 <ToolbarButton
                                     icon={<AlignLeftIcon className="w-4 h-4" />}
@@ -391,7 +392,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                         </>
                     )}
 
-                    <Divider orientation="vertical" flexItem className="mx-1" />
+                    <Divider orientation="vertical" className="mx-1 self-stretch" />
                 </>
             )}
 
@@ -455,7 +456,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
             </Button>
 
             {/* Phase-specific Actions */}
-            {state.currentPhase && (state.currentPhase === LifecyclePhase.SHAPE || state.currentPhase === LifecyclePhase.VALIDATE) && capabilities.canGenerate && (
+            {state.currentPhase && (state.currentPhase === LifecyclePhase.CONTEXT || state.currentPhase === LifecyclePhase.PLAN) && capabilities.canGenerate && (
                 <Button
                     variant="solid"
                     size="sm"
@@ -467,7 +468,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                 </Button>
             )}
 
-            {state.currentPhase === LifecyclePhase.RUN && capabilities.canRun && (
+            {state.currentPhase === LifecyclePhase.EXECUTE && capabilities.canDeploy && (
                 <>
                     <Button
                         variant="outlined"
@@ -500,14 +501,10 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                     >
                         <MoreIcon className="w-4 h-4" />
                     </IconButton>
-                    <Menu
-                        anchorEl={moreMenuAnchor}
-                        open={Boolean(moreMenuAnchor)}
-                        onClose={handleMoreClose}
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    >
-                        {overflowActions.map(action => (
+                    {moreMenuAnchor ? (
+                    <div className="relative">
+                    <div className="absolute right-0 top-8 z-20 min-w-[240px] rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                        {overflowActions.map((action: ActionDefinition) => (
                             <MenuItem
                                 key={action.id}
                                 onClick={() => {
@@ -524,7 +521,15 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                                 />
                             </MenuItem>
                         ))}
-                    </Menu>
+                    </div>
+                    <button
+                        type="button"
+                        className="fixed inset-0 cursor-default"
+                        aria-label="Close overflow actions"
+                        onClick={handleMoreClose}
+                    />
+                    </div>
+                    ) : null}
                 </>
             )}
         </div>

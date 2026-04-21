@@ -18,11 +18,22 @@ import {
   CardActions,
   Grid,
   Chip,
-  InputAdornment,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
-import type { PageConfig } from '@yappc/config-schema';
+interface PageComponentConfig {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface PageConfig {
+  id: string;
+  title: string;
+  route: string;
+  layout?: string;
+  components?: PageComponentConfig[];
+  [key: string]: unknown;
+}
 
 import { dashboardTemplate } from './dashboard';
 import { formTemplate } from './form';
@@ -110,28 +121,21 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
 
   return (
     <Box data-testid="template-library" className="p-4">
-      <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+      <Box className="mb-3 flex items-center gap-1">
         <TemplateIcon size={16} />
         <Typography variant="h6">Template Library</Typography>
-      </Stack>
+      </Box>
 
-      <Stack direction="row" spacing={2} mb={4}>
+      <Box className="mb-4 flex flex-wrap gap-2">
         <TextField
           placeholder="Search templates..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon size={16} />
-              </InputAdornment>
-            ),
-          }}
           fullWidth
           size="small"
         />
 
-        <Stack direction="row" spacing={1}>
+        <Box className="flex flex-wrap gap-1">
           {categories.map((category) => (
             <Chip
               key={category}
@@ -141,14 +145,14 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
               size="small"
             />
           ))}
-        </Stack>
-      </Stack>
+        </Box>
+      </Box>
 
       <Grid container spacing={3}>
         {filteredTemplates.map((template) => (
           <Grid item xs={12} sm={6} md={4} key={template.id}>
             <Card
-              variant={selectedTemplate?.id === template.id ? 'outlined' : 'elevation'}
+              variant="outlined"
               sx={{
                 cursor: 'pointer',
                 borderColor: selectedTemplate?.id === template.id ? 'primary.main' : 'divider',
@@ -164,11 +168,11 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   {template.description}
                 </Typography>
-                <Stack direction="row" spacing={1} mt={2}>
+                <Box className="mt-2 flex flex-wrap gap-1">
                   {template.tags.map((tag) => (
                     <Chip key={tag} label={tag} size="small" variant="outlined" />
                   ))}
-                </Stack>
+                </Box>
               </CardContent>
               <CardActions>
                 <Button size="small" onClick={() => handleSelectTemplate(template)}>
@@ -184,8 +188,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectTempla
       </Grid>
 
       {filteredTemplates.length === 0 && (
-        <Box textAlign="center" py={8}>
-          <Typography color="textSecondary">No templates found matching your search</Typography>
+        <Box className="py-8 text-center">
+          <Typography color="text.secondary">No templates found matching your search</Typography>
         </Box>
       )}
     </Box>

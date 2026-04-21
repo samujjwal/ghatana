@@ -1940,9 +1940,28 @@ model User {
 
   ssoLinks SsoUserLink[]
   learnerProfile LearnerProfile?
+  consents UserConsent[]
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
+}
+
+model UserConsent {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  String   // essential, analytics, ai_processing, third_party_sharing, marketing
+  granted   Boolean  @default(true)
+  grantedAt DateTime @default(now())
+  revokedAt DateTime?
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, userId, category])
+  @@index([tenantId, userId])
+  @@index([tenantId, userId, granted])
 }
 
 model LearnerProfile {
@@ -3984,8 +4003,37 @@ model GenerationJob {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  replayManifests GenerationReplayManifest[]
+
   @@index([requestId, status])
   @@index([requestId, jobType])
+}
+
+model GenerationReplayManifest {
+  id              String   @id @default(cuid())
+  generationJobId String
+  generationJob   GenerationJob @relation(fields: [generationJobId], references: [id], onDelete: Cascade)
+
+  // Seed information for deterministic replay
+  seed           String
+  seedSource     String   // 'deterministic' | 'random' | 'provided'
+
+  // Job metadata
+  jobType        String
+  inputParams    Json
+
+  // Output data for reproducibility verification
+  outputData     Json?
+  replayable     Boolean  @default(true)
+
+  // Timing
+  generatedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([generationJobId])
+  @@index([seedSource])
+  @@index([generatedAt])
 }
 
 // =============================================================================

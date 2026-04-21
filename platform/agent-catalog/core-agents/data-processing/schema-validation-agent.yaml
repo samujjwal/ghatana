@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: schema-validation-agent
 name: Schema Validation Agent
 namespace: platform.data-processing

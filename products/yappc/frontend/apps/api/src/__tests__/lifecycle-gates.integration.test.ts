@@ -1,438 +1,292 @@
 /**
  * @doc.type test-suite
- * @doc.purpose Integration tests for gate evaluation accuracy
+ * @doc.purpose Integration tests for lifecycle gate evaluation using the real Fastify app and current Prisma schema
  * @doc.layer application
  * @doc.pattern Integration Test
- *
- * Tests gate evaluation accuracy across lifecycle stages:
- * - Stage 0 (Intent) gate checks intent artifacts
- * - Stage 1 (Shape) gate checks shape artifacts
- * - Stage 3 (Run) gate checks run artifacts
- * - Readiness calculations are stage-specific
- * - Required artifact types match STAGE_GATE_REQUIREMENTS
  */
 
 import {
-  describe,
-  it,
-  expect,
-  beforeAll,
   afterAll,
+  beforeAll,
   beforeEach,
+  describe,
+  expect,
+  it,
 } from 'vitest';
-import { createApp } from '../index';
 import type { FastifyInstance } from 'fastify';
-import { getPrismaClient } from '../database/client';
+import type { PrismaClient } from '@prisma/client';
+import { sign } from 'jsonwebtoken';
 
-// JWT token generation helper
+import { createApp } from '../index';
+import { disconnectDatabase, getPrismaClient } from '../database/client';
+
+const integrationDatabaseUrl = process.env.TEST_DATABASE_URL;
+
 function generateJWT(
   userId: string,
-  role: string = 'user',
-  tenantId: string = 'tenant-1'
+  role: 'admin' | 'editor' | 'viewer' | 'owner' = 'admin',
 ): string {
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
-  const payload = Buffer.from(
-    JSON.stringify({ sub: userId, tenantId, role })
-  ).toString('base64');
-  const signature = Buffer.from('test-signature').toString('base64');
-  return `${header}.${payload}.${signature}`;
+  return sign(
+    { sub: userId, tenantId: 'tenant-1', role },
+    process.env.JWT_ACCESS_SECRET || 'test-secret-for-gate-tests',
+    { expiresIn: '1h' },
+  );
 }
 
-describe('Integration: Gate Evaluation Accuracy', () => {
-  let app: FastifyInstance;
-  let prisma: any;
-
-  beforeAll(async () => {
-    process.env.JWT_ACCESS_SECRET = 'test-secret-for-gate-tests';
-    process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
-    app = await createApp();
-    prisma = getPrismaClient();
+async function createOwnedProject(
+  prisma: PrismaClient,
+  params: {
+    userId: string;
+    workspaceId: string;
+    projectId: string;
+    phase:
+      | 'INTENT'
+      | 'CONTEXT'
+      | 'PLAN'
+      | 'EXECUTE'
+      | 'VERIFY'
+      | 'OBSERVE'
+      | 'LEARN'
+      | 'INSTITUTIONALIZE';
+  },
+) {
+  const user = await prisma.user.create({
+    data: {
+      id: params.userId,
+      email: `${params.userId}@example.com`,
+      name: `User ${params.userId}`,
+    },
   });
 
-  afterAll(async () => {
-    await app.close();
+  const workspace = await prisma.workspace.create({
+    data: {
+      id: params.workspaceId,
+      name: `Workspace ${params.workspaceId}`,
+      ownerId: user.id,
+    },
   });
 
-  beforeEach(async () => {
-    // Clean up test data
-    try {
+  const project = await prisma.project.create({
+    data: {
+      id: params.projectId,
+      name: `Project ${params.projectId}`,
+      ownerWorkspaceId: workspace.id,
+      createdById: user.id,
+      type: 'FULL_STACK',
+      lifecyclePhase: params.phase,
+    },
+  });
+
+  return { user, workspace, project };
+}
+
+async function createApprovedArtifacts(
+  prisma: PrismaClient,
+  params: {
+    projectId: string;
+    phase:
+      | 'INTENT'
+      | 'CONTEXT'
+      | 'PLAN'
+      | 'EXECUTE'
+      | 'VERIFY'
+      | 'OBSERVE'
+      | 'LEARN'
+      | 'INSTITUTIONALIZE';
+    stage: number;
+    types: string[];
+  },
+) {
+  for (const [index, type] of params.types.entries()) {
+    await prisma.lifecycleArtifact.create({
+      data: {
+        id: `${params.projectId}-artifact-${index + 1}`,
+        projectId: params.projectId,
+        title: type,
+        type,
+        status: 'approved',
+        phase: params.phase,
+        flowStage: params.stage,
+      },
+    });
+  }
+}
+
+if (!integrationDatabaseUrl) {
+  describe.skip('Integration: Lifecycle gate evaluation (set TEST_DATABASE_URL to enable)', () => {
+    it('placeholder', () => {
+      expect(true).toBe(true);
+    });
+  });
+} else {
+  describe('Integration: Lifecycle gate evaluation', () => {
+    let app: FastifyInstance;
+    let prisma: PrismaClient;
+
+    beforeAll(async () => {
+      process.env.JWT_ACCESS_SECRET = 'test-secret-for-gate-tests';
+      process.env.DATABASE_URL = integrationDatabaseUrl;
+
+      app = await createApp();
+      prisma = getPrismaClient();
+    });
+
+    afterAll(async () => {
+      if (app) {
+        await app.close();
+      }
+      await disconnectDatabase();
+    });
+
+    beforeEach(async () => {
+      await prisma.lifecycleActivityLog.deleteMany({});
       await prisma.lifecycleArtifact.deleteMany({});
       await prisma.project.deleteMany({});
       await prisma.workspace.deleteMany({});
       await prisma.user.deleteMany({});
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  });
-
-  describe('Stage 0 (Intent) Gate Evaluation', () => {
-    it('should return readiness: 100 when project has all required stage 0 artifacts', async () => {
-      // Create test workspace and project at stage 0
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'INTENT',
-          currentStage: 0,
-          tenantId: 'tenant-1',
-        },
-      });
-
-      // Seed stage 0 artifacts (intent documents, requirements)
-      await prisma.lifecycleArtifact.create({
-        data: {
-          id: 'artifact-1',
-          projectId: project.id,
-          type: 'INTENT_DOCUMENT',
-          stage: 0,
-          status: 'COMPLETED',
-        },
-      });
-
-      await prisma.lifecycleArtifact.create({
-        data: {
-          id: 'artifact-2',
-          projectId: project.id,
-          type: 'REQUIREMENTS',
-          stage: 0,
-          status: 'COMPLETED',
-        },
-      });
-
-      const token = generateJWT('user-1', 'admin');
-
-      const response = await app.inject({
-        method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/0`,
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('readiness', 100);
-      expect(gateEvaluation).toHaveProperty('canProceed', true);
-      expect(gateEvaluation).toHaveProperty('requiredArtifactTypes');
     });
 
-    it('should return readiness: 0 when project has no stage 0 artifacts', async () => {
-      // Create test workspace and project at stage 0 with no artifacts
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
+    it('returns readiness 100 when stage 0 has every required artifact', async () => {
+      const { project, user } = await createOwnedProject(prisma, {
+        userId: 'user-intent',
+        workspaceId: 'ws-intent',
+        projectId: 'proj-intent',
+        phase: 'INTENT',
       });
 
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'INTENT',
-          currentStage: 0,
-          tenantId: 'tenant-1',
-        },
+      await createApprovedArtifacts(prisma, {
+        projectId: project.id,
+        phase: 'INTENT',
+        stage: 0,
+        types: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
       });
-
-      const token = generateJWT('user-1', 'admin');
 
       const response = await app.inject({
         method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/0`,
-        headers: { authorization: `Bearer ${token}` },
+        url: `/api/projects/${project.id}/gates/0`,
+        headers: { authorization: `Bearer ${generateJWT(user.id)}` },
       });
 
       expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('readiness', 0);
-      expect(gateEvaluation).toHaveProperty('canProceed', false);
+      expect(response.json()).toMatchObject({
+        stage: 0,
+        readiness: 100,
+        canProceed: true,
+        requiredArtifactTypes: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
+      });
     });
-  });
 
-  describe('Stage 1 (Shape) Gate Evaluation', () => {
-    it('should return correct readiness for stage 1 with shape artifacts', async () => {
-      // Create test workspace and project at stage 1
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
+    it('returns readiness 0 when stage 0 has no approved artifacts', async () => {
+      const { project, user } = await createOwnedProject(prisma, {
+        userId: 'user-empty',
+        workspaceId: 'ws-empty',
+        projectId: 'proj-empty',
+        phase: 'INTENT',
       });
-
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'SHAPE',
-          currentStage: 1,
-          tenantId: 'tenant-1',
-        },
-      });
-
-      // Seed stage 1 artifacts (design documents, architecture)
-      await prisma.lifecycleArtifact.create({
-        data: {
-          id: 'artifact-1',
-          projectId: project.id,
-          type: 'DESIGN_DOCUMENT',
-          stage: 1,
-          status: 'COMPLETED',
-        },
-      });
-
-      await prisma.lifecycleArtifact.create({
-        data: {
-          id: 'artifact-2',
-          projectId: project.id,
-          type: 'ARCHITECTURE',
-          stage: 1,
-          status: 'COMPLETED',
-        },
-      });
-
-      const token = generateJWT('user-1', 'admin');
 
       const response = await app.inject({
         method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/1`,
-        headers: { authorization: `Bearer ${token}` },
+        url: `/api/projects/${project.id}/gates/0`,
+        headers: { authorization: `Bearer ${generateJWT(user.id)}` },
       });
 
       expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('readiness');
-      expect(gateEvaluation).toHaveProperty('canProceed');
-      expect(gateEvaluation).toHaveProperty('requiredArtifactTypes');
+      expect(response.json()).toMatchObject({
+        stage: 0,
+        readiness: 0,
+        canProceed: false,
+        requiredArtifactTypes: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
+      });
+    });
+
+    it('uses canonical stage 1 requirements for context gates', async () => {
+      const { project, user } = await createOwnedProject(prisma, {
+        userId: 'user-context',
+        workspaceId: 'ws-context',
+        projectId: 'proj-context',
+        phase: 'CONTEXT',
+      });
+
+      await createApprovedArtifacts(prisma, {
+        projectId: project.id,
+        phase: 'CONTEXT',
+        stage: 1,
+        types: ['Architecture Diagram', 'Tech Stack'],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/projects/${project.id}/gates/1`,
+        headers: { authorization: `Bearer ${generateJWT(user.id)}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        stage: 1,
+        readiness: 67,
+        canProceed: false,
+        requiredArtifactTypes: ['Architecture Diagram', 'Tech Stack', 'API Design'],
+      });
+    });
+
+    it('uses canonical stage 3 requirements for execute gates', async () => {
+      const { project, user } = await createOwnedProject(prisma, {
+        userId: 'user-execute',
+        workspaceId: 'ws-execute',
+        projectId: 'proj-execute',
+        phase: 'EXECUTE',
+      });
+
+      await createApprovedArtifacts(prisma, {
+        projectId: project.id,
+        phase: 'EXECUTE',
+        stage: 3,
+        types: ['Source Code', 'Documentation', 'Build Artifacts'],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/projects/${project.id}/gates/3`,
+        headers: { authorization: `Bearer ${generateJWT(user.id)}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        stage: 3,
+        readiness: 100,
+        canProceed: true,
+        requiredArtifactTypes: ['Source Code', 'Documentation', 'Build Artifacts'],
+      });
+    });
+
+    it('ignores stage 0 artifacts when evaluating stage 3 gates', async () => {
+      const { project, user } = await createOwnedProject(prisma, {
+        userId: 'user-stage-mismatch',
+        workspaceId: 'ws-stage-mismatch',
+        projectId: 'proj-stage-mismatch',
+        phase: 'EXECUTE',
+      });
+
+      await createApprovedArtifacts(prisma, {
+        projectId: project.id,
+        phase: 'INTENT',
+        stage: 0,
+        types: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/projects/${project.id}/gates/3`,
+        headers: { authorization: `Bearer ${generateJWT(user.id)}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        stage: 3,
+        readiness: 0,
+        canProceed: false,
+        requiredArtifactTypes: ['Source Code', 'Documentation', 'Build Artifacts'],
+      });
     });
   });
-
-  describe('Stage 3 (Run) Gate Evaluation', () => {
-    it('should return correct readiness for stage 3 with run artifacts', async () => {
-      // Create test workspace and project at stage 3
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'RUN',
-          currentStage: 3,
-          tenantId: 'tenant-1',
-        },
-      });
-
-      // Seed stage 3 artifacts (build artifacts, test results)
-      await prisma.lifecycleArtifact.create({
-        data: {
-          id: 'artifact-1',
-          projectId: project.id,
-          type: 'BUILD_ARTIFACT',
-          stage: 3,
-          status: 'COMPLETED',
-        },
-      });
-
-      await prisma.lifecycleArtifact.create({
-        data: {
-          id: 'artifact-2',
-          projectId: project.id,
-          type: 'TEST_RESULTS',
-          stage: 3,
-          status: 'COMPLETED',
-        },
-      });
-
-      const token = generateJWT('user-1', 'admin');
-
-      const response = await app.inject({
-        method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/3`,
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('readiness');
-      expect(gateEvaluation).toHaveProperty('canProceed');
-      expect(gateEvaluation).toHaveProperty('requiredArtifactTypes');
-    });
-
-    it('should not check stage 0 artifacts when evaluating stage 3 gate', async () => {
-      // Create test workspace and project at stage 3
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'RUN',
-          currentStage: 3,
-          tenantId: 'tenant-1',
-        },
-      });
-
-      // Seed only stage 0 artifacts (should not affect stage 3 gate)
-      await prisma.lifecycleArtifact.create({
-        data: {
-          id: 'artifact-1',
-          projectId: project.id,
-          type: 'INTENT_DOCUMENT',
-          stage: 0,
-          status: 'COMPLETED',
-        },
-      });
-
-      const token = generateJWT('user-1', 'admin');
-
-      const response = await app.inject({
-        method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/3`,
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('readiness');
-      // Stage 3 gate should not be satisfied by stage 0 artifacts
-      expect(gateEvaluation.canProceed).toBe(false);
-    });
-  });
-
-  describe('Required Artifact Types Validation', () => {
-    it('should verify requiredArtifactTypes matches STAGE_GATE_REQUIREMENTS for stage 0', async () => {
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'INTENT',
-          currentStage: 0,
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const token = generateJWT('user-1', 'admin');
-
-      const response = await app.inject({
-        method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/0`,
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('requiredArtifactTypes');
-      expect(Array.isArray(gateEvaluation.requiredArtifactTypes)).toBe(true);
-    });
-
-    it('should verify requiredArtifactTypes matches STAGE_GATE_REQUIREMENTS for stage 1', async () => {
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'SHAPE',
-          currentStage: 1,
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const token = generateJWT('user-1', 'admin');
-
-      const response = await app.inject({
-        method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/1`,
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('requiredArtifactTypes');
-      expect(Array.isArray(gateEvaluation.requiredArtifactTypes)).toBe(true);
-    });
-
-    it('should verify requiredArtifactTypes matches STAGE_GATE_REQUIREMENTS for stage 3', async () => {
-      const workspace = await prisma.workspace.create({
-        data: {
-          id: 'ws-1',
-          name: 'Test Workspace',
-          ownerId: 'user-1',
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const project = await prisma.project.create({
-        data: {
-          id: 'proj-1',
-          name: 'Test Project',
-          workspaceId: workspace.id,
-          lifecyclePhase: 'RUN',
-          currentStage: 3,
-          tenantId: 'tenant-1',
-        },
-      });
-
-      const token = generateJWT('user-1', 'admin');
-
-      const response = await app.inject({
-        method: 'GET',
-        url: `/lifecycle/projects/${project.id}/gates/3`,
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const gateEvaluation = response.json();
-      expect(gateEvaluation).toHaveProperty('requiredArtifactTypes');
-      expect(Array.isArray(gateEvaluation.requiredArtifactTypes)).toBe(true);
-    });
-  });
-});
+}

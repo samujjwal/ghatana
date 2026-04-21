@@ -21,6 +21,9 @@ import java.util.Optional;
  * {@link AuditEvent} value object and the {@link AuditEventEntity} persistence entity.
  * The {@code details} map is stored as serialized JSON in a TEXT column.</p>
  *
+ * <p>Implements hash-chain integrity verification to ensure audit logs cannot be tampered with.
+ * Each event includes a hash of the previous event, creating an append-only chain.</p>
+ *
  * <p>All mutating operations run inside the caller-supplied transaction. Read operations
  * work in read-only mode.</p>
  *
@@ -36,7 +39,7 @@ import java.util.Optional;
  * @see AuditEventEntity
  * @see InMemoryAuditQueryService
  * @doc.type class
- * @doc.purpose JPA-backed durable audit service for production use
+ * @doc.purpose JPA-backed durable audit service for production use with hash-chain integrity
  * @doc.layer infrastructure
  * @doc.pattern Service, Repository
  */
@@ -46,10 +49,16 @@ public class JpaAuditService implements AuditService, AuditQueryService {
 
     private final EntityManager entityManager;
     private final ObjectMapper objectMapper;
+    private final AuditIntegrityService integrityService;
 
     public JpaAuditService(EntityManager entityManager, ObjectMapper objectMapper) {
+        this(entityManager, objectMapper, new AuditIntegrityService());
+    }
+
+    public JpaAuditService(EntityManager entityManager, ObjectMapper objectMapper, AuditIntegrityService integrityService) {
         this.entityManager = Objects.requireNonNull(entityManager, "EntityManager cannot be null");
         this.objectMapper  = Objects.requireNonNull(objectMapper,  "ObjectMapper cannot be null");
+        this.integrityService = Objects.requireNonNull(integrityService, "IntegrityService cannot be null");
     }
 
     // -------------------------------------------------------------------------
@@ -60,10 +69,33 @@ public class JpaAuditService implements AuditService, AuditQueryService {
     public Promise<Void> record(AuditEvent event) {
         Objects.requireNonNull(event, "event cannot be null");
         try {
-            entityManager.persist(toEntity(event));
+            // Get the previous event's hash for chain integrity
+            String previousHash = getLatestChainHash(event.getTenantId());
+            AuditEventEntity entity = toEntity(event, previousHash);
+            entityManager.persist(entity);
             return Promise.complete();
         } catch (Exception e) {
             return Promise.ofException(e);
+        }
+    }
+
+    /**
+     * Gets the chain hash of the most recent audit event for a tenant.
+     *
+     * @param tenantId the tenant ID
+     * @return the chain hash, or null if no events exist
+     */
+    private String getLatestChainHash(String tenantId) {
+        try {
+            AuditEventEntity latest = entityManager.createQuery(
+                    "SELECT e FROM AuditEventEntity e WHERE e.tenantId = :tid ORDER BY e.timestamp DESC",
+                    AuditEventEntity.class)
+                    .setParameter("tid", tenantId)
+                    .setMaxResults(1)
+                    .getSingleResult();
+            return latest != null ? latest.getChainHash() : null;
+        } catch (Exception e) {
+            return null; // No events exist or query failed
         }
     }
 
@@ -185,17 +217,26 @@ public class JpaAuditService implements AuditService, AuditQueryService {
     // Mapping helpers
     // -------------------------------------------------------------------------
 
-    private AuditEventEntity toEntity(AuditEvent event) {
+    private AuditEventEntity toEntity(AuditEvent event, String previousHash) {
         String detailsJson;
         try {
             detailsJson = objectMapper.writeValueAsString(event.getDetails());
         } catch (JsonProcessingException e) {
             detailsJson = "{}";
         }
+        
+        // Create entity without hash first
+        AuditEventEntity entity = new AuditEventEntity(
+                event.getId(), event.getTenantId(), event.getEventType(),
+                event.getPrincipal(), event.getResourceType(), event.getResourceId(),
+                event.getSuccess(), event.getTimestamp(), detailsJson, previousHash, null);
+        
+        // Compute and set the chain hash
+        String chainHash = integrityService.computeChainHash(entity, previousHash);
         return new AuditEventEntity(
                 event.getId(), event.getTenantId(), event.getEventType(),
                 event.getPrincipal(), event.getResourceType(), event.getResourceId(),
-                event.getSuccess(), event.getTimestamp(), detailsJson);
+                event.getSuccess(), event.getTimestamp(), detailsJson, previousHash, chainHash);
     }
 
     private AuditEvent toDomain(AuditEventEntity entity) {

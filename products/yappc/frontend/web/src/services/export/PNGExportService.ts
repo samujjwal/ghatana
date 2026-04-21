@@ -6,13 +6,55 @@
 import { logger } from '../../utils/Logger';
 
 import type { ExportOptions, ExportResult } from './types';
-import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';
+import type {
+  CanvasElement,
+  CanvasState,
+} from '../../components/canvas/workspace/canvasAtoms';
 
 const neutralPalette = {
   300: '#d4d4d8',
   500: '#71717a',
   900: '#18181b',
 } as const;
+
+interface CanvasPoint {
+  x: number;
+  y: number;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value === 'object' && value !== null) {
+    return value as Record<string, unknown>;
+  }
+  return undefined;
+}
+
+function readString(record: Record<string, unknown> | undefined, key: string): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function readNumber(record: Record<string, unknown> | undefined, key: string): number | undefined {
+  const value = record?.[key];
+  return typeof value === 'number' ? value : undefined;
+}
+
+function readPoints(record: Record<string, unknown> | undefined, key: string): CanvasPoint[] {
+  const value = record?.[key];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((point) => {
+    const candidate = asRecord(point);
+    const x = readNumber(candidate, 'x');
+    const y = readNumber(candidate, 'y');
+
+    return typeof x === 'number' && typeof y === 'number'
+      ? [{ x, y }]
+      : [];
+  });
+}
 
 /**
  *
@@ -114,8 +156,13 @@ class PNGExportServiceClass {
   /**
    *
    */
-  private async renderElement(ctx: CanvasRenderingContext2D, element: unknown): Promise<void> {
-    const { position, size, data, style } = element;
+  private async renderElement(
+    ctx: CanvasRenderingContext2D,
+    element: CanvasElement,
+  ): Promise<void> {
+    const { position, size } = element;
+    const data = asRecord(element.data);
+    const style = asRecord(element.style);
 
     if (!position) return;
 
@@ -125,12 +172,13 @@ class PNGExportServiceClass {
     ctx.translate(position.x, position.y);
 
     // Set styles
-    if (style?.color) {
-      ctx.fillStyle = style.color;
-      ctx.strokeStyle = style.color;
+    const styleColor = readString(style, 'color');
+    if (styleColor) {
+      ctx.fillStyle = styleColor;
+      ctx.strokeStyle = styleColor;
     }
 
-    switch (element.kind) {
+    switch (element.kind ?? element.type) {
       case 'node':
       case 'component':
         await this.renderNode(ctx, element);
@@ -152,40 +200,53 @@ class PNGExportServiceClass {
   /**
    *
    */
-  private async renderNode(ctx: CanvasRenderingContext2D, element: unknown): Promise<void> {
-    const width = element.style?.width || 150;
-    const height = element.size?.height || 80;
+  private async renderNode(
+    ctx: CanvasRenderingContext2D,
+    element: CanvasElement,
+  ): Promise<void> {
+    const style = asRecord(element.style);
+    const data = asRecord(element.data);
+    const width = readNumber(style, 'width') ?? element.size?.width ?? 150;
+    const height = element.size?.height ?? 80;
 
     // Node background
     // Node background: Using white as default fallback for user-created nodes
     // eslint-disable-next-line yappc-design-system/no-hardcoded-colors
-    ctx.fillStyle = element.style?.backgroundColor || '#ffffff';
+    ctx.fillStyle = readString(style, 'backgroundColor') ?? '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
     // Node border
-    ctx.strokeStyle = element.style?.borderColor || neutralPalette[300];
+    ctx.strokeStyle = readString(style, 'borderColor') ?? neutralPalette[300];
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, width, height);
 
     // Node label
-    if (element.data?.label) {
-      ctx.fillStyle = element.style?.color || neutralPalette[900];
+    const label = readString(data, 'label');
+    if (label) {
+      ctx.fillStyle = readString(style, 'color') ?? neutralPalette[900];
       ctx.font = '14px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(element.data.label, width / 2, height / 2);
+      ctx.fillText(label, width / 2, height / 2);
     }
   }
 
   /**
    *
    */
-  private async renderShape(ctx: CanvasRenderingContext2D, element: unknown): Promise<void> {
-    const { shapeType, width = 100, height = 100 } = element.data || {};
+  private async renderShape(
+    ctx: CanvasRenderingContext2D,
+    element: CanvasElement,
+  ): Promise<void> {
+    const data = asRecord(element.data);
+    const style = asRecord(element.style);
+    const shapeType = readString(data, 'shapeType');
+    const width = readNumber(data, 'width') ?? element.size?.width ?? 100;
+    const height = readNumber(data, 'height') ?? element.size?.height ?? 100;
 
-    ctx.fillStyle = element.style?.fill || 'rgba(0, 0, 0, 0.1)';
-    ctx.strokeStyle = element.style?.stroke || neutralPalette[900];
-    ctx.lineWidth = element.style?.strokeWidth || 2;
+    ctx.fillStyle = readString(style, 'fill') ?? 'rgba(0, 0, 0, 0.1)';
+    ctx.strokeStyle = readString(style, 'stroke') ?? neutralPalette[900];
+    ctx.lineWidth = readNumber(style, 'strokeWidth') ?? 2;
 
     switch (shapeType) {
       case 'rectangle':
@@ -206,15 +267,20 @@ class PNGExportServiceClass {
   /**
    *
    */
-  private async renderStroke(ctx: CanvasRenderingContext2D, element: unknown): Promise<void> {
-    const points = element.data?.points || [];
+  private async renderStroke(
+    ctx: CanvasRenderingContext2D,
+    element: CanvasElement,
+  ): Promise<void> {
+    const data = asRecord(element.data);
+    const style = asRecord(element.style);
+    const points = readPoints(data, 'points');
 
     if (points.length < 2) return;
 
     // Stroke default: Black is standard for user-drawn strokes when not specified
     // eslint-disable-next-line yappc-design-system/no-hardcoded-colors
-    ctx.strokeStyle = element.style?.stroke || '#000000';
-    ctx.lineWidth = element.style?.strokeWidth || 2;
+    ctx.strokeStyle = readString(style, 'stroke') ?? '#000000';
+    ctx.lineWidth = readNumber(style, 'strokeWidth') ?? 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 

@@ -2,7 +2,11 @@ import { getPrismaClient, Prisma, type PrismaClient } from '../database/client';
 import { GoldenFlows } from '../config/flows';
 import { getArray, isRecord } from '../utils/type-guards';
 
-const prisma: PrismaClient = getPrismaClient();
+const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, property, receiver) {
+    return Reflect.get(getPrismaClient() as unknown as object, property, receiver);
+  },
+}) as PrismaClient;
 
 // State hooks that trigger AI processing
 type StateHook = (

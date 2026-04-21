@@ -12,7 +12,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Database,
   Globe,
@@ -36,15 +36,85 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type {
-  ProvisionedResource,
-  ResourceType,
-  ProviderType,
-  ProvisioningStatus,
-  EnvironmentType,
-} from '@yappc/api';
 
-export interface ResourceNodeData {
+type ResourceType =
+  | 'REPOSITORY'
+  | 'HOSTING'
+  | 'DATABASE'
+  | 'CACHE'
+  | 'STORAGE'
+  | 'CDN'
+  | 'DOMAIN'
+  | 'SSL'
+  | 'CI_CD'
+  | 'SECRETS'
+  | 'MONITORING'
+  | 'LOGGING';
+
+type ProviderType =
+  | 'GITHUB'
+  | 'GITLAB'
+  | 'BITBUCKET'
+  | 'VERCEL'
+  | 'NETLIFY'
+  | 'RAILWAY'
+  | 'RENDER'
+  | 'HEROKU'
+  | 'AWS'
+  | 'GCP'
+  | 'AZURE'
+  | 'SUPABASE'
+  | 'PLANETSCALE'
+  | 'NEON'
+  | 'UPSTASH'
+  | 'CLOUDFLARE'
+  | 'CUSTOM';
+
+type ProvisioningStatus =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'ROLLBACK_PENDING'
+  | 'ROLLED_BACK';
+
+type EnvironmentType = 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'PREVIEW';
+
+interface ResourceCredentials {
+  encrypted: boolean;
+  accessedAt?: string;
+}
+
+interface ResourceCostBreakdownItem {
+  item: string;
+  amount: number;
+}
+
+interface ResourceCost {
+  amount: number;
+  currency: string;
+  period: string;
+  breakdown?: ResourceCostBreakdownItem[];
+}
+
+interface ProvisionedResource {
+  id: string;
+  name: string;
+  type: ResourceType;
+  provider: ProviderType;
+  status: ProvisioningStatus;
+  environment?: EnvironmentType;
+  externalId?: string;
+  url?: string;
+  connectionString?: string;
+  credentials?: ResourceCredentials;
+  cost?: ResourceCost;
+  metadata?: Record<string, unknown>;
+  provisionedAt?: string;
+  lastSyncedAt?: string;
+}
+
+export interface ResourceNodeData extends Record<string, unknown> {
   resource: ProvisionedResource;
   onSync?: () => void;
   onDelete?: () => void;
@@ -53,6 +123,8 @@ export interface ResourceNodeData {
   showCredentials?: boolean;
   onToggleCredentials?: () => void;
 }
+
+type ResourceCanvasNode = Node<ResourceNodeData, 'resource'>;
 
 const resourceConfig: Record<
   ResourceType,
@@ -111,7 +183,7 @@ const providerLogos: Record<ProviderType, string> = {
   CUSTOM: '?',
 };
 
-function ResourceNode({ data }: NodeProps<ResourceNodeData>) {
+function ResourceNode({ data }: NodeProps<ResourceCanvasNode>) {
   const {
     resource,
     onSync,
@@ -277,7 +349,7 @@ function ResourceNode({ data }: NodeProps<ResourceNodeData>) {
           </div>
           {resource.cost.breakdown && resource.cost.breakdown.length > 0 && (
             <div className="mt-2 space-y-1">
-              {resource.cost.breakdown.map((item, index) => (
+              {resource.cost.breakdown.map((item: ResourceCostBreakdownItem, index: number) => (
                 <div key={index} className="flex items-center justify-between text-xs">
                   <span className="text-slate-500">{item.item}</span>
                   <span className="text-slate-400">

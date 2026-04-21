@@ -200,6 +200,9 @@ export interface ToggleButtonGroupProps
   /** Whether the group spans full width */
   fullWidth?: boolean;
 
+  /** MUI-compatible visual variant (ignored). */
+  variant?: 'text' | 'outlined' | 'contained';
+
   /** MUI-compatible sx prop */
   sx?: SxProps;
 
@@ -216,6 +219,7 @@ export const ToggleButtonGroup = React.forwardRef<HTMLDivElement, ToggleButtonGr
       tone = 'primary',
       orientation = 'horizontal',
       fullWidth = false,
+      variant: _variant,
       className,
       style,
       children,

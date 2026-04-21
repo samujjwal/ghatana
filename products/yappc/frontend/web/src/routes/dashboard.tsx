@@ -1,11 +1,11 @@
 /**
  * App Route Index (Refactored)
  *
- * Home Dashboard - Command Center & Task Executor.
+ * Home dashboard for mounted project and workspace entry points.
  * Smart container that manages authentication state and data fetching.
  *
  * @doc.type route
- * @doc.purpose Task-centric home dashboard container
+ * @doc.purpose Mounted home dashboard container
  * @doc.layer product
  * @doc.pattern Route Module
  */
@@ -67,7 +67,7 @@ export default function Component() {
         if (workspaceId) {
             setLastOpenedProject(workspaceId, projectId);
         }
-        navigate(`/p/${projectId}/canvas`);
+        navigate(`/p/${projectId}`);
     };
 
     const handleWorkspaceClick = (workspaceId: string) => {
@@ -77,7 +77,7 @@ export default function Component() {
         if (lastProjectId) {
             const project = allProjects.find(p => p.id === lastProjectId);
             if (project) {
-                navigate(`/p/${lastProjectId}/canvas`);
+                navigate(`/p/${lastProjectId}`);
                 return;
             }
         }
@@ -87,7 +87,7 @@ export default function Component() {
         if (workspaceProjects.length > 0) {
             const firstProject = workspaceProjects[0];
             setLastOpenedProject(workspaceId, firstProject.id);
-            navigate(`/p/${firstProject.id}/canvas`);
+            navigate(`/p/${firstProject.id}`);
         } else {
             navigate(`/projects`);
         }
@@ -121,7 +121,7 @@ export default function Component() {
             <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
                 <div className="flex flex-col gap-3">
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-600">
-                        Workspace Command Center
+                        Workspace Home
                     </p>
                     <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                         <div>
@@ -161,8 +161,8 @@ export default function Component() {
                         <h2 className="text-lg font-semibold text-text-primary">Resume Project</h2>
                         <p className="mt-2 text-sm text-text-secondary">
                             {recentProjects[0]
-                                ? `Continue ${recentProjects[0].name} in the canvas.`
-                                : 'Open your project workspace and continue where you left off.'}
+                                ? `Open ${recentProjects[0].name} in its project cockpit.`
+                                : 'Open a project cockpit and continue where you left off.'}
                         </p>
                     </button>
 
@@ -200,7 +200,7 @@ export default function Component() {
                         <div>
                             <h2 className="text-xl font-semibold text-text-primary">Recent Projects</h2>
                             <p className="mt-1 text-sm text-text-secondary">
-                                Jump directly back into the latest project workspaces.
+                                Jump directly back into the latest project cockpits.
                             </p>
                         </div>
                         <button

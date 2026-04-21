@@ -1,0 +1,12 @@
+version: v1
+breaking:
+  use:
+    - FILE
+  ignore_unstable_packages: true
+lint:
+  use:
+    - DEFAULT
+  ignore:
+    - google/protobuf/any.proto
+deps:
+  - buf.build/googleapis/googleapis

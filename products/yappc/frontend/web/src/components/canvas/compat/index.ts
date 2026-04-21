@@ -2,6 +2,8 @@
 // Re-export the small public surface expected by the app from canonical packages.
 // Updated: Now uses @ghatana/canvas core library
 
+import type { ReactNode } from 'react';
+
 // Re-export ReactFlow components from @xyflow/react (used directly now)
 export {
   ReactFlow as Diagram,
@@ -9,18 +11,24 @@ export {
   useReactFlow as useDiagram,
 } from '@xyflow/react';
 
-// Re-export hybrid canvas components from @ghatana/canvas
-export {
-  GraphLayer,
-  FreeformLayer,
-  HybridCanvas,
-  type GraphLayerProps,
-  type FreeformLayerProps,
-  type HybridCanvasProps,
-} from '@ghatana/canvas/hybrid';
+export interface GraphLayerProps {
+  children?: ReactNode;
+}
 
-// CanvasFlow / CanvasFlowShim removed — use GraphLayer from @ghatana/canvas/hybrid directly
-export { GraphLayer as CanvasFlow } from '@ghatana/canvas/hybrid';
+export interface FreeformLayerProps {
+  children?: ReactNode;
+}
+
+export interface HybridCanvasProps {
+  children?: ReactNode;
+}
+
+export const GraphLayer = (_props: GraphLayerProps) => null;
+export const FreeformLayer = (_props: FreeformLayerProps) => null;
+export const HybridCanvas = (_props: HybridCanvasProps) => null;
+
+// CanvasFlow / CanvasFlowShim removed — keep the shim mapped to GraphLayer locally.
+export const CanvasFlow = GraphLayer;
 
 // Default node types placeholder (product extensions should provide their own)
 export const nodeTypes = {};

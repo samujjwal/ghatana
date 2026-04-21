@@ -16,10 +16,54 @@ import {
     readErrorResponse as sharedReadErrorResponse,
 } from '@/lib/http';
 import { logger } from '../../utils/Logger';
-import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';
+import type {
+    CanvasConnection,
+    CanvasElement,
+    CanvasState,
+} from '../../components/canvas/workspace/canvasAtoms';
 
 // Re-export for convenience
 export type { CanvasState };
+
+type LegacyRecord = Record<string, unknown>;
+type LegacyConnectionRecord = LegacyRecord & { source: string; target: string };
+
+function isRecord(value: unknown): value is LegacyRecord {
+    return typeof value === 'object' && value !== null;
+}
+
+function getPosition(value: unknown): { x: number; y: number } {
+    if (!isRecord(value)) {
+        return { x: 0, y: 0 };
+    }
+
+    return {
+        x: typeof value.x === 'number' ? value.x : 0,
+        y: typeof value.y === 'number' ? value.y : 0,
+    };
+}
+
+function getViewport(value: unknown, fallbackZoom = 1): { x: number; y: number; zoom: number } {
+    if (!isRecord(value)) {
+        return { x: 0, y: 0, zoom: fallbackZoom };
+    }
+
+    return {
+        x: typeof value.x === 'number' ? value.x : 0,
+        y: typeof value.y === 'number' ? value.y : 0,
+        zoom: typeof value.zoom === 'number' ? value.zoom : fallbackZoom,
+    };
+}
+
+function getStringArray(value: unknown): string[] {
+    return Array.isArray(value)
+        ? value.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+}
+
+function getUnknownArray(value: unknown): unknown[] {
+    return Array.isArray(value) ? value : [];
+}
 
 /**
  * Canvas snapshot with version metadata
@@ -156,6 +200,11 @@ export class CanvasPersistence {
     public startAutoSave(getState: () => CanvasState, projectId: string, canvasId: string): void {
         this.stopAutoSave();
 
+        const autoSaveConfig = this.config.autoSave;
+        if (!autoSaveConfig?.enabled) {
+            return;
+        }
+
         this.autoSaveTimer = setInterval(async () => {
             if (this.isDirty) {
                 try {
@@ -166,12 +215,12 @@ export class CanvasPersistence {
                     });
 
                     this.isDirty = false;
-                    this.config.autoSave?.onSuccess?.(snapshot);
+                    autoSaveConfig.onSuccess?.(snapshot);
                 } catch (error) {
-                    this.config.autoSave?.onError?.(error as Error);
+                    autoSaveConfig.onError?.(error as Error);
                 }
             }
-        }, this.config.autoSave.interval);
+        }, autoSaveConfig.interval);
     }
 
     /**
@@ -201,74 +250,86 @@ export class CanvasPersistence {
         if (!legacyRaw) return null;
 
         try {
-            const legacy = JSON.parse(legacyRaw);
+            const legacy = JSON.parse(legacyRaw) as LegacyRecord;
             const legacyElements = Array.isArray(legacy.elements)
                 ? (legacy.elements as unknown[]).map(
-                    (element: unknown, index: number) => ({
-                        id: element.id ?? `legacy-element-${index}`,
-                        kind: element.kind ?? 'node',
-                        type: element.type ?? 'component',
-                        position: element.position ?? { x: 0, y: 0 },
-                        size: element.size,
-                        data: element.data ?? {
-                            label: element.id ?? `Element ${index + 1}`,
-                        },
-                        style: element.style,
-                        selected: element.selected ?? false,
-                    })
+                    (element: unknown, index: number): CanvasElement => {
+                        const record = isRecord(element) ? element : {};
+                        const id = typeof record.id === 'string' ? record.id : `legacy-element-${index}`;
+                        return {
+                            id,
+                            kind: typeof record.kind === 'string' ? record.kind : 'node',
+                            type: typeof record.type === 'string' ? record.type : 'component',
+                            position: getPosition(record.position),
+                            size: isRecord(record.size)
+                                ? {
+                                    width: typeof record.size.width === 'number' ? record.size.width : 0,
+                                    height: typeof record.size.height === 'number' ? record.size.height : 0,
+                                }
+                                : undefined,
+                            data: isRecord(record.data)
+                                ? record.data
+                                : { label: id || `Element ${index + 1}` },
+                            style: isRecord(record.style) ? record.style : undefined,
+                            selected: typeof record.selected === 'boolean' ? record.selected : false,
+                        };
+                    }
                 )
                 : [];
 
             const legacyShapes = Array.isArray(legacy.sketches)
                 ? (legacy.sketches as unknown[]).map(
-                    (shape: unknown, index: number) => ({
-                        id: shape.id ?? `legacy-shape-${index}`,
-                        kind: 'shape',
-                        type: shape.type ?? 'stroke',
-                        position: shape.position ?? { x: 0, y: 0 },
-                        data: shape.data ?? shape,
-                        style: shape.style,
-                    })
+                    (shape: unknown, index: number): CanvasElement => {
+                        const record = isRecord(shape) ? shape : {};
+                        return {
+                            id: typeof record.id === 'string' ? record.id : `legacy-shape-${index}`,
+                            kind: 'shape',
+                            type: typeof record.type === 'string' ? record.type : 'stroke',
+                            position: getPosition(record.position),
+                            data: isRecord(record.data) ? record.data : record,
+                            style: isRecord(record.style) ? record.style : undefined,
+                        };
+                    }
                 )
                 : [];
 
             const legacyConnections = Array.isArray(legacy.connections)
                 ? (legacy.connections as unknown[])
                     .filter(
-                        (connection: unknown) =>
-                            connection?.source && connection?.target
+                        (connection: unknown): connection is LegacyConnectionRecord =>
+                            isRecord(connection) &&
+                            typeof connection.source === 'string' &&
+                            typeof connection.target === 'string'
                     )
-                    .map((connection: unknown, index: number) => ({
-                        id: connection.id ?? `legacy-connection-${index}`,
+                    .map((connection: LegacyConnectionRecord, index: number): CanvasConnection => ({
+                        id: typeof connection.id === 'string' ? connection.id : `legacy-connection-${index}`,
                         source: connection.source,
                         target: connection.target,
-                        sourceHandle: connection.sourceHandle,
-                        targetHandle: connection.targetHandle,
-                        type: connection.type ?? 'default',
-                        animated: connection.animated ?? false,
-                        data: connection.data,
-                        style: connection.style,
+                        sourceHandle: typeof connection.sourceHandle === 'string' ? connection.sourceHandle : undefined,
+                        targetHandle: typeof connection.targetHandle === 'string' ? connection.targetHandle : undefined,
+                        type: typeof connection.type === 'string' ? connection.type : 'default',
+                        animated: typeof connection.animated === 'boolean' ? connection.animated : false,
+                        data: isRecord(connection.data) ? connection.data : undefined,
+                        style: isRecord(connection.style) ? connection.style : undefined,
                     }))
                 : [];
 
             const loadedState: CanvasState = {
                 elements: [...legacyElements, ...legacyShapes],
                 connections: legacyConnections,
-                selectedElements: Array.isArray(legacy.selectedElements)
-                    ? legacy.selectedElements
-                    : [],
-                viewportPosition: legacy.viewportPosition ??
-                    legacy.viewport ?? { x: 0, y: 0 },
-                viewport: legacy.viewport ?? {
-                    x: legacy.viewportPosition?.x ?? 0,
-                    y: legacy.viewportPosition?.y ?? 0,
-                    zoom: legacy.zoomLevel ?? 1,
-                },
-                zoomLevel: legacy.zoomLevel ?? legacy.viewport?.zoom ?? 1,
-                metadata: legacy.metadata ?? {},
+                selectedElements: getStringArray(legacy.selectedElements),
+                viewportPosition: getPosition(legacy.viewportPosition ?? legacy.viewport),
+                viewport: getViewport(
+                    legacy.viewport,
+                    typeof legacy.zoomLevel === 'number' ? legacy.zoomLevel : 1,
+                ),
+                zoomLevel: typeof legacy.zoomLevel === 'number'
+                    ? legacy.zoomLevel
+                    : getViewport(legacy.viewport).zoom,
+                metadata: isRecord(legacy.metadata) ? legacy.metadata : {},
                 draggedElement: legacy.draggedElement,
-                isReadOnly: legacy.isReadOnly ?? false,
-                layers: legacy.layers ?? [],
+                isReadOnly: typeof legacy.isReadOnly === 'boolean' ? legacy.isReadOnly : false,
+                layers: getUnknownArray(legacy.layers),
                 history: legacy.history,
             };
 
@@ -439,14 +500,14 @@ export class CanvasPersistence {
         };
 
         // Compare nodes
-        const state1NodeIds = new Set(state1.elements.map((e: unknown) => e.id));
-        const state2NodeIds = new Set(state2.elements.map((e: unknown) => e.id));
+        const state1NodeIds = new Set(state1.elements.map((element) => element.id));
+        const state2NodeIds = new Set(state2.elements.map((element) => element.id));
 
-        state2.elements.forEach((node: unknown) => {
+        state2.elements.forEach((node) => {
             if (!state1NodeIds.has(node.id)) {
                 diff.added.nodes++;
             } else {
-                const oldNode = state1.elements.find((n: unknown) => n.id === node.id);
+                const oldNode = state1.elements.find((element) => element.id === node.id);
                 if (JSON.stringify(oldNode) !== JSON.stringify(node)) {
                     diff.modified.nodes++;
                 } else {
@@ -455,21 +516,21 @@ export class CanvasPersistence {
             }
         });
 
-        state1.elements.forEach((node: unknown) => {
+        state1.elements.forEach((node) => {
             if (!state2NodeIds.has(node.id)) {
                 diff.removed.nodes++;
             }
         });
 
         // Similar for edges
-        const state1EdgeIds = new Set(state1.connections.map((c: unknown) => c.id));
-        const state2EdgeIds = new Set(state2.connections.map((c: unknown) => c.id));
+        const state1EdgeIds = new Set(state1.connections.map((connection) => connection.id));
+        const state2EdgeIds = new Set(state2.connections.map((connection) => connection.id));
 
-        state2.connections.forEach((edge: unknown) => {
+        state2.connections.forEach((edge) => {
             if (!state1EdgeIds.has(edge.id)) {
                 diff.added.edges++;
             } else {
-                const oldEdge = state1.connections.find((e: unknown) => e.id === edge.id);
+                const oldEdge = state1.connections.find((connection) => connection.id === edge.id);
                 if (JSON.stringify(oldEdge) !== JSON.stringify(edge)) {
                     diff.modified.edges++;
                 } else {
@@ -478,7 +539,7 @@ export class CanvasPersistence {
             }
         });
 
-        state1.connections.forEach((edge: unknown) => {
+        state1.connections.forEach((edge) => {
             if (!state2EdgeIds.has(edge.id)) {
                 diff.removed.edges++;
             }

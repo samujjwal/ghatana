@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: anomaly-detector-agent
 name: Anomaly Detector Agent
 namespace: platform.monitoring

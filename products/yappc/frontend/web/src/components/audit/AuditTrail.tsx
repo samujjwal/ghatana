@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Box, Typography, Card, CardContent, Chip, IconButton, Button, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem, Tooltip, Collapse, Divider, Spinner as CircularProgress, Alert, Menu, ListItemText } from '@ghatana/design-system';
+import { Box, Typography, Card, CardContent, Chip, IconButton, Button, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem, Tooltip, Collapse, Divider, Spinner as CircularProgress, Alert, Menu } from '@ghatana/design-system';
 import { Search as SearchIcon, Download as DownloadIcon, RefreshCw as RefreshIcon, ChevronDown as ExpandIcon, ChevronUp as CollapseIcon, AlertCircle as ErrorIcon, AlertTriangle as WarningIcon, Info as InfoIcon, User as PersonIcon, Bot as AgentIcon, Settings as SystemIcon, Clock as AutomationIcon, ChevronDown as MenuIcon } from 'lucide-react';
 
 // ============================================================================
@@ -193,22 +193,15 @@ export function AuditTrail({
                 className="p-4 flex items-center gap-4 flex-wrap border-gray-200 dark:border-gray-700 border-b" >
                 {/* Search */}
                 <TextField
-                    size="sm"
+                    size="small"
                     placeholder="Search events..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon size={16} />
-                            </InputAdornment>
-                        ),
-                    }}
                     className="min-w-[200px]"
                 />
 
                 {/* Category Filter */}
-                <FormControl size="sm" className="min-w-[140px]">
+                <FormControl size="small" className="min-w-[140px]">
                     <InputLabel>Category</InputLabel>
                     <Select
                         value={categoryFilter}
@@ -228,7 +221,7 @@ export function AuditTrail({
                 </FormControl>
 
                 {/* Severity Filter */}
-                <FormControl size="sm" className="min-w-[120px]">
+                <FormControl size="small" className="min-w-[120px]">
                     <InputLabel>Severity</InputLabel>
                     <Select
                         value={severityFilter}
@@ -248,43 +241,45 @@ export function AuditTrail({
                 {/* Actions */}
                 <Tooltip title="Refresh">
                     <IconButton onClick={onRefresh} disabled={isLoading}>
-                        {isLoading ? <CircularProgress size={20} /> : <RefreshIcon />}
+                        {isLoading ? <CircularProgress size="small" /> : <RefreshIcon />}
                     </IconButton>
                 </Tooltip>
 
-                <Button
-                    variant="outlined"
-                    startIcon={<DownloadIcon />}
-                    endIcon={<MenuIcon />}
-                    onClick={(e) => setExportAnchorEl(e.currentTarget)}
-                    size="sm"
-                >
-                    Export
-                </Button>
-                <Menu
-                    anchorEl={exportAnchorEl}
-                    open={Boolean(exportAnchorEl)}
-                    onClose={() => setExportAnchorEl(null)}
-                >
-                    <MenuItem onClick={() => handleExport('json')}>
-                        <ListItemText>JSON</ListItemText>
-                    </MenuItem>
-                    <MenuItem onClick={() => handleExport('csv')}>
-                        <ListItemText>CSV</ListItemText>
-                    </MenuItem>
-                    <MenuItem onClick={() => handleExport('pdf')}>
-                        <ListItemText>PDF Report</ListItemText>
-                    </MenuItem>
-                </Menu>
+                <Box className="flex items-center gap-2">
+                    <Button
+                        variant="outlined"
+                        startIcon={<DownloadIcon />}
+                        size="small"
+                        onClick={() => handleExport('json')}
+                    >
+                        JSON
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        startIcon={<DownloadIcon />}
+                        size="small"
+                        onClick={() => handleExport('csv')}
+                    >
+                        CSV
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        startIcon={<DownloadIcon />}
+                        size="small"
+                        onClick={() => handleExport('pdf')}
+                    >
+                        PDF
+                    </Button>
+                </Box>
             </Box>
 
             {/* Stats Bar */}
             <Box
                 className="px-4 py-2 flex gap-4 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border-b" >
-                <Typography as="p" className="text-sm" color="text.secondary">
+                <Typography className="text-sm text-gray-500" color="text.secondary">
                     {filteredEvents.length} events
                 </Typography>
-                <Divider orientation="vertical" flexItem />
+                <Box className="w-px self-stretch bg-gray-300 dark:bg-gray-600" />
                 {Object.entries(
                     filteredEvents.reduce((acc, e) => {
                         acc[e.severity] = (acc[e.severity] || 0) + 1;
@@ -309,15 +304,14 @@ export function AuditTrail({
                     </Box>
                 ) : filteredEvents.length === 0 ? (
                     <Box className="text-center py-8">
-                        <Typography color="text.secondary">No events found</Typography>
+                        <Typography className="text-gray-500" color="text.secondary">No events found</Typography>
                     </Box>
                 ) : (
                     Object.entries(groupedEvents).map(([date, dateEvents]) => (
                         <Box key={date} className="mb-6">
                             <Typography
-                                as="span" className="text-xs uppercase tracking-wider"
+                                className="block mb-2 text-xs uppercase tracking-wider"
                                 color="text.secondary"
-                                className="block mb-2"
                             >
                                 {date}
                             </Typography>
@@ -326,7 +320,7 @@ export function AuditTrail({
                                     <div key={event.id} className="relative flex gap-4 pb-4">
                                         {/* Opposite content (time) */}
                                         <div className="absolute -left-8 w-20 flex-shrink-0 py-1.5 text-right">
-                                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                            <Typography className="text-xs text-gray-500" color="text.secondary">
                                                 {new Date(event.timestamp).toLocaleTimeString()}
                                             </Typography>
                                         </div>
@@ -396,20 +390,20 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                         />
                     )}
                     <Box className="flex-1" />
-                    <IconButton size="sm" onClick={onToggle}>
+                    <IconButton size="small" onClick={onToggle}>
                         {expanded ? <CollapseIcon size={16} /> : <ExpandIcon size={16} />}
                     </IconButton>
                 </Box>
 
                 {/* Message */}
-                <Typography as="p" className="text-sm" className="mt-2">
+                <Typography className="mt-2 text-sm">
                     {event.message}
                 </Typography>
 
                 {/* Actor */}
                 <Box className="flex items-center gap-1 mt-2">
                     {ACTOR_ICONS[event.actor.type]}
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                    <Typography className="text-xs text-gray-500" color="text.secondary">
                         {event.actor.name || event.actor.id}
                     </Typography>
                 </Box>
@@ -419,37 +413,37 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                     <Divider className="my-2" />
                     <Box className="grid gap-2 grid-cols-2">
                         <Box>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-gray-500" color="text.secondary">
                                 Event ID
                             </Typography>
-                            <Typography as="p" className="text-sm" className="text-xs font-mono">
+                            <Typography className="text-xs font-mono">
                                 {event.id}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-gray-500" color="text.secondary">
                                 Target
                             </Typography>
-                            <Typography as="p" className="text-sm">
+                            <Typography className="text-sm">
                                 {event.target.name || event.target.id}
                             </Typography>
                         </Box>
                         {event.workflowId && (
                             <Box>
-                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                <Typography className="text-xs text-gray-500" color="text.secondary">
                                     Workflow ID
                                 </Typography>
-                                <Typography as="p" className="text-sm" className="text-xs font-mono">
+                                <Typography className="text-xs font-mono">
                                     {event.workflowId}
                                 </Typography>
                             </Box>
                         )}
                         {event.taskId && (
                             <Box>
-                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                <Typography className="text-xs text-gray-500" color="text.secondary">
                                     Task ID
                                 </Typography>
-                                <Typography as="p" className="text-sm" className="text-xs font-mono">
+                                <Typography className="text-xs font-mono">
                                     {event.taskId}
                                 </Typography>
                             </Box>
@@ -457,15 +451,12 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                     </Box>
                     {event.metadata && Object.keys(event.metadata).length > 0 && (
                         <Box className="mt-2">
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-gray-500" color="text.secondary">
                                 Metadata
                             </Typography>
-                            <Box
-                                component="pre"
-                                className="p-2 rounded overflow-auto text-[0.7rem] bg-gray-100 dark:bg-gray-800 max-h-[100px]"
-                            >
+                            <pre className="p-2 rounded overflow-auto text-[0.7rem] bg-gray-100 dark:bg-gray-800 max-h-[100px]">
                                 {JSON.stringify(event.metadata, null, 2)}
-                            </Box>
+                            </pre>
                         </Box>
                     )}
                 </Collapse>

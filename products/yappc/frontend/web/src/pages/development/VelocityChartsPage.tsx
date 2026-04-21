@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { VelocityChart, BurndownChart } from '@yappc/development-ui';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';

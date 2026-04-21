@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { memo, useMemo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import {
   FileKey,
   Shield,
@@ -75,7 +75,7 @@ export interface PolicyException {
   validUntil?: string;
 }
 
-export interface PolicyNodeData {
+export interface PolicyNodeData extends Record<string, unknown> {
   id: string;
   name: string;
   description?: string;
@@ -104,6 +104,8 @@ export interface PolicyNodeData {
   selected?: boolean;
   compact?: boolean;
 }
+
+type PolicyCanvasNode = Node<PolicyNodeData>;
 
 // ============================================================================
 // Type Configuration
@@ -363,7 +365,7 @@ function EnforcementBadge({ enforcement }: { enforcement: PolicyEnforcement }) {
 // Main Component
 // ============================================================================
 
-function PolicyNodeComponent({ data, selected }: NodeProps<PolicyNodeData>) {
+function PolicyNodeComponent({ data, selected }: NodeProps<PolicyCanvasNode>) {
   const typeConfig = TYPE_CONFIG[data.type];
   const statusConfig = STATUS_CONFIG[data.status];
   const TypeIcon = typeConfig.icon;

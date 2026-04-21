@@ -1,19 +1,29 @@
 import React, { useMemo } from 'react';
 import { ReactFlow } from '@xyflow/react';
+import type {
+    Edge,
+    Node,
+    NodeMouseHandler,
+    OnConnect,
+    OnEdgesChange,
+    OnInit,
+    OnNodesChange,
+    OnSelectionChangeFunc,
+} from '@xyflow/react';
 import { nodeTypes as importedNodeTypes } from './nodeTypes';
 
 const SNAP_GRID: [number, number] = [15, 15];
 
 // Memoized ReactFlow wrapper to prevent React Flow warning about nodeTypes changes
 interface ReactFlowWrapperProps {
-    nodes: unknown[];
-    edges: unknown[];
-    onInit: unknown;
-    onNodesChange: unknown;
-    onEdgesChange: unknown;
-    onConnect: unknown;
-    onSelectionChange: unknown;
-    onNodeDoubleClick: unknown;
+    nodes: Node[];
+    edges: Edge[];
+    onInit?: OnInit<Node, Edge>;
+    onNodesChange?: OnNodesChange<Node>;
+    onEdgesChange?: OnEdgesChange<Edge>;
+    onConnect?: OnConnect;
+    onSelectionChange?: OnSelectionChangeFunc<Node, Edge>;
+    onNodeDoubleClick?: NodeMouseHandler<Node>;
     children: React.ReactNode;
 }
 

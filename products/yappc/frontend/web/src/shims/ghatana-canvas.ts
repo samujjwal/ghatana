@@ -71,6 +71,7 @@ export interface ActionContext {
   projectId?: string;
   workspaceId?: string;
   userId?: string;
+  phase?: string;
   selection?: string[];
   metadata?: Record<string, unknown>;
 }
@@ -79,7 +80,14 @@ export interface ActionDefinition {
   id: string;
   label: string;
   description?: string;
-  execute: (context: ActionContext) => Promise<void> | void;
+  icon?: string;
+  shortcut?: string;
+  category?: string;
+  priority?: number;
+  handler?: (context: ActionContext) => Promise<void> | void;
+  isEnabled?: (context: ActionContext) => boolean;
+  isVisible?: (context: ActionContext) => boolean;
+  execute?: (context: ActionContext) => Promise<void> | void;
   enabled?: (context: ActionContext) => boolean;
 }
 

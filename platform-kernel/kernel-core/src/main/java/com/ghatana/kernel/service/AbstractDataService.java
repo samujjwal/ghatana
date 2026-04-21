@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 
 /**
@@ -46,11 +48,19 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
 
     protected final DataCloudKernelAdapter dataCloud;
     protected final CrossScopeAuditService auditService;
+    protected final Executor executor;
     protected volatile boolean running = false;
 
     protected AbstractDataService(KernelContext context) {
         this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
         this.auditService = context.getOptionalDependency(CrossScopeAuditService.class).orElse(null);
+        this.executor = ForkJoinPool.commonPool();
+    }
+
+    protected AbstractDataService(KernelContext context, Executor executor) {
+        this.dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        this.auditService = context.getOptionalDependency(CrossScopeAuditService.class).orElse(null);
+        this.executor = executor != null ? executor : ForkJoinPool.commonPool();
     }
 
     @Override
@@ -93,12 +103,13 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
             return Promise.ofException(new IllegalStateException("Service not running"));
         }
 
-        byte[] data = serialize(record, entityType, version);
-        DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
-
-        return dataCloud.writeData(request)
-            .map($ -> record)
-            .then(result -> audit("CREATE", recordId, entityType + " created", metadata).map($ -> result));
+        return Promise.ofBlocking(executor, () -> serialize(record, entityType, version))
+            .then(data -> {
+                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
+                return dataCloud.writeData(request)
+                    .map($ -> record)
+                    .then(result -> audit("CREATE", recordId, entityType + " created", metadata).map($ -> result));
+            });
     }
 
     /**
@@ -125,12 +136,13 @@ public abstract class AbstractDataService implements KernelLifecycleAware {
             return Promise.ofException(new IllegalStateException("Service not running"));
         }
 
-        byte[] data = serialize(record, entityType, version);
-        DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
-
-        return dataCloud.writeData(request)
-            .map($ -> record)
-            .then(result -> audit("UPDATE", recordId, entityType + " updated", metadata).map($ -> result));
+        return Promise.ofBlocking(executor, () -> serialize(record, entityType, version))
+            .then(data -> {
+                DataWriteRequest request = new DataWriteRequest(datasetId, recordId, data, metadata);
+                return dataCloud.writeData(request)
+                    .map($ -> record)
+                    .then(result -> audit("UPDATE", recordId, entityType + " updated", metadata).map($ -> result));
+            });
     }
 
     /**

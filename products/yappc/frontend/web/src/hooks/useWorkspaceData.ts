@@ -15,7 +15,18 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys, projectQueryKeys } from '../lib/query-keys';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
-import type { components } from '../clients/generated/openapi';
+import type {
+  CreateProjectRequestContract,
+  CreateWorkspaceRequestContract,
+  NameSuggestionResponseContract,
+  ProjectResponseContract,
+  ProjectSetupSuggestionContract,
+  ProjectsResponseContract,
+  ProjectTypeContract,
+  WorkspaceDetailResponseContract,
+  WorkspaceListResponseContract,
+  WorkspaceResponseContract,
+} from '@/contracts/workspace-project';
 import {
   currentWorkspaceIdAtom,
   workspaceAtom,
@@ -27,17 +38,8 @@ import {
   type ProjectWithOwnership,
 } from '@/state/atoms/workspaceAtom';
 
-type WorkspaceListResponse = components['schemas']['WorkspaceListResponse'];
-type WorkspaceDetailResponse = components['schemas']['WorkspaceDetailResponse'];
-type ProjectsResponse = components['schemas']['ProjectsResponse'];
-type WorkspaceResponse = components['schemas']['WorkspaceResponse'];
-type ProjectResponse = components['schemas']['ProjectResponse'];
-type NameSuggestionResponse = components['schemas']['NameSuggestionResponse'];
-type GeneratedProjectSetupSuggestion = components['schemas']['ProjectSetupSuggestion'];
-type GeneratedProjectType = components['schemas']['ProjectType'];
-type CreateWorkspaceRequest = components['schemas']['CreateWorkspaceRequest'];
-
-export type ProjectSetupSuggestion = GeneratedProjectSetupSuggestion;
+export type ProjectSetupSuggestion = ProjectSetupSuggestionContract;
+export type CreateWorkspaceRequest = CreateWorkspaceRequestContract;
 
 // ============================================================================
 // API Functions
@@ -95,7 +97,7 @@ async function fetchWorkspaces(): Promise<Workspace[]> {
     // Accept either the raw array or the wrapped form { workspaces: [...] }
     if (Array.isArray(data)) return data as Workspace[];
     if (isRecord(data) && Array.isArray(data.workspaces)) {
-      const response = data as WorkspaceListResponse;
+      const response = data as WorkspaceListResponseContract;
       return response.workspaces as Workspace[];
     }
 
@@ -118,7 +120,7 @@ async function fetchWorkspace(
 
     // Accept either raw workspace or wrapped form { workspace: {...} }
     if (isRecord(data) && isRecord(data.workspace)) {
-      const response = data as WorkspaceDetailResponse;
+      const response = data as WorkspaceDetailResponseContract;
       return response.workspace as unknown as Workspace & {
         ownedProjects: Project[];
         includedProjects: Project[];
@@ -145,7 +147,7 @@ async function fetchProjects(
 ): Promise<{ owned: Project[]; included: Project[] }> {
   try {
     const res = await fetch(`${API_BASE}/projects?workspaceId=${workspaceId}`);
-    const payload = (await parseJsonResponse(res)) as ProjectsResponse;
+    const payload = (await parseJsonResponse(res)) as ProjectsResponseContract;
     return {
       owned: payload.owned as Project[],
       included: payload.included as Project[],
@@ -166,7 +168,7 @@ async function createWorkspaceApi(
 
   const payload = await parseJsonResponse(res);
   if (isRecord(payload) && isRecord(payload.workspace)) {
-    const response = payload as WorkspaceResponse;
+    const response = payload as WorkspaceResponseContract;
     return response.workspace as Workspace;
   }
   return payload as Workspace;
@@ -175,23 +177,25 @@ async function createWorkspaceApi(
 async function createProjectApi(data: {
   name: string;
   description?: string;
-  type: GeneratedProjectType;
+  type: ProjectTypeContract;
   ownerWorkspaceId: string;
 }): Promise<Project> {
+  const request: CreateProjectRequestContract = {
+    name: data.name,
+    description: data.description,
+    type: data.type,
+    workspaceId: data.ownerWorkspaceId,
+  };
+
   const res = await fetch(`${API_BASE}/projects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: data.name,
-      description: data.description,
-      type: data.type,
-      workspaceId: data.ownerWorkspaceId,
-    }),
+    body: JSON.stringify(request),
   });
 
   const payload = await parseJsonResponse(res);
   if (isRecord(payload) && isRecord(payload.project)) {
-    const response = payload as ProjectResponse;
+    const response = payload as ProjectResponseContract;
     return response.project as Project;
   }
   return payload as Project;
@@ -213,7 +217,7 @@ async function suggestWorkspaceName(): Promise<string> {
   const res = await fetch(`${API_BASE}/workspaces/suggest-name`);
   const data = await parseJsonResponse(res);
   if (isRecord(data) && typeof data.suggestion === 'string') {
-    const response = data as NameSuggestionResponse;
+    const response = data as NameSuggestionResponseContract;
     return response.suggestion;
   }
   if (isRecord(data) && typeof data.name === 'string') return data.name;
@@ -222,14 +226,14 @@ async function suggestWorkspaceName(): Promise<string> {
 
 async function suggestProjectName(
   workspaceId: string,
-  projectType?: GeneratedProjectType
+  projectType?: ProjectTypeContract
 ): Promise<string> {
   const params = new URLSearchParams({ workspaceId });
   if (projectType) params.append('type', projectType);
   const res = await fetch(`${API_BASE}/projects/suggest-name?${params}`);
   const data = await parseJsonResponse(res);
   if (isRecord(data) && typeof data.suggestion === 'string') {
-    const response = data as NameSuggestionResponse;
+    const response = data as NameSuggestionResponseContract;
     return response.suggestion;
   }
   if (isRecord(data) && typeof data.name === 'string') return data.name;
@@ -239,7 +243,7 @@ async function suggestProjectName(
 async function suggestProjectSetup(data: {
   workspaceId: string;
   description?: string;
-  preferredType?: GeneratedProjectType;
+  preferredType?: ProjectTypeContract;
 }): Promise<ProjectSetupSuggestion> {
   const res = await fetch(`${API_BASE}/projects/setup-suggestion`, {
     method: 'POST',
@@ -396,7 +400,7 @@ export function useWorkspace(workspaceId: string | null) {
     retry: (failureCount, error: unknown) => {
       // Do not retry on 404 errors as they are likely permanent for that ID
       // This prevents rapid infinite loops when a workspace ID is stale/invalid
-      if (error?.message?.includes('HTTP 404')) return false;
+      if (error instanceof Error && error.message.includes('HTTP 404')) return false;
       return failureCount < 3;
     },
   });
@@ -485,6 +489,7 @@ export function useCreateWorkspace() {
           id: 'temp-' + Date.now(),
           name: newWorkspace.name,
           description: newWorkspace.description,
+          ownerId: '',
           isDefault: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -530,7 +535,10 @@ export function useCreateProject() {
         name: variables.name,
         description: variables.description,
         type: variables.type,
-        workspaceId: ownerWorkspaceId,
+        status: 'DRAFT',
+        lifecyclePhase: 'INTENT',
+        ownerWorkspaceId,
+        isDefault: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         aiNextActions: [],
@@ -551,7 +559,7 @@ export function useCreateProject() {
     onError: (err, _, context) => {
       // Rollback on error
       if (context?.previousProjects) {
-        queryClient.setQueryData(projectKeys.list(context.tempProject.workspaceId), context.previousProjects);
+        queryClient.setQueryData(projectKeys.list(context.tempProject.ownerWorkspaceId), context.previousProjects);
       }
     },
     onSettled: (_, __, variables) => {
@@ -601,7 +609,10 @@ export function useIncludeProject() {
         queryClient.setQueryData(projectKeys.available(variables.workspaceId), context.previousAvailable);
       }
     },
-    onSettled: (_, variables) => {
+    onSettled: (_data, _error, variables) => {
+      if (!variables) {
+        return;
+      }
       // Refetch to ensure server state
       queryClient.invalidateQueries({
         queryKey: projectKeys.list(variables.workspaceId),
@@ -637,7 +648,7 @@ export function useNameSuggestions() {
   }, []);
 
   const suggestProject = useCallback(
-    async (workspaceId: string, type?: string) => {
+    async (workspaceId: string, type?: ProjectTypeContract) => {
       try {
         return await suggestProjectName(workspaceId, type);
       } catch {
@@ -660,7 +671,7 @@ export function useNameSuggestions() {
   );
 
   const suggestProjectSetupWithFallback = useCallback(
-    async (workspaceId: string, description?: string, preferredType?: string) => {
+    async (workspaceId: string, description?: string, preferredType?: ProjectTypeContract) => {
       try {
         return await suggestProjectSetup({ workspaceId, description, preferredType });
       } catch {
@@ -693,13 +704,16 @@ export function useRefreshAI() {
     mutationFn: refreshWorkspaceAI,
     onMutate: async (workspaceId) => {
       await queryClient.cancelQueries({ queryKey: workspaceKeys.detail(workspaceId) });
-      const previousWorkspace = queryClient.getQueryData(workspaceKeys.detail(workspaceId));
+      const previousWorkspace = queryClient.getQueryData<Workspace>(workspaceKeys.detail(workspaceId));
       return { previousWorkspace };
     },
     onError: (err, _, context) => {
       queryClient.setQueryData(workspaceKeys.detail(context?.previousWorkspace?.id || ''), context?.previousWorkspace);
     },
-    onSettled: (_, workspaceId) => {
+    onSettled: (_data, _error, workspaceId) => {
+      if (!workspaceId) {
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: workspaceKeys.detail(workspaceId) });
     },
   });
@@ -708,7 +722,7 @@ export function useRefreshAI() {
     mutationFn: refreshProjectAI,
     onMutate: async (projectId) => {
       await queryClient.cancelQueries({ queryKey: projectKeys.detail(projectId) });
-      const previousProject = queryClient.getQueryData(projectKeys.detail(projectId));
+      const previousProject = queryClient.getQueryData<Project>(projectKeys.detail(projectId));
       return { previousProject };
     },
     onError: (err, _, context) => {

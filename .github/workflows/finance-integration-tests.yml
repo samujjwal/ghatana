@@ -1,0 +1,77 @@
+name: Finance Integration Tests
+
+on:
+  pull_request:
+    paths:
+      - 'products/finance/**'
+      - 'platform-kernel/**'
+      - 'platform/java/**'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    name: Run Finance Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      
+      - name: Run Finance Integration Tests
+        run: |
+          ./gradlew :products:finance:integration-testing:test --no-daemon --stacktrace
+      
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-integration-test-reports
+          path: products/finance/integration-testing/build/reports/tests/
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-integration-test-results
+          path: products/finance/integration-testing/build/test-results/
+
+  cross-domain-integration:
+    name: Run Cross-Domain Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      
+      - name: Run Cross-Domain Integration Tests
+        run: |
+          ./gradlew :products:finance:domains:integration:test --no-daemon --stacktrace
+      
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-cross-domain-test-reports
+          path: products/finance/domains/integration/build/reports/tests/
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-cross-domain-test-results
+          path: products/finance/domains/integration/build/test-results/

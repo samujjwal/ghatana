@@ -1,11 +1,11 @@
 /**
  * Project Preview Route
  *
- * Live preview of the project with hot reload.
- * Shows the running application in an iframe with controls.
+ * External preview host surface for the current project.
+ * Shows a configured preview host in an iframe when available.
  *
  * @doc.type route
- * @doc.purpose Runtime application preview with device mode controls
+ * @doc.purpose External preview host surface with device mode controls
  * @doc.layer product
  * @doc.pattern Route Component
  */
@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { useParams } from "react-router";
 import { RefreshCw as Refresh, ExternalLink as OpenInNew, Smartphone, Tablet, Laptop } from 'lucide-react';
+import type { PreviewStatusContract } from '@/contracts/workspace-project';
 
 type DeviceMode = 'mobile' | 'tablet' | 'desktop';
 
@@ -22,6 +23,27 @@ const deviceDimensions: Record<DeviceMode, { width: string; label: string }> = {
     desktop: { width: '100%', label: 'Desktop' }
 };
 
+function getPreviewStatusView(status: PreviewStatusContract): {
+    label: string;
+    className: string;
+    detail: string;
+} {
+    switch (status) {
+        case 'external-ready':
+            return {
+                label: 'External preview ready',
+                className: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200',
+                detail: 'This route embeds a configured external preview host. It does not run a local preview runtime by itself.',
+            };
+        default:
+            return {
+                label: 'Preview unavailable',
+                className: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200',
+                detail: 'A preview host must be configured before this screen can expose a live preview.',
+            };
+    }
+}
+
 /**
  * Preview page component
  */
@@ -30,7 +52,27 @@ export default function PreviewPage() {
     const [device, setDevice] = useState<DeviceMode>('desktop');
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const previewBaseUrl = import.meta.env.VITE_PREVIEW_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+    const previewFeatureEnabled = import.meta.env.VITE_FEATURE_PROJECT_PREVIEW === 'true';
+    const previewBaseUrl = import.meta.env.VITE_PREVIEW_BASE_URL;
+    const previewStatus: PreviewStatusContract = previewFeatureEnabled && previewBaseUrl ? 'external-ready' : 'unconfigured';
+    const previewStatusView = getPreviewStatusView(previewStatus);
+
+    if (previewStatus === 'unconfigured') {
+        return (
+            <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-divider bg-bg-paper p-8 text-center">
+                <div className="max-w-lg">
+                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${previewStatusView.className}`} data-testid="preview-status-badge">
+                        {previewStatusView.label}
+                    </span>
+                    <h1 className="text-xl font-semibold text-text-primary">Preview Is Not Configured</h1>
+                    <p className="mt-3 text-sm text-text-secondary">
+                        {previewStatusView.detail}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     const previewUrl = `${previewBaseUrl}/preview/${projectId}`;
 
     const handleRefresh = () => {
@@ -43,6 +85,15 @@ export default function PreviewPage() {
 
     return (
         <div className="flex flex-col h-full">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-divider bg-bg-paper px-4 py-3">
+                <div>
+                    <p className="text-sm font-semibold text-text-primary">Preview via external host</p>
+                    <p className="mt-1 text-xs text-text-secondary">{previewStatusView.detail}</p>
+                </div>
+                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${previewStatusView.className}`} data-testid="preview-status-badge">
+                    {previewStatusView.label}
+                </span>
+            </div>
             {/* Preview Controls */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -121,7 +172,7 @@ export default function PreviewPage() {
             {/* Status Bar */}
             <div className="flex items-center justify-between mt-3 text-xs text-text-secondary">
                 <span>Preview URL: {previewUrl}</span>
-                <span>{deviceDimensions[device].label} View</span>
+                <span>{deviceDimensions[device].label} View via configured external preview host</span>
             </div>
         </div>
     );

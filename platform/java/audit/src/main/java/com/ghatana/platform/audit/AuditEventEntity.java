@@ -71,12 +71,20 @@ public class AuditEventEntity {
     @Column(name = "details_json", columnDefinition = "TEXT")
     private String detailsJson;
 
+    /** Hash of the previous audit event in the chain for integrity verification. */
+    @Column(name = "previous_hash", length = 64)
+    private String previousHash;
+
+    /** Computed hash of this event including all fields for chain integrity. */
+    @Column(name = "chain_hash", nullable = false, length = 64)
+    private String chainHash;
+
     /** Required by JPA. */
     protected AuditEventEntity() {}
 
     public AuditEventEntity(String id, String tenantId, String eventType, String principal,
                             String resourceType, String resourceId, Boolean success,
-                            Instant timestamp, String detailsJson) {
+                            Instant timestamp, String detailsJson, String previousHash, String chainHash) {
         this.id = id;
         this.tenantId = tenantId;
         this.eventType = eventType;
@@ -86,6 +94,8 @@ public class AuditEventEntity {
         this.success = success;
         this.timestamp = timestamp;
         this.detailsJson = detailsJson;
+        this.previousHash = previousHash;
+        this.chainHash = chainHash;
     }
 
     public String getId() { return id; }
@@ -97,4 +107,6 @@ public class AuditEventEntity {
     public Boolean getSuccess() { return success; }
     public Instant getTimestamp() { return timestamp; }
     public String getDetailsJson() { return detailsJson; }
+    public String getPreviousHash() { return previousHash; }
+    public String getChainHash() { return chainHash; }
 }

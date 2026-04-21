@@ -135,6 +135,18 @@ export interface Bounds {
   center: { x: number; y: number };
 }
 
+interface CanvasNodeGeometry {
+  position?: { x?: number; y?: number };
+  size?: { width?: number; height?: number };
+  children?: string[];
+}
+
+function isCanvasNodeGeometry(
+  node: CanvasNodeGeometry | null | undefined
+): node is CanvasNodeGeometry {
+  return node !== null && node !== undefined;
+}
+
 export class ZoomManager {
   private currentZoom: number = 0.5; // Default 50% (Working View)
   private targetZoom: number = 0.5;
@@ -148,7 +160,7 @@ export class ZoomManager {
     [];
 
   constructor(
-    private getNode: (id: string) => any,
+    private getNode: (id: string) => CanvasNodeGeometry | null | undefined,
     private updateViewport: (viewport: Partial<ViewportState>) => void
   ) {
     this.pushHistory({ x: 0, y: 0, zoom: this.currentZoom });
@@ -392,7 +404,9 @@ export class ZoomManager {
 
   private calculateChildrenBounds(childIds: string[]): Bounds {
     // Calculate bounding box of all children
-    const children = childIds.map((id) => this.getNode(id)).filter(Boolean);
+    const children = childIds
+      .map((id) => this.getNode(id))
+      .filter(isCanvasNodeGeometry);
 
     if (children.length === 0) {
       return { x: 0, y: 0, width: 0, height: 0, center: { x: 0, y: 0 } };
@@ -420,7 +434,7 @@ export class ZoomManager {
     };
   }
 
-  private getNodeBounds(node: unknown): Bounds {
+  private getNodeBounds(node: CanvasNodeGeometry): Bounds {
     return {
       x: node.position?.x || 0,
       y: node.position?.y || 0,

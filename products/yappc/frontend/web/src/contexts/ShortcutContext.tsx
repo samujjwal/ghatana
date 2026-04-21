@@ -12,7 +12,7 @@ import {
     type Command,
 } from '../components/ui';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 
 /**
  *
@@ -104,7 +104,7 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
 
     // Register global shortcuts
     useEffect(() => {
-        const registrations: (() => void)[] = [];
+        const registrations: Array<string | (() => void)> = [];
 
         // Command palette (⌘K)
         registrations.push(registerShortcut({
@@ -137,7 +137,9 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
             modifiers: ['cmd'],
             description: 'Open settings',
             category: 'Global',
-            handler: () => navigate('/settings')
+            handler: () => {
+                void navigate('/settings');
+            }
         }));
 
         // Navigation shortcuts (⌘1-6)
@@ -161,7 +163,9 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
                     modifiers: ['cmd'],
                     description: `Go to ${label}`,
                     category: 'Navigation',
-                    handler: () => navigate(`${basePath}${path}`)
+                    handler: () => {
+                        void navigate(`${basePath}${path}`);
+                    }
                 }));
             });
         }
@@ -203,7 +207,11 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
 
         // Cleanup all registrations on unmount
         return () => {
-            registrations.forEach(cleanup => cleanup());
+            registrations.forEach((cleanup) => {
+                if (typeof cleanup === 'function') {
+                    cleanup();
+                }
+            });
         };
     }, [
         registerShortcut,

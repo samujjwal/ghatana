@@ -23,7 +23,24 @@ import {
 } from '../../../state/atoms/unifiedCanvasAtom';
 import { usePanelRegistry } from './panel-registry';
 import { AssetsPanel } from './panels';
-import type { RailContext, RailPanelProps } from './UnifiedLeftRail.types';
+import type { RailContext, RailPanelProps, RailTabId } from './UnifiedLeftRail.types';
+
+const FALLBACK_TAB: RailTabId = 'assets';
+
+function isRailTabId(value: string): value is RailTabId {
+  return [
+    'assets',
+    'layers',
+    'components',
+    'infrastructure',
+    'history',
+    'files',
+    'data',
+    'ai',
+    'favorites',
+    'team',
+  ].includes(value);
+}
 
 interface UnifiedLeftRailProps {
   /** Current canvas context */
@@ -66,11 +83,12 @@ export function UnifiedLeftRail({
 
   // Auto-select first panel if current tab is not visible
   const validPanelIds = visiblePanels.map((p) => p.id);
-  const currentTab = validPanelIds.includes(ui.leftPanelTab as unknown)
-    ? ui.leftPanelTab
-    : validPanelIds[0] || 'assets';
+  const storedTab = isRailTabId(ui.leftPanelTab) ? ui.leftPanelTab : FALLBACK_TAB;
+  const currentTab = validPanelIds.includes(storedTab)
+    ? storedTab
+    : validPanelIds[0] || FALLBACK_TAB;
 
-  const [activeTab, setActiveTab] = useState(currentTab);
+  const [activeTab, setActiveTab] = useState<RailTabId>(currentTab);
 
   // If no panels are visible, show fallback message with AssetsPanel
   if (visiblePanels.length === 0) {
@@ -92,9 +110,9 @@ export function UnifiedLeftRail({
           <Box className="w-[48px] border-gray-200 dark:border-gray-700 border-r" />
         )}
         <Drawer
-          variant="persistent"
           anchor="left"
           open={panelOpen}
+          onClose={() => setPanelOpen(false)}
           className="w-[320px] shrink-0 w-[320px] relative h-full"
         >
           <Box
@@ -117,8 +135,12 @@ export function UnifiedLeftRail({
   }
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
+    if (!isRailTabId(newValue)) {
+      return;
+    }
+
     setActiveTab(newValue);
-    setUI({ ...ui, leftPanelTab: newValue });
+    setUI({ ...ui, leftPanelTab: 'history' });
   };
 
   // Build panel props
@@ -175,9 +197,9 @@ export function UnifiedLeftRail({
 
       {/* Expanded Panel */}
       <Drawer
-        variant="persistent"
         anchor="left"
         open={panelOpen}
+        onClose={() => setPanelOpen(false)}
         className="w-[320px] shrink-0 w-[320px] relative h-full border-r border-gray-200 dark:border-gray-700"
       >
         <Box className="flex flex-col h-full">
@@ -197,17 +219,12 @@ export function UnifiedLeftRail({
             <Tabs
               value={activeTab}
               onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons="auto"
               className="min-h-[40px] border-gray-200 dark:border-gray-700 border-b" >
               {visiblePanels.map((panel) => (
                 <Tab
                   key={panel.id}
                   label={panel.label}
                   value={panel.id}
-                  icon={<span>{panel.icon}</span>}
-                  iconPosition="start"
-                  className="py-2 normal-case min-h-[40px]"
                 />
               ))}
             </Tabs>

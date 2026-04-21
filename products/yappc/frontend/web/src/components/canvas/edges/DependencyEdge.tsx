@@ -11,16 +11,19 @@
 
 import * as React from 'react';
 import { EdgeProps, getBezierPath, EdgeLabelRenderer, BaseEdge } from '@xyflow/react';
+import type { Edge } from '@xyflow/react';
 import { Box, Chip, Tooltip } from '@ghatana/design-system';
 import { Ban as BlockIcon, ChevronRight as RequiresIcon, Link as ReferenceIcon } from 'lucide-react';
 
 export type DependencyType = 'requires' | 'blocks' | 'references';
 
-export interface DependencyEdgeData {
+export interface DependencyEdgeData extends Record<string, unknown> {
     type: DependencyType;
     label?: string;
     isBlocked?: boolean;
 }
+
+type DependencyCanvasEdge = Edge<DependencyEdgeData, 'dependency'>;
 
 const DEPENDENCY_CONFIG = {
     requires: {
@@ -43,7 +46,7 @@ const DEPENDENCY_CONFIG = {
     },
 };
 
-export const DependencyEdge: React.FC<EdgeProps<DependencyEdgeData>> = ({
+export const DependencyEdge: React.FC<EdgeProps<DependencyCanvasEdge>> = ({
     id,
     sourceX,
     sourceY,
@@ -101,7 +104,6 @@ export const DependencyEdge: React.FC<EdgeProps<DependencyEdgeData>> = ({
                                 {isBlocked && <Box className="mt-1 text-red-400" >⚠️ Blocking</Box>}
                             </Box>
                         }
-                        arrow
                     >
                         <Chip
                             icon={config.icon}

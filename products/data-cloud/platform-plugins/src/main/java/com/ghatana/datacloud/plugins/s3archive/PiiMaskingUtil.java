@@ -67,7 +67,7 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
 
     private static final Logger log = LoggerFactory.getLogger(PiiMaskingUtil.class);
 
-    // Common PII patterns
+    // Common PII patterns - expanded for international formats and edge cases
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
             Pattern.CASE_INSENSITIVE);
@@ -75,14 +75,41 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
     private static final Pattern PHONE_PATTERN = Pattern.compile(
             "\\+?[0-9]{1,3}[-.\\s]?\\(?[0-9]{3}\\)?[-.\\s]?[0-9]{3}[-.\\s]?[0-9]{4}");
 
+    private static final Pattern PHONE_INTL_PATTERN = Pattern.compile(
+            "\\+\\d{1,3}[-.\\s]?\\d{3,14}");
+
+    private static final Pattern PHONE_GENERIC_PATTERN = Pattern.compile(
+            "\\+?[\\d\\s\\-\\(\\)]{7,20}");
+
     private static final Pattern SSN_PATTERN = Pattern.compile(
-            "\\d{3}-\\d{2}-\\d{4}|\\d{9}");
+            "(?!000|666|9\\d{2})\\d{3}[-\\s]?(?!00)\\d{2}[-\\s]?(?!0000)\\d{4}");
+
+    private static final Pattern SSN_UNFORMATTED_PATTERN = Pattern.compile(
+            "(?!000|666|9\\d{2})\\d{9}(?!\\d)");
 
     private static final Pattern CREDIT_CARD_PATTERN = Pattern.compile(
             "\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}");
 
+    private static final Pattern CREDIT_CARD_LUHN_PATTERN = Pattern.compile(
+            "(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\\d{3})\\d{11})");
+
     private static final Pattern IPV4_PATTERN = Pattern.compile(
             "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+
+    private static final Pattern IPV6_PATTERN = Pattern.compile(
+            "(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}");
+
+    private static final Pattern IBAN_PATTERN = Pattern.compile(
+            "[A-Z]{2}\\d{2}[A-Z0-9]{11,30}");
+
+    private static final Pattern TAX_ID_PATTERN = Pattern.compile(
+            "\\d{2}-\\d{7}");
+
+    private static final Pattern ZIP_PATTERN = Pattern.compile(
+            "\\d{5}(?:-\\d{4})?");
+
+    private static final Pattern DOB_PATTERN = Pattern.compile(
+            "\\d{4}-\\d{2}-\\d{2}|\\d{2}/\\d{2}/\\d{4}|\\d{2}-\\d{2}-\\d{4}");
 
     private static final String REDACTED = "[REDACTED]";
     private static final String SALT = "eventcloud-pii-salt-"; // In production, use secure config
@@ -209,17 +236,31 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
         if (EMAIL_PATTERN.matcher(value).find()) {
             detected.add(PiiType.EMAIL);
         }
-        if (PHONE_PATTERN.matcher(value).find()) {
+        if (PHONE_PATTERN.matcher(value).find() || 
+            PHONE_INTL_PATTERN.matcher(value).find() ||
+            PHONE_GENERIC_PATTERN.matcher(value).find()) {
             detected.add(PiiType.PHONE);
         }
-        if (SSN_PATTERN.matcher(value).find()) {
+        if (SSN_PATTERN.matcher(value).find() || SSN_UNFORMATTED_PATTERN.matcher(value).find()) {
             detected.add(PiiType.SSN);
         }
-        if (CREDIT_CARD_PATTERN.matcher(value).find()) {
+        if (CREDIT_CARD_PATTERN.matcher(value).find() || CREDIT_CARD_LUHN_PATTERN.matcher(value).find()) {
             detected.add(PiiType.CREDIT_CARD);
         }
-        if (IPV4_PATTERN.matcher(value).find()) {
+        if (IPV4_PATTERN.matcher(value).find() || IPV6_PATTERN.matcher(value).find()) {
             detected.add(PiiType.IP_ADDRESS);
+        }
+        if (IBAN_PATTERN.matcher(value).find()) {
+            detected.add(PiiType.BANK_ACCOUNT);
+        }
+        if (TAX_ID_PATTERN.matcher(value).find()) {
+            detected.add(PiiType.TAX_ID);
+        }
+        if (ZIP_PATTERN.matcher(value).find()) {
+            detected.add(PiiType.ZIP_CODE);
+        }
+        if (DOB_PATTERN.matcher(value).find()) {
+            detected.add(PiiType.DATE_OF_BIRTH);
         }
 
         return detected;
@@ -361,7 +402,7 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
                 case SSN -> SSN_PATTERN.matcher(result).replaceAll("XXX-XX-XXXX");
                 case CREDIT_CARD -> CREDIT_CARD_PATTERN.matcher(result).replaceAll(m -> maskCreditCard(m.group()));
                 case IP_ADDRESS -> IPV4_PATTERN.matcher(result).replaceAll(m -> maskIp(m.group()));
-                case NAME, ADDRESS, DATE_OF_BIRTH -> result; // Not auto-detected
+                case BANK_ACCOUNT, TAX_ID, ZIP_CODE, NAME, ADDRESS, DATE_OF_BIRTH -> result; // Not auto-detected
             };
         }
 
@@ -600,6 +641,9 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
         SSN,
         CREDIT_CARD,
         IP_ADDRESS,
+        BANK_ACCOUNT,
+        TAX_ID,
+        ZIP_CODE,
         NAME,
         ADDRESS,
         DATE_OF_BIRTH

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useNavigate } from 'react-router';
 import { Box, Typography, Stack, Button, Grid, Surface as Paper } from '@ghatana/design-system';
 import { Sparkles as AutoAwesome, Building2 as Architecture, Gauge as Speed, Shield as Security } from 'lucide-react';
@@ -23,49 +22,49 @@ export function GuestLandingView({
     const handleGetStarted = onGetStartedClick || (() => navigate('/login'));
 
     const features = [
-        { icon: <AutoAwesome tone="primary" />, title: 'AI-First Design', desc: 'Implicit personas drive intelligent scaffolding.' },
-        { icon: <Architecture tone="secondary" />, title: 'Governed Architecture', desc: 'Standardized templates that scale securely.' },
-        { icon: <Speed tone="success" />, title: 'Rapid Scaffolding', desc: 'Generate complete stacks in seconds.' },
-        { icon: <Security tone="warning" />, title: 'Enterprise Ready', desc: 'Built-in observability, auth, and testing.' },
+        { icon: <AutoAwesome className="text-blue-600" />, title: 'Guided Setup', desc: 'Start with a workspace and starter project that map to backed product flows.' },
+        { icon: <Architecture className="text-violet-600" />, title: 'Governed Architecture', desc: 'Use consistent product structure and lifecycle checkpoints.' },
+        { icon: <Speed className="text-emerald-600" />, title: 'Fast Project Kickoff', desc: 'Move from idea to a persisted project cockpit quickly.' },
+        { icon: <Security className="text-amber-600" />, title: 'Operationally Honest', desc: 'Only mounted, supported surfaces are presented as active product behavior.' },
     ];
 
     return (
         <Box className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
             {/* Public Header */}
-            <Box component="header" className="p-4 flex justify-between items-center border-gray-200 dark:border-gray-700 border-b" >
-                <Typography as="h6" fontWeight="bold">YAPPC</Typography>
+            <header className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
+                <Typography variant="h6" fontWeight="bold">YAPPC</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button variant="ghost" onClick={handleLogin}>Sign In</Button>
                     <Button variant="solid" onClick={handleGetStarted}>Get Started</Button>
                 </Stack>
-            </Box>
+            </header>
 
             {/* Hero */}
             <Box className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 text-center">
                 <Typography
-                    as="h2"
+                    variant="h2"
                     fontWeight="bold"
                     gutterBottom
                     className="max-w-[900px] text-[2.5rem] md:text-6xl"
                 >
-                    Build AI-Powered Applications in Minutes
+                    Build Product Workspaces Without Guesswork
                 </Typography>
                 <Typography
-                    as="h5"
+                    variant="h5"
                     color="text.secondary"
                     className="mb-12 max-w-[600px] text-xl md:text-2xl"
                 >
-                    From idea to deployed application with the power of implicit personas and agentic workflows.
+                    Move from idea to a backed workspace, starter project, and lifecycle-guided cockpit with grounded product behavior.
                 </Typography>
 
                 {/* Feature Grid */}
                 <Grid container spacing={3} className="mb-16 max-w-[1000px]">
                     {features.map((f, i) => (
-                        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
-                            <Paper variant="flat" className="p-6 text-center h-full border border-solid border-gray-200 dark:border-gray-700">
+                        <Grid xs={12} sm={6} md={3} key={i}>
+                            <Paper className="h-full border border-solid border-gray-200 p-6 text-center dark:border-gray-700">
                                 <Box className="mb-4">{f.icon}</Box>
-                                <Typography as="p" className="text-lg font-medium" fontWeight="bold" gutterBottom>{f.title}</Typography>
-                                <Typography as="p" className="text-sm" color="text.secondary">{f.desc}</Typography>
+                                <Typography className="text-lg font-medium" fontWeight="bold" gutterBottom>{f.title}</Typography>
+                                <Typography className="text-sm" color="text.secondary">{f.desc}</Typography>
                             </Paper>
                         </Grid>
                     ))}

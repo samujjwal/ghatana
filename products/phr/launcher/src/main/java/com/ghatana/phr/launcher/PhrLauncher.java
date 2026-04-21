@@ -22,6 +22,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Standalone launcher for the PHR kernel module.
+ *
+ * <h2>HTTP Server Configuration</h2>
+ * <ul>
+ *   <li>Default port: 8080 (configurable via {@code PHR_HTTP_PORT} environment variable or {@code --port} argument)</li>
+ *   <li>Health probe: {@code GET /health} - returns 200 when service is healthy</li>
+ *   <li>Readiness probe: {@code GET /ready} - returns 200 when service is ready to accept traffic</li>
+ * </ul>
+ *
+ * <h2>API Endpoints</h2>
+ * <ul>
+ *   <li>POST {@code /phr/billing/encounters} - Create billing encounter</li>
+ *   <li>POST {@code /phr/billing/encounters/:encounterId/close} - Close billing encounter</li>
+ *   <li>POST {@code /fhir/:resourceType} - Create FHIR resource</li>
+ *   <li>GET {@code /fhir/:resourceType/:id} - Get FHIR resource by ID</li>
+ *   <li>GET {@code /fhir/:resourceType} - Search FHIR resources</li>
+ * </ul>
+ *
  * @doc.type class
  * @doc.purpose Standalone launcher for the PHR kernel module
  * @doc.layer launcher
@@ -32,6 +50,7 @@ public final class PhrLauncher {
     private static final Logger log = LoggerFactory.getLogger(PhrLauncher.class);
     private static final Duration START_TIMEOUT = Duration.ofSeconds(60);
     private static final Duration STOP_TIMEOUT = Duration.ofSeconds(30);
+    private static final int DEFAULT_HTTP_PORT = 8080;
 
     private PhrLauncher() {
     }
@@ -46,11 +65,13 @@ public final class PhrLauncher {
             module.initialize(context);
             await("phr startup", module.start(), START_TIMEOUT);
 
-            // Create and start HTTP server binding
+            // Create and start HTTP server binding with explicit port configuration
             Eventloop eventloop = context.getDependency(Eventloop.class);
             PhrHttpServer phrHttpServer = context.getDependency(PhrHttpServer.class);
             httpBinding = new HttpServerBindingFactory()
                     .withServiceName("phr")
+                    .withPort(config.httpPort())
+                    .withHost(config.httpHost())
                     .build(eventloop, phrHttpServer.getServlet());
             await("phr http binding", httpBinding.start(), START_TIMEOUT);
 
@@ -121,7 +142,7 @@ public final class PhrLauncher {
         log.info("Completed {}", operation);
     }
 
-    private record PhrLauncherConfig(String environment) {
+    private record PhrLauncherConfig(String environment, int httpPort, String httpHost) {
 
         private static PhrLauncherConfig from(String[] args) {
             String environment = readOption(args, "--environment")
@@ -129,7 +150,17 @@ public final class PhrLauncher {
                 .or(() -> readValue("PHR_ENVIRONMENT"))
                 .or(() -> readValue("GHATANA_ENVIRONMENT"))
                 .orElse("local");
-            return new PhrLauncherConfig(environment);
+            
+            int port = readOption(args, "--port")
+                .or(() -> readValue("PHR_HTTP_PORT"))
+                .map(Integer::parseInt)
+                .orElse(DEFAULT_HTTP_PORT);
+            
+            String host = readOption(args, "--host")
+                .or(() -> readValue("PHR_HTTP_HOST"))
+                .orElse("0.0.0.0");
+            
+            return new PhrLauncherConfig(environment, port, host);
         }
 
         private static Optional<String> readOption(String[] args, String option) {

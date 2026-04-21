@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useCallback, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   Rocket,
@@ -48,7 +48,7 @@ export interface PipelineStage {
   readonly duration?: number; // seconds
 }
 
-export interface DeploymentNodeData {
+export interface DeploymentNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly version: string;
   readonly environment: DeploymentEnvironment;
@@ -77,7 +77,9 @@ export interface DeploymentNodeData {
   readonly onRetry?: (nodeId: string) => void;
 }
 
-export interface DeploymentNodeProps extends NodeProps<DeploymentNodeData> {}
+type DeploymentCanvasNode = Node<DeploymentNodeData>;
+
+export interface DeploymentNodeProps extends NodeProps<DeploymentCanvasNode> {}
 
 // =============================================================================
 // Constants
@@ -395,7 +397,9 @@ const DeploymentNodeComponent: React.FC<DeploymentNodeProps> = ({
             </span>
           </div>
           {data.environment === 'production' && (
-            <AlertTriangle className="w-4 h-4 text-amber-500" title="Production deployment" />
+            <span title="Production deployment">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            </span>
           )}
         </div>
 

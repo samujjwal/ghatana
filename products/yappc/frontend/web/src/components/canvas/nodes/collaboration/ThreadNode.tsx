@@ -11,7 +11,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   MessageCircle,
   CheckCircle2,
@@ -25,18 +25,45 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type { Thread, Message, User } from '@yappc/api';
 
-export interface ThreadNodeData {
-  thread: Thread & {
-    messages?: Message[];
-  };
+interface ThreadUser {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  email?: string;
+}
+
+interface ThreadMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: ThreadUser;
+}
+
+interface ThreadRecord {
+  id: string;
+  createdAt: string;
+  isResolved: boolean;
+  messageCount: number;
+  participantCount: number;
+  lastReplyAt?: string;
+  resolvedAt?: string;
+  resolvedBy?: ThreadUser;
+  participants: ThreadUser[];
+  parentMessage: ThreadMessage;
+  messages?: ThreadMessage[];
+}
+
+export interface ThreadNodeData extends Record<string, unknown> {
+  thread: ThreadRecord;
   onOpenThread?: () => void;
   onResolve?: () => void;
   onReopen?: () => void;
 }
 
-function ThreadNode({ data }: NodeProps<ThreadNodeData>) {
+type ThreadCanvasNode = Node<ThreadNodeData, 'thread'>;
+
+function ThreadNode({ data }: NodeProps<ThreadCanvasNode>) {
   const { thread, onOpenThread, onResolve, onReopen } = data;
 
   // Get latest messages (up to 5)
@@ -170,7 +197,7 @@ function ThreadNode({ data }: NodeProps<ThreadNodeData>) {
         </span>
         <div className="flex items-center">
           <div className="flex -space-x-2">
-            {thread.participants.slice(0, 6).map((participant, index) => (
+            {thread.participants.slice(0, 6).map((participant: ThreadUser, index: number) => (
               <div
                 key={participant.id}
                 className="relative"
@@ -208,7 +235,7 @@ function ThreadNode({ data }: NodeProps<ThreadNodeData>) {
             Latest Replies
           </span>
           <div className="space-y-3">
-            {latestMessages.map((message, index) => (
+            {latestMessages.map((message: ThreadMessage, index: number) => (
               <div key={message.id} className="flex items-start gap-2">
                 <CornerDownRight className="w-3 h-3 text-slate-600 mt-1.5 flex-shrink-0" />
                 {message.author.avatarUrl ? (

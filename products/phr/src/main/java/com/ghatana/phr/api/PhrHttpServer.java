@@ -6,6 +6,7 @@ package com.ghatana.phr.api;
 
 import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
+import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -27,11 +28,11 @@ import java.util.Objects;
  *
  * <h2>Endpoints</h2>
  * <pre>
- *   POST   /fhir/:resourceType          — Create a FHIR R4 resource
- *   GET    /fhir/:resourceType/:id      — Read a FHIR R4 resource by ID
- *   GET    /fhir/:resourceType          — Search FHIR R4 resources
- *   GET    /health                      — Liveness probe
- *   GET    /ready                       — Readiness probe
+ *   POST   /fhir/:resourceType                          — Create a FHIR R4 resource
+ *   GET    /fhir/:resourceType/:id                      — Read a FHIR R4 resource by ID
+ *   GET    /fhir/:resourceType                          — Search FHIR R4 resources
+ *   GET    /health                                      — Liveness probe
+ *   GET    /ready                                       — Readiness probe
  * </pre>
  *
  * <p>Register the servlet returned by {@link #getServlet()} into the product-level router.
@@ -51,6 +52,7 @@ public final class PhrHttpServer implements KernelLifecycleAware {
 
     private final FhirController fhirController;
     private final PhrFhirR4Server fhirServer;
+    private final BillingService billingService;
     private volatile boolean started = false;
 
     /**
@@ -58,10 +60,12 @@ public final class PhrHttpServer implements KernelLifecycleAware {
      *
      * @param fhirServer     the underlying FHIR server; must not be null
      * @param fhirController the FHIR controller delegate; must not be null
+     * @param billingService the billing service for encounter management; may be null for FHIR-only mode
      */
-    public PhrHttpServer(PhrFhirR4Server fhirServer, FhirController fhirController) {
+    public PhrHttpServer(PhrFhirR4Server fhirServer, FhirController fhirController, BillingService billingService) {
         this.fhirServer = Objects.requireNonNull(fhirServer, "fhirServer cannot be null");
         this.fhirController = Objects.requireNonNull(fhirController, "fhirController cannot be null");
+        this.billingService = billingService;
     }
 
     // -------------------------------------------------------------------------
@@ -108,15 +112,17 @@ public final class PhrHttpServer implements KernelLifecycleAware {
      * @return routing servlet; never null
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(Eventloop.create())
-                // FHIR R4 resource endpoints
+        RoutingServlet.Builder builder = RoutingServlet.builder(Eventloop.create());
+        
+        // FHIR endpoints
+        builder
             .with(HttpMethod.POST, "/fhir/:resourceType", this::handleCreateFhirResource)
             .with(HttpMethod.GET, "/fhir/:resourceType/:id", this::handleGetFhirResource)
             .with(HttpMethod.GET, "/fhir/:resourceType", this::handleSearchFhirResources)
-                // Operational endpoints
             .with(HttpMethod.GET, "/health", this::handleHealth)
-            .with(HttpMethod.GET, "/ready", this::handleReady)
-            .build();
+            .with(HttpMethod.GET, "/ready", this::handleReady);
+        
+        return builder.build();
     }
 
     // -------------------------------------------------------------------------

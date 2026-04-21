@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { memo, useMemo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import {
   ShieldAlert,
   AlertTriangle,
@@ -85,6 +85,8 @@ export interface ThreatNodeData {
   selected?: boolean;
   compact?: boolean;
 }
+
+type ThreatCanvasNode = Node<ThreatNodeData, 'threat'>;
 
 // ============================================================================
 // Severity Configuration
@@ -289,7 +291,7 @@ function IndicatorBadge({ indicator }: { indicator: ThreatIndicator }) {
 // Main Component
 // ============================================================================
 
-function ThreatNodeComponent({ data, selected }: NodeProps<ThreatNodeData>) {
+function ThreatNodeComponent({ data, selected }: NodeProps<ThreatCanvasNode>) {
   const severityConfig = SEVERITY_CONFIG[data.severity];
   const statusConfig = STATUS_CONFIG[data.status];
   const categoryConfig = CATEGORY_CONFIG[data.category];

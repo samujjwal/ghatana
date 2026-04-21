@@ -4,6 +4,25 @@ Step-by-step migration guides for each product's library consolidation.
 
 ---
 
+## Platform Kernel Migration
+
+The platform kernel extraction migration status is tracked in a single canonical location:
+
+**Canonical Source:** [`platform-kernel/MIGRATION_STATUS.md`](../platform-kernel/MIGRATION_STATUS.md)
+
+This document tracks the migration of kernel modules from `platform/java/` to the new `platform-kernel/` composite build structure.
+
+### Quick Reference
+
+- **Migration Date:** 2026-04-05
+- **Status:** Complete
+- **New Structure:** `platform-kernel/kernel-core`, `platform-kernel/kernel-plugin`, `platform-kernel/kernel-persistence`
+- **Archived Modules:** `platform/java/.archived/kernel`, `platform/java/.archived/plugin`, `platform/java/.archived/kernel-persistence`
+
+For detailed migration information, refer to the canonical [`platform-kernel/MIGRATION_STATUS.md`](../platform-kernel/MIGRATION_STATUS.md).
+
+---
+
 ## YAPPC Migration Guide
 
 ### What Changed (15 → 4 libraries)

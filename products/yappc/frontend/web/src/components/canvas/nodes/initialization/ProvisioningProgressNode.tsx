@@ -11,7 +11,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Loader2,
   Check,
@@ -34,16 +34,66 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type {
-  InitializationProgress,
-  InitializationStep,
-  InitializationStatus,
-  StepStatus,
-  ResourceType,
-  ProvisionedResource,
-} from '@yappc/api';
 
-export interface ProvisioningProgressNodeData {
+type InitializationStatus =
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'PAUSED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'ROLLED_BACK';
+
+type StepStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+
+type ResourceType =
+  | 'REPOSITORY'
+  | 'HOSTING'
+  | 'DATABASE'
+  | 'CACHE'
+  | 'STORAGE'
+  | 'CDN'
+  | 'DOMAIN'
+  | 'SSL'
+  | 'CI_CD'
+  | 'SECRETS'
+  | 'MONITORING'
+  | 'LOGGING';
+
+type ProvisioningStatus = 'COMPLETED' | 'FAILED' | 'IN_PROGRESS';
+
+interface CurrentProvisioningStep {
+  name: string;
+  resourceType: ResourceType;
+  progress: number;
+}
+
+interface InitializationProgress {
+  status: InitializationStatus;
+  totalSteps: number;
+  overallProgress: number;
+  estimatedTimeRemaining?: number;
+  resourcesProvisioned: number;
+  resourcesFailed: number;
+  currentStep?: CurrentProvisioningStep;
+}
+
+interface InitializationStep {
+  id: string;
+  name: string;
+  status: StepStatus;
+  resourceType: ResourceType;
+  errorMessage?: string;
+  canRollback?: boolean;
+}
+
+interface ProvisionedResource {
+  id: string;
+  name: string;
+  type: ResourceType;
+  status: ProvisioningStatus;
+}
+
+export interface ProvisioningProgressNodeData extends Record<string, unknown> {
   progress: InitializationProgress;
   steps: InitializationStep[];
   resources?: ProvisionedResource[];
@@ -55,6 +105,8 @@ export interface ProvisioningProgressNodeData {
   onResume?: () => void;
   onCancel?: () => void;
 }
+
+type ProvisioningProgressCanvasNode = Node<ProvisioningProgressNodeData, 'provisioning-progress'>;
 
 const statusConfig: Record<
   InitializationStatus,
@@ -106,7 +158,7 @@ function formatDuration(seconds: number): string {
   return `${hours}h ${remainingMinutes}m`;
 }
 
-function ProvisioningProgressNode({ data }: NodeProps<ProvisioningProgressNodeData>) {
+function ProvisioningProgressNode({ data }: NodeProps<ProvisioningProgressCanvasNode>) {
   const {
     progress,
     steps,
@@ -123,8 +175,8 @@ function ProvisioningProgressNode({ data }: NodeProps<ProvisioningProgressNodeDa
   const statusInfo = statusConfig[progress.status];
   const StatusIcon = statusInfo.icon;
 
-  const completedSteps = steps.filter((s) => s.status === 'COMPLETED').length;
-  const failedSteps = steps.filter((s) => s.status === 'FAILED').length;
+  const completedSteps = steps.filter((step) => step.status === 'COMPLETED').length;
+  const failedSteps = steps.filter((step) => step.status === 'FAILED').length;
   const progressPercent = Math.round(progress.overallProgress * 100);
 
   return (

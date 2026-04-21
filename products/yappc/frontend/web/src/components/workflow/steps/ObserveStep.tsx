@@ -18,7 +18,30 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { ObserveStepData, Anomaly } from '@yappc/core/types';
+interface Anomaly {
+    id: string;
+    type: 'REGRESSION' | 'SPIKE' | 'DROP' | 'ERROR_RATE' | 'LATENCY';
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    metric: string;
+    description: string;
+    detectedAt: string;
+    resolved: boolean;
+}
+
+interface ObserveStepData {
+    metricsDelta: {
+        before: Record<string, number>;
+        after: Record<string, number>;
+        percentChange: Record<string, number>;
+    };
+    anomalies: Anomaly[];
+    observationWindow: {
+        startedAt: string;
+        durationHours: number;
+        status: 'ACTIVE' | 'EXTENDED' | 'COMPLETED';
+        endedAt?: string;
+    };
+}
 
 // ============================================================================
 // CONSTANTS
@@ -57,7 +80,7 @@ export function ObserveStep() {
     const [newMetricAfter, setNewMetricAfter] = React.useState('');
 
     // Get current data (draft or saved)
-    const baseData = draftData ?? workflow?.steps.observe.data;
+    const baseData = (draftData ?? workflow?.steps.observe.data) as ObserveStepData | null;
     const currentData: ObserveStepData = {
         metricsDelta: baseData?.metricsDelta ?? { before: {}, after: {}, percentChange: {} },
         anomalies: baseData?.anomalies ?? [],
@@ -153,8 +176,8 @@ export function ObserveStep() {
             <Card className="mb-6">
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <TimerIcon tone="primary" />
-                        <Typography as="p" className="text-lg font-medium" fontWeight={600}>
+                        <TimerIcon className="text-blue-600" />
+                        <Typography className="text-lg font-medium" fontWeight={600}>
                             Observation Window
                         </Typography>
                         <Chip
@@ -166,10 +189,10 @@ export function ObserveStep() {
 
                     <Box className="mb-2">
                         <Box className="flex justify-between mb-1">
-                            <Typography as="p" className="text-sm" color="text.secondary">
+                            <Typography className="text-sm text-gray-500" color="text.secondary">
                                 {progress.toFixed(0)}% complete
                             </Typography>
-                            <Typography as="p" className="text-sm" color="text.secondary">
+                            <Typography className="text-sm text-gray-500" color="text.secondary">
                                 {hoursRemaining.toFixed(1)}h remaining
                             </Typography>
                         </Box>
@@ -178,7 +201,7 @@ export function ObserveStep() {
 
                     <Box className="flex gap-2 mt-4">
                         <Button
-                            size="sm"
+                            size="small"
                             variant="outlined"
                             onClick={() =>
                                 handleChange('observationWindow', {
@@ -191,9 +214,8 @@ export function ObserveStep() {
                             Extend +24h
                         </Button>
                         <Button
-                            size="sm"
+                            size="small"
                             variant="solid"
-                            tone="success"
                             startIcon={<StableIcon />}
                             onClick={() =>
                                 handleChange('observationWindow', {
@@ -212,20 +234,20 @@ export function ObserveStep() {
             {/* Metrics Comparison */}
             <Card className="mb-6">
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography className="text-lg font-medium" gutterBottom fontWeight={600}>
                         Metrics Comparison
                     </Typography>
 
                     <Box className="flex gap-2 mb-4 flex-wrap">
                         <TextField
-                            size="sm"
+                            size="small"
                             placeholder="Metric name"
                             value={newMetricName}
                             onChange={(e) => setNewMetricName(e.target.value)}
                             className="min-w-[150px]"
                         />
                         <TextField
-                            size="sm"
+                            size="small"
                             placeholder="Before"
                             type="number"
                             value={newMetricBefore}
@@ -233,7 +255,7 @@ export function ObserveStep() {
                             className="w-[100px]"
                         />
                         <TextField
-                            size="sm"
+                            size="small"
                             placeholder="After"
                             type="number"
                             value={newMetricAfter}
@@ -254,7 +276,7 @@ export function ObserveStep() {
                         <Alert severity="info">No metrics tracked yet. Add before/after metrics to compare.</Alert>
                     ) : (
                         <List>
-                            {metricNames.map((name, index) => {
+                            {metricNames.map((name: string, index: number) => {
                                 const before = currentData.metricsDelta.before[name];
                                 const after = currentData.metricsDelta.after[name];
                                 const change = currentData.metricsDelta.percentChange[name];
@@ -274,7 +296,7 @@ export function ObserveStep() {
                                                 color={Math.abs(change) > 20 ? 'warning' : 'default'}
                                                 className="mr-2"
                                             />
-                                            <IconButton size="sm" onClick={() => handleRemoveMetric(name)}>
+                                            <IconButton size="small" onClick={() => handleRemoveMetric(name)}>
                                                 <DeleteIcon size={16} />
                                             </IconButton>
                                         </ListItem>
@@ -291,14 +313,14 @@ export function ObserveStep() {
             <Card>
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <AnomalyIcon color={unresolvedAnomalies.length > 0 ? 'warning' : 'success'} />
-                        <Typography as="p" className="text-lg font-medium" fontWeight={600}>
+                        <AnomalyIcon className={unresolvedAnomalies.length > 0 ? 'text-amber-600' : 'text-green-600'} />
+                        <Typography className="text-lg font-medium" fontWeight={600}>
                             Anomalies ({unresolvedAnomalies.length} unresolved)
                         </Typography>
                     </Box>
 
                     <Box className="flex gap-2 mb-4 flex-wrap">
-                        <FormControl size="sm" className="min-w-[120px]">
+                        <FormControl size="small" className="min-w-[120px]">
                             <InputLabel>Type</InputLabel>
                             <Select
                                 value={newAnomalyType}
@@ -310,7 +332,7 @@ export function ObserveStep() {
                                 ))}
                             </Select>
                         </FormControl>
-                        <FormControl size="sm" className="min-w-[100px]">
+                        <FormControl size="small" className="min-w-[100px]">
                             <InputLabel>Severity</InputLabel>
                             <Select
                                 value={newAnomalySeverity}
@@ -323,14 +345,14 @@ export function ObserveStep() {
                             </Select>
                         </FormControl>
                         <TextField
-                            size="sm"
+                            size="small"
                             placeholder="Metric"
                             value={newAnomalyMetric}
                             onChange={(e) => setNewAnomalyMetric(e.target.value)}
                             className="min-w-[120px]"
                         />
                         <TextField
-                            size="sm"
+                            size="small"
                             placeholder="Description"
                             value={newAnomalyDesc}
                             onChange={(e) => setNewAnomalyDesc(e.target.value)}
@@ -338,7 +360,6 @@ export function ObserveStep() {
                         />
                         <Button
                             variant="solid"
-                            tone="warning"
                             onClick={handleAddAnomaly}
                             disabled={!newAnomalyMetric.trim() || !newAnomalyDesc.trim()}
                             startIcon={<AddIcon />}
@@ -349,7 +370,7 @@ export function ObserveStep() {
 
                     {currentData.anomalies.length > 0 && (
                         <List>
-                            {currentData.anomalies.map((anomaly, index) => {
+                            {currentData.anomalies.map((anomaly: Anomaly, index: number) => {
                                 const severity = SEVERITY_LEVELS.find((s) => s.value === anomaly.severity);
 
                                 return (
@@ -362,7 +383,7 @@ export function ObserveStep() {
                                                 primary={
                                                     <Box className="flex items-center gap-2">
                                                         <Typography
-                                                            as="p" className="text-sm"
+                                                            className="text-sm"
                                                             style={{ textDecoration: anomaly.resolved ? 'line-through' : 'none' }}
                                                         >
                                                             {anomaly.description}
@@ -379,12 +400,12 @@ export function ObserveStep() {
                                                 className="mr-2"
                                             />
                                             <Button
-                                                size="sm"
+                                                size="small"
                                                 onClick={() => handleToggleAnomalyResolved(anomaly.id)}
                                             >
                                                 {anomaly.resolved ? 'Reopen' : 'Resolve'}
                                             </Button>
-                                            <IconButton size="sm" onClick={() => handleRemoveAnomaly(anomaly.id)}>
+                                            <IconButton size="small" onClick={() => handleRemoveAnomaly(anomaly.id)}>
                                                 <DeleteIcon size={16} />
                                             </IconButton>
                                         </ListItem>

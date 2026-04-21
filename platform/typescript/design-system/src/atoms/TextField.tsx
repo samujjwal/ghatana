@@ -59,6 +59,8 @@ const sizeMetrics: Record<TextFieldSize, { paddingBlock: string; paddingInline: 
 export interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'suffix'> {
   label?: string;
   description?: string;
+  helperText?: string;
+  error?: boolean | string;
   errorMessage?: string;
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
@@ -70,6 +72,21 @@ export interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInput
   variant?: 'standard' | 'filled' | 'outlined';
   /** MUI-compatible alias for the input element ref. */
   inputRef?: React.Ref<HTMLInputElement>;
+
+  /** MUI-like multiline. When true, renders a textarea. */
+  multiline?: boolean;
+  /** Rows for multiline textarea. */
+  rows?: number;
+
+  /** MUI-like input adornments and nested input props. */
+  InputProps?: {
+    startAdornment?: React.ReactNode;
+    endAdornment?: React.ReactNode;
+    inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+  };
+
+  /** MUI-like native input props forwarded to the underlying control. */
+  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 
   /** MUI-like select mode. When true, renders a native <select>. */
   select?: boolean;
@@ -87,11 +104,17 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
     id,
     label,
     description,
+    helperText,
+    error,
     errorMessage,
     prefix,
     suffix,
     size = 'md',
     fullWidth = false,
+    multiline = false,
+    rows,
+    InputProps,
+    inputProps,
     select = false,
     SelectProps,
     disabled,
@@ -107,8 +130,10 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
 
   const generatedId = useId('gh-text-field');
   const inputId = id ?? generatedId;
-  const descriptionId = description ? `${inputId}-description` : undefined;
-  const errorId = errorMessage ? `${inputId}-error` : undefined;
+  const resolvedDescription = description ?? helperText;
+  const resolvedErrorMessage = errorMessage ?? (typeof error === 'string' ? error : undefined);
+  const descriptionId = resolvedDescription ? `${inputId}-description` : undefined;
+  const errorId = resolvedErrorMessage ? `${inputId}-error` : undefined;
 
   const { resolvedTheme } = useTheme();
   const { focusProps, isFocusVisible } = useFocusRing<HTMLInputElement>({ onFocus, onBlur });
@@ -118,7 +143,10 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
   const isDark = resolvedTheme === 'dark';
   const surface = isDark ? darkColors : lightColors;
 
-  const hasError = Boolean(errorMessage ?? rest['aria-invalid']);
+  const resolvedPrefix = prefix ?? InputProps?.startAdornment;
+  const resolvedSuffix = suffix ?? InputProps?.endAdornment;
+  const resolvedInputProps = inputProps ?? InputProps?.inputProps;
+  const hasError = Boolean(resolvedErrorMessage ?? error ?? rest['aria-invalid']);
 
   const colors = React.useMemo(() => {
     const baseBorder = hasError ? palette.error[400] : surface.border;
@@ -165,7 +193,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
         style={{
           position: 'relative',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: multiline ? 'stretch' : 'center',
           borderRadius: `${componentRadius.input}px`,
           borderWidth: 1,
           borderStyle: 'solid',
@@ -173,13 +201,13 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
           boxShadow: isFocusVisible ? `0 0 0 3px ${colors.focusRing}33` : 'none',
           backgroundColor: disabled ? colors.disabledBackground : colors.background,
           transition: transitions.default,
-          paddingInline: prefix || suffix ? '0px' : metrics.paddingInline,
+          paddingInline: resolvedPrefix || resolvedSuffix ? '0px' : metrics.paddingInline,
         }}
         data-disabled={disabled ? 'true' : undefined}
         data-focused={isFocusVisible ? 'true' : undefined}
         data-invalid={hasError ? 'true' : undefined}
       >
-        {prefix ? (
+        {resolvedPrefix ? (
           <span
             className="gh-text-field__prefix"
             style={{
@@ -190,7 +218,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
               fontSize: metrics.fontSize,
             }}
           >
-            {prefix}
+            {resolvedPrefix}
           </span>
         ) : null}
 
@@ -210,7 +238,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
               border: 'none',
               outline: 'none',
               background: 'transparent',
-              paddingInline: prefix ? '0px' : metrics.paddingInline,
+              paddingInline: resolvedPrefix ? '0px' : metrics.paddingInline,
               paddingBlock: metrics.paddingBlock,
               fontSize: metrics.fontSize,
               fontWeight: fontWeight.regular,
@@ -220,8 +248,35 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
           >
             {children}
           </select>
+        ) : multiline ? (
+          <textarea
+            {...(rest as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            {...(focusProps as unknown as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            ref={mergedInputRef as unknown as React.Ref<HTMLTextAreaElement>}
+            id={inputId}
+            autoComplete={autoComplete}
+            disabled={disabled}
+            rows={rows}
+            aria-describedby={[descriptionId, errorId].filter(Boolean).join(' ') || undefined}
+            aria-invalid={hasError || undefined}
+            className="gh-text-field__input"
+            style={{
+              flex: '1 1 auto',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              paddingInline: resolvedPrefix ? '0px' : metrics.paddingInline,
+              paddingBlock: metrics.paddingBlock,
+              fontSize: metrics.fontSize,
+              fontWeight: fontWeight.regular,
+              color: disabled ? colors.disabledText : colors.text,
+              resize: 'vertical',
+              minHeight: rows ? `${rows * 1.5}em` : undefined,
+            }}
+          />
         ) : (
           <input
+            {...resolvedInputProps}
             {...rest}
             {...focusProps}
             ref={mergedInputRef}
@@ -236,7 +291,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
               border: 'none',
               outline: 'none',
               background: 'transparent',
-              paddingInline: prefix ? '0px' : metrics.paddingInline,
+              paddingInline: resolvedPrefix ? '0px' : metrics.paddingInline,
               paddingBlock: metrics.paddingBlock,
               fontSize: metrics.fontSize,
               fontWeight: fontWeight.regular,
@@ -245,7 +300,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
           />
         )}
 
-        {suffix ? (
+        {resolvedSuffix ? (
           <span
             className="gh-text-field__suffix"
             style={{
@@ -256,12 +311,12 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
               fontSize: metrics.fontSize,
             }}
           >
-            {suffix}
+            {resolvedSuffix}
           </span>
         ) : null}
       </div>
 
-      {description ? (
+      {resolvedDescription ? (
         <p
           id={descriptionId}
           className="gh-text-field__description"
@@ -271,11 +326,11 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
             color: colors.helper,
           }}
         >
-          {description}
+          {resolvedDescription}
         </p>
       ) : null}
 
-      {errorMessage ? (
+      {resolvedErrorMessage ? (
         <p
           id={errorId}
           className="gh-text-field__error"
@@ -285,7 +340,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
             color: colors.error,
           }}
         >
-          {errorMessage}
+          {resolvedErrorMessage}
         </p>
       ) : null}
     </div>

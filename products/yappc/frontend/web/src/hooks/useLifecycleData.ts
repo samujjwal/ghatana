@@ -48,6 +48,41 @@ export const lifecycleKeys = {
     automationPlan: (projectId: string, phase: LifecyclePhase) => [...lifecycleKeys.all, 'automation-plan', projectId, phase] as const,
 };
 
+type CreateArtifactInput = Omit<Artifact, 'id' | 'createdAt' | 'updatedAt' | 'version'>;
+type CreateArtifactContext = {
+    previousArtifacts: Artifact[] | undefined;
+    tempArtifact: Artifact;
+};
+
+type UpdateArtifactInput = { artifactId: string; data: Partial<Artifact> };
+type UpdateArtifactContext = {
+    previousArtifact: Artifact | undefined;
+};
+
+type DeleteArtifactInput = { artifactId: string; projectId: string };
+type DeleteArtifactContext = {
+    previousArtifacts: Artifact[] | undefined;
+    previousArtifact: Artifact | undefined;
+};
+
+type CreateEvidenceInput = Omit<Evidence, 'id'> & { projectId: string };
+type CreateEvidenceContext = {
+    previousEvidence: Evidence[] | undefined;
+    tempEvidence: Evidence;
+    projectId: string;
+};
+
+type TransitionStageInput = { projectId: string; fromStage: FOWStage; targetStage: FOWStage };
+type TransitionStageContext = {
+    previousGates: unknown;
+};
+
+type EmitAuditEventInput = Omit<AuditEvent, 'id' | 'timestamp'>;
+type EmitAuditEventContext = {
+    previousAudit: AuditEvent[] | undefined;
+    tempEvent: AuditEvent;
+};
+
 // ============================================================================
 // Artifact Hooks
 // ============================================================================
@@ -89,20 +124,20 @@ export function useArtifactsByStage(projectId: string, stage: FOWStage, options?
     });
 }
 
-export function useCreateArtifact(options?: UseMutationOptions<Artifact, Error, Omit<Artifact, 'id' | 'createdAt' | 'updatedAt' | 'version'>>) {
+export function useCreateArtifact(options?: UseMutationOptions<Artifact, Error, CreateArtifactInput, CreateArtifactContext>) {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation<Artifact, Error, CreateArtifactInput, CreateArtifactContext>({
         mutationFn: lifecycleAPI.artifacts.createArtifact,
         onMutate: async (newArtifact) => {
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.artifacts(newArtifact.projectId) });
-            const previousArtifacts = queryClient.getQueryData(lifecycleKeys.artifacts(newArtifact.projectId));
+            const previousArtifacts = queryClient.getQueryData<Artifact[]>(lifecycleKeys.artifacts(newArtifact.projectId));
 
             const tempArtifact: Artifact = {
                 ...newArtifact,
                 id: 'temp-' + Date.now(),
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
                 version: 1,
             };
 
@@ -110,7 +145,7 @@ export function useCreateArtifact(options?: UseMutationOptions<Artifact, Error, 
 
             return { previousArtifacts, tempArtifact };
         },
-        onError: (err, _, context) => {
+        onError: (_err, _variables, context) => {
             queryClient.setQueryData(lifecycleKeys.artifacts(context?.tempArtifact.projectId || ''), context?.previousArtifacts);
         },
         onSettled: (data) => {
@@ -124,27 +159,27 @@ export function useCreateArtifact(options?: UseMutationOptions<Artifact, Error, 
     });
 }
 
-export function useUpdateArtifact(options?: UseMutationOptions<Artifact, Error, { artifactId: string; data: Partial<Artifact> }>) {
+export function useUpdateArtifact(options?: UseMutationOptions<Artifact, Error, UpdateArtifactInput, UpdateArtifactContext>) {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation<Artifact, Error, UpdateArtifactInput, UpdateArtifactContext>({
         mutationFn: ({ artifactId, data }) => lifecycleAPI.artifacts.updateArtifact(artifactId, data),
         onMutate: async ({ artifactId, data }) => {
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.artifact(artifactId) });
-            const previousArtifact = queryClient.getQueryData(lifecycleKeys.artifact(artifactId));
+            const previousArtifact = queryClient.getQueryData<Artifact>(lifecycleKeys.artifact(artifactId));
 
             queryClient.setQueryData(lifecycleKeys.artifact(artifactId), (old: Artifact) => ({
                 ...old,
                 ...data,
-                updatedAt: new Date().toISOString(),
+                updatedAt: new Date(),
             }));
 
             return { previousArtifact };
         },
-        onError: (err, variables, context) => {
+        onError: (_err, variables, context) => {
             queryClient.setQueryData(lifecycleKeys.artifact(variables.artifactId), context?.previousArtifact);
         },
-        onSettled: (data, variables) => {
+        onSettled: (data, _error, variables) => {
             queryClient.invalidateQueries({ queryKey: lifecycleKeys.artifact(variables.artifactId) });
             if (data) {
                 queryClient.invalidateQueries({ queryKey: lifecycleKeys.artifacts(data.projectId) });
@@ -155,16 +190,16 @@ export function useUpdateArtifact(options?: UseMutationOptions<Artifact, Error, 
     });
 }
 
-export function useDeleteArtifact(options?: UseMutationOptions<void, Error, { artifactId: string; projectId: string }>) {
+export function useDeleteArtifact(options?: UseMutationOptions<void, Error, DeleteArtifactInput, DeleteArtifactContext>) {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation<void, Error, DeleteArtifactInput, DeleteArtifactContext>({
         mutationFn: ({ artifactId }) => lifecycleAPI.artifacts.deleteArtifact(artifactId),
         onMutate: async ({ artifactId, projectId }) => {
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.artifacts(projectId) });
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.artifact(artifactId) });
-            const previousArtifacts = queryClient.getQueryData(lifecycleKeys.artifacts(projectId));
-            const previousArtifact = queryClient.getQueryData(lifecycleKeys.artifact(artifactId));
+            const previousArtifacts = queryClient.getQueryData<Artifact[]>(lifecycleKeys.artifacts(projectId));
+            const previousArtifact = queryClient.getQueryData<Artifact>(lifecycleKeys.artifact(artifactId));
 
             queryClient.setQueryData(lifecycleKeys.artifacts(projectId), (old: Artifact[] = []) =>
                 old.filter(a => a.id !== artifactId)
@@ -172,11 +207,11 @@ export function useDeleteArtifact(options?: UseMutationOptions<void, Error, { ar
 
             return { previousArtifacts, previousArtifact };
         },
-        onError: (err, variables, context) => {
+        onError: (_err, variables, context) => {
             queryClient.setQueryData(lifecycleKeys.artifacts(variables.projectId), context?.previousArtifacts);
             queryClient.setQueryData(lifecycleKeys.artifact(variables.artifactId), context?.previousArtifact);
         },
-        onSettled: (_, variables) => {
+        onSettled: (_data, _error, variables) => {
             queryClient.invalidateQueries({ queryKey: lifecycleKeys.artifacts(variables.projectId) });
             queryClient.removeQueries({ queryKey: lifecycleKeys.artifact(variables.artifactId) });
         },
@@ -207,29 +242,29 @@ export function useEvidenceByType(projectId: string, type: Evidence['type'], opt
     });
 }
 
-export function useCreateEvidence(options?: UseMutationOptions<Evidence, Error, Omit<Evidence, 'id'>>) {
+export function useCreateEvidence(options?: UseMutationOptions<Evidence, Error, CreateEvidenceInput, CreateEvidenceContext>) {
     const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: lifecycleAPI.evidence.createEvidence,
+    return useMutation<Evidence, Error, CreateEvidenceInput, CreateEvidenceContext>({
+        mutationFn: ({ projectId: _projectId, ...newEvidence }) => lifecycleAPI.evidence.createEvidence(newEvidence),
         onMutate: async (newEvidence) => {
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.evidence(newEvidence.projectId) });
-            const previousEvidence = queryClient.getQueryData(lifecycleKeys.evidence(newEvidence.projectId));
+            const previousEvidence = queryClient.getQueryData<Evidence[]>(lifecycleKeys.evidence(newEvidence.projectId));
 
             const tempEvidence: Evidence = {
                 ...newEvidence,
                 id: 'temp-' + Date.now(),
-                timestamp: new Date().toISOString(),
+                timestamp: new Date(),
             };
 
             queryClient.setQueryData(lifecycleKeys.evidence(newEvidence.projectId), (old: Evidence[] = []) => [...old, tempEvidence]);
 
-            return { previousEvidence, tempEvidence };
+            return { previousEvidence, tempEvidence, projectId: newEvidence.projectId };
         },
-        onError: (err, _, context) => {
-            queryClient.setQueryData(lifecycleKeys.evidence(context?.tempEvidence.projectId || ''), context?.previousEvidence);
+        onError: (_err, _variables, context) => {
+            queryClient.setQueryData(lifecycleKeys.evidence(context?.projectId || ''), context?.previousEvidence);
         },
-        onSettled: (_, variables) => {
+        onSettled: (_data, _error, variables) => {
             queryClient.invalidateQueries({ queryKey: lifecycleKeys.evidence(variables.projectId) });
         },
         ...options,
@@ -251,11 +286,11 @@ export function useGateStatus(projectId: string, stage?: FOWStage, options?: Use
     });
 }
 
-export function useTransitionStage(options?: UseMutationOptions<{ success: boolean; currentStage: FOWStage }, Error, { projectId: string; targetStage: FOWStage }>) {
+export function useTransitionStage(options?: UseMutationOptions<{ success: boolean; currentStage: FOWStage }, Error, TransitionStageInput, TransitionStageContext>) {
     const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: ({ projectId, targetStage }) => lifecycleAPI.gates.transitionStage(projectId, targetStage),
+    return useMutation<{ success: boolean; currentStage: FOWStage }, Error, TransitionStageInput, TransitionStageContext>({
+        mutationFn: ({ projectId, fromStage, targetStage }) => lifecycleAPI.gates.transitionStage(projectId, fromStage, targetStage),
         onMutate: async ({ projectId, targetStage }) => {
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.all });
             const previousGates = queryClient.getQueryData(lifecycleKeys.all);
@@ -267,7 +302,7 @@ export function useTransitionStage(options?: UseMutationOptions<{ success: boole
 
             return { previousGates };
         },
-        onError: (err, _, context) => {
+        onError: (_err, _variables, context) => {
             queryClient.setQueryData(lifecycleKeys.all, context?.previousGates);
         },
         onSettled: () => {
@@ -409,29 +444,29 @@ export function useAuditEvents(
     });
 }
 
-export function useEmitAuditEvent(options?: UseMutationOptions<AuditEvent, Error, Omit<AuditEvent, 'id' | 'timestamp'>>) {
+export function useEmitAuditEvent(options?: UseMutationOptions<AuditEvent, Error, EmitAuditEventInput, EmitAuditEventContext>) {
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation<AuditEvent, Error, EmitAuditEventInput, EmitAuditEventContext>({
         mutationFn: lifecycleAPI.audit.emitEvent,
         onMutate: async (newEvent) => {
             await queryClient.cancelQueries({ queryKey: lifecycleKeys.audit(newEvent.projectId) });
-            const previousAudit = queryClient.getQueryData(lifecycleKeys.audit(newEvent.projectId));
+            const previousAudit = queryClient.getQueryData<AuditEvent[]>(lifecycleKeys.audit(newEvent.projectId));
 
             const tempEvent: AuditEvent = {
                 ...newEvent,
                 id: 'temp-' + Date.now(),
-                timestamp: new Date().toISOString(),
+                timestamp: new Date(),
             };
 
             queryClient.setQueryData(lifecycleKeys.audit(newEvent.projectId), (old: AuditEvent[] = []) => [...old, tempEvent]);
 
             return { previousAudit, tempEvent };
         },
-        onError: (err, _, context) => {
+        onError: (_err, _variables, context) => {
             queryClient.setQueryData(lifecycleKeys.audit(context?.tempEvent.projectId || ''), context?.previousAudit);
         },
-        onSettled: (_, variables) => {
+        onSettled: (_data, _error, variables) => {
             queryClient.invalidateQueries({ queryKey: lifecycleKeys.audit(variables.projectId) });
         },
         ...options,

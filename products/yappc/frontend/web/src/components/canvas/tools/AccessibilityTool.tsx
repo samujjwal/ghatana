@@ -13,6 +13,7 @@ import {
 import React, { useState } from 'react';
 
 import type { CanvasTool, CanvasContext } from '../../../state/tools/ToolAPI';
+import type { CanvasElement } from '../workspace/canvasAtoms';
 
 /**
  *
@@ -23,6 +24,18 @@ interface AccessibilityIssue {
   message: string;
   elementId?: string;
   suggestion?: string;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value === 'object' && value !== null) {
+    return value as Record<string, unknown>;
+  }
+
+  return undefined;
+}
+
+function hasString(record: Record<string, unknown> | undefined, key: string): boolean {
+  return typeof record?.[key] === 'string' && String(record[key]).length > 0;
 }
 
 /**
@@ -60,8 +73,11 @@ export class AccessibilityTool implements CanvasTool {
     this.issues = [];
 
     // Check for missing labels
-    state.elements?.forEach((element: unknown) => {
-      if (!element.data?.label && element.kind !== 'shape') {
+    state.elements?.forEach((element: CanvasElement) => {
+      const data = asRecord(element.data);
+      const style = asRecord(element.style);
+
+      if (!hasString(data, 'label') && element.kind !== 'shape') {
         this.issues.push({
           id: `missing-label-${element.id}`,
           severity: 'warning',
@@ -72,7 +88,7 @@ export class AccessibilityTool implements CanvasTool {
       }
 
       // Check for low contrast (simplified)
-      if (element.style?.color && element.style?.backgroundColor) {
+      if (hasString(style, 'color') && hasString(style, 'backgroundColor')) {
         // Simplified contrast check
         this.issues.push({
           id: `contrast-${element.id}`,
@@ -96,8 +112,10 @@ export class AccessibilityTool implements CanvasTool {
     }
 
     // Check for alt text on images/icons
-    state.elements?.forEach((element: unknown) => {
-      if (element.data?.icon && !element.data?.iconAlt) {
+    state.elements?.forEach((element: CanvasElement) => {
+      const data = asRecord(element.data);
+
+      if (hasString(data, 'icon') && !hasString(data, 'iconAlt')) {
         this.issues.push({
           id: `missing-alt-${element.id}`,
           severity: 'error',
@@ -145,11 +163,11 @@ const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({ issues, context
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'error':
-        return <ErrorIcon color="error" size={16} />;
+        return <ErrorIcon className="text-red-600" size={16} />;
       case 'warning':
-        return <WarningIcon color="warning" size={16} />;
+        return <WarningIcon className="text-amber-600" size={16} />;
       default:
-        return <CheckIcon color="info" size={16} />;
+        return <CheckIcon className="text-blue-600" size={16} />;
     }
   };
 
@@ -196,10 +214,8 @@ const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({ issues, context
               <Box className="flex items-start w-full">
                 <Box className="mr-2 mt-1">{getSeverityIcon(issue.severity)}</Box>
                 <ListItemText
-                  primary={issue.message}
-                  secondary={issue.suggestion}
-                  primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 500 }}
-                  secondaryTypographyProps={{ fontSize: '0.8rem' }}
+                  primary={<Typography className="text-sm font-medium">{issue.message}</Typography>}
+                  secondary={issue.suggestion ? <Typography className="text-xs text-gray-600">{issue.suggestion}</Typography> : undefined}
                 />
               </Box>
               {issue.elementId && (

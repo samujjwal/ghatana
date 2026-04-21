@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { LifecyclePhase } from '../../../../types/lifecycle';
 
 const { mockExecuteTask } = vi.hoisted(() => ({
   mockExecuteTask: vi.fn(),
@@ -30,7 +31,7 @@ vi.mock('../../../../components/route/ErrorBoundary', () => ({
 
 vi.mock('../../../../services/canvas/lifecycle', () => ({
   usePhaseGates: () => ({
-    currentPhase: 'IMPROVE',
+    currentPhase: LifecyclePhase.LEARN,
   }),
 }));
 
@@ -51,7 +52,7 @@ vi.mock('../../../../hooks/useLifecycleData', () => ({
   useAIInsights: () => ({
     data: [
       {
-        id: 'insight-1',
+        phase: LifecyclePhase.LEARN,
         title: 'Elevated deployment friction',
         description: 'Repeated deploy retries suggest release readiness drift.',
         type: 'insight',
@@ -94,7 +95,7 @@ vi.mock('../../../../hooks/useLifecycleData', () => ({
   useLifecycleAutomationPlan: () => ({
     data: {
       projectId: 'proj-42',
-      currentPhase: 'IMPROVE',
+      currentPhase: LifecyclePhase.LEARN,
       nextPhase: null,
       canAutoAdvance: true,
       readiness: 88,
@@ -153,16 +154,17 @@ describe('Lifecycle route', () => {
     expect(screen.getByTestId('lifecycle-explorer')).toBeDefined();
     expect(screen.getByTestId('lifecycle-insights-section')).toBeDefined();
     expect(screen.getByTestId('lifecycle-phase-summary-card')).toBeDefined();
-    expect(screen.getByText('AI phase summary')).toBeDefined();
-    expect(screen.getByText('AI phase summary: Enhance & Evolve readiness is under active risk.')).toBeDefined();
+    expect(screen.getByText('Phase summary')).toBeDefined();
+    expect(screen.getByText(/readiness is under active risk\./)).toBeDefined();
     expect(screen.getByText('1 critical anomaly signal should be resolved before promotion decisions.')).toBeDefined();
-    expect(screen.getByText('AI recommendations')).toBeDefined();
-    expect(screen.getByText('Workflow automation')).toBeDefined();
+    expect(screen.getByText('Recommended next steps')).toBeDefined();
+    expect(screen.getByText('Suggested task')).toBeDefined();
     expect(screen.getByText('Automate release checklist')).toBeDefined();
     expect(screen.getByText('Readiness anomalies')).toBeDefined();
     expect(screen.getByText('Observed evidence')).toBeDefined();
     expect(screen.getByText('Decision support')).toBeDefined();
-    expect(screen.getByText('AI-generated defaults and progressive disclosure to reduce manual decision burden.')).toBeDefined();
+    expect(screen.getByText('Evidence-based defaults with explicit review thresholds and progressive disclosure.')).toBeDefined();
+    expect(screen.getByTestId('decision-review-threshold').textContent).toContain('Review required');
     expect(screen.getByText('Capture enhancement feedback')).toBeDefined();
     expect(screen.getByText('Deployment Error Rate')).toBeDefined();
     expect(screen.getByText('Deployment error rate is materially above the readiness baseline.')).toBeDefined();
@@ -180,12 +182,12 @@ describe('Lifecycle route', () => {
         input: {
           projectId: 'proj-42',
           source: 'lifecycle-route',
-          phase: 'IMPROVE',
+          phase: LifecyclePhase.LEARN,
         },
       });
     });
 
-    expect(screen.getByTestId('workflow-automation-feedback').textContent).toContain('Automation started');
+    expect(screen.getByTestId('workflow-automation-feedback').textContent).toContain('Suggested task started');
   });
 
   it('applies one-click automation plan from decision support panel', async () => {
@@ -197,7 +199,7 @@ describe('Lifecycle route', () => {
       expect(mockApplyAutomationPlan).toHaveBeenCalledWith({
         projectId: 'proj-42',
         request: {
-          phase: 'IMPROVE',
+          phase: LifecyclePhase.LEARN,
           oneClickApprove: true,
           reason: 'Applied from lifecycle route decision support panel',
         },

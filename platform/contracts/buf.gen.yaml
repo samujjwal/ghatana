@@ -1,0 +1,6 @@
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/java
+    out: src/main/java
+    opt:
+      - paths=source_relative

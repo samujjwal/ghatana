@@ -7,12 +7,12 @@ description = "Platform Contracts - Shared Protobuf definitions and schemas"
 dependencies {
     implementation(libs.bundles.jackson.json)
     implementation(libs.bundles.jackson.yaml)
-    implementation("com.sun.codemodel:codemodel:2.6")
-    implementation("org.jsonschema2pojo:jsonschema2pojo-core:1.2.2")
-    implementation("com.github.spullara.mustache.java:compiler:0.9.14")
-    implementation("org.jsoup:jsoup:1.15.3")
+    implementation(libs.codemodel)
+    implementation(libs.jsonschema2pojo.core)
+    implementation(libs.mustache.compiler)
+    implementation(libs.jsoup)
     implementation(libs.bundles.common.utils)
-    implementation("com.google.protobuf:protobuf-java-util:4.34.1")
+    implementation(libs.protobuf.java.util)
     testImplementation(libs.bundles.testing.core)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

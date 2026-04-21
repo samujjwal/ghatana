@@ -9,6 +9,8 @@
         "build": "tsup src/index.ts --format esm --clean --external @opentelemetry/* --external import-in-the-middle",
         "start": "node dist/index.js",
         "test": "vitest run",
+        "test:integration": "vitest run src/__tests__/*.integration.test.ts",
+        "test:integration:lifecycle": "bash ./scripts/run-lifecycle-integration.sh",
         "test:watch": "vitest",
         "db:migrate": "npx tsx apply-migrations.mjs",
         "db:push": "prisma db push --schema=prisma/schema.prisma",
@@ -17,6 +19,7 @@
         "db:studio": "prisma studio --schema=prisma/schema.prisma"
     },
     "dependencies": {
+        "@fastify/cookie": "^11.0.2",
         "@fastify/cors": "^11.2.0",
         "@ghatana/api": "workspace:*",
         "@fastify/websocket": "^11.2.0",

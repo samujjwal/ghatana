@@ -11,7 +11,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Users,
   Crown,
@@ -25,17 +25,57 @@ import {
   Circle,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type { Team, TeamMember, TeamRole, TeamStatus } from '@yappc/api';
 
-export interface TeamNodeData {
-  team: Team & {
-    members?: TeamMember[];
-    channels?: { id: string; name: string; type: string }[];
-  };
+type TeamRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'GUEST';
+type TeamStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+
+interface TeamUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+}
+
+interface TeamMemberRecord {
+  id: string;
+  role: TeamRole;
+  user: TeamUser;
+}
+
+interface TeamChannel {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface TeamSettings {
+  allowGuestInvites: boolean;
+  requireApprovalToJoin: boolean;
+}
+
+interface TeamRecord {
+  id: string;
+  name: string;
+  slug: string;
+  status: TeamStatus;
+  memberCount: number;
+  avatarUrl?: string;
+  description?: string;
+  owner: TeamUser;
+  members?: TeamMemberRecord[];
+  channels?: TeamChannel[];
+  settings?: TeamSettings;
+  createdAt: string;
+}
+
+export interface TeamNodeData extends Record<string, unknown> {
+  team: TeamRecord;
   onInviteMember?: () => void;
   onOpenSettings?: () => void;
   onOpenChannel?: (channelId: string) => void;
 }
+
+type TeamCanvasNode = Node<TeamNodeData, 'team'>;
 
 const statusConfig: Record<TeamStatus, { color: string; bgColor: string; label: string }> = {
   ACTIVE: { color: 'text-green-400', bgColor: 'bg-green-500/20', label: 'Active' },
@@ -57,14 +97,14 @@ const roleColors: Record<TeamRole, string> = {
   GUEST: 'text-gray-400',
 };
 
-function TeamNode({ data }: NodeProps<TeamNodeData>) {
+function TeamNode({ data }: NodeProps<TeamCanvasNode>) {
   const { team, onInviteMember, onOpenSettings, onOpenChannel } = data;
 
   const statusInfo = statusConfig[team.status];
 
   // Count members by role
   const roleCounts = (team.members ?? []).reduce(
-    (acc, member) => {
+    (acc: Record<TeamRole, number>, member: TeamMemberRecord) => {
       acc[member.role] = (acc[member.role] || 0) + 1;
       return acc;
     },
@@ -202,7 +242,7 @@ function TeamNode({ data }: NodeProps<TeamNodeData>) {
             Channels
           </span>
           <div className="mt-2 space-y-1">
-            {recentChannels.map((channel) => (
+            {recentChannels.map((channel: TeamChannel) => (
               <button
                 key={channel.id}
                 onClick={() => onOpenChannel?.(channel.id)}

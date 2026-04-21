@@ -239,7 +239,7 @@ export interface ModeRailConfig {
   /** Asset categories to prioritize */
   featuredCategories?: AssetCategory[];
   /** Custom panel settings */
-  panelSettings?: Record<RailTabId, unknown>;
+  panelSettings?: Partial<Record<RailTabId, unknown>>;
 }
 
 // ============================================================================

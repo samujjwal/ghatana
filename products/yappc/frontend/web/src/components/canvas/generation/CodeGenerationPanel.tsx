@@ -12,7 +12,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Alert,
-  AlertTitle,
   Box,
   Button,
   Chip,
@@ -37,8 +36,7 @@ import {
 } from '@ghatana/design-system';
 import { MenuItem } from '@ghatana/design-system';
 import { Code as CodeIcon, Download as DownloadIcon, Copy as CopyIcon, Eye as PreviewIcon, CheckCircle as CheckCircleIcon, AlertCircle as ErrorIcon, AlertTriangle as WarningIcon, FileText as FileIcon, Bug as TestIcon, Settings as ConfigIcon, Book as DocsIcon, HardDrive as SchemaIcon, Plug as ApiIcon, Cloud as InfraIcon } from 'lucide-react';
-import type { CodeGenerationResult, GeneratedArtifact, ArtifactType } from '../services/canvas/agents/GenerationAgent';
-import type { GenerationOptions } from '../services/canvas/agents/GenerationAgent';
+import type { CodeGenerationResult, GeneratedArtifact, ArtifactType, GenerationOptions } from '../../../services/canvas/agents/GenerationAgent';
 
 // ============================================================================
 // Props
@@ -109,8 +107,6 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
      * Group artifacts by type
      */
     const artifactsByType = useMemo(() => {
-        if (!generationResult) return {};
-
         const grouped: Record<ArtifactType, GeneratedArtifact[]> = {
             source: [],
             test: [],
@@ -120,6 +116,10 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
             api: [],
             infrastructure: [],
         };
+
+        if (!generationResult) {
+            return grouped;
+        }
 
         for (const artifact of generationResult.artifacts) {
             grouped[artifact.type].push(artifact);
@@ -159,7 +159,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
                     <Select
                         value={language}
                         label="Language"
-                        onChange={(e) => setLanguage(e.target.value as unknown)}
+                        onChange={(e) => setLanguage(e.target.value as typeof language)}
                     >
                         <MenuItem value="typescript">TypeScript</MenuItem>
                         <MenuItem value="java">Java</MenuItem>
@@ -186,8 +186,8 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
 
             {errors.length > 0 && (
                 <Alert severity="error" className="mb-4">
-                    <AlertTitle>Cannot Generate</AlertTitle>
-                    {errors.map((error, index) => (
+                    <Typography variant="subtitle2" className="mb-2">Cannot Generate</Typography>
+                    {errors.map((error: string, index: number) => (
                         <Typography key={index} variant="body2">
                             • {error}
                         </Typography>
@@ -197,7 +197,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
 
             {warnings.length > 0 && (
                 <Alert severity="warning" className="mb-4">
-                    {warnings.map((warning, index) => (
+                    {warnings.map((warning: string, index: number) => (
                         <Typography key={index} variant="body2">
                             • {warning}
                         </Typography>
@@ -209,7 +209,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
                 variant="contained"
                 size="large"
                 fullWidth
-                startIcon={isGenerating ? <CircularProgress size={20} /> : <CodeIcon />}
+                startIcon={isGenerating ? <CircularProgress size="md" /> : <CodeIcon />}
                 onClick={handleGenerate}
                 disabled={!canGenerate || isGenerating}
             >
@@ -271,11 +271,11 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
             <Box key={type} className="mb-6">
                 <Stack direction="row" spacing={1} alignItems="center" className="mb-2">
                     {getArtifactIcon(type)}
-                    <Typography variant="subtitle2" textTransform="capitalize">
+                    <Typography variant="subtitle2" className="capitalize">
                         {type} Files ({artifacts.length})
                     </Typography>
                 </Stack>
-                <List dense>
+                <List>
                     {artifacts.map(renderArtifact)}
                 </List>
             </Box>
@@ -288,7 +288,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
     const renderResults = () => {
         if (!generationResult) {
             return (
-                <Box textAlign="center" py={4}>
+                <Box className="py-4 text-center">
                     <CodeIcon className="mb-4 text-[64px] text-gray-500 dark:text-gray-400" />
                     <Typography variant="body1" color="text.secondary">
                         Configure options and click "Generate Code" to get started
@@ -301,8 +301,8 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
             return (
                 <Box>
                     <Alert severity="error">
-                        <AlertTitle>Generation Failed</AlertTitle>
-                        {generationResult.errors.map((error, index) => (
+                        <Typography variant="subtitle2" className="mb-2">Generation Failed</Typography>
+                        {generationResult.errors.map((error: string, index: number) => (
                             <Typography key={index} variant="body2">
                                 • {error}
                             </Typography>
@@ -316,9 +316,9 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
             <Box>
                 {/* Summary */}
                 <Paper variant="outlined" className="p-4 mb-6">
-                    <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+                    <Stack direction="row" spacing={2} alignItems="center" className="mb-2">
                         <CheckCircleIcon color="success" className="text-[32px]" />
-                        <Box flex={1}>
+                        <Box className="flex-1">
                             <Typography variant="h6">Generation Complete</Typography>
                             <Typography variant="body2" color="text.secondary">
                                 {generationResult.summary}
@@ -326,7 +326,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
                         </Box>
                     </Stack>
 
-                    <Stack direction="row" spacing={2} mb={2}>
+                    <Stack direction="row" spacing={2} className="mb-2">
                         <Chip
                             icon={<FileIcon />}
                             label={`${generationResult.statistics.totalFiles} Files`}
@@ -353,7 +353,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
                 {/* Warnings */}
                 {generationResult.warnings.length > 0 && (
                     <Alert severity="warning" className="mb-4">
-                        {generationResult.warnings.map((warning, index) => (
+                        {generationResult.warnings.map((warning: string, index: number) => (
                             <Typography key={index} variant="body2">
                                 • {warning}
                             </Typography>
@@ -371,7 +371,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
                 {renderArtifactsByType('infrastructure')}
 
                 {generationResult.artifacts.length === 0 && (
-                    <Box textAlign="center" py={4}>
+                    <Box className="py-4 text-center">
                         <WarningIcon className="mb-4 text-5xl text-amber-600" />
                         <Typography color="text.secondary">
                             No artifacts generated

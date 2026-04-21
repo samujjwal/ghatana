@@ -149,7 +149,6 @@ public final class AgentDefinitionValidator {
 
     private static void validateSemantic(AgentDefinition def, List<String> errors) {
         // PROBABILISTIC and HYBRID agents must have a system prompt
-        // Note: AgentType.LLM is deprecated — use PROBABILISTIC with subtype "llm"
         if (def.getType() == AgentType.PROBABILISTIC || def.getType() == AgentType.HYBRID) {
             if (def.getSystemPrompt() == null || def.getSystemPrompt().isBlank()) {
                 errors.add("[semantic] PROBABILISTIC/HYBRID agents must have a systemPrompt");

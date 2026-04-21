@@ -2,15 +2,25 @@
  * Component Registry - Central registry for all canvas components
  */
 
-import type { RegistryComparator } from '@yappc/core/types';
+import type { ComponentDefinition } from './types';
 
-import type { ComponentDefinition, RegistryEntry, RegistryFilter } from '@yappc/core/types';
+type ComponentPredicate = (component: ComponentDefinition) => boolean;
+
+interface RegistryEntry {
+  key: string;
+  namespace: string;
+  value: ComponentDefinition;
+  registeredAt: string;
+  updatedAt: string;
+}
+
+const COMPONENT_NAMESPACE = 'canvas-components';
 
 /**
  *
  */
 class ComponentRegistryClass {
-  private components: Map<string, RegistryEntry<ComponentDefinition>> = new Map();
+  private components: Map<string, RegistryEntry> = new Map();
   private categoryIndex: Map<string, Set<string>> = new Map();
   private typeIndex: Map<string, string> = new Map();
 
@@ -18,27 +28,31 @@ class ComponentRegistryClass {
    * Register a component definition
    */
   register(component: ComponentDefinition): void {
-    const key = this.makeKey(component.type, component.version);
+    const type = component.type ?? component.id;
+    const version = component.version ?? 'latest';
+    const category = component.category ?? 'uncategorized';
+    const key = this.makeKey(type, version);
 
     if (this.components.has(key)) {
       throw new Error(`Component already registered: ${key}`);
     }
 
-    const entry: RegistryEntry<ComponentDefinition> = {
+    const entry: RegistryEntry = {
       key,
+      namespace: COMPONENT_NAMESPACE,
       value: component,
       registeredAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     this.components.set(key, entry);
-    this.typeIndex.set(component.type, key);
+    this.typeIndex.set(type, key);
 
     // Update category index
-    if (!this.categoryIndex.has(component.category)) {
-      this.categoryIndex.set(component.category, new Set());
+    if (!this.categoryIndex.has(category)) {
+      this.categoryIndex.set(category, new Set());
     }
-    this.categoryIndex.get(component.category)!.add(key);
+    this.categoryIndex.get(category)!.add(key);
   }
 
   /**
@@ -79,7 +93,7 @@ class ComponentRegistryClass {
   /**
    * List all components
    */
-  list(filter?: RegistryFilter<ComponentDefinition>): ComponentDefinition[] {
+  list(filter?: ComponentPredicate): ComponentDefinition[] {
     const components = Array.from(this.components.values()).map((entry) => entry.value);
 
     if (filter) {
@@ -116,10 +130,10 @@ class ComponentRegistryClass {
 
     return this.list((comp) => {
       return (
-        comp.label.toLowerCase().includes(lowerQuery) ||
-        comp.description.toLowerCase().includes(lowerQuery) ||
-        comp.type.toLowerCase().includes(lowerQuery) ||
-        comp.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
+        (comp.label ?? '').toLowerCase().includes(lowerQuery) ||
+        (comp.description ?? '').toLowerCase().includes(lowerQuery) ||
+        (comp.type ?? '').toLowerCase().includes(lowerQuery) ||
+        (comp.tags ?? []).some((tag: string) => tag.toLowerCase().includes(lowerQuery))
       );
     });
   }
@@ -145,10 +159,10 @@ class ComponentRegistryClass {
 
     // Remove from category index
     const category = entry.value.category;
-    const categorySet = this.categoryIndex.get(category);
+    const categorySet = category ? this.categoryIndex.get(category) : undefined;
     if (categorySet) {
       categorySet.delete(key);
-      if (categorySet.size === 0) {
+      if (categorySet.size === 0 && category) {
         this.categoryIndex.delete(category);
       }
     }

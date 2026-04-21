@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: event-transformer-agent
 name: Event Transformer Agent
 namespace: platform.event-processing

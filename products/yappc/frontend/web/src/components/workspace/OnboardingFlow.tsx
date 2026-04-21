@@ -1,9 +1,9 @@
 /**
  * OnboardingFlow Component
  *
- * AI-driven first-login experience that automatically sets up
+ * Guided first-login experience that automatically sets up
  * a default workspace and project based on user context.
- * Minimal friction - just a few optional customizations.
+ * Minimal friction with only the durable inputs the mounted product can back today.
  *
  * @doc.type component
  * @doc.purpose Smart user onboarding with AI suggestions
@@ -13,8 +13,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles as AutoAwesome, Folder, Globe as Public, Smartphone as PhoneIphone, Component as Widgets } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
+import type { ProjectTypeContract } from '@/contracts/workspace-project';
 import { useCreateWorkspace, useNameSuggestions } from '@/hooks/useWorkspaceData';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { PERSONA_DEFINITIONS, ALL_PERSONA_TYPES, type PersonaType } from '../../context/PersonaContext';
@@ -29,7 +30,7 @@ interface OnboardingStep {
     subtitle: string;
 }
 
-interface ProjectType {
+interface StarterProjectOption {
     id: string;
     name: string;
     description: string;
@@ -44,7 +45,7 @@ const STEPS: OnboardingStep[] = [
     { id: 'complete', title: 'All Set!', subtitle: "You're ready to create amazing things" },
 ];
 
-const PROJECT_TYPES: ProjectType[] = [
+const PROJECT_TYPES: StarterProjectOption[] = [
     {
         id: 'webapp',
         name: 'Web Application',
@@ -74,6 +75,20 @@ const PROJECT_TYPES: ProjectType[] = [
         color: 'from-green-500 to-emerald-500',
     },
 ];
+
+function mapProjectTypeToApiType(projectType: string): ProjectTypeContract {
+    switch (projectType) {
+        case 'api':
+            return 'BACKEND';
+        case 'mobile':
+            return 'MOBILE';
+        case 'library':
+            return 'UI';
+        case 'webapp':
+        default:
+            return 'FULL_STACK';
+    }
+}
 
 // ============================================================================
 // Sub-Components
@@ -121,7 +136,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
             </h1>
 
             <p className="text-lg text-text-secondary mb-8 max-w-md mx-auto">
-                We'll have you up and running in under 30 seconds. Our AI will handle the heavy lifting.
+                We'll have you up and running in under 30 seconds with a backed workspace and starter project.
             </p>
 
             <div className="flex flex-col items-center gap-4">
@@ -134,7 +149,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
                 </button>
 
                 <p className="text-sm text-text-secondary">
-                    AI will suggest names based on your context
+                    The product can suggest a starting name, and you can change it before creation.
                 </p>
             </div>
         </div>
@@ -554,17 +569,21 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
     const handleCreate = useCallback(async () => {
         setCurrentStep(3);
         setIsCreating(true);
+        setWorkspaceError(null);
 
         try {
-            // Save selected personas to localStorage for PersonaContext
-            localStorage.setItem('yappc_active_personas', JSON.stringify(selectedPersonas));
-            localStorage.setItem('yappc_primary_persona', selectedPersonas[0] || 'developer');
-
-            // Create workspace with default project
             const workspace = await createWorkspace.mutateAsync({
                 name: workspaceName,
                 createDefaultProject: true,
+                personaSelections: selectedPersonas,
+                defaultProject: {
+                    name: projectName,
+                    type: mapProjectTypeToApiType(projectType),
+                },
             });
+
+            localStorage.setItem('yappc_active_personas', JSON.stringify(selectedPersonas));
+            localStorage.setItem('yappc_primary_persona', selectedPersonas[0] || 'developer');
 
             // Set the newly created workspace as current
             setCurrentWorkspaceId(workspace.id);
@@ -586,11 +605,11 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
                 return;
             }
 
-            // For other errors, still mark as complete to not block user
-            localStorage.setItem('onboarding_complete', 'true');
+            setWorkspaceError('We could not finish onboarding because workspace setup did not complete. No data was marked as complete.');
+            setCurrentStep(1);
             setIsCreating(false);
         }
-    }, [workspaceName, selectedPersonas, createWorkspace, setCurrentWorkspaceId]);
+    }, [workspaceName, projectName, projectType, selectedPersonas, createWorkspace, setCurrentWorkspaceId]);
 
     const handleFinish = useCallback(() => {
         onComplete?.();

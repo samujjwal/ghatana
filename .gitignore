@@ -27,6 +27,7 @@ shared-services/**/package-lock.json
 .gradle/
 gradle-app.setting
 !gradle-wrapper.jar
+bin/
 build-logic/conventions/bin/
 
 # OS

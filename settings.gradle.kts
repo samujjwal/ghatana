@@ -118,8 +118,9 @@ include(":platform:java:ai-integration")
 include(":platform:java:governance")
 include(":platform:java:security")
 include(":platform:java:agent-core")
-include(":platform:java:messaging")   // Unified messaging module (merged connectors + aep-connectors)
+include(":platform:java:messaging")   // Unified messaging module
 include(":platform:java:audit")
+include(":platform:java:integration-tests")  // Cross-module integration tests
 // Audio-Video commons libraries
 include(":products:audio-video:libs:java:common")
 include(":products:audio-video:libs:common")
@@ -142,7 +143,6 @@ include(":products:aep:aep-runtime-core")
 include(":products:aep:aep-registry")
 include(":products:aep:aep-analytics")
 include(":products:aep:aep-security")
-// aep-connectors DEPRECATED: Merged into platform:java:messaging
 include(":products:aep:aep-event-cloud")
 include(":products:aep:aep-agent-runtime")
 include(":products:aep:aep-api")
@@ -325,9 +325,10 @@ include(":products:finance:client-onboarding")
 // =============================================================================
 // Platform Shared Services (Kernel Bridges)
 // =============================================================================
-include(":platform:shared-services:data-cloud-kernel-bridge")
-include(":platform:shared-services:aep-kernel-bridge")
-include(":platform:shared-services:yappc-kernel-bridge")
+// Kernel bridge modules (product-specific adapters - moved to products/)
+include(":products:aep:kernel-bridge")
+include(":products:data-cloud:kernel-bridge")
+include(":products:yappc:kernel-bridge")
 
 // =============================================================================
 // Shared Services

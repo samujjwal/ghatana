@@ -13,7 +13,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, InteractiveList as List, ListItemButton, ListItemText, Alert, Box, Chip, Grid } from '@ghatana/design-system';
 import { Code as CodeIcon, FileText as DocIcon, Building2 as ArchitectureIcon, Bug as TestIcon, Plug as ApiIcon, Table as TableIcon, ClipboardList as RequirementIcon, BarChart3 as ChartIcon } from 'lucide-react';
-import { ArtifactType } from '@/types/fow-stages';
+import type { ArtifactType } from './workspace/artifact-templates';
 
 // Content type metadata
 interface ContentTypeInfo {
@@ -30,33 +30,35 @@ const CONTENT_TYPES: ContentTypeInfo[] = [
     { type: 'test', label: 'Test Case', description: 'Automated test specifications', icon: <TestIcon />, category: 'code' },
 
     // Design types
-    { type: 'architecture', label: 'Architecture Diagram', description: 'System architecture visualization', icon: <ArchitectureIcon />, category: 'design' },
+    { type: 'mockup', label: 'Architecture Diagram', description: 'System architecture visualization', icon: <ArchitectureIcon />, category: 'design' },
     { type: 'design', label: 'Design Mockup', description: 'UI/UX design mockups', icon: <ArchitectureIcon />, category: 'design' },
 
     // Documentation types
-    { type: 'documentation', label: 'Markdown Document', description: 'Rich text documentation', icon: <DocIcon />, category: 'documentation' },
-    { type: 'adr', label: 'Architecture Decision Record', description: 'Technical decision documentation', icon: <DocIcon />, category: 'documentation' },
+    { type: 'brief', label: 'Markdown Document', description: 'Rich text documentation', icon: <DocIcon />, category: 'documentation' },
+    { type: 'user-story', label: 'User Story', description: 'Structured delivery narrative', icon: <DocIcon />, category: 'documentation' },
 
     // Requirements types
     { type: 'requirement', label: 'Requirement', description: 'Functional requirements', icon: <RequirementIcon />, category: 'requirements' },
     { type: 'brief', label: 'Project Brief', description: 'High-level project overview', icon: <RequirementIcon />, category: 'requirements' },
 
     // Data types
-    { type: 'evidence', label: 'API Specification', description: 'REST/GraphQL API specs', icon: <ApiIcon />, category: 'data' },
+    { type: 'api-spec', label: 'API Specification', description: 'REST/GraphQL API specs', icon: <ApiIcon />, category: 'data' },
+    { type: 'metric', label: 'Metrics', description: 'Observability and KPI tracking', icon: <ChartIcon />, category: 'data' },
+    { type: 'deployment', label: 'Deployment', description: 'Deployment and release configuration', icon: <TableIcon />, category: 'data' },
 ];
 
 // Compatibility matrix - defines which conversions are compatible
 const COMPATIBILITY_MATRIX: Record<ArtifactType, ArtifactType[]> = {
-    'code': ['test', 'documentation', 'evidence'],
-    'test': ['code', 'documentation'],
-    'architecture': ['design', 'documentation'],
-    'design': ['architecture', 'documentation'],
-    'documentation': ['code', 'test', 'architecture', 'design', 'requirement', 'brief', 'adr'],
-    'adr': ['documentation', 'requirement'],
-    'requirement': ['brief', 'documentation', 'test'],
-    'brief': ['requirement', 'documentation'],
-    'evidence': ['documentation', 'code'],
-    'deployment': ['documentation', 'code'],
+    'brief': ['user-story', 'requirement'],
+    'user-story': ['brief', 'requirement'],
+    'requirement': ['brief', 'user-story', 'test'],
+    'design': ['mockup', 'api-spec'],
+    'mockup': ['design', 'brief'],
+    'api-spec': ['design', 'code', 'test'],
+    'code': ['test', 'api-spec', 'deployment'],
+    'test': ['code', 'requirement', 'metric'],
+    'deployment': ['code', 'metric'],
+    'metric': ['deployment', 'test'],
 };
 
 interface TypeSelectorModalProps {
@@ -123,12 +125,12 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
             <DialogTitle>Change Content Type</DialogTitle>
             <DialogContent>
                 <Box className="mb-6">
-                    <Typography as="p" className="text-sm font-medium" color="text.secondary">
+                    <Typography className="text-sm font-medium" color="text.secondary">
                         Current Type:
                     </Typography>
                     <Box className="flex items-center gap-2 mt-1">
                         {getTypeInfo(currentType)?.icon}
-                        <Typography as="h6">
+                        <Typography className="text-lg font-semibold">
                             {getTypeInfo(currentType)?.label}
                         </Typography>
                     </Box>
@@ -137,11 +139,11 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
                 {/* Compatible Types (Recommended) */}
                 {compatibleTypes.length > 0 && (
                     <Box className="mb-6">
-                        <Typography as="h6" gutterBottom className="flex items-center gap-2">
+                        <Typography gutterBottom className="flex items-center gap-2 text-lg font-semibold">
                             Recommended Types
                             <Chip label="Compatible" size="sm" tone="success" variant="outlined" />
                         </Typography>
-                        <Typography as="p" className="text-sm" color="text.secondary" gutterBottom>
+                        <Typography className="text-sm" color="text.secondary" gutterBottom>
                             These conversions preserve data and structure
                         </Typography>
                         <List>
@@ -156,7 +158,7 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
                 {/* All Types */}
                 <details open>
                     <summary style={{ cursor: 'pointer', padding: '8px 0', listStyle: 'none', display: 'flex', alignItems: 'center', userSelect: 'none' }}>
-                        <Typography as="h6">All Content Types</Typography>
+                        <Typography className="text-lg font-semibold">All Content Types</Typography>
                     </summary>
                     <div>
                         <Grid container spacing={2}>
@@ -166,10 +168,10 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
 
                                 return (
                                     <Grid item xs={12} key={category}>
-                                        <Typography as="p" className="text-sm font-medium" color="text.secondary" gutterBottom className="capitalize">
+                                        <Typography className="text-sm font-medium capitalize" color="text.secondary" gutterBottom>
                                             {category}
                                         </Typography>
-                                        <List dense>
+                                        <List>
                                             {categoryTypes.map(typeInfo => renderTypeOption(typeInfo, false))}
                                         </List>
                                     </Grid>
@@ -182,10 +184,10 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
                 {/* Warning for incompatible conversions */}
                 {isDifferent && !isCompatible && (
                     <Alert severity="warning" className="mt-4">
-                        <Typography as="p" className="text-sm" fontWeight="bold" gutterBottom>
+                        <Typography className="text-sm font-bold" gutterBottom>
                             ⚠️ Potentially Lossy Conversion
                         </Typography>
-                        <Typography as="p" className="text-sm">
+                        <Typography className="text-sm">
                             Changing from <strong>{getTypeInfo(currentType)?.label}</strong> to <strong>{getTypeInfo(selectedType)?.label}</strong> may result in data loss.
                             The system will attempt to preserve as much information as possible, but some structure or content may not transfer correctly.
                         </Typography>
@@ -195,7 +197,7 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
                 {/* Info for compatible conversions */}
                 {isDifferent && isCompatible && (
                     <Alert severity="info" className="mt-4">
-                        <Typography as="p" className="text-sm">
+                        <Typography className="text-sm">
                             ✓ This conversion is compatible. Data will be automatically migrated to the new format.
                         </Typography>
                     </Alert>

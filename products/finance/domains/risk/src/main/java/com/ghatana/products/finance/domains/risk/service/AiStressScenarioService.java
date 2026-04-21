@@ -3,12 +3,15 @@ package com.ghatana.products.finance.domains.risk.service;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.postgresql.util.PGobject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -139,8 +142,7 @@ public class AiStressScenarioService {
                 ps.setObject(1, UUID.fromString(runId));
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Double> shocks = (Map<String, Double>) rs.getObject("shock_factors");
+                        Map<String, Double> shocks = deserializeShockFactors(rs.getObject("shock_factors"));
                         list.add(new StressScenario(rs.getString("id"), runId, shocks,
                             rs.getDouble("max_shock_sigma"), ScenarioStatus.PENDING_REVIEW,
                             true, null, rs.getTimestamp("generated_at").toInstant()));
@@ -149,6 +151,63 @@ public class AiStressScenarioService {
             }
             return list;
         });
+    }
+
+    /**
+     * Type-safe deserialization of shock factors from JSONB.
+     */
+    private Map<String, Double> deserializeShockFactors(Object shockFactorsObj) throws SQLException {
+        if (shockFactorsObj == null) {
+            return Map.of();
+        }
+        
+        if (shockFactorsObj instanceof PGobject pgObject) {
+            String jsonValue = pgObject.getValue();
+            return parseShockFactorsJson(jsonValue);
+        }
+        
+        if (shockFactorsObj instanceof Map) {
+            // Already deserialized by JDBC driver
+            @SuppressWarnings("unchecked")
+            Map<String, Object> rawMap = (Map<String, Object>) shockFactorsObj;
+            Map<String, Double> result = new HashMap<>();
+            for (Map.Entry<String, Object> entry : rawMap.entrySet()) {
+                if (entry.getValue() instanceof Number) {
+                    result.put(entry.getKey(), ((Number) entry.getValue()).doubleValue());
+                }
+            }
+            return result;
+        }
+        
+        return Map.of();
+    }
+
+    /**
+     * Parse shock factors from JSON string.
+     */
+    private Map<String, Double> parseShockFactorsJson(String json) {
+        Map<String, Double> result = new HashMap<>();
+        // Simple JSON parsing for key-value pairs
+        // Format: {"key1":value1,"key2":value2}
+        String trimmed = json.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            String content = trimmed.substring(1, trimmed.length() - 1);
+            String[] pairs = content.split(",");
+            for (String pair : pairs) {
+                String[] kv = pair.split(":");
+                if (kv.length == 2) {
+                    String key = kv[0].trim().replace("\"", "");
+                    String valueStr = kv[1].trim();
+                    try {
+                        double value = Double.parseDouble(valueStr);
+                        result.put(key, value);
+                    } catch (NumberFormatException e) {
+                        // Skip invalid values
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private void persistScenarios(String runId, List<StressScenario> scenarios) throws Exception {

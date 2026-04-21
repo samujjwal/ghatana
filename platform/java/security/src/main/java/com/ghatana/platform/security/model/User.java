@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
  * {@link com.ghatana.platform.domain.auth.User}, which is the canonical record of user
  * identity and should be preferred for business-logic decisions.
  *
- * <p><b>Migration note:</b> For domain operations and authorization decisions prefer
- * {@link com.ghatana.platform.domain.auth.User}. This class is retained for security
+ * <p><b>Usage note:</b> For domain operations and authorization decisions prefer
+ * {@link com.ghatana.platform.domain.auth.User}. This class serves security
  * filter/session infrastructure that requires mutable auth-token state. New code should
  * construct instances via {@link #fromDomainUser(com.ghatana.platform.domain.auth.User)}
  * rather than the raw constructors.
@@ -42,11 +42,7 @@ import java.util.stream.Collectors;
  * @doc.layer platform
  * @doc.pattern Adapter
  * @see com.ghatana.platform.domain.auth.User
- * @deprecated Prefer {@link com.ghatana.platform.domain.auth.User} for domain and authorization
- *             logic. This class will continue to serve security infrastructure (filters, sessions)
- *             but should not be used as a domain model.
  */
-@SuppressWarnings("DeprecatedIsStillUsed") // retained for security filter infrastructure
 public class User {
     private final String userId;
     private final String username;

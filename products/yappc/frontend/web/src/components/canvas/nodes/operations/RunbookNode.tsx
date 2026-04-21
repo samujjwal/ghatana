@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { 
   BookOpen, 
   Play, 
@@ -62,7 +62,7 @@ export interface RunbookExecutionSummary {
   averageDuration?: number;
 }
 
-export interface RunbookNodeData {
+export interface RunbookNodeData extends Record<string, unknown> {
   id: string;
   name: string;
   description?: string;
@@ -81,7 +81,9 @@ export interface RunbookNodeData {
   executionStats: RunbookExecutionSummary;
 }
 
-export type RunbookNodeProps = NodeProps<RunbookNodeData>;
+type RunbookCanvasNode = Node<RunbookNodeData>;
+
+export type RunbookNodeProps = NodeProps<RunbookCanvasNode>;
 
 // ============================================================================
 // CONSTANTS

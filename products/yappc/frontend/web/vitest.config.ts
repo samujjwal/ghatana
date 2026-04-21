@@ -10,42 +10,128 @@ export default defineConfig({
     // Enforce single React instance and path aliases
     extensions: ['.js', '.ts', '.tsx', '.json'],
     dedupe: ['react', 'react-dom'],
-    alias: {
-      '@': resolve(__dirname, 'src'),
-      '@ghatana/design-system': resolve(__dirname, '../../../../platform/typescript/design-system/src'),
-      '@yappc/api': resolve(__dirname, '../libs/api/src'),
-      '@yappc/devsecops': resolve(__dirname, '../libs/yappc-devsecops/src'),
-      '@yappc/auth': resolve(__dirname, '../libs/yappc-auth/src'),
-      '@yappc/auth/rbac': resolve(__dirname, '../libs/yappc-auth/src/auth/rbac'),
-      '@yappc/chat': resolve(__dirname, '../libs/yappc-chat/src'),
-      '@yappc/collab': resolve(__dirname, '../libs/collab/src'),
-      '@yappc/initialization-ui': resolve(__dirname, '../libs/yappc-initialization-ui/src'),
-      '@yappc/development-ui': resolve(__dirname, '../libs/yappc-development-ui/src'),
-      '@ghatana/code-editor': resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
-      '@yappc/state': resolve(__dirname, 'src/__mocks__/@yappc/state.ts'),
-      '@ghatana/platform-utils': resolve(
-        __dirname,
-        '../../../../platform/typescript/foundation/platform-utils/src'
-      ),
-      '@ghatana/theme': resolve(__dirname, 'src/__mocks__/@ghatana/theme.ts'),
-      '@ghatana/theme/provider': resolve(__dirname, 'src/__mocks__/@ghatana/theme.ts'),
-      '@ghatana/canvas': resolve(__dirname, 'src/__mocks__/@ghatana/canvas.ts'),
-      '@ghatana/canvas/hybrid': resolve(__dirname, 'src/__mocks__/@ghatana/canvas.ts'),
-      '@monaco-editor/react': resolve(__dirname, 'src/__mocks__/@monaco-editor/react.ts'),
-      '@ghatana/canvas/hybrid': resolve(__dirname, 'src/__mocks__/@ghatana/canvas.ts'),
-      '@yappc/product-theme/lifecycle-presets': resolve(__dirname, '../libs/yappc-product-theme/src/lifecycle-presets.ts'),
-      '@yappc/product-theme/mui-bridge': resolve(__dirname, '../libs/yappc-product-theme/src/mui-bridge.tsx'),
-      '@yappc/product-theme': resolve(__dirname, '../libs/yappc-product-theme/src/index.ts'),
-      '@mui/material': resolve(__dirname, 'src/__mocks__/@mui/material.ts'),
-      '@hookform/resolvers/zod': resolve(__dirname, 'src/__mocks__/@hookform/resolvers/zod.ts'),
-      'react-hook-form': resolve(__dirname, 'src/__mocks__/react-hook-form.ts'),
-      '@ghatana/ui-builder': resolve(__dirname, '../../../../platform/typescript/ui-builder/src/index.ts'),
-      '@yappc/ui': resolve(__dirname, '../libs/yappc-ui/src/index.ts'),
-      react: resolve(__dirname, 'node_modules/react'),
-      'react/jsx-runtime': resolve(__dirname, 'node_modules/react/jsx-runtime'),
-      'react-dom': resolve(__dirname, 'node_modules/react-dom'),
-      'react-dom/client': resolve(__dirname, 'node_modules/react-dom/client'),
-    },
+    alias: [
+      {
+        find: '@mui/material/styles',
+        replacement: resolve(__dirname, 'src/__mocks__/@mui/material/styles.ts'),
+      },
+      {
+        find: '@mui/material',
+        replacement: resolve(__dirname, 'src/__mocks__/@mui/material.ts'),
+      },
+      { find: '@', replacement: resolve(__dirname, 'src') },
+      {
+        find: '@ghatana/design-system',
+        replacement: resolve(__dirname, '../../../../platform/typescript/design-system/src'),
+      },
+      { find: '@yappc/api', replacement: resolve(__dirname, '../libs/api/src') },
+      {
+        find: '@yappc/devsecops',
+        replacement: resolve(__dirname, '../libs/yappc-devsecops/src'),
+      },
+      { find: '@yappc/auth', replacement: resolve(__dirname, '../libs/yappc-auth/src') },
+      {
+        find: '@yappc/auth/rbac',
+        replacement: resolve(__dirname, '../libs/yappc-auth/src/auth/rbac'),
+      },
+      { find: '@yappc/chat', replacement: resolve(__dirname, '../libs/yappc-chat/src') },
+      { find: '@yappc/collab', replacement: resolve(__dirname, '../libs/collab/src') },
+      {
+        find: '@yappc/initialization-ui',
+        replacement: resolve(__dirname, '../libs/yappc-initialization-ui/src'),
+      },
+      {
+        find: '@yappc/development-ui',
+        replacement: resolve(__dirname, '../libs/yappc-development-ui/src'),
+      },
+      {
+        find: '@ghatana/code-editor',
+        replacement: resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
+      },
+      {
+        find: '@yappc/state',
+        replacement: resolve(__dirname, 'src/__mocks__/@yappc/state.ts'),
+      },
+      {
+        find: '@ghatana/platform-utils',
+        replacement: resolve(
+          __dirname,
+          '../../../../platform/typescript/platform-utils/src'
+        ),
+      },
+      {
+        find: 'clsx',
+        replacement: resolve(
+          __dirname,
+          '../../../../node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs'
+        ),
+      },
+      {
+        find: 'tailwind-merge',
+        replacement: resolve(
+          __dirname,
+          '../../../../node_modules/.pnpm/tailwind-merge@3.5.0/node_modules/tailwind-merge/dist/bundle-mjs.mjs'
+        ),
+      },
+      {
+        find: '@ghatana/theme',
+        replacement: resolve(__dirname, 'src/__mocks__/@ghatana/theme.ts'),
+      },
+      {
+        find: '@ghatana/theme/provider',
+        replacement: resolve(__dirname, 'src/__mocks__/@ghatana/theme.ts'),
+      },
+      {
+        find: '@ghatana/canvas',
+        replacement: resolve(__dirname, 'src/__mocks__/@ghatana/canvas.ts'),
+      },
+      {
+        find: '@ghatana/canvas/hybrid',
+        replacement: resolve(__dirname, 'src/__mocks__/@ghatana/canvas.ts'),
+      },
+      {
+        find: '@monaco-editor/react',
+        replacement: resolve(__dirname, 'src/__mocks__/@monaco-editor/react.ts'),
+      },
+      {
+        find: '@yappc/product-theme/lifecycle-presets',
+        replacement: resolve(
+          __dirname,
+          '../libs/yappc-product-theme/src/lifecycle-presets.ts'
+        ),
+      },
+      {
+        find: '@yappc/product-theme/mui-bridge',
+        replacement: resolve(__dirname, '../libs/yappc-product-theme/src/mui-bridge.tsx'),
+      },
+      {
+        find: '@yappc/product-theme',
+        replacement: resolve(__dirname, '../libs/yappc-product-theme/src/index.ts'),
+      },
+      {
+        find: '@hookform/resolvers/zod',
+        replacement: resolve(__dirname, 'src/__mocks__/@hookform/resolvers/zod.ts'),
+      },
+      {
+        find: 'react-hook-form',
+        replacement: resolve(__dirname, 'src/__mocks__/react-hook-form.ts'),
+      },
+      {
+        find: '@ghatana/ui-builder',
+        replacement: resolve(__dirname, '../../../../platform/typescript/ui-builder/src/index.ts'),
+      },
+      { find: '@yappc/ui', replacement: resolve(__dirname, '../libs/yappc-ui/src/index.ts') },
+      { find: 'react', replacement: resolve(__dirname, 'node_modules/react') },
+      {
+        find: 'react/jsx-runtime',
+        replacement: resolve(__dirname, 'node_modules/react/jsx-runtime'),
+      },
+      { find: 'react-dom', replacement: resolve(__dirname, 'node_modules/react-dom') },
+      {
+        find: 'react-dom/client',
+        replacement: resolve(__dirname, 'node_modules/react-dom/client'),
+      },
+    ],
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
@@ -55,7 +141,11 @@ export default defineConfig({
   },
   server: {
     fs: {
-      allow: [__dirname, resolve(__dirname, '../../')],
+      allow: [
+        __dirname,
+        resolve(__dirname, '../../'),
+        resolve(__dirname, '../../../../'),
+      ],
     },
   },
   test: {

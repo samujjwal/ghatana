@@ -11,15 +11,7 @@
  */
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-
-/** Project lifecycle stage — migrated from @ghatana/yappc-shared */
-export type LifecyclePhase =
-  | 'planning'
-  | 'development'
-  | 'testing'
-  | 'deployment'
-  | 'maintenance'
-  | 'deprecated';
+import type { LifecyclePhase } from '../../shared/types/lifecycle';
 
 // ============================================================================
 // Types

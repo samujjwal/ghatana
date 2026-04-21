@@ -27,6 +27,5 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.bundles.testing.containers)
-    testImplementation(libs.bundles.testing.containers)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

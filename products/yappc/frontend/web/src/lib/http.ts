@@ -16,6 +16,24 @@ export async function parseJsonResponse<T>(
   }
 }
 
+export async function parseJsonResourceResponse<T>(
+  response: Response,
+  context: string,
+  key: string,
+): Promise<T> {
+  const payload = await parseJsonResponse<unknown>(response, context);
+
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    key in payload
+  ) {
+    return (payload as Record<string, T>)[key];
+  }
+
+  return payload as T;
+}
+
 export async function readErrorResponse(
   response: Response,
   fallback: string,

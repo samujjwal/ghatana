@@ -21,6 +21,8 @@ import { registerQualityMLRoutes } from "./quality-ml/routes.js";
 import { registerABTestingRoutes } from "./experiments/ab-testing/routes.js";
 import { registerRestoreRoutes } from "./restore/routes.js";
 import { registerVersioningRoutes } from "./versioning/routes.js";
+import { IndependentGeneratedContentValidator } from "./evaluation/independent-validator-service.js";
+import { KnowledgeBaseServiceImpl } from "../knowledge-base/service.js";
 
 /**
  * Content module - consolidates:
@@ -41,6 +43,10 @@ export const contentModule: FastifyPluginAsync = async (app) => {
   const contentStudioService = createContentStudioService(prisma, {
     openaiApiKey: process.env.OPENAI_API_KEY || "",
     model: process.env.OPENAI_MODEL || "gpt-4",
+    independentValidator: new IndependentGeneratedContentValidator(
+      prisma,
+      new KnowledgeBaseServiceImpl(prisma),
+    ),
   });
 
   const contentService = new ContentServiceImpl(

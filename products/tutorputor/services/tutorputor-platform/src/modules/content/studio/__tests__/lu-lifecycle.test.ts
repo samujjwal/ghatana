@@ -70,6 +70,33 @@ vi.mock("openai", () => ({
 
 import { createContentStudioService } from "../service.js";
 
+function createIndependentValidationResult(
+  overrides: Partial<{
+    overallStatus: "PASS" | "WARN" | "FAIL";
+    score: number;
+    requiresHumanReview: boolean;
+    recommendations: string[];
+    validatorVersion: string;
+  }> = {},
+) {
+  return {
+    validationRecordId: "ivr-1",
+    validatorVersion: overrides.validatorVersion ?? "independent-validator@test",
+    inputHash: "hash-1",
+    overallStatus: overrides.overallStatus ?? "PASS",
+    score: overrides.score ?? 96,
+    riskLevel:
+      overrides.overallStatus === "FAIL"
+        ? "high"
+        : overrides.overallStatus === "WARN"
+          ? "medium"
+          : "low",
+    requiresHumanReview: overrides.requiresHumanReview ?? false,
+    checks: [],
+    recommendations: overrides.recommendations ?? [],
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Shared fixtures
 // ---------------------------------------------------------------------------
@@ -122,6 +149,13 @@ function makePrisma() {
       findFirst: vi.fn().mockResolvedValue(null),
       findMany: vi.fn().mockResolvedValue([]),
     },
+    validationRecordExtended: {
+      create: vi.fn().mockResolvedValue({ id: "valx-1" }),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    contentAsset: {
+      update: vi.fn().mockResolvedValue({ id: "asset-1" }),
+    },
     experienceEvent: {
       create: vi.fn().mockResolvedValue({ id: "evt-1" }),
       findMany: vi.fn().mockResolvedValue([]),
@@ -139,11 +173,20 @@ function makePrisma() {
 describe("LU lifecycle state transitions", () => {
   let service: ReturnType<typeof createContentStudioService>;
   let prisma: ReturnType<typeof makePrisma>;
+  let independentValidator: {
+    validateGeneratedContent: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     prisma = makePrisma();
+    independentValidator = {
+      validateGeneratedContent: vi
+        .fn()
+        .mockResolvedValue(createIndependentValidationResult()),
+    };
     service = createContentStudioService(prisma as never, {
       openaiApiKey: "test-key",
+      independentValidator,
     });
   });
 

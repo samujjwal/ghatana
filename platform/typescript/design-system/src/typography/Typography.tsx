@@ -21,6 +21,7 @@ export type TypographyVariant =
 
 export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
   variant?: TypographyVariant;
+  as?: React.ElementType;
   component?: React.ElementType;
   align?: TextProps['align'];
   color?:
@@ -43,6 +44,7 @@ export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
   | 'info.main'
   | 'text.primary'
   | 'text.secondary'
+  | 'text.disabled'
   | (string & {});
   /** MUI-like prop (compatibility). */
   fontWeight?: React.CSSProperties['fontWeight'];
@@ -56,6 +58,7 @@ export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
 export const Typography = React.forwardRef<HTMLElement, TypographyProps>((props, ref) => {
   const {
     variant = 'body1',
+    as,
     component,
     align,
     color = 'default',
@@ -68,11 +71,14 @@ export const Typography = React.forwardRef<HTMLElement, TypographyProps>((props,
     ...rest
   } = props;
 
+  const resolvedComponent = component ?? as;
+
   const spacingStyle = gutterBottom ? { marginBottom: '0.5rem' } : undefined;
 
   let tone: TextProps['tone'] = 'default';
   if (color === 'text.secondary') tone = 'muted';
   else if (color === 'text.primary') tone = 'default';
+  else if (color === 'text.disabled') tone = 'subtle';
   else if (color === 'inherit') tone = 'default';
   else if (color === 'error' || color === 'error.main') tone = 'danger';
   else if (color === 'primary' || color === 'primary.main') tone = 'primary';
@@ -96,7 +102,7 @@ export const Typography = React.forwardRef<HTMLElement, TypographyProps>((props,
     return (
       <Heading
         ref={ref as React.Ref<HTMLHeadingElement>}
-        as={component}
+          as={resolvedComponent}
         level={level}
         tone={tone}
         align={align}
@@ -113,7 +119,7 @@ export const Typography = React.forwardRef<HTMLElement, TypographyProps>((props,
     return (
       <Heading
         ref={ref as React.Ref<HTMLHeadingElement>}
-        as={component}
+          as={resolvedComponent}
         level={level}
         tone={tone}
         align={align}
@@ -137,7 +143,7 @@ export const Typography = React.forwardRef<HTMLElement, TypographyProps>((props,
   return (
     <Text
       ref={ref as React.Ref<HTMLElement>}
-      as={component}
+      as={resolvedComponent}
       variant={textVariantMap[variant] ?? 'body'}
       tone={tone}
       align={align}

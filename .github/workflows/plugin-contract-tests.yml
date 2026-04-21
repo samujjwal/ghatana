@@ -5,7 +5,7 @@ on:
     paths:
       - 'platform-plugins/**'
       - 'platform-kernel/**'
-      - 'platform/shared-services/**'
+      - 'products/**/kernel-bridge/**'
       - 'integration-tests/phr-finance-integration/**'
       - 'products/phr/**'
       - 'products/finance/**'
@@ -16,7 +16,7 @@ on:
     paths:
       - 'platform-plugins/**'
       - 'platform-kernel/**'
-      - 'platform/shared-services/**'
+      - 'products/**/kernel-bridge/**'
   workflow_dispatch:
 
 concurrency:
@@ -80,9 +80,9 @@ jobs:
       - name: Build and test kernel bridges
         run: |
           ./gradlew \
-            :platform:shared-services:data-cloud-kernel-bridge:test \
-            :platform:shared-services:aep-kernel-bridge:test \
-            :platform:shared-services:yappc-kernel-bridge:test \
+            :products:data-cloud:kernel-bridge:test \
+            :products:aep:kernel-bridge:test \
+            :products:yappc:kernel-bridge:test \
             --no-daemon
 
       - name: Upload bridge test reports
@@ -90,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bridge-test-reports
-          path: platform/shared-services/**/build/reports/tests/**
+          path: products/**/kernel-bridge/build/reports/tests/**
           retention-days: 7
 
   # ── 3. Cross-product plugin isolation tests (consent plugin) ────────────────

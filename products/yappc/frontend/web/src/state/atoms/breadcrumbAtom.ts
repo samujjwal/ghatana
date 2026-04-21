@@ -49,7 +49,7 @@ export interface NavigationContext {
 /**
  * Current navigation context
  */
-export const navigationContextAtom = atom({});
+export const navigationContextAtom = atom<NavigationContext>({});
 
 /**
  * Computed breadcrumb items based on navigation context

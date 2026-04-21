@@ -8,6 +8,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router';
 import { useAtomValue, useSetAtom } from 'jotai';
+import type { Atom } from 'jotai';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Home,
@@ -49,6 +50,28 @@ interface NavItem {
   badge?: number;
 }
 
+interface LayoutUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
+interface LayoutProject {
+  id: string;
+  name: string;
+  status?: string;
+}
+
+interface LayoutNotification {
+  id: string;
+  read?: boolean;
+}
+
+const currentUserStateAtom = currentUserAtom as Atom<LayoutUser | null>;
+const activeProjectStateAtom = activeProjectAtom as Atom<LayoutProject | null>;
+const notificationsStateAtom = notificationsAtom as Atom<LayoutNotification[]>;
+
 // =============================================================================
 // Sidebar Navigation Items
 // =============================================================================
@@ -73,9 +96,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
-  const currentUser = useAtomValue(currentUserAtom);
-  const activeProject = useAtomValue(activeProjectAtom);
-  const notifications = useAtomValue(notificationsAtom);
+  const currentUser = useAtomValue(currentUserStateAtom);
+  const activeProject = useAtomValue(activeProjectStateAtom);
+  const notifications = useAtomValue(notificationsStateAtom);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
@@ -281,7 +304,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
       <div className="flex items-center gap-2">
         {/* New Project */}
         <button
-          onClick={navigation.toNewProject}
+          onClick={navigation.toProjects}
           className={cn(
             'flex items-center gap-2 px-4 py-2 rounded-lg',
             'bg-violet-500 text-white hover:bg-violet-600',

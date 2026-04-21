@@ -28,8 +28,7 @@ public enum ProbabilisticSubtype {
     /**
      * Large Language Model (via LangChain4j, OpenAI, Anthropic, or Gemini).
      *
-     * <p>Use {@code AgentType.PROBABILISTIC} with this subtype instead of the
-     * deprecated {@code AgentType.LLM} top-level enum value.
+     * <p>Use {@code AgentType.PROBABILISTIC} with this subtype.
      */
     LLM,
     /**

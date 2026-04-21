@@ -26,13 +26,7 @@ describe('trustedProxyAuth', () => {
     process.env.TRUST_PROXY_AUTH_SHARED_SECRET = originalTrustedSecret;
   });
 
-  it('enables trusted proxy headers automatically in test mode', () => {
-    process.env.NODE_ENV = 'test';
-
-    expect(isTrustedProxyAuthEnabled()).toBe(true);
-  });
-
-  it('requires explicit opt-in outside test mode', () => {
+  it('requires explicit opt-in configuration', () => {
     expect(isTrustedProxyAuthEnabled()).toBe(false);
 
     process.env.TRUST_PROXY_AUTH_HEADERS = 'true';
@@ -40,12 +34,24 @@ describe('trustedProxyAuth', () => {
     expect(isTrustedProxyAuthEnabled()).toBe(true);
   });
 
-  it('requires a configured shared secret outside test mode', () => {
+  it('requires a configured shared secret', () => {
     process.env.TRUST_PROXY_AUTH_HEADERS = 'true';
 
     expect(
-      hasTrustedProxySecret({ headers: {} } as FastifyRequest),
+      hasTrustedProxySecret({ headers: {} } as unknown as FastifyRequest),
     ).toBe(false);
+
+    process.env.TRUST_PROXY_AUTH_SHARED_SECRET = 'internal-secret';
+
+    expect(
+      hasTrustedProxySecret({ headers: {} } as unknown as FastifyRequest),
+    ).toBe(false);
+
+    expect(
+      hasTrustedProxySecret({
+        headers: { 'x-trusted-proxy-secret': 'internal-secret' },
+      } as unknown as FastifyRequest),
+    ).toBe(true);
   });
 
   it('recognizes private and loopback address ranges', () => {
@@ -68,9 +74,9 @@ describe('trustedProxyAuth', () => {
           'x-user-role': 'admin',
           'x-trusted-proxy-secret': 'internal-secret',
         },
-      } as FastifyRequest),
+      } as unknown as FastifyRequest),
     ).toBe(true);
-    expect(canUseTrustedProxyAuth({ ip: '8.8.8.8' } as FastifyRequest)).toBe(false);
+    expect(canUseTrustedProxyAuth({ ip: '8.8.8.8' } as unknown as FastifyRequest)).toBe(false);
   });
 
   it('requires a complete trusted identity tuple', () => {
@@ -81,7 +87,7 @@ describe('trustedProxyAuth', () => {
           'x-user-id': 'user-1',
           'x-user-role': 'admin',
         },
-      } as FastifyRequest),
+      } as unknown as FastifyRequest),
     ).toBe(true);
     expect(
       hasTrustedProxyIdentityHeaders({
@@ -89,7 +95,7 @@ describe('trustedProxyAuth', () => {
           'x-tenant-id': 'tenant-1',
           'x-user-role': 'admin',
         },
-      } as FastifyRequest),
+      } as unknown as FastifyRequest),
     ).toBe(false);
     expect(
       hasTrustedProxyIdentityHeaders({
@@ -99,7 +105,7 @@ describe('trustedProxyAuth', () => {
           'x-user-id': 'user-1',
           'x-user-role': 'admin',
         },
-      } as FastifyRequest),
+      } as unknown as FastifyRequest),
     ).toBe(false);
   });
 
@@ -110,7 +116,7 @@ describe('trustedProxyAuth', () => {
     expect(
       hasTrustedProxySecret({
         headers: { 'x-trusted-proxy-secret': 'internal-secret' },
-      } as FastifyRequest),
+      } as unknown as FastifyRequest),
     ).toBe(true);
     expect(
       canUseTrustedProxyAuth({
@@ -121,7 +127,7 @@ describe('trustedProxyAuth', () => {
           'x-user-role': 'admin',
           'x-trusted-proxy-secret': 'internal-secret',
         },
-      } as FastifyRequest),
+      } as unknown as FastifyRequest),
     ).toBe(true);
     expect(
       canUseTrustedProxyAuth({
@@ -132,7 +138,7 @@ describe('trustedProxyAuth', () => {
           'x-user-role': 'admin',
           'x-trusted-proxy-secret': 'wrong-secret',
         },
-      } as FastifyRequest),
+      } as unknown as FastifyRequest),
     ).toBe(false);
   });
 });

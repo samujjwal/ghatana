@@ -33,6 +33,12 @@ interface UpdateProjectBody {
   status?: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
   lifecyclePhase?:
     | 'INTENT'
+    | 'CONTEXT'
+    | 'PLAN'
+    | 'EXECUTE'
+    | 'VERIFY'
+    | 'LEARN'
+    | 'INSTITUTIONALIZE'
     | 'SHAPE'
     | 'VALIDATE'
     | 'GENERATE'
@@ -41,8 +47,47 @@ interface UpdateProjectBody {
     | 'IMPROVE';
 }
 
+function normalizeLifecyclePhase(
+  lifecyclePhase?: UpdateProjectBody['lifecyclePhase']
+):
+  | 'INTENT'
+  | 'CONTEXT'
+  | 'PLAN'
+  | 'EXECUTE'
+  | 'VERIFY'
+  | 'OBSERVE'
+  | 'LEARN'
+  | 'INSTITUTIONALIZE'
+  | undefined {
+  switch (lifecyclePhase) {
+    case 'SHAPE':
+      return 'CONTEXT';
+    case 'VALIDATE':
+      return 'PLAN';
+    case 'GENERATE':
+      return 'EXECUTE';
+    case 'RUN':
+      return 'VERIFY';
+    case 'IMPROVE':
+      return 'LEARN';
+    default:
+      return lifecyclePhase;
+  }
+}
+
 interface ProjectParams {
   projectId: string;
+}
+
+interface ProjectActivityEvent {
+  id: string;
+  source: 'lifecycle' | 'audit';
+  action: string;
+  summary: string;
+  timestamp: string;
+  actor: string | null;
+  severity?: string | null;
+  success?: boolean | null;
 }
 
 interface IncludeProjectBody {
@@ -445,6 +490,77 @@ async function logProjectCreatedAuditEvent(params: {
   }
 }
 
+async function logProjectLifecycleEvent(params: {
+  request: FastifyRequest;
+  projectId: string;
+  action: string;
+  description: string;
+  metadata?: Record<string, unknown>;
+}): Promise<void> {
+  if (!params.request.user?.userId) {
+    return;
+  }
+
+  try {
+    await prisma.lifecycleActivityLog.create({
+      data: {
+        projectId: params.projectId,
+        userId: params.request.user.userId,
+        action: params.action,
+        description: params.description,
+        metadata: params.metadata,
+      },
+    });
+  } catch (error) {
+    params.request.log.warn(
+      {
+        error,
+        projectId: params.projectId,
+        action: params.action,
+      },
+      'Failed to write project lifecycle activity event'
+    );
+  }
+}
+
+function mapLifecycleActivityEvent(entry: {
+  id: string;
+  action: string;
+  description: string | null;
+  timestamp: Date;
+  userId: string;
+}): ProjectActivityEvent {
+  return {
+    id: `lifecycle-${entry.id}`,
+    source: 'lifecycle',
+    action: entry.action,
+    summary: entry.description ?? entry.action,
+    timestamp: entry.timestamp.toISOString(),
+    actor: entry.userId,
+  };
+}
+
+function mapAuditActivityEvent(entry: {
+  id: string;
+  action: string;
+  details: string | null;
+  timestamp: Date;
+  actor: string;
+  severity: string | null;
+  success: boolean | null;
+}): ProjectActivityEvent {
+  return {
+    id: `audit-${entry.id}`,
+    source: 'audit',
+    action: entry.action,
+    summary: entry.details ?? entry.action,
+    timestamp: entry.timestamp.toISOString(),
+    actor: entry.actor,
+    severity: entry.severity,
+    success: entry.success,
+  };
+}
+
 // ============================================================================
 // Routes
 // ============================================================================
@@ -529,6 +645,48 @@ export default async function projectRoutes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.get<{ Params: ProjectParams }>(
+    '/projects/:projectId/activity',
+    async (request, reply) => {
+      const { projectId } = request.params;
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { id: true },
+      });
+
+      if (!project) {
+        return reply.status(404).send({ error: 'Project not found' });
+      }
+
+      const [lifecycleEntries, auditEntries] = await Promise.all([
+        prisma.lifecycleActivityLog.findMany({
+          where: { projectId },
+          orderBy: { timestamp: 'desc' },
+          take: 10,
+        }),
+        prisma.auditLogEntry.findMany({
+          where: { resource: `/projects/${projectId}` },
+          orderBy: { timestamp: 'desc' },
+          take: 10,
+        }),
+      ]);
+
+      const activity = [
+        ...lifecycleEntries.map(mapLifecycleActivityEvent),
+        ...auditEntries.map(mapAuditActivityEvent),
+      ]
+        .sort(
+          (left, right) =>
+            new Date(right.timestamp).getTime() -
+            new Date(left.timestamp).getTime()
+        )
+        .slice(0, 10);
+
+      return reply.send({ projectId, activity });
+    }
+  );
+
   /**
    * POST /api/projects
    * Create new project (owned by specified workspace)
@@ -559,6 +717,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
           description,
           type,
           status: 'DRAFT',
+          lifecyclePhase: 'INTENT',
           ownerWorkspaceId: workspaceId,
           createdById: userId,
           isDefault: false,
@@ -592,8 +751,24 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         },
       });
 
+      await logProjectLifecycleEvent({
+        request,
+        projectId: project.id,
+        action: 'PROJECT_CREATED',
+        description: `Project ${project.name} created in INTENT with ${project.type.toLowerCase()} scope.`,
+        metadata: {
+          lifecyclePhase: 'INTENT',
+          projectType: project.type,
+          workspaceId,
+        },
+      });
+
       return reply.status(201).send({
-        project: { ...project, aiHealthScore, isOwned: true },
+        project: {
+          ...project,
+          aiHealthScore: healthResult.score,
+          isOwned: true,
+        },
       });
     }
   );
@@ -613,6 +788,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       const { projectId } = request.params;
       const { workspaceId } = request.query;
       const { name, description, type, status, lifecyclePhase } = request.body;
+      const normalizedLifecyclePhase = normalizeLifecyclePhase(lifecyclePhase);
 
       // Verify ownership
       const existing = await prisma.project.findUnique({
@@ -636,7 +812,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
           ...(description !== undefined && { description }),
           ...(type && { type }),
           ...(status && { status }),
-          ...(lifecyclePhase && { lifecyclePhase }),
+          ...(normalizedLifecyclePhase && { lifecyclePhase: normalizedLifecyclePhase }),
           aiNextActions: generateNextActions({
             name: name || existing.name,
             type: type || existing.type,
@@ -652,6 +828,40 @@ export default async function projectRoutes(fastify: FastifyInstance) {
         where: { id: project.id },
         data: { aiHealthScore: healthResult.score },
       });
+
+      const changeSummary: string[] = [];
+      if (name && name !== existing.name) {
+        changeSummary.push(`renamed to ${name}`);
+      }
+      if (type && type !== existing.type) {
+        changeSummary.push(`retargeted as ${type.toLowerCase()}`);
+      }
+      if (status && status !== existing.status) {
+        changeSummary.push(`status set to ${status.toLowerCase()}`);
+      }
+      if (normalizedLifecyclePhase && normalizedLifecyclePhase !== existing.lifecyclePhase) {
+        changeSummary.push(`lifecycle moved to ${normalizedLifecyclePhase}`);
+      }
+      if (description !== undefined && description !== existing.description) {
+        changeSummary.push('description updated');
+      }
+
+      if (changeSummary.length > 0) {
+        await logProjectLifecycleEvent({
+          request,
+          projectId,
+          action:
+            normalizedLifecyclePhase && normalizedLifecyclePhase !== existing.lifecyclePhase
+              ? 'PROJECT_LIFECYCLE_UPDATED'
+              : 'PROJECT_UPDATED',
+          description: `Project ${project.name}: ${changeSummary.join(', ')}.`,
+          metadata: {
+            previousLifecyclePhase: existing.lifecyclePhase,
+            lifecyclePhase: project.lifecyclePhase,
+            status: project.status,
+          },
+        });
+      }
 
       return reply.send({
         project: { ...project, aiHealthScore: healthResult.score, isOwned: true },

@@ -11,7 +11,13 @@
  */
 
 import { Box } from '@ghatana/design-system';
+import {
+  SaveSyncStatusBadge,
+  type SaveSyncStatusLabels,
+} from '../../../../components/status/SaveSyncStatusBadge';
 import type { DrawingTool } from './types';
+
+export type CanvasSyncStatus = 'local-only' | 'syncing' | 'remote-saved' | 'remote-failed';
 
 interface CanvasStatusBarProps {
   calmMode: boolean;
@@ -22,7 +28,15 @@ interface CanvasStatusBarProps {
   selectedCount: number;
   currentPhase: string;
   zoom: number;
+  syncStatus: CanvasSyncStatus;
 }
+
+const canvasSyncStatusLabels: SaveSyncStatusLabels = {
+  'local-only': 'Local draft only',
+  syncing: 'Syncing remote draft',
+  'remote-saved': 'Remote draft saved',
+  'remote-failed': 'Remote sync failed',
+};
 
 export function CanvasStatusBar({
   calmMode,
@@ -33,6 +47,7 @@ export function CanvasStatusBar({
   selectedCount,
   currentPhase,
   zoom,
+  syncStatus,
 }: CanvasStatusBarProps) {
   return (
     <Box
@@ -51,6 +66,12 @@ export function CanvasStatusBar({
         )}
       </Box>
       <Box className="flex gap-4">
+        <SaveSyncStatusBadge
+          className="border-none bg-transparent px-0 py-0 text-xs"
+          data-testid="canvas-sync-status"
+          labels={canvasSyncStatusLabels}
+          status={syncStatus}
+        />
         <span>Zoom: {Math.round(zoom * 100)}%</span>
       </Box>
     </Box>

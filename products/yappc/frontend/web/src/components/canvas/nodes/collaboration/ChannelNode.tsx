@@ -12,7 +12,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Hash,
   Lock,
@@ -28,18 +28,55 @@ import {
   Circle,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type { Channel, ChannelMember, ChannelType, Message, PresenceStatus } from '@yappc/api';
 
-export interface ChannelNodeData {
-  channel: Channel & {
-    members?: (ChannelMember & { presence?: PresenceStatus })[];
-    recentMessages?: Message[];
-  };
+type ChannelType = 'PUBLIC' | 'PRIVATE' | 'DIRECT_MESSAGE' | 'GROUP_DM';
+type PresenceStatus = 'ONLINE' | 'AWAY' | 'BUSY' | 'OFFLINE' | 'INVISIBLE';
+
+interface ChannelUser {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+}
+
+interface ChannelMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  isPinned?: boolean;
+  author: ChannelUser;
+}
+
+interface ChannelMemberRecord {
+  id: string;
+  role: string;
+  user: ChannelUser;
+  presence?: PresenceStatus;
+}
+
+interface ChannelRecord {
+  id: string;
+  name: string;
+  type: ChannelType;
+  memberCount: number;
+  unreadCount: number;
+  isArchived?: boolean;
+  topic?: string;
+  description?: string;
+  members?: ChannelMemberRecord[];
+  recentMessages?: ChannelMessage[];
+  pinnedMessages?: ChannelMessage[];
+  lastMessageAt?: string;
+}
+
+export interface ChannelNodeData extends Record<string, unknown> {
+  channel: ChannelRecord;
   isMuted?: boolean;
   onOpenChannel?: () => void;
   onMute?: () => void;
   onUnmute?: () => void;
 }
+
+type ChannelCanvasNode = Node<ChannelNodeData, 'channel'>;
 
 const channelTypeConfig: Record<
   ChannelType,
@@ -79,7 +116,7 @@ const presenceColors: Record<PresenceStatus, string> = {
   INVISIBLE: 'bg-slate-500',
 };
 
-function ChannelNode({ data }: NodeProps<ChannelNodeData>) {
+function ChannelNode({ data }: NodeProps<ChannelCanvasNode>) {
   const { channel, isMuted, onOpenChannel, onMute, onUnmute } = data;
 
   const typeConfig = channelTypeConfig[channel.type];
@@ -87,7 +124,7 @@ function ChannelNode({ data }: NodeProps<ChannelNodeData>) {
 
   // Get online members
   const onlineMembers = (channel.members ?? []).filter(
-    (m) => m.presence === 'ONLINE' || m.presence === 'BUSY'
+    (m: ChannelMemberRecord) => m.presence === 'ONLINE' || m.presence === 'BUSY'
   );
 
   // Get recent messages (up to 3)
@@ -214,7 +251,7 @@ function ChannelNode({ data }: NodeProps<ChannelNodeData>) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {channel.members.slice(0, 8).map((member) => (
+            {channel.members.slice(0, 8).map((member: ChannelMemberRecord) => (
               <div
                 key={member.id}
                 className="relative"
@@ -259,7 +296,7 @@ function ChannelNode({ data }: NodeProps<ChannelNodeData>) {
             Recent Messages
           </span>
           <div className="mt-2 space-y-2">
-            {recentMessages.map((message) => (
+            {recentMessages.map((message: ChannelMessage) => (
               <div key={message.id} className="flex items-start gap-2">
                 {message.author.avatarUrl ? (
                   <img

@@ -11,7 +11,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Settings,
   Check,
@@ -32,13 +32,32 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type {
-  Initialization,
-  InitializationConfig,
-  InitializationStatus,
-  ResourceType,
-  InfrastructureTier,
-} from '@yappc/api';
+
+type InitializationStatus =
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'PAUSED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'ROLLED_BACK';
+
+type ResourceType =
+  | 'REPOSITORY'
+  | 'HOSTING'
+  | 'DATABASE'
+  | 'CACHE'
+  | 'STORAGE'
+  | 'CDN'
+  | 'DOMAIN'
+  | 'SSL'
+  | 'CI_CD'
+  | 'SECRETS'
+  | 'MONITORING'
+  | 'LOGGING';
+
+interface Initialization {
+  status: InitializationStatus;
+}
 
 export interface WizardStep {
   id: string;
@@ -49,7 +68,7 @@ export interface WizardStep {
   description?: string;
 }
 
-export interface ConfigurationWizardNodeData {
+export interface ConfigurationWizardNodeData extends Record<string, unknown> {
   initialization?: Initialization;
   currentStepIndex: number;
   steps: WizardStep[];
@@ -61,6 +80,8 @@ export interface ConfigurationWizardNodeData {
   onResume?: () => void;
   onReset?: () => void;
 }
+
+type ConfigurationWizardCanvasNode = Node<ConfigurationWizardNodeData, 'configuration-wizard'>;
 
 const statusConfig: Record<
   InitializationStatus,
@@ -89,7 +110,7 @@ const resourceIcons: Record<ResourceType, typeof Database> = {
   LOGGING: Settings,
 };
 
-function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardNodeData>) {
+function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardCanvasNode>) {
   const {
     initialization,
     currentStepIndex,
@@ -103,13 +124,13 @@ function ConfigurationWizardNode({ data }: NodeProps<ConfigurationWizardNodeData
     onReset,
   } = data;
 
-  const status = initialization?.status ?? 'NOT_STARTED';
+  const status: InitializationStatus = initialization?.status ?? 'NOT_STARTED';
   const statusInfo = statusConfig[status];
   const StatusIcon = statusInfo.icon;
 
   const canNavigatePrev = currentStepIndex > 0 && status === 'NOT_STARTED';
   const canNavigateNext = currentStepIndex < steps.length - 1 && status === 'NOT_STARTED';
-  const canStart = status === 'NOT_STARTED' && steps.some((s) => s.isConfigured);
+  const canStart = status === 'NOT_STARTED' && steps.some((step) => step.isConfigured);
   const canPause = status === 'IN_PROGRESS';
   const canResume = status === 'PAUSED';
   const canReset = status === 'COMPLETED' || status === 'FAILED' || status === 'ROLLED_BACK';

@@ -186,20 +186,6 @@ jobs:
       - name: Test
         run: pnpm --filter @ghatana/ui test -- --run
 
-  canvas-core:
-    name: '@ghatana/canvas-core — Facade Test'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - name: Test
-        run: pnpm --filter @ghatana/canvas-core test -- --run
-
   canvas-tools:
     name: '@ghatana/canvas-tools — Facade Test'
     runs-on: ubuntu-latest

@@ -18,7 +18,6 @@ import type {
     AIMode,
     WorkflowSteps,
     WorkflowAuditEntry,
-    WORKFLOW_STEPS,
 } from '@yappc/core/types';
 
 // Removed: import { sampleWorkflows } from './workflow.sample-data';
@@ -174,7 +173,6 @@ export const stepNavigationAtom = atom<StepNavigationState>((get) => {
     const canAdvance =
         currentIndex < STEP_ORDER.length - 1 &&
         stepState.status !== 'BLOCKED' &&
-        workflow.status !== 'BLOCKED' &&
         workflow.status !== 'COMPLETED';
 
     const canGoBack = currentIndex > 0;

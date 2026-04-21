@@ -101,7 +101,7 @@ export function UnifiedToolbar({
             } ${propClassName ?? ''}`}
         >
             {/* Navigation Tools */}
-            <ButtonGroup size="small" variant="outlined">
+            <ButtonGroup size="sm" variant="outlined">
                 {navTools.map(tool => (
                     <Button
                         key={tool.id}
@@ -114,10 +114,10 @@ export function UnifiedToolbar({
                 ))}
             </ButtonGroup>
 
-            <Divider orientation="vertical" flexItem />
+            <Divider orientation="vertical" className="self-stretch" />
 
             {/* Creation Tools */}
-            <ButtonGroup size="small" variant="outlined">
+            <ButtonGroup size="sm" variant="outlined">
                 {createTools.map(tool => (
                     <Button
                         key={tool.id}
@@ -131,7 +131,7 @@ export function UnifiedToolbar({
             </ButtonGroup>
 
             {/* Shape Tools */}
-            <ButtonGroup size="small" variant="outlined">
+            <ButtonGroup size="sm" variant="outlined">
                 {shapeTools.map(tool => (
                     <Button
                         key={tool.id}
@@ -145,7 +145,7 @@ export function UnifiedToolbar({
             </ButtonGroup>
 
             {/* Advanced Tools (AFFiNE features) */}
-            <ButtonGroup size="small" variant="outlined">
+            <ButtonGroup size="sm" variant="outlined">
                 {advancedTools.map(tool => (
                     <Button
                         key={tool.id}
@@ -158,82 +158,82 @@ export function UnifiedToolbar({
                 ))}
             </ButtonGroup>
 
-            <Divider orientation="vertical" flexItem />
+            <Divider orientation="vertical" className="self-stretch" />
 
             {/* Alignment Tools (show when nodes selected) */}
             {hasSelection && (
                 <>
-                    <ButtonGroup size="small" variant="outlined">
+                    <ButtonGroup size="sm" variant="outlined">
                         <Button
                             onClick={onAlignLeft}
                             title="Align Left"
-                            size="small"
+                            size="sm"
                         >
                             ⫷
                         </Button>
                         <Button
                             onClick={onAlignCenter}
                             title="Align Center"
-                            size="small"
+                            size="sm"
                         >
                             ◫
                         </Button>
                         <Button
                             onClick={onAlignRight}
                             title="Align Right"
-                            size="small"
+                            size="sm"
                         >
                             ⫸
                         </Button>
                     </ButtonGroup>
 
-                    <ButtonGroup size="small" variant="outlined">
+                    <ButtonGroup size="sm" variant="outlined">
                         <Button
                             onClick={onAlignTop}
                             title="Align Top"
-                            size="small"
+                            size="sm"
                         >
                             ⫶
                         </Button>
                         <Button
                             onClick={onAlignMiddle}
                             title="Align Middle"
-                            size="small"
+                            size="sm"
                         >
                             ⬒
                         </Button>
                         <Button
                             onClick={onAlignBottom}
                             title="Align Bottom"
-                            size="small"
+                            size="sm"
                         >
                             ⫯
                         </Button>
                     </ButtonGroup>
 
-                    <ButtonGroup size="small" variant="outlined">
+                    <ButtonGroup size="sm" variant="outlined">
                         <Button
                             onClick={onDistributeHorizontal}
                             title="Distribute Horizontally"
-                            size="small"
+                            size="sm"
                         >
                             ⬌
                         </Button>
                         <Button
                             onClick={onDistributeVertical}
                             title="Distribute Vertically"
-                            size="small"
+                            size="sm"
                         >
                             ⬍
                         </Button>
                     </ButtonGroup>
 
-                    <Divider orientation="vertical" flexItem />
+                    <Divider orientation="vertical" className="self-stretch" />
                 </>
             )}
 
             {/* History */}
-            <ButtonGroup size="small" variant="outlined">
+            <ButtonGroup size="sm" variant="outlined">
                 <Button
                     onClick={onUndo}
                     disabled={!canUndo}
@@ -250,22 +250,22 @@ export function UnifiedToolbar({
                 </Button>
             </ButtonGroup>
 
-            <Divider orientation="vertical" flexItem />
+            <Divider orientation="vertical" className="self-stretch" />
 
             {/* Zoom Controls */}
             <Box className="flex items-center gap-2">
-                <IconButton size="small" onClick={onZoomOut} title="Zoom Out (-)">
+                <IconButton size="sm" onClick={onZoomOut} title="Zoom Out (-)">
                     <ZoomOut size={16} />
                 </IconButton>
                 <Button
-                    size="small"
+                    size="sm"
                     onClick={onResetZoom}
                     className="min-w-[60px]"
                     title="Reset Zoom (⌘1)"
                 >
                     {zoomLevel}%
                 </Button>
-                <IconButton size="small" onClick={onZoomIn} title="Zoom In (+)">
+                <IconButton size="sm" onClick={onZoomIn} title="Zoom In (+)">
                     <ZoomIn size={16} />
                 </IconButton>
             </Box>

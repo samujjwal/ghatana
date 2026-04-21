@@ -162,7 +162,7 @@ public class PhrKernelModule extends AbstractKernelModule {
         CaregiverService caregivers = new CaregiverService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
-        PhrHttpServer phrHttpServer = new PhrHttpServer(fhirServer, fhirController);
+        PhrHttpServer phrHttpServer = new PhrHttpServer(fhirServer, fhirController, billing);
         context.registerService(PhrHttpServer.class, phrHttpServer);
         context.registerService(PhrFhirR4Server.class, fhirServer);
         context.registerService(FhirController.class, fhirController);

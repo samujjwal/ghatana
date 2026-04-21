@@ -11,7 +11,7 @@
 
 // @ts-nocheck
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
 import {
   LiveProgressViewer,
   ResourcesList,

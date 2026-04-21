@@ -18,7 +18,18 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { ContextStepData, ContextReference } from '@yappc/core/types';
+interface ContextReference {
+    id: string;
+    type: 'TICKET' | 'REPO' | 'SERVICE' | 'WORKFLOW' | 'DOCUMENT';
+    name: string;
+    url?: string;
+}
+
+interface ContextStepData {
+    systemsImpacted: string[];
+    constraints: string[];
+    references: ContextReference[];
+}
 
 // ============================================================================
 // CONSTANTS
@@ -48,7 +59,7 @@ export function ContextStep() {
     const [newRefUrl, setNewRefUrl] = React.useState('');
 
     // Get current data (draft or saved)
-    const baseData = draftData ?? workflow?.steps.context.data;
+    const baseData = (draftData ?? workflow?.steps.context.data) as Partial<ContextStepData> | null;
     const currentData: ContextStepData = {
         systemsImpacted: baseData?.systemsImpacted ?? [],
         constraints: baseData?.constraints ?? [],
@@ -113,17 +124,17 @@ export function ContextStep() {
             {/* Systems Impacted */}
             <Card className="mb-6">
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography className="text-lg font-medium" gutterBottom fontWeight={600}>
                         Systems Impacted
                     </Typography>
-                    <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+                    <Typography className="mb-4 text-sm" color="text.secondary">
                         List all systems, services, or components affected by this work.
                     </Typography>
 
                     <Box className="flex gap-2 mb-4">
                         <TextField
                             fullWidth
-                            size="sm"
+                            size="small"
                             placeholder="Add a system or service..."
                             value={newSystem}
                             onChange={(e) => setNewSystem(e.target.value)}
@@ -156,17 +167,17 @@ export function ContextStep() {
             {/* Constraints & Assumptions */}
             <Card className="mb-6">
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography className="text-lg font-medium" gutterBottom fontWeight={600}>
                         Constraints & Assumptions
                     </Typography>
-                    <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+                    <Typography className="mb-4 text-sm" color="text.secondary">
                         Document any constraints, limitations, or assumptions for this work.
                     </Typography>
 
                     <Box className="flex gap-2 mb-4">
                         <TextField
                             fullWidth
-                            size="sm"
+                            size="small"
                             placeholder="Add a constraint or assumption..."
                             value={newConstraint}
                             onChange={(e) => setNewConstraint(e.target.value)}
@@ -183,12 +194,11 @@ export function ContextStep() {
                     </Box>
 
                     {(currentData.constraints ?? []).length > 0 && (
-                        <List dense>
+                        <List>
                             {(currentData.constraints ?? []).map((constraint: string) => (
                                 <ListItem key={`constraint-${constraint}`} className="px-0">
                                     <ListItemText
-                                        primary={constraint}
-                                        primaryTypographyProps={{ variant: 'body2' }}
+                                        primary={<Typography variant="body2">{constraint}</Typography>}
                                     />
                                     <ListItemSecondaryAction>
                                         <IconButton
@@ -209,20 +219,20 @@ export function ContextStep() {
             {/* References */}
             <Card>
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography className="text-lg font-medium" gutterBottom fontWeight={600}>
                         References
                     </Typography>
-                    <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+                    <Typography className="mb-4 text-sm" color="text.secondary">
                         Link to tickets, repos, documentation, or other workflows.
                     </Typography>
 
                     <Box className="flex gap-2 mb-4 flex-wrap">
-                        <FormControl size="sm" className="min-w-[120px]">
+                        <FormControl size="small" className="min-w-[120px]">
                             <InputLabel>Type</InputLabel>
                             <Select
                                 value={newRefType}
                                 label="Type"
-                                onChange={(e: unknown) => setNewRefType(e.target.value as ContextReference['type'])}
+                                onChange={(e) => setNewRefType(e.target.value as ContextReference['type'])}
                             >
                                 {REFERENCE_TYPES.map((type) => (
                                     <MenuItem key={type.value} value={type.value}>
@@ -232,14 +242,14 @@ export function ContextStep() {
                             </Select>
                         </FormControl>
                         <TextField
-                            size="sm"
+                            size="small"
                             placeholder="Name"
                             value={newRefName}
                             onChange={(e) => setNewRefName(e.target.value)}
                             className="grow min-w-[150px]"
                         />
                         <TextField
-                            size="sm"
+                            size="small"
                             placeholder="URL (optional)"
                             value={newRefUrl}
                             onChange={(e) => setNewRefUrl(e.target.value)}
@@ -265,7 +275,7 @@ export function ContextStep() {
                                     <React.Fragment key={ref.id}>
                                         <ListItem className="px-0">
                                             <ListItemIcon className="min-w-[40px]">
-                                                <RefIcon color="action" />
+                                                <RefIcon className="text-gray-500" />
                                             </ListItemIcon>
                                             <ListItemText
                                                 primary={ref.name}

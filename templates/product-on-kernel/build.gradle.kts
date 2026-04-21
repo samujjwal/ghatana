@@ -22,9 +22,9 @@ dependencies {
     api(project(":platform-kernel:kernel-plugin"))
 
     // ── Platform bridges (include only the capabilities your module needs) ───
-    // api(project(":platform:shared-services:data-cloud-kernel-bridge"))
-    // api(project(":platform:shared-services:aep-kernel-bridge"))
-    // api(project(":platform:shared-services:yappc-kernel-bridge"))
+    // api(project(":products:data-cloud:kernel-bridge"))
+    // api(project(":products:aep:kernel-bridge"))
+    // api(project(":products:yappc:kernel-bridge"))
 
     // ── Platform plugins (include per regulated-domain requirements) ─────────
     // api(project(":platform-plugins:plugin-audit-trail"))

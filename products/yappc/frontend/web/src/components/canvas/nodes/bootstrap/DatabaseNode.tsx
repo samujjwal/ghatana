@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useState, useCallback } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   Database,
@@ -42,7 +42,7 @@ export interface DatabaseEntity {
   readonly fields?: readonly string[];
 }
 
-export interface DatabaseNodeData {
+export interface DatabaseNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly description?: string;
   readonly databaseType: DatabaseType;
@@ -61,7 +61,9 @@ export interface DatabaseNodeData {
   readonly onOpenComments?: (nodeId: string) => void;
 }
 
-export interface DatabaseNodeProps extends NodeProps<DatabaseNodeData> {}
+type DatabaseCanvasNode = Node<DatabaseNodeData>;
+
+export interface DatabaseNodeProps extends NodeProps<DatabaseCanvasNode> {}
 
 // =============================================================================
 // Constants
@@ -207,8 +209,8 @@ export const DatabaseNode = memo<DatabaseNodeProps>(({ id, data, selected }) => 
               Managed
             </span>
           )}
-          {data.backupEnabled && <HardDrive className="w-3.5 h-3.5 text-blue-600" title="Backups Enabled" />}
-          {data.hasReplication && <Layers className="w-3.5 h-3.5 text-purple-600" title="Replication" />}
+          {data.backupEnabled && <span title="Backups Enabled"><HardDrive className="w-3.5 h-3.5 text-blue-600" /></span>}
+          {data.hasReplication && <span title="Replication"><Layers className="w-3.5 h-3.5 text-purple-600" /></span>}
           <div className="relative">
             <button
               onClick={(e) => {

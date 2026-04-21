@@ -18,7 +18,24 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { VerifyStepData, VerificationEvidence, ChecklistItem } from '@yappc/core/types';
+interface VerificationEvidence {
+    id: string;
+    type: 'TEST_RESULT' | 'SCREENSHOT' | 'LOG' | 'MANUAL_CHECK';
+    name: string;
+    status: 'PASS' | 'FAIL' | 'SKIPPED';
+}
+
+interface ChecklistItem {
+    id: string;
+    label: string;
+    checked: boolean;
+}
+
+interface VerifyStepData {
+    verificationStatus: 'PENDING' | 'PASS' | 'FAIL';
+    acceptanceChecklist: ChecklistItem[];
+    evidence: VerificationEvidence[];
+}
 
 // ============================================================================
 // CONSTANTS
@@ -46,7 +63,7 @@ export function VerifyStep() {
     const [newEvidenceStatus, setNewEvidenceStatus] = React.useState<VerificationEvidence['status']>('PASS');
 
     // Get current data (draft or saved)
-    const baseData = draftData ?? workflow?.steps.verify.data;
+    const baseData = (draftData ?? workflow?.steps.verify.data) as Partial<VerifyStepData> | null;
     const currentData: VerifyStepData = {
         verificationStatus: baseData?.verificationStatus ?? 'PENDING',
         acceptanceChecklist: baseData?.acceptanceChecklist ?? [],
@@ -59,10 +76,10 @@ export function VerifyStep() {
 
     // Calculate overall status
     const evidence = currentData.evidence ?? [];
-    const passCount = evidence.filter((e) => e.status === 'PASS').length;
-    const failCount = evidence.filter((e) => e.status === 'FAIL').length;
+    const passCount = evidence.filter((e: VerificationEvidence) => e.status === 'PASS').length;
+    const failCount = evidence.filter((e: VerificationEvidence) => e.status === 'FAIL').length;
     const checklist = currentData.acceptanceChecklist ?? [];
-    const checkedCount = checklist.filter((c) => c.checked).length;
+    const checkedCount = checklist.filter((c: ChecklistItem) => c.checked).length;
 
     // Checklist
     const handleAddChecklistItem = () => {
@@ -80,7 +97,7 @@ export function VerifyStep() {
     const handleToggleChecklistItem = (id: string) => {
         handleChange(
             'acceptanceChecklist',
-            checklist.map((item) =>
+            checklist.map((item: ChecklistItem) =>
                 item.id === id ? { ...item, checked: !item.checked } : item
             )
         );
@@ -89,7 +106,7 @@ export function VerifyStep() {
     const handleRemoveChecklistItem = (id: string) => {
         handleChange(
             'acceptanceChecklist',
-            checklist.filter((item) => item.id !== id)
+            checklist.filter((item: ChecklistItem) => item.id !== id)
         );
     };
 
@@ -110,7 +127,7 @@ export function VerifyStep() {
     const handleRemoveEvidence = (id: string) => {
         handleChange(
             'evidence',
-            evidence.filter((e) => e.id !== id)
+            evidence.filter((e: VerificationEvidence) => e.id !== id)
         );
     };
 
@@ -119,7 +136,7 @@ export function VerifyStep() {
             {/* Acceptance Checklist */}
             <Box className="mb-8">
                 <Box className="flex items-center justify-between mb-4">
-                    <Typography as="h6">
+                    <Typography className="text-lg font-semibold">
                         Acceptance Checklist
                     </Typography>
                     <Box className="flex gap-2">
@@ -179,15 +196,16 @@ export function VerifyStep() {
                                         />
                                     </ListItemIcon>
                                     <ListItemText
-                                        primary={item.label}
-                                        primaryTypographyProps={{
-                                            sx: item.checked ? { textDecoration: 'line-through', color: 'text.secondary' } : {},
-                                        }}
+                                        primary={
+                                            <Typography className={item.checked ? 'text-gray-500 line-through' : ''}>
+                                                {item.label}
+                                            </Typography>
+                                        }
                                     />
                                     <ListItemSecondaryAction>
                                         <IconButton
                                             edge="end"
-                                            size="sm"
+                                            size="small"
                                             onClick={() => handleRemoveChecklistItem(item.id)}
                                         >
                                             <DeleteIcon size={16} />
@@ -205,7 +223,7 @@ export function VerifyStep() {
 
             {/* Evidence */}
             <Box className="mb-8">
-                <Typography as="h6" gutterBottom>
+                <Typography gutterBottom className="text-lg font-semibold">
                     Verification Evidence
                 </Typography>
 
@@ -213,7 +231,11 @@ export function VerifyStep() {
                     <ToggleButtonGroup
                         value={newEvidenceType}
                         exclusive
-                        onChange={(_, v) => v && setNewEvidenceType(v)}
+                            onChange={(value) => {
+                                if (typeof value === 'string') {
+                                    setNewEvidenceType(value as VerificationEvidence['type']);
+                                }
+                            }}
                         size="sm"
                     >
                         {EVIDENCE_TYPES.map((type) => (
@@ -236,13 +258,17 @@ export function VerifyStep() {
                     <ToggleButtonGroup
                         value={newEvidenceStatus}
                         exclusive
-                        onChange={(_, v) => v && setNewEvidenceStatus(v)}
+                        onChange={(value) => {
+                            if (typeof value === 'string') {
+                                setNewEvidenceStatus(value as VerificationEvidence['status']);
+                            }
+                        }}
                         size="sm"
                     >
-                        <ToggleButton value="PASS" tone="success">
+                        <ToggleButton value="PASS">
                             Pass
                         </ToggleButton>
-                        <ToggleButton value="FAIL" tone="danger">
+                        <ToggleButton value="FAIL">
                             Fail
                         </ToggleButton>
                         <ToggleButton value="SKIPPED">
@@ -261,7 +287,7 @@ export function VerifyStep() {
 
                 {evidence.length > 0 && (
                     <List>
-                        {evidence.map((ev, index) => {
+                        {evidence.map((ev: VerificationEvidence, index: number) => {
                             const evidenceType = EVIDENCE_TYPES.find((t) => t.value === ev.type);
                             const EvidenceIcon = evidenceType?.icon || TestIcon;
 
@@ -282,7 +308,7 @@ export function VerifyStep() {
                                             className="mr-2"
                                         />
                                         <IconButton
-                                            size="sm"
+                                            size="small"
                                             onClick={() => handleRemoveEvidence(ev.id)}
                                         >
                                             <DeleteIcon size={16} />

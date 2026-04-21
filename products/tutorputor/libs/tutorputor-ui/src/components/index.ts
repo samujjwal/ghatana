@@ -1,14 +1,20 @@
 /**
- * @ghatana/tutorputor-ui-shared
+ * @ghatana/tutorputor-ui Components
  *
- * Shared UI utilities and providers for the Tutorputor product suite.
+ * Shared UI components and utilities for the Tutorputor product suite.
+ * These exports are shared by all Tutorputor applications to prevent code drift.
  *
- * These exports are shared by both `tutorputor-admin` and `tutorputor-web`
- * to prevent code drift from maintaining identical copies.
+ * Usage boundaries:
+ * - Use primitives from ./primitives for basic UI components
+ * - Do not duplicate these components in app-specific folders
+ * - Add new shared components to ./primitives
  *
- * @module @ghatana/tutorputor-ui-shared
+ * @module @ghatana/tutorputor-ui/components
  */
 
 export { cn } from './utils';
 export { MinimalThemeProvider } from './MinimalThemeProvider';
 export type { MinimalThemeProviderProps } from './MinimalThemeProvider';
+
+// Export primitive components
+export * from './primitives';

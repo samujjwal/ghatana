@@ -5,6 +5,7 @@ import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
 import com.ghatana.datacloud.launcher.http.RequestTraceSupport;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.http.server.response.ErrorResponse;
 import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
@@ -102,14 +103,12 @@ public class HttpHandlerSupport {
 
     /**
      * Builds an error response with the given HTTP status code and message.
+     * Uses platform's ErrorResponse for consistent error semantics (CROSS-P1-3).
      */
     public HttpResponse errorResponse(int code, String message) {
         try {
-            String json = objectMapper.writeValueAsString(Map.of(
-                "error", message,
-                "code", code,
-                "timestamp", Instant.now().toString()
-            ));
+            ErrorResponse errorResponse = ErrorResponse.of(code, message);
+            String json = objectMapper.writeValueAsString(errorResponse);
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
@@ -231,15 +230,16 @@ public class HttpHandlerSupport {
     /**
      * Builds an error response with the given HTTP status code, message, and
      * an {@code X-Request-Id} header set to {@code correlationId}.
+     * Uses platform's ErrorResponse for consistent error semantics (CROSS-P1-3).
      */
     public HttpResponse errorResponse(int code, String message, String correlationId) {
         try {
-            String json = objectMapper.writeValueAsString(Map.of(
-                "error", message,
-                "code", code,
-                "timestamp", Instant.now().toString(),
-                "requestId", correlationId
-            ));
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(code)
+                .message(message)
+                .traceId(correlationId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))

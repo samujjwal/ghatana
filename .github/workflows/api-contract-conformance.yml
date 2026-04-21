@@ -1,0 +1,80 @@
+name: API Contract Conformance Gate
+
+on:
+  pull_request:
+    paths:
+      - 'products/phr/**'
+      - 'products/finance/**'
+      - 'platform/java/testing/**'
+      - '.github/workflows/api-contract-conformance.yml'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  phr-contract-conformance:
+    name: PHR API Contract Conformance
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      
+      - name: Run PHR API Contract Conformance Check
+        run: |
+          ./gradlew :products:phr:checkApiContractConformance --no-daemon --stacktrace
+      
+      - name: Upload PHR contract conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phr-contract-conformance-report
+          path: products/phr/build/reports/tests/test/
+
+  finance-contract-conformance:
+    name: Finance API Contract Conformance
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      
+      - name: Run Finance API Contract Conformance Check
+        run: |
+          ./gradlew :products:finance:checkApiContractConformance --no-daemon --stacktrace
+      
+      - name: Upload Finance contract conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-contract-conformance-report
+          path: products/finance/build/reports/tests/test/
+
+  contract-drift-summary:
+    name: Contract Drift Summary
+    runs-on: ubuntu-latest
+    needs: [phr-contract-conformance, finance-contract-conformance]
+    if: always()
+    
+    steps:
+      - name: Check for failures
+        run: |
+          if [ "${{ needs.phr-contract-conformance.result }}" == "failure" ] || [ "${{ needs.finance-contract-conformance.result }}" == "failure" ]; then
+            echo "::error::API contract conformance check failed. Please review the violation details above."
+            exit 1
+          else
+            echo "All API contract conformance checks passed."
+          fi

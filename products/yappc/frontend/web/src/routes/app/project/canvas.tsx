@@ -103,6 +103,7 @@ import {
   CanvasNodeContextMenu,
   CanvasOutlinePanel,
   CanvasStatusBar,
+  type CanvasSyncStatus,
   DraggableBox,
   type NodeContextMenuState,
   useCanvasDrawing,
@@ -203,9 +204,10 @@ function UnifiedCanvasInner() {
     queryFn: async () => {
       const response = await fetch(`/api/projects/${projectId}`);
       if (!response.ok) return null;
-      return parseJsonResponse<CanvasProjectData>(
+      return parseJsonResourceResponse<CanvasProjectData>(
         response,
-        'project canvas query'
+        'project canvas query',
+        'project'
       );
     },
     enabled: !!projectId,
@@ -324,6 +326,7 @@ function UnifiedCanvasInner() {
 
   const hasSelection = canvas.selectedNodeIds.length > 0;
   const hasMultipleSelection = canvas.selectedNodeIds.length > 1;
+  const canvasSyncStatus: CanvasSyncStatus = 'local-only';
 
   // =========================================================================
   // LIFECYCLE
@@ -872,6 +875,7 @@ function UnifiedCanvasInner() {
               selectedCount={canvas.selectedNodeIds.length}
               currentPhase={currentPhase}
               zoom={canvas.viewport.zoom}
+              syncStatus={canvasSyncStatus}
             />
 
             {projectId && <CanvasCollaborationBanner projectId={projectId} />}

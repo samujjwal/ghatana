@@ -1,0 +1,243 @@
+groups:
+  - name: phr_golden_signals
+    interval: 30s
+    rules:
+      # Latency - High request latency
+      - alert: PhrHighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{service="phr-platform"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          product: phr
+          signal: latency
+        annotations:
+          summary: "PHR high latency detected"
+          description: "PHR 95th percentile latency is {{ $value }}s"
+
+      - alert: PhrCriticalLatency
+        expr: histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{service="phr-platform"}[5m])) > 5
+        for: 2m
+        labels:
+          severity: critical
+          product: phr
+          signal: latency
+        annotations:
+          summary: "PHR critical latency detected"
+          description: "PHR 99th percentile latency is {{ $value }}s"
+
+      # Traffic - Low traffic (potential outage)
+      - alert: PhrLowTraffic
+        expr: rate(http_server_requests_seconds_count{service="phr-platform"}[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          product: phr
+          signal: traffic
+        annotations:
+          summary: "PHR low traffic detected"
+          description: "PHR request rate is {{ $value }} req/s"
+
+      # Errors - High error rate
+      - alert: PhrHighErrorRate
+        expr: rate(http_server_requests_seconds_count{service="phr-platform",status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{service="phr-platform"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          product: phr
+          signal: errors
+        annotations:
+          summary: "PHR high error rate detected"
+          description: "PHR error rate is {{ $value | humanizePercentage }}"
+
+      - alert: PhrCriticalErrorRate
+        expr: rate(http_server_requests_seconds_count{service="phr-platform",status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{service="phr-platform"}[5m]) > 0.15
+        for: 2m
+        labels:
+          severity: critical
+          product: phr
+          signal: errors
+        annotations:
+          summary: "PHR critical error rate detected"
+          description: "PHR error rate is {{ $value | humanizePercentage }}"
+
+      # Saturation - High CPU usage
+      - alert: PhrHighCpuUsage
+        expr: rate(process_cpu_seconds_total{service="phr-platform"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          product: phr
+          signal: saturation
+        annotations:
+          summary: "PHR high CPU usage detected"
+          description: "PHR CPU usage is {{ $value | humanizePercentage }}"
+
+      # Saturation - High memory usage
+      - alert: PhrHighMemoryUsage
+        expr: jvm_memory_used_bytes{service="phr-platform",area="heap"} / jvm_memory_max_bytes{service="phr-platform",area="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          product: phr
+          signal: saturation
+        annotations:
+          summary: "PHR high memory usage detected"
+          description: "PHR heap memory usage is {{ $value | humanizePercentage }}"
+
+  - name: finance_golden_signals
+    interval: 30s
+    rules:
+      # Latency - High request latency
+      - alert: FinanceHighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{service="finance-platform"}[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          product: finance
+          signal: latency
+        annotations:
+          summary: "Finance high latency detected"
+          description: "Finance 95th percentile latency is {{ $value }}s"
+
+      - alert: FinanceCriticalLatency
+        expr: histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{service="finance-platform"}[5m])) > 2
+        for: 2m
+        labels:
+          severity: critical
+          product: finance
+          signal: latency
+        annotations:
+          summary: "Finance critical latency detected"
+          description: "Finance 99th percentile latency is {{ $value }}s"
+
+      # Traffic - Low traffic (potential outage)
+      - alert: FinanceLowTraffic
+        expr: rate(http_server_requests_seconds_count{service="finance-platform"}[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          product: finance
+          signal: traffic
+        annotations:
+          summary: "Finance low traffic detected"
+          description: "Finance request rate is {{ $value }} req/s"
+
+      # Errors - High error rate
+      - alert: FinanceHighErrorRate
+        expr: rate(http_server_requests_seconds_count{service="finance-platform",status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{service="finance-platform"}[5m]) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          product: finance
+          signal: errors
+        annotations:
+          summary: "Finance high error rate detected"
+          description: "Finance error rate is {{ $value | humanizePercentage }}"
+
+      - alert: FinanceCriticalErrorRate
+        expr: rate(http_server_requests_seconds_count{service="finance-platform",status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{service="finance-platform"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          product: finance
+          signal: errors
+        annotations:
+          summary: "Finance critical error rate detected"
+          description: "Finance error rate is {{ $value | humanizePercentage }}"
+
+      # Saturation - High CPU usage
+      - alert: FinanceHighCpuUsage
+        expr: rate(process_cpu_seconds_total{service="finance-platform"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          product: finance
+          signal: saturation
+        annotations:
+          summary: "Finance high CPU usage detected"
+          description: "Finance CPU usage is {{ $value | humanizePercentage }}"
+
+      # Saturation - High memory usage
+      - alert: FinanceHighMemoryUsage
+        expr: jvm_memory_used_bytes{service="finance-platform",area="heap"} / jvm_memory_max_bytes{service="finance-platform",area="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          product: finance
+          signal: saturation
+        annotations:
+          summary: "Finance high memory usage detected"
+          description: "Finance heap memory usage is {{ $value | humanizePercentage }}"
+
+  - name: kernel_golden_signals
+    interval: 30s
+    rules:
+      # Latency - High request latency
+      - alert: KernelHighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{service="platform-kernel"}[5m])) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          product: kernel
+          signal: latency
+        annotations:
+          summary: "Kernel high latency detected"
+          description: "Kernel 95th percentile latency is {{ $value }}s"
+
+      - alert: KernelCriticalLatency
+        expr: histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{service="platform-kernel"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: critical
+          product: kernel
+          signal: latency
+        annotations:
+          summary: "Kernel critical latency detected"
+          description: "Kernel 99th percentile latency is {{ $value }}s"
+
+      # Errors - High error rate
+      - alert: KernelHighErrorRate
+        expr: rate(http_server_requests_seconds_count{service="platform-kernel",status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{service="platform-kernel"}[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          product: kernel
+          signal: errors
+        annotations:
+          summary: "Kernel high error rate detected"
+          description: "Kernel error rate is {{ $value | humanizePercentage }}"
+
+      - alert: KernelCriticalErrorRate
+        expr: rate(http_server_requests_seconds_count{service="platform-kernel",status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{service="platform-kernel"}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          product: kernel
+          signal: errors
+        annotations:
+          summary: "Kernel critical error rate detected"
+          description: "Kernel error rate is {{ $value | humanizePercentage }}"
+
+      # Saturation - High CPU usage
+      - alert: KernelHighCpuUsage
+        expr: rate(process_cpu_seconds_total{service="platform-kernel"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          product: kernel
+          signal: saturation
+        annotations:
+          summary: "Kernel high CPU usage detected"
+          description: "Kernel CPU usage is {{ $value | humanizePercentage }}"
+
+      # Saturation - High memory usage
+      - alert: KernelHighMemoryUsage
+        expr: jvm_memory_used_bytes{service="platform-kernel",area="heap"} / jvm_memory_max_bytes{service="platform-kernel",area="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          product: kernel
+          signal: saturation
+        annotations:
+          summary: "Kernel high memory usage detected"
+          description: "Kernel heap memory usage is {{ $value | humanizePercentage }}"

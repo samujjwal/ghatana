@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useState, useCallback } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   Plug,
@@ -65,7 +65,7 @@ export interface IntegrationCapability {
   readonly required: boolean;
 }
 
-export interface IntegrationNodeData {
+export interface IntegrationNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly description?: string;
   readonly integrationType: IntegrationType;
@@ -88,7 +88,9 @@ export interface IntegrationNodeData {
   readonly onOpenDocs?: (url: string) => void;
 }
 
-export interface IntegrationNodeProps extends NodeProps<IntegrationNodeData> {}
+type IntegrationCanvasNode = Node<IntegrationNodeData>;
+
+export interface IntegrationNodeProps extends NodeProps<IntegrationCanvasNode> {}
 
 // =============================================================================
 // Constants

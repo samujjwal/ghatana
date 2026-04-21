@@ -4,6 +4,10 @@ plugins {
 
 description = "Finance product - Core trading and risk management platform"
 
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-Xlint:unchecked")
+}
+
 dependencies {
     api(project(":platform-kernel:kernel-core"))
     api(project(":platform-kernel:kernel-plugin"))
@@ -56,4 +60,15 @@ tasks.register<JavaExec>("validateContracts") {
     description = "Validates Finance contracts for deployment"
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("com.ghatana.finance.contracts.ContractValidationRunner")
+}
+
+tasks.register<Test>("checkApiContractConformance") {
+    group = "verification"
+    description = "Validates that implemented routes match the OpenAPI specification (CI gate for contract drift)"
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    filter {
+        includeTestsMatching("com.ghatana.products.finance.http.FinanceApiContractConformanceTest")
+    }
 }

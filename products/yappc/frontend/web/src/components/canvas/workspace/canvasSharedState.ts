@@ -2,7 +2,7 @@ import { atom } from 'jotai';
 
 import { activePersonaAtom as activeWorkspacePersonaAtom } from '@/stores/user.store';
 
-export type CanvasInteractionMode = 'select' | 'pan' | 'draw' | 'text' | 'navigate';
+export type CanvasInteractionMode = 'select' | 'pan' | 'draw' | 'text' | 'navigate' | 'sketch' | 'code' | 'diagram';
 export type SketchTool = 'select' | 'pen' | 'rectangle';
 export type DiagramType = 'architecture' | 'sequence' | 'flowchart' | 'custom';
 export type LifecyclePhase = 'intent' | 'shape' | 'validate' | 'generate' | 'run' | 'observe' | 'improve';
@@ -62,7 +62,101 @@ export interface CanvasProjectMetadata {
   [key: string]: unknown;
 }
 
-const defaultDocument = () => ({
+interface CanvasElementBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface CanvasElementTransform {
+  position?: {
+    x: number;
+    y: number;
+  };
+}
+
+interface CanvasDocumentElement {
+  id: string;
+  bounds?: Partial<CanvasElementBounds>;
+  transform?: CanvasElementTransform;
+  [key: string]: unknown;
+}
+
+interface CanvasDocument {
+  version: string;
+  id: string;
+  title: string;
+  viewport: {
+    center: { x: number; y: number };
+    zoom: number;
+  };
+  elements: Record<string, CanvasDocumentElement>;
+  elementOrder: string[];
+  metadata: Record<string, unknown>;
+  capabilities: {
+    canEdit: boolean;
+    canZoom: boolean;
+    canPan: boolean;
+    canSelect: boolean;
+    canUndo: boolean;
+    canRedo: boolean;
+    canExport: boolean;
+    canImport: boolean;
+    canCollaborate: boolean;
+    canPersist: boolean;
+    allowedElementTypes: string[];
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CanvasSelectionState {
+  selectedIds: string[];
+  focusedId?: string;
+  hoveredId?: string;
+}
+
+interface CanvasViewportState {
+  center: { x: number; y: number };
+  zoom: number;
+  bounds: CanvasElementBounds;
+}
+
+interface CanvasHistoryEntry {
+  [key: string]: unknown;
+}
+
+interface CanvasHistoryState {
+  entries: CanvasHistoryEntry[];
+  currentIndex: number;
+}
+
+interface CanvasUIState {
+  isDragging: boolean;
+  isSelecting: boolean;
+  isPanning: boolean;
+  isLoading: boolean;
+  mode: CanvasInteractionMode;
+}
+
+interface CanvasPerformanceState {
+  renderTime: number;
+  fps: number;
+  lastUpdate: Date;
+}
+
+interface UpdateElementPayload {
+  id: string;
+  changes: Partial<CanvasDocumentElement>;
+}
+
+interface PanDelta {
+  x: number;
+  y: number;
+}
+
+const defaultDocument = (): CanvasDocument => ({
   version: '1.0.0',
   id: 'canvas-document',
   title: 'Untitled Canvas',
@@ -103,12 +197,12 @@ export const hybridCanvasStateAtom = atom({
 
 export const renderingModeAtom = atom<'reactflow' | 'document'>('reactflow');
 export const activeLayerAtom = atom<string | null>(null);
-export const canvasDocumentAtom = atom(defaultDocument());
-export const canvasSelectionAtom = atom({ selectedIds: [], focusedId: undefined, hoveredId: undefined });
-export const canvasViewportAtom = atom({ center: { x: 0, y: 0 }, zoom: 1, bounds: { x: -1000, y: -1000, width: 2000, height: 2000 } });
-export const canvasHistoryAtom = atom({ entries: [], currentIndex: -1 });
-export const canvasUIStateAtom = atom({ isDragging: false, isSelecting: false, isPanning: false, isLoading: false, mode: 'select' });
-export const canvasPerformanceAtom = atom({ renderTime: 0, fps: 60, lastUpdate: new Date() });
+export const canvasDocumentAtom = atom<CanvasDocument>(defaultDocument());
+export const canvasSelectionAtom = atom<CanvasSelectionState>({ selectedIds: [], focusedId: undefined, hoveredId: undefined });
+export const canvasViewportAtom = atom<CanvasViewportState>({ center: { x: 0, y: 0 }, zoom: 1, bounds: { x: -1000, y: -1000, width: 2000, height: 2000 } });
+export const canvasHistoryAtom = atom<CanvasHistoryState>({ entries: [], currentIndex: -1 });
+export const canvasUIStateAtom = atom<CanvasUIState>({ isDragging: false, isSelecting: false, isPanning: false, isLoading: false, mode: 'select' });
+export const canvasPerformanceAtom = atom<CanvasPerformanceState>({ renderTime: 0, fps: 60, lastUpdate: new Date() });
 export const canvasCollaborationAtom = atom({ collaborators: [] });
 export const canvasInteractionModeAtom = atom<CanvasInteractionMode>('select');
 export const sketchToolAtom = atom<SketchTool>('select');
@@ -224,11 +318,11 @@ export const boundingBoxAtom = atom((get) => {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 });
 
-export const updateDocumentAtom = atom(null, (_get, set, document) => {
+export const updateDocumentAtom = atom(null, (_get, set, document: CanvasDocument) => {
   set(canvasDocumentAtom, document);
   set(hasUnsavedChangesAtom, true);
 });
-export const addElementAtom = atom(null, (get, set, element) => {
+export const addElementAtom = atom(null, (get, set, element: CanvasDocumentElement) => {
   const document = get(canvasDocumentAtom);
   const elementOrder = document.elementOrder.includes(element.id)
     ? document.elementOrder
@@ -241,7 +335,7 @@ export const addElementAtom = atom(null, (get, set, element) => {
   });
   set(hasUnsavedChangesAtom, true);
 });
-export const updateElementAtom = atom(null, (get, set, payload) => {
+export const updateElementAtom = atom(null, (get, set, payload: UpdateElementPayload) => {
   const { id, changes } = payload;
   const document = get(canvasDocumentAtom);
   const current = document.elements[id];
@@ -273,13 +367,13 @@ export const removeElementAtom = atom(null, (get, set, elementId: string) => {
   });
   set(hasUnsavedChangesAtom, true);
 });
-export const updateSelectionAtom = atom(null, (get, set, payload) => {
+export const updateSelectionAtom = atom(null, (get, set, payload: Partial<CanvasSelectionState>) => {
   set(canvasSelectionAtom, {
     ...get(canvasSelectionAtom),
     selectedIds: payload.selectedIds ?? [],
   });
 });
-export const addHistoryEntryAtom = atom(null, (get, set, entry) => {
+export const addHistoryEntryAtom = atom(null, (get, set, entry: CanvasHistoryEntry) => {
   const history = get(canvasHistoryAtom);
   const entries = [...history.entries, entry].slice(-MAX_HISTORY_SIZE);
   set(canvasHistoryAtom, { entries, currentIndex: entries.length - 1 });
@@ -287,10 +381,10 @@ export const addHistoryEntryAtom = atom(null, (get, set, entry) => {
 export const resetUIStateAtom = atom(null, (_get, set) => {
   set(canvasUIStateAtom, { isDragging: false, isSelecting: false, isPanning: false, isLoading: false, mode: 'select' });
 });
-export const batchUpdateElementsAtom = atom(null, (_get, set, updates) => {
+export const batchUpdateElementsAtom = atom(null, (_get, set, updates: UpdateElementPayload[]) => {
   updates.forEach((update) => set(updateElementAtom, update));
 });
-export const panViewportAtom = atom(null, (get, set, delta) => {
+export const panViewportAtom = atom(null, (get, set, delta: PanDelta) => {
   const viewport = get(canvasViewportAtom);
   set(canvasViewportAtom, {
     ...viewport,
@@ -304,9 +398,9 @@ export const zoomViewportAtom = atom(null, (get, set, zoom: number) => {
 export const clearHistoryAtom = atom(null, (_get, set) => {
   set(canvasHistoryAtom, { entries: [], currentIndex: -1 });
 });
-export const updateUIStateAtom = atom(null, (get, set, patch) => {
+export const updateUIStateAtom = atom(null, (get, set, patch: Partial<CanvasUIState>) => {
   set(canvasUIStateAtom, { ...get(canvasUIStateAtom), ...patch });
 });
-export const updatePerformanceAtom = atom(null, (get, set, patch) => {
+export const updatePerformanceAtom = atom(null, (get, set, patch: Partial<CanvasPerformanceState>) => {
   set(canvasPerformanceAtom, { ...get(canvasPerformanceAtom), ...patch, lastUpdate: new Date() });
 });

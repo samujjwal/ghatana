@@ -20,7 +20,7 @@ import {
     type ReactFlowInstance, type NodeChange, type EdgeChange, type Connection,
 } from '@xyflow/react';
 import { type LifecyclePhase } from '@/types/lifecycle';
-import { SpatialZones, GhostNodes } from './workspace';
+import { SpatialZones, GhostNodes, type GhostNodeTemplate } from './workspace';
 import { type ArtifactNodeData } from './nodes/ArtifactNode';
 import { type ComputedViewResult } from './hooks/useComputedView';
 import { AlignmentGuides } from './AlignmentGuides';
@@ -28,6 +28,7 @@ import { AlignmentToolbar } from './toolbar/AlignmentToolbar';
 import { EnhancedSketchLayer } from './sketch/EnhancedSketchLayer';
 import { SketchToolbar } from './toolbar/SketchToolbar';
 import { DiagramToolbar } from './toolbar/DiagramToolbar';
+import { type CanvasInteractionMode, type SketchTool } from './workspace/canvasSharedState';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -36,22 +37,22 @@ interface DragDropSurface {
     handleCanvasDrop: (e: React.DragEvent) => void;
     handleCanvasDragOver: (e: React.DragEvent) => void;
     handleCanvasDragLeave: (e: React.DragEvent) => void;
-    onNodeDragStart: (e: React.MouseEvent, node: Node) => void;
+    onNodeDragStart: (e: React.MouseEvent, node: Node, allNodes: Node[]) => void;
     onNodeDrag: (e: React.MouseEvent, node: Node) => void;
-    onNodeDragStop: (e: React.MouseEvent, node: Node) => void;
+    onNodeDragStop: (e: React.MouseEvent, node: Node, allNodes: Node[]) => void;
 }
 
 export interface CanvasReactFlowSurfaceProps {
     // ── Refs & dimensions ────────────────────────────────────────────────
-    canvasSurfaceRef: React.RefObject<HTMLDivElement>;
+    canvasSurfaceRef: React.RefObject<HTMLDivElement | null>;
     canvasSize: { width: number; height: number };
     // ── Interaction mode ─────────────────────────────────────────────────
-    interactionMode: 'navigate' | 'sketch' | 'code' | 'diagram';
+    interactionMode: CanvasInteractionMode;
     currentPhase: LifecyclePhase;
     // ── Theme ────────────────────────────────────────────────────────────
     minimapMaskColor: string;
     // ── Sketch layer ─────────────────────────────────────────────────────
-    sketchTool: string;
+    sketchTool: SketchTool;
     sketchColor: string;
     sketchStrokeWidth: number;
     // ── ReactFlow data ───────────────────────────────────────────────────
@@ -72,7 +73,7 @@ export interface CanvasReactFlowSurfaceProps {
     // ── Aggregated hook refs ─────────────────────────────────────────────
     dragDrop: DragDropSurface;
     handleZoomToPhase: (phase: LifecyclePhase) => void;
-    handleGhostNodeCreate: (template: unknown, position: { x: number; y: number }) => void;
+    handleGhostNodeCreate: (template: GhostNodeTemplate) => void;
     setIsAIModalOpen: (open: boolean) => void;
 }
 

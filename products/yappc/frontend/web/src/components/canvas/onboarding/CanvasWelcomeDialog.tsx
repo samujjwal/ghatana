@@ -198,14 +198,6 @@ export function CanvasWelcomeDialog({
         <Dialog
             open={open}
             onClose={handleSkip}
-            size="md"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: 3,
-                    overflow: 'visible',
-                },
-            }}
         >
             {/* Close Button */}
             <IconButton
@@ -229,10 +221,9 @@ export function CanvasWelcomeDialog({
                         <Chip
                             label={`Step ${activeStep + 1} of ${steps.length}`}
                             size="sm"
-                            tone="primary"
                             variant="outlined"
                         />
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                        <Typography className="text-xs text-gray-500" color="text.secondary">
                             ~{steps.length - activeStep} min remaining
                         </Typography>
                     </Stack>
@@ -240,7 +231,6 @@ export function CanvasWelcomeDialog({
                     {/* Visual Stepper (Dots) */}
                     <Stepper
                         activeStep={activeStep}
-                        alternativeLabel
                         className="mb-8"
                     >
                         {steps.map((step) => (
@@ -259,13 +249,12 @@ export function CanvasWelcomeDialog({
                         </Box>
 
                         {/* Title */}
-                        <Typography as="h5" fontWeight={600}>
+                        <Typography variant="h5" fontWeight={600}>
                             {currentStep.title}
                         </Typography>
 
                         {/* Description */}
                         <Typography
-                            as="p"
                             color="text.secondary"
                             className="max-w-[480px]"
                         >
@@ -288,7 +277,7 @@ export function CanvasWelcomeDialog({
                                     <CheckCircleOutline
                                         className="mt-0.5 text-green-600 text-xl"
                                     />
-                                    <Typography as="p" className="text-sm" color="text.primary">
+                                    <Typography className="text-sm" color="text.primary">
                                         {tip}
                                     </Typography>
                                 </Stack>
@@ -306,7 +295,7 @@ export function CanvasWelcomeDialog({
                                 />
                             }
                             label={
-                                <Typography as="p" className="text-sm" color="text.secondary">
+                                <Typography className="text-sm" color="text.secondary">
                                     Don't show this again
                                 </Typography>
                             }
@@ -351,9 +340,8 @@ export function CanvasWelcomeDialog({
 
                     {/* Keyboard Hint */}
                     <Typography
-                        as="span" className="text-xs text-gray-500"
+                        className="mt-4 block text-center text-xs text-gray-500"
                         color="text.tertiary"
-                        className="block text-center mt-4"
                     >
                         Use arrow keys to navigate • Press Enter to continue
                     </Typography>

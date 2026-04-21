@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import { GitCompareArrowsLeftRight as DiffIcon, ArrowLeft as LeftArrow, ArrowRight as RightArrow } from 'lucide-react';
+import { ArrowLeft as LeftArrow, ArrowRight as RightArrow, GitCompare as DiffIcon } from 'lucide-react';
 import {
   Box,
   Stack,
@@ -15,9 +15,19 @@ import {
   Paper,
   Divider,
 } from '@ghatana/design-system';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 
-import type { PageConfig } from '@yappc/config-schema';
+interface PageComponentConfig {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface PageConfig {
+  id: string;
+  title: string;
+  route: string;
+  components?: PageComponentConfig[];
+}
 
 /**
  * @doc.type component
@@ -81,8 +91,8 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
     const targetComponents = targetConfig.components || [];
 
     // Check for added components
-    targetComponents.forEach((targetComp) => {
-      const baseComp = baseComponents.find((c) => c.id === targetComp.id);
+    targetComponents.forEach((targetComp: PageComponentConfig) => {
+      const baseComp = baseComponents.find((c: PageComponentConfig) => c.id === targetComp.id);
       if (!baseComp) {
         diff.push({
           path: `components.${targetComp.id}`,
@@ -94,8 +104,8 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
     });
 
     // Check for removed components
-    baseComponents.forEach((baseComp) => {
-      const targetComp = targetComponents.find((c) => c.id === baseComp.id);
+    baseComponents.forEach((baseComp: PageComponentConfig) => {
+      const targetComp = targetComponents.find((c: PageComponentConfig) => c.id === baseComp.id);
       if (!targetComp) {
         diff.push({
           path: `components.${baseComp.id}`,
@@ -107,8 +117,8 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
     });
 
     // Check for modified components
-    targetComponents.forEach((targetComp) => {
-      const baseComp = baseComponents.find((c) => c.id === targetComp.id);
+    targetComponents.forEach((targetComp: PageComponentConfig) => {
+      const baseComp = baseComponents.find((c: PageComponentConfig) => c.id === targetComp.id);
       if (baseComp) {
         const baseStr = JSON.stringify(baseComp);
         const targetStr = JSON.stringify(targetComp);
@@ -177,11 +187,11 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
 
   return (
     <Box data-testid="config-diff">
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Stack direction="row" alignItems="center" spacing={1}>
+      <Box className="mb-2 flex items-center justify-between">
+        <Box className="flex items-center gap-1">
           <DiffIcon size={16} />
           <Typography variant="h6">Config Diff</Typography>
-        </Stack>
+        </Box>
 
         <Button
           variant="contained"
@@ -190,9 +200,9 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
         >
           Apply {selectedSide === 'left' ? 'Left' : 'Right'}
         </Button>
-      </Stack>
+      </Box>
 
-      <Stack direction="row" spacing={2} mb={3}>
+      <Box className="mb-3 flex gap-2">
         <Button
           variant={selectedSide === 'left' ? 'contained' : 'outlined'}
           onClick={() => setSelectedSide('left')}
@@ -207,7 +217,7 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
         >
           Target Version
         </Button>
-      </Stack>
+      </Box>
 
       <Divider />
 

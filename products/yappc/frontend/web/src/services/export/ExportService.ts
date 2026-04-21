@@ -5,7 +5,25 @@
 import { ExportFormat } from './types';
 
 import type { ExportOptions, ExportResult } from './types';
-import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';
+import type {
+  CanvasConnection,
+  CanvasElement,
+  CanvasState,
+} from '../../components/canvas/workspace/canvasAtoms';
+
+type RenderableData = Record<string, unknown>;
+
+function getRenderableData(data: unknown): RenderableData {
+  return typeof data === 'object' && data !== null ? (data as RenderableData) : {};
+}
+
+function getNumber(data: RenderableData, key: string, fallback: number): number {
+  return typeof data[key] === 'number' ? (data[key] as number) : fallback;
+}
+
+function getString(data: RenderableData, key: string, fallback: string): string {
+  return typeof data[key] === 'string' ? (data[key] as string) : fallback;
+}
 
 /**
  *
@@ -174,7 +192,7 @@ class ExportServiceClass {
   ): Promise<void> {
     // Render connections first (so they appear behind nodes)
     for (const connection of canvasState.connections || []) {
-      await this.renderConnection(ctx, connection, scale);
+      await this.renderConnection(ctx, connection, canvasState.elements, scale);
     }
 
     // Render nodes
@@ -188,21 +206,23 @@ class ExportServiceClass {
    */
   private async renderConnection(
     ctx: CanvasRenderingContext2D,
-    connection: unknown,
+    connection: CanvasConnection,
+    elements: CanvasElement[],
     scale: number
   ): Promise<void> {
-    const { source, target, style = {} } = connection;
+    const { source, target } = connection;
+    const style = getRenderableData(connection.style);
 
     // Find source and target elements
-    const sourceElement = this.findElementById(source);
-    const targetElement = this.findElementById(target);
+    const sourceElement = this.findElementById(elements, source);
+    const targetElement = this.findElementById(elements, target);
 
     if (!sourceElement || !targetElement) return;
 
     // Calculate positions
     const sourcePos = {
       x: sourceElement.position.x * scale,
-      y: sourceElement.position.y * scale + (sourceElement.data.height || 50) / 2
+      y: sourceElement.position.y * scale + getNumber(getRenderableData(sourceElement.data), 'height', 50) / 2
     };
 
     const targetPos = {
@@ -214,7 +234,7 @@ class ExportServiceClass {
     ctx.beginPath();
     ctx.moveTo(sourcePos.x, sourcePos.y);
 
-    if (style.type === 'curved') {
+    if (getString(style, 'type', '') === 'curved') {
       // Draw curved line
       const controlX = (sourcePos.x + targetPos.x) / 2;
       const controlY = Math.min(sourcePos.y, targetPos.y) - 50;
@@ -224,12 +244,12 @@ class ExportServiceClass {
       ctx.lineTo(targetPos.x, targetPos.y);
     }
 
-    ctx.strokeStyle = style.color || '#666';
-    ctx.lineWidth = style.width || 2;
+    ctx.strokeStyle = getString(style, 'color', '#666');
+    ctx.lineWidth = getNumber(style, 'width', 2);
     ctx.stroke();
 
     // Draw arrowhead
-    this.drawArrowhead(ctx, sourcePos, targetPos, style.color || '#666');
+    this.drawArrowhead(ctx, sourcePos, targetPos, getString(style, 'color', '#666'));
   }
 
   /**
@@ -237,10 +257,11 @@ class ExportServiceClass {
    */
   private async renderElement(
     ctx: CanvasRenderingContext2D,
-    element: unknown,
+    element: CanvasElement,
     scale: number
   ): Promise<void> {
-    const { type, position, data = {} } = element;
+    const { type, position } = element;
+    const data = getRenderableData(element.data);
     const x = position.x * scale;
     const y = position.y * scale;
 
@@ -279,9 +300,10 @@ class ExportServiceClass {
     data: unknown,
     scale: number
   ): void {
-    const width = (data.width || 150) * scale;
-    const height = (data.height || 100) * scale;
-    const color = data.color || '#fff9c4';
+    const renderData = getRenderableData(data);
+    const width = getNumber(renderData, 'width', 150) * scale;
+    const height = getNumber(renderData, 'height', 100) * scale;
+    const color = getString(renderData, 'color', '#fff9c4');
 
     // Draw sticky note background
     ctx.fillStyle = color;
@@ -293,10 +315,11 @@ class ExportServiceClass {
     ctx.strokeRect(x, y, width, height);
 
     // Draw text
-    if (data.text) {
+    const text = getString(renderData, 'text', '');
+    if (text) {
       ctx.fillStyle = '#333';
       ctx.font = `${14 * scale}px Arial`;
-      ctx.fillText(data.text, x + 10 * scale, y + 20 * scale);
+      ctx.fillText(text, x + 10 * scale, y + 20 * scale);
     }
   }
 
@@ -310,9 +333,10 @@ class ExportServiceClass {
     data: unknown,
     scale: number
   ): void {
-    const width = (data.width || 400) * scale;
-    const height = (data.height || 300) * scale;
-    const color = data.color || '#e3f2fd';
+    const renderData = getRenderableData(data);
+    const width = getNumber(renderData, 'width', 400) * scale;
+    const height = getNumber(renderData, 'height', 300) * scale;
+    const color = getString(renderData, 'color', '#e3f2fd');
 
     // Draw frame background
     ctx.fillStyle = color;
@@ -324,10 +348,11 @@ class ExportServiceClass {
     ctx.strokeRect(x, y, width, height);
 
     // Draw title
-    if (data.title) {
+    const title = getString(renderData, 'title', '');
+    if (title) {
       ctx.fillStyle = '#1976d2';
       ctx.font = `bold ${16 * scale}px Arial`;
-      ctx.fillText(data.title, x + 15 * scale, y + 25 * scale);
+      ctx.fillText(title, x + 15 * scale, y + 25 * scale);
     }
   }
 
@@ -341,12 +366,13 @@ class ExportServiceClass {
     data: unknown,
     scale: number
   ): void {
-    const fontSize = data.fontSize || 16;
-    const color = data.color || '#333';
+    const renderData = getRenderableData(data);
+    const fontSize = getNumber(renderData, 'fontSize', 16);
+    const color = getString(renderData, 'color', '#333');
 
     ctx.fillStyle = color;
     ctx.font = `${fontSize * scale}px Arial`;
-    ctx.fillText(data.text || 'Text', x, y + fontSize * scale);
+    ctx.fillText(getString(renderData, 'text', 'Text'), x, y + fontSize * scale);
   }
 
   /**
@@ -360,8 +386,9 @@ class ExportServiceClass {
     data: unknown,
     scale: number
   ): void {
-    const color = data.color || '#e3f2fd';
-    const label = data.label || '';
+    const renderData = getRenderableData(data);
+    const color = getString(renderData, 'color', '#e3f2fd');
+    const label = getString(renderData, 'label', '');
 
     ctx.fillStyle = color;
     ctx.strokeStyle = '#2196f3';
@@ -369,8 +396,8 @@ class ExportServiceClass {
 
     switch (shapeType) {
       case 'rectangle':
-        const rectWidth = (data.width || 120) * scale;
-        const rectHeight = (data.height || 80) * scale;
+        const rectWidth = getNumber(renderData, 'width', 120) * scale;
+        const rectHeight = getNumber(renderData, 'height', 80) * scale;
         ctx.fillRect(x, y, rectWidth, rectHeight);
         ctx.strokeRect(x, y, rectWidth, rectHeight);
         break;
@@ -401,7 +428,11 @@ class ExportServiceClass {
       ctx.fillStyle = '#1976d2';
       ctx.font = `${14 * scale}px Arial`;
       ctx.textAlign = 'center';
-      ctx.fillText(label, x + (data.width || 120) * scale / 2, y + (data.height || 80) * scale / 2);
+      ctx.fillText(
+        label,
+        x + (getNumber(renderData, 'width', 120) * scale) / 2,
+        y + (getNumber(renderData, 'height', 80) * scale) / 2,
+      );
     }
   }
 
@@ -415,16 +446,18 @@ class ExportServiceClass {
     data: unknown,
     scale: number
   ): Promise<void> {
-    const width = (data.width || 200) * scale;
-    const height = (data.height || 150) * scale;
+    const renderData = getRenderableData(data);
+    const width = getNumber(renderData, 'width', 200) * scale;
+    const height = getNumber(renderData, 'height', 150) * scale;
 
-    if (data.url) {
+    const url = getString(renderData, 'url', '');
+    if (url) {
       try {
         const img = new Image();
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
-          img.src = data.url;
+          img.src = url;
         });
         ctx.drawImage(img, x, y, width, height);
       } catch (error) {
@@ -438,7 +471,7 @@ class ExportServiceClass {
         ctx.fillStyle = '#999';
         ctx.font = `${14 * scale}px Arial`;
         ctx.textAlign = 'center';
-        ctx.fillText(data.alt || 'Image', x + width / 2, y + height / 2);
+        ctx.fillText(getString(renderData, 'alt', 'Image'), x + width / 2, y + height / 2);
       }
     } else {
       // Draw placeholder
@@ -510,10 +543,8 @@ class ExportServiceClass {
   /**
    * Find element by ID
    */
-  private findElementById(id: string): unknown {
-    // This would need access to the full canvas state
-    // For now, return null - in a real implementation, this would search the elements array
-    return null;
+  private findElementById(elements: CanvasElement[], id: string): CanvasElement | undefined {
+    return elements.find((element) => element.id === id);
   }
 
   /**

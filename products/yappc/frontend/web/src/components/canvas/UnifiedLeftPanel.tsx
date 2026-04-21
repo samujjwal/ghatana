@@ -17,14 +17,13 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Box, Tabs, Tab, Surface as Paper, Typography, IconButton, Tooltip } from '@ghatana/design-system';
+import { Box, Tabs, Tab, Surface as Paper, Typography, IconButton, Tooltip, Button } from '@ghatana/design-system';
 import { ClipboardList as Assignment, Component as Widgets, Activity as Timeline, Hammer as Build, History, ListOrdered as ListAlt, Save, Shield as Security, Sparkles as AutoAwesome } from 'lucide-react';
 
 import { CanvasTaskPanel } from './tasks/CanvasTaskPanel';
 import { ComponentPalette } from './ComponentPalette';
 import { CanvasPhaseNavigator } from './CanvasPhaseNavigator';
 import { ArtifactPalette, type ArtifactTemplate } from './workspace/ArtifactPalette';
-import { VersionHistoryPanel, VersionHistoryList } from './versioning/VersionHistoryPanel';
 import { AuditTimeline, type AuditEvent } from './audit/AuditTimeline';
 import { GovernancePanel } from './governance/GovernancePanel';
 import { GraphVisualizer } from './visualizer/GraphVisualizer';
@@ -42,9 +41,9 @@ export interface UnifiedLeftPanelProps {
   /** Callback when collapse state changes */
   onCollapseChange?: (collapsed: boolean) => void;
   /** Component addition handler */
-  onAddComponent: (component: unknown, position: { x: number; y: number }) => void;
+  onAddComponent: (component: object, position: { x: number; y: number }) => void;
   /** Drag start handler */
-  onDragStart?: (template: unknown) => void;
+  onDragStart?: (template: ArtifactTemplate) => void;
   /** Additional CSS classes */
   className?: string;
   /** Current nodes for visualization */
@@ -65,6 +64,8 @@ export function UnifiedLeftPanel({
   onCollapseChange,
   onAddComponent,
   onDragStart,
+  nodes = [],
+  edges = [],
   className = '',
 }: UnifiedLeftPanelProps) {
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
@@ -121,13 +122,12 @@ export function UnifiedLeftPanel({
   if (isCollapsed) {
     return (
       <Paper
-        variant="flat"
+        variant="outlined"
         className={`
-          flex flex-col items-center gap-1 py-2 bg-bg-paper border-r border-divider
+          shrink-0 h-full w-[48px] flex flex-col items-center gap-1 py-2 bg-bg-paper border-r border-divider
           ${TRANSITIONS.default}
           ${className}
         `}
-        className="shrink-0 h-full w-[48px]"
       >
         <Tooltip title="Tasks" placement="right">
           <button
@@ -266,7 +266,7 @@ export function UnifiedLeftPanel({
       <Box
         className="flex items-center justify-between px-5 py-2"
       >
-        <Typography as="p" className="text-lg font-medium" fontWeight="700" color="text.primary" className="tracking-[-0.02em]">
+        <Typography className="text-lg font-medium tracking-[-0.02em]" fontWeight="700" color="text.primary">
           Canvas Tools
         </Typography>
         <Tooltip title="Collapse panel">
@@ -275,14 +275,9 @@ export function UnifiedLeftPanel({
             onClick={() => handleCollapseChange(true)}
             className="p-1 rounded-md hover:bg-gray-100"
           >
-            <Box
-              component="svg"
-              className="w-[18px] h-[18px]"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
+            <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-            </Box>
+            </svg>
           </IconButton>
         </Tooltip>
       </Box>
@@ -292,56 +287,46 @@ export function UnifiedLeftPanel({
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          className="min-h-[36px] h-full rounded-lg border border-solid border-blue-600 z-0 min-h-[36px] min-w-0 px-3 py-1 normal-case text-xs font-semibold gap-1 z-[1] rounded-lg transition-all duration-200 mr-1 text-blue-600" >
+          variant="underline"
+          className="min-h-[36px] h-full rounded-lg border border-solid border-blue-600 min-w-0 px-3 py-1 text-blue-600" >
           <Tab
             value="tasks"
             icon={<Assignment className="text-base" />}
-            iconPosition="start"
             label="Tasks"
           />
           <Tab
             value="components"
             icon={<Widgets className="text-base" />}
-            iconPosition="start"
             label="Widgets"
           />
           <Tab
             value="artifacts"
             icon={<Build className="text-base" />}
-            iconPosition="start"
             label="Build"
           />
           <Tab
             value="phases"
             icon={<Timeline className="text-base" />}
-            iconPosition="start"
             label="Phases"
           />
           <Tab
             value="history"
             icon={<History className="text-base" />}
-            iconPosition="start"
             label="History"
           />
           <Tab
             value="activity"
             icon={<ListAlt className="text-lg" />}
-            iconPosition="start"
             label="Activity"
           />
           <Tab
             value="governance"
             icon={<Security className="text-base" />}
-            iconPosition="start"
             label="Gov"
           />
           <Tab
             value="visualize"
             icon={<AutoAwesome className="text-base" />}
-            iconPosition="start"
             label="Diagram"
           />
         </Tabs>
@@ -361,7 +346,7 @@ export function UnifiedLeftPanel({
           </Box>
         ) : activeTab === 'components' ? (
           <Box className="flex-1 overflow-auto">
-            <ComponentPalette onAddComponent={onAddComponent} />
+            <ComponentPalette onAddComponent={(component, position) => onAddComponent(component, position ?? { x: 400, y: 300 })} />
           </Box>
         ) : activeTab === 'artifacts' ? (
           <Box className="flex-1 overflow-auto">
@@ -378,7 +363,7 @@ export function UnifiedLeftPanel({
           </Box>
         ) : activeTab === 'history' ? (
           <Box className="flex-1 overflow-auto p-4">
-            <Typography as="span" className="text-xs uppercase tracking-wider" color="text.secondary" className="font-extrabold mb-2 block">
+            <Typography className="mb-2 block text-xs font-extrabold uppercase tracking-wider" color="text.secondary">
               Snapshot History
             </Typography>
             <Button
@@ -390,28 +375,22 @@ export function UnifiedLeftPanel({
               Save Snapshot
             </Button>
 
-            <VersionHistoryList
-              snapshots={[
-                {
-                  id: 'v1',
-                  version: 1.0,
-                  timestamp: Date.now() - 86400000,
-                  label: 'Initial Layout',
-                  author: 'Alice Chen',
-                  data: { elements: [], connections: [] }
-                },
-                {
-                  id: 'v2',
-                  version: 1.1,
-                  timestamp: Date.now() - 3600000,
-                  label: 'Auth Added',
-                  author: 'Bob Smith',
-                  data: { elements: [], connections: [] }
-                }
-              ]}
-              currentVersion={1.1}
-              onRestore={(id) => console.log('Restore', id)}
-            />
+            <Box className="space-y-3">
+              {[
+                { id: 'v1', version: '1.0', timestamp: '1 day ago', label: 'Initial Layout', author: 'Alice Chen' },
+                { id: 'v2', version: '1.1', timestamp: '1 hour ago', label: 'Auth Added', author: 'Bob Smith' },
+              ].map((snapshot) => (
+                <Box key={snapshot.id} className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+                  <Box className="flex items-center justify-between gap-2">
+                    <Typography className="text-sm font-medium">{snapshot.label}</Typography>
+                    <Typography className="text-xs text-gray-500">v{snapshot.version}</Typography>
+                  </Box>
+                  <Typography className="mt-1 text-xs text-gray-500" color="text.secondary">
+                    {snapshot.author} · {snapshot.timestamp}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           </Box>
         ) : activeTab === 'activity' ? (
           <Box className="flex-1 overflow-auto p-4">

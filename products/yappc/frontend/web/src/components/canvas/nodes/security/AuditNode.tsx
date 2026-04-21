@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { memo, useMemo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import {
   FileText,
   User,
@@ -48,7 +48,7 @@ export interface AuditChanges {
   fields?: string[];
 }
 
-export interface AuditNodeData {
+export interface AuditNodeData extends Record<string, unknown> {
   id: string;
   projectId: string;
   userId: string;
@@ -72,6 +72,8 @@ export interface AuditNodeData {
   selected?: boolean;
   compact?: boolean;
 }
+
+type AuditCanvasNode = Node<AuditNodeData>;
 
 // ============================================================================
 // Category Configuration
@@ -315,7 +317,7 @@ function DetailsList({ details }: { details: Record<string, unknown> }) {
 // Main Component
 // ============================================================================
 
-function AuditNodeComponent({ data, selected }: NodeProps<AuditNodeData>) {
+function AuditNodeComponent({ data, selected }: NodeProps<AuditCanvasNode>) {
   const categoryConfig = CATEGORY_CONFIG[data.category];
   const statusConfig = STATUS_CONFIG[data.status];
   const CategoryIcon = categoryConfig.icon;

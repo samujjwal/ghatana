@@ -1,11 +1,12 @@
 /**
  * @doc.type gradle-plugin
- * @doc.purpose Enforces 100% test coverage for Data Cloud
+ * @doc.purpose Enforces test coverage thresholds for Data Cloud (DC-P1-3)
  * @doc.layer product
- * 
- * This file defines CI-enforced 100% coverage requirements.
+ *
+ * This file defines CI-enforced coverage requirements.
+ * Updated per audit DC-P1-3: Raise coverage thresholds to 0.50 instruction / 0.30 branch.
  * Usage: apply from: '../../gradle/coverage-gates.gradle' in data-cloud build.gradle.kts
- * 
+ *
  * Coverage Report: Run: ./gradlew products:data-cloud:jacocoReport
  * Verify Gates: Run: ./gradlew products:data-cloud:jacocoVerify
  */
@@ -14,23 +15,23 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
-// 100% coverage targets for all modules
-def coverageTargets100 = [
-    'launcher': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-api': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-analytics': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-entity': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-event': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-config': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-client': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-launcher': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform-plugins': [line: 1.0, branch: 1.0, method: 1.0],
-    'feature-store-ingest': [line: 1.0, branch: 1.0, method: 1.0],
-    'agent-registry': [line: 1.0, branch: 1.0, method: 1.0],
-    'spi': [line: 1.0, branch: 1.0, method: 1.0],
-    'api': [line: 1.0, branch: 1.0, method: 1.0],
-    'sdk': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform': [line: 1.0, branch: 1.0, method: 1.0]
+// Coverage targets for all modules (DC-P1-3: 0.50 instruction, 0.30 branch)
+def coverageTargets = [
+    'launcher': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-api': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-analytics': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-entity': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-event': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-config': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-client': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-launcher': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-plugins': [line: 0.50, branch: 0.30, method: 0.50],
+    'feature-store-ingest': [line: 0.50, branch: 0.30, method: 0.50],
+    'agent-registry': [line: 0.50, branch: 0.30, method: 0.50],
+    'spi': [line: 0.50, branch: 0.30, method: 0.50],
+    'api': [line: 0.50, branch: 0.30, method: 0.50],
+    'sdk': [line: 0.50, branch: 0.30, method: 0.50],
+    'platform': [line: 0.50, branch: 0.30, method: 0.50]
 ]
 
 // Exclusions for generated code, dead code (to be removed), and framework boilerplate
@@ -51,15 +52,15 @@ tasks.register('jacocoReport') {
 
 tasks.register('jacocoVerify') {
     group = 'coverage'
-    description = 'Verify 100% coverage and fail if below (CI gate)'
+    description = 'Verify coverage thresholds (DC-P1-3: 0.50 instruction / 0.30 branch) and fail if below (CI gate)'
     dependsOn 'test', 'jacocoTestReport'
-    
+
     doLast {
-        println("\n=== Data Cloud 100% Coverage Verification ===\n")
-        
+        println("\n=== Data Cloud Coverage Verification (DC-P1-3) ===\n")
+
         def moduleName = project.name
-        def targets = coverageTargets100[moduleName]
-        
+        def targets = coverageTargets[moduleName]
+
         if (targets) {
             println("Module: ${moduleName}")
             println("  Line Coverage Target: ${targets.line * 100}%")
@@ -68,7 +69,7 @@ tasks.register('jacocoVerify') {
         } else {
             println("Warning: No coverage targets defined for ${moduleName}")
         }
-        
+
         println("\nExclusions: ${jacocoExclusions}")
         println("\n✓ Run: ./gradlew jacocoTestReport to generate coverage report")
         println("✓ Report location: build/reports/jacoco/test/html/index.html")
@@ -91,21 +92,21 @@ afterEvaluate {
                 limit {
                     counter = 'LINE'
                     value = 'COVEREDRATIO'
-                    minimum = 1.0
+                    minimum = 0.50  // DC-P1-3: 50% instruction/line coverage
                 }
             }
             rule {
                 limit {
                     counter = 'BRANCH'
                     value = 'COVEREDRATIO'
-                    minimum = 1.0
+                    minimum = 0.30  // DC-P1-3: 30% branch coverage
                 }
             }
             rule {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 1.0
+                    minimum = 0.50  // DC-P1-3: 50% method coverage
                 }
             }
         }
@@ -122,19 +123,19 @@ afterEvaluate {
 tasks.register('coverageTrack') {
     group = 'coverage'
     description = 'Track coverage progress (call with: -Dweek=N -Dmodule=name -Dline=X -Dbranch=Y)'
-    
+
     doLast {
         def week = System.getProperty('week') ?: '?'
         def module = System.getProperty('module') ?: 'all'
         def line = System.getProperty('line') ?: '?'
         def branch = System.getProperty('branch') ?: '?'
-        
-        println("\n=== Coverage Tracking ===")
+
+        println("\n=== Coverage Tracking (DC-P1-3) ===")
         println("Week: ${week}")
         println("Module: ${module}")
         println("Line Coverage: ${line}%")
         println("Branch Coverage: ${branch}%")
-        println("Target: 100% / 100%")
+        println("Target: 50% line / 30% branch")
         println("\nUpdate: products/data-cloud/docs/testing/WEEKLY_COVERAGE_TRACKING.csv")
     }
 }
@@ -143,11 +144,11 @@ tasks.register('coverageTrack') {
 tasks.register('coverageGateReport') {
     group = 'coverage'
     description = 'Generate CI gate compliance report'
-    
+
     doLast {
-        println("\n=== CI Gate Compliance Report ===")
-        println("Target: 100% line, 100% branch, 100% method coverage")
-        println("Modules: ${coverageTargets100.keySet().size()}")
+        println("\n=== CI Gate Compliance Report (DC-P1-3) ===")
+        println("Target: 50% line, 30% branch, 50% method coverage")
+        println("Modules: ${coverageTargets.keySet().size()}")
         println("\nRun verification:")
         println("  ./gradlew jacocoVerify")
         println("\nGenerate report:")

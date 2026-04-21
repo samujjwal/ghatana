@@ -45,17 +45,17 @@ function getHeaderValue(
 }
 
 export function isTrustedProxyAuthEnabled(): boolean {
-  return (
-    process.env.TRUST_PROXY_AUTH_HEADERS === "true" ||
-    process.env.NODE_ENV === "test"
-  );
+  // Trusted proxy auth must be explicitly enabled via configuration
+  // This prevents accidental bypass of JWT authentication
+  return process.env.TRUST_PROXY_AUTH_HEADERS === "true";
 }
 
 export function hasTrustedProxySecret(request: FastifyRequest): boolean {
   const configuredSecret = process.env.TRUST_PROXY_AUTH_SHARED_SECRET;
 
+  // Secret must be configured for trusted proxy auth to work
   if (!configuredSecret) {
-    return process.env.NODE_ENV === "test";
+    return false;
   }
 
   return getTrustedProxySecretHeader(request) === configuredSecret;

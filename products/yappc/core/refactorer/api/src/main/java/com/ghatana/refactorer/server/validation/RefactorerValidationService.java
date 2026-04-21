@@ -1,8 +1,8 @@
 package com.ghatana.refactorer.server.validation;
 
-import com.ghatana.platform.validation.ValidationError;
-import com.ghatana.platform.validation.ValidationResult;
-import com.ghatana.platform.validation.ValidationService;
+import com.ghatana.platform.core.validation.ValidationResult;
+import com.ghatana.platform.core.validation.ValidationResult.Violation;
+import com.ghatana.platform.core.validation.ValidationService;
 import com.ghatana.refactorer.api.v1.Budget;
 import com.ghatana.refactorer.api.v1.DiagnoseRequest;
 import com.ghatana.refactorer.api.v1.RunRequest;
@@ -52,9 +52,7 @@ public class RefactorerValidationService implements ValidationService {
     @Override
     public Promise<ValidationResult> validateEvent(Object event) {
         if (event == null) {
-            return Promise.of(
-                    ValidationResult.failure(
-                            new ValidationError("NULL_EVENT", "Event cannot be null", "root", null)));
+            return Promise.of(ValidationResult.invalid("root", "Event cannot be null"));
         }
 
         if (event instanceof RestModels.DiagnoseRequest diagnoseReq) {
@@ -75,31 +73,23 @@ public class RefactorerValidationService implements ValidationService {
 
         // Default: validation not implemented for this event type
         logger.debug("No validation rules for event type: {}", event.getClass().getSimpleName());
-        return Promise.of(ValidationResult.success());
+        return Promise.of(ValidationResult.valid());
     }
 
     @Override
     public Promise<ValidationResult> validatePayload(Object eventType, String payload) {
         if (payload == null || payload.isBlank()) {
-            return Promise.of(
-                    ValidationResult.failure(
-                            new ValidationError(
-                                    "EMPTY_PAYLOAD", "Payload cannot be null or empty", "payload", null)));
+            return Promise.of(ValidationResult.invalid("payload", "Payload cannot be null or empty"));
         }
-        return Promise.of(ValidationResult.success());
+        return Promise.of(ValidationResult.valid());
     }
 
     @Override
     public Promise<ValidationResult> validateSchema(String schema) {
         if (schema == null || schema.isBlank()) {
-            return Promise.of(
-                    ValidationResult.failure(
-                            new ValidationError(
-                                    "EMPTY_SCHEMA",
-                                    "Schema cannot be null or empty",
-                                    "schema", null)));
+            return Promise.of(ValidationResult.invalid("schema", "Schema cannot be null or empty"));
         }
-        return Promise.of(ValidationResult.success());
+        return Promise.of(ValidationResult.valid());
     }
 
     @Override
@@ -114,52 +104,32 @@ public class RefactorerValidationService implements ValidationService {
      * @return ValidationResult with any discovered errors
      */
     private ValidationResult validateDiagnoseRequest(RestModels.DiagnoseRequest request) {
-        List<ValidationError> errors = new ArrayList<>();
+        List<Violation> violations = new ArrayList<>();
 
         // Validate repoRoot
         if (request.repoRoot() == null || request.repoRoot().isBlank()) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_REPO_ROOT",
-                            "Repository root path is required",
-                            "repoRoot",
-                            request.repoRoot()));
+            violations.add(new Violation("repoRoot", "Repository root path is required"));
         }
 
         // Validate languages
         if (request.languages() == null || request.languages().isEmpty()) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_LANGUAGES",
-                            "At least one language must be specified",
-                            "languages",
-                            request.languages()));
+            violations.add(new Violation("languages", "At least one language must be specified"));
         }
 
         // Validate budget
         if (request.budget() != null) {
-            errors.addAll(validateBudget(request.budget()));
+            violations.addAll(validateBudget(request.budget()));
         } else {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_BUDGET",
-                            "Budget configuration is required",
-                            "budget",
-                            null));
+            violations.add(new Violation("budget", "Budget configuration is required"));
         }
 
         // Validate tenantId if present
         if (request.tenantId() != null && request.tenantId().isBlank()) {
-            errors.add(
-                    new ValidationError(
-                            "INVALID_TENANT_ID",
-                            "Tenant ID cannot be blank",
-                            "tenantId",
-                            request.tenantId()));
+            violations.add(new Violation("tenantId", "Tenant ID cannot be blank"));
         }
 
-        logger.debug("DiagnoseRequest validation complete: {} errors found", errors.size());
-        return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+        logger.debug("DiagnoseRequest validation complete: {} errors found", violations.size());
+        return violations.isEmpty() ? ValidationResult.valid() : ValidationResult.of(violations);
     }
 
     /**
@@ -169,102 +139,67 @@ public class RefactorerValidationService implements ValidationService {
      * @return ValidationResult with any discovered errors
      */
     private ValidationResult validateRunRequest(RestModels.RunRequest request) {
-        List<ValidationError> errors = new ArrayList<>();
+        List<Violation> violations = new ArrayList<>();
 
         // Validate config
         if (request.config() == null) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_CONFIG",
-                            "Diagnosis configuration is required",
-                            "config",
-                            null));
+            violations.add(new Violation("config", "Diagnosis configuration is required"));
         } else {
             // Validate nested DiagnoseRequest
             ValidationResult configResult = validateDiagnoseRequest(request.config());
             if (!configResult.isValid()) {
-                errors.addAll(configResult.getErrors());
+                violations.addAll(configResult.violations());
             }
         }
 
         // Validate idempotencyKey
         if (request.idempotencyKey() == null || request.idempotencyKey().isBlank()) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_IDEMPOTENCY_KEY",
-                            "Idempotency key is required",
-                            "idempotencyKey",
-                            request.idempotencyKey()));
+            violations.add(new Violation("idempotencyKey", "Idempotency key is required"));
         }
 
-        logger.debug("RunRequest validation complete: {} errors found", errors.size());
-        return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+        logger.debug("RunRequest validation complete: {} errors found", violations.size());
+        return violations.isEmpty() ? ValidationResult.valid() : ValidationResult.of(violations);
     }
 
     private ValidationResult validateDiagnoseRequest(DiagnoseRequest request) {
-        List<ValidationError> errors = new ArrayList<>();
+        List<Violation> violations = new ArrayList<>();
 
         if (request.getRepoRoot().isBlank()) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_REPO_ROOT",
-                            "Repository root path is required",
-                            "repoRoot",
-                            request.getRepoRoot()));
+            violations.add(new Violation("repoRoot", "Repository root path is required"));
         }
 
         if (request.getLanguagesCount() == 0) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_LANGUAGES",
-                            "At least one language must be specified",
-                            "languages",
-                            request.getLanguagesList()));
+            violations.add(new Violation("languages", "At least one language must be specified"));
         }
 
         if (request.hasBudget()) {
-            errors.addAll(validateBudget(request.getBudget()));
+            violations.addAll(validateBudget(request.getBudget()));
         } else {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_BUDGET",
-                            "Budget configuration is required",
-                            "budget",
-                            null));
+            violations.add(new Violation("budget", "Budget configuration is required"));
         }
 
-        logger.debug("DiagnoseRequest validation complete: {} errors found", errors.size());
-        return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+        logger.debug("DiagnoseRequest validation complete: {} errors found", violations.size());
+        return violations.isEmpty() ? ValidationResult.valid() : ValidationResult.of(violations);
     }
 
     private ValidationResult validateRunRequest(RunRequest request) {
-        List<ValidationError> errors = new ArrayList<>();
+        List<Violation> violations = new ArrayList<>();
 
         if (!request.hasConfig()) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_CONFIG",
-                            "Diagnosis configuration is required",
-                            "config",
-                            null));
+            violations.add(new Violation("config", "Diagnosis configuration is required"));
         } else {
             ValidationResult configResult = validateDiagnoseRequest(request.getConfig());
             if (!configResult.isValid()) {
-                errors.addAll(configResult.getErrors());
+                violations.addAll(configResult.violations());
             }
         }
 
         if (request.getIdempotencyKey().isBlank()) {
-            errors.add(
-                    new ValidationError(
-                            "MISSING_IDEMPOTENCY_KEY",
-                            "Idempotency key is required",
-                            "idempotencyKey",
-                            request.getIdempotencyKey()));
+            violations.add(new Violation("idempotencyKey", "Idempotency key is required"));
         }
 
-        logger.debug("RunRequest validation complete: {} errors found", errors.size());
-        return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+        logger.debug("RunRequest validation complete: {} errors found", violations.size());
+        return violations.isEmpty() ? ValidationResult.valid() : ValidationResult.of(violations);
     }
 
     /**
@@ -273,69 +208,39 @@ public class RefactorerValidationService implements ValidationService {
      * @param budget the budget to validate
      * @return List of validation errors (empty if valid)
      */
-    private List<ValidationError> validateBudget(RestModels.Budget budget) {
-        List<ValidationError> errors = new ArrayList<>();
+    private List<Violation> validateBudget(RestModels.Budget budget) {
+        List<Violation> violations = new ArrayList<>();
 
         if (budget.maxPasses() < 1) {
-            errors.add(
-                    new ValidationError(
-                            "INVALID_MAX_PASSES",
-                            "Maximum passes must be at least 1",
-                            "budget.maxPasses",
-                            budget.maxPasses()));
+            violations.add(new Violation("budget.maxPasses", "Maximum passes must be at least 1"));
         }
 
         if (budget.maxEditsPerFile() < 0) {
-            errors.add(
-                    new ValidationError(
-                            "INVALID_MAX_EDITS",
-                            "Maximum edits per file must be non-negative",
-                            "budget.maxEditsPerFile",
-                            budget.maxEditsPerFile()));
+            violations.add(new Violation("budget.maxEditsPerFile", "Maximum edits per file must be non-negative"));
         }
 
         if (budget.timeoutSeconds() <= 0) {
-            errors.add(
-                    new ValidationError(
-                            "INVALID_TIMEOUT",
-                            "Timeout must be greater than zero",
-                            "budget.timeoutSeconds",
-                            budget.timeoutSeconds()));
+            violations.add(new Violation("budget.timeoutSeconds", "Timeout must be greater than zero"));
         }
 
-        return errors;
+        return violations;
     }
 
-    private List<ValidationError> validateBudget(Budget budget) {
-        List<ValidationError> errors = new ArrayList<>();
+    private List<Violation> validateBudget(Budget budget) {
+        List<Violation> violations = new ArrayList<>();
 
         if (budget.getMaxPasses() < 1) {
-            errors.add(
-                    new ValidationError(
-                            "INVALID_MAX_PASSES",
-                            "Maximum passes must be at least 1",
-                            "budget.maxPasses",
-                            budget.getMaxPasses()));
+            violations.add(new Violation("budget.maxPasses", "Maximum passes must be at least 1"));
         }
 
         if (budget.getMaxEditsPerFile() < 0) {
-            errors.add(
-                    new ValidationError(
-                            "INVALID_MAX_EDITS",
-                            "Maximum edits per file must be non-negative",
-                            "budget.maxEditsPerFile",
-                            budget.getMaxEditsPerFile()));
+            violations.add(new Violation("budget.maxEditsPerFile", "Maximum edits per file must be non-negative"));
         }
 
         if (budget.getTimeoutSeconds() <= 0) {
-            errors.add(
-                    new ValidationError(
-                            "INVALID_TIMEOUT",
-                            "Timeout must be greater than zero",
-                            "budget.timeoutSeconds",
-                            budget.getTimeoutSeconds()));
+            violations.add(new Violation("budget.timeoutSeconds", "Timeout must be greater than zero"));
         }
 
-        return errors;
+        return violations;
     }
 }

@@ -14,7 +14,8 @@
 import { Link } from 'react-router';
 import { Folder, Clock as AccessTime, CheckCircle, TrendingUp } from 'lucide-react';
 import type { Project } from '../../state/atoms/workspaceAtom';
-import type { LifecyclePhase } from '@/shared/types/lifecycle';
+import { getLifecyclePhaseLabel } from '../../shared/types/lifecycle';
+import type { LifecyclePhase } from '../../shared/types/lifecycle';
 
 // ============================================================================
 // Types
@@ -101,27 +102,19 @@ export function RecentProjectsStrip({
 // ============================================================================
 
 function formatLifecyclePhase(phase: LifecyclePhase): string {
-    const labels: Record<LifecyclePhase, string> = {
-        [LifecyclePhase.INTENT]: 'Intent',
-        [LifecyclePhase.SHAPE]: 'Shape',
-        [LifecyclePhase.VALIDATE]: 'Validate',
-        [LifecyclePhase.GENERATE]: 'Generate',
-        [LifecyclePhase.RUN]: 'Run',
-        [LifecyclePhase.OBSERVE]: 'Observe',
-        [LifecyclePhase.IMPROVE]: 'Improve',
-    };
-    return labels[phase] || phase;
+    return getLifecyclePhaseLabel(phase);
 }
 
 function getLifecycleColor(phase: LifecyclePhase): string {
     const colors: Record<LifecyclePhase, string> = {
-        [LifecyclePhase.INTENT]: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
-        [LifecyclePhase.SHAPE]: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-        [LifecyclePhase.VALIDATE]: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
-        [LifecyclePhase.GENERATE]: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300',
-        [LifecyclePhase.RUN]: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
-        [LifecyclePhase.OBSERVE]: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300',
-        [LifecyclePhase.IMPROVE]: 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300',
+        INTENT: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+        CONTEXT: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+        PLAN: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300',
+        EXECUTE: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300',
+        VERIFY: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+        OBSERVE: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300',
+        LEARN: 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300',
+        INSTITUTIONALIZE: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300',
     };
     return colors[phase] || 'bg-grey-100 dark:bg-grey-900/30 text-grey-700 dark:text-grey-300';
 }

@@ -12,7 +12,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { X as Close, Search, Keyboard, Pencil as Edit, Eye as Visibility, LayoutDashboard as Dashboard, Sparkles as AutoAwesome, Navigation, FolderOpen, CloudUpload, HelpCircle as HelpOutline } from 'lucide-react';
-import { Modal, Fade, Modal as Backdrop, InputAdornment, TextField, Box, Typography } from '@ghatana/design-system';
+import { Modal, Fade, TextField, Box, Typography } from '@ghatana/design-system';
 import type { ReactNode } from 'react';
 
 import { TRANSITIONS, RADIUS } from '../../styles/design-tokens';
@@ -45,6 +45,8 @@ const CATEGORY_ICONS: Record<ActionCategory, ReactNode> = {
     navigation: <Navigation className="w-5 h-5" />,
     project: <FolderOpen className="w-5 h-5" />,
     deploy: <CloudUpload className="w-5 h-5" />,
+    connection: <Navigation className="w-5 h-5" />,
+    interface: <Dashboard className="w-5 h-5" />,
     help: <HelpOutline className="w-5 h-5" />,
 };
 
@@ -58,6 +60,8 @@ const CATEGORY_LABELS: Record<ActionCategory, string> = {
     navigation: 'Navigation',
     project: 'Project',
     deploy: 'Deploy',
+    connection: 'Connection',
+    interface: 'Interface',
     help: 'Help',
 };
 
@@ -109,7 +113,7 @@ export function KeyboardShortcutsHelp({
 
         // Convert to array and sort by category order
         const categoryOrder: ActionCategory[] = [
-            'file', 'edit', 'view', 'canvas', 'selection', 'ai', 'navigation', 'project', 'deploy', 'help'
+            'file', 'edit', 'view', 'canvas', 'selection', 'ai', 'navigation', 'project', 'deploy', 'connection', 'interface', 'help'
         ];
 
         return categoryOrder
@@ -144,14 +148,6 @@ export function KeyboardShortcutsHelp({
         <Modal
             open={open}
             onClose={onClose}
-            closeAfterTransition
-            slots={{ backdrop: Backdrop }}
-            slotProps={{
-                backdrop: {
-                    timeout: 300,
-                    className: 'bg-black/50',
-                },
-            }}
         >
             <Fade in={open}>
                 <Box
@@ -167,7 +163,7 @@ export function KeyboardShortcutsHelp({
                     <div className="flex items-center justify-between px-6 py-4 border-b border-divider">
                         <div className="flex items-center gap-3">
                             <Keyboard className="w-6 h-6 text-primary-500" />
-                            <Typography as="h6" component="h2" className="font-semibold">
+                            <Typography className="font-semibold">
                                 Keyboard Shortcuts
                             </Typography>
                         </div>
@@ -185,21 +181,17 @@ export function KeyboardShortcutsHelp({
 
                     {/* Search */}
                     <div className="px-6 py-3 border-b border-divider">
-                        <TextField
-                            fullWidth
-                            size="sm"
-                            placeholder="Search shortcuts..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search className="w-5 h-5 text-text-tertiary" />
-                                    </InputAdornment>
-                                ),
-                            }}
-                            autoFocus
-                        />
+                        <Box className="flex items-center gap-2">
+                            <Search className="h-5 w-5 text-text-tertiary" />
+                            <TextField
+                                fullWidth
+                                size="sm"
+                                placeholder="Search shortcuts..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                autoFocus
+                            />
+                        </Box>
                     </div>
 
                     {/* Shortcuts List */}
@@ -215,7 +207,7 @@ export function KeyboardShortcutsHelp({
                                         {/* Category Header */}
                                         <div className="flex items-center gap-2 mb-3 text-text-secondary">
                                             {group.icon}
-                                            <Typography as="p" className="font-semibold uppercase tracking-wide text-xs">
+                                            <Typography className="text-xs font-semibold uppercase tracking-wide">
                                                 {group.label}
                                             </Typography>
                                         </div>

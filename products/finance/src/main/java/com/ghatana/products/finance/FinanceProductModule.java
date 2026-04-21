@@ -180,8 +180,7 @@ public final class FinanceProductModule implements KernelModule {
             aiRuntimeService,
             aiRuntimeService
         );
-        productShell = new FinanceProductShell(context);
-        bff = new FinanceBFF(context);
+        // productShell and bff will be created in start() after transactionService is available
 
         omsModule = new OmsDomainModule();
         emsModule = new EmsDomainModule();
@@ -205,8 +204,6 @@ public final class FinanceProductModule implements KernelModule {
         context.registerService(AgentOrchestrator.class, aiRuntimeService);
         context.registerService(ModelGovernanceService.class, aiRuntimeService);
         context.registerService(AutonomyManager.class, aiRuntimeService);
-        context.registerService(FinanceProductShell.class, productShell);
-        context.registerService(FinanceBFF.class, bff);
 
         log.info("Finance product module initialized successfully with 14 domains");
     }
@@ -240,8 +237,16 @@ public final class FinanceProductModule implements KernelModule {
                 ? kernelModule.start() : Promise.complete();
 
         return kernelStart.then($ -> aiRuntimeService.start()).then($ -> transactionRuntimeService.start()).then($ -> {
-            context.registerService(TransactionService.class, transactionRuntimeService.getTransactionService());
-            httpServer = new FinanceHttpServer(transactionRuntimeService.getTransactionService());
+            TransactionService transactionService = transactionRuntimeService.getTransactionService();
+            context.registerService(TransactionService.class, transactionService);
+            
+            // Create shell and BFF now that transactionService is available
+            productShell = new FinanceProductShell(context, transactionService, null);
+            bff = new FinanceBFF(context, transactionService, null);
+            context.registerService(FinanceProductShell.class, productShell);
+            context.registerService(FinanceBFF.class, bff);
+            
+            httpServer = new FinanceHttpServer(transactionService);
             context.registerService(FinanceHttpServer.class, httpServer);
             startDomainModules();
             productShell.start();

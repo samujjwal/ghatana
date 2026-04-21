@@ -3,7 +3,7 @@ package com.ghatana.refactorer.server.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.platform.validation.ValidationResult;
+import com.ghatana.platform.core.validation.ValidationResult;
 import com.ghatana.refactorer.api.testutils.GrpcProtoFactory;
 import com.ghatana.refactorer.api.v1.Budget;
 import com.ghatana.refactorer.api.v1.DiagnoseRequest;
@@ -33,9 +33,9 @@ class RefactorerValidationServiceTest extends EventloopTestBase {
         ValidationResult result = runPromise(() -> service.validateEvent(request));
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.getErrors())
-                .extracting(error -> error.getCode())
-                .contains("MISSING_LANGUAGES", "INVALID_MAX_PASSES", "INVALID_MAX_EDITS", "INVALID_TIMEOUT");
+        assertThat(result.violations())
+                .extracting(violation -> violation.field())
+                .contains("languages", "budget.maxPasses", "budget.maxEditsPerFile", "budget.timeoutSeconds");
     }
 
     @Test
@@ -46,9 +46,9 @@ class RefactorerValidationServiceTest extends EventloopTestBase {
         ValidationResult result = runPromise(() -> service.validateEvent(request));
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.getErrors())
-                .extracting(error -> error.getCode())
-                .contains("MISSING_CONFIG", "MISSING_IDEMPOTENCY_KEY");
+        assertThat(result.violations())
+                .extracting(violation -> violation.field())
+                .contains("config", "idempotencyKey");
     }
 
     @Test
@@ -57,6 +57,6 @@ class RefactorerValidationServiceTest extends EventloopTestBase {
         ValidationResult result = runPromise(() -> service.validateEvent(GrpcProtoFactory.sampleRunRequest()));
 
         assertThat(result.isValid()).isTrue();
-        assertThat(result.getErrors()).isEmpty();
+        assertThat(result.violations()).isEmpty();
     }
 }

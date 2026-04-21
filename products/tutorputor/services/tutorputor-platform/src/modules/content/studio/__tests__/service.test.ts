@@ -52,6 +52,35 @@ vi.mock("openai", () => ({
 
 import { createContentStudioService } from "../service.js";
 
+function createIndependentValidationResult(
+  overrides: Partial<{
+    overallStatus: "PASS" | "WARN" | "FAIL";
+    score: number;
+    requiresHumanReview: boolean;
+    reviewQueueId: string | undefined;
+    recommendations: string[];
+    validatorVersion: string;
+  }> = {},
+) {
+  return {
+    validationRecordId: "ivr-1",
+    validatorVersion: overrides.validatorVersion ?? "independent-validator@test",
+    inputHash: "hash-1",
+    overallStatus: overrides.overallStatus ?? "PASS",
+    score: overrides.score ?? 96,
+    riskLevel:
+      overrides.overallStatus === "FAIL"
+        ? "high"
+        : overrides.overallStatus === "WARN"
+          ? "medium"
+          : "low",
+    requiresHumanReview: overrides.requiresHumanReview ?? false,
+    reviewQueueId: overrides.reviewQueueId,
+    checks: [],
+    recommendations: overrides.recommendations ?? [],
+  };
+}
+
 const mockExperience = {
   id: "exp-1",
   tenantId: "tenant-1",
@@ -102,6 +131,13 @@ function makePrisma() {
       findFirst: vi.fn().mockResolvedValue(null),
       findMany: vi.fn().mockResolvedValue([]),
     },
+    validationRecordExtended: {
+      create: vi.fn().mockResolvedValue({ id: "valx-1" }),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    contentAsset: {
+      update: vi.fn().mockResolvedValue({ id: "asset-1" }),
+    },
     experienceEvent: {
       create: vi.fn().mockResolvedValue({ id: "evt-1" }),
       findMany: vi.fn().mockResolvedValue([]),
@@ -149,11 +185,20 @@ function makeAiClient() {
 describe("ContentStudioService", () => {
   let service: ReturnType<typeof createContentStudioService>;
   let prisma: ReturnType<typeof makePrisma>;
+  let independentValidator: {
+    validateGeneratedContent: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     prisma = makePrisma();
+    independentValidator = {
+      validateGeneratedContent: vi
+        .fn()
+        .mockResolvedValue(createIndependentValidationResult()),
+    };
     service = createContentStudioService(prisma as any, {
       openaiApiKey: "test-key",
+      independentValidator,
     });
   });
 
@@ -417,6 +462,53 @@ describe("ContentStudioService", () => {
       expect(result.score).toBeGreaterThanOrEqual(60);
       expect(result.pillarScores.educational).toBe(100);
       expect(result.pillarScores.experiential).toBe(100);
+      expect(independentValidator.validateGeneratedContent).toHaveBeenCalledOnce();
+      expect(
+        result.checks.find((c: any) => c.checkId === "independent-validator")
+          ?.passed,
+      ).toBe(true);
+    });
+
+    it("returns warnings when the independent validator requires reviewer confirmation", async () => {
+      independentValidator.validateGeneratedContent.mockResolvedValueOnce(
+        createIndependentValidationResult({
+          overallStatus: "WARN",
+          score: 78,
+          requiresHumanReview: true,
+          reviewQueueId: "review-77",
+          recommendations: ["Reviewer confirmation required."],
+        }),
+      );
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        ...baseExp,
+        claims: [
+          {
+            id: "c1",
+            claimRef: "claim-1",
+            bloomLevel: "APPLY",
+            examples: [{ id: "ex-1" }],
+            simulations: [],
+            animations: [],
+          },
+        ],
+        experienceTasks: [{ id: "task-1", claimRef: "claim-1" }],
+      });
+
+      const result = await service.validateExperience("exp-1", {
+        userId: "validator-user",
+      });
+
+      expect(result.canPublish).toBe(false);
+      expect(result.status).toBe("warnings");
+      expect(result).toMatchObject({
+        independentValidation: expect.objectContaining({
+          status: "WARN",
+          reviewQueueId: "review-77",
+        }),
+      });
+      expect(
+        result.checks.find((c: any) => c.checkId === "independent-validator"),
+      ).toMatchObject({ passed: false, severity: "warning" });
     });
 
     it("computes correct pillar scores for partial coverage", async () => {
@@ -594,6 +686,10 @@ describe("ContentStudioService", () => {
             diff: expect.objectContaining({
               validation: expect.objectContaining({
                 source: "content_studio.validateExperience",
+                independentValidation: expect.objectContaining({
+                  status: "PASS",
+                  validatorVersion: "independent-validator@test",
+                }),
               }),
             }),
           }),
@@ -724,6 +820,58 @@ describe("ContentStudioService", () => {
       );
     });
 
+    it("blocks publishing and opens manual review when the independent validator requires reviewer confirmation", async () => {
+      independentValidator.validateGeneratedContent.mockResolvedValueOnce(
+        createIndependentValidationResult({
+          overallStatus: "WARN",
+          score: 79,
+          requiresHumanReview: true,
+          reviewQueueId: "review-from-validator",
+          recommendations: ["Escalate to manual review."],
+        }),
+      );
+      prisma.learningExperience.findUnique
+        .mockResolvedValueOnce({
+          tenantId: "tenant-1",
+        })
+        .mockResolvedValueOnce({
+          id: "exp-1",
+          tenantId: "tenant-1",
+          status: "DRAFT",
+          gradeAdaptations: [],
+          claims: [
+            {
+              id: "claim-1",
+              claimRef: "claim-1",
+              bloomLevel: "APPLY",
+              examples: [{ id: "ex-1" }],
+              simulations: [],
+              animations: [],
+            },
+          ],
+          evidences: [],
+          experienceTasks: [{ id: "task-1", claimRef: "claim-1" }],
+        });
+
+      await expect(
+        service.publishExperience("exp-1", "user-9"),
+      ).rejects.toMatchObject({
+        statusCode: 409,
+        code: "REVIEW_REQUIRED",
+      });
+
+      expect(prisma.reviewQueue.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            triggerReason: "low_confidence",
+            tenantId: "tenant-1",
+            experienceId: "exp-1",
+          }),
+        }),
+      );
+      expect(prisma.learningExperience.update).not.toHaveBeenCalled();
+    });
+
     it("blocks publishing and opens manual review when evidence confidence is below the publish threshold", async () => {
       prisma.evidenceBundleMetadata.findMany.mockResolvedValueOnce([
         {
@@ -852,6 +1000,14 @@ describe("ContentStudioService", () => {
         harmlessnessScore: 100,
         suggestions: ["Add one more artifact"],
       });
+      prisma.validationRecordExtended.findFirst.mockResolvedValue({
+        overallStatus: "PASS",
+        validatedAt: new Date("2024-02-01T12:00:00.000Z"),
+        validatorsVersion: "independent-validator@test",
+        authorityScore: 94,
+        suggestions: ["Ready for publish."],
+        issues: [],
+      });
       prisma.experienceEvent.findMany.mockResolvedValue([
         {
           id: "evt-1",
@@ -874,6 +1030,11 @@ describe("ContentStudioService", () => {
           status: "WARN",
           accessibilityScore: 85,
         },
+        latestIndependentValidation: {
+          status: "PASS",
+          score: 94,
+          validatorVersion: "independent-validator@test",
+        },
         recentEvents: [
           expect.objectContaining({
             id: "evt-1",
@@ -884,6 +1045,9 @@ describe("ContentStudioService", () => {
       });
       expect(analytics.latestValidation.validatedAt).toBe(
         "2024-02-01T00:00:00.000Z",
+      );
+      expect(analytics.latestIndependentValidation?.validatedAt).toBe(
+        "2024-02-01T12:00:00.000Z",
       );
       expect(analytics.recentEvents[0].createdAt).toBe(
         "2024-02-02T00:00:00.000Z",

@@ -108,21 +108,6 @@ public final class DefaultToolExecutor implements ToolExecutor {
                 .register(meterRegistry);
     }
 
-    /**
-     * Convenience constructor for backward compatibility — uses an allow-all policy engine.
-     *
-     * @param approvalGateway gateway for evaluating and submitting approval requests; must not be null
-     * @param monitor         execution monitor for recording metrics; must not be null
-     * @deprecated Prefer {@link #DefaultToolExecutor(ApprovalGateway, ToolExecutionMonitor, PolicyAsCodeEngine)}
-     *             to enforce policy evaluation on every tool call.
-     */
-    @Deprecated
-    public DefaultToolExecutor(ApprovalGateway approvalGateway, ToolExecutionMonitor monitor) {
-        this(approvalGateway, monitor,
-                (tenantId, policyName, input) -> Promise.of(PolicyEvalResult.allow(policyName)),
-                null, new SimpleMeterRegistry());
-    }
-
     @Override
     public void register(String toolId, ToolHandler handler) {
         Objects.requireNonNull(toolId,   "toolId must not be null");

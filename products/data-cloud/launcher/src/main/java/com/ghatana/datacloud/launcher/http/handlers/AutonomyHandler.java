@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.AutonomyLevel;
+import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -30,11 +31,16 @@ import java.util.Map;
  *   <li>{@code GET  /api/v1/autonomy/logs}            — get autonomy audit log</li>
  * </ul>
  *
+ * <h2>Security</h2>
+ * Emergency autonomy shutoff operations require ADMIN role. Domain-level policy
+ * management requires OPERATOR or ADMIN role.
+ *
  * @doc.type class
  * @doc.purpose Emergency autonomy shutoff and domain-level policy HTTP handler
  * @doc.layer product
  * @doc.pattern Handler
  */
+@RequiresRole("ADMIN")
 public final class AutonomyHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AutonomyHandler.class);

@@ -4,7 +4,11 @@
  */
 package com.ghatana.platform.pac;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -18,9 +22,8 @@ import java.util.concurrent.Executor;
  * {@link PolicyAsCodeEngine} that delegates to an external Open Policy Agent (OPA)
  * HTTP endpoint via the OPA REST API (POST /v1/data/{policyPath}).
  *
- * <p>This is a stub implementation. The response parsing assumes OPA returns:
- * <pre>{"result": {"allow": true}}</pre>
- * A production implementation should deserialise the full OPA result using Jackson.
+ * <p>Uses Jackson for proper JSON serialization and deserialization with typed
+ * response records. Handles HTTP errors, malformed JSON, and missing fields explicitly.
  *
  * <p>All HTTP calls are wrapped in {@code Promise.ofBlocking} to avoid blocking
  * the ActiveJ event loop.
@@ -32,11 +35,13 @@ import java.util.concurrent.Executor;
  */
 public final class OpaClient implements PolicyAsCodeEngine {
 
+    private static final Logger log = LoggerFactory.getLogger(OpaClient.class);
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5);
 
     private final String opaBaseUrl;
     private final HttpClient httpClient;
     private final Executor executor;
+    private final ObjectMapper objectMapper;
 
     /**
      * Construct an OPA client.
@@ -47,6 +52,7 @@ public final class OpaClient implements PolicyAsCodeEngine {
     public OpaClient(String opaBaseUrl, Executor executor) {
         this.opaBaseUrl = opaBaseUrl.stripTrailing();
         this.executor = executor;
+        this.objectMapper = new ObjectMapper();
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(DEFAULT_TIMEOUT)
             .build();
@@ -55,62 +61,87 @@ public final class OpaClient implements PolicyAsCodeEngine {
     @Override
     public Promise<PolicyEvalResult> evaluate(
             String tenantId, String policyName, Map<String, Object> input) {
-        // TODO: serialise input with Jackson and parse the OPA JSON response properly.
-        // This stub always allows — replace before production use.
         return Promise.ofBlocking(executor, () -> {
             String url = opaBaseUrl + "/v1/data/" + policyName.replace('.', '/');
-            String body = """
-                {"input": %s}
-                """.formatted(mapToJsonUnsafe(input));
+            
+            try {
+                String requestBody = objectMapper.writeValueAsString(Map.of("input", input));
+                
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(DEFAULT_TIMEOUT)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
 
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(DEFAULT_TIMEOUT)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
+                HttpResponse<String> response = httpClient.send(
+                    request, HttpResponse.BodyHandlers.ofString());
 
-            HttpResponse<String> response = httpClient.send(
-                request, HttpResponse.BodyHandlers.ofString());
+                // Handle HTTP errors
+                if (response.statusCode() >= 400 && response.statusCode() < 500) {
+                    String errorMsg = "OPA client error: HTTP " + response.statusCode();
+                    log.warn("{} for policy {} tenant {}", errorMsg, policyName, tenantId);
+                    return PolicyEvalResult.deny(policyName, List.of(errorMsg), 100);
+                }
+                
+                if (response.statusCode() >= 500) {
+                    String errorMsg = "OPA server error: HTTP " + response.statusCode();
+                    log.error("{} for policy {} tenant {}", errorMsg, policyName, tenantId);
+                    return PolicyEvalResult.deny(policyName, List.of(errorMsg), 100);
+                }
 
-            if (response.statusCode() != 200) {
-                return PolicyEvalResult.deny(policyName,
-                    List.of("OPA returned HTTP " + response.statusCode()), 100);
+                if (response.statusCode() != 200) {
+                    String errorMsg = "OPA unexpected status: HTTP " + response.statusCode();
+                    log.warn("{} for policy {} tenant {}", errorMsg, policyName, tenantId);
+                    return PolicyEvalResult.deny(policyName, List.of(errorMsg), 100);
+                }
+
+                // Parse OPA response
+                OpaResponse opaResponse = objectMapper.readValue(response.body(), OpaResponse.class);
+                
+                if (opaResponse.result() == null) {
+                    log.warn("OPA response missing result field for policy {} tenant {}", policyName, tenantId);
+                    return PolicyEvalResult.deny(policyName, List.of("OPA response missing result"), 100);
+                }
+
+                boolean allowed = opaResponse.result().allow() != null && opaResponse.result().allow();
+                
+                if (allowed) {
+                    return PolicyEvalResult.allow(policyName);
+                } else {
+                    // Extract reasons from OPA response if available
+                    List<String> reasons = opaResponse.result().reasons();
+                    if (reasons == null || reasons.isEmpty()) {
+                        reasons = List.of("OPA policy denied the request");
+                    }
+                    return PolicyEvalResult.deny(policyName, reasons, 50);
+                }
+
+            } catch (java.net.ConnectException e) {
+                String errorMsg = "Failed to connect to OPA server: " + e.getMessage();
+                log.error("{} for policy {} tenant {}", errorMsg, policyName, tenantId, e);
+                return PolicyEvalResult.deny(policyName, List.of(errorMsg), 100);
+            } catch (java.net.SocketTimeoutException e) {
+                String errorMsg = "OPA request timed out: " + e.getMessage();
+                log.error("{} for policy {} tenant {}", errorMsg, policyName, tenantId, e);
+                return PolicyEvalResult.deny(policyName, List.of(errorMsg), 100);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                String errorMsg = "Failed to parse OPA response: " + e.getMessage();
+                log.error("{} for policy {} tenant {}", errorMsg, policyName, tenantId, e);
+                return PolicyEvalResult.deny(policyName, List.of(errorMsg), 100);
+            } catch (Exception e) {
+                String errorMsg = "Unexpected error evaluating policy: " + e.getMessage();
+                log.error("{} for policy {} tenant {}", errorMsg, policyName, tenantId, e);
+                return PolicyEvalResult.deny(policyName, List.of(errorMsg), 100);
             }
-
-            // Minimal parsing: check if response body contains '"allow":true'
-            boolean allowed = response.body().contains("\"allow\":true");
-            return allowed
-                ? PolicyEvalResult.allow(policyName)
-                : PolicyEvalResult.deny(policyName,
-                    List.of("OPA policy denied the request"), 50);
         });
     }
 
     /**
-     * Minimal, injection-safe JSON serialisation for string-keyed maps.
-     * Only handles String, Number, and Boolean values. Other values are omitted.
-     * A production implementation MUST use Jackson or Gson.
+     * Typed OPA response structure.
+     * OPA returns: {"result": {"allow": boolean, "reasons": [string]}}
      */
-    private static String mapToJsonUnsafe(Map<String, Object> map) {
-        if (map == null || map.isEmpty()) return "{}";
-        StringBuilder sb = new StringBuilder("{");
-        boolean first = true;
-        for (Map.Entry<String, Object> e : map.entrySet()) {
-            if (!first) sb.append(",");
-            first = false;
-            // Escape key to prevent injection
-            sb.append('"').append(e.getKey().replace("\"", "\\\"")).append('"').append(":");
-            Object v = e.getValue();
-            if (v instanceof String s) {
-                sb.append('"').append(s.replace("\\", "\\\\").replace("\"", "\\\"")).append('"');
-            } else if (v instanceof Number || v instanceof Boolean) {
-                sb.append(v);
-            } else {
-                sb.append("null");
-            }
-        }
-        sb.append("}");
-        return sb.toString();
+    record OpaResponse(OpaResult result) {
+        record OpaResult(Boolean allow, List<String> reasons) {}
     }
 }

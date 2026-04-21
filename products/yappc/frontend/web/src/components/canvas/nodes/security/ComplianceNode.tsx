@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { memo, useMemo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import {
   Shield,
   CheckCircle2,
@@ -36,7 +36,7 @@ export interface ControlSummary {
   status: ComplianceStatus;
 }
 
-export interface ComplianceNodeData {
+export interface ComplianceNodeData extends Record<string, unknown> {
   id: string;
   projectId: string;
   framework: ComplianceFramework;
@@ -52,6 +52,8 @@ export interface ComplianceNodeData {
   selected?: boolean;
   compact?: boolean;
 }
+
+type ComplianceCanvasNode = Node<ComplianceNodeData>;
 
 // ============================================================================
 // Framework Configuration
@@ -306,7 +308,7 @@ function getDaysUntil(dateString: string): number {
 // Main Component
 // ============================================================================
 
-function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceNodeData>) {
+function ComplianceNodeComponent({ data, selected }: NodeProps<ComplianceCanvasNode>) {
   const frameworkConfig = FRAMEWORK_CONFIG[data.framework];
   const statusConfig = STATUS_CONFIG[data.overallStatus];
   const StatusIcon = statusConfig.icon;

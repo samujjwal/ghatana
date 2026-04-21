@@ -1,3 +1,4 @@
+schemaVersion: "2.0.0"
 id: data-transformation-agent
 name: Data Transformation Agent
 namespace: platform.data-processing

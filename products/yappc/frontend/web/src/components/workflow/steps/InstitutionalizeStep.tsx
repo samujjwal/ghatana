@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Box, Card, CardContent, Typography, TextField, Button, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemText as ListItemSecondaryAction, IconButton, Divider, Chip, Alert, Slider, Surface as Paper, Select as Autocomplete } from '@ghatana/design-system';
+import { Box, Card, CardContent, Typography, TextField, Button, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction, IconButton, Divider, Chip, Alert, Surface as Paper, Select, MenuItem, FormControl, InputLabel } from '@ghatana/design-system';
 import { Plus as AddIcon, Trash2 as DeleteIcon, ListChecks as ChecklistIcon, FileText as TemplateIcon, BookOpen as ADRIcon, BookOpen as RunbookIcon, ShieldCheck as PolicyIcon, User as PersonIcon, Gavel as EnforcementIcon } from 'lucide-react';
 import { useAtomValue, useSetAtom } from 'jotai';
 
@@ -135,33 +135,33 @@ export function InstitutionalizeStep() {
                 <Paper className="p-4 mb-6 bg-gray-100 dark:bg-gray-800">
                     <Box className="flex gap-6 justify-center">
                         <Box className="text-center">
-                            <Typography as="h4">{actions.length}</Typography>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography variant="h4">{actions.length}</Typography>
+                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                 Total Actions
                             </Typography>
                         </Box>
-                        <Divider orientation="vertical" flexItem />
+                        <Divider orientation="vertical" />
                         <Box className="text-center">
-                            <Typography as="h4" color="warning.main">
+                            <Typography variant="h4" color="warning.main">
                                 {pendingCount}
                             </Typography>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                 Pending
                             </Typography>
                         </Box>
                         <Box className="text-center">
-                            <Typography as="h4" color="success.main">
+                            <Typography variant="h4" color="success.main">
                                 {approvedCount}
                             </Typography>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                 Approved
                             </Typography>
                         </Box>
                         <Box className="text-center">
-                            <Typography as="h4" color="error.main">
+                            <Typography variant="h4" color="error.main">
                                 {rejectedCount}
                             </Typography>
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                 Rejected
                             </Typography>
                         </Box>
@@ -172,7 +172,7 @@ export function InstitutionalizeStep() {
             {/* New Action Form */}
             <Card className="mb-6">
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography component="p" className="text-lg font-medium" gutterBottom>
                         Create Institutional Action
                     </Typography>
 
@@ -187,12 +187,12 @@ export function InstitutionalizeStep() {
                                 style={{ flex: '1 1 150px' }}
                             >
                                 <Box className="flex items-center gap-2">
-                                    <actionType.icon color={newActionType === actionType.value ? 'primary' : 'action'} />
-                                    <Typography as="p" className="text-sm" fontWeight={newActionType === actionType.value ? 600 : 400}>
+                                    <actionType.icon className={newActionType === actionType.value ? 'text-blue-600' : 'text-gray-500'} />
+                                    <Typography component="p" className="text-sm" fontWeight={newActionType === actionType.value ? 600 : 400}>
                                         {actionType.label}
                                     </Typography>
                                 </Box>
-                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
                                     {actionType.desc}
                                 </Typography>
                             </Paper>
@@ -210,48 +210,76 @@ export function InstitutionalizeStep() {
                         />
 
                         <Box className="flex gap-4">
-                            <Autocomplete
-                                options={TEAM_MEMBERS}
-                                value={newActionOwner}
-                                onChange={(_, v) => setNewActionOwner(v)}
-                                renderInput={(params) => (
-                                    <TextField {...params} label="Owner" placeholder="Assign owner" />
-                                )}
-                                className="flex-1"
-                            />
-                            <Autocomplete
-                                multiple
-                                options={TEAM_MEMBERS.filter((m) => m !== newActionOwner)}
-                                value={newActionApprovers}
-                                onChange={(_, v) => setNewActionApprovers(v)}
-                                renderInput={(params) => (
-                                    <TextField {...params} label="Approvers" placeholder="Add approvers" />
-                                )}
-                                className="flex-1"
-                            />
+                            <FormControl fullWidth>
+                                <InputLabel id="institutional-action-owner-label">Owner</InputLabel>
+                                <Select
+                                    labelId="institutional-action-owner-label"
+                                    value={newActionOwner ?? ''}
+                                    label="Owner"
+                                    onChange={(event) => {
+                                        const nextOwner = event.target.value;
+                                        setNewActionOwner(nextOwner === '' ? null : nextOwner);
+                                    }}
+                                >
+                                    <MenuItem value="">
+                                        <em>Assign owner</em>
+                                    </MenuItem>
+                                    {TEAM_MEMBERS.map((member) => (
+                                        <MenuItem key={member} value={member}>
+                                            {member}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            <FormControl fullWidth>
+                                <InputLabel id="institutional-action-approvers-label">Approvers</InputLabel>
+                                <Select
+                                    multiple
+                                    labelId="institutional-action-approvers-label"
+                                    value={newActionApprovers}
+                                    label="Approvers"
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        setNewActionApprovers(typeof value === 'string' ? value.split(',') : value);
+                                    }}
+                                >
+                                    {TEAM_MEMBERS.filter((member) => member !== newActionOwner).map((member) => (
+                                        <MenuItem key={member} value={member}>
+                                            {member}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                         </Box>
 
                         {/* Enforcement Level Slider */}
                         <Box className="px-4">
                             <Box className="flex items-center gap-2 mb-2">
-                                <EnforcementIcon color="action" size={16} />
-                                <Typography as="p" className="text-sm" color="text.secondary">
+                                <EnforcementIcon size={16} className="text-gray-500" />
+                                <Typography component="p" className="text-sm" color="text.secondary">
                                     Enforcement Level: <strong>{getEnforcementLabel(newActionEnforcement)}</strong>
                                 </Typography>
                             </Box>
-                            <Slider
+                            <input
+                                type="range"
                                 value={newActionEnforcement}
-                                onChange={(_, v) => setNewActionEnforcement(v as number)}
+                                onChange={(event) => {
+                                    setNewActionEnforcement(Number(event.target.value));
+                                }}
                                 step={25}
-                                marks={ENFORCEMENT_LEVELS.map((l) => ({ value: l.value, label: l.label }))}
                                 min={0}
                                 max={100}
-                                tone="secondary"
+                                className="w-full"
                             />
+                            <Box className="mt-2 flex justify-between text-xs text-gray-500">
+                                {ENFORCEMENT_LEVELS.map((level) => (
+                                    <span key={level.value}>{level.label}</span>
+                                ))}
+                            </Box>
                         </Box>
 
                         <Button
-                            variant="solid"
+                            variant="contained"
                             onClick={handleAddAction}
                             disabled={!newActionTitle.trim() || !newActionOwner}
                             startIcon={<AddIcon />}
@@ -266,7 +294,7 @@ export function InstitutionalizeStep() {
             {/* Actions List */}
             <Card>
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography component="p" className="text-lg font-medium" gutterBottom>
                         Institutional Actions
                     </Typography>
 
@@ -289,19 +317,19 @@ export function InstitutionalizeStep() {
                                             <ListItemText
                                                 primary={
                                                     <Box className="flex items-center gap-2 flex-wrap">
-                                                        <Typography as="p" fontWeight={500}>
+                                                        <Typography component="p" fontWeight={500}>
                                                             {action.title}
                                                         </Typography>
                                                         <Chip
                                                             label={typeInfo.label}
-                                                            size="sm"
+                                                            size="small"
                                                             variant="outlined"
-                                                            tone="secondary"
+                                                            color="secondary"
                                                             className="h-[20px] text-[10px]"
                                                         />
                                                         <Chip
                                                             label={action.status}
-                                                            size="sm"
+                                                            size="small"
                                                             color={
                                                                 action.status === 'APPROVED'
                                                                     ? 'success'
@@ -313,7 +341,7 @@ export function InstitutionalizeStep() {
                                                         />
                                                         <Chip
                                                             label={getEnforcementLabel(action.enforcementLevel)}
-                                                            size="sm"
+                                                            size="small"
                                                             variant="outlined"
                                                             className="h-[20px] text-[10px]"
                                                         />
@@ -321,18 +349,18 @@ export function InstitutionalizeStep() {
                                                 }
                                                 secondary={
                                                     <>
-                                                        <Typography component="span" as="span" className="text-xs text-gray-500" color="text.secondary" className="block mt-2">
-                                                            <PersonIcon size={undefined} className="mr-1 text-gray-500 dark:text-gray-400 align-middle" />
+                                                        <Typography component="span" className="mt-2 block text-xs text-gray-500" color="text.secondary">
+                                                            <PersonIcon size={12} className="mr-1 inline-block text-gray-500 dark:text-gray-400 align-middle" />
                                                             Owner: {action.owner}
                                                         </Typography>
                                                         {(action.approvers ?? []).length > 0 && (
-                                                            <Typography component="span" as="span" className="text-xs text-gray-500" color="text.secondary" className="block mt-1">
+                                                            <Typography component="span" className="mt-1 block text-xs text-gray-500" color="text.secondary">
                                                                 Approvers:
                                                                 {(action.approvers ?? []).map((approver, i) => (
                                                                     <Chip
                                                                         key={i}
                                                                         label={approver}
-                                                                        size="sm"
+                                                                        size="small"
                                                                         variant="outlined"
                                                                         className="ml-1 h-[18px] text-[10px]"
                                                                     />
@@ -347,8 +375,8 @@ export function InstitutionalizeStep() {
                                                     {action.status === 'PENDING' && (
                                                         <>
                                                             <Button
-                                                                size="sm"
-                                                                tone="success"
+                                                                size="small"
+                                                                color="success"
                                                                 variant="outlined"
                                                                 onClick={() => handleUpdateActionStatus(action.id, 'APPROVED')}
                                                                 className="min-w-0 px-2"
@@ -356,8 +384,8 @@ export function InstitutionalizeStep() {
                                                                 ✓
                                                             </Button>
                                                             <Button
-                                                                size="sm"
-                                                                tone="danger"
+                                                                size="small"
+                                                                color="error"
                                                                 variant="outlined"
                                                                 onClick={() => handleUpdateActionStatus(action.id, 'REJECTED')}
                                                                 className="min-w-0 px-2"
@@ -366,7 +394,7 @@ export function InstitutionalizeStep() {
                                                             </Button>
                                                         </>
                                                     )}
-                                                    <IconButton size="sm" onClick={() => handleRemoveAction(action.id)}>
+                                                    <IconButton size="small" onClick={() => handleRemoveAction(action.id)}>
                                                         <DeleteIcon size={16} />
                                                     </IconButton>
                                                 </Box>
@@ -384,17 +412,18 @@ export function InstitutionalizeStep() {
             {/* Effective Date */}
             <Card className="mt-6">
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography component="p" className="text-lg font-medium" gutterBottom>
                         Effective Date
                     </Typography>
-                    <TextField
+                    <input
                         type="date"
                         value={currentData.effectiveDate ?? ''}
                         onChange={(e) => handleChange('effectiveDate', e.target.value || undefined)}
-                        InputLabelProps={{ shrink: true }}
-                        helperText="When should these changes take effect?"
-                        className="min-w-[200px]"
+                        className="min-w-[200px] rounded border border-gray-300 px-3 py-2 text-sm"
                     />
+                    <Typography component="p" className="mt-2 text-sm text-gray-500" color="text.secondary">
+                        When should these changes take effect?
+                    </Typography>
                 </CardContent>
             </Card>
         </Box>

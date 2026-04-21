@@ -39,7 +39,8 @@ dependencies {
     // Testing
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
-    // JMH Benchmarks
+
+    // JMH for benchmark tests
     testImplementation(libs.jmh.core)
     testAnnotationProcessor(libs.jmh.generator.annprocess)
 }

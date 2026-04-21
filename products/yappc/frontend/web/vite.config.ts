@@ -240,7 +240,7 @@ export default defineConfig({
       ),
       '@ghatana/platform-utils': path.resolve(
         __dirname,
-        '../../../../platform/typescript/foundation/platform-utils/src/index.ts'
+        '../../../../platform/typescript/platform-utils/src/index.ts'
       ),
       '@ghatana/accessibility-audit': path.resolve(
         __dirname,

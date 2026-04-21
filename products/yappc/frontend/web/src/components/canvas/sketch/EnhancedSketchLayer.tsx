@@ -21,7 +21,9 @@ import type { SketchTool, SketchToolConfig, StrokeData, ShapeData } from './type
 import { canvasAtom } from '../../../components/canvas/workspace/canvasAtoms';
 import { cameraAtom } from '../workspace';
 
-import type { CanvasElement } from '../../../components/canvas/workspace/canvasAtoms';
+import type { PrimitiveAtom, SetStateAction, WritableAtom } from 'jotai';
+import type { CanvasElement, CanvasState } from '../../../components/canvas/workspace/canvasAtoms';
+import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 
 
@@ -33,6 +35,35 @@ interface EnhancedSketchLayerProps {
   height: number;
   activeTool: SketchTool;
   config?: SketchToolConfig;
+}
+
+function isStrokeData(value: unknown): value is StrokeData {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    Array.isArray(record.points) &&
+    typeof record.color === 'string' &&
+    typeof record.strokeWidth === 'number' &&
+    (record.tool === 'pen' || record.tool === 'highlighter' || record.tool === 'eraser')
+  );
+}
+
+function isShapeData(value: unknown): value is ShapeData {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    (record.type === 'rectangle' || record.type === 'ellipse' || record.type === 'line' || record.type === 'arrow' || record.type === 'polygon') &&
+    typeof record.x === 'number' &&
+    typeof record.y === 'number' &&
+    typeof record.width === 'number' &&
+    typeof record.height === 'number'
+  );
 }
 
 const DEFAULT_CONFIG: SketchToolConfig = {
@@ -47,15 +78,21 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
   activeTool,
   config = DEFAULT_CONFIG,
 }) => {
-  const stageRef = useRef<unknown>(null);
+  const stageRef = useRef<Konva.Stage | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const [canvasState, setCanvasState] = useAtom(canvasAtom);
+  const [canvasState, setCanvasState] = useAtom(
+    canvasAtom as unknown as WritableAtom<CanvasState, [SetStateAction<CanvasState>], void>,
+  );
   // Use the canonical ReactFlow camera atom (x, y, zoom) instead of the
   // legacy Konva-era cameraAtom/transformAtom which are never updated by
   // ReactFlow's onMove handler.
   const camera = useAtomValue(cameraAtom);
-  const isE2E = typeof window !== 'undefined' && ((window as unknown).__E2E_TEST_MODE || (typeof navigator !== 'undefined' && (navigator as unknown).webdriver));
+  const isE2E =
+    typeof window !== 'undefined' &&
+    (((window as Window & { __E2E_TEST_MODE?: boolean }).__E2E_TEST_MODE ?? false) ||
+      (typeof navigator !== 'undefined' &&
+        (navigator as Navigator & { webdriver?: boolean }).webdriver === true));
 
   const mergedConfig = useMemo(() => ({ ...DEFAULT_CONFIG, ...config }), [config]);
 
@@ -89,7 +126,7 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
         kind: 'shape',
         type: 'stroke',
         position: { x: 0, y: 0 },
-        data: stroke,
+        data: { ...stroke },
       };
 
       setCanvasState((prev) => {
@@ -119,7 +156,7 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
         kind: 'shape',
         type: shape.type,
         position: { x: shape.x, y: shape.y },
-        data: shape,
+        data: { ...shape },
       };
 
       setCanvasState((prev) => {
@@ -276,7 +313,10 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
           {/* Render saved strokes */}
           {sketchElements.map((element) => {
             if (element.type === 'stroke') {
-              const strokeData = element.data as StrokeData;
+              if (!isStrokeData(element.data)) {
+                return null;
+              }
+              const strokeData = element.data;
               return (
                 <Line
                   key={element.id}
@@ -293,7 +333,10 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
                 />
               );
             } else if (element.type === 'rectangle') {
-              const shapeData = element.data as ShapeData;
+              if (!isShapeData(element.data)) {
+                return null;
+              }
+              const shapeData = element.data;
               return (
                 <Rect
                   key={element.id}
@@ -308,7 +351,10 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
                 />
               );
             } else if (element.type === 'ellipse') {
-              const shapeData = element.data as ShapeData;
+              if (!isShapeData(element.data)) {
+                return null;
+              }
+              const shapeData = element.data;
               return (
                 <Ellipse
                   key={element.id}

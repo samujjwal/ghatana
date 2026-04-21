@@ -20,8 +20,9 @@
 
 import React, { useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { Surface as Paper, ToggleButtonGroup, ToggleButton, Slider, Box, Tooltip, IconButton, Popper as Popover } from '@ghatana/design-system';
+import { Surface as Paper, ToggleButtonGroup, ToggleButton, Box, Tooltip, IconButton } from '@ghatana/design-system';
 import { Pencil as PenIcon, Crop as RectIcon, Circle as CircleIcon, Trash2 as EraserIcon, Palette as ColorIcon } from 'lucide-react';
+import type { SketchTool } from '../workspace/canvasAtoms';
 import {
     sketchToolAtom,
     sketchColorAtom,
@@ -33,6 +34,8 @@ export interface SketchToolbarProps {
     className?: string;
 }
 
+type ToolbarTool = SketchTool | 'ellipse' | 'eraser';
+
 /**
  * SketchToolbar - Contextual toolbar for sketch mode
  */
@@ -42,6 +45,10 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
     const [strokeWidth, setStrokeWidth] = useAtom(sketchStrokeWidthAtom);
     const [interactionMode, setInteractionMode] = useAtom(canvasInteractionModeAtom);
     const [colorPickerAnchor, setColorPickerAnchor] = React.useState<HTMLElement | null>(null);
+
+    const setToolbarTool = (nextTool: ToolbarTool) => {
+        setTool(nextTool as SketchTool);
+    };
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -56,19 +63,19 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
 
             switch (e.key.toLowerCase()) {
                 case 'p':
-                    setTool('pen');
+                    setToolbarTool('pen');
                     e.preventDefault();
                     break;
                 case 'r':
-                    setTool('rect');
+                    setToolbarTool('rectangle');
                     e.preventDefault();
                     break;
                 case 'e':
-                    setTool('ellipse');
+                    setToolbarTool('ellipse');
                     e.preventDefault();
                     break;
                 case 'd':
-                    setTool('eraser');
+                    setToolbarTool('eraser');
                     e.preventDefault();
                     break;
                 case '[':
@@ -90,9 +97,9 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [interactionMode, strokeWidth, setTool, setColor, setStrokeWidth, setInteractionMode]);
 
-    const handleToolChange = (newTool: typeof tool | null) => {
-        if (newTool !== null && newTool !== undefined) {
-            setTool(newTool);
+    const handleToolChange = (value: string | string[]) => {
+        if (typeof value === 'string' && value.length > 0) {
+            setToolbarTool(value as ToolbarTool);
         }
     };
 
@@ -137,7 +144,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                         <PenIcon />
                     </Tooltip>
                 </ToggleButton>
-                <ToggleButton value="rect" aria-label="rectangle tool">
+                <ToggleButton value="rectangle" aria-label="rectangle tool">
                     <Tooltip title="Rectangle">
                         <RectIcon />
                     </Tooltip>
@@ -168,20 +175,8 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                     </IconButton>
                 </Tooltip>
 
-                <Popover
-                    open={Boolean(colorPickerAnchor)}
-                    anchorEl={colorPickerAnchor}
-                    onClose={handleCloseColorPicker}
-                    anchorOrigin={{
-                        vertical: 'top',
-                        horizontal: 'center',
-                    }}
-                    transformOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center',
-                    }}
-                >
-                    <Box className="grid grid-cols-5 gap-1 p-2">
+                {colorPickerAnchor && (
+                    <Box className="absolute bottom-full mb-2 grid grid-cols-5 gap-1 rounded border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-900">
                         {commonColors.map((presetColor) => (
                             <IconButton
                                 key={presetColor}
@@ -194,7 +189,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                             />
                         ))}
                     </Box>
-                </Popover>
+                )}
             </Box>
 
             {/* Stroke Width Slider */}
@@ -203,13 +198,13 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                     className="rounded w-[24px]"
                     style={{ height: strokeWidth }}
                 />
-                <Slider
+                <input
+                    type="range"
                     value={strokeWidth}
-                    onChange={(_event, value) => setStrokeWidth(value as number)}
+                    onChange={(event) => setStrokeWidth(Number(event.target.value))}
                     min={1}
                     max={20}
                     step={1}
-                    valueLabelDisplay="auto"
                     aria-label="stroke width"
                     className="w-[120px]"
                 />

@@ -349,23 +349,6 @@ class DefaultToolExecutorTest extends EventloopTestBase {
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS);
         }
-
-        @Test
-        @DisplayName("backward-compat 2-arg constructor uses allow-all policy engine")
-        @SuppressWarnings("deprecation")
-        void twoArgConstructorUsesAllowAllPolicy() {
-            DefaultToolExecutor backCompatExecutor = new DefaultToolExecutor(approvalGateway, monitor);
-            backCompatExecutor.register("tool", (env, con) -> Promise.of(
-                    ToolExecutionResult.succeeded(env.invocationId(), "ok", Map.of(), null, Instant.now(), Duration.ofMillis(5))));
-
-            ToolContract c = contract("tool", ActionClass.READ, false);
-            ToolExecutionEnvelope e = envelope("tool", "agent-1", ActionClass.READ);
-
-            ToolExecutionResult result = runPromise(() -> backCompatExecutor.execute(e, c));
-
-            // allow-all policy ⟹ execution proceeds ⟹ SUCCESS
-            assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS);
-        }
     }
 
     // ─── Metrics and tracing ─────────────────────────────────────────────────

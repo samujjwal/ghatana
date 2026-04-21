@@ -2,7 +2,7 @@
  * Lifecycle Artifact Types
  *
  * Complete type system for YAPPC lifecycle artifacts.
- * Covers the 7-phase model (INTENT → SHAPE → VALIDATE → GENERATE → RUN → OBSERVE → IMPROVE).
+ * Covers the canonical 8-phase model (INTENT → CONTEXT → PLAN → EXECUTE → VERIFY → OBSERVE → LEARN → INSTITUTIONALIZE).
  *
  * @doc.type types
  * @doc.purpose Lifecycle artifact type definitions and catalog
@@ -264,7 +264,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Requirements',
     description: 'Epics and user stories for the system',
     icon: '📋',
-    phase: LifecyclePhase.SHAPE,
+    phase: LifecyclePhase.CONTEXT,
     requiredUpstream: ['problem_statement'],
     placement: { surface: 'canvas', paramType: 'panel', param: 'requirements' },
   },
@@ -273,7 +273,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Architecture Decision Record',
     description: 'Key architectural decisions with context and rationale',
     icon: '🏛️',
-    phase: LifecyclePhase.SHAPE,
+    phase: LifecyclePhase.CONTEXT,
     requiredUpstream: ['requirements'],
     placement: { surface: 'canvas', paramType: 'panel', param: 'adr' },
   },
@@ -283,7 +283,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     description:
       'User flows, information architecture, and accessibility notes',
     icon: '🎨',
-    phase: LifecyclePhase.SHAPE,
+    phase: LifecyclePhase.CONTEXT,
     requiredUpstream: ['requirements'],
     placement: { surface: 'canvas', paramType: 'panel', param: 'ux-spec' },
   },
@@ -292,7 +292,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Threat Model',
     description: 'Security threats, mitigations, and residual risk assessment',
     icon: '🔒',
-    phase: LifecyclePhase.VALIDATE,
+    phase: LifecyclePhase.PLAN,
     requiredUpstream: ['requirements', 'adr'],
     placement: {
       surface: 'preview',
@@ -305,7 +305,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Validation Report',
     description: 'Test coverage, accessibility, and performance findings',
     icon: '✅',
-    phase: LifecyclePhase.VALIDATE,
+    phase: LifecyclePhase.PLAN,
     requiredUpstream: ['ux_spec', 'threat_model'],
     placement: { surface: 'preview', paramType: 'panel', param: 'validation' },
   },
@@ -314,7 +314,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Simulation Results',
     description: 'Scenario outcomes and confidence scoring',
     icon: '🧪',
-    phase: LifecyclePhase.VALIDATE,
+    phase: LifecyclePhase.PLAN,
     requiredUpstream: ['validation_report'],
     placement: { surface: 'preview', paramType: 'panel', param: 'simulation' },
   },
@@ -323,7 +323,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Delivery Plan',
     description: 'Milestones, work items, and delivery schedule',
     icon: '📅',
-    phase: LifecyclePhase.GENERATE,
+    phase: LifecyclePhase.EXECUTE,
     requiredUpstream: ['simulation_results'],
     placement: {
       surface: 'canvas',
@@ -336,7 +336,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Release Strategy',
     description: 'Rollout approach, environments, and rollback plan',
     icon: '🚀',
-    phase: LifecyclePhase.GENERATE,
+    phase: LifecyclePhase.EXECUTE,
     requiredUpstream: ['delivery_plan'],
     placement: {
       surface: 'canvas',
@@ -349,7 +349,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Evidence Pack',
     description: 'Test results, security scans, and compliance checks',
     icon: '📦',
-    phase: LifecyclePhase.RUN,
+    phase: LifecyclePhase.VERIFY,
     requiredUpstream: ['release_strategy'],
     placement: { surface: 'deploy', paramType: 'tab', param: 'evidence' },
   },
@@ -358,7 +358,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Release Packet',
     description: 'Release notes, FAQ, and runbook for operations',
     icon: '📄',
-    phase: LifecyclePhase.RUN,
+    phase: LifecyclePhase.VERIFY,
     requiredUpstream: ['evidence_pack'],
     placement: { surface: 'deploy', paramType: 'tab', param: 'release-packet' },
   },
@@ -385,7 +385,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Enhancement Requests',
     description: 'Backlog of improvement requests from observations',
     icon: '✨',
-    phase: LifecyclePhase.IMPROVE,
+    phase: LifecyclePhase.LEARN,
     requiredUpstream: ['incident_report'],
     placement: { surface: 'deploy', paramType: 'tab', param: 'enhancements' },
   },
@@ -394,7 +394,7 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
     label: 'Learning Record',
     description: 'Retrospective insights and recommendations',
     icon: '📚',
-    phase: LifecyclePhase.IMPROVE,
+    phase: LifecyclePhase.LEARN,
     requiredUpstream: ['enhancement_requests'],
     placement: { surface: 'deploy', paramType: 'tab', param: 'learning' },
   },

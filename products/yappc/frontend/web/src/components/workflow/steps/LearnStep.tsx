@@ -18,7 +18,24 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { LearnStepData, Lesson, RootCause } from '@yappc/core/types';
+interface Lesson {
+    id: string;
+    category: 'WHAT_WORKED' | 'WHAT_DIDNT' | 'IMPROVEMENT';
+    description: string;
+    actionable: boolean;
+}
+
+interface RootCause {
+    id: string;
+    category: 'PROCESS' | 'TECHNOLOGY' | 'PEOPLE' | 'EXTERNAL';
+    description: string;
+    contributingFactors: string[];
+}
+
+interface LearnStepData {
+    lessons?: Lesson[];
+    rootCauses?: RootCause[];
+}
 
 // ============================================================================
 // CONSTANTS
@@ -135,7 +152,7 @@ export function LearnStep() {
             {/* Lessons Learned */}
             <Card className="mb-6">
                 <CardContent>
-                    <Typography as="p" className="text-lg font-medium" gutterBottom fontWeight={600}>
+                    <Typography className="text-lg font-medium" gutterBottom fontWeight={600}>
                         Lessons Learned
                     </Typography>
 
@@ -143,7 +160,11 @@ export function LearnStep() {
                         <ToggleButtonGroup
                             value={newLessonCategory}
                             exclusive
-                            onChange={(_, v) => v && setNewLessonCategory(v)}
+                            onChange={(value) => {
+                                if (typeof value === 'string') {
+                                    setNewLessonCategory(value as Lesson['category']);
+                                }
+                            }}
                             size="sm"
                         >
                             {LESSON_CATEGORIES.map((cat) => (
@@ -191,19 +212,19 @@ export function LearnStep() {
                                         <Box key={cat.value}>
                                             <Box className="flex items-center gap-2 mb-2">
                                                 <cat.icon color={cat.color} size={16} />
-                                                <Typography as="p" className="text-sm" fontWeight={500}>
+                                                <Typography className="text-sm font-medium">
                                                     {cat.label} ({cat.lessons.length})
                                                 </Typography>
                                             </Box>
                                             <List className="rounded bg-gray-100 dark:bg-gray-800">
-                                                {cat.lessons.map((lesson, index) => (
+                                                {cat.lessons.map((lesson: Lesson, index: number) => (
                                                     <React.Fragment key={lesson.id}>
                                                         <ListItem className="px-4">
                                                             <ListItemText primary={lesson.description} />
                                                             {lesson.actionable && (
                                                                 <Chip label="Actionable" size="sm" tone="primary" className="mr-2" />
                                                             )}
-                                                            <IconButton size="sm" onClick={() => handleRemoveLesson(lesson.id)}>
+                                                            <IconButton size="small" onClick={() => handleRemoveLesson(lesson.id)}>
                                                                 <DeleteIcon size={16} />
                                                             </IconButton>
                                                         </ListItem>
@@ -223,14 +244,14 @@ export function LearnStep() {
             <Card>
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <RootCauseIcon tone="warning" />
-                        <Typography as="p" className="text-lg font-medium" fontWeight={600}>
+                        <RootCauseIcon className="text-amber-600" />
+                        <Typography className="text-lg font-medium" fontWeight={600}>
                             Root Cause Analysis
                         </Typography>
                     </Box>
 
                     <Box className="flex gap-2 mb-4">
-                        <FormControl size="sm" className="min-w-[140px]">
+                        <FormControl size="small" className="min-w-[140px]">
                             <InputLabel>Category</InputLabel>
                             <Select
                                 value={newRootCauseCategory}
@@ -258,19 +279,19 @@ export function LearnStep() {
 
                     {/* Contributing factors */}
                     <Box className="mb-4">
-                        <Typography as="p" className="text-sm" color="text.secondary" className="mb-2">
+                        <Typography className="mb-2 text-sm text-gray-500" color="text.secondary">
                             Contributing Factors
                         </Typography>
                         <Box className="flex gap-2 mb-2">
                             <TextField
-                                size="sm"
+                                size="small"
                                 placeholder="Add factor..."
                                 value={newFactor}
                                 onChange={(e) => setNewFactor(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleAddFactor()}
                                 className="grow"
                             />
-                            <Button variant="outlined" size="sm" onClick={handleAddFactor} disabled={!newFactor.trim()}>
+                            <Button variant="outlined" size="small" onClick={handleAddFactor} disabled={!newFactor.trim()}>
                                 Add Factor
                             </Button>
                         </Box>
@@ -288,7 +309,6 @@ export function LearnStep() {
 
                     <Button
                         variant="solid"
-                        tone="warning"
                         onClick={handleAddRootCause}
                         disabled={!newRootCauseDesc.trim()}
                         startIcon={<AddIcon />}
@@ -298,7 +318,7 @@ export function LearnStep() {
 
                     {rootCauses.length > 0 && (
                         <List className="mt-4">
-                            {rootCauses.map((rootCause, index) => {
+                            {rootCauses.map((rootCause: RootCause, index: number) => {
                                 const cat = ROOT_CAUSE_CATEGORIES.find((c) => c.value === rootCause.category);
                                 const CatIcon = cat?.icon || ProcessIcon;
 
@@ -306,12 +326,12 @@ export function LearnStep() {
                                     <React.Fragment key={rootCause.id}>
                                         <ListItem className="px-0 items-start">
                                             <ListItemIcon className="mt-1 min-w-[40px]">
-                                                <CatIcon tone="warning" />
+                                                <CatIcon className="text-amber-600" />
                                             </ListItemIcon>
                                             <ListItemText
                                                 primary={
                                                     <Box className="flex items-center gap-2">
-                                                        <Typography as="p" className="text-sm" fontWeight={500}>
+                                                        <Typography className="text-sm font-medium">
                                                             {rootCause.description}
                                                         </Typography>
                                                         <Chip label={cat?.label} size="sm" variant="outlined" className="h-[18px] text-[10px]" />
@@ -320,7 +340,7 @@ export function LearnStep() {
                                                 secondary={
                                                     rootCause.contributingFactors.length > 0 && (
                                                         <>
-                                                            {rootCause.contributingFactors.map((factor, i) => (
+                                                            {rootCause.contributingFactors.map((factor: string, i: number) => (
                                                                 <Chip key={i} label={factor} size="sm" variant="outlined" className="h-[20px] text-[10px]" />
                                                             ))}
                                                         </>
@@ -328,7 +348,7 @@ export function LearnStep() {
                                                 }
                                             />
                                             <ListItemSecondaryAction>
-                                                <IconButton size="sm" onClick={() => handleRemoveRootCause(rootCause.id)}>
+                                                <IconButton size="small" onClick={() => handleRemoveRootCause(rootCause.id)}>
                                                     <DeleteIcon size={16} />
                                                 </IconButton>
                                             </ListItemSecondaryAction>

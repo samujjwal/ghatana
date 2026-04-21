@@ -100,8 +100,8 @@ export interface PhaseTransitionValidation {
 // ============================================================================
 
 /**
- * All 6 consecutive phase gates for the 7-phase lifecycle:
- * INTENT → SHAPE → VALIDATE → GENERATE → RUN → OBSERVE → IMPROVE
+ * All consecutive phase gates for the canonical 8-phase lifecycle:
+ * INTENT → CONTEXT → PLAN → EXECUTE → VERIFY → OBSERVE → LEARN → INSTITUTIONALIZE
  *
  * Required artifacts per gate are taken directly from the catalog so
  * that this file never drifts out of sync with lifecycle-artifacts.ts.
@@ -109,63 +109,73 @@ export interface PhaseTransitionValidation {
 export const PHASE_GATES: PhaseGate[] = [
   {
     id: 'gate:intent-to-shape',
-    name: 'Intent → Shape Gate',
+    name: 'Intent → Context Gate',
     description:
-      'All Intent-phase artifacts (Idea Brief, Research Pack, Problem Statement) must be complete before shaping can begin.',
+      'All Intent-phase artifacts (Idea Brief, Research Pack, Problem Statement) must be complete before context work can begin.',
     fromPhase: LifecyclePhase.INTENT,
-    toPhase: LifecyclePhase.SHAPE,
+    toPhase: LifecyclePhase.CONTEXT,
     canBypass: true,
     requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.INTENT),
   },
   {
     id: 'gate:shape-to-validate',
-    name: 'Shape → Validate Gate',
+    name: 'Context → Plan Gate',
     description:
-      'All Shape-phase artifacts (Requirements, ADR, UX Spec) must be complete before validation can begin.',
-    fromPhase: LifecyclePhase.SHAPE,
-    toPhase: LifecyclePhase.VALIDATE,
+      'All Context-phase artifacts (Requirements, ADR, UX Spec) must be complete before planning can begin.',
+    fromPhase: LifecyclePhase.CONTEXT,
+    toPhase: LifecyclePhase.PLAN,
     canBypass: true,
-    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.SHAPE),
+    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.CONTEXT),
   },
   {
     id: 'gate:validate-to-generate',
-    name: 'Validate → Generate Gate',
+    name: 'Plan → Execute Gate',
     description:
-      'All Validate-phase artifacts (Threat Model, Validation Report, Simulation Results) must be complete before code generation can begin.',
-    fromPhase: LifecyclePhase.VALIDATE,
-    toPhase: LifecyclePhase.GENERATE,
+      'All Plan-phase artifacts (Threat Model, Validation Report, Simulation Results) must be complete before execution can begin.',
+    fromPhase: LifecyclePhase.PLAN,
+    toPhase: LifecyclePhase.EXECUTE,
     canBypass: true,
-    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.VALIDATE),
+    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.PLAN),
   },
   {
     id: 'gate:generate-to-run',
-    name: 'Generate → Run Gate',
+    name: 'Execute → Verify Gate',
     description:
-      'All Generate-phase artifacts (Delivery Plan, Release Strategy) must be complete before execution can begin.',
-    fromPhase: LifecyclePhase.GENERATE,
-    toPhase: LifecyclePhase.RUN,
+      'All Execute-phase artifacts (Delivery Plan, Release Strategy) must be complete before verification can begin.',
+    fromPhase: LifecyclePhase.EXECUTE,
+    toPhase: LifecyclePhase.VERIFY,
     canBypass: true,
-    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.GENERATE),
+    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.EXECUTE),
   },
   {
     id: 'gate:run-to-observe',
-    name: 'Run → Observe Gate',
+    name: 'Verify → Observe Gate',
     description:
-      'All Run-phase artifacts (Evidence Pack, Release Packet) must be complete before the observation phase can begin.',
-    fromPhase: LifecyclePhase.RUN,
+      'All Verify-phase artifacts (Evidence Pack, Release Packet) must be complete before the observation phase can begin.',
+    fromPhase: LifecyclePhase.VERIFY,
     toPhase: LifecyclePhase.OBSERVE,
     canBypass: true,
-    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.RUN),
+    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.VERIFY),
   },
   {
     id: 'gate:observe-to-improve',
-    name: 'Observe → Improve Gate',
+    name: 'Observe → Learn Gate',
     description:
-      'All Observe-phase artifacts (Ops Baseline, Incident Report) must be complete before the improvement cycle can begin.',
+      'All Observe-phase artifacts (Ops Baseline, Incident Report) must be complete before the learning cycle can begin.',
     fromPhase: LifecyclePhase.OBSERVE,
-    toPhase: LifecyclePhase.IMPROVE,
+    toPhase: LifecyclePhase.LEARN,
     canBypass: true,
     requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.OBSERVE),
+  },
+  {
+    id: 'gate:learn-to-institutionalize',
+    name: 'Learn → Institutionalize Gate',
+    description:
+      'All Learn-phase artifacts (Enhancement Requests, Learning Record) must be complete before institutionalizing the outcomes.',
+    fromPhase: LifecyclePhase.LEARN,
+    toPhase: LifecyclePhase.INSTITUTIONALIZE,
+    canBypass: true,
+    requiredArtifactKinds: getArtifactsForPhase(LifecyclePhase.LEARN),
   },
 ];
 

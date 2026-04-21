@@ -25,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Service that delivers processed events and pattern detections to registered
  * external destinations via pluggable {@link MessageSender} callbacks.
  *
- * <p>Callers in {@code aep-connectors} (which depends on this module) can adapt
+ * <p>Callers in {@code platform:java:messaging} (which depends on this module) can adapt
  * any {@code QueueProducerStrategy} to the {@link MessageSender} functional interface:
  * <pre>{@code
  * MessageSender sender = (tenantId, eventType, payload, headers) -> {
@@ -178,7 +178,7 @@ public final class EventDeliveryService {
 
     /**
      * Functional interface for sending a pre-serialized event payload to an external system.
-     * Implementations live in {@code aep-connectors}; {@code aep-engine} only depends on this
+     * Implementations live in {@code platform:java:messaging}; {@code aep-engine} only depends on this
      * abstraction so the module graph stays acyclic.
      */
     @FunctionalInterface

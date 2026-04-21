@@ -6,7 +6,6 @@
  * @packageDocumentation
  */
 
-import { Search, Filter } from 'lucide-react';
 import {
   Box,
   Stack,
@@ -19,7 +18,15 @@ import {
 } from '@ghatana/design-system';
 import React, { useState, useMemo, useCallback } from 'react';
 
-import type { RequirementConfig } from '@yappc/config-schema';
+interface RequirementConfig {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  priority: string;
+  status: string;
+  tags?: string[];
+}
 
 /**
  * @doc.type component
@@ -99,24 +106,16 @@ export const RequirementList: React.FC<RequirementListProps> = ({
         onChange={(e) => setSearchTerm(e.target.value)}
         fullWidth
         size="small"
-        InputProps={{
-          startAdornment: <Search size={16} className="mr-2 text-gray-400" />,
-        }}
-        sx={{ mb: 2 }}
+        className="mb-2"
       />
 
       {/* Filters */}
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          select
-          label="Type"
+      <Box className="mb-2 flex flex-wrap gap-2">
+        <Select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          size="small"
-          sx={{ minWidth: 120 }}
-          InputProps={{
-            startAdornment: <Filter size={16} className="mr-1 text-gray-400" />,
-          }}
+          onChange={(e) => setFilterType(String(e.target.value))}
+          size="sm"
+          className="min-w-[120px]"
         >
           <MenuItem value="all">All Types</MenuItem>
           {uniqueTypes.map((type) => (
@@ -124,15 +123,13 @@ export const RequirementList: React.FC<RequirementListProps> = ({
               {type}
             </MenuItem>
           ))}
-        </TextField>
+        </Select>
 
-        <TextField
-          select
-          label="Priority"
+        <Select
           value={filterPriority}
-          onChange={(e) => setFilterPriority(e.target.value)}
-          size="small"
-          sx={{ minWidth: 120 }}
+          onChange={(e) => setFilterPriority(String(e.target.value))}
+          size="sm"
+          className="min-w-[120px]"
         >
           <MenuItem value="all">All Priorities</MenuItem>
           {uniquePriorities.map((priority) => (
@@ -140,15 +137,13 @@ export const RequirementList: React.FC<RequirementListProps> = ({
               {priority}
             </MenuItem>
           ))}
-        </TextField>
+        </Select>
 
-        <TextField
-          select
-          label="Status"
+        <Select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          size="small"
-          sx={{ minWidth: 120 }}
+          onChange={(e) => setFilterStatus(String(e.target.value))}
+          size="sm"
+          className="min-w-[120px]"
         >
           <MenuItem value="all">All Statuses</MenuItem>
           {uniqueStatuses.map((status) => (
@@ -156,13 +151,13 @@ export const RequirementList: React.FC<RequirementListProps> = ({
               {status}
             </MenuItem>
           ))}
-        </TextField>
-      </Stack>
+        </Select>
+      </Box>
 
       {/* List */}
       <Stack spacing={2}>
         {filteredRequirements.length === 0 ? (
-          <Typography color="text.secondary" variant="body2" textAlign="center" py={4}>
+          <Typography color="text.secondary" variant="body2" className="py-4 text-center">
             No requirements match your filters
           </Typography>
         ) : (
@@ -216,7 +211,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
 
                 {req.tags && req.tags.length > 0 && (
                   <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                    {req.tags.map((tag) => (
+                    {req.tags.map((tag: string) => (
                       <Chip key={tag} label={tag} size="small" variant="outlined" className="text-xs" />
                     ))}
                   </Stack>

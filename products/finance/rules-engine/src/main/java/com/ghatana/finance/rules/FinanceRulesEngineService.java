@@ -317,7 +317,7 @@ public final class FinanceRulesEngineService {
         Map<String, FinanceViolation> violations = new HashMap<>();
 
         if (!resultNode.isMissingNode()) {
-            resultMap = MAPPER.convertValue(resultNode, Map.class);
+            resultMap = MAPPER.convertValue(resultNode, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 
             // Extract compliance result
             Object compliantVal = resultMap.get("compliant");
@@ -334,9 +334,11 @@ public final class FinanceRulesEngineService {
             // Extract violations
             Object violationsVal = resultMap.get("violations");
             if (violationsVal instanceof Map) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> violationMaps = (Map<String, Object>) violationsVal;
                 for (Map.Entry<String, Object> entry : violationMaps.entrySet()) {
                     if (entry.getValue() instanceof Map) {
+                        @SuppressWarnings("unchecked")
                         Map<String, Object> violationMap = (Map<String, Object>) entry.getValue();
                         violations.put(entry.getKey(), new FinanceViolation(
                             entry.getKey(),

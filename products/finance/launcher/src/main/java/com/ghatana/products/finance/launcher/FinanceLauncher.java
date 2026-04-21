@@ -23,6 +23,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Standalone launcher for the Finance product module.
+ *
+ * <h2>HTTP Server Configuration</h2>
+ * <ul>
+ *   <li>Default port: 8081 (configurable via {@code FINANCE_HTTP_PORT} environment variable or {@code --port} argument)</li>
+ *   <li>Health probe: {@code GET /health} - returns 200 when service is healthy</li>
+ *   <li>Readiness probe: {@code GET /ready} - returns 200 when service is ready to accept traffic</li>
+ * </ul>
+ *
+ * <h2>API Endpoints</h2>
+ * <ul>
+ *   <li>POST {@code /ledger/postings} - Post ledger transaction</li>
+ *   <li>GET {@code /ledger/postings/:entryId} - Get ledger posting status</li>
+ *   <li>POST {@code /transactions} - Submit and process transaction</li>
+ *   <li>GET {@code /transactions/:id} - Retrieve transaction by ID</li>
+ * </ul>
+ *
  * @doc.type class
  * @doc.purpose Standalone launcher for the Finance product module
  * @doc.layer launcher
@@ -33,6 +50,7 @@ public final class FinanceLauncher {
     private static final Logger log = LoggerFactory.getLogger(FinanceLauncher.class);
     private static final Duration START_TIMEOUT = Duration.ofSeconds(60);
     private static final Duration STOP_TIMEOUT = Duration.ofSeconds(30);
+    private static final int DEFAULT_HTTP_PORT = 8081;
 
     private FinanceLauncher() {
     }
@@ -47,11 +65,13 @@ public final class FinanceLauncher {
             module.initialize(context);
             await("finance startup", module.start(), START_TIMEOUT);
 
-            // Create and start HTTP server binding
+            // Create and start HTTP server binding with explicit port configuration
             Eventloop eventloop = context.getDependency(Eventloop.class);
             FinanceHttpServer financeHttpServer = context.getDependency(FinanceHttpServer.class);
             httpBinding = new HttpServerBindingFactory()
                     .withServiceName("finance")
+                    .withPort(config.httpPort())
+                    .withHost(config.httpHost())
                     .build(eventloop, financeHttpServer.getServlet());
             await("finance http binding", httpBinding.start(), START_TIMEOUT);
 
@@ -124,7 +144,7 @@ public final class FinanceLauncher {
         log.info("Completed {}", operation);
     }
 
-    private record FinanceLauncherConfig(String environment) {
+    private record FinanceLauncherConfig(String environment, int httpPort, String httpHost) {
 
         private static FinanceLauncherConfig from(String[] args) {
             String environment = readOption(args, "--environment")
@@ -132,7 +152,17 @@ public final class FinanceLauncher {
                 .or(() -> readValue("FINANCE_ENVIRONMENT"))
                 .or(() -> readValue("GHATANA_ENVIRONMENT"))
                 .orElse("local");
-            return new FinanceLauncherConfig(environment);
+            
+            int port = readOption(args, "--port")
+                .or(() -> readValue("FINANCE_HTTP_PORT"))
+                .map(Integer::parseInt)
+                .orElse(DEFAULT_HTTP_PORT);
+            
+            String host = readOption(args, "--host")
+                .or(() -> readValue("FINANCE_HTTP_HOST"))
+                .orElse("0.0.0.0");
+            
+            return new FinanceLauncherConfig(environment, port, host);
         }
 
         private static Optional<String> readOption(String[] args, String option) {

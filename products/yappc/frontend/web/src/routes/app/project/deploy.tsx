@@ -15,6 +15,10 @@ import { useParams } from "react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../../../stores/user.store';
+import type {
+    ReleasePlanningStatusContract,
+    ReleasePlanningStatusViewContract,
+} from '@/contracts/workspace-project';
 
 import { RouteErrorBoundary } from "../../../components/route/ErrorBoundary";
 import { DeployPanelHost } from '../../../components/deploy/DeployPanelHost';
@@ -23,6 +27,69 @@ import type { DeploymentPlanSummary } from '../../../components/deploy/Deploymen
 import { useLifecycleArtifacts, usePhaseGates } from "../../../services/canvas/lifecycle";
 import type { TransitionResult } from '../../../services/canvas/lifecycle';
 import { phaseTransitionAPI, type PhaseTransitionPreview } from '@/services/lifecycle/phase-transition-api';
+
+function getReleasePlanningStatusView(
+    preview: PhaseTransitionPreview | null,
+    previewError: string | null,
+): ReleasePlanningStatusViewContract {
+    if (previewError) {
+        return {
+            status: 'blocked',
+            label: 'Release planning blocked',
+            detail: previewError,
+        };
+    }
+
+    if (!preview) {
+        return {
+            status: 'approval-needed',
+            label: 'Review pending',
+            detail: 'Waiting for lifecycle readiness before the planning posture can be finalized.',
+        };
+    }
+
+    if (!preview.nextPhase) {
+        return {
+            status: 'final-phase',
+            label: 'Lifecycle complete',
+            detail: 'No further promotion step is available from this project state.',
+        };
+    }
+
+    if (!preview.canAdvance) {
+        return {
+            status: 'blocked',
+            label: 'Blocked by lifecycle gates',
+            detail: preview.blockers[0] ?? 'Resolve the listed blockers before planning promotion.',
+        };
+    }
+
+    if ((preview.readiness ?? 0) < 90) {
+        return {
+            status: 'approval-needed',
+            label: 'Approval-needed',
+            detail: 'The route can plan promotion, but an operator should review readiness before proceeding.',
+        };
+    }
+
+    return {
+        status: 'planning-ready',
+        label: 'Planning-ready',
+        detail: 'Lifecycle evidence supports the next promotion step with standard operator checks.',
+    };
+}
+
+function getReleasePlanningStatusClassName(status: ReleasePlanningStatusContract): string {
+    switch (status) {
+        case 'planning-ready':
+        case 'final-phase':
+            return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200';
+        case 'approval-needed':
+            return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200';
+        default:
+            return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200';
+    }
+}
 
 function buildDeploymentPlanSummary(preview: PhaseTransitionPreview | null, currentPhase: string): DeploymentPlanSummary {
     const readiness = Math.round(preview?.readiness ?? 0);
@@ -91,6 +158,7 @@ export default function Component() {
 
     const deploymentPlan = buildDeploymentPlanSummary(phasePreview, currentPhase);
     const capacityRecommendation = buildCapacityRecommendation(phasePreview);
+    const releasePlanningStatus = getReleasePlanningStatusView(phasePreview, phasePreviewError);
 
     type ArtifactKindValue = Parameters<typeof createArtifact>[0];
     const DELIVERY_PLAN_KIND = 'delivery_plan' as ArtifactKindValue;
@@ -249,11 +317,16 @@ export default function Component() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-bg-paper">
                 <div>
                     <h1 className="text-xl font-semibold text-text-primary">
-                        Deployment Pipeline
+                        Release Planning
                     </h1>
                     <p className="text-sm text-text-secondary mt-0.5">
-                        Multi-environment deployment management
+                        Lifecycle promotion guidance and operator planning
                     </p>
+                    <div className="mt-3">
+                        <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getReleasePlanningStatusClassName(releasePlanningStatus.status)}`} data-testid="release-planning-status-badge">
+                            {releasePlanningStatus.label}
+                        </span>
+                    </div>
                     <p className="text-xs text-text-secondary mt-2" data-testid="phase-preview-summary">
                         {isPhasePreviewLoading
                             ? 'Loading lifecycle readiness...'
@@ -263,6 +336,9 @@ export default function Component() {
                     </p>
                     <p className="text-xs text-text-secondary mt-1" data-testid="phase-prediction-summary">
                         {isPhasePreviewLoading ? 'Predicting readiness window...' : phasePredictionSummary}
+                    </p>
+                    <p className="text-xs text-text-secondary mt-1" data-testid="release-planning-status-detail">
+                        {releasePlanningStatus.detail}
                     </p>
                 </div>
                 <button
@@ -308,15 +384,21 @@ export default function Component() {
                 <div className="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
                     <div>
                         <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-primary-600">Operator control surface</h2>
-                        <p className="mt-2 text-base font-semibold text-text-primary">Release posture for live promotion decisions</p>
+                        <p className="mt-2 text-base font-semibold text-text-primary">Release posture for lifecycle promotion planning</p>
                         <p className="mt-1 text-sm text-text-secondary">
-                            Strategy {deploymentPlan.strategy}, risk score {deploymentPlan.riskScore}, readiness {deploymentPlan.readiness}%.
+                            Planning recommendation: strategy {deploymentPlan.strategy}, estimated risk score {deploymentPlan.riskScore}, readiness {deploymentPlan.readiness}%.
+                        </p>
+                        <p className="mt-2 text-sm text-text-secondary">
+                            Current release status: {releasePlanningStatus.label}. {releasePlanningStatus.detail}
                         </p>
                         <div className="mt-3 flex flex-wrap gap-3 text-xs text-text-secondary">
                             <span>Approval {deploymentPlan.requiresApproval ? 'required' : 'not required'}</span>
-                            <span>Target replicas {capacityRecommendation.targetReplicas}</span>
-                            <span>Projected cost ${capacityRecommendation.projectedMonthlyCost}</span>
+                            <span>Suggested replica posture {capacityRecommendation.targetReplicas}</span>
+                            <span>Estimated monthly cost ${capacityRecommendation.projectedMonthlyCost}</span>
                         </div>
+                        <p className="mt-3 text-xs text-text-secondary">
+                            These figures are planning estimates derived from lifecycle readiness, not live deployment telemetry.
+                        </p>
                     </div>
                     <div>
                         <label className="block text-xs font-medium uppercase tracking-[0.14em] text-text-secondary" htmlFor="operator-note">

@@ -20,7 +20,7 @@ export default defineConfig({
       '@yappc/state/*': resolve(__dirname, '../yappc-state/src/*'),
       '@ghatana/platform-utils': resolve(
         __dirname,
-        '../../../../../platform/typescript/foundation/platform-utils/src'
+        '../../../../../platform/typescript/platform-utils/src'
       ),
     },
   },

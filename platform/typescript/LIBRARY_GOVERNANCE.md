@@ -1,6 +1,8 @@
 # Library Governance
 
-> **Last Updated:** 2026-04-10 (post-audit Phase 1 & 2 remediation)
+> **Last Updated:** 2026-04-20 (post-audit Phase 3 remediation)
+>
+> **Authoritative Entry Point:** For the complete repository-wide engineering standards including package governance, see [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md). This document provides the detailed platform-specific package registry and governance rules.
 
 ## When to Create a New Library
 

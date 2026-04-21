@@ -30,7 +30,7 @@ Platform code is **architecturally serious but operationally drifting**. Strong 
 5. **HIGH — Section 25 ("fix-forward, no aliases, no backward compatibility") is violated in code.** Concrete cases:
    - [agent-core DEPRECATION_GUIDE.md](platform/java/agent-core/DEPRECATION_GUIDE.md#L9-L20) keeps `AgentType.LLM`, the legacy `Agent` interface, and `AgentCapabilities` until "3.0.0" — explicit deprecation window.
    - [canvas-core/package.json L26](platform/typescript/canvas-core/package.json#L26) has `"deprecated": "Use @ghatana/canvas directly. This package is a thin re-export facade."` — exactly the alias pattern Section 25 forbids.
-   - [agent-catalog schema-migration.js L48-L57](platform/agent-catalog/schema-migration.js#L48-L57) explicitly says *"Mark generator as deprecated but keep for backward compatibility"*.
+   - [agent-catalog schema-migration.ts L48-L57](platform/agent-catalog/schema-migration.ts#L48-L57) explicitly says *"Mark generator as deprecated but keep for backward compatibility"*.
    - 9 `@Deprecated` Java members across `core/validation/ValidationResult`, `ai-integration/LLMService.generate(String)`, `tool-runtime/DefaultToolExecutor`, `security/model/User`.
 
 6. **HIGH — Severe dependency drift between `platform/typescript/package.json` and the actual packages.** Root [platform/typescript/package.json L21-L29](platform/typescript/package.json#L21-L29) declares `typescript ^4.9.4`, `vitest ^0.28.1`, `@types/react ^18.x`, `engines.node >=16`, and uses `npm run --workspaces`. Actual packages use `typescript ^6.0.2`, `vitest ^4.1.4`, `react ^19.2.4`, `@types/node ^25.6.0` (e.g. [design-system/package.json L106-L114](platform/typescript/design-system/package.json#L106-L114)). The root file is a stale lie that confuses tooling and contradicts repo policy of `pnpm`.
@@ -82,7 +82,7 @@ Platform code is **architecturally serious but operationally drifting**. Strong 
 
 ### Correctness
 - `OpaClient` (HIGH).
-- `agent-catalog/schema-migration.js`: `_deprecated`/`_migratedTo` fields injected into the live YAML write back are unspecified by `catalog-schema.yaml` (would need verification), and consumers may treat them as data.
+- `agent-catalog/schema-migration.ts`: `_deprecated`/`_migratedTo` fields injected into the live YAML write back are unspecified by `catalog-schema.yaml` (would need verification), and consumers may treat them as data.
 - Token-expiration test in cross-cutting suite asserts on a hard-coded boolean; real token validators are not invoked.
 
 ### Completeness
@@ -142,7 +142,7 @@ Platform code is **architecturally serious but operationally drifting**. Strong 
 - **Intent.** YAML-driven catalog of agents, capabilities, templates, consumed by `CatalogLoader` discovery.
 - **What exists.** [agent-catalog.yaml](platform/agent-catalog/agent-catalog.yaml), schema, capability taxonomy, schema-migration script.
 - **Findings.**
-  - `schema-migration.js` is JS not TS, lives outside any `pnpm` package, has no tests, and explicitly perpetuates deprecation (Section 25 violation).
+  - `schema-migration.ts` is JS not TS, lives outside any `pnpm` package, has no tests, and explicitly perpetuates deprecation (Section 25 violation).
   - No CI-time schema validation that loaded YAMLs conform to `catalog-schema.yaml` (only declared, not enforced).
   - `composite-agents/data-pipelines/` and `domain-agents/{finance,healthcare,manufacturing,retail}/` exist but were not inspected in depth — verify whether shipped agents are actually loaded by any product or are aspirational.
 - **Verdict.** PARTIAL.

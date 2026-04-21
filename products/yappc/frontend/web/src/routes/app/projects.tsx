@@ -20,22 +20,17 @@ import { LifecyclePhaseBadge } from '../../components/lifecycle/LifecyclePhaseBa
 import { CreateProjectDialog } from '../../components/workspace';
 import { ApiUnavailableFallback } from '../../components/route/ApiUnavailableFallback';
 import type { LifecyclePhase } from '../../types/lifecycle';
+import type { ProjectWithOwnership } from '../../state/atoms/workspaceAtom';
 
 type ViewMode = 'grid' | 'list';
 type FilterType = 'all' | 'owned' | 'included';
 type SortBy = 'updated' | 'name' | 'phase';
 
-interface ProjectItem {
-    id: string;
-    name: string;
-    description?: string;
-    status: string;
+type ProjectItem = ProjectWithOwnership & {
     currentPhase?: LifecyclePhase;
-    aiHealthScore?: number;
     lastActivityAt?: string;
-    isOwned: boolean;
     workspaceName?: string;
-}
+};
 
 function getErrorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -247,13 +242,13 @@ export default function ProjectsRoute() {
                     <ProjectGrid
                         projects={filteredProjects}
                         getHealthColor={getHealthColor}
-                        onSelect={(id) => navigate(`/p/${id}/canvas`)}
+                        onSelect={(id) => navigate(`/p/${id}`)}
                     />
                 ) : (
                     <ProjectList
                         projects={filteredProjects}
                         getHealthColor={getHealthColor}
-                        onSelect={(id) => navigate(`/p/${id}/canvas`)}
+                        onSelect={(id) => navigate(`/p/${id}`)}
                     />
                 )}
             </main>
@@ -264,7 +259,7 @@ export default function ProjectsRoute() {
                 onClose={() => setShowCreateDialog(false)}
                 onCreated={(project) => {
                     setShowCreateDialog(false);
-                    navigate(`/p/${project.id}/canvas`);
+                    navigate(`/p/${project.id}`);
                 }}
             />
         </div>

@@ -15,6 +15,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { type Node, type Edge, MarkerType, type ReactFlowInstance } from '@xyflow/react';
 import { useCreateArtifact, useUpdateArtifact, useTransitionStage } from '@/hooks/useLifecycleData';
 import { LifecyclePhase } from '@/types/lifecycle';
+import { getFOWStageForPhase } from '@/types/fow-stages';
 import { ArtifactType, type FOWStage } from '@/types/fow-stages';
 import {
     nodesAtom, edgesAtom, selectedNodesAtom, isInspectorOpenAtom, selectedArtifactAtom,
@@ -319,10 +320,12 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         const phases = [LifecyclePhase.INTENT, LifecyclePhase.SHAPE, LifecyclePhase.VALIDATE, LifecyclePhase.GENERATE, LifecyclePhase.RUN, LifecyclePhase.OBSERVE, LifecyclePhase.IMPROVE];
         const index = phases.indexOf(currentPhase);
         const nextPhase = index >= 0 && index < phases.length - 1 ? phases[index + 1] : undefined;
+        const currentStage = getFOWStageForPhase(currentPhase);
         if (nextPhase) {
             void runMutationWithAnnouncement(
                 transitionStage({
                     projectId,
+                    fromStage: currentStage,
                     targetStage: nextPhase as unknown as FOWStage,
                 }),
                 'Phase transition failed'

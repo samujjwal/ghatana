@@ -6,7 +6,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Box, Breadcrumb as Breadcrumbs, Button, ToggleButtonGroup as ButtonGroup, Chip, IconButton, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
+import { Box, Breadcrumbs, Button, ToggleButtonGroup as ButtonGroup, Chip, IconButton, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
 import { ArrowUp as ArrowUpward, ArrowDown as ArrowDownward, ArrowLeft as ArrowBack, Home, ZoomIn, ZoomOut } from 'lucide-react';
 import { AbstractionLevel, ABSTRACTION_LEVELS, AbstractionBreadcrumb } from '../../types/abstractionLevel';
 

@@ -21,19 +21,20 @@ import { useCallback, useMemo, useEffect } from 'react';
 import { NavLink, useParams, Outlet, useNavigate, useLocation } from 'react-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { currentUserAtom } from '../../../stores/user.store';
+import type { ProjectShellContract } from '@/contracts/workspace-project';
 import {
   headerVisibleAtom,
   headerActionContextAtom,
   headerContextActionsAtom,
   headerPhaseInfoAtom
 } from '../../../state/atoms/layoutAtom';
-import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Boxes as Workspaces, Eye as Visibility, Rocket as RocketLaunch, Activity as LifecycleIcon } from 'lucide-react';
+import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Boxes as Workspaces, Eye as Visibility, Rocket as RocketLaunch, Activity as LifecycleIcon, LayoutDashboard } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { IntentDrawer } from '../../../components/intent';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
-import { parseJsonResponse } from '@/lib/http';
+import { parseJsonResourceResponse } from '@/lib/http';
 import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle';
 import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
@@ -41,6 +42,12 @@ import { UnifiedContextHeader } from '../../../components/navigation';
 
 // Simplified tabs - only essential views
 const BASE_PROJECT_TABS = [
+  {
+    key: '',
+    label: 'Overview',
+    icon: LayoutDashboard,
+    tooltip: 'Project cockpit with status, next action, and recent activity',
+  },
   {
     key: 'canvas',
     label: 'Canvas',
@@ -63,7 +70,7 @@ const BASE_PROJECT_TABS = [
     key: 'deploy',
     label: 'Deploy',
     icon: RocketLaunch,
-    tooltip: 'Deploy to production',
+    tooltip: 'Release planning and lifecycle promotion',
   },
   {
     key: 'settings',
@@ -79,14 +86,6 @@ const PREVIEW_TAB = {
   icon: Visibility,
   tooltip: 'Preview your application',
 } as const;
-
-interface ProjectShellData {
-  name: string;
-  type?: string;
-  workspaceId?: string;
-  currentPhase: string;
-  phaseProgress?: number;
-}
 
 /**
  * Project shell layout with minimal navigation
@@ -110,9 +109,10 @@ export function Layout() {
     queryFn: async () => {
       const response = await fetch(`/api/projects/${projectId}`);
       if (!response.ok) return null;
-      return parseJsonResponse<ProjectShellData>(
+      return parseJsonResourceResponse<ProjectShellContract>(
         response,
-        'project shell project query'
+        'project shell project query',
+        'project'
       );
     },
     enabled: !!projectId,
@@ -251,10 +251,11 @@ export function Layout() {
     ? [
         BASE_PROJECT_TABS[0],
         BASE_PROJECT_TABS[1],
-        PREVIEW_TAB,
         BASE_PROJECT_TABS[2],
+        PREVIEW_TAB,
         BASE_PROJECT_TABS[3],
         BASE_PROJECT_TABS[4],
+        BASE_PROJECT_TABS[5],
       ]
     : [...BASE_PROJECT_TABS];
 

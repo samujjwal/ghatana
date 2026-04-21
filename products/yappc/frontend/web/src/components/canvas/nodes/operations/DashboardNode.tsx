@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { 
   LayoutDashboard, 
   BarChart, 
@@ -64,7 +64,7 @@ export interface DashboardWidgetSummary {
   count: number;
 }
 
-export interface DashboardNodeData {
+export interface DashboardNodeData extends Record<string, unknown> {
   id: string;
   name: string;
   description?: string;
@@ -87,7 +87,9 @@ export interface DashboardNodeData {
   viewCount?: number;
 }
 
-export type DashboardNodeProps = NodeProps<DashboardNodeData>;
+type DashboardCanvasNode = Node<DashboardNodeData>;
+
+export type DashboardNodeProps = NodeProps<DashboardCanvasNode>;
 
 // ============================================================================
 // CONSTANTS

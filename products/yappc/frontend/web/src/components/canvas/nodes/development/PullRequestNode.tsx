@@ -11,7 +11,7 @@
  */
 
 import React, { memo, useCallback, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { cn } from '../../utils/cn';
 import {
   GitPullRequest,
@@ -55,7 +55,7 @@ export interface PRChecks {
   readonly pending: number;
 }
 
-export interface PullRequestNodeData {
+export interface PullRequestNodeData extends Record<string, unknown> {
   readonly label: string;
   readonly number: number;
   readonly provider: GitProvider;
@@ -88,7 +88,9 @@ export interface PullRequestNodeData {
   readonly onMerge?: (nodeId: string) => void;
 }
 
-export interface PullRequestNodeProps extends NodeProps<PullRequestNodeData> {}
+type PullRequestCanvasNode = Node<PullRequestNodeData>;
+
+export interface PullRequestNodeProps extends NodeProps<PullRequestCanvasNode> {}
 
 // =============================================================================
 // Constants

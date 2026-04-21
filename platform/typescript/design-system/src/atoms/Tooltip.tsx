@@ -13,6 +13,7 @@ export interface TooltipProps {
   children: React.ReactNode;
   placement?: TooltipPlacement;
   delay?: number;
+  arrow?: boolean;
   showArrow?: boolean;
   className?: string;
   /** Render tooltip inline instead of in a portal (useful in SSR) */
@@ -28,6 +29,7 @@ export function Tooltip({
   children,
   placement = 'top',
   delay = 200,
+  arrow,
   showArrow = true,
   className,
   disablePortal = false,
@@ -138,7 +140,7 @@ export function Tooltip({
         style={{ ...styles, top, left, transform }}
       >
         {tooltipContent}
-        {showArrow && (
+        {(arrow ?? showArrow) && (
           <span
             aria-hidden="true"
             style={{

@@ -12,7 +12,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   GitBranch,
   Cloud,
@@ -32,16 +32,75 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type {
-  ProviderConnection,
-  ProviderCapabilities,
-  ProviderType,
-  ProviderAuthStatus,
-  ResourceType,
-  InfrastructureTier,
-} from '@yappc/api';
 
-export interface ProviderNodeData {
+type ProviderType =
+  | 'GITHUB'
+  | 'GITLAB'
+  | 'BITBUCKET'
+  | 'VERCEL'
+  | 'NETLIFY'
+  | 'RAILWAY'
+  | 'RENDER'
+  | 'HEROKU'
+  | 'AWS'
+  | 'GCP'
+  | 'AZURE'
+  | 'SUPABASE'
+  | 'PLANETSCALE'
+  | 'NEON'
+  | 'UPSTASH'
+  | 'CLOUDFLARE'
+  | 'CUSTOM';
+
+type ProviderAuthStatus = 'NOT_CONNECTED' | 'CONNECTED' | 'EXPIRED' | 'ERROR';
+
+type ResourceType =
+  | 'REPOSITORY'
+  | 'HOSTING'
+  | 'DATABASE'
+  | 'CACHE'
+  | 'STORAGE'
+  | 'CDN'
+  | 'DOMAIN'
+  | 'SSL'
+  | 'CI_CD'
+  | 'SECRETS'
+  | 'MONITORING'
+  | 'LOGGING';
+
+type InfrastructureTier = 'FREE' | 'HOBBY' | 'PRO' | 'TEAM' | 'ENTERPRISE';
+
+interface ProviderFeature {
+  name: string;
+  available: boolean;
+  requiredTier?: InfrastructureTier;
+}
+
+interface ProviderLimits {
+  maxProjects?: number;
+  maxEnvironments?: number;
+  maxBandwidth?: string;
+  maxStorage?: string;
+}
+
+interface ProviderConnection {
+  status: ProviderAuthStatus;
+  accountName?: string;
+  accountId?: string;
+  expiresAt?: string;
+  lastUsedAt?: string;
+  scopes: string[];
+}
+
+interface ProviderCapabilities {
+  resourceTypes: ResourceType[];
+  tiers: InfrastructureTier[];
+  regions: string[];
+  features: ProviderFeature[];
+  limits?: ProviderLimits;
+}
+
+export interface ProviderNodeData extends Record<string, unknown> {
   connection?: ProviderConnection;
   capabilities?: ProviderCapabilities;
   provider: ProviderType;
@@ -50,6 +109,8 @@ export interface ProviderNodeData {
   onRefresh?: () => void;
   onViewDocs?: () => void;
 }
+
+type ProviderCanvasNode = Node<ProviderNodeData, 'provider'>;
 
 const providerConfig: Record<
   ProviderType,
@@ -215,7 +276,7 @@ const tierLabels: Record<InfrastructureTier, string> = {
   ENTERPRISE: 'Enterprise',
 };
 
-function ProviderNode({ data }: NodeProps<ProviderNodeData>) {
+function ProviderNode({ data }: NodeProps<ProviderCanvasNode>) {
   const { connection, capabilities, provider, onConnect, onDisconnect, onRefresh, onViewDocs } = data;
 
   const providerInfo = providerConfig[provider];
@@ -289,7 +350,7 @@ function ProviderNode({ data }: NodeProps<ProviderNodeData>) {
             Permissions
           </h4>
           <div className="flex flex-wrap gap-1">
-            {connection.scopes.slice(0, 6).map((scope) => (
+            {connection.scopes.slice(0, 6).map((scope: string) => (
               <span
                 key={scope}
                 className="text-xs px-2 py-0.5 bg-slate-700 text-slate-300 rounded"
@@ -315,7 +376,7 @@ function ProviderNode({ data }: NodeProps<ProviderNodeData>) {
               Supported Resources
             </h4>
             <div className="flex flex-wrap gap-1">
-              {capabilities.resourceTypes.map((type) => (
+              {capabilities.resourceTypes.map((type: ResourceType) => (
                 <span
                   key={type}
                   className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded"
@@ -332,7 +393,7 @@ function ProviderNode({ data }: NodeProps<ProviderNodeData>) {
               Available Tiers
             </h4>
             <div className="flex flex-wrap gap-1">
-              {capabilities.tiers.map((tier) => (
+              {capabilities.tiers.map((tier: InfrastructureTier) => (
                 <span
                   key={tier}
                   className={cn(
@@ -357,7 +418,7 @@ function ProviderNode({ data }: NodeProps<ProviderNodeData>) {
                 Regions
               </h4>
               <div className="flex flex-wrap gap-1">
-                {capabilities.regions.slice(0, 5).map((region) => (
+                {capabilities.regions.slice(0, 5).map((region: string) => (
                   <span
                     key={region}
                     className="text-xs px-2 py-0.5 bg-slate-700 text-slate-300 rounded"
@@ -382,7 +443,7 @@ function ProviderNode({ data }: NodeProps<ProviderNodeData>) {
                 Features
               </h4>
               <div className="space-y-1">
-                {capabilities.features.slice(0, 4).map((feature) => (
+                {capabilities.features.slice(0, 4).map((feature: ProviderFeature) => (
                   <div
                     key={feature.name}
                     className="flex items-center justify-between text-xs"

@@ -1,2 +1,14 @@
-<testsuites id="" name="" tests="0" failures="0" skipped="0" errors="0" time="0.005795999999999992">
+<testsuites id="" name="" tests="4" failures="0" skipped="0" errors="0" time="6.009247">
+<testsuite name="EducatorWorkflow.spec.ts" timestamp="2026-04-20T22:46:07.199Z" hostname="chromium" tests="2" failures="0" skipped="0" time="1.876" errors="0">
+<testcase name="TutorPutor educator workflows › renders the canonical authoring workspace with publish readiness and analytics panels for a real experience" classname="EducatorWorkflow.spec.ts" time="1.039">
+</testcase>
+<testcase name="TutorPutor educator workflows › loads the consolidated admin analytics route with real dashboard visuals" classname="EducatorWorkflow.spec.ts" time="0.837">
+</testcase>
+</testsuite>
+<testsuite name="StudentOnboarding.spec.ts" timestamp="2026-04-20T22:46:07.199Z" hostname="chromium" tests="2" failures="0" skipped="0" time="3.355" errors="0">
+<testcase name="TutorPutor student onboarding › bootstraps the canonical first-sign-in flow and first-visit learner dashboard" classname="StudentOnboarding.spec.ts" time="2.728">
+</testcase>
+<testcase name="TutorPutor student onboarding › guides a newly authenticated learner from dashboard discovery to module exploration" classname="StudentOnboarding.spec.ts" time="0.627">
+</testcase>
+</testsuite>
 </testsuites>

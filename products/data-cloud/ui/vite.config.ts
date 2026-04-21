@@ -7,7 +7,7 @@ const workspaceAliases = {
   '@ghatana/canvas/flow': path.resolve(__dirname, '../../../platform/typescript/canvas/src/flow/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
-  '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
+  '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/platform-utils/src/index.ts'),
   '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/canvas'),
   '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
   '@ghatana/privacy-ui': path.resolve(__dirname, '../../../platform/typescript/privacy-ui/src/index.ts'),

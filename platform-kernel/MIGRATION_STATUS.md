@@ -28,7 +28,7 @@ platform-plugins/                   ← NEW composite build
 
 The following modules have been moved to `platform/java/.archived/`:
 
-- `platform/java/kernel` → `platform/java/.archived/kernel/`
+- `platform/java/kernel` → `platform/java/.archived/kernel/` (Note: Kernel modules now live at `platform-kernel/` at repo root)
 - `platform/java/plugin` → `platform/java/.archived/plugin/`
 - `platform/java/kernel-persistence` → `platform/java/.archived/kernel-persistence/`
 - `platform/java/billing` → `platform/java/.archived/billing/`

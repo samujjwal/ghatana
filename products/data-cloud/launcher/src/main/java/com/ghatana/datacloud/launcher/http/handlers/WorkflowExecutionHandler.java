@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
+import com.ghatana.platform.security.annotation.Secured;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -13,11 +14,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * HTTP endpoints for plugin-backed workflow execution.
+ *
+ * <h2>Security</h2>
+ * All workflow execution operations require authentication.
+ *
  * @doc.type class
  * @doc.purpose HTTP endpoints for plugin-backed workflow execution
  * @doc.layer product
  * @doc.pattern Handler
  */
+@Secured
 public final class WorkflowExecutionHandler {
 
     private final HttpHandlerSupport http;

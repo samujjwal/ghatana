@@ -93,8 +93,7 @@ export interface LiveReactProps extends BaseElementProps {
 // ---------------------------------------------------------------------------
 
 type ComponentEntry = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  component: React.ComponentType<any>;
+  component: React.ComponentType<Record<string, PropValue>>;
   propsSchema?: PropsSchema;
   displayName?: string;
 };
@@ -181,8 +180,7 @@ export class LiveReactElement extends CanvasElement {
    * Resolve the registered or dynamically-loaded component.
    * Returns null if the key is not registered.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  resolveComponent(): React.ComponentType<any> | null {
+  resolveComponent(): React.ComponentType<Record<string, PropValue>> | null {
     if (this.componentKey) {
       return _registry.get(this.componentKey)?.component ?? null;
     }

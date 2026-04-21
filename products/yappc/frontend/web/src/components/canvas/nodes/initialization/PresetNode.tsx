@@ -12,7 +12,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Layers,
   Star,
@@ -32,14 +32,58 @@ import {
   Grid3X3,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type { Preset, PresetCategory, PresetConfig } from '@yappc/api';
 
-export interface PresetNodeData {
+type PresetCategory =
+  | 'STARTER'
+  | 'FULL_STACK'
+  | 'API_ONLY'
+  | 'STATIC_SITE'
+  | 'MONOREPO'
+  | 'MICROSERVICES'
+  | 'CUSTOM';
+
+interface PresetStack {
+  language?: string;
+  framework?: string;
+  frontend?: string;
+  backend?: string;
+  database?: string;
+}
+
+interface PresetConfig {
+  stack: PresetStack;
+  includeRepository?: boolean;
+  includeHosting?: boolean;
+  includeDatabase?: boolean;
+  includeCache?: boolean;
+  includeStorage?: boolean;
+  includeCICD?: boolean;
+  includeMonitoring?: boolean;
+}
+
+interface Preset {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+  category: PresetCategory;
+  popularity: number;
+  estimatedSetupTime: number;
+  estimatedMonthlyCost: number;
+  config: PresetConfig;
+  features: string[];
+  requirements?: string[];
+  tags: string[];
+}
+
+export interface PresetNodeData extends Record<string, unknown> {
   preset: Preset;
   isSelected?: boolean;
   onSelect?: () => void;
   onPreview?: () => void;
 }
+
+type PresetCanvasNode = Node<PresetNodeData, 'preset'>;
 
 const categoryConfig: Record<
   PresetCategory,
@@ -54,7 +98,7 @@ const categoryConfig: Record<
   CUSTOM: { color: 'text-gray-400', bgColor: 'bg-gray-500/20', icon: Package, label: 'Custom' },
 };
 
-function PresetNode({ data }: NodeProps<PresetNodeData>) {
+function PresetNode({ data }: NodeProps<PresetCanvasNode>) {
   const { preset, isSelected, onSelect, onPreview } = data;
   const categoryInfo = categoryConfig[preset.category];
   const CategoryIcon = categoryInfo.icon;
@@ -227,7 +271,7 @@ function PresetNode({ data }: NodeProps<PresetNodeData>) {
         <div className="px-4 py-3 border-b border-slate-700">
           <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Features</h4>
           <ul className="space-y-1">
-            {preset.features.slice(0, 4).map((feature, index) => (
+            {preset.features.slice(0, 4).map((feature: string, index: number) => (
               <li key={index} className="flex items-start gap-1.5 text-xs text-slate-300">
                 <Zap className="w-3 h-3 text-yellow-400 mt-0.5 flex-shrink-0" />
                 <span>{feature}</span>
@@ -250,7 +294,7 @@ function PresetNode({ data }: NodeProps<PresetNodeData>) {
             Requirements
           </h4>
           <ul className="space-y-1">
-            {preset.requirements.map((req, index) => (
+            {preset.requirements.map((req: string, index: number) => (
               <li key={index} className="text-xs text-amber-200/80">
                 • {req}
               </li>
@@ -263,7 +307,7 @@ function PresetNode({ data }: NodeProps<PresetNodeData>) {
       {preset.tags.length > 0 && (
         <div className="px-4 py-3 border-b border-slate-700">
           <div className="flex flex-wrap gap-1">
-            {preset.tags.map((tag) => (
+            {preset.tags.map((tag: string) => (
               <span
                 key={tag}
                 className="text-xs px-2 py-0.5 bg-slate-700/50 text-slate-400 rounded-full"

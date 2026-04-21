@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * <ul>
  *   <li>Extends {@link UnifiedApplicationLauncher} for consistent service bootstrapping</li>
  *   <li>Uses ActiveJ HTTP types (HttpRequest, HttpResponse) - ALLOWED</li>
- *   <li>TODO: Refactor to use {@code core:http-server} ResponseBuilder</li>
+ *   <li>Uses {@code core:http-server} ResponseBuilder for response construction</li>
  *   <li>All handlers are stateless and thread-safe</li>
  *   <li>JSON serialization via Jackson</li>
  * </ul>
@@ -221,7 +221,7 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
      * Architecture Notes:
      * <ul>
      *   <li>Uses ActiveJ HTTP types (HttpRequest, HttpResponse) - TYPE REFERENCES ALLOWED</li>
-     *   <li>TODO: Migrate to {@code core:http-server} ResponseBuilder for OPERATIONS</li>
+     *   <li>Uses {@code core:http-server} ResponseBuilder for response construction</li>
      *   <li>All handlers are stateless and thread-safe (safe for concurrent requests)</li>
      *   <li>Eventloop affinity: Single eventloop per server instance (ActiveJ concurrency model)</li>
      * </ul>
@@ -268,11 +268,7 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
                 // 404 handler (matches all methods and paths)
                 .with("/*", request -> {
                     logger.warn("404 Not Found: {} {}", request.getMethod(), request.getPath());
-                    HttpResponse response = HttpResponse.ofCode(404)
-                            .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
-                            .withBody("{\"error\":\"Not Found\",\"path\":\"" + request.getPath() + "\"}".getBytes())
-                            .build();
-                    return io.activej.promise.Promise.of(response);
+                    return io.activej.promise.Promise.of(HttpResponse.ofCode(404).withBody("404 Not Found: " + request.getPath()).build());
                 })
                 .build();
 

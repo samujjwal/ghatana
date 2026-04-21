@@ -21,6 +21,12 @@ interface CreateWorkspaceBody {
   name: string;
   description?: string;
   createDefaultProject?: boolean;
+  personaSelections?: string[];
+  defaultProject?: {
+    name: string;
+    description?: string;
+    type: 'UI' | 'BACKEND' | 'MOBILE' | 'DESKTOP' | 'FULL_STACK';
+  };
 }
 
 interface UpdateWorkspaceBody {
@@ -112,6 +118,14 @@ function suggestWorkspaceName(existingNames: string[]): string {
   );
 
   return available[0] || `Workspace ${existingNames.length + 1}`;
+}
+
+function normalizePersonaSelections(personaSelections?: string[]): string[] {
+  if (!personaSelections?.length) {
+    return [];
+  }
+
+  return [...new Set(personaSelections.map((persona) => `persona:${persona}`))];
 }
 
 // ============================================================================
@@ -272,7 +286,13 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
 
-      const { name, description, createDefaultProject = true } = request.body;
+      const {
+        name,
+        description,
+        createDefaultProject = true,
+        personaSelections,
+        defaultProject,
+      } = request.body;
       const userId = request.user.userId;
 
       // Check if user already has workspaces
@@ -291,7 +311,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
           ownerId: userId,
           isDefault,
           aiSummary: 'New workspace ready for projects',
-          aiTags: [],
+          aiTags: normalizePersonaSelections(personaSelections),
           members: {
             create: {
               userId,
@@ -305,11 +325,13 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
       if (createDefaultProject) {
         await prisma.project.create({
           data: {
-            name: 'Untitled Project',
+            name: defaultProject?.name ?? 'Untitled Project',
+            description: defaultProject?.description,
             ownerWorkspaceId: workspace.id,
             createdById: userId,
-            type: 'FULL_STACK',
+            type: defaultProject?.type ?? 'FULL_STACK',
             status: 'DRAFT',
+            lifecyclePhase: 'INTENT',
             isDefault: true,
             aiNextActions: ['Set up project structure', 'Define requirements'],
           },

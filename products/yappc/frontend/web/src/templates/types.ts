@@ -6,12 +6,14 @@
  * @packageDocumentation
  */
 
+import type { PageConfig } from '@yappc/config-schema';
+
 export interface Template {
   id: string;
   name: string;
   description: string;
   category: string;
-  config: import('@yappc/config-schema').PageConfig;
+  config: PageConfig;
   tags: string[];
   previewImage?: string;
   metadata?: {
@@ -23,13 +25,13 @@ export interface Template {
 }
 
 export interface TemplateLibraryProps {
-  onSelectTemplate?: (template: import('@yappc/config-schema').PageConfig) => void;
-  onUseTemplate?: (template: import('@yappc/config-schema').PageConfig) => void;
+  onSelectTemplate?: (template: PageConfig) => void;
+  onUseTemplate?: (template: PageConfig) => void;
 }
 
 export interface TemplateEditorProps {
-  template: import('@yappc/config-schema').PageConfig;
-  onSave?: (template: import('@yappc/config-schema').PageConfig) => void;
+  template: PageConfig;
+  onSave?: (template: PageConfig) => void;
   onCancel?: () => void;
   readOnly?: boolean;
 }

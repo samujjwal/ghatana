@@ -18,7 +18,18 @@ import {
     updateDraftStepDataAtom,
 } from '../../../stores/workflow.store';
 
-import type { ExecuteStepData, ChangeRecord } from '@yappc/core/types';
+interface ChangeRecord {
+    id: string;
+    type: 'CODE' | 'CONFIG' | 'TEST' | 'DOCS' | 'INFRASTRUCTURE';
+    description: string;
+    path?: string;
+    status: 'PENDING' | 'IN_REVIEW' | 'COMPLETED' | 'ROLLED_BACK';
+}
+
+interface ExecuteStepData {
+    changes?: ChangeRecord[];
+    progress?: number;
+}
 
 // ============================================================================
 // CONSTANTS
@@ -54,7 +65,7 @@ export function ExecuteStep() {
     const [aiAssistEnabled, setAiAssistEnabled] = React.useState(true);
 
     // Get current data (draft or saved)
-    const baseData = draftData ?? workflow?.steps.execute.data;
+    const baseData = (draftData ?? workflow?.steps.execute.data) as ExecuteStepData | null;
     const currentData: ExecuteStepData = {
         changes: baseData?.changes ?? [],
         progress: baseData?.progress ?? 0,
@@ -114,7 +125,7 @@ export function ExecuteStep() {
                     label={
                         <Box className="flex items-center gap-1">
                             <AIIcon size={16} />
-                            <Typography as="p" className="text-sm">AI Assist</Typography>
+                            <Typography className="text-sm">AI Assist</Typography>
                         </Box>
                     }
                 />
@@ -124,10 +135,10 @@ export function ExecuteStep() {
             {totalChanges > 0 && (
                 <Box className="mb-8">
                     <Box className="flex justify-between mb-2">
-                        <Typography as="p" className="text-sm" fontWeight={500}>
+                        <Typography className="text-sm font-medium">
                             Execution Progress
                         </Typography>
-                        <Typography as="p" className="text-sm" color="text.secondary">
+                        <Typography className="text-sm text-gray-500" color="text.secondary">
                             {completedChanges} / {totalChanges} changes completed
                         </Typography>
                     </Box>
@@ -141,12 +152,12 @@ export function ExecuteStep() {
 
             {/* Add Change */}
             <Box className="mb-8">
-                <Typography as="h6" gutterBottom fontWeight={600}>
+                <Typography gutterBottom className="text-lg font-semibold">
                     Add Change
                 </Typography>
 
                 <Box className="flex gap-2 mb-4 flex-wrap">
-                    <FormControl size="sm" className="min-w-[140px]">
+                    <FormControl size="small" className="min-w-[140px]">
                         <InputLabel>Type</InputLabel>
                         <Select
                             value={newChangeType}
@@ -161,14 +172,14 @@ export function ExecuteStep() {
                         </Select>
                     </FormControl>
                     <TextField
-                        size="sm"
+                        size="small"
                         placeholder="Description"
                         value={newChangeDesc}
                         onChange={(e) => setNewChangeDesc(e.target.value)}
                         className="grow min-w-[200px]"
                     />
                     <TextField
-                        size="sm"
+                        size="small"
                         placeholder="File path (optional)"
                         value={newChangePath}
                         onChange={(e) => setNewChangePath(e.target.value)}
@@ -189,7 +200,7 @@ export function ExecuteStep() {
 
             {/* Changes List */}
             <Box>
-                <Typography as="h6" gutterBottom>
+                <Typography gutterBottom className="text-lg font-semibold">
                     Changes ({changes.length})
                 </Typography>
 
@@ -197,7 +208,7 @@ export function ExecuteStep() {
                     <Alert severity="info">No changes tracked yet. Add changes as you execute the plan.</Alert>
                 ) : (
                     <List>
-                        {changes.map((change, index) => {
+                        {changes.map((change: ChangeRecord, index: number) => {
                             const changeType = CHANGE_TYPES.find((t) => t.value === change.type);
                             const ChangeIcon = changeType?.icon || CodeIcon;
 
@@ -205,12 +216,12 @@ export function ExecuteStep() {
                                 <React.Fragment key={change.id}>
                                     <ListItem className="px-0 items-start flex-wrap">
                                         <ListItemIcon className="mt-2 min-w-[40px]">
-                                            <ChangeIcon color="action" />
+                                            <ChangeIcon className="text-gray-500" />
                                         </ListItemIcon>
                                         <ListItemText
                                             primary={
                                                 <Box className="flex items-center gap-2">
-                                                    <Typography as="p" className="text-sm" fontWeight={500}>
+                                                    <Typography className="text-sm font-medium">
                                                         {change.description}
                                                     </Typography>
                                                     <Chip
@@ -223,13 +234,13 @@ export function ExecuteStep() {
                                             }
                                             secondary={
                                                 change.path && (
-                                                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary" component="span" className="font-mono">
+                                                    <Typography className="font-mono text-xs text-gray-500" color="text.secondary">
                                                         {change.path}
                                                     </Typography>
                                                 )
                                             }
                                         />
-                                        <FormControl size="sm" className="min-w-[120px] ml-auto">
+                                        <FormControl size="small" className="min-w-[120px] ml-auto">
                                             <Select
                                                 value={change.status || 'PENDING'}
                                                 size="sm"
@@ -251,7 +262,7 @@ export function ExecuteStep() {
                                         <ListItemSecondaryAction>
                                             <IconButton
                                                 edge="end"
-                                                size="sm"
+                                                size="small"
                                                 onClick={() => handleRemoveChange(change.id)}
                                             >
                                                 <DeleteIcon size={16} />

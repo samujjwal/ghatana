@@ -1170,6 +1170,19 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.UserConsentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  category: 'category',
+  granted: 'granted',
+  grantedAt: 'grantedAt',
+  revokedAt: 'revokedAt',
+  version: 'version',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.LearnerProfileScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -2221,6 +2234,20 @@ exports.Prisma.GenerationJobScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.GenerationReplayManifestScalarFieldEnum = {
+  id: 'id',
+  generationJobId: 'generationJobId',
+  seed: 'seed',
+  seedSource: 'seedSource',
+  jobType: 'jobType',
+  inputParams: 'inputParams',
+  outputData: 'outputData',
+  replayable: 'replayable',
+  generatedAt: 'generatedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.EvaluationRecordScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -3080,6 +3107,7 @@ exports.Prisma.ModelName = {
   Tenant: 'Tenant',
   TenantSettings: 'TenantSettings',
   User: 'User',
+  UserConsent: 'UserConsent',
   LearnerProfile: 'LearnerProfile',
   LearnerMastery: 'LearnerMastery',
   KnowledgeGap: 'KnowledgeGap',
@@ -3148,6 +3176,7 @@ exports.Prisma.ModelName = {
   RecommendationEdge: 'RecommendationEdge',
   GenerationRequest: 'GenerationRequest',
   GenerationJob: 'GenerationJob',
+  GenerationReplayManifest: 'GenerationReplayManifest',
   EvaluationRecord: 'EvaluationRecord',
   GenerationReviewDecision: 'GenerationReviewDecision',
   ExplorerEvent: 'ExplorerEvent',

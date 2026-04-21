@@ -60,13 +60,13 @@ export function WorkspaceSelectionDialog({
             aria-labelledby="workspace-selection-dialog-title"
         >
             <DialogTitle id="workspace-selection-dialog-title">
-                <Box display="flex" alignItems="center" gap={1}>
-                    <Business tone="primary" />
+                <Box className="flex items-center gap-1">
+                    <Business className="text-blue-600" />
                     <span>Select Workspace</span>
                 </Box>
             </DialogTitle>
             <DialogContent>
-                <Typography as="p" className="mb-6 text-sm" color="text.secondary">
+                <Typography className="mb-6 text-sm text-gray-600 dark:text-gray-400">
                     <strong>{projectName}</strong> is part of multiple workspaces.
                     Choose which workspace context to open it in.
                 </Typography>
@@ -83,21 +83,17 @@ export function WorkspaceSelectionDialog({
                         >
                             <ListItemIcon>
                                 <Radio
-                                    edge="start"
                                     checked={selectedWorkspaceId === workspace.id}
-                                    tabIndex={-1}
-                                    disableRipple
                                 />
                             </ListItemIcon>
                             <ListItemText
                                 primary={
-                                    <Box display="flex" alignItems="center" gap={1}>
+                                    <Box className="flex items-center gap-1">
                                         <span>{workspace.name}</span>
                                         {workspace.isOwner && (
-                                            <CheckCircle
-                                                className="text-green-600 text-base"
-                                                titleAccess="Owner"
-                                            />
+                                            <span title="Owner">
+                                                <CheckCircle className="text-green-600 text-base" />
+                                            </span>
                                         )}
                                     </Box>
                                 }

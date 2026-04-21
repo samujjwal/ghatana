@@ -34,7 +34,7 @@ export interface ComponentRendererProps {
   /** Event handler context for resolving event bindings */
   eventContext?: Record<string, (event: Event) => void>;
   /** Custom component registry mapping contract names to React components */
-  componentRegistry?: Record<string, React.ComponentType<any>>;
+  componentRegistry?: Record<string, React.ComponentType<Record<string, unknown>>>;
   /** Optional contract lookup for platform-aware rendering metadata */
   contracts?: ContractLookup;
   /** Optional component manifest lookup from design-system recipes */
@@ -188,7 +188,13 @@ export function ComponentRenderer({
 /**
  * Generic fallback component for unregistered contracts.
  */
-function GenericComponent({ children, ...props }: any): React.ReactElement {
+interface GenericComponentProps {
+  children?: React.ReactNode;
+  'data-builder-contract'?: string;
+  [key: string]: unknown;
+}
+
+function GenericComponent({ children, ...props }: GenericComponentProps): React.ReactElement {
   return (
     <div
       {...props}

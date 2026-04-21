@@ -59,20 +59,6 @@ public class ArchitectureRulesTest {
     }
 
     @Test
-    @DisplayName("Domain events must extend platform DomainEvent")
-    void domainEventHierarchy() {
-        // TODO: Enable when DomainEvent class exists
-        System.out.println("Skipping domain event hierarchy test - DomainEvent class not found");
-    }
-
-    @Test
-    @DisplayName("Repository interfaces must extend platform Repository")
-    void repositoryPattern() {
-        // TODO: Enable when Repository class exists
-        System.out.println("Skipping repository pattern test - Repository class not found");
-    }
-
-    @Test
     @DisplayName("Platform foundation has minimal dependencies")
     void platformFoundationIndependence() {
         ArchRule rule = ArchRuleDefinition.classes()
@@ -90,34 +76,6 @@ public class ArchitectureRulesTest {
                         "lombok.."
                 );
         rule.check(platformClasses);
-    }
-
-    @Test
-    @DisplayName("Public APIs must have @doc annotations")
-    void publicApiDocumentation() {
-        // TODO: Enable when Documented class exists
-        System.out.println("Skipping public API documentation test - Documented class not found");
-    }
-
-    @Test
-    @DisplayName("HTTP filters should be in http module, not security")
-    void httpFilterLocation() {
-        // TODO: Enable when servlet classes exist
-        System.out.println("Skipping HTTP filter location test - servlet classes not found");
-    }
-
-    @Test
-    @DisplayName("No JPA annotations in domain contracts")
-    void noJpaInDomain() {
-        // TODO: Enable when JPA classes exist
-        System.out.println("Skipping JPA annotations test - JPA classes not found");
-    }
-
-    @Test
-    @DisplayName("Framework types should not leak to public API")
-    void noFrameworkInPublicApi() {
-        // TODO: Fix ArchUnit API compatibility
-        System.out.println("Skipping framework leakage test - API compatibility issue");
     }
 
     @Test
@@ -150,7 +108,7 @@ public class ArchitectureRulesTest {
                 .should().onlyDependOnClassesThat()
                 .resideInAnyPackage(
                         "com.ghatana.platform..",
-                        "com.ghatana.platform.kernel..",
+                        "com.ghatana.kernel..",
                         "com.ghatana.shared..",
                         "java..",
                         "javax.."

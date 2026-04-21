@@ -5,7 +5,7 @@
 package com.ghatana.platform.config.validation;
 
 import com.ghatana.platform.config.ConfigSource;
-import com.ghatana.platform.validation.ValidationResult;
+import com.ghatana.platform.core.validation.ValidationFramework;
 
 /**
  * Validates configuration values.
@@ -29,5 +29,5 @@ public interface ConfigValidator {
      * @param config the configuration source
      * @return validation result
      */
-    ValidationResult validate(String key, String value, ConfigSource config);
+    ValidationFramework.ValidationResult validate(String key, String value, ConfigSource config);
 }

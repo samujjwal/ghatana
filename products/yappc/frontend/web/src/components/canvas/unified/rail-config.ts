@@ -18,7 +18,8 @@ import type {
   VisibilityRule,
 } from './UnifiedLeftRail.types';
 import type { CanvasMode } from '../../../types/canvasMode';
-import type { LifecyclePhase } from '../../../types/lifecycle';
+import { LifecyclePhase } from '../../../types/lifecycle';
+import type { LifecyclePhase as LifecyclePhaseType } from '../../../types/lifecycle';
 
 // ============================================================================
 // Mode-Specific Panel Configurations
@@ -41,7 +42,16 @@ export const MODE_RAIL_CONFIG: Record<CanvasMode, ModeRailConfig> = {
   diagram: {
     panels: ['assets', 'layers', 'favorites', 'history'],
     defaultPanel: 'assets',
-    featuredCategories: ['flowchart', 'uml', 'basic', 'charts'],
+    featuredCategories: [
+      'flowchart',
+      'uml',
+      'basic',
+      'charts',
+      'cloud-aws',
+      'cloud-azure',
+      'cloud-gcp',
+      'data',
+    ],
   },
 
   // Design & UX
@@ -49,26 +59,6 @@ export const MODE_RAIL_CONFIG: Record<CanvasMode, ModeRailConfig> = {
     panels: ['assets', 'layers', 'components', 'favorites', 'ai', 'history'],
     defaultPanel: 'assets',
     featuredCategories: ['wireframe', 'icons', 'basic', 'charts'],
-  },
-
-  // Architecture & Infrastructure
-  architecture: {
-    panels: [
-      'assets',
-      'infrastructure',
-      'layers',
-      'data',
-      'components',
-      'history',
-    ],
-    defaultPanel: 'assets',
-    featuredCategories: [
-      'cloud-aws',
-      'cloud-azure',
-      'cloud-gcp',
-      'uml',
-      'data',
-    ],
   },
 
   // Development
@@ -105,12 +95,6 @@ export const MODE_RAIL_CONFIG: Record<CanvasMode, ModeRailConfig> = {
     featuredCategories: ['cloud-aws', 'cloud-azure', 'cloud-gcp', 'flowchart'],
   },
 
-  // Planning
-  plan: {
-    panels: ['assets', 'layers', 'favorites', 'ai', 'history'],
-    defaultPanel: 'assets',
-    featuredCategories: ['flowchart', 'basic', 'icons', 'mindmap'],
-  },
 };
 
 // ============================================================================
@@ -139,12 +123,15 @@ export const ROLE_ASSET_PREFERENCES: Record<string, AssetCategory[]> = {
 /**
  * Defines which panels are most relevant during each lifecycle phase
  */
-export const PHASE_PANEL_PRIORITY: Record<LifecyclePhase, RailTabId[]> = {
-  INTENT: ['assets', 'ai', 'favorites'],
-  SHAPE: ['assets', 'layers', 'components', 'ai'],
-  BUILD: ['files', 'components', 'data', 'layers'],
-  RUN: ['infrastructure', 'data', 'layers'],
-  IMPROVE: ['assets', 'layers', 'data', 'history'],
+export const PHASE_PANEL_PRIORITY: Record<LifecyclePhaseType, RailTabId[]> = {
+  [LifecyclePhase.INTENT]: ['assets', 'ai', 'favorites'],
+  [LifecyclePhase.CONTEXT]: ['assets', 'layers', 'components', 'ai'],
+  [LifecyclePhase.PLAN]: ['assets', 'layers', 'components', 'ai'],
+  [LifecyclePhase.EXECUTE]: ['files', 'components', 'data', 'layers'],
+  [LifecyclePhase.VERIFY]: ['infrastructure', 'data', 'layers'],
+  [LifecyclePhase.OBSERVE]: ['infrastructure', 'data', 'layers'],
+  [LifecyclePhase.LEARN]: ['assets', 'layers', 'data', 'history'],
+  [LifecyclePhase.INSTITUTIONALIZE]: ['assets', 'layers', 'data', 'history'],
 };
 
 // ============================================================================
@@ -169,7 +156,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '⟁',
     description: 'Process diagrams and decision flows',
     visibility: {
-      modes: ['diagram', 'plan', 'test', 'design'],
+      modes: ['diagram', 'test', 'design'],
     },
   },
 
@@ -179,7 +166,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '◇',
     description: 'Class, sequence, and state diagrams',
     visibility: {
-      modes: ['architecture', 'diagram', 'code'],
+      modes: ['diagram', 'code'],
       roles: ['Architect', 'Developer', 'Diagrammer'],
     },
   },
@@ -201,7 +188,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '☁️',
     description: 'Amazon Web Services icons',
     visibility: {
-      modes: ['architecture', 'deploy', 'observe'],
+      modes: ['diagram', 'deploy', 'observe'],
       roles: ['Architect', 'DevOps', 'Observer'],
     },
   },
@@ -212,7 +199,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '⚡',
     description: 'Microsoft Azure icons',
     visibility: {
-      modes: ['architecture', 'deploy', 'observe'],
+      modes: ['diagram', 'deploy', 'observe'],
       roles: ['Architect', 'DevOps', 'Observer'],
     },
   },
@@ -223,7 +210,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '🔷',
     description: 'Google Cloud Platform icons',
     visibility: {
-      modes: ['architecture', 'deploy', 'observe'],
+      modes: ['diagram', 'deploy', 'observe'],
       roles: ['Architect', 'DevOps', 'Observer'],
     },
   },
@@ -242,7 +229,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '📝',
     description: 'Sticky notes and annotations',
     visibility: {
-      modes: ['brainstorm', 'design', 'plan'],
+      modes: ['brainstorm', 'design'],
     },
   },
 
@@ -262,7 +249,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '🧠',
     description: 'Thought bubbles and connections',
     visibility: {
-      modes: ['brainstorm', 'plan'],
+      modes: ['brainstorm'],
     },
   },
 
@@ -272,7 +259,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '💻',
     description: 'Code snippets and terminals',
     visibility: {
-      modes: ['code', 'architecture'],
+      modes: ['code', 'diagram'],
       roles: ['Developer', 'Architect'],
     },
   },
@@ -283,7 +270,7 @@ export const ASSET_CATEGORY_META: Record<AssetCategory, AssetCategoryMeta> = {
     icon: '🗄️',
     description: 'Database and API shapes',
     visibility: {
-      modes: ['architecture', 'code', 'observe'],
+      modes: ['diagram', 'code', 'observe'],
       roles: ['Architect', 'Developer', 'DevOps'],
     },
   },
@@ -306,11 +293,11 @@ export const PANEL_VISIBILITY_RULES: Record<RailTabId, VisibilityRule> = {
   },
 
   components: {
-    phases: ['SHAPE', 'BUILD'],
+    phases: [LifecyclePhase.CONTEXT, LifecyclePhase.EXECUTE],
   },
 
   infrastructure: {
-    modes: ['architecture', 'deploy', 'observe'],
+    modes: ['diagram', 'deploy', 'observe'],
     roles: ['Architect', 'DevOps', 'Observer'],
   },
 
@@ -320,11 +307,11 @@ export const PANEL_VISIBILITY_RULES: Record<RailTabId, VisibilityRule> = {
 
   files: {
     modes: ['code'],
-    phases: ['BUILD'],
+    phases: [LifecyclePhase.EXECUTE],
   },
 
   data: {
-    modes: ['architecture', 'code', 'observe'],
+    modes: ['diagram', 'code', 'observe'],
   },
 
   ai: {
@@ -356,7 +343,7 @@ export function matchesVisibilityRule(
   context: {
     mode: CanvasMode;
     role?: string;
-    phase?: LifecyclePhase;
+    phase?: LifecyclePhaseType;
   }
 ): boolean {
   if (!rule) return true;
@@ -377,7 +364,7 @@ export function matchesVisibilityRule(
   }
 
   // Check custom condition
-  if (rule.condition && !rule.condition(context as unknown)) {
+  if (rule.condition && !rule.condition(context)) {
     return false;
   }
 
@@ -390,7 +377,7 @@ export function matchesVisibilityRule(
 export function getVisibleAssetCategories(context: {
   mode: CanvasMode;
   role?: string;
-  phase?: LifecyclePhase;
+  phase?: LifecyclePhaseType;
 }): AssetCategory[] {
   const allCategories = Object.values(ASSET_CATEGORY_META);
 

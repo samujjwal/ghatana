@@ -7,6 +7,14 @@
 // Re-export canonical platform tokens
 export * from '@ghatana/tokens';
 
+// Re-export YAPPC token modules consumed by the local theme implementation.
+export * from './colors';
+export * from './typography';
+export * from './spacing';
+export * from './shadows';
+export * from './breakpoints';
+export * from './transitions';
+
 // YAPPC-specific local overrides (zIndex, shape, and YAPPC MUI-derived tokens)
 export * from './zIndex';
 export * from './shape';

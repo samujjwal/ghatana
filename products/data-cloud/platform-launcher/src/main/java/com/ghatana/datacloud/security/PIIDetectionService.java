@@ -70,35 +70,65 @@ public class PIIDetectionService {
     }
 
     private void initializePatterns() {
-        // Email addresses
+        // Email addresses - expanded to catch edge cases
         piiPatterns.put("EMAIL", Pattern.compile(
             "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
             Pattern.CASE_INSENSITIVE
         ));
 
-        // Phone numbers (US format)
+        // Phone numbers - US format with variations
         piiPatterns.put("PHONE_US", Pattern.compile(
             "\\b(\\+?1[-.\\s]?)?\\(?([0-9]{3})\\)?[-.\\s]?([0-9]{3})[-.\\s]?([0-9]{4})\\b"
         ));
 
-        // Social Security Numbers
+        // Phone numbers - International format (E.164)
+        piiPatterns.put("PHONE_INTL", Pattern.compile(
+            "\\+\\d{1,3}[-.\\s]?\\d{3,14}"
+        ));
+
+        // Phone numbers - Generic (catches various formats)
+        piiPatterns.put("PHONE_GENERIC", Pattern.compile(
+            "\\b\\+?[\\d\\s\\-\\(\\)]{7,20}\\b"
+        ));
+
+        // Social Security Numbers - US format with separators
         piiPatterns.put("SSN", Pattern.compile(
             "\\b(?!000|666|9\\d{2})\\d{3}[-\\s]?(?!00)\\d{2}[-\\s]?(?!0000)\\d{4}\\b"
         ));
 
-        // Credit card numbers (major brands)
+        // Social Security Numbers - US format without separators (9 digits)
+        piiPatterns.put("SSN_UNFORMATTED", Pattern.compile(
+            "\\b(?!000|666|9\\d{2})\\d{9}(?!\\d)\\b"
+        ));
+
+        // Credit card numbers - major brands with spaces/dashes
         piiPatterns.put("CREDIT_CARD", Pattern.compile(
             "\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\\d{3})\\d{11})\\b"
         ));
 
-        // IP addresses
-        piiPatterns.put("IP_ADDRESS", Pattern.compile(
+        // Credit card numbers - formatted with spaces/dashes
+        piiPatterns.put("CREDIT_CARD_FORMATTED", Pattern.compile(
+            "\\b(?:\\d{4}[-\\s]){3}\\d{4}\\b"
+        ));
+
+        // IP addresses - IPv4
+        piiPatterns.put("IPV4", Pattern.compile(
             "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"
         ));
 
-        // Bank account numbers (simplified - 8-17 digits)
-        piiPatterns.put("BANK_ACCOUNT", Pattern.compile(
-            "\\b\\d{8,17}\\b"
+        // IP addresses - IPv6
+        piiPatterns.put("IPV6", Pattern.compile(
+            "\\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\\b"
+        ));
+
+        // Bank account numbers - IBAN format
+        piiPatterns.put("IBAN", Pattern.compile(
+            "\\b[A-Z]{2}\\d{2}[A-Z0-9]{11,30}\\b"
+        ));
+
+        // Bank account numbers - US routing + account
+        piiPatterns.put("BANK_ACCOUNT_US", Pattern.compile(
+            "\\b\\d{9}[-\\s]?\\d{4,17}\\b"
         ));
 
         // Medical record numbers (MRN) - alphanumeric, typically 6-10 characters
@@ -107,20 +137,68 @@ public class PIIDetectionService {
             Pattern.CASE_INSENSITIVE
         ));
 
-        // Passport numbers (simplified pattern)
-        piiPatterns.put("PASSPORT", Pattern.compile(
+        // Passport numbers - US format
+        piiPatterns.put("PASSPORT_US", Pattern.compile(
+            "\\b\\d{9}\\b"
+        ));
+
+        // Passport numbers - International (alphanumeric)
+        piiPatterns.put("PASSPORT_INTL", Pattern.compile(
             "\\b[A-Z]{1,2}[0-9]{6,9}\\b"
         ));
 
-        // Driver's license numbers (simplified)
-        piiPatterns.put("DRIVERS_LICENSE", Pattern.compile(
+        // Driver's license numbers - US state format
+        piiPatterns.put("DRIVERS_LICENSE_US", Pattern.compile(
             "\\b[A-Z]{1,2}[0-9]{6,14}\\b"
         ));
 
-        // Street addresses (simplified pattern)
+        // Tax ID / EIN (Employer Identification Number)
+        piiPatterns.put("TAX_ID", Pattern.compile(
+            "\\b\\d{2}-\\d{7}\\b"
+        ));
+
+        // Street addresses - US format
         piiPatterns.put("STREET_ADDRESS", Pattern.compile(
             "\\b\\d+\\s+([A-Za-z]+\\s*)+(street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|way|court|ct|circle|cir|trail|trl|parkway|pkwy|highway|hwy)\\b",
             Pattern.CASE_INSENSITIVE
+        ));
+
+        // ZIP codes - US 5-digit
+        piiPatterns.put("ZIP_US", Pattern.compile(
+            "\\b\\d{5}(?:-\\d{4})?\\b"
+        ));
+
+        // Postal codes - International
+        piiPatterns.put("POSTAL_CODE_INTL", Pattern.compile(
+            "\\b[A-Z0-9]{3,10}\\b"
+        ));
+
+        // Date of birth - common formats
+        piiPatterns.put("DOB_FORMAT1", Pattern.compile(
+            "\\b\\d{4}-\\d{2}-\\d{2}\\b"  // YYYY-MM-DD
+        ));
+
+        piiPatterns.put("DOB_FORMAT2", Pattern.compile(
+            "\\b\\d{2}/\\d{2}/\\d{4}\\b"  // MM/DD/YYYY
+        ));
+
+        piiPatterns.put("DOB_FORMAT3", Pattern.compile(
+            "\\b\\d{2}-\\d{2}-\\d{4}\\b"  // MM-DD-YYYY
+        ));
+
+        // National ID numbers (various countries)
+        piiPatterns.put("NATIONAL_ID", Pattern.compile(
+            "\\b[A-Z]{0,2}\\d{6,15}\\b"
+        ));
+
+        // Insurance policy numbers
+        piiPatterns.put("INSURANCE_POLICY", Pattern.compile(
+            "\\b[A-Z]{0,3}\\d{6,20}\\b"
+        ));
+
+        // License plate numbers
+        piiPatterns.put("LICENSE_PLATE", Pattern.compile(
+            "\\b[A-Z0-9]{5,8}\\b"
         ));
     }
 

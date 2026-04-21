@@ -19,11 +19,19 @@ import { AIService } from '../services/ai/ai.service';
 
 type LifecyclePhaseId =
   | 'INTENT'
+  | 'CONTEXT'
+  | 'PLAN'
+  | 'EXECUTE'
+  | 'VERIFY'
+  | 'OBSERVE'
+  | 'LEARN'
+  | 'INSTITUTIONALIZE';
+
+type LegacyLifecyclePhaseId =
   | 'SHAPE'
   | 'VALIDATE'
   | 'GENERATE'
   | 'RUN'
-  | 'OBSERVE'
   | 'IMPROVE';
 
 interface LifecyclePhaseDefinition {
@@ -81,30 +89,30 @@ const LIFECYCLE_PHASES: LifecyclePhaseDefinition[] = [
     keyArtifacts: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
   },
   {
-    id: 'SHAPE',
-    name: 'Shape',
-    description: 'Design the solution architecture',
+    id: 'CONTEXT',
+    name: 'Context',
+    description: 'Capture the requirements, architecture, and delivery context',
     stage: 1,
     color: '#8B5CF6',
-    icon: '🎨',
+    icon: '🧭',
     gates: ['architecture-approved', 'tech-stack-selected'],
     personas: ['Architect', 'Tech Lead'],
     keyArtifacts: ['Architecture Diagram', 'Tech Stack', 'API Design'],
   },
   {
-    id: 'VALIDATE',
-    name: 'Validate',
-    description: 'Test and validate the solution',
+    id: 'PLAN',
+    name: 'Plan',
+    description: 'Validate the approach and plan safe execution',
     stage: 2,
     color: '#10B981',
-    icon: '✅',
+    icon: '🧪',
     gates: ['tests-passed', 'quality-gates-met'],
     personas: ['QA Engineer', 'Test Lead'],
     keyArtifacts: ['Test Plan', 'Test Cases', 'Test Results'],
   },
   {
-    id: 'GENERATE',
-    name: 'Generate',
+    id: 'EXECUTE',
+    name: 'Execute',
     description: 'Build and implement the solution',
     stage: 3,
     color: '#F59E0B',
@@ -114,12 +122,12 @@ const LIFECYCLE_PHASES: LifecyclePhaseDefinition[] = [
     keyArtifacts: ['Source Code', 'Documentation', 'Build Artifacts'],
   },
   {
-    id: 'RUN',
-    name: 'Run',
-    description: 'Deploy and run the solution',
+    id: 'VERIFY',
+    name: 'Verify',
+    description: 'Verify release readiness before live promotion',
     stage: 4,
     color: '#EF4444',
-    icon: '🚀',
+    icon: '🛡️',
     gates: ['deployment-successful', 'smoke-tests-passed'],
     personas: ['DevOps Engineer', 'SRE'],
     keyArtifacts: [
@@ -140,12 +148,12 @@ const LIFECYCLE_PHASES: LifecyclePhaseDefinition[] = [
     keyArtifacts: ['Dashboards', 'Alerts', 'SLOs'],
   },
   {
-    id: 'IMPROVE',
-    name: 'Improve',
-    description: 'Continuous improvement and optimization',
+    id: 'LEARN',
+    name: 'Learn',
+    description: 'Capture lessons, follow-ups, and improvement signals',
     stage: 6,
     color: '#EC4899',
-    icon: '📈',
+    icon: '📚',
     gates: ['improvements-identified', 'next-iteration-planned'],
     personas: ['Product Manager', 'All'],
     keyArtifacts: [
@@ -153,6 +161,17 @@ const LIFECYCLE_PHASES: LifecyclePhaseDefinition[] = [
       'Metrics Analysis',
       'Lessons Learned',
     ],
+  },
+  {
+    id: 'INSTITUTIONALIZE',
+    name: 'Institutionalize',
+    description: 'Roll validated practices back into the operating model',
+    stage: 7,
+    color: '#14B8A6',
+    icon: '🏛️',
+    gates: ['changes-adopted', 'standards-updated'],
+    personas: ['Platform Lead', 'Engineering Manager'],
+    keyArtifacts: ['Standards Update', 'Reusable Playbook', 'Adoption Plan'],
   },
 ];
 
@@ -240,6 +259,30 @@ async function logStageTransitionAuditEvent(params: {
 
 function isLifecyclePhaseId(value: string): value is LifecyclePhaseId {
   return value in LIFECYCLE_PHASES_BY_ID;
+}
+
+function normalizeLifecyclePhaseId(
+  value: string | undefined | null
+): LifecyclePhaseId | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalizedValue = value.toUpperCase();
+
+  const legacyPhaseMap: Record<LegacyLifecyclePhaseId, LifecyclePhaseId> = {
+    SHAPE: 'CONTEXT',
+    VALIDATE: 'PLAN',
+    GENERATE: 'EXECUTE',
+    RUN: 'VERIFY',
+    IMPROVE: 'LEARN',
+  };
+
+  if (normalizedValue in legacyPhaseMap) {
+    return legacyPhaseMap[normalizedValue as LegacyLifecyclePhaseId];
+  }
+
+  return isLifecyclePhaseId(normalizedValue) ? normalizedValue : null;
 }
 
 function getNextLifecyclePhase(
@@ -346,12 +389,13 @@ function buildTransitionTimingPrediction(
 
   const baseHoursByPhase: Record<LifecyclePhaseId, number> = {
     INTENT: 16,
-    SHAPE: 24,
-    VALIDATE: 12,
-    GENERATE: 20,
-    RUN: 8,
+    CONTEXT: 24,
+    PLAN: 12,
+    EXECUTE: 20,
+    VERIFY: 8,
     OBSERVE: 12,
-    IMPROVE: 10,
+    LEARN: 10,
+    INSTITUTIONALIZE: 8,
   };
 
   const requiredCount = preview.requiredArtifacts.length;
@@ -390,7 +434,7 @@ function buildDecisionSupportDefaults(
   readiness: number,
   blockerCount: number
 ): DecisionSupportDefaults {
-  const isLateLifecycle = phase === 'RUN' || phase === 'OBSERVE' || phase === 'IMPROVE';
+  const isLateLifecycle = phase === 'VERIFY' || phase === 'OBSERVE' || phase === 'LEARN' || phase === 'INSTITUTIONALIZE';
   const riskTolerance: RiskTolerance = blockerCount > 0
     ? 'low'
     : readiness >= 85
@@ -431,7 +475,7 @@ function buildDecisionSupportSuggestions(
     });
   }
 
-  if (phase === 'VALIDATE') {
+  if (phase === 'PLAN') {
     suggestions.push({
       id: 'promote-test-evidence',
       title: 'Attach passing test evidence to approval packet',
@@ -440,7 +484,7 @@ function buildDecisionSupportSuggestions(
     });
   }
 
-  if (phase === 'RUN' || phase === 'OBSERVE') {
+  if (phase === 'VERIFY' || phase === 'OBSERVE') {
     suggestions.push({
       id: 'confirm-alert-routes',
       title: 'Confirm on-call alert routing before promotion',
@@ -539,6 +583,7 @@ async function evaluateStageGate(
     4: ['Deployment Script', 'Environment Config', 'Smoke Test Results'],
     5: ['Dashboards', 'Alerts', 'SLOs'],
     6: ['Improvement Backlog', 'Performance Metrics', 'Next Iteration Plan'],
+    7: ['Standards Update', 'Reusable Playbook', 'Adoption Plan'],
   };
 
   const requiredArtifacts = stageRequirements[fromStage] || [];
@@ -590,12 +635,13 @@ function safeMetadataNumber(metadata: unknown, key: string): number | undefined 
 function getPhaseFromStage(stage: number): LifecyclePhaseId {
   const phaseMap: Record<number, LifecyclePhaseId> = {
     0: 'INTENT',
-    1: 'SHAPE',
-    2: 'VALIDATE',
-    3: 'GENERATE',
-    4: 'RUN',
+    1: 'CONTEXT',
+    2: 'PLAN',
+    3: 'EXECUTE',
+    4: 'VERIFY',
     5: 'OBSERVE',
-    6: 'IMPROVE',
+    6: 'LEARN',
+    7: 'INSTITUTIONALIZE',
   };
   
   return phaseMap[stage] || 'INTENT';
@@ -629,7 +675,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    const normalizedPhase = phase.toUpperCase();
+    const normalizedPhase = normalizeLifecyclePhaseId(phase);
     if (!isLifecyclePhaseId(normalizedPhase)) {
       return reply.status(400).send({
         error: 'Invalid phase',
@@ -719,8 +765,8 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Get phase details
-    const currentPhase = isLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
-      ? project.lifecyclePhase || 'INTENT'
+    const currentPhase = normalizeLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
+      ? normalizeLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
       : 'INTENT';
     const phaseInfo = LIFECYCLE_PHASES_BY_ID[currentPhase];
 
@@ -776,21 +822,22 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(404).send({ error: 'Project not found' });
       }
 
-      const currentPhase = project.lifecyclePhase ?? 'INTENT';
-      const targetPhase = body.targetPhase ?? '';
+      const currentPhase = normalizeLifecyclePhaseId(project.lifecyclePhase ?? 'INTENT') ?? 'INTENT';
+      const targetPhase = normalizeLifecyclePhaseId(body.targetPhase ?? '');
       const phaseOrder = [
         'INTENT',
-        'SHAPE',
-        'VALIDATE',
-        'GENERATE',
-        'RUN',
+        'CONTEXT',
+        'PLAN',
+        'EXECUTE',
+        'VERIFY',
         'OBSERVE',
-        'IMPROVE',
-      ];
+        'LEARN',
+        'INSTITUTIONALIZE',
+      ] as const;
       const currentIndex = phaseOrder.indexOf(currentPhase);
-      const targetIndex = phaseOrder.indexOf(targetPhase);
+      const targetIndex = targetPhase ? phaseOrder.indexOf(targetPhase) : -1;
 
-      if (targetIndex === -1 || targetPhase === '') {
+      if (targetIndex === -1 || targetPhase === null) {
         return reply.status(400).send({
           error: 'Invalid target phase',
           validPhases: phaseOrder,
@@ -799,7 +846,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
 
       const updatedProject = await prisma.project.update({
         where: { id: projectId },
-        data: { lifecyclePhase: targetPhase as LifecyclePhase },
+          data: { lifecyclePhase: targetPhase as LifecyclePhase },
       });
 
       await prisma.lifecycleActivityLog.create({
@@ -865,11 +912,9 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(404).send({ error: 'Project not found' });
       }
 
-      const currentPhase = isLifecyclePhaseId(body.phase || '')
-        ? (body.phase as LifecyclePhaseId)
-        : (isLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
-          ? (project.lifecyclePhase as LifecyclePhaseId)
-          : 'INTENT');
+      const currentPhase = normalizeLifecyclePhaseId(body.phase || '')
+        ?? normalizeLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
+        ?? 'INTENT';
 
       const approvedArtifacts = await prisma.lifecycleArtifact.findMany({
         where: {

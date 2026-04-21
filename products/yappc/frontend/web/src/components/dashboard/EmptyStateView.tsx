@@ -1,5 +1,3 @@
-// @ts-nocheck
-import { useNavigate } from 'react-router';
 import { Box, Typography, Button, Stack } from '@ghatana/design-system';
 import { Sparkles as AutoAwesomeIcon, LayoutDashboard as DashboardCustomize, Zap as Bolt } from 'lucide-react';
 import { IdeaInput } from './IdeaInput';
@@ -22,18 +20,18 @@ export function EmptyStateView({ onCreateProject, onSkip }: EmptyStateViewProps)
                     </Typography>
 
                     <Typography as="h6" color="text.secondary" className="mb-8">
-                        What do you want to build today?
+                        Start with one backed project and adjust it from the cockpit.
                     </Typography>
 
                     <IdeaInput onSubmit={onCreateProject} />
 
                     <Box className="mt-12 mb-8">
                         <Typography as="p" className="mb-4 text-sm" color="text.secondary">
-                            or select a starting point
+                            or open a supported starting point
                         </Typography>
                         <Stack direction="row" spacing={2} justifyContent="center">
-                            <Button variant="outlined" startIcon={<DashboardCustomize />}>Browse Templates</Button>
-                            <Button variant="outlined" startIcon={<Bolt />}>Quick Start Guide</Button>
+                            <Button variant="outlined" startIcon={<DashboardCustomize />}>Browse Project Types</Button>
+                            <Button variant="outlined" startIcon={<Bolt />}>View Quick Start</Button>
                         </Stack>
                     </Box>
 
