@@ -210,7 +210,7 @@ describe('ServiceStatus contract shape', () => {
       },
     };
     expect(status.status).toBe('healthy');
-    expect(status.metrics.requestCount).toBe(1000);
+    expect(status.metrics!.requestCount).toBe(1000);
   });
 
   it('allows all status variants', () => {
@@ -234,14 +234,16 @@ describe('ServiceStatus contract shape', () => {
 describe('MultimodalResult contract shape', () => {
   it('satisfies expected shape', () => {
     const result: MultimodalResult = {
+      result: { summary: 'ok' },
+      confidence: 0.92,
       insights: [
         { type: 'sentiment', description: 'Positive tone', confidence: 0.9, data: { score: 0.9 } },
       ],
       processingTimeMs: 500,
       modalities: ['audio', 'text'],
     };
-    expect(result.insights).toHaveLength(1);
-    expect(result.insights[0]!.confidence).toBe(0.9);
+    expect(result.insights!).toHaveLength(1);
+    expect(result.insights![0]!.confidence).toBe(0.9);
     expect(result.modalities).toContain('audio');
   });
 

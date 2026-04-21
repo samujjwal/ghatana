@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 /**
  * @doc.type types
  * @doc.purpose Shared TypeScript interfaces for audio-video application
@@ -164,12 +162,6 @@ export interface BoundingBox {
   height: number;
 }
 
-export const BoundingBoxSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-  width: z.number(),
-  height: z.number(),
-}).strict();
 
 // Multimodal types
 export interface MultimodalRequest {
@@ -197,66 +189,57 @@ export interface MultimodalResult {
   insights?: MultimodalInsight[];
 }
 
-export const STTResultSchema = z.object({
-  text: z.string(),
-  confidence: z.number().min(0).max(1),
-  alternatives: z.array(z.object({
-    text: z.string(),
-    confidence: z.number().min(0).max(1),
-  }).strict()).optional(),
-  words: z.array(z.object({
-    word: z.string(),
-    start: z.number(),
-    end: z.number(),
-    confidence: z.number().min(0).max(1),
-  }).strict()).optional(),
-  processingTimeMs: z.number(),
-  language: z.string(),
-  model: z.string(),
-}).strict();
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
-export const DetectedObjectSchema = z.object({
-  class: z.string(),
-  confidence: z.number().min(0).max(1),
-  bbox: BoundingBoxSchema,
-  attributes: z.record(z.string(), z.unknown()).optional(),
-}).strict();
+function isConfidence(value: unknown): value is number {
+  return typeof value === 'number' && value >= 0 && value <= 1;
+}
 
-export const DetectionResultSchema = z.object({
-  objects: z.array(DetectedObjectSchema),
-  confidence: z.number().min(0).max(1),
-  processingTimeMs: z.number(),
-  imageSize: z.object({
-    width: z.number(),
-    height: z.number(),
-  }).strict(),
-}).strict();
-
-export const MultimodalInsightSchema = z.object({
-  type: z.string(),
-  description: z.string(),
-  confidence: z.number().min(0).max(1),
-  data: z.unknown(),
-}).strict();
-
-export const MultimodalResultSchema = z.object({
-  result: z.unknown(),
-  confidence: z.number().min(0).max(1),
-  processingTimeMs: z.number(),
-  modalities: z.array(z.string()),
-  insights: z.array(MultimodalInsightSchema).optional(),
-}).strict();
+function isBoundingBox(value: unknown): value is BoundingBox {
+  return isObject(value)
+    && typeof value.x === 'number'
+    && typeof value.y === 'number'
+    && typeof value.width === 'number'
+    && typeof value.height === 'number';
+}
 
 export function parseSTTResult(input: unknown): STTResult {
-  return STTResultSchema.parse(input);
+  if (!isObject(input)) throw new Error('Invalid STT payload: not an object');
+  if (typeof input.text !== 'string') throw new Error('Invalid STT payload: text');
+  if (!isConfidence(input.confidence)) throw new Error('Invalid STT payload: confidence');
+  if (typeof input.processingTimeMs !== 'number') throw new Error('Invalid STT payload: processingTimeMs');
+  if (typeof input.language !== 'string') throw new Error('Invalid STT payload: language');
+  if (typeof input.model !== 'string') throw new Error('Invalid STT payload: model');
+  return input as STTResult;
 }
 
 export function parseDetectionResult(input: unknown): DetectionResult {
-  return DetectionResultSchema.parse(input);
+  if (!isObject(input)) throw new Error('Invalid detection payload: not an object');
+  if (!Array.isArray(input.objects)) throw new Error('Invalid detection payload: objects');
+  if (!isConfidence(input.confidence)) throw new Error('Invalid detection payload: confidence');
+  if (typeof input.processingTimeMs !== 'number') throw new Error('Invalid detection payload: processingTimeMs');
+  if (!isObject(input.imageSize) || typeof input.imageSize.width !== 'number' || typeof input.imageSize.height !== 'number') {
+    throw new Error('Invalid detection payload: imageSize');
+  }
+  for (const item of input.objects) {
+    if (!isObject(item) || typeof item.class !== 'string' || !isConfidence(item.confidence) || !isBoundingBox(item.bbox)) {
+      throw new Error('Invalid detection payload: objects[]');
+    }
+  }
+  return input as DetectionResult;
 }
 
 export function parseMultimodalResult(input: unknown): MultimodalResult {
-  return MultimodalResultSchema.parse(input);
+  if (!isObject(input)) throw new Error('Invalid multimodal payload: not an object');
+  if (!('result' in input)) throw new Error('Invalid multimodal payload: result');
+  if (!isConfidence(input.confidence)) throw new Error('Invalid multimodal payload: confidence');
+  if (typeof input.processingTimeMs !== 'number') throw new Error('Invalid multimodal payload: processingTimeMs');
+  if (!Array.isArray(input.modalities) || !input.modalities.every(item => typeof item === 'string')) {
+    throw new Error('Invalid multimodal payload: modalities');
+  }
+  return input as MultimodalResult;
 }
 
 export interface MultimodalInsight {

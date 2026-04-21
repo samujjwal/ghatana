@@ -80,6 +80,7 @@ function makeTTSRequest() {
 function makeVisionRequest() {
   return {
     image: { data: new ArrayBuffer(4), width: 100, height: 100, format: 'png' as const },
+    task: 'detect' as const,
   };
 }
 
@@ -93,6 +94,7 @@ function makeMultimodalRequest() {
       durationMs: 500,
       format: 'wav' as const,
     },
+    task: 'analyze' as const,
   };
 }
 
@@ -135,9 +137,7 @@ describe('AudioVideoClient', () => {
         json: () => Promise.resolve({}),
         text: () => Promise.resolve('{}'),
       } as unknown as Response);
-      const result = await client.synthesize(makeTTSRequest());
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toMatch(/tts service not configured/i);
+      await expect(client.synthesize(makeTTSRequest())).rejects.toThrow(/tts service not configured/i);
       g.mockRestore();
     });
   });
@@ -284,12 +284,12 @@ describe('AudioVideoClient', () => {
   describe('processVision()', () => {
     it('returns detection result on success', async () => {
       const visionResult = {
-        objects: [],
+        objects: [
+          { class: 'person', confidence: 0.9, bbox: { x: 2, y: 3, width: 40, height: 50 } },
+        ],
         processingTimeMs: 50,
-        model: 'yolo-v8',
         confidence: 0.9,
-        width: 100,
-        height: 100,
+        imageSize: { width: 100, height: 100 },
       };
       const g = vi.spyOn(globalThis, 'fetch').mockImplementation(
         mockFetch([{ status: 200, body: visionResult }]),
@@ -326,6 +326,8 @@ describe('AudioVideoClient', () => {
   describe('processMultimodal()', () => {
     it('returns success on 200', async () => {
       const multiResult = {
+        result: { summary: 'ok' },
+        confidence: 0.88,
         insights: [],
         processingTimeMs: 300,
         modalities: ['audio'],
@@ -542,7 +544,9 @@ describe('AudioVideoClient', () => {
         });
       });
       const client = makeClient({ timeout: 5, retries: 0 });
-      const result = await client.transcribe(makeSTTRequest());
+      const pending = client.transcribe(makeSTTRequest());
+      await vi.runAllTimersAsync();
+      const result = await pending;
       expect(result.success).toBe(false);
       expect(result.error?.retryable).toBe(true);
       g.mockRestore();

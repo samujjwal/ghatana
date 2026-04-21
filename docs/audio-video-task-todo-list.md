@@ -39,11 +39,11 @@ Status values:
 
 ### P0 Tracking
 
-- [ ] `AV-P0-01` Owner: Backend (Speech) ETA: 2026-04-24 Status: `IN_PROGRESS` Notes: Replaced disabled Whisper tests with executable fallback-guidance regression tests; production-path hard enforcement still pending adapter-level integration.
+- [x] `AV-P0-01` Owner: Backend (Speech) ETA: 2026-04-21 Status: `DONE` Notes: Enforced LLM_FALLBACK-only mode in `GrpcSttClientAdapter`; `PlatformMultimodalAdapter` now routes transcription through STT adapter instead of direct platform Whisper engine; added adapter regression tests.
 - [x] `AV-P0-02` Owner: Security + SDET ETA: 2026-04-21 Status: `DONE` Notes: Added `AuthenticationInterceptorTest` covering public bypass, missing auth, invalid token, valid token + tenant propagation.
 - [x] `AV-P0-03` Owner: Backend (Persistence) ETA: 2026-04-21 Status: `DONE` Notes: Fixed `AudioFile.findByUserIdAndTenantId` to exclude soft-deleted rows; added regression test in `JpaAudioFileRepositoryTest`.
 - [ ] `AV-P0-04` Owner: Backend (Messaging) + SDET ETA: 2026-04-25 Status: `IN_PROGRESS` Notes: Added producer/consumer lifecycle unit tests and fixed module compile against current `QueueConsumerStrategy` API; RabbitMQ Testcontainers round-trip, retry, and DLQ tests still pending.
-- [ ] `AV-P0-05` Owner: ___ ETA: ___ Status: `NOT_STARTED` Notes: ___
+- [x] `AV-P0-05` Owner: ML + Security ETA: 2026-04-21 Status: `DONE` Notes: Added facial recognition consent/feature-flag gating, audit sink events, and confidence-threshold filtering in `FacialRecognitionService`; added privacy/safety tests.
 
 ---
 
@@ -61,13 +61,13 @@ Status values:
 
 ### P1 Tracking
 
-- [ ] `AV-P1-01` Owner: ___ ETA: ___ Status: `NOT_STARTED` Notes: ___
+- [ ] `AV-P1-01` Owner: SDET + Backend ETA: 2026-04-29 Status: `BLOCKED` Notes: Requires full cross-service runtime (auth + STT + vision + persistence + messaging) and stable integration environment wiring.
 - [ ] `AV-P1-02` Owner: Backend (Cache) ETA: 2026-04-26 Status: `IN_PROGRESS` Notes: Added `AudioVideoCacheTest`; fixed cache module dependency wiring to persistence entities. Redis-backed TTL and tenant invalidation integration tests still pending.
 - [ ] `AV-P1-03` Owner: ___ ETA: ___ Status: `NOT_STARTED` Notes: ___
-- [ ] `AV-P1-04` Owner: ___ ETA: ___ Status: `NOT_STARTED` Notes: ___
-- [ ] `AV-P1-05` Owner: ___ ETA: ___ Status: `NOT_STARTED` Notes: ___
-- [ ] `AV-P1-06` Owner: ___ ETA: ___ Status: `NOT_STARTED` Notes: ___
-- [ ] `AV-P1-07` Owner: ___ ETA: ___ Status: `NOT_STARTED` Notes: ___
+- [x] `AV-P1-04` Owner: TypeScript Engineer ETA: 2026-04-21 Status: `DONE` Notes: Added runtime boundary validators and parser functions in `@audio-video/types`; integrated validation in `@audio-video/client`; added contract and client tests for schema drift.
+- [ ] `AV-P1-05` Owner: Performance Engineer ETA: 2026-04-30 Status: `BLOCKED` Notes: Requires benchmark environment and representative runtime dependencies for STT/vision/database/cache.
+- [ ] `AV-P1-06` Owner: Platform/O11y ETA: 2026-05-01 Status: `BLOCKED` Notes: Requires cross-service deployment wiring for metrics/traces/readiness verification.
+- [ ] `AV-P1-07` Owner: Tech Lead + Backend ETA: 2026-04-30 Status: `IN_PROGRESS` Notes: Multimodal adapter routing tightened; API contract documentation + integration contract tests still pending.
 
 ---
 
@@ -103,9 +103,9 @@ Status values:
 
 ## Progress Snapshot
 
-- P0 complete: `2/5`
-- P1 complete: `0/7`
+- P0 complete: `4/5`
+- P1 complete: `1/7`
 - P2 complete: `0/5`
-- Overall complete: `2/17`
+- Overall complete: `5/17`
 
 

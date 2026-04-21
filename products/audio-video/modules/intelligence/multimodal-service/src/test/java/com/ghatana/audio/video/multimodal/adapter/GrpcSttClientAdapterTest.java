@@ -33,17 +33,17 @@ class GrpcSttClientAdapterTest {
     @Test
     @DisplayName("LLM_FALLBACK mode uses AI Inference fallback")
     void llmFallbackModeUsesAiInference() {
-        GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
-            "localhost",
-            50051,
-            GrpcSttClientAdapter.SttMode.LLM_FALLBACK
-        );
-        
-        byte[] audioData = new byte[1024];
-        AudioResult result = adapter.transcribe(audioData);
-        
-        assertThat(result).isNotNull();
-        assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
+                "localhost",
+                50051,
+                GrpcSttClientAdapter.SttMode.LLM_FALLBACK
+        )) {
+            byte[] audioData = new byte[1024];
+            AudioResult result = adapter.transcribe(audioData);
+
+            assertThat(result).isNotNull();
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        }
     }
 
     /**
@@ -52,19 +52,19 @@ class GrpcSttClientAdapterTest {
     @Test
     @DisplayName("NOP mode returns empty result")
     void nopModeReturnsEmptyResult() {
-        GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
-            "localhost",
-            50051,
-            GrpcSttClientAdapter.SttMode.NOP
-        );
-        
-        byte[] audioData = new byte[1024];
-        AudioResult result = adapter.transcribe(audioData);
-        
-        assertThat(result).isNotNull();
-        assertThat(result.getTranscription()).isEmpty();
-        assertThat(result.getConfidence()).isEqualTo(0.0);
-        assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.NOP);
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
+                "localhost",
+                50051,
+                GrpcSttClientAdapter.SttMode.NOP
+        )) {
+            byte[] audioData = new byte[1024];
+            AudioResult result = adapter.transcribe(audioData);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getTranscription()).isEmpty();
+            assertThat(result.getConfidence()).isEqualTo(0.0);
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.NOP);
+        }
     }
 
     /**
@@ -88,12 +88,12 @@ class GrpcSttClientAdapterTest {
     @Test
     @DisplayName("Default constructor uses LLM_FALLBACK mode")
     void defaultConstructorUsesLlmFallbackMode() {
-        GrpcSttClientAdapter adapter = new GrpcSttClientAdapter("localhost", 50051);
-        
-        byte[] audioData = new byte[1024];
-        AudioResult result = adapter.transcribe(audioData);
-        
-        assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter("localhost", 50051)) {
+            byte[] audioData = new byte[1024];
+            adapter.transcribe(audioData);
+
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        }
     }
 
     /**
@@ -102,13 +102,13 @@ class GrpcSttClientAdapterTest {
     @Test
     @DisplayName("getCurrentMode returns the current mode")
     void getCurrentModeReturnsCurrentMode() {
-        GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
-            "localhost",
-            50051,
-            GrpcSttClientAdapter.SttMode.LLM_FALLBACK
-        );
-        
-        assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
+                "localhost",
+                50051,
+                GrpcSttClientAdapter.SttMode.LLM_FALLBACK
+        )) {
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        }
     }
 
     /**
@@ -117,8 +117,8 @@ class GrpcSttClientAdapterTest {
     @Test
     @DisplayName("Adapter can be closed")
     void adapterCanBeClosed() {
-        GrpcSttClientAdapter adapter = new GrpcSttClientAdapter("localhost", 50051);
-
-        adapter.close();
+        try (GrpcSttClientAdapter ignored = new GrpcSttClientAdapter("localhost", 50051)) {
+            // Auto-close via try-with-resources
+        }
     }
 }
