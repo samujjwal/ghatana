@@ -28,6 +28,11 @@ If `OUTPUT_FILE` is not provided, default to:
 You must **write the full audit output to the Markdown file at `OUTPUT_FILE`**.
 
 Requirements:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - Create the file if it does not exist.
 - Overwrite it if it already exists.
@@ -74,6 +79,11 @@ You must do all of the following where applicable:
 7. Ensure the final state is not merely “higher line coverage,” but **meaningful coverage of real behavior**.
 
 If code is uncovered because the implementation is incomplete, explicitly say so and:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - add/update the tests that can already be written,
 - identify the blocked tests,
@@ -84,6 +94,7 @@ If code is uncovered because the implementation is incomplete, explicitly say so
 ## Scan Scope Rules
 
 Starting at `TARGET_ROOT`, recursively scan and audit:
+<<<<<<< Updated upstream
 
 - every direct child folder,
 - every nested folder,
@@ -104,7 +115,29 @@ Treat each meaningful folder/library as:
 1. independently auditable, and
 2. part of larger end-to-end flows.
 
-Do not skip a folder merely because it appears small, old, internal, generated-adjacent, or test-only unless it is clearly irrelevant binary/vendor output. If you exclude anything, list exclusions explicitly in the report and justify them.
+=======
+
+- every direct child folder,
+- every nested folder,
+- every library/module/package,
+- supporting configs,
+- tests,
+- build files,
+- scripts,
+- schemas,
+- docs,
+- migrations,
+- workflows,
+- assets relevant to behavior,
+- infrastructure/configuration files relevant to runtime, build, release, security, observability, AI/ML, and production readiness.
+
+Treat each meaningful folder/library as:
+
+1. independently auditable, and
+2. part of larger end-to-end flows.
+
+> > > > > > > Stashed changes
+> > > > > > > Do not skip a folder merely because it appears small, old, internal, generated-adjacent, or test-only unless it is clearly irrelevant binary/vendor output. If you exclude anything, list exclusions explicitly in the report and justify them.
 
 ---
 
@@ -229,6 +262,12 @@ When reviewing and updating tests, you must enforce all of the following:
 
 ### You must add/update tests across the right tiers:
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 - unit
 - integration
 - infrastructure-backed integration
@@ -245,6 +284,8 @@ When reviewing and updating tests, you must enforce all of the following:
 - AI/ML evaluation tests where relevant
 
 ### Every test suite must explicitly cover:
+
+<<<<<<< Updated upstream
 
 - expected success behavior,
 - invalid inputs,
@@ -265,6 +306,29 @@ When reviewing and updating tests, you must enforce all of the following:
 
 ### Coverage must be validated at multiple levels:
 
+=======
+
+- expected success behavior,
+- invalid inputs,
+- edge conditions,
+- empty/missing/null states,
+- retries/timeouts,
+- authorization/permission failures,
+- persistence correctness,
+- rollback/cleanup,
+- idempotency,
+- event ordering or async correctness,
+- pagination/filter/sort correctness where relevant,
+- error mapping,
+- user-visible outcomes,
+- contract/schema correctness,
+- regression risks,
+- previously broken behaviors if evidence exists.
+
+### Coverage must be validated at multiple levels:
+
+> > > > > > > Stashed changes
+
 - file/function/method level,
 - branch/decision level,
 - feature level,
@@ -275,7 +339,15 @@ When reviewing and updating tests, you must enforce all of the following:
 
 ### If a feature/use case exists, it must have tests.
 
+<<<<<<< Updated upstream
+
 ### If a flow exists, it must have tests.
+
+=======
+
+### If a flow exists, it must have tests.
+
+> > > > > > > Stashed changes
 
 ### If code exists, it must have meaningful coverage unless it is truly unreachable/dead, in which case flag it for removal.
 
@@ -286,6 +358,12 @@ When reviewing and updating tests, you must enforce all of the following:
 For **every library/folder/subfolder**, perform the following:
 
 ### 1. Inventory and intent discovery
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - Identify:
   - folder path,
@@ -310,6 +388,12 @@ For **every library/folder/subfolder**, perform the following:
 
 ### 2. Boundary and ownership review
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 - Verify whether the library has a clean and coherent responsibility.
 - Check for:
   - mixed concerns,
@@ -323,7 +407,14 @@ For **every library/folder/subfolder**, perform the following:
 
 ### 3. Completeness review
 
+<<<<<<< Updated upstream
+
 Validate whether the library fully covers what it should cover:
+
+=======
+Validate whether the library fully covers what it should cover:
+
+> > > > > > > Stashed changes
 
 - happy path,
 - validation failures,
@@ -346,7 +437,14 @@ Validate whether the library fully covers what it should cover:
 
 ### 4. Correctness review
 
+<<<<<<< Updated upstream
+
 Verify:
+
+=======
+Verify:
+
+> > > > > > > Stashed changes
 
 - business logic correctness,
 - mathematical/computational correctness,
@@ -367,7 +465,12 @@ Verify:
 
 ### 5. Test strategy, creation, and coverage review
 
-Assess all existing and missing test layers. For each library/folder, determine what is required, what is missing, and what must be created or updated across:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+> > > > > > > Assess all existing and missing test layers. For each library/folder, determine what is required, what is missing, and what must be created or updated across:
 
 - **Unit tests**
 - **Integration tests**
@@ -389,6 +492,11 @@ Assess all existing and missing test layers. For each library/folder, determine 
 - **AI/ML evaluation tests** where applicable
 
 For tests, check:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - Are they testing the right behavior?
 - Are they meaningful and deterministic?
@@ -404,9 +512,18 @@ Then **add/update/fix** the missing or weak tests.
 
 ### 6. Real 100% coverage requirement
 
+<<<<<<< Updated upstream
+
 Your goal is to enforce **true, meaningful 100% coverage** for the evaluated scope, not superficial line coverage.
 
 For each library/folder:
+
+=======
+Your goal is to enforce **true, meaningful 100% coverage** for the evaluated scope, not superficial line coverage.
+
+For each library/folder:
+
+> > > > > > > Stashed changes
 
 - identify the required coverage matrix by test tier,
 - identify existing gaps,
@@ -414,6 +531,11 @@ For each library/folder:
 - report residual gaps only if they are blocked by implementation or environment issues.
 
 Report:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - current effective coverage,
 - false-confidence coverage,
@@ -428,6 +550,11 @@ Report:
 - missing concurrency/performance/security/privacy/operability coverage.
 
 Produce a **concrete test completion plan** to reach full coverage of:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - functionality,
 - branches,
@@ -442,7 +569,14 @@ Produce a **concrete test completion plan** to reach full coverage of:
 
 ### 7. Technology and architecture review
 
+<<<<<<< Updated upstream
+
 Evaluate whether the implementation uses the right:
+
+=======
+Evaluate whether the implementation uses the right:
+
+> > > > > > > Stashed changes
 
 - language features,
 - framework patterns,
@@ -457,6 +591,11 @@ Evaluate whether the implementation uses the right:
 - packaging/module boundaries.
 
 Flag:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - unnecessary complexity,
 - overengineering,
@@ -472,7 +611,14 @@ Flag:
 
 ### 8. Performance and scalability review
 
+<<<<<<< Updated upstream
+
 For each library, analyze:
+
+=======
+For each library, analyze:
+
+> > > > > > > Stashed changes
 
 - algorithmic complexity,
 - unnecessary allocations,
@@ -492,6 +638,11 @@ For each library, analyze:
 - poor horizontal/vertical scaling assumptions.
 
 Specify:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - what to benchmark,
 - what to load test,
@@ -502,7 +653,14 @@ Specify:
 
 ### 9. Observability / O11y review
 
+<<<<<<< Updated upstream
+
 Verify whether the library is production-observable:
+
+=======
+Verify whether the library is production-observable:
+
+> > > > > > > Stashed changes
 
 - structured logs,
 - traces/spans,
@@ -520,7 +678,14 @@ Flag any blind spots.
 
 ### 10. Security, privacy, audit, compliance review
 
+<<<<<<< Updated upstream
+
 Check for:
+
+=======
+Check for:
+
+> > > > > > > Stashed changes
 
 - auth/authz gaps,
 - insecure defaults,
@@ -543,7 +708,14 @@ Check for:
 
 ### 11. AI/ML review
 
+<<<<<<< Updated upstream
+
 Where relevant, evaluate:
+
+=======
+Where relevant, evaluate:
+
+> > > > > > > Stashed changes
 
 - whether AI/ML should exist here,
 - whether it is embedded implicitly and appropriately,
@@ -557,6 +729,11 @@ Where relevant, evaluate:
 - whether privacy and security are preserved.
 
 If AI/ML should be added, define:
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - exact use case,
 - trigger point,
@@ -570,7 +747,14 @@ If AI/ML should be added, define:
 
 ### 12. Production readiness verdict
 
+<<<<<<< Updated upstream
+
 End each library review with a strict verdict:
+
+=======
+End each library review with a strict verdict:
+
+> > > > > > > Stashed changes
 
 - `PASS`
 - `PASS WITH MINOR GAPS`
@@ -588,6 +772,12 @@ Structure the generated `OUTPUT_FILE` as follows:
 
 # Audit Report
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 - Audited root: `TARGET_ROOT`
 - Generated file: `OUTPUT_FILE`
 - Date/time of audit
@@ -596,6 +786,12 @@ Structure the generated `OUTPUT_FILE` as follows:
 - Test creation/update summary
 
 # 1. Executive summary
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 - Overall repository quality within `TARGET_ROOT`
 - Major systemic risks
@@ -610,7 +806,14 @@ Structure the generated `OUTPUT_FILE` as follows:
 
 # 2. Repository-wide findings
 
+<<<<<<< Updated upstream
+
 Group findings into:
+
+=======
+Group findings into:
+
+> > > > > > > Stashed changes
 
 - architecture
 - correctness
@@ -627,6 +830,8 @@ Group findings into:
 - reuse/shared-library opportunities
 
 # 3. Per-library / per-folder audit
+
+<<<<<<< Updated upstream
 
 For **each** library/folder, use this template:
 
@@ -698,12 +903,87 @@ For **each** library/folder, use this template:
 
 ### Technology / architecture assessment
 
+=======
+For **each** library/folder, use this template:
+
+## `<path>`
+
+### Intent
+
+- inferred purpose
+- owned responsibilities
+- non-responsibilities
+
+### What exists
+
+- main modules/files
+- exposed interfaces
+- integrations/dependencies
+- consumers
+
+### Completeness assessment
+
+- complete areas
+- missing areas
+- partial/placeholder areas
+
+### Correctness assessment
+
+- confirmed correct behavior
+- suspected incorrect behavior
+- unproven areas needing validation
+
+### Test coverage assessment
+
+- existing test types
+- tests added/updated
+- missing test types
+- invalid/weak tests replaced or fixed
+- required test cases
+- required fixtures/seeds/configs
+- gaps to true 100% meaningful coverage
+- uncovered features/flows/use cases, if any
+
+### Performance / scalability assessment
+
+- bottlenecks
+- risky patterns
+- benchmarks/tests needed
+- optimization recommendations
+
+### O11y assessment
+
+- existing logs/metrics/traces/audits
+- missing observability
+- required additions
+
+### Security / privacy / audit assessment
+
+- findings
+- risks
+- required controls
+
+### AI/ML assessment
+
+- applicability
+- current state
+- missing opportunities
+- risks
+- configuration/setup expectations
+- tests/evaluation requirements
+
+### Technology / architecture assessment
+
+> > > > > > > Stashed changes
+
 - good choices
 - poor choices
 - simplification opportunities
 - reuse/shared abstraction opportunities
 
 ### Required actions
+
+<<<<<<< Updated upstream
 
 Provide a prioritized list:
 
@@ -736,6 +1016,40 @@ Create a repository-wide section that includes:
 
 Provide a concrete plan for:
 
+=======
+Provide a prioritized list:
+
+- P0 blockers
+- P1 high priority
+- P2 improvements
+
+### Verdict
+
+- one of: PASS / PASS WITH MINOR GAPS / PARTIAL / HIGH RISK / FAIL
+
+# 4. Test plan and test completion report
+
+Create a repository-wide section that includes:
+
+- tests added,
+- tests updated,
+- invalid tests removed or rewritten,
+- test tiers required by library,
+- missing scenarios by library,
+- branch/failure/state/contract/feature/use-case/flow coverage gaps,
+- performance/security/privacy/o11y coverage gaps,
+- recommended test execution strategy,
+- isolation strategy,
+- real infrastructure strategy,
+- seed/fixture/config strategy,
+- CI classification and execution tiers.
+
+# 5. Refactor and standardization plan
+
+Provide a concrete plan for:
+
+> > > > > > > Stashed changes
+
 - deduplication,
 - shared abstractions,
 - library boundary cleanup,
@@ -747,7 +1061,14 @@ Provide a concrete plan for:
 
 # 6. Final scorecard
 
+<<<<<<< Updated upstream
+
 Create a matrix with each library/folder and columns for:
+
+=======
+Create a matrix with each library/folder and columns for:
+
+> > > > > > > Stashed changes
 
 - intent clarity
 - completeness
@@ -766,7 +1087,14 @@ Create a matrix with each library/folder and columns for:
 
 # 7. Appendix
 
+<<<<<<< Updated upstream
+
 Include:
+
+=======
+Include:
+
+> > > > > > > Stashed changes
 
 - folder inventory scanned
 - detected languages/frameworks
@@ -780,6 +1108,7 @@ Include:
 ## File Writing Instructions
 
 When generating `OUTPUT_FILE`:
+<<<<<<< Updated upstream
 
 - ensure parent directories exist; create them if necessary,
 - write the report as Markdown,
@@ -790,6 +1119,20 @@ When generating `OUTPUT_FILE`:
 - keep the document usable as an engineering work artifact.
 
 At the very end:
+
+=======
+
+- ensure parent directories exist; create them if necessary,
+- write the report as Markdown,
+- keep headings consistent,
+- use tables only where they improve readability,
+- avoid losing detail for brevity,
+- preserve exact paths in code blocks or inline code formatting,
+- keep the document usable as an engineering work artifact.
+
+At the very end:
+
+> > > > > > > Stashed changes
 
 1. save the file,
 2. confirm the final saved path,
@@ -812,4 +1155,7 @@ At the very end:
 - If something is wrong, say exactly why it is wrong.
 - If something should be tested, specify exactly how.
 - If AI/ML is appropriate, define exactly how it should be embedded implicitly and safely.
+  <<<<<<< Updated upstream
+- # Do not treat 100% line coverage as success unless features, flows, and use cases are also comprehensively covered.
 - Do not treat 100% line coverage as success unless features, flows, and use cases are also comprehensively covered.
+  > > > > > > > Stashed changes
