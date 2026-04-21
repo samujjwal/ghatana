@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: build dfdgg [`93d5082`](https://github.com/samujjwal/ghatana/commit/93d50822f3529de457b0ce37fd8482b05464a8fd)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`5e30a46`](https://github.com/samujjwal/ghatana/commit/5e30a4654ac5a1ef4004b9b5ab383fc02b46fea7)
 - **Changed**: tutput ffdd [`1cf0b22`](https://github.com/samujjwal/ghatana/commit/1cf0b22f4a8d13da60bb11199cc005bfdf198257)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`70ded08`](https://github.com/samujjwal/ghatana/commit/70ded081339b936dd73f2f607cd1d3797e75a147)
