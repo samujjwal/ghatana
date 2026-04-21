@@ -6,126 +6,72 @@ The AI Platform provides shared infrastructure for managing AI models, features,
 
 ## Purpose
 
-Centralized platform for:
-- **Model Registry** - Version control, metadata, deployment tracking for ML models
-- **Feature Store** - Feature engineering, storage, and serving for ML pipelines
-- **Observability** - AI-specific metrics (latency, drift, accuracy) and monitoring
+The AI Platform capabilities (Model Registry, Feature Store, Observability) are integrated as packages within this module:
 
-## Architecture
+- `com.ghatana.aiplatform.registry.*` - Model registry capabilities
+- `com.ghatana.aiplatform.observability.*` - AI observability capabilities
+- `com.ghatana.aiplatform.featurestore.*` - Feature store capabilities
+
+These are currently in development. The module provides LLM/embedding integrations via the ai-integration package.
+
+## Current Implementation
+
+The ai-integration module provides:
+
+- LLM client integrations (OpenAI, etc.)
+- Embedding generation
+- AI gateway abstractions
+- Vector store integration
+- Policy guard rails
+
+## Package Structure
 
 ```
-ai-platform/
-├── registry/          # Model version control & deployment
-├── feature-store/     # Feature ingestion & serving
-└── observability/     # AI metrics & monitoring
+com.ghatana.ai.*                      — LLM clients, embeddings, prompts, vector store
+com.ghatana.aiplatform.registry.*     — Model registry, version control, deployment tracking
+com.ghatana.aiplatform.observability.* — AI metrics, cost tracking, drift detection
+com.ghatana.aiplatform.featurestore.*  — Feature engineering, storage, and serving
 ```
 
-## Key Capabilities
+## Planned Key Capabilities
 
-### Model Registry
+### Model Registry (PLANNED)
+
 - Model metadata storage (name, version, framework, parameters)
 - Deployment status tracking (staged, production, deprecated)
 - Model lineage and provenance
 - A/B testing support
 
-### Feature Store
+### Feature Store (PLANNED)
+
 - Real-time feature computation from EventCloud
 - Historical feature storage (Postgres/ClickHouse)
 - Feature serving API with low latency (<10ms p99)
 - Feature versioning and schema evolution
 
-### Observability
+### Observability (PLANNED)
+
 - Model performance metrics (latency, throughput, error rate)
 - Prediction quality tracking (accuracy, F1, precision, recall)
 - Data drift detection
 - Model staleness alerts
 
-## Usage
-
-### Registry Example
-```java
-import com.ghatana.aiplatform.registry.ModelRegistryService;
-import com.ghatana.aiplatform.registry.ModelMetadata;
-
-ModelRegistryService registry = new ModelRegistryService(dataSource, metrics);
-
-// Register new model
-ModelMetadata model = ModelMetadata.builder()
-    .name("pattern-recommender")
-    .version("v1.2.0")
-    .framework("tensorflow")
-    .deploymentStatus(DeploymentStatus.STAGED)
-    .build();
-
-registry.register("tenant-123", model);
-
-// Query deployed models
-List<ModelMetadata> prodModels = registry.findByStatus(
-    "tenant-123", 
-    DeploymentStatus.PRODUCTION
-);
-```
-
-### Feature Store Example
-```java
-import com.ghatana.aiplatform.featurestore.FeatureStoreService;
-import com.ghatana.aiplatform.featurestore.Feature;
-
-FeatureStoreService featureStore = new FeatureStoreService(dataSource, eventCloud);
-
-// Ingest feature from event
-Feature feature = Feature.builder()
-    .name("user_event_count_7d")
-    .entityId("user-123")
-    .value(42.0)
-    .timestamp(Instant.now())
-    .build();
-
-featureStore.ingest("tenant-123", feature);
-
-// Serve feature for inference
-Map<String, Double> features = featureStore.getFeatures(
-    "tenant-123",
-    "user-123",
-    List.of("user_event_count_7d", "avg_session_duration")
-);
-```
-
-### Observability Example
-```java
-import com.ghatana.aiplatform.observability.AiMetricsEmitter;
-
-AiMetricsEmitter aiMetrics = new AiMetricsEmitter(metricsCollector);
-
-// Track model inference
-aiMetrics.recordInference(
-    "pattern-recommender",
-    "v1.2.0",
-    Duration.ofMillis(45),
-    true // success
-);
-
-// Track prediction quality
-aiMetrics.recordPredictionQuality(
-    "pattern-recommender",
-    "v1.2.0",
-    0.87 // F1 score
-);
-```
-
 ## Integration Points
 
 ### With AEP
+
 - Feature computation from event patterns
 - Model serving in real-time pipelines
 - Prediction result events back to EventCloud
 
 ### With Virtual-Org
+
 - Agent behavior models
 - Task recommendation engines
 - KPI prediction models
 
 ### With Software-Org
+
 - Code quality models
 - Sprint velocity predictions
 - Incident classification models
@@ -154,21 +100,17 @@ aiMetrics.recordPredictionQuality(
 ## Testing
 
 ```bash
-# Run all tests
-./gradlew :libs:ai-platform:test
-
-# Run specific module tests
-./gradlew :libs:ai-platform:registry:test
-./gradlew :libs:ai-platform:feature-store:test
-./gradlew :libs:ai-platform:observability:test
+# Run ai-integration tests
+./gradlew :platform:java:ai-integration:test
 ```
 
 ## Documentation
 
-Detailed module documentation:
-- [Model Registry](./registry/README.md)
-- [Feature Store](./feature-store/README.md)
-- [AI Observability](./observability/README.md)
+Submodule documentation (planned, not yet implemented):
+
+- Model Registry - Planned
+- Feature Store - Planned
+- AI Observability - Planned
 
 ## Related Modules
 

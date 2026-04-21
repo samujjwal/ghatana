@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * @doc.type types
  * @doc.purpose Shared TypeScript interfaces for audio-video application
@@ -162,6 +164,13 @@ export interface BoundingBox {
   height: number;
 }
 
+export const BoundingBoxSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+}).strict();
+
 // Multimodal types
 export interface MultimodalRequest {
   audio?: AudioData;
@@ -186,6 +195,68 @@ export interface MultimodalResult {
   processingTimeMs: number;
   modalities: string[];
   insights?: MultimodalInsight[];
+}
+
+export const STTResultSchema = z.object({
+  text: z.string(),
+  confidence: z.number().min(0).max(1),
+  alternatives: z.array(z.object({
+    text: z.string(),
+    confidence: z.number().min(0).max(1),
+  }).strict()).optional(),
+  words: z.array(z.object({
+    word: z.string(),
+    start: z.number(),
+    end: z.number(),
+    confidence: z.number().min(0).max(1),
+  }).strict()).optional(),
+  processingTimeMs: z.number(),
+  language: z.string(),
+  model: z.string(),
+}).strict();
+
+export const DetectedObjectSchema = z.object({
+  class: z.string(),
+  confidence: z.number().min(0).max(1),
+  bbox: BoundingBoxSchema,
+  attributes: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+
+export const DetectionResultSchema = z.object({
+  objects: z.array(DetectedObjectSchema),
+  confidence: z.number().min(0).max(1),
+  processingTimeMs: z.number(),
+  imageSize: z.object({
+    width: z.number(),
+    height: z.number(),
+  }).strict(),
+}).strict();
+
+export const MultimodalInsightSchema = z.object({
+  type: z.string(),
+  description: z.string(),
+  confidence: z.number().min(0).max(1),
+  data: z.unknown(),
+}).strict();
+
+export const MultimodalResultSchema = z.object({
+  result: z.unknown(),
+  confidence: z.number().min(0).max(1),
+  processingTimeMs: z.number(),
+  modalities: z.array(z.string()),
+  insights: z.array(MultimodalInsightSchema).optional(),
+}).strict();
+
+export function parseSTTResult(input: unknown): STTResult {
+  return STTResultSchema.parse(input);
+}
+
+export function parseDetectionResult(input: unknown): DetectionResult {
+  return DetectionResultSchema.parse(input);
+}
+
+export function parseMultimodalResult(input: unknown): MultimodalResult {
+  return MultimodalResultSchema.parse(input);
 }
 
 export interface MultimodalInsight {

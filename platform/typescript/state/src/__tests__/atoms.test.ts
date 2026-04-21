@@ -5,6 +5,7 @@ import {
   createPersistentAtom,
   createDerivedAtom,
   createAsyncAtom,
+  createWritableAtom,
   getRegisteredAtoms,
 } from "../atoms";
 import { AsyncState } from "../types";
@@ -46,7 +47,7 @@ describe("createPersistentAtom", () => {
     const prefsAtom = createPersistentAtom(
       "test:prefs",
       { theme: "light" },
-      { storage: "memory" }
+      { storage: "memory" },
     );
     expect(store.get(prefsAtom)).toEqual({ theme: "light" });
   });
@@ -56,7 +57,7 @@ describe("createPersistentAtom", () => {
       "test:persistent-meta",
       42,
       { storage: "memory" },
-      "Persistent atom"
+      "Persistent atom",
     );
     const meta = getRegisteredAtoms().get("test:persistent-meta");
     expect(meta?.persistent).toBe(true);
@@ -71,7 +72,7 @@ describe("createDerivedAtom", () => {
     const lastAtom = createAtom("test:last", "Smith");
     const fullNameAtom = createDerivedAtom(
       "test:fullName",
-      (get) => `${get(firstAtom)} ${get(lastAtom)}`
+      (get) => `${get(firstAtom)} ${get(lastAtom)}`,
     );
 
     expect(store.get(fullNameAtom)).toBe("Alice Smith");
@@ -116,5 +117,46 @@ describe("createAsyncAtom", () => {
     if (state.status === "error") {
       expect(state.error.message).toBe("fetch failed");
     }
+  });
+});
+
+describe("createWritableAtom", () => {
+  it("creates an atom with custom read and write logic", () => {
+    const store = createStore();
+    const baseAtom = createAtom("test:base", 10);
+    const doubledAtom = createWritableAtom(
+      "test:doubled",
+      (get) => get(baseAtom) * 2,
+      (get, set, value: number) => {
+        set(baseAtom, value / 2);
+      },
+    );
+    expect(store.get(doubledAtom)).toBe(20);
+  });
+
+  it("write function updates base atom", () => {
+    const store = createStore();
+    const baseAtom = createAtom("test:base2", 10);
+    const doubledAtom = createWritableAtom(
+      "test:doubled2",
+      (get) => get(baseAtom) * 2,
+      (get, set, value: number) => {
+        set(baseAtom, value / 2);
+      },
+    );
+    store.set(doubledAtom, 40);
+    expect(store.get(baseAtom)).toBe(20);
+    expect(store.get(doubledAtom)).toBe(40);
+  });
+
+  it("does not register metadata (custom atoms skip registration)", () => {
+    const baseAtom = createAtom("test:base3", 5);
+    const customAtom = createWritableAtom(
+      "test:custom",
+      (get) => get(baseAtom) + 1,
+      (get, set) => {},
+    );
+    const meta = getRegisteredAtoms().get("test:custom");
+    expect(meta).toBeUndefined();
   });
 });

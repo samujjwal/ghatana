@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
@@ -34,6 +35,11 @@ class FacialRecognitionServiceTest {
 
     private FacialRecognitionService buildService() {
         return FacialRecognitionService.of(STUB_MODEL);
+    }
+
+    private FacialRecognitionService buildService(double detectionThreshold, boolean enabled,
+                                                  FacialRecognitionService.FacialRecognitionAuditSink auditSink) {
+        return FacialRecognitionService.of(STUB_MODEL, 0.85, detectionThreshold, enabled, auditSink);
     }
 
     // ─── of() ─────────────────────────────────────────────────────────────────
@@ -91,6 +97,17 @@ class FacialRecognitionServiceTest {
             assertThatThrownBy(() -> faces.add(FacialRecognitionService.FaceDetection.of(
                     new FacialRecognitionService.BoundingBox(0, 0, 1, 1), 0.5, new float[0])))
                     .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        @DisplayName("filters detections below configured confidence threshold")
+        void detect_filtersByConfiguredThreshold() {
+            FacialRecognitionService service = buildService(0.99, true,
+                    FacialRecognitionService.FacialRecognitionAuditSink.noop());
+
+            List<FacialRecognitionService.FaceDetection> faces = service.detect(new byte[]{1, 2, 3});
+
+            assertThat(faces).isEmpty();
         }
     }
 
@@ -163,6 +180,61 @@ class FacialRecognitionServiceTest {
                             "person-far", ENROLLED_NO_MATCH));
             assertThat(match).isPresent();
             assertThat(match.get().identityId()).isEqualTo("person-exact");
+        }
+
+        @Test
+        @DisplayName("identify denied when recognition feature is disabled")
+        void identify_disabledFeature_returnsEmptyAndAudits() {
+            AtomicReference<FacialRecognitionService.FacialRecognitionAuditEvent> auditEvent = new AtomicReference<>();
+            FacialRecognitionService service = buildService(0.5, false, auditEvent::set);
+
+            Optional<FacialRecognitionService.IdentityMatch> match = service.identify(
+                    QUERY,
+                    Map.of("person-1", ENROLLED_MATCH),
+                    true,
+                    "actor-1");
+
+            assertThat(match).isEmpty();
+            assertThat(auditEvent.get()).isNotNull();
+            assertThat(auditEvent.get().outcome()).isEqualTo("denied");
+            assertThat(auditEvent.get().reason()).isEqualTo("feature_disabled");
+        }
+
+        @Test
+        @DisplayName("identify denied when consent is missing")
+        void identify_missingConsent_returnsEmptyAndAudits() {
+            AtomicReference<FacialRecognitionService.FacialRecognitionAuditEvent> auditEvent = new AtomicReference<>();
+            FacialRecognitionService service = buildService(0.5, true, auditEvent::set);
+
+            Optional<FacialRecognitionService.IdentityMatch> match = service.identify(
+                    QUERY,
+                    Map.of("person-1", ENROLLED_MATCH),
+                    false,
+                    "actor-2");
+
+            assertThat(match).isEmpty();
+            assertThat(auditEvent.get()).isNotNull();
+            assertThat(auditEvent.get().outcome()).isEqualTo("denied");
+            assertThat(auditEvent.get().reason()).isEqualTo("consent_missing");
+        }
+
+        @Test
+        @DisplayName("identify emits success audit for accepted match")
+        void identify_successMatch_emitsAudit() {
+            AtomicReference<FacialRecognitionService.FacialRecognitionAuditEvent> auditEvent = new AtomicReference<>();
+            FacialRecognitionService service = buildService(0.5, true, auditEvent::set);
+
+            Optional<FacialRecognitionService.IdentityMatch> match = service.identify(
+                    QUERY,
+                    Map.of("person-1", ENROLLED_MATCH),
+                    true,
+                    "actor-3");
+
+            assertThat(match).isPresent();
+            assertThat(auditEvent.get()).isNotNull();
+            assertThat(auditEvent.get().outcome()).isEqualTo("success");
+            assertThat(auditEvent.get().actorId()).isEqualTo("actor-3");
+            assertThat(auditEvent.get().identityId()).isEqualTo("person-1");
         }
     }
 

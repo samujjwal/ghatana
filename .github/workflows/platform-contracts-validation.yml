@@ -1,0 +1,67 @@
+name: Platform Contracts Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'platform/contracts/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/contracts/**'
+
+concurrency:
+  group: platform-contracts-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-openapi:
+    name: Validate OpenAPI Specifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install @apidevtools/swagger-cli
+
+      - name: Validate OpenAPI specs
+        run: |
+          echo "Validating OpenAPI specifications in platform/contracts/openapi/"
+          for file in platform/contracts/openapi/*.yaml; do
+            echo "Validating $file"
+            npx @apidevtools/swagger-cli validate "$file"
+            if [ $? -ne 0 ]; then
+              echo "::error::OpenAPI validation failed for $file"
+              exit 1
+            fi
+          done
+          echo "✓ All OpenAPI specifications are valid"
+
+  validate-protobuf:
+    name: Validate Protobuf Schemas
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: bufbuild/buf-setup-action@v1
+
+      - name: buf lint
+        run: buf lint
+        working-directory: platform/contracts
+
+      - name: buf breaking check
+        run: buf breaking --against '.git^#HEAD'
+        working-directory: platform/contracts

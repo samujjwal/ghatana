@@ -1,8 +1,8 @@
 package com.ghatana.audio.video.multimodal.engine;
 
 import com.ghatana.audio.video.vision.video.VideoFrameExtractor;
+import com.ghatana.audio.video.multimodal.adapter.GrpcSttClientAdapter;
 import com.ghatana.media.AudioVideoLibrary;
-import com.ghatana.media.common.AudioData;
 import com.ghatana.media.common.BoundingBox;
 import com.ghatana.media.common.ColorSpace;
 import com.ghatana.media.common.ImageData;
@@ -10,9 +10,6 @@ import com.ghatana.media.common.ImageFormat;
 import com.ghatana.media.config.SttConfig;
 import com.ghatana.media.config.TtsConfig;
 import com.ghatana.media.config.VisionConfig;
-import com.ghatana.media.stt.api.TranscriptionOptions;
-import com.ghatana.media.stt.api.TranscriptionResult;
-import com.ghatana.media.stt.api.WordTiming;
 import com.ghatana.media.vision.api.DetectedObject;
 import com.ghatana.media.vision.api.DetectionOptions;
 import org.slf4j.Logger;
@@ -43,52 +40,51 @@ public final class PlatformMultimodalAdapter implements MultimodalMediaGateway {
     private final AudioVideoRuntimeSettings settings;
     private final AudioVideoLibrary library;
     private final VideoFrameExtractor frameExtractor;
+    private final SttClientAdapter sttClientAdapter;
 
     public PlatformMultimodalAdapter() {
         this(AudioVideoRuntimeSettings.load());
     }
 
     PlatformMultimodalAdapter(AudioVideoRuntimeSettings settings) {
+        this(
+                settings,
+                AudioVideoLibrary.builder()
+                        .withSttConfig(SttConfig.builder()
+                                .modelId(settings.sttModelId())
+                                .enableTimestamps(true)
+                                .build())
+                        .withTtsConfig(TtsConfig.builder()
+                                .defaultVoiceId(settings.ttsVoiceId())
+                                .build())
+                        .withVisionConfig(VisionConfig.builder()
+                                .modelId(settings.visionModelId())
+                                .defaultConfidenceThreshold(0.5)
+                                .build())
+                        .withMetrics(settings.metricsEnabled())
+                        .build(),
+                new VideoFrameExtractor(),
+                new GrpcSttClientAdapter(
+                        System.getenv().getOrDefault("STT_GRPC_HOST", "localhost"),
+                        Integer.parseInt(System.getenv().getOrDefault("STT_GRPC_PORT", "50051")),
+                        GrpcSttClientAdapter.SttMode.LLM_FALLBACK));
+    }
+
+    PlatformMultimodalAdapter(
+            AudioVideoRuntimeSettings settings,
+            AudioVideoLibrary library,
+            VideoFrameExtractor frameExtractor,
+            SttClientAdapter sttClientAdapter) {
         this.settings = settings;
-        this.library = AudioVideoLibrary.builder()
-                .withSttConfig(SttConfig.builder()
-                        .modelId(settings.sttModelId())
-                        .enableTimestamps(true)
-                        .build())
-                .withTtsConfig(TtsConfig.builder()
-                        .defaultVoiceId(settings.ttsVoiceId())
-                        .build())
-                .withVisionConfig(VisionConfig.builder()
-                        .modelId(settings.visionModelId())
-                        .defaultConfidenceThreshold(0.5)
-                        .build())
-                .withMetrics(settings.metricsEnabled())
-                .build();
-        this.frameExtractor = new VideoFrameExtractor();
+        this.library = library;
+        this.frameExtractor = frameExtractor;
+        this.sttClientAdapter = sttClientAdapter;
     }
 
     @Override
     public AudioResult transcribe(byte[] audioData) {
         try {
-            TranscriptionResult result = library.getSttEngine().transcribe(
-                    new AudioData(audioData, settings.sttSampleRate(), settings.sttChannels(), settings.sttBitsPerSample()),
-                    TranscriptionOptions.builder()
-                            .language(Locale.forLanguageTag(settings.languageTag()))
-                            .enableTimestamps(true)
-                            .timeout(Duration.ofSeconds(30))
-                            .build());
-
-            List<AudioResult.TimedSegment> timedSegments = result.words() == null
-                    ? List.of()
-                    : result.words().stream()
-                            .map(PlatformMultimodalAdapter::toTimedSegment)
-                            .toList();
-
-            return AudioResult.builder()
-                    .transcription(result.text())
-                    .confidence(result.confidence())
-                    .timedSegments(timedSegments)
-                    .build();
+            return sttClientAdapter.transcribe(audioData);
         } catch (Exception e) {
             throw new MultimodalException("Platform STT processing failed", e);
         }
@@ -166,6 +162,13 @@ public final class PlatformMultimodalAdapter implements MultimodalMediaGateway {
 
     @Override
     public void close() {
+        if (sttClientAdapter instanceof AutoCloseable closeable) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                LOG.debug("Failed to close STT adapter", e);
+            }
+        }
         library.close();
     }
 
@@ -197,12 +200,6 @@ public final class PlatformMultimodalAdapter implements MultimodalMediaGateway {
                 bbox.height());
     }
 
-    private static AudioResult.TimedSegment toTimedSegment(WordTiming wordTiming) {
-        return new AudioResult.TimedSegment(
-                Math.round(wordTiming.startSec() * 1000),
-                Math.round(wordTiming.endSec() * 1000),
-                wordTiming.word());
-    }
 
     private void deleteRecursively(Path path) {
         if (path == null || !Files.exists(path)) {

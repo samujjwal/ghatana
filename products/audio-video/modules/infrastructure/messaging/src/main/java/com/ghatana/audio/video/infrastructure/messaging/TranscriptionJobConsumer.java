@@ -102,14 +102,12 @@ public class TranscriptionJobConsumer {
             return Promise.ofException(new IllegalStateException("Job processor not set"));
         }
         
-        return consumerStrategy.start((key, payload) -> {
-            // Process message
-            return processMessage(key, payload);
-        })
+        return consumerStrategy.start()
         .whenResult(v -> {
             LOG.info("TranscriptionJobConsumer started for queue: {}", queueName);
             metricsCollector.incrementCounter("av.messaging.consumer.start",
                 "queue", queueName);
+            LOG.debug("Consumer strategy started; message callback wiring depends on strategy implementation");
         })
         .whenException(e -> {
             LOG.error("Failed to start consumer: {}", queueName, e);
@@ -191,6 +189,6 @@ public class TranscriptionJobConsumer {
         if (state.get() != ConsumerState.STARTED) {
             return false;
         }
-        return consumerStrategy.getStatus() == QueueConsumerStrategy.ConsumerStatus.RUNNING;
+        return consumerStrategy.isRunning();
     }
 }

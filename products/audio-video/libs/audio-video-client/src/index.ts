@@ -22,7 +22,10 @@ import type {
   AudioVideoError,
   ProgressCallback,
   ErrorCallback,
-  SuccessCallback
+  SuccessCallback,
+  parseSTTResult,
+  parseDetectionResult,
+  parseMultimodalResult,
 } from '@audio-video/types';
 
 /**
@@ -161,8 +164,9 @@ export class AudioVideoClient {
         config,
         serviceLabel: 'stt',
       });
+      const validated = parseSTTResult(result);
       this.emitEvent('stt:transcription:complete', { request, result });
-      return { success: true, data: result, metadata: { processingTime: result.processingTimeMs, service: 'stt' } };
+      return { success: true, data: validated, metadata: { processingTime: validated.processingTimeMs, service: 'stt' } };
     } catch (error) {
       const audioVideoError = this.toError(error, 'STT_ERROR', 'stt');
       this.emitEvent('stt:transcription:error', { request, error: audioVideoError });
@@ -242,8 +246,9 @@ export class AudioVideoClient {
         config,
         serviceLabel: 'vision',
       });
+      const validated = parseDetectionResult(result);
       this.emitEvent('vision:process:complete', { request, result });
-      return { success: true, data: result, metadata: { processingTime: result.processingTimeMs, service: 'vision' } };
+      return { success: true, data: validated, metadata: { processingTime: validated.processingTimeMs, service: 'vision' } };
     } catch (error) {
       const audioVideoError = this.toError(error, 'VISION_ERROR', 'vision');
       this.emitEvent('vision:process:error', { request, error: audioVideoError });
@@ -269,8 +274,9 @@ export class AudioVideoClient {
         config,
         serviceLabel: 'multimodal',
       });
+      const validated = parseMultimodalResult(result);
       this.emitEvent('multimodal:process:complete', { request, result });
-      return { success: true, data: result, metadata: { processingTime: result.processingTimeMs, service: 'multimodal' } };
+      return { success: true, data: validated, metadata: { processingTime: validated.processingTimeMs, service: 'multimodal' } };
     } catch (error) {
       const audioVideoError = this.toError(error, 'MULTIMODAL_ERROR', 'multimodal');
       this.emitEvent('multimodal:process:error', { request, error: audioVideoError });

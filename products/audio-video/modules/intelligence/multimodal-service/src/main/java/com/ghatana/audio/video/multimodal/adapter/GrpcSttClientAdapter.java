@@ -78,23 +78,18 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
      * @throws IllegalArgumentException if GRPC mode is requested but ENABLE_STT_GRPC is not true
      */
     public GrpcSttClientAdapter(String host, int port, SttMode sttMode) {
-        boolean enableSttGrpc = Boolean.parseBoolean(System.getenv().getOrDefault("ENABLE_STT_GRPC", "false"));
-        
-        if (sttMode == SttMode.GRPC && !enableSttGrpc) {
-            LOG.error("GRPC mode requested but ENABLE_STT_GRPC is not set to true. " +
-                    "GRPC mode is not implemented. Use LLM_FALLBACK mode instead. " +
-                    "Set ENABLE_STT_GRPC=true only when implementing real Whisper gRPC integration.");
+        if (sttMode == SttMode.GRPC) {
+            LOG.error("GRPC mode requested but this adapter supports LLM_FALLBACK mode only");
             throw new IllegalArgumentException(
-                    "GRPC mode is not yet implemented. Set ENABLE_STT_GRPC=true only when implementing " +
-                    "real Whisper gRPC integration. Use SttMode.LLM_FALLBACK for transcription via AI Inference Service.");
+                    "GrpcSttClientAdapter supports SttMode.LLM_FALLBACK only. " +
+                    "Use LLM_FALLBACK for production transcription via AI Inference Service.");
         }
         
         this.channel = ManagedChannelBuilder.forAddress(host, port)
                 .usePlaintext()
                 .build();
-        this.configuredMode = sttMode == SttMode.GRPC ? SttMode.LLM_FALLBACK : sttMode;
-        LOG.info("STT gRPC client connected to {}:{} with mode {} (GRPC mode not implemented, using {})", 
-                host, port, sttMode, this.configuredMode);
+        this.configuredMode = sttMode;
+        LOG.info("STT client connected to {}:{} with mode {}", host, port, this.configuredMode);
     }
 
     /**

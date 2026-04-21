@@ -29,7 +29,7 @@ import java.util.UUID;
     ),
     @NamedQuery(
         name = "AudioFile.findByUserIdAndTenantId",
-        query = "SELECT af FROM AudioFileEntity af WHERE af.userId = :userId AND af.tenantId = :tenantId ORDER BY af.createdAt DESC"
+        query = "SELECT af FROM AudioFileEntity af WHERE af.userId = :userId AND af.tenantId = :tenantId AND af.deleted = false ORDER BY af.createdAt DESC"
     ),
     @NamedQuery(
         name = "AudioFile.findByStatusAndTenantId",

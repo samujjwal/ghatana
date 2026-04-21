@@ -33,10 +33,21 @@ public final class FacialRecognitionService {
 
     private final FaceRecognitionModel model;
     private final double identificationThreshold;
+    private final double detectionConfidenceThreshold;
+    private final boolean recognitionEnabled;
+    private final FacialRecognitionAuditSink auditSink;
 
-    private FacialRecognitionService(FaceRecognitionModel model, double identificationThreshold) {
+    private FacialRecognitionService(
+            FaceRecognitionModel model,
+            double identificationThreshold,
+            double detectionConfidenceThreshold,
+            boolean recognitionEnabled,
+            FacialRecognitionAuditSink auditSink) {
         this.model = model;
         this.identificationThreshold = identificationThreshold;
+        this.detectionConfidenceThreshold = detectionConfidenceThreshold;
+        this.recognitionEnabled = recognitionEnabled;
+        this.auditSink = auditSink;
     }
 
     /**
@@ -48,7 +59,7 @@ public final class FacialRecognitionService {
      */
     public static FacialRecognitionService of(FaceRecognitionModel model) {
         Objects.requireNonNull(model, "model must not be null");
-        return new FacialRecognitionService(model, 0.85);
+        return new FacialRecognitionService(model, 0.85, 0.5, true, FacialRecognitionAuditSink.noop());
     }
 
     /**
@@ -65,7 +76,29 @@ public final class FacialRecognitionService {
         if (identificationThreshold < 0 || identificationThreshold > 1) {
             throw new IllegalArgumentException("identificationThreshold must be in [0, 1]");
         }
-        return new FacialRecognitionService(model, identificationThreshold);
+        return new FacialRecognitionService(model, identificationThreshold, 0.5, true, FacialRecognitionAuditSink.noop());
+    }
+
+    public static FacialRecognitionService of(
+            FaceRecognitionModel model,
+            double identificationThreshold,
+            double detectionConfidenceThreshold,
+            boolean recognitionEnabled,
+            FacialRecognitionAuditSink auditSink) {
+        Objects.requireNonNull(model, "model must not be null");
+        Objects.requireNonNull(auditSink, "auditSink must not be null");
+        if (identificationThreshold < 0 || identificationThreshold > 1) {
+            throw new IllegalArgumentException("identificationThreshold must be in [0, 1]");
+        }
+        if (detectionConfidenceThreshold < 0 || detectionConfidenceThreshold > 1) {
+            throw new IllegalArgumentException("detectionConfidenceThreshold must be in [0, 1]");
+        }
+        return new FacialRecognitionService(
+                model,
+                identificationThreshold,
+                detectionConfidenceThreshold,
+                recognitionEnabled,
+                auditSink);
     }
 
     // ─── detect ───────────────────────────────────────────────────────────────
@@ -83,7 +116,9 @@ public final class FacialRecognitionService {
         if (imageBytes.length == 0) {
             throw new IllegalArgumentException("imageBytes must not be empty");
         }
-        List<FaceDetection> detections = model.detectFaces(imageBytes);
+        List<FaceDetection> detections = model.detectFaces(imageBytes).stream()
+                .filter(face -> face.confidence() >= detectionConfidenceThreshold)
+                .toList();
         LOG.debug("Facial detection: {} face(s) detected in {} byte image",
                 detections.size(), imageBytes.length);
         return Collections.unmodifiableList(new ArrayList<>(detections));
@@ -100,8 +135,26 @@ public final class FacialRecognitionService {
     public Optional<IdentityMatch> identify(
             float[] faceEmbedding,
             java.util.Map<String, float[]> enrolledIdentities) {
+        return identify(faceEmbedding, enrolledIdentities, true, "system");
+    }
+
+    public Optional<IdentityMatch> identify(
+            float[] faceEmbedding,
+            java.util.Map<String, float[]> enrolledIdentities,
+            boolean consentGranted,
+            String actorId) {
         Objects.requireNonNull(faceEmbedding, "faceEmbedding must not be null");
         Objects.requireNonNull(enrolledIdentities, "enrolledIdentities must not be null");
+        Objects.requireNonNull(actorId, "actorId must not be null");
+
+        if (!recognitionEnabled) {
+            auditSink.record(FacialRecognitionAuditEvent.denied("feature_disabled", actorId));
+            return Optional.empty();
+        }
+        if (!consentGranted) {
+            auditSink.record(FacialRecognitionAuditEvent.denied("consent_missing", actorId));
+            return Optional.empty();
+        }
 
         String bestId = null;
         double bestSim = -1.0;
@@ -115,9 +168,12 @@ public final class FacialRecognitionService {
         }
 
         if (bestId != null && bestSim >= identificationThreshold) {
-            LOG.debug("Face identified as '{}' (similarity={:.3f})", bestId, bestSim);
-            return Optional.of(new IdentityMatch(bestId, bestSim));
+            LOG.debug("Face identified as '{}' (similarity={})", bestId, bestSim);
+            IdentityMatch match = new IdentityMatch(bestId, bestSim);
+            auditSink.record(FacialRecognitionAuditEvent.success(actorId, bestId, bestSim));
+            return Optional.of(match);
         }
+        auditSink.record(FacialRecognitionAuditEvent.noMatch(actorId, bestSim));
         return Optional.empty();
     }
 
@@ -145,6 +201,35 @@ public final class FacialRecognitionService {
          * @return list of detected faces
          */
         List<FaceDetection> detectFaces(byte[] imageBytes);
+    }
+
+    public interface FacialRecognitionAuditSink {
+        void record(FacialRecognitionAuditEvent event);
+
+        static FacialRecognitionAuditSink noop() {
+            return event -> {
+            };
+        }
+    }
+
+    public record FacialRecognitionAuditEvent(
+            String outcome,
+            String actorId,
+            String identityId,
+            double similarity,
+            String reason
+    ) {
+        static FacialRecognitionAuditEvent success(String actorId, String identityId, double similarity) {
+            return new FacialRecognitionAuditEvent("success", actorId, identityId, similarity, "");
+        }
+
+        static FacialRecognitionAuditEvent noMatch(String actorId, double similarity) {
+            return new FacialRecognitionAuditEvent("no_match", actorId, "", similarity, "below_threshold");
+        }
+
+        static FacialRecognitionAuditEvent denied(String reason, String actorId) {
+            return new FacialRecognitionAuditEvent("denied", actorId, "", 0.0, reason);
+        }
     }
 
     /**

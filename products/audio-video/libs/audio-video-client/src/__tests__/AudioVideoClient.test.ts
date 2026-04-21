@@ -177,6 +177,26 @@ describe('AudioVideoClient', () => {
       g.mockRestore();
     });
 
+    it('returns failure when STT payload violates runtime schema', async () => {
+      const invalidPayload = {
+        text: 'Hello',
+        confidence: 1.5,
+        processingTimeMs: 120,
+        language: 'en-US',
+        model: 'default',
+      };
+      const g = vi.spyOn(globalThis, 'fetch').mockImplementation(
+        mockFetch([{ status: 200, body: invalidPayload }]),
+      );
+      const client = makeClient();
+
+      const response = await client.transcribe(makeSTTRequest());
+
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('STT_ERROR');
+      g.mockRestore();
+    });
+
     it('calls onError callback on failure', async () => {
       const g = vi
         .spyOn(globalThis, 'fetch')
@@ -278,6 +298,25 @@ describe('AudioVideoClient', () => {
       const response = await client.processVision(makeVisionRequest());
       expect(response.success).toBe(true);
       expect(response.metadata?.service).toBe('vision');
+      g.mockRestore();
+    });
+
+    it('returns failure when vision payload violates runtime schema', async () => {
+      const invalidPayload = {
+        objects: [{ class: 'car', confidence: 0.9 }],
+        confidence: 0.9,
+        processingTimeMs: 50,
+        imageSize: { width: 100, height: 100 },
+      };
+      const g = vi.spyOn(globalThis, 'fetch').mockImplementation(
+        mockFetch([{ status: 200, body: invalidPayload }]),
+      );
+      const client = makeClient();
+
+      const response = await client.processVision(makeVisionRequest());
+
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('VISION_ERROR');
       g.mockRestore();
     });
   });

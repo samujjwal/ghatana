@@ -5,12 +5,12 @@
 package com.ghatana.audio.video.multimodal.adapter;
 
 import com.ghatana.audio.video.multimodal.engine.AudioResult;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration tests for GrpcSttClientAdapter.
@@ -68,24 +68,18 @@ class GrpcSttClientAdapterTest {
     }
 
     /**
-     * Test that verifies GRPC mode falls back to LLM when gRPC unavailable.
+     * Test that verifies GRPC mode is explicitly rejected.
      */
     @Test
-    @DisplayName("GRPC mode falls back to LLM when gRPC unavailable")
-    @Disabled("GRPC mode not yet implemented - throws IllegalArgumentException. Re-enable when Whisper gRPC integration is complete.")
-    void grpcModeFallsBackToLlmWhenUnavailable() {
-        GrpcSttClientAdapter adapter = new GrpcSttClientAdapter(
-            "unavailable-host",
+    @DisplayName("GRPC mode is rejected and LLM_FALLBACK is required")
+    void grpcModeIsRejected() {
+        assertThatThrownBy(() -> new GrpcSttClientAdapter(
+            "localhost",
             50051,
             GrpcSttClientAdapter.SttMode.GRPC
-        );
-        
-        byte[] audioData = new byte[1024];
-        AudioResult result = adapter.transcribe(audioData);
-        
-        // Should fall back to LLM since gRPC service is unavailable
-        assertThat(result).isNotNull();
-        assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
+        ))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("LLM_FALLBACK");
     }
 
     /**
@@ -124,13 +118,7 @@ class GrpcSttClientAdapterTest {
     @DisplayName("Adapter can be closed")
     void adapterCanBeClosed() {
         GrpcSttClientAdapter adapter = new GrpcSttClientAdapter("localhost", 50051);
-        
-        try {
-            adapter.close();
-        } catch (Exception e) {
-            // Should not throw
-        }
-        
-        assertThat(true).isTrue();
+
+        adapter.close();
     }
 }

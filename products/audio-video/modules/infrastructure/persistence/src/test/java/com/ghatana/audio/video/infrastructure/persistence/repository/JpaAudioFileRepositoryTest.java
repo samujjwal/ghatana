@@ -184,6 +184,43 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
+    @DisplayName("GIVEN soft deleted user file WHEN findByUserId THEN excludes deleted records")
+    void testFindByUserIdExcludesSoftDeleted() {
+        // GIVEN
+        String tenantId = "tenant-123";
+        UUID userId = UUID.randomUUID();
+
+        AudioFileEntity active = new AudioFileEntity(
+            UUID.randomUUID(),
+            tenantId,
+            userId,
+            "active.mp3",
+            "/storage/active.mp3",
+            "mp3"
+        );
+        AudioFileEntity deleted = new AudioFileEntity(
+            UUID.randomUUID(),
+            tenantId,
+            userId,
+            "deleted.mp3",
+            "/storage/deleted.mp3",
+            "mp3"
+        );
+
+        repository.save(tenantId, active);
+        repository.save(tenantId, deleted);
+        repository.softDelete(tenantId, deleted.getId());
+
+        // WHEN
+        var found = repository.findByUserId(tenantId, userId);
+
+        // THEN
+        assertThat(found).hasSize(1);
+        assertThat(found.getFirst().getId()).isEqualTo(active.getId());
+        assertThat(found.getFirst().isDeleted()).isFalse();
+    }
+
+    @Test
     @DisplayName("GIVEN saved entities WHEN countByTenantId THEN returns correct count")
     void testCountByTenantId() {
         // GIVEN

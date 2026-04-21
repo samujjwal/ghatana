@@ -18,6 +18,9 @@ import {
   type MultimodalResult,
   type ServiceStatus,
   type AudioVideoError,
+  parseSTTResult,
+  parseDetectionResult,
+  parseMultimodalResult,
 } from '../index.js';
 
 // ─── DEFAULT_AUDIO_FORMAT ─────────────────────────────────────────────────────
@@ -105,6 +108,16 @@ describe('STTResult contract shape', () => {
     expect(result.confidence).toBeLessThanOrEqual(1);
     expect(result.alternatives![0]!.confidence).toBe(0.7);
     expect(result.words![0]!.start).toBe(0);
+  });
+
+  it('runtime parser rejects malformed confidence value', () => {
+    expect(() => parseSTTResult({
+      text: 'bad',
+      confidence: 2,
+      processingTimeMs: 10,
+      language: 'en',
+      model: 'x',
+    })).toThrow();
   });
 });
 
@@ -230,5 +243,27 @@ describe('MultimodalResult contract shape', () => {
     expect(result.insights).toHaveLength(1);
     expect(result.insights[0]!.confidence).toBe(0.9);
     expect(result.modalities).toContain('audio');
+  });
+
+  it('runtime parser validates multimodal payload', () => {
+    const parsed = parseMultimodalResult({
+      result: { summary: 'ok' },
+      confidence: 0.8,
+      processingTimeMs: 100,
+      modalities: ['audio'],
+      insights: [{ type: 'summary', description: 'ok', confidence: 0.9, data: {} }],
+    });
+    expect(parsed.modalities).toContain('audio');
+  });
+});
+
+describe('DetectionResult runtime validation', () => {
+  it('rejects malformed detection payload', () => {
+    expect(() => parseDetectionResult({
+      objects: [{ class: 'person', confidence: 0.9 }],
+      confidence: 0.9,
+      processingTimeMs: 20,
+      imageSize: { width: 640, height: 480 },
+    })).toThrow();
   });
 });
