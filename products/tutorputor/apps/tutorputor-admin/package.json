@@ -18,7 +18,7 @@
     "@ghatana/design-system": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@tanstack/query-core": "^5.99.0",
-    "@tanstack/react-query": "^5.99.0",
+    "@tanstack/react-query": "^5.99.2",
     "@tiptap/extension-link": "^3.22.3",
     "@tiptap/extension-placeholder": "^3.22.3",
     "@tiptap/react": "^3.22.3",
