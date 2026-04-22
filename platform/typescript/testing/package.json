@@ -13,6 +13,14 @@
     "./accessibility": {
       "types": "./src/accessibility-testing.ts",
       "import": "./src/accessibility-testing.ts"
+    },
+    "./vitest-browser": {
+      "types": "./src/vitest-browser.ts",
+      "import": "./src/vitest-browser.ts"
+    },
+    "./builder-preview": {
+      "types": "./src/builder-preview.ts",
+      "import": "./src/builder-preview.ts"
     }
   },
   "files": [
@@ -27,12 +35,14 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "peerDependencies": {
+    "@testing-library/jest-dom": ">=6.0.0",
     "@testing-library/react": ">=14.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "vitest": ">=2.0.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

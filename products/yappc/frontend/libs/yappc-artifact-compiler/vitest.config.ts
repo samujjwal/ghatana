@@ -1,6 +1,19 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@ghatana/ui-builder': resolve(
+        __dirname,
+        '../../../../../platform/typescript/ui-builder/src/index.ts',
+      ),
+      '@ghatana/ds-schema': resolve(
+        __dirname,
+        '../../../../../platform/typescript/ds-schema/src/index.ts',
+      ),
+    },
+  },
   test: {
     globals: true,
     environment: 'node',

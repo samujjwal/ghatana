@@ -16,6 +16,17 @@ import {
   updateNodeProps,
   addBinding,
   removeBinding,
+  reorderNode,
+  resizeNode,
+  repositionNode,
+  setResponsiveVariant,
+  removeResponsiveVariant,
+  upsertAction,
+  removeAction,
+  batchUpdate,
+  createUndoStack,
+  mergeDocuments,
+  lastWriteWins,
   noopEventBus,
   type OperationEventBus,
 } from '../operations.js';
@@ -26,6 +37,8 @@ import {
   type ComponentInstance,
   type Binding,
   type NodeId,
+  type ActionDefinition,
+  type ResponsiveVariant,
 } from '../types.js';
 
 // ============================================================================
@@ -478,5 +491,378 @@ describe('noopEventBus', () => {
     expect(() =>
       insertNode(doc, { contractNamtractName: 'A', props: {}, slots: {}, bindings: [], metadata: { layout: {} } }, undefined, undefined, noopEventBus),
     ).not.toThrow();
+  });
+});
+
+// ============================================================================
+// reorderNode
+// ============================================================================
+
+describe('reorderNode', () => {
+  it('reorders root-level nodes', () => {
+    const a = makeInstance(createNodeId(), 'A');
+    const b = makeInstance(createNodeId(), 'B');
+    const c = makeInstance(createNodeId(), 'C');
+    const doc = makeDoc({
+      rootNodes: [a.id, b.id, c.id],
+      nodes: new Map([[a.id, a], [b.id, b], [c.id, c]]),
+    });
+    const next = reorderNode(doc, c.id, 0);
+    expect(next.rootNodes).toEqual([c.id, a.id, b.id]);
+  });
+
+  it('reorders a node within its parent slot', () => {
+    const parent = makeInstance(createNodeId(), 'Container');
+    const child1 = makeInstance(createNodeId(), 'A');
+    const child2 = makeInstance(createNodeId(), 'B');
+    parent.slots = { default: [child1.id, child2.id] };
+    const doc = makeDoc({
+      rootNodes: [parent.id],
+      nodes: new Map([[parent.id, parent], [child1.id, child1], [child2.id, child2]]),
+    });
+    const next = reorderNode(doc, child2.id, 0);
+    expect(next.nodes.get(parent.id)!.slots['default']).toEqual([child2.id, child1.id]);
+  });
+
+  it('clamps to-index to the end of the list', () => {
+    const a = makeInstance(createNodeId(), 'A');
+    const b = makeInstance(createNodeId(), 'B');
+    const doc = makeDoc({
+      rootNodes: [a.id, b.id],
+      nodes: new Map([[a.id, a], [b.id, b]]),
+    });
+    const next = reorderNode(doc, a.id, 99);
+    expect(next.rootNodes).toEqual([b.id, a.id]);
+  });
+
+  it('is a no-op when node is not found', () => {
+    const doc = makeDoc();
+    const next = reorderNode(doc, 'nonexistent' as NodeId, 0);
+    expect(next.rootNodes).toEqual([]);
+  });
+});
+
+// ============================================================================
+// resizeNode
+// ============================================================================
+
+describe('resizeNode', () => {
+  it('updates the node size', () => {
+    const node = makeInstance(createNodeId(), 'Box');
+    const doc = makeDoc({
+      rootNodes: [node.id],
+      nodes: new Map([[node.id, node]]),
+    });
+    const next = resizeNode(doc, node.id, { width: 320, height: 180 });
+    expect(next.nodes.get(node.id)!.metadata.size).toEqual({ width: 320, height: 180 });
+  });
+
+  it('does not mutate original document', () => {
+    const node = makeInstance(createNodeId(), 'Box');
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    resizeNode(doc, node.id, { width: 100, height: 100 });
+    expect(doc.nodes.get(node.id)!.metadata.size).toBeUndefined();
+  });
+
+  it('is a no-op for unknown node', () => {
+    const doc = makeDoc();
+    expect(() => resizeNode(doc, 'x' as NodeId, { width: 1, height: 1 })).not.toThrow();
+  });
+});
+
+// ============================================================================
+// repositionNode
+// ============================================================================
+
+describe('repositionNode', () => {
+  it('updates the node position', () => {
+    const node = makeInstance(createNodeId(), 'Box');
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const next = repositionNode(doc, node.id, { x: 50, y: 75 });
+    expect(next.nodes.get(node.id)!.metadata.position).toEqual({ x: 50, y: 75 });
+  });
+});
+
+// ============================================================================
+// setResponsiveVariant / removeResponsiveVariant
+// ============================================================================
+
+describe('setResponsiveVariant', () => {
+  it('adds a responsive variant', () => {
+    const node = makeInstance(createNodeId(), 'Text');
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const variant: ResponsiveVariant = { breakpoint: 'md', props: { size: 'lg' } };
+    const next = setResponsiveVariant(doc, node.id, variant);
+    expect(next.nodes.get(node.id)!.metadata.responsiveVariants).toHaveLength(1);
+    expect(next.nodes.get(node.id)!.metadata.responsiveVariants![0].breakpoint).toBe('md');
+  });
+
+  it('replaces an existing variant at the same breakpoint', () => {
+    const node = makeInstance(createNodeId(), 'Text');
+    node.metadata = { layout: {}, responsiveVariants: [{ breakpoint: 'md', props: { size: 'sm' } }] };
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const next = setResponsiveVariant(doc, node.id, { breakpoint: 'md', props: { size: 'xl' } });
+    expect(next.nodes.get(node.id)!.metadata.responsiveVariants).toHaveLength(1);
+    expect(next.nodes.get(node.id)!.metadata.responsiveVariants![0].props?.size).toBe('xl');
+  });
+
+  it('preserves variants at other breakpoints', () => {
+    const node = makeInstance(createNodeId(), 'Text');
+    node.metadata = { layout: {}, responsiveVariants: [{ breakpoint: 'sm', props: { size: 'xs' } }] };
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const next = setResponsiveVariant(doc, node.id, { breakpoint: 'lg', props: { size: '2xl' } });
+    expect(next.nodes.get(node.id)!.metadata.responsiveVariants).toHaveLength(2);
+  });
+});
+
+describe('removeResponsiveVariant', () => {
+  it('removes the variant for the specified breakpoint', () => {
+    const node = makeInstance(createNodeId(), 'Text');
+    node.metadata = { layout: {}, responsiveVariants: [{ breakpoint: 'md', props: {} }, { breakpoint: 'lg', props: {} }] };
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const next = removeResponsiveVariant(doc, node.id, 'md');
+    expect(next.nodes.get(node.id)!.metadata.responsiveVariants).toHaveLength(1);
+    expect(next.nodes.get(node.id)!.metadata.responsiveVariants![0].breakpoint).toBe('lg');
+  });
+
+  it('is safe when no variants exist', () => {
+    const node = makeInstance(createNodeId(), 'Text');
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    expect(() => removeResponsiveVariant(doc, node.id, 'md')).not.toThrow();
+  });
+});
+
+// ============================================================================
+// upsertAction / removeAction
+// ============================================================================
+
+function makeAction(id: string, triggerEvent: string): ActionDefinition {
+  return { id, label: 'Click', triggerEvent, targetKind: 'event', payload: {}, condition: undefined };
+}
+
+describe('upsertAction', () => {
+  it('adds an action when none exists', () => {
+    const node = makeInstance(createNodeId(), 'Button');
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const next = upsertAction(doc, node.id, makeAction('a1', 'onClick'));
+    expect(next.nodes.get(node.id)!.metadata.actions).toHaveLength(1);
+  });
+
+  it('replaces an existing action by id', () => {
+    const node = makeInstance(createNodeId(), 'Button');
+    node.metadata = { layout: {}, actions: [makeAction('a1', 'onClick')] };
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const next = upsertAction(doc, node.id, { ...makeAction('a1', 'onDoubleClick'), label: 'DoubleClick' });
+    expect(next.nodes.get(node.id)!.metadata.actions).toHaveLength(1);
+    expect(next.nodes.get(node.id)!.metadata.actions![0].label).toBe('DoubleClick');
+  });
+});
+
+describe('removeAction', () => {
+  it('removes action by id', () => {
+    const node = makeInstance(createNodeId(), 'Button');
+    node.metadata = { layout: {}, actions: [makeAction('a1', 'onClick'), makeAction('a2', 'onHover')] };
+    const doc = makeDoc({ rootNodes: [node.id], nodes: new Map([[node.id, node]]) });
+    const next = removeAction(doc, node.id, 'a1');
+    expect(next.nodes.get(node.id)!.metadata.actions).toHaveLength(1);
+    expect(next.nodes.get(node.id)!.metadata.actions![0].id).toBe('a2');
+  });
+});
+
+// ============================================================================
+// batchUpdate
+// ============================================================================
+
+describe('batchUpdate', () => {
+  it('applies all operations in sequence', () => {
+    const nodeA = makeInstance(createNodeId(), 'A');
+    const nodeB = makeInstance(createNodeId(), 'B');
+    const doc = makeDoc();
+    const final = batchUpdate(doc, [
+      (d) => insertNode(d, { ...nodeA }),
+      (d) => insertNode(d, { ...nodeB }),
+    ]);
+    expect(final.rootNodes).toHaveLength(2);
+  });
+
+  it('returns the original document when given an empty list', () => {
+    const doc = makeDoc();
+    const next = batchUpdate(doc, []);
+    expect(next).toBe(doc);
+  });
+});
+
+// ============================================================================
+// createUndoStack
+// ============================================================================
+
+describe('createUndoStack', () => {
+  it('starts with canUndo=false and canRedo=false', () => {
+    const doc = makeDoc();
+    const stack = createUndoStack(doc);
+    expect(stack.canUndo).toBe(false);
+    expect(stack.canRedo).toBe(false);
+    expect(stack.current).toBe(doc);
+  });
+
+  it('enables canUndo after push', () => {
+    const doc1 = makeDoc();
+    const doc2 = insertNode(doc1, makeInstance());
+    const stack = createUndoStack(doc1);
+    stack.push(doc2);
+    expect(stack.canUndo).toBe(true);
+    expect(stack.canRedo).toBe(false);
+  });
+
+  it('undo returns previous snapshot', () => {
+    const doc1 = makeDoc();
+    const doc2 = insertNode(doc1, makeInstance());
+    const stack = createUndoStack(doc1);
+    stack.push(doc2);
+    const prev = stack.undo();
+    expect(prev).toBe(doc1);
+    expect(stack.canUndo).toBe(false);
+    expect(stack.canRedo).toBe(true);
+  });
+
+  it('redo returns the next snapshot', () => {
+    const doc1 = makeDoc();
+    const doc2 = insertNode(doc1, makeInstance());
+    const stack = createUndoStack(doc1);
+    stack.push(doc2);
+    stack.undo();
+    const redone = stack.redo();
+    expect(redone).toBe(doc2);
+    expect(stack.canRedo).toBe(false);
+  });
+
+  it('undo returns undefined when nothing to undo', () => {
+    const stack = createUndoStack(makeDoc());
+    expect(stack.undo()).toBeUndefined();
+  });
+
+  it('redo returns undefined when nothing to redo', () => {
+    const stack = createUndoStack(makeDoc());
+    expect(stack.redo()).toBeUndefined();
+  });
+
+  it('push discards redo history', () => {
+    const doc1 = makeDoc();
+    const doc2 = insertNode(doc1, makeInstance());
+    const doc3 = insertNode(doc2, makeInstance());
+    const stack = createUndoStack(doc1);
+    stack.push(doc2);
+    stack.undo();
+    stack.push(doc3); // should clear redo stack
+    expect(stack.canRedo).toBe(false);
+  });
+
+  it('respects maxDepth and evicts the oldest snapshot', () => {
+    const stack = createUndoStack(makeDoc(), { maxDepth: 2 });
+    const doc2 = makeDoc();
+    const doc3 = makeDoc();
+    const doc4 = makeDoc();
+    stack.push(doc2);
+    stack.push(doc3);
+    stack.push(doc4);
+    // undo twice — the 3rd undo should be exhausted (maxDepth 2 keeps only last 2)
+    stack.undo();
+    stack.undo();
+    expect(stack.canUndo).toBe(false);
+  });
+
+  it('clear empties past and future', () => {
+    const doc1 = makeDoc();
+    const doc2 = makeDoc();
+    const stack = createUndoStack(doc1);
+    stack.push(doc2);
+    stack.undo();
+    stack.clear();
+    expect(stack.canUndo).toBe(false);
+    expect(stack.canRedo).toBe(false);
+  });
+});
+
+// ============================================================================
+// mergeDocuments / lastWriteWins
+// ============================================================================
+
+describe('mergeDocuments', () => {
+  it('includes remote-only nodes in the merged document', () => {
+    const local = makeDoc();
+    const remoteNode = makeInstance(createNodeId(), 'Card');
+    const remote = makeDoc({
+      rootNodes: [remoteNode.id],
+      nodes: new Map([[remoteNode.id, remoteNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-02T00:00:00.000Z' },
+    });
+    const { merged, conflicts } = mergeDocuments(local, remote);
+    expect(merged.nodes.has(remoteNode.id)).toBe(true);
+    expect(conflicts).toHaveLength(0);
+  });
+
+  it('detects a prop conflict and records it', () => {
+    const nodeId = createNodeId();
+    const localNode = makeInstance(nodeId, 'Text', { content: 'Hello' });
+    const remoteNode = makeInstance(nodeId, 'Text', { content: 'World' });
+    const local = makeDoc({
+      nodes: new Map([[nodeId, localNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T10:00:00.000Z' },
+    });
+    const remote = makeDoc({
+      nodes: new Map([[nodeId, remoteNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T12:00:00.000Z' },
+    });
+    const { conflicts } = mergeDocuments(local, remote);
+    expect(conflicts.length).toBeGreaterThanOrEqual(1);
+    expect(conflicts[0].path).toBe('props.content');
+  });
+
+  it('lastWriteWins picks the later timestamp', () => {
+    const nodeId = createNodeId();
+    const localNode = makeInstance(nodeId, 'Text', { content: 'Old' });
+    const remoteNode = makeInstance(nodeId, 'Text', { content: 'New' });
+    const local = makeDoc({
+      nodes: new Map([[nodeId, localNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T09:00:00.000Z' },
+    });
+    const remote = makeDoc({
+      nodes: new Map([[nodeId, remoteNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T12:00:00.000Z' },
+    });
+    const { merged } = mergeDocuments(local, remote, lastWriteWins);
+    expect(merged.nodes.get(nodeId)!.props['content']).toBe('New');
+  });
+
+  it('uses accept-local when local timestamp is later', () => {
+    const nodeId = createNodeId();
+    const localNode = makeInstance(nodeId, 'Text', { content: 'Latest' });
+    const remoteNode = makeInstance(nodeId, 'Text', { content: 'Stale' });
+    const local = makeDoc({
+      nodes: new Map([[nodeId, localNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T15:00:00.000Z' },
+    });
+    const remote = makeDoc({
+      nodes: new Map([[nodeId, remoteNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T12:00:00.000Z' },
+    });
+    const { merged } = mergeDocuments(local, remote, lastWriteWins);
+    expect(merged.nodes.get(nodeId)!.props['content']).toBe('Latest');
+  });
+
+  it('uses merge strategy when resolver returns merged value', () => {
+    const nodeId = createNodeId();
+    const localNode = makeInstance(nodeId, 'Text', { content: 'A' });
+    const remoteNode = makeInstance(nodeId, 'Text', { content: 'B' });
+    const local = makeDoc({
+      nodes: new Map([[nodeId, localNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T09:00:00.000Z' },
+    });
+    const remote = makeDoc({
+      nodes: new Map([[nodeId, remoteNode]]),
+      metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T12:00:00.000Z' },
+    });
+    const { merged } = mergeDocuments(local, remote, () => ({ strategy: 'merge', mergedValue: 'A+B' }));
+    expect(merged.nodes.get(nodeId)!.props['content']).toBe('A+B');
   });
 });

@@ -283,6 +283,401 @@ export function removeBinding(
 }
 
 // ============================================================================
+// Reorder — move a node within its current slot/root list
+// ============================================================================
+
+/** Reorder a node within its current parent slot or the root list. */
+export function reorderNode(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  toIndex: number,
+): BuilderDocument {
+  return produce(document, (draft) => {
+    const parentId = findParent(draft, nodeId);
+
+    if (parentId === null) {
+      // Root-level reorder
+      const list = [...draft.rootNodes];
+      const from = list.indexOf(nodeId);
+      if (from === -1) return;
+      list.splice(from, 1);
+      list.splice(Math.min(toIndex, list.length), 0, nodeId);
+      draft.rootNodes = list;
+    } else {
+      const parent = draft.nodes.get(parentId);
+      if (!parent) return;
+      for (const [slotName, children] of Object.entries(parent.slots)) {
+        const from = children.indexOf(nodeId);
+        if (from === -1) continue;
+        const list = [...children];
+        list.splice(from, 1);
+        list.splice(Math.min(toIndex, list.length), 0, nodeId);
+        const slots = { ...parent.slots };
+        slots[slotName] = list;
+        parent.slots = slots;
+        break;
+      }
+    }
+
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+}
+
+// ============================================================================
+// Resize / Reposition
+// ============================================================================
+
+/** Update the size of a node in the builder canvas. */
+export function resizeNode(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  size: { readonly width: number; readonly height: number },
+): BuilderDocument {
+  return produce(document, (draft) => {
+    const node = draft.nodes.get(nodeId);
+    if (node) {
+      node.metadata = { ...node.metadata, size };
+    }
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+}
+
+/** Update the position of a node in the builder canvas. */
+export function repositionNode(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  position: { readonly x: number; readonly y: number },
+): BuilderDocument {
+  return produce(document, (draft) => {
+    const node = draft.nodes.get(nodeId);
+    if (node) {
+      node.metadata = { ...node.metadata, position };
+    }
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+}
+
+// ============================================================================
+// Responsive Overrides
+// ============================================================================
+
+import type { ResponsiveVariant } from './types';
+
+/**
+ * Set or replace the responsive variant for a specific breakpoint on a node.
+ * Existing variants at other breakpoints are preserved.
+ */
+export function setResponsiveVariant(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  variant: ResponsiveVariant,
+): BuilderDocument {
+  return produce(document, (draft) => {
+    const node = draft.nodes.get(nodeId);
+    if (!node) return;
+    const existing = node.metadata.responsiveVariants ?? [];
+    const filtered = existing.filter((v) => v.breakpoint !== variant.breakpoint);
+    node.metadata = {
+      ...node.metadata,
+      responsiveVariants: [...filtered, variant],
+    };
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+}
+
+/**
+ * Remove the responsive variant for a specific breakpoint from a node.
+ */
+export function removeResponsiveVariant(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  breakpoint: string,
+): BuilderDocument {
+  return produce(document, (draft) => {
+    const node = draft.nodes.get(nodeId);
+    if (!node) return;
+    const existing = node.metadata.responsiveVariants ?? [];
+    node.metadata = {
+      ...node.metadata,
+      responsiveVariants: existing.filter((v) => v.breakpoint !== breakpoint),
+    };
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+}
+
+// ============================================================================
+// Action-Graph Editing
+// ============================================================================
+
+import type { ActionDefinition } from './types';
+
+/**
+ * Add or replace an action definition on a node.
+ * If an action with the same `id` already exists it is replaced; otherwise
+ * the new action is appended.
+ */
+export function upsertAction(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  action: ActionDefinition,
+): BuilderDocument {
+  return produce(document, (draft) => {
+    const node = draft.nodes.get(nodeId);
+    if (!node) return;
+    const existing = node.metadata.actions ?? [];
+    const idx = existing.findIndex((a) => a.id === action.id);
+    const next = [...existing];
+    if (idx >= 0) {
+      next[idx] = action;
+    } else {
+      next.push(action);
+    }
+    node.metadata = { ...node.metadata, actions: next };
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+}
+
+/**
+ * Remove an action definition from a node by ID.
+ */
+export function removeAction(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  actionId: string,
+): BuilderDocument {
+  return produce(document, (draft) => {
+    const node = draft.nodes.get(nodeId);
+    if (!node) return;
+    node.metadata = {
+      ...node.metadata,
+      actions: (node.metadata.actions ?? []).filter((a) => a.id !== actionId),
+    };
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+}
+
+// ============================================================================
+// Batch Updates
+// ============================================================================
+
+/**
+ * Apply a sequence of document transformation functions in a single atomic
+ * step.  Each function receives the document produced by the previous one.
+ * This is a lightweight alternative to a formal command pattern when the
+ * caller needs to combine several operations without interleaved re-renders.
+ *
+ * @example
+ * const next = batchUpdate(document, [
+ *   (d) => insertNode(d, nodeA),
+ *   (d) => updateNodeProps(d, nodeA.id, { label: 'Hello' }),
+ * ]);
+ */
+export function batchUpdate(
+  document: BuilderDocument,
+  operations: ReadonlyArray<(doc: BuilderDocument) => BuilderDocument>,
+): BuilderDocument {
+  return operations.reduce((doc, op) => op(doc), document);
+}
+
+// ============================================================================
+// Undo / Redo Snapshots
+// ============================================================================
+
+/**
+ * An in-memory undo/redo stack backed by document snapshots.
+ *
+ * Usage:
+ * ```ts
+ * const history = createUndoStack(initialDocument, { maxDepth: 50 });
+ * history.push(afterInsertNode);
+ * const prev = history.undo();   // returns the document before insertNode
+ * const next = history.redo();   // returns afterInsertNode again
+ * ```
+ */
+export interface UndoStack {
+  /** Push a new document snapshot onto the stack. */
+  readonly push: (document: BuilderDocument) => void;
+  /** Undo the most recent operation. Returns `undefined` if at the start. */
+  readonly undo: () => BuilderDocument | undefined;
+  /** Redo the most recently undone operation. Returns `undefined` if nothing to redo. */
+  readonly redo: () => BuilderDocument | undefined;
+  /** True when there is at least one snapshot to undo. */
+  readonly canUndo: boolean;
+  /** True when there is at least one snapshot to redo. */
+  readonly canRedo: boolean;
+  /** The current document (tip of the undo stack). */
+  readonly current: BuilderDocument;
+  /** Clear all history. */
+  readonly clear: () => void;
+}
+
+export interface UndoStackOptions {
+  /** Maximum number of snapshots to keep (default 100). */
+  readonly maxDepth?: number;
+}
+
+/**
+ * Create an undo/redo stack seeded with an initial document snapshot.
+ */
+export function createUndoStack(
+  initial: BuilderDocument,
+  options: UndoStackOptions = {},
+): UndoStack {
+  const maxDepth = options.maxDepth ?? 100;
+  // Past snapshots (most recent at the end), current document, future snapshots
+  let past: BuilderDocument[] = [];
+  let present: BuilderDocument = initial;
+  let future: BuilderDocument[] = [];
+
+  return {
+    get canUndo() { return past.length > 0; },
+    get canRedo() { return future.length > 0; },
+    get current() { return present; },
+
+    push(document) {
+      past = [...past, present].slice(-maxDepth);
+      present = document;
+      future = [];
+    },
+
+    undo() {
+      if (past.length === 0) return undefined;
+      const prev = past[past.length - 1];
+      past = past.slice(0, -1);
+      future = [present, ...future];
+      present = prev;
+      return present;
+    },
+
+    redo() {
+      if (future.length === 0) return undefined;
+      const [next, ...rest] = future;
+      past = [...past, present];
+      future = rest;
+      present = next;
+      return present;
+    },
+
+    clear() {
+      past = [];
+      future = [];
+    },
+  };
+}
+
+// ============================================================================
+// Conflict-Safe Merge Hooks
+// ============================================================================
+
+/**
+ * Describes a conflict between a local document state and a remote document
+ * state arriving from a collaboration peer.
+ */
+export interface DocumentConflict {
+  readonly nodeId: NodeId;
+  /** The operation path where the conflict was detected (e.g. `props.label`). */
+  readonly path: string;
+  readonly localValue: unknown;
+  readonly remoteValue: unknown;
+  /** Timestamp of the local change. */
+  readonly localTimestamp: string;
+  /** Timestamp of the remote change. */
+  readonly remoteTimestamp: string;
+}
+
+/**
+ * Resolution instruction returned by a conflict resolver.
+ */
+export type ConflictResolution =
+  | { readonly strategy: 'accept-local' }
+  | { readonly strategy: 'accept-remote' }
+  | { readonly strategy: 'merge'; readonly mergedValue: unknown };
+
+/**
+ * A function that resolves a single conflict between local and remote state.
+ * The default (`lastWriteWins`) picks the value with the later timestamp.
+ */
+export type ConflictResolver = (conflict: DocumentConflict) => ConflictResolution;
+
+/** Default conflict resolver: last-write-wins by timestamp. */
+export const lastWriteWins: ConflictResolver = (conflict) => {
+  return conflict.remoteTimestamp >= conflict.localTimestamp
+    ? { strategy: 'accept-remote' }
+    : { strategy: 'accept-local' };
+};
+
+/**
+ * Merge `remote` onto `local` using the provided conflict resolver.
+ *
+ * This is a **shallow** merge over individual node props and metadata fields —
+ * it is not a full CRDT merge. For production collaboration, integrate a
+ * proper CRDT library (e.g. Yjs) at the product layer and use this hook
+ * only for resolving conflicts flagged by the CRDT framework.
+ *
+ * @returns The merged document plus any conflicts that were detected.
+ */
+export function mergeDocuments(
+  local: BuilderDocument,
+  remote: BuilderDocument,
+  resolver: ConflictResolver = lastWriteWins,
+): { readonly merged: BuilderDocument; readonly conflicts: readonly DocumentConflict[] } {
+  const detectedConflicts: DocumentConflict[] = [];
+
+  const merged = produce(local, (draft) => {
+    // Merge in nodes that exist in remote but not in local (additions)
+    for (const [nodeId, remoteNode] of remote.nodes) {
+      if (!draft.nodes.has(nodeId)) {
+        (draft.nodes as Map<NodeId, ComponentInstance>).set(nodeId, remoteNode);
+        continue;
+      }
+
+      const localNode = draft.nodes.get(nodeId)!;
+
+      // Merge props field-by-field
+      const mergedProps: Record<string, unknown> = { ...localNode.props };
+      for (const [key, remoteVal] of Object.entries(remoteNode.props)) {
+        const localVal = localNode.props[key];
+        if (JSON.stringify(localVal) !== JSON.stringify(remoteVal)) {
+          const localTs = local.metadata.updatedAt;
+          const remoteTs = remote.metadata.updatedAt;
+          const conflict: DocumentConflict = {
+            nodeId,
+            path: `props.${key}`,
+            localValue: localVal,
+            remoteValue: remoteVal,
+            localTimestamp: localTs,
+            remoteTimestamp: remoteTs,
+          };
+          detectedConflicts.push(conflict);
+          const resolution = resolver(conflict);
+          if (resolution.strategy === 'accept-remote') {
+            mergedProps[key] = remoteVal;
+          } else if (resolution.strategy === 'merge') {
+            mergedProps[key] = resolution.mergedValue;
+          }
+          // 'accept-local' — keep localVal (already set)
+        }
+      }
+      localNode.props = mergedProps;
+    }
+
+    // Use the later updatedAt timestamp
+    const localTs = local.metadata.updatedAt;
+    const remoteTs = remote.metadata.updatedAt;
+    draft.metadata = {
+      ...draft.metadata,
+      updatedAt: remoteTs > localTs ? remoteTs : localTs,
+      changeCount: Math.max(
+        local.metadata.changeCount ?? 0,
+        remote.metadata.changeCount ?? 0,
+      ),
+    };
+  });
+
+  return { merged, conflicts: detectedConflicts };
+}
+
+// ============================================================================
 // Utilities
 // ============================================================================
 

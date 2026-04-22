@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -74,7 +75,7 @@ class MultiTenantIsolationDurableTest {
     @BeforeEach
     void setUp() throws Exception {
         DataCloudConfig config = DataCloudConfig.builder()
-            .profile(DataCloudProfile.DISTRIBUTED)
+            .profile(DataCloudProfile.STAGING)
             .customConfig(Map.of(
                 "postgresql.url", POSTGRESQL.getJdbcUrl(),
                 "postgresql.username", POSTGRESQL.getUsername(),

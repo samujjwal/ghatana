@@ -9,8 +9,16 @@ import {
   createFallbackState,
   withPreviewTelemetry,
   noopPreviewTelemetrySink,
+  resolvePreviewMode,
+  getPreviewCapabilities,
+  resolvePreviewExecutionPolicy,
 } from '../trust.js';
-import type { SandboxProfile, PreviewTelemetrySink } from '../trust.js';
+import type {
+  SandboxProfile,
+  PreviewTelemetrySink,
+  PreviewMode,
+  RuntimeMode,
+} from '../trust.js';
 import { createSandboxProfile } from '../protocol.js';
 
 function makeProfile(trustedOrigins: string[] = []): SandboxProfile {
@@ -243,5 +251,208 @@ describe('withPreviewTelemetry', () => {
     await expect(
       withPreviewTelemetry(noopPreviewTelemetrySink, 'preview.teardown', undefined, async () => 'ok'),
     ).resolves.toBe('ok');
+  });
+});
+
+// ============================================================================
+// resolvePreviewMode
+// ============================================================================
+
+describe('resolvePreviewMode', () => {
+  it('maps TRUSTED_WORKSPACE to trusted-local in authoring mode', () => {
+    const mode = resolvePreviewMode('TRUSTED_WORKSPACE', 'authoring');
+    expect(mode).toBe<PreviewMode>('trusted-local');
+  });
+
+  it('maps GENERATED_TRUSTED to trusted-controlled in authoring mode', () => {
+    const mode = resolvePreviewMode('GENERATED_TRUSTED', 'authoring');
+    expect(mode).toBe<PreviewMode>('trusted-controlled');
+  });
+
+  it('maps IMPORTED_REVIEW_REQUIRED to semi-trusted in authoring mode', () => {
+    const mode = resolvePreviewMode('IMPORTED_REVIEW_REQUIRED', 'authoring');
+    expect(mode).toBe<PreviewMode>('semi-trusted');
+  });
+
+  it('maps UNTRUSTED to untrusted', () => {
+    const mode = resolvePreviewMode('UNTRUSTED', 'authoring');
+    expect(mode).toBe<PreviewMode>('untrusted');
+  });
+
+  it('caps TRUSTED_WORKSPACE to trusted-controlled in production mode', () => {
+    const mode = resolvePreviewMode('TRUSTED_WORKSPACE', 'production');
+    expect(mode).toBe<PreviewMode>('trusted-controlled');
+  });
+
+  it('caps TRUSTED_WORKSPACE to trusted-controlled in demo mode', () => {
+    const mode = resolvePreviewMode('TRUSTED_WORKSPACE', 'demo');
+    expect(mode).toBe<PreviewMode>('trusted-controlled');
+  });
+
+  it('does NOT cap GENERATED_TRUSTED in production mode (already controlled)', () => {
+    const mode = resolvePreviewMode('GENERATED_TRUSTED', 'production');
+    expect(mode).toBe<PreviewMode>('trusted-controlled');
+  });
+
+  it('does NOT cap anything in staging mode (staging = authoring rules)', () => {
+    const mode = resolvePreviewMode('TRUSTED_WORKSPACE', 'staging');
+    expect(mode).toBe<PreviewMode>('trusted-local');
+  });
+
+  it('defaults to authoring mode when runtimeMode is omitted', () => {
+    const mode = resolvePreviewMode('TRUSTED_WORKSPACE');
+    expect(mode).toBe<PreviewMode>('trusted-local');
+  });
+});
+
+// ============================================================================
+// getPreviewCapabilities
+// ============================================================================
+
+describe('getPreviewCapabilities', () => {
+  it('untrusted mode allows nothing', () => {
+    const caps = getPreviewCapabilities('untrusted');
+    expect(caps.allowScripts).toBe(false);
+    expect(caps.allowForms).toBe(false);
+    expect(caps.allowSameOrigin).toBe(false);
+    expect(caps.allowNetwork).toBe(false);
+    expect(caps.allowStorage).toBe(false);
+  });
+
+  it('semi-trusted mode allows scripts only', () => {
+    const caps = getPreviewCapabilities('semi-trusted');
+    expect(caps.allowScripts).toBe(true);
+    expect(caps.allowForms).toBe(false);
+    expect(caps.allowSameOrigin).toBe(false);
+    expect(caps.allowNetwork).toBe(false);
+  });
+
+  it('trusted-controlled allows scripts and forms', () => {
+    const caps = getPreviewCapabilities('trusted-controlled');
+    expect(caps.allowScripts).toBe(true);
+    expect(caps.allowForms).toBe(true);
+    expect(caps.allowSameOrigin).toBe(false);
+    expect(caps.allowNetwork).toBe(false);
+  });
+
+  it('trusted-local allows everything', () => {
+    const caps = getPreviewCapabilities('trusted-local');
+    expect(caps.allowScripts).toBe(true);
+    expect(caps.allowForms).toBe(true);
+    expect(caps.allowSameOrigin).toBe(true);
+    expect(caps.allowNetwork).toBe(true);
+    expect(caps.allowStorage).toBe(true);
+  });
+});
+
+// ============================================================================
+// resolvePreviewExecutionPolicy
+// ============================================================================
+
+describe('resolvePreviewExecutionPolicy', () => {
+  it('trusted-workspace document in authoring mode gets full sandbox capabilities', () => {
+    const profile = makeProfile(['https://preview.ghatana.dev']);
+    // BuilderDocument stub with TRUSTED_WORKSPACE trust level
+    const doc = {
+      metadata: { trustLevel: 'TRUSTED_WORKSPACE' },
+      designSystem: { componentContracts: [] },
+    } as unknown as Parameters<typeof resolvePreviewExecutionPolicy>[0];
+
+    const policy = resolvePreviewExecutionPolicy(doc, profile, 'authoring');
+
+    expect(policy.trustLevel).toBe('TRUSTED_WORKSPACE');
+    expect(policy.sandbox).toContain('allow-scripts');
+    expect(policy.sandbox).toContain('allow-same-origin');
+    expect(policy.fallbackState).toBeUndefined();
+    expect(policy.diagnostics).toHaveLength(0);
+  });
+
+  it('UNTRUSTED document gets no scripts and no same-origin', () => {
+    const profile = makeProfile();
+    const doc = {
+      metadata: { trustLevel: 'UNTRUSTED' },
+      designSystem: { componentContracts: [] },
+    } as unknown as Parameters<typeof resolvePreviewExecutionPolicy>[0];
+
+    const policy = resolvePreviewExecutionPolicy(doc, profile, 'authoring');
+
+    expect(policy.trustLevel).toBe('UNTRUSTED');
+    expect(policy.sandbox).not.toContain('allow-scripts');
+    expect(policy.sandbox).not.toContain('allow-same-origin');
+    expect(policy.fallbackState).toBeUndefined();
+  });
+
+  it('TRUSTED_WORKSPACE in production mode is capped at trusted-controlled (no same-origin)', () => {
+    const profile = makeProfile();
+    const doc = {
+      metadata: { trustLevel: 'TRUSTED_WORKSPACE' },
+      designSystem: { componentContracts: [] },
+    } as unknown as Parameters<typeof resolvePreviewExecutionPolicy>[0];
+
+    const policy = resolvePreviewExecutionPolicy(doc, profile, 'production');
+
+    expect(policy.trustLevel).toBe('TRUSTED_WORKSPACE');
+    expect(policy.sandbox).toContain('allow-scripts');
+    expect(policy.sandbox).not.toContain('allow-same-origin');
+  });
+
+  it('undefined document defaults to GENERATED_TRUSTED trust level', () => {
+    const profile = makeProfile();
+    const policy = resolvePreviewExecutionPolicy(undefined, profile, 'authoring');
+
+    expect(policy.trustLevel).toBe('GENERATED_TRUSTED');
+    expect(policy.sandbox).toContain('allow-scripts');
+    expect(policy.fallbackState).toBeUndefined();
+  });
+
+  it('trust requirement violation produces sandbox-blocked fallback', () => {
+    const profile = makeProfile();
+    // Document is UNTRUSTED but a component requires TRUSTED_WORKSPACE level
+    const doc = {
+      metadata: { trustLevel: 'UNTRUSTED' },
+      designSystem: {
+        componentContracts: [
+          {
+            preview: {
+              minimumTrustLevel: 'trusted-local',
+              requiresNetwork: false,
+              requiresStorage: false,
+              requiresConsent: false,
+            },
+          },
+        ],
+      },
+    } as unknown as Parameters<typeof resolvePreviewExecutionPolicy>[0];
+
+    const policy = resolvePreviewExecutionPolicy(doc, profile, 'authoring');
+
+    expect(policy.fallbackState).toBeDefined();
+    expect(policy.fallbackState?.kind).toBe('sandbox-blocked');
+    expect(policy.fallbackState?.retryable).toBe(false);
+    // Effective trust level drops to UNTRUSTED
+    expect(policy.trustLevel).toBe('UNTRUSTED');
+  });
+
+  it('network-requiring component adds network diagnostic message', () => {
+    const profile = makeProfile();
+    const doc = {
+      metadata: { trustLevel: 'GENERATED_TRUSTED' },
+      designSystem: {
+        componentContracts: [
+          {
+            preview: {
+              minimumTrustLevel: 'semi-trusted',
+              requiresNetwork: true,
+              requiresStorage: false,
+              requiresConsent: false,
+            },
+          },
+        ],
+      },
+    } as unknown as Parameters<typeof resolvePreviewExecutionPolicy>[0];
+
+    const policy = resolvePreviewExecutionPolicy(doc, profile, 'authoring');
+
+    expect(policy.diagnostics).toContain('Preview requires network access.');
   });
 });

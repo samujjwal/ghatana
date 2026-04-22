@@ -119,7 +119,10 @@ function renderNodeHtml(
   inheritedAttrs: Readonly<Record<string, string>> = {},
 ): string[] {
   const pad = ' '.repeat(cfg.indent * depth);
-  const tagName = `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  const contractMap = toContractMap(cfg.contracts);
+  const contract = contractMap.get(node.contractName);
+  const tagName = contract?.builder?.codegen?.htmlTagName
+    ?? `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
   const manifestMap = cfg.manifests instanceof Map
     ? cfg.manifests
     : Array.isArray(cfg.manifests)
@@ -176,7 +179,7 @@ function renderNodeHtml(
       const child = document.nodes.get(childId as NodeId);
       if (child) {
         const childAttrs = slotPlan.name === 'default'
-          ? {}
+          ? undefined
           : { slot: slotPlan.name, [`${cfg.debugAttributePrefix}-slot`]: slotPlan.name };
         lines.push(...renderNodeHtml(child, document, cfg, depth + 1, childAttrs));
       }
@@ -253,7 +256,10 @@ function renderNodeDOM(
   cfg: WebRendererConfig,
   inheritedAttrs: Readonly<Record<string, string>> = {},
 ): Element {
-  const tagName = `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  const contractMap = toContractMap(cfg.contracts);
+  const contract = contractMap.get(node.contractName);
+  const tagName = contract?.builder?.codegen?.htmlTagName
+    ?? `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
   const manifestMap = cfg.manifests instanceof Map
     ? cfg.manifests
     : Array.isArray(cfg.manifests)
@@ -317,7 +323,7 @@ function renderNodeDOM(
       const child = document.nodes.get(childId as NodeId);
       if (child) {
         const childAttrs = slotPlan.name === 'default'
-          ? {}
+          ? undefined
           : { slot: slotPlan.name, [`${cfg.debugAttributePrefix}-slot`]: slotPlan.name };
         el.appendChild(renderNodeDOM(child, document, cfg, childAttrs));
       }

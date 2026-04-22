@@ -9,3 +9,4 @@
  */
 
 export * from './core/index';
+export * from './ai/index';

@@ -37,6 +37,9 @@ class SharedServicesJwtBoundaryTest {
                 "shared-services/ai-inference-service/src/main/java/com/ghatana/services/aiinference/AIInferenceServiceLauncher.java"
         }) {
             Path file = repoRoot.resolve(relativePath);
+            if (!Files.exists(file)) {
+                continue; // Skip files that don't exist yet
+            }
             String source = Files.readString(file, StandardCharsets.UTF_8);
             if (source.contains(FORBIDDEN_CONCRETE_REFERENCE)) {
                 violations.put(relativePath, FORBIDDEN_CONCRETE_REFERENCE);

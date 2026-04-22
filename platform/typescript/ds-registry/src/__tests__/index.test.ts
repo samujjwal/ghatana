@@ -278,4 +278,96 @@ describe('@ghatana/ds-registry', () => {
       expect(patterns[0].id).toBe('pattern-1');
     });
   });
+
+  describe('Component Versioning', () => {
+    const makeEntry = (
+      id: string,
+      version: string,
+    ): Omit<ComponentEntry, 'registeredAt' | 'updatedAt'> => ({
+      id,
+      contract: {
+        name: 'Button',
+        version,
+        props: [],
+        slots: [],
+        events: [],
+        styles: {},
+        metadata: {
+          category: 'input',
+          status: 'stable' as const,
+          platforms: ['web' as const],
+        },
+      },
+      hash: `hash-${version}`,
+      source: '@ghatana/design-system',
+      version,
+    });
+
+    it('getComponentByNameAndVersion returns matching entry', () => {
+      store.registerComponent(makeEntry('btn-1', '1.0.0'));
+      store.registerComponent(makeEntry('btn-2', '2.0.0'));
+
+      const entry = store.getComponentByNameAndVersion('Button', '1.0.0');
+      expect(entry).toBeDefined();
+      expect(entry?.version).toBe('1.0.0');
+      expect(entry?.id).toBe('btn-1');
+    });
+
+    it('getComponentByNameAndVersion returns undefined for unknown version', () => {
+      store.registerComponent(makeEntry('btn-1', '1.0.0'));
+      expect(store.getComponentByNameAndVersion('Button', '3.0.0')).toBeUndefined();
+    });
+
+    it('getComponentByNameAndVersion returns undefined for unknown name', () => {
+      expect(store.getComponentByNameAndVersion('NonExistent', '1.0.0')).toBeUndefined();
+    });
+
+    it('getAllVersionsOfComponent returns all entries for a name', () => {
+      store.registerComponent(makeEntry('btn-1', '1.0.0'));
+      store.registerComponent(makeEntry('btn-2', '2.0.0'));
+      store.registerComponent(makeEntry('btn-3', '2.1.0'));
+
+      const versions = store.getAllVersionsOfComponent('Button');
+      expect(versions).toHaveLength(3);
+      expect(versions.map((e) => e.version)).toEqual(['1.0.0', '2.0.0', '2.1.0']);
+    });
+
+    it('getAllVersionsOfComponent returns empty array for unknown name', () => {
+      expect(store.getAllVersionsOfComponent('Unknown')).toHaveLength(0);
+    });
+
+    it('resolveLatestComponent returns the newest entry by registeredAt', () => {
+      store.registerComponent(makeEntry('btn-1', '1.0.0'));
+      store.registerComponent(makeEntry('btn-2', '2.0.0'));
+
+      const latest = store.resolveLatestComponent('Button');
+      // The last registered entry has the latest registeredAt
+      expect(latest).toBeDefined();
+      expect(latest?.id).toBe('btn-2');
+    });
+
+    it('resolveLatestComponent returns undefined for unknown name', () => {
+      expect(store.resolveLatestComponent('Unknown')).toBeUndefined();
+    });
+
+    it('unregisterComponent removes entry from versioning index', () => {
+      store.registerComponent(makeEntry('btn-1', '1.0.0'));
+      store.registerComponent(makeEntry('btn-2', '2.0.0'));
+
+      store.unregisterComponent('btn-1');
+
+      const versions = store.getAllVersionsOfComponent('Button');
+      expect(versions).toHaveLength(1);
+      expect(versions[0].version).toBe('2.0.0');
+      expect(store.getComponentByNameAndVersion('Button', '1.0.0')).toBeUndefined();
+    });
+
+    it('unregisterComponent clears name index when all versions removed', () => {
+      store.registerComponent(makeEntry('btn-1', '1.0.0'));
+      store.unregisterComponent('btn-1');
+
+      expect(store.getAllVersionsOfComponent('Button')).toHaveLength(0);
+      expect(store.resolveLatestComponent('Button')).toBeUndefined();
+    });
+  });
 });

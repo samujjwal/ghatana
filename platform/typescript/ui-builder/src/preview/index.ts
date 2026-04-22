@@ -2,6 +2,10 @@
  * @fileoverview Preview host protocol for UI Builder.
  */
 
+export {
+  PreviewHostService,
+} from './protocol.js';
+
 export type {
   SandboxProfile,
   Viewport,
@@ -22,7 +26,6 @@ export type {
   ClickMessage,
   HoverMessage,
   PongMessage,
-  PreviewHostService,
 } from './protocol.js';
 
 export { PRESET_VIEWPORTS, createSandboxProfile } from './protocol.js';
@@ -38,6 +41,10 @@ export type {
   PreviewTelemetryEvent,
   PreviewTelemetrySink,
   PreviewCSPDirectives,
+  PreviewExecutionPolicy,
+  PreviewMode,
+  RuntimeMode,
+  PreviewCapabilities,
 } from './trust.js';
 
 export {
@@ -48,6 +55,9 @@ export {
   createDeviceControlState,
   applyOrientation,
   createFallbackState,
+  resolvePreviewExecutionPolicy,
+  resolvePreviewMode,
+  getPreviewCapabilities,
   noopPreviewTelemetrySink,
   withPreviewTelemetry,
 } from './trust.js';

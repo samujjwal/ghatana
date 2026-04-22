@@ -7,6 +7,7 @@ package com.ghatana.datacloud.sdk.documentation;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -26,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("SDK Documentation Tests")
+@Tag("documentation")
 class SDKDocumentationTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();

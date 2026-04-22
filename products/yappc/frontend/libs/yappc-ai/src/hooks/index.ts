@@ -23,3 +23,6 @@ export * from './useAI.graphql';
 
 // WebSocket-based real-time hooks
 export * from './useWebSocket';
+
+// Builder AI orchestration hook
+export * from './useBuilderAI';

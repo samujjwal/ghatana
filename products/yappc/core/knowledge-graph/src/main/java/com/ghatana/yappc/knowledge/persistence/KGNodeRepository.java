@@ -247,6 +247,122 @@ public final class KGNodeRepository {
         });
     }
 
+    // ========== Artifact-Specific Queries ==========
+
+    public Promise<List<YAPPCGraphNode>> findArtifactNodesByTypePrefix(String typePrefix, String tenantId, int limit) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT node_id, node_type, label, description, properties_json, tags_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at, updated_at,
+                           version, labels_json
+                    FROM kg_nodes
+                    WHERE tenant_id = ? AND node_type LIKE ?
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, typePrefix + "%");
+                statement.setInt(3, limit);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.util.ArrayList<YAPPCGraphNode> nodes = new java.util.ArrayList<>();
+                    while (resultSet.next()) {
+                        nodes.add(mapNode(resultSet));
+                    }
+                    return nodes;
+                }
+            }
+        });
+    }
+
+    public Promise<List<YAPPCGraphNode>> findArtifactNodesByFramework(String framework, String tenantId, int limit) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT node_id, node_type, label, description, properties_json, tags_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at, updated_at,
+                           version, labels_json
+                    FROM kg_nodes
+                    WHERE tenant_id = ?
+                      AND properties_json ->> 'framework' = ?
+                      AND node_type LIKE 'ARTIFACT_%'
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, framework);
+                statement.setInt(3, limit);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.util.ArrayList<YAPPCGraphNode> nodes = new java.util.ArrayList<>();
+                    while (resultSet.next()) {
+                        nodes.add(mapNode(resultSet));
+                    }
+                    return nodes;
+                }
+            }
+        });
+    }
+
+    public Promise<List<YAPPCGraphNode>> findArtifactNodesByLanguage(String language, String tenantId, int limit) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT node_id, node_type, label, description, properties_json, tags_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at, updated_at,
+                           version, labels_json
+                    FROM kg_nodes
+                    WHERE tenant_id = ?
+                      AND properties_json ->> 'language' = ?
+                      AND node_type LIKE 'ARTIFACT_%'
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, language);
+                statement.setInt(3, limit);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.util.ArrayList<YAPPCGraphNode> nodes = new java.util.ArrayList<>();
+                    while (resultSet.next()) {
+                        nodes.add(mapNode(resultSet));
+                    }
+                    return nodes;
+                }
+            }
+        });
+    }
+
+    public Promise<List<YAPPCGraphNode>> findArtifactNodesByKind(String kind, String tenantId, int limit) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT node_id, node_type, label, description, properties_json, tags_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at, updated_at,
+                           version, labels_json
+                    FROM kg_nodes
+                    WHERE tenant_id = ?
+                      AND properties_json ->> 'kind' = ?
+                      AND node_type LIKE 'ARTIFACT_%'
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, kind);
+                statement.setInt(3, limit);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.util.ArrayList<YAPPCGraphNode> nodes = new java.util.ArrayList<>();
+                    while (resultSet.next()) {
+                        nodes.add(mapNode(resultSet));
+                    }
+                    return nodes;
+                }
+            }
+        });
+    }
+
     private void bindNode(PreparedStatement statement, YAPPCGraphNode node) throws SQLException {
         YAPPCGraphMetadata metadata = node.metadata();
         statement.setString(1, node.id());

@@ -9,19 +9,26 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { Drawer } from '@ghatana/design-system';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 
 import { ComponentRenderer } from './ComponentRenderer';
 import { PropertyForm } from './PropertyForm';
 import { getDefaultComponentData } from './schemas';
 import {
   componentDataToBuilderDocument,
+  componentDataToInsertableInstance,
+  componentDataToBuilderProps,
   builderDocumentToComponentData,
   isBuilderDocument,
 } from './builder-document-adapter';
 
 import type { ComponentData } from './schemas';
-import type { BuilderDocument } from '@ghatana/ui-builder';
+import {
+  deleteNode,
+  insertNode,
+  updateNodeProps,
+} from '@ghatana/ui-builder';
+import type { BuilderDocument, NodeId } from '@ghatana/ui-builder';
 
 /**
  * @doc.type component
@@ -48,25 +55,24 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   onComponentsChange,
   onDocumentChange,
 }) => {
-  // Initialize components from either ComponentData[] or BuilderDocument
-  const [components, setComponents] = useState<ComponentData[]>(() => {
+  const [document, setDocument] = useState<BuilderDocument>(() => {
     if (isBuilderDocument(initialComponents)) {
-      return builderDocumentToComponentData(initialComponents);
+      return initialComponents;
     }
-    return initialComponents as ComponentData[];
+    return componentDataToBuilderDocument(initialComponents as ComponentData[]);
   });
+
+  const components = useMemo<ComponentData[]>(() => {
+    return builderDocumentToComponentData(document);
+  }, [document]);
   
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Sync BuilderDocument when components change
   useEffect(() => {
-    if (onDocumentChange) {
-      const document = componentDataToBuilderDocument(components);
-      onDocumentChange(document);
-    }
-  }, [components, onDocumentChange]);
+    onDocumentChange?.(document);
+  }, [document, onDocumentChange]);
 
   const selectedComponent = components.find((c) => c.id === selectedId);
   const editingComponent = components.find((c) => c.id === editingId);
@@ -74,12 +80,24 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const handleAddComponent = useCallback(
     (type: string) => {
       const newComponent = getDefaultComponentData(type) as ComponentData;
-      const updated = [...components, newComponent];
-      setComponents(updated);
+      let insertedNodeId: string | null = null;
+      const nextDocument = insertNode(
+        document,
+        componentDataToInsertableInstance(newComponent),
+        undefined,
+        undefined,
+        {
+          onNodeInserted: ({ nodeId }) => {
+            insertedNodeId = nodeId;
+          },
+        },
+      );
+      const updated = builderDocumentToComponentData(nextDocument);
+      setDocument(nextDocument);
       onComponentsChange?.(updated);
-      setSelectedId(newComponent.id);
+      setSelectedId(insertedNodeId ?? updated.at(-1)?.id ?? null);
     },
-    [components, onComponentsChange],
+    [document, onComponentsChange],
   );
 
   const handlePaletteDragStart = useCallback((event: React.DragEvent<HTMLButtonElement>, componentType: string) => {
@@ -105,11 +123,12 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   const handleDeleteComponent = useCallback(() => {
     if (!selectedId) return;
 
-    const updated = components.filter((c) => c.id !== selectedId);
-    setComponents(updated);
+    const nextDocument = deleteNode(document, selectedId as NodeId);
+    const updated = builderDocumentToComponentData(nextDocument);
+    setDocument(nextDocument);
     onComponentsChange?.(updated);
     setSelectedId(null);
-  }, [selectedId, components, onComponentsChange]);
+  }, [document, onComponentsChange, selectedId]);
 
   const handleEditComponent = useCallback(() => {
     if (!selectedId) return;
@@ -119,16 +138,18 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
 
   const handleUpdateComponent = useCallback(
     (updatedData: ComponentData) => {
-      const updated = components.map((c) =>
-        c.id === updatedData.id ? updatedData : c,
+      const nextDocument = updateNodeProps(
+        document,
+        updatedData.id as NodeId,
+        componentDataToBuilderProps(updatedData),
       );
-      setComponents(updated);
+      const updated = builderDocumentToComponentData(nextDocument);
+      setDocument(nextDocument);
       onComponentsChange?.(updated);
-      // BuilderDocument sync is handled by useEffect
       setDrawerOpen(false);
       setEditingId(null);
     },
-    [components, onComponentsChange],
+    [document, onComponentsChange],
   );
 
   const handleCloseDrawer = useCallback(() => {

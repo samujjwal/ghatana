@@ -13,6 +13,7 @@ import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
+import com.ghatana.yappc.api.ArtifactGraphController;
 import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
@@ -36,7 +37,11 @@ import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
+import com.ghatana.yappc.storage.ArtifactGraphRepository;
+import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
+import com.ghatana.yappc.services.artifact.ArtifactGraphService;
+import com.ghatana.yappc.services.artifact.ArtifactGraphServiceImpl;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.services.lifecycle.storage.YappcDataCloudArtifactStore;
@@ -411,6 +416,36 @@ public class LifecycleServiceModule extends AbstractModule {
     ValidationApiController validationApiController(ValidationService validationService) {
         logger.info("Creating ValidationApiController");
         return new ValidationApiController(validationService);
+    }
+
+    // ========== Artifact Compiler (YAPPC-ArtifactCompiler) ==========
+
+    /** Provides the durable {@link ArtifactGraphRepository} for artifact graph persistence. */
+    @Provides
+    ArtifactGraphRepository artifactGraphRepository(DataSource dataSource) {
+        logger.info("Creating ArtifactGraphRepository (YAPPC-ArtifactCompiler)");
+        return new ArtifactGraphRepository(dataSource);
+    }
+
+    /** Provides {@link ArtifactModelVersionRepository} for artifact model version history. */
+    @Provides
+    ArtifactModelVersionRepository artifactModelVersionRepository(DataSource dataSource) {
+        logger.info("Creating ArtifactModelVersionRepository (YAPPC-ArtifactCompiler)");
+        return new ArtifactModelVersionRepository(dataSource);
+    }
+
+    /** Provides {@link ArtifactGraphService} for artifact graph ingest, analysis, merge, and query. */
+    @Provides
+    ArtifactGraphService artifactGraphService(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository) {
+        logger.info("Creating ArtifactGraphService (YAPPC-ArtifactCompiler)");
+        return new ArtifactGraphServiceImpl(repository, versionRepository);
+    }
+
+    /** Provides {@link ArtifactGraphController} for artifact compiler HTTP routes. */
+    @Provides
+    ArtifactGraphController artifactGraphController(ArtifactGraphService service) {
+        logger.info("Creating ArtifactGraphController (YAPPC-ArtifactCompiler)");
+        return new ArtifactGraphController(service);
     }
 
     // ========== Lifecycle Transitions ==========

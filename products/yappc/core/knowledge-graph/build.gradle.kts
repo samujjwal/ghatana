@@ -47,6 +47,8 @@ dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
     implementation("org.apache.pdfbox:pdfbox:3.0.1")
     implementation(libs.slf4j.api)
+    implementation(libs.jgrapht.core)
+    implementation(libs.caffeine)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     testImplementation(project(":platform:java:testing"))

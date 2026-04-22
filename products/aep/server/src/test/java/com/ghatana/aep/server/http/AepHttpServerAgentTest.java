@@ -156,7 +156,7 @@ class AepHttpServerAgentTest {
         assertThat(resp.statusCode()).isEqualTo(200);
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
         assertThat(body.get("id")).isEqualTo("agent-42");
-        assertThat(body.get("data")).isNotNull();
+        assertThat(body.get("config")).isNotNull();
         assertThat(body.get("tenantId")).isNotNull();
         assertThat(body.get("timestamp")).isNotNull();
     }

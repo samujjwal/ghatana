@@ -21,6 +21,15 @@ export type {
   ValidationResult,
   ValidationError,
   ValidationWarning,
+  ActionDefinition,
+  ActionTargetKind,
+  ReviewStatus,
+  ReviewStatusKind,
+  AIChangeRecord,
+  ResponsiveVariant,
+  StateVariant,
+  LayoutConstraints,
+  CodeRegionOwnership,
 } from './types';
 
 export {
@@ -35,6 +44,17 @@ export {
   updateNodeProps,
   addBinding,
   removeBinding,
+  reorderNode,
+  resizeNode,
+  repositionNode,
+  setResponsiveVariant,
+  removeResponsiveVariant,
+  upsertAction,
+  removeAction,
+  batchUpdate,
+  createUndoStack,
+  mergeDocuments,
+  lastWriteWins,
   noopEventBus,
 } from './operations';
 
@@ -46,6 +66,11 @@ export type {
   NodePropsUpdatedPayload,
   BindingAddedPayload,
   BindingRemovedPayload,
+  UndoStack,
+  UndoStackOptions,
+  DocumentConflict,
+  ConflictResolution,
+  ConflictResolver,
 } from './operations';
 
 export { validateDocument } from './validation';

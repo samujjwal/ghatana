@@ -452,17 +452,13 @@ class ProfileValidationTest extends EventloopTestBase {
         @Test
         @DisplayName("should reject null collectionName")
         void shouldRejectNullCollectionName() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
+            assertThatThrownBy(() -> CollectionStorageProfile.builder()
                 .tenantId("tenant-1")
                 .collectionName(null)
                 .primaryBackendId("postgres-primary")
-                .build();
-
-            Promise<CollectionStorageProfile> result = repository.save(profile);
-
-            assertThatThrownBy(() -> runPromise(() -> result))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("non-blank collectionName");
+                .build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("collectionName must not be null");
         }
 
         @Test

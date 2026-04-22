@@ -109,11 +109,145 @@ export function validateDocument(
     }
   }
 
+  // Additional contract-aware validations
+  validateResponsiveConsistency(document, contracts, warnings);
+  validateActionBindings(document, contracts, warnings);
+  validatePreviewTrustPolicy(document, contracts, errors, warnings);
+
   return {
     valid: errors.length === 0,
     errors,
     warnings,
   };
+}
+
+// ============================================================================
+// Responsive Consistency
+// ============================================================================
+
+/**
+ * Validates that responsive variants on nodes only override props declared as
+ * responsive-capable in the component contract.
+ */
+function validateResponsiveConsistency(
+  document: BuilderDocument,
+  contracts: ReadonlyMap<string, ComponentContract>,
+  warnings: ValidationWarning[],
+): void {
+  for (const [nodeId, instance] of document.nodes) {
+    const contract = contracts.get(instance.contractName);
+    const responsiveMeta = contract?.responsive;
+    if (!responsiveMeta || !instance.metadata.responsiveVariants?.length) continue;
+
+    for (const variant of instance.metadata.responsiveVariants) {
+      if (!variant.props) continue;
+      const overrideKeys = Object.keys(variant.props);
+      const allowedProps = responsiveMeta.responsiveProps;
+
+      for (const key of overrideKeys) {
+        if (allowedProps.length > 0 && !allowedProps.includes(key)) {
+          warnings.push({
+            code: 'RESPONSIVE_PROP_NOT_DECLARED',
+            message:
+              `Node "${nodeId}" overrides prop "${key}" at breakpoint "${variant.breakpoint}" ` +
+              `but "${instance.contractName}" does not declare "${key}" as a responsiveProps.`,
+            nodeId,
+            path: `responsiveVariants[${variant.breakpoint}].props.${key}`,
+          });
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Action / Binding Correctness
+// ============================================================================
+
+/**
+ * Validates that action trigger events exist in the component's contract events.
+ */
+function validateActionBindings(
+  document: BuilderDocument,
+  contracts: ReadonlyMap<string, ComponentContract>,
+  warnings: ValidationWarning[],
+): void {
+  for (const [nodeId, instance] of document.nodes) {
+    const contract = contracts.get(instance.contractName);
+    if (!contract || !instance.metadata.actions?.length) continue;
+
+    const contractEventNames = new Set(contract.events.map((e) => e.name));
+
+    for (const action of instance.metadata.actions) {
+      if (!contractEventNames.has(action.triggerEvent)) {
+        warnings.push({
+          code: 'ACTION_EVENT_NOT_IN_CONTRACT',
+          message:
+            `Node "${nodeId}" has action "${action.id}" triggered by event "${action.triggerEvent}" ` +
+            `but "${instance.contractName}" does not declare that event.`,
+          nodeId,
+          path: `actions[${action.id}].triggerEvent`,
+        });
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Preview Trust Policy
+// ============================================================================
+
+const TRUST_RANK: Record<string, number> = {
+  'untrusted': 0,
+  'semi-trusted': 1,
+  'trusted-controlled': 2,
+  'trusted-local': 3,
+};
+
+/**
+ * Validates that the document trust level satisfies the minimum required by
+ * every component contract's preview restrictions.
+ */
+function validatePreviewTrustPolicy(
+  document: BuilderDocument,
+  contracts: ReadonlyMap<string, ComponentContract>,
+  errors: ValidationError[],
+  warnings: ValidationWarning[],
+): void {
+  const docTrust = document.metadata.trustLevel ?? 'untrusted';
+  const docRank = TRUST_RANK[String(docTrust)] ?? 0;
+
+  for (const [nodeId, instance] of document.nodes) {
+    const contract = contracts.get(instance.contractName);
+    const previewRestrictions = contract?.preview;
+    if (!previewRestrictions) continue;
+
+    const requiredTrust = previewRestrictions.minimumTrustLevel;
+    const requiredRank = TRUST_RANK[requiredTrust] ?? 0;
+
+    if (docRank < requiredRank) {
+      errors.push({
+        code: 'TRUST_LEVEL_INSUFFICIENT',
+        message:
+          `Node "${nodeId}" (${instance.contractName}) requires minimumTrustLevel ` +
+          `"${requiredTrust}" but the document trust level is "${String(docTrust)}".`,
+        nodeId,
+        path: 'metadata.trustLevel',
+      });
+    }
+
+    // Warn if the document has no trust level set but a component requires one
+    if (!document.metadata.trustLevel && requiredRank > 0) {
+      warnings.push({
+        code: 'DOCUMENT_TRUST_LEVEL_UNSET',
+        message:
+          `Document has no trustLevel set, but node "${nodeId}" (${instance.contractName}) ` +
+          `requires minimumTrustLevel "${requiredTrust}".`,
+        nodeId,
+        path: 'metadata.trustLevel',
+      });
+    }
+  }
 }
 
 // ============================================================================

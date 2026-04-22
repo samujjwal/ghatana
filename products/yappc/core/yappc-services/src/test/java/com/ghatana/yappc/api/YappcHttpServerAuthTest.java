@@ -60,6 +60,9 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
     @Mock
     private LifecycleApiController lifecycleController;
 
+    @Mock
+    private ArtifactGraphController artifactGraphController;
+
     private AsyncServlet servlet;
 
     @BeforeEach
@@ -77,7 +80,8 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             observeController,
             learnController,
             evolveController,
-            lifecycleController
+            lifecycleController,
+            artifactGraphController
         );
     }
 

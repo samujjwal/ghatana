@@ -20,7 +20,9 @@ export {
 export type { CanvasEventPayloads, CanvasEventName } from './canvas-events';
 export { CanvasEvents, ALL_CANVAS_EVENT_NAMES } from './canvas-events';
 
-export type { BuilderEventPayloads, BuilderEventName } from './builder-events';
+export type { BuilderEventPayloads, BuilderEventName,
+  PreviewPolicyPayload, LossPointPayload, CollabPayload,
+} from './builder-events';
 export { BuilderEvents, ALL_BUILDER_EVENT_NAMES } from './builder-events';
 
 export type { DesignSystemEventPayloads, DesignSystemEventName } from './design-system-events';

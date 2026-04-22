@@ -9,10 +9,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import com.redis.testcontainers.RedisContainer;
 import org.testcontainers.containers.ClickHouseContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RedisContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;

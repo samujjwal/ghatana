@@ -152,8 +152,8 @@ describe('Event Types', () => {
   });
 
   describe('Builder Events', () => {
-    it('should have all 25 required builder event names', () => {
-      const expectedCount = 25;
+    it('should have all 33 required builder event names', () => {
+      const expectedCount = 33;
       expect(ALL_BUILDER_EVENT_NAMES.length).toBe(expectedCount);
     });
 

@@ -5,9 +5,6 @@
  * @doc.layer testing
  */
 
-import { render, screen } from "@testing-library/react";
-import { axe } from "vitest";
-
 /**
  * Accessibility violation severity levels
  */
@@ -105,7 +102,7 @@ export function imagesHaveAltText(container: HTMLElement): boolean {
   const images = container.querySelectorAll("img");
   return Array.from(images).every((img) => {
     const alt = img.getAttribute("alt");
-    return alt && alt.trim().length > 0;
+    return typeof alt === 'string' && alt.trim().length > 0;
   });
 }
 
@@ -145,9 +142,9 @@ export function inputsHaveLabels(container: HTMLElement): boolean {
  */
 export function colorNotOnlyIndicator(element: HTMLElement): boolean {
   // Check for text, icon, or other visual indicators beyond color
-  return (
-    (element.textContent?.trim().length ?? 0 > 0) ||
-    element.querySelector('svg, img[role="img"]') !== null
+  return Boolean(
+    (element.textContent?.trim().length ?? 0) > 0 ||
+      element.querySelector('svg, img[role="img"]') !== null,
   );
 }
 
@@ -182,7 +179,7 @@ export function linksHaveDescriptiveText(container: HTMLElement): boolean {
 export function hasFocusIndicator(element: HTMLElement): boolean {
   const style = window.getComputedStyle(element, ":focus");
   const outline = style.outline || style.outlineWidth;
-  return outline && outline !== "none";
+  return Boolean(outline && outline !== "none");
 }
 
 /**

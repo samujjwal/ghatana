@@ -110,7 +110,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
             
             assertThat(result).isNotNull();
             assertThat(result.get("id")).isEqualTo(entityId.toString());
-            assertThat(result.get("version")).isEqualTo(2L);
+            assertThat(result.get("version")).isEqualTo(2);
         }
 
         @Test

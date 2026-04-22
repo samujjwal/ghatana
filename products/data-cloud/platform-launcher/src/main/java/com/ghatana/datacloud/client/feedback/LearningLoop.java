@@ -435,6 +435,9 @@ public class LearningLoop {
     }
 
     private LearningSignal.SignalType mapFeedbackToSignalType(FeedbackEvent event) {
+        if (event.getFeedbackType() == null) {
+            return LearningSignal.SignalType.FEEDBACK; // Default to FEEDBACK for null type
+        }
         return switch (event.getFeedbackType()) {
             case OPERATIONAL -> LearningSignal.SignalType.OPERATIONAL;
             case OUTCOME -> LearningSignal.SignalType.PREDICTION_OUTCOME;

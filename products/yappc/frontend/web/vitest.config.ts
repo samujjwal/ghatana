@@ -60,6 +60,20 @@ export default defineConfig({
         ),
       },
       {
+        find: '@ghatana/ds-schema',
+        replacement: resolve(
+          __dirname,
+          '../../../../platform/typescript/ds-schema/src/index.ts'
+        ),
+      },
+      {
+        find: '@ghatana/ds-registry',
+        replacement: resolve(
+          __dirname,
+          '../../../../platform/typescript/ds-registry/src/index.ts'
+        ),
+      },
+      {
         find: 'clsx',
         replacement: resolve(
           __dirname,
@@ -115,6 +129,10 @@ export default defineConfig({
       {
         find: 'react-hook-form',
         replacement: resolve(__dirname, 'src/__mocks__/react-hook-form.ts'),
+      },
+      {
+        find: '@ghatana/ui-builder/preview',
+        replacement: resolve(__dirname, '../../../../platform/typescript/ui-builder/src/preview/index.ts'),
       },
       {
         find: '@ghatana/ui-builder',

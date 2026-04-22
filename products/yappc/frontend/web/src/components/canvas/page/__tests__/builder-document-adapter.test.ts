@@ -6,6 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   componentDataToBuilderDocument,
+  componentDataToBuilderProps,
+  componentDataToInsertableInstance,
   builderDocumentToComponentData,
   isBuilderDocument,
 } from '../builder-document-adapter';
@@ -51,7 +53,14 @@ describe('Builder Document Adapter', () => {
       const document = componentDataToBuilderDocument(components);
       const node = document.nodes.get('button-1');
 
-      expect(node?.props).toEqual(components[0]);
+      expect(node?.props).toEqual({
+        text: 'Test Button',
+        variant: 'outlined',
+        color: 'secondary',
+        size: 'large',
+        disabled: true,
+        fullWidth: true,
+      });
     });
 
     it('should include design system model', () => {
@@ -61,6 +70,45 @@ describe('Builder Document Adapter', () => {
       expect(document.designSystem).toBeDefined();
       expect(document.designSystem.id).toBe('ghatana-ds-v1');
       expect(document.designSystem.name).toBe('Ghatana Design System');
+    });
+
+    it('should preserve document identity and provenance when reconciling updates', () => {
+      const original = componentDataToBuilderDocument([
+        {
+          id: 'button-1',
+          type: 'button',
+          text: 'Original',
+          variant: 'contained',
+          color: 'primary',
+          size: 'medium',
+          disabled: false,
+          fullWidth: false,
+        },
+      ]);
+
+      const updated = componentDataToBuilderDocument(
+        [
+          {
+            id: 'button-1',
+            type: 'button',
+            text: 'Updated',
+            variant: 'contained',
+            color: 'primary',
+            size: 'medium',
+            disabled: false,
+            fullWidth: false,
+          },
+        ],
+        { existingDocument: original },
+      );
+
+      expect(updated.id).toBe(original.id);
+      expect(updated.metadata.createdAt).toBe(original.metadata.createdAt);
+      expect(updated.metadata.author).toBe('yappc-page-designer-adapter');
+      expect(updated.metadata.tags).toContain('legacy-component-data-v1');
+      expect(updated.nodes.get('button-1')?.metadata.provenance?.source).toBe(
+        'yappc-page-designer-adapter',
+      );
     });
   });
 
@@ -109,6 +157,71 @@ describe('Builder Document Adapter', () => {
 
       expect(converted[0]).toEqual(original[0]);
     });
+
+    it('should preserve all currently supported component types on round-trip', () => {
+      const original: ComponentData[] = [
+        {
+          id: 'button-1',
+          type: 'button',
+          text: 'Save',
+          variant: 'contained',
+          color: 'success',
+          size: 'small',
+          disabled: false,
+          fullWidth: false,
+        },
+        {
+          id: 'card-1',
+          type: 'card',
+          label: 'Profile card',
+          elevation: 4,
+          title: 'Profile',
+          subtitle: 'Active user',
+          content: 'Summary content',
+          showActions: true,
+        },
+        {
+          id: 'textfield-1',
+          type: 'textfield',
+          label: 'Email',
+          placeholder: 'name@example.com',
+          variant: 'filled',
+          size: 'small',
+          required: true,
+          disabled: false,
+          fullWidth: true,
+          multiline: false,
+          rows: 1,
+        },
+        {
+          id: 'typography-1',
+          type: 'typography',
+          label: 'Heading copy',
+          variant: 'h4',
+          text: 'Welcome back',
+          color: 'primary',
+          align: 'center',
+        },
+        {
+          id: 'box-1',
+          type: 'box',
+          label: 'Layout wrapper',
+          padding: 3,
+          margin: 1,
+          backgroundColor: '#ffffff',
+          borderRadius: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'stretch',
+        },
+      ];
+
+      const document = componentDataToBuilderDocument(original);
+      const converted = builderDocumentToComponentData(document);
+
+      expect(converted).toEqual(original);
+    });
   });
 
   describe('isBuilderDocument', () => {
@@ -130,6 +243,59 @@ describe('Builder Document Adapter', () => {
       const components: ComponentData[] = [];
 
       expect(isBuilderDocument(components)).toBe(false);
+    });
+  });
+
+  describe('operation helpers', () => {
+    it('should expose insertable instances without legacy structural fields in props', () => {
+      const instance = componentDataToInsertableInstance({
+        id: 'button-1',
+        type: 'button',
+        text: 'Click Me',
+        variant: 'contained',
+        color: 'primary',
+        size: 'medium',
+        disabled: false,
+        fullWidth: false,
+      });
+
+      expect(instance.contractName).toBe('button');
+      expect(instance.props).toEqual({
+        text: 'Click Me',
+        variant: 'contained',
+        color: 'primary',
+        size: 'medium',
+        disabled: false,
+        fullWidth: false,
+      });
+    });
+
+    it('should expose prop payloads for document update operations', () => {
+      expect(
+        componentDataToBuilderProps({
+          id: 'textfield-1',
+          type: 'textfield',
+          label: 'Name',
+          placeholder: 'Enter name',
+          variant: 'outlined',
+          size: 'medium',
+          required: true,
+          disabled: false,
+          fullWidth: true,
+          multiline: false,
+          rows: 1,
+        }),
+      ).toEqual({
+        label: 'Name',
+        placeholder: 'Enter name',
+        variant: 'outlined',
+        size: 'medium',
+        required: true,
+        disabled: false,
+        fullWidth: true,
+        multiline: false,
+        rows: 1,
+      });
     });
   });
 });

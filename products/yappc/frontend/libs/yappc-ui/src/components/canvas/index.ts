@@ -46,3 +46,7 @@ export { CanvasEditor } from './CanvasEditor';
 export type { CanvasEditorProps } from './CanvasEditor';
 export { CanvasVersionHistory } from './CanvasVersionHistory';
 export type { CanvasVersionHistoryProps } from './CanvasVersionHistory';
+
+// Builder editor shell (YAPPC productization)
+export { BuilderEditorShell } from './BuilderEditorShell';
+export type { BuilderEditorShellProps } from './BuilderEditorShell';

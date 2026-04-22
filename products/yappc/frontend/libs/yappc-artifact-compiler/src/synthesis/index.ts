@@ -8,3 +8,10 @@ export type {
   MultiSourceSynthesisRequest,
   MultiSourceSynthesizer,
 } from './types';
+
+export {
+  SynthesisEngine,
+  type SynthesisEngineOptions,
+  type AnalysisResult,
+  type QueryResult,
+} from './engine';

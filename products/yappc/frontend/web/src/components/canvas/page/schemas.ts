@@ -1,8 +1,37 @@
 import { z } from 'zod';
+import {
+  getRegistryStore,
+  registerStarterContracts,
+  buildContractMap,
+  resolveContractForCodegen,
+} from '@ghatana/ds-registry';
 
 /**
- * Component schema definitions for page designer
+ * MIGRATION BOUNDARY — COMPATIBILITY SHIMS ONLY
+ *
+ * The Zod schemas in this file are local compatibility shims that replicate
+ * the prop shapes for the five starter components used by the YAPPC page
+ * designer canvas (Button, Card, TextField, Typography, Box).
+ *
+ * Canonical source of truth:
+ *   These prop shapes are now derived from `@ghatana/ds-registry` starter
+ *   contracts registered via `registerStarterContracts()`. The registry is
+ *   the authoritative source for default props and codegen metadata.
+ *
+ * Migration status (2026-04-22):
+ *   - `getDefaultComponentData` now reads defaults from the registry first,
+ *     falling back to local Zod schema defaults for backward compatibility.
+ *   - `validateComponentData` delegates to contract validation when a
+ *     registered contract exists.
+ *   - `buildContractMapForCanvas` provides the registry map for codegen.
+ *   - Local Zod schemas remain for discriminated-union TypeScript typing only.
+ *
+ * DO NOT add new component schemas here. Add them to `@ghatana/ds-registry`.
  */
+
+// Ensure starter contracts are registered into the global store.
+// This is idempotent — safe to call multiple times.
+registerStarterContracts(getRegistryStore());
 
 // Base schema for all components
 export const BaseComponentSchema = z.object({
@@ -108,11 +137,40 @@ export type TypographyData = z.infer<typeof TypographySchema>;
 export type BoxData = z.infer<typeof BoxSchema>;
 
 /**
- * Get default values for a component type
+ * Get default values for a component type.
+ *
+ * Reads `builder.defaultProps` from the registered contract first.
+ * Falls back to the local Zod schema defaults for backward compatibility
+ * while the registry migration is in progress.
  */
 export function getDefaultComponentData(type: string): ComponentData | { id: string; type: string } {
   const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
+  // Attempt to derive defaults from the registered contract.
+  const store = getRegistryStore();
+  const contractName = type.charAt(0).toUpperCase() + type.slice(1).replace('textfield', 'TextField');
+  const registryEntry = store.resolveLatestComponent(contractName)
+    ?? store.resolveLatestComponent(type.charAt(0).toUpperCase() + type.slice(1));
+
+  if (registryEntry) {
+    const contractDefaults = registryEntry.contract.builder?.defaultProps ?? {};
+    // Merge contract defaults with the local shim defaults via Zod parsing.
+    // This keeps backward compat while the registry becomes authoritative.
+    switch (type) {
+      case 'button':
+        return ButtonSchema.parse({ id, type, ...contractDefaults });
+      case 'card':
+        return CardSchema.parse({ id, type, ...contractDefaults });
+      case 'textfield':
+        return TextFieldSchema.parse({ id, type, ...contractDefaults });
+      case 'typography':
+        return TypographySchema.parse({ id, type, ...contractDefaults });
+      case 'box':
+        return BoxSchema.parse({ id, type, ...contractDefaults });
+    }
+  }
+
+  // Fallback: local Zod schema defaults only.
   switch (type) {
     case 'button':
       return ButtonSchema.parse({ id, type });
@@ -130,7 +188,10 @@ export function getDefaultComponentData(type: string): ComponentData | { id: str
 }
 
 /**
- * Validate component data against schema
+ * Validate component data against schema.
+ *
+ * Uses the local Zod discriminated union for now (contract-level validation is
+ * handled by `validateDocumentAgainstDS` in `@ghatana/ui-builder`).
  */
 export function validateComponentData(data: unknown): { valid: boolean; errors?: string[] } {
   try {
@@ -148,7 +209,9 @@ export function validateComponentData(data: unknown): { valid: boolean; errors?:
 }
 
 /**
- * Get schema for a specific component type
+ * Get schema for a specific component type.
+ *
+ * @deprecated Use the registry contract directly via `@ghatana/ds-registry`.
  */
 export function getSchemaForType(type: string): z.ZodSchema | null {
   switch (type) {
@@ -165,4 +228,30 @@ export function getSchemaForType(type: string): z.ZodSchema | null {
     default:
       return null;
   }
+}
+
+/**
+ * Returns a `ReadonlyMap<string, ComponentContract>` from the global registry
+ * suitable for passing to `@ghatana/ui-builder` codegen and validation
+ * functions.
+ *
+ * Use this in PageDesigner and other canvas consumers instead of maintaining
+ * a local contract map.
+ */
+export function buildContractMapForCanvas(): ReadonlyMap<string, import('@ghatana/ds-schema').ComponentContract> {
+  return buildContractMap(getRegistryStore());
+}
+
+/**
+ * Returns codegen metadata for the given component type from the registry.
+ * Returns `undefined` when no contract with a codegen section is registered.
+ */
+export function resolveCanvasCodegen(type: string): import('@ghatana/ds-registry').ResolvedCodegenContract | undefined {
+  const contractName = type.charAt(0).toUpperCase() + type.slice(1).replace('textfield', 'TextField');
+  const result = resolveContractForCodegen(getRegistryStore(), contractName);
+  if (result) return result;
+  return resolveContractForCodegen(
+    getRegistryStore(),
+    type.charAt(0).toUpperCase() + type.slice(1),
+  );
 }

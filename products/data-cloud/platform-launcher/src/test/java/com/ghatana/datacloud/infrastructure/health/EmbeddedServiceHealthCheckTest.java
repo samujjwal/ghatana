@@ -105,6 +105,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
             Boolean live = runPromise(healthCheck::checkLiveness);
 
             assertThat(live).isTrue();
+            // checkLiveness should set the status, so this should now work
             assertThat(healthCheck.getLastStatus()).isEqualTo(RedisHealthCheck.HealthStatus.DEGRADED);
         }
 
@@ -117,6 +118,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
             RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector);
 
+            runPromise(healthCheck::checkReadiness);
             Map<String, Object> details = runPromise(healthCheck::getHealthDetails);
 
             assertThat(details).containsEntry("status", "UP");
@@ -188,6 +190,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
             OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector);
 
+            runPromise(healthCheck::checkReadiness);
             Map<String, Object> details = runPromise(healthCheck::getHealthDetails);
 
             assertThat(details).containsEntry("status", "UP");
@@ -235,6 +238,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
             ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector);
 
+            runPromise(healthCheck::checkReadiness);
             Map<String, Object> details = runPromise(healthCheck::getHealthDetails);
 
             assertThat(details).containsEntry("status", "UP");
@@ -277,7 +281,19 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         public Promise<Boolean> checkLiveness() {
-            return Promise.of(true); // Redis liveness is more lenient
+            long start = System.currentTimeMillis();
+            try {
+                StatefulRedisConnection<String, String> conn = redisClient.connect();
+                String result = conn.sync().ping();
+                long latency = System.currentTimeMillis() - start;
+                this.lastLatencyMs = latency;
+                this.lastStatus = latency > config.degradedThresholdMs ? HealthStatus.DEGRADED : HealthStatus.UP;
+                metricsCollector.recordTimer("redis.health.check.latency", latency);
+                return Promise.of(true);
+            } catch (Exception e) {
+                this.lastStatus = HealthStatus.DOWN;
+                return Promise.of(false);
+            }
         }
 
         public Promise<Map<String, Object>> getHealthDetails() {

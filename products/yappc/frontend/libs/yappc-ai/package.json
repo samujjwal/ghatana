@@ -48,6 +48,8 @@
   "dependencies": {
     "@yappc/core": "workspace:*",
     "@yappc/ui": "workspace:*",
+    "@ghatana/ui-builder": "workspace:*",
+    "@ghatana/platform-events": "workspace:*",
     "openai": "^6.34.0",
     "ai": "^6.0.158",
     "nanostores": "^1.2.0",

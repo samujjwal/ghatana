@@ -65,6 +65,101 @@ public final class KGQueryService {
         .then(paths -> mapPaths(paths, tenantId));
   }
 
+  // ========== Artifact-Specific Pattern Queries ==========
+
+  /**
+   * Find artifact nodes that have no incoming edges (orphaned/unreferenced components, pages, etc.).
+   */
+  public Promise<List<YAPPCGraphNode>> findOrphanedArtifacts(String tenantId) {
+    Objects.requireNonNull(tenantId, "tenantId");
+    return nodeRepository.findNodesByType("ARTIFACT_COMPONENT", tenantId, 1000)
+        .then(nodes -> edgeRepository.findAllTargetIds(tenantId)
+            .map(targetIds -> {
+              Set<String> referenced = new LinkedHashSet<>(targetIds);
+              return nodes.stream()
+                  .filter(n -> !referenced.contains(n.id()))
+                  .collect(java.util.stream.Collectors.toList());
+            }));
+  }
+
+  /**
+   * Find all pages that render a given component (or any component in a module).
+   */
+  public Promise<List<YAPPCGraphNode>> findPagesForComponent(String componentNodeId, String tenantId) {
+    Objects.requireNonNull(componentNodeId, "componentNodeId");
+    Objects.requireNonNull(tenantId, "tenantId");
+    return edgeRepository.findEdgesToTarget(componentNodeId, tenantId, Set.of(YAPPCGraphEdge.YAPPCRelationshipType.RENDERS_IN.name()))
+        .then(edges -> {
+          List<String> pageIds = edges.stream().map(YAPPCGraphEdge::sourceNodeId).toList();
+          return pageIds.isEmpty()
+              ? Promise.of(List.<YAPPCGraphNode>of())
+              : nodeRepository.findNodesByIds(pageIds, tenantId);
+        });
+  }
+
+  /**
+   * Find the full dependency chain (transitive imports/uses) for an artifact node.
+   */
+  public Promise<List<YAPPCGraphNode>> findArtifactDependencyChain(String nodeId, String tenantId, int maxHops) {
+    Objects.requireNonNull(nodeId, "nodeId");
+    Objects.requireNonNull(tenantId, "tenantId");
+    return collectReachable(Set.of(nodeId), maxHops > 0 ? maxHops : DEFAULT_MAX_PATH_HOPS, tenantId, new LinkedHashSet<>())
+        .then(ids -> ids.isEmpty() ? Promise.of(List.<YAPPCGraphNode>of()) : nodeRepository.findNodesByIds(List.copyOf(ids), tenantId));
+  }
+
+  /**
+   * Find artifacts by type filter (e.g. COMPONENT, PAGE, STATE_STORE).
+   */
+  public Promise<List<YAPPCGraphNode>> findArtifactsByType(String artifactTypePrefix, String tenantId, int limit) {
+    Objects.requireNonNull(artifactTypePrefix, "artifactTypePrefix");
+    Objects.requireNonNull(tenantId, "tenantId");
+    return nodeRepository.findNodesByType(artifactTypePrefix, tenantId, limit);
+  }
+
+  /**
+   * Find all circular dependency chains among artifacts.
+   */
+  public Promise<List<List<String>>> findArtifactCycles(String tenantId) {
+    Objects.requireNonNull(tenantId, "tenantId");
+    return edgeRepository.findArtifactEdges(tenantId)
+        .map(edges -> {
+          Map<String, List<String>> adjacency = new LinkedHashMap<>();
+          for (YAPPCGraphEdge edge : edges) {
+            adjacency.computeIfAbsent(edge.sourceNodeId(), k -> new ArrayList<>()).add(edge.targetNodeId());
+          }
+          List<List<String>> cycles = new ArrayList<>();
+          Set<String> visited = new LinkedHashSet<>();
+          Set<String> recStack = new LinkedHashSet<>();
+          for (String node : adjacency.keySet()) {
+            if (!visited.contains(node)) {
+              detectCycle(node, adjacency, visited, recStack, new ArrayList<>(), cycles);
+            }
+          }
+          return cycles;
+        });
+  }
+
+  private void detectCycle(String node, Map<String, List<String>> adjacency, Set<String> visited, Set<String> recStack, List<String> path, List<List<String>> cycles) {
+    visited.add(node);
+    recStack.add(node);
+    path.add(node);
+    List<String> neighbors = adjacency.getOrDefault(node, List.of());
+    for (String neighbor : neighbors) {
+      if (!visited.contains(neighbor)) {
+        detectCycle(neighbor, adjacency, visited, recStack, path, cycles);
+      } else if (recStack.contains(neighbor)) {
+        // Found a cycle; extract cycle nodes from path
+        int index = path.indexOf(neighbor);
+        if (index >= 0) {
+          List<String> cycle = new ArrayList<>(path.subList(index, path.size()));
+          cycles.add(List.copyOf(cycle));
+        }
+      }
+    }
+    path.remove(path.size() - 1);
+    recStack.remove(node);
+  }
+
   private Promise<LinkedHashSet<String>> collectReachable(
       Set<String> frontier, int hopsRemaining, String tenantId, LinkedHashSet<String> visited) {
     if (frontier.isEmpty() || hopsRemaining == 0) {

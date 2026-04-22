@@ -1,51 +1,146 @@
-/**
- * Live Preview Panel test suite
- * Tests for YAPPC LivePreviewPanel with platform preview protocol
- */
-
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { LivePreviewPanel } from '../LivePreviewPanel';
 
+const mountDocumentMock = vi.fn();
+const teardownMock = vi.fn();
+const resolvePreviewExecutionPolicyMock = vi.fn();
+
+vi.mock('@ghatana/ui-builder/preview', () => ({
+  PRESET_VIEWPORTS: {
+    mobile: { width: 375, height: 812, devicePixelRatio: 3, label: 'Mobile (375px)' },
+    tablet: { width: 768, height: 1024, devicePixelRatio: 2, label: 'Tablet (768px)' },
+    desktop: { width: 1440, height: 900, devicePixelRatio: 1, label: 'Desktop (1440px)' },
+    'desktop-xl': { width: 1920, height: 1080, devicePixelRatio: 1, label: 'Desktop XL (1920px)' },
+  },
+  createSandboxProfile: (profile: unknown) => profile,
+  resolvePreviewExecutionPolicy: (...args: unknown[]) => resolvePreviewExecutionPolicyMock(...args),
+  PreviewHostService: class {
+    constructor() {}
+
+    mountDocument(document: unknown) {
+      return mountDocumentMock(document);
+    }
+
+    teardown() {
+      return teardownMock();
+    }
+  },
+}));
+
+const baseDocument = {
+  id: 'test-doc',
+  version: '1',
+  name: 'Test Document',
+  designSystem: {
+    id: 'test-ds',
+    name: 'Test Design System',
+    version: '1.0.0',
+    tokenSetIds: [],
+    componentContracts: [],
+    themeId: 'default',
+  },
+  rootNodes: [],
+  nodes: new Map(),
+  metadata: {
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    trustLevel: 'TRUSTED_WORKSPACE',
+  },
+};
+
 describe('LivePreviewPanel - Platform Preview Protocol', () => {
+  beforeEach(() => {
+    mountDocumentMock.mockReset();
+    teardownMock.mockReset();
+    resolvePreviewExecutionPolicyMock.mockReset();
+    resolvePreviewExecutionPolicyMock.mockReturnValue({
+      profile: {
+        id: 'yappc-preview',
+        name: 'YAPPC Preview',
+        viewport: { width: 1440, height: 900, devicePixelRatio: 1, label: 'Desktop (1440px)' },
+        theme: 'default',
+        locale: 'en-US',
+        featureFlags: {},
+        trustedOrigins: ['https://preview.example.com'],
+      },
+      trustLevel: 'TRUSTED_WORKSPACE',
+      sandbox: ['allow-same-origin', 'allow-scripts', 'allow-forms'],
+      contentSecurityPolicy: "default-src 'self' https://preview.example.com; frame-ancestors 'none'",
+      diagnostics: ['Preview requires network access.'],
+    });
+  });
+
   describe('Component Rendering', () => {
-    it('should render LivePreviewPanel component', () => {
+    it('renders the empty state when no preview inputs are provided', () => {
       render(<LivePreviewPanel />);
-      // Verify component renders without errors
-      expect(true).toBe(true);
+      expect(screen.getByText('Select a document or component to preview')).toBeInTheDocument();
     });
 
-    it('should render with document prop', () => {
-      const document = {
-        id: 'test-doc',
-        version: '1',
-        name: 'Test Document',
-        designSystem: {
-          id: 'test-ds',
-          name: 'Test Design System',
-          version: '1.0.0',
-          tokenSetIds: [],
-          componentContracts: [],
-          themeId: 'default',
-        },
-        rootNodes: [],
-        nodes: new Map(),
-        metadata: {
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      };
+    it('renders the iframe with policy-derived sandbox and diagnostics', () => {
+      render(
+        <LivePreviewPanel
+          document={baseDocument}
+          previewUrl="https://preview.example.com/frame"
+        />,
+      );
 
-      render(<LivePreviewPanel document={document} />);
-      expect(true).toBe(true);
+      const iframe = screen.getByTitle('Live Preview');
+      expect(iframe).toHaveAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms');
+      expect(iframe).toHaveAttribute(
+        'csp',
+        "default-src 'self' https://preview.example.com; frame-ancestors 'none'",
+      );
+      expect(screen.getByText('TRUSTED WORKSPACE')).toBeInTheDocument();
+      expect(screen.getByText('Preview requires network access.')).toBeInTheDocument();
+      expect(mountDocumentMock).toHaveBeenCalledWith(baseDocument);
+    });
+  });
+
+  describe('Fallback Behavior', () => {
+    it('surfaces blocked preview state and avoids mounting the document', () => {
+      resolvePreviewExecutionPolicyMock.mockReturnValue({
+        profile: {
+          id: 'yappc-preview',
+          name: 'YAPPC Preview',
+          viewport: { width: 1440, height: 900, devicePixelRatio: 1, label: 'Desktop (1440px)' },
+          theme: 'default',
+          locale: 'en-US',
+          featureFlags: {},
+          trustedOrigins: [],
+        },
+        trustLevel: 'UNTRUSTED',
+        sandbox: [],
+        contentSecurityPolicy: "default-src 'none'; frame-ancestors 'none'",
+        diagnostics: [],
+        fallbackState: {
+          kind: 'sandbox-blocked',
+          message: 'Preview requires trusted workspace review.',
+          retryable: false,
+        },
+      });
+
+      render(<LivePreviewPanel document={baseDocument} />);
+
+      expect(screen.getByText('Preview requires trusted workspace review.')).toBeInTheDocument();
+      expect(mountDocumentMock).not.toHaveBeenCalled();
     });
   });
 
   describe('Viewport Controls', () => {
-    it('should render viewport selector', () => {
-      render(<LivePreviewPanel />);
-      // Viewport selector should be present
-      expect(true).toBe(true);
+    it('updates the selected viewport through the control', () => {
+      render(<LivePreviewPanel document={baseDocument} />);
+
+      fireEvent.change(screen.getByDisplayValue('Desktop (1440px)'), {
+        target: { value: 'mobile' },
+      });
+
+      expect(resolvePreviewExecutionPolicyMock).toHaveBeenLastCalledWith(
+        baseDocument,
+        expect.objectContaining({
+          viewport: expect.objectContaining({ width: 375 }),
+        }),
+      );
     });
   });
 });

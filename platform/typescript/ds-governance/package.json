@@ -26,6 +26,10 @@
       "types": "./dist/contribution/index.d.ts",
       "import": "./dist/contribution/index.js"
     },
+    "./quality": {
+      "types": "./dist/quality/index.d.ts",
+      "import": "./dist/quality/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": ["dist", "README.md"],

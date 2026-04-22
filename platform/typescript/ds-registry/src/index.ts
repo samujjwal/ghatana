@@ -21,3 +21,31 @@ export type {
   PatternEntry,
   RegistryStore,
 } from './registry/store';
+
+export {
+  starterContracts,
+  registerStarterContracts,
+  ButtonContract,
+  CardContract,
+  TextFieldContract,
+  TypographyContract,
+  BoxContract,
+} from './starters';
+
+export {
+  findBuilderComponents,
+  resolveContractForCodegen,
+  resolveAllContractsForCodegen,
+  resolvePreviewPolicy,
+  resolveAllPreviewPolicies,
+  resolveLatestContract,
+  resolveContractAtVersion,
+  resolveAllContractVersions,
+  buildContractMap,
+} from './queries';
+
+export type {
+  BuilderPaletteEntry,
+  ResolvedCodegenContract,
+  ResolvedPreviewPolicy,
+} from './queries';

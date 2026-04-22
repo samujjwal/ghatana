@@ -166,6 +166,13 @@ export interface PongMessage {
 // Host Service Interface
 // ============================================================================
 
+export interface PreviewHostServiceCallbacks {
+  readonly onReady?: (message: ReadyMessage) => void;
+  readonly onMounted?: (message: MountedMessage) => void;
+  readonly onUpdated?: (message: UpdatedMessage) => void;
+  readonly onError?: (message: ErrorMessage) => void;
+}
+
 /** Interface a builder host must implement to manage a preview iframe. */
 export interface PreviewHostService {
   /** Send a message to the preview frame. */
@@ -182,4 +189,115 @@ export interface PreviewHostService {
 
   /** Tear down and release the sandbox. */
   teardown(): Promise<void>;
+}
+
+/**
+ * Runtime implementation of the typed preview host service used by builder consumers.
+ */
+export class PreviewHostService {
+  private readonly messageHandlers = new Set<
+    (message: PreviewToHostMessage) => void
+  >();
+
+  private readonly handleMessage = (event: MessageEvent): void => {
+    if (event.source !== this.iframe.contentWindow) {
+      return;
+    }
+
+    if (!event.data || typeof event.data !== 'object') {
+      return;
+    }
+
+    const maybeMessage = event.data as Record<string, unknown>;
+    if (typeof maybeMessage.type !== 'string') {
+      return;
+    }
+
+    const message = maybeMessage as unknown as PreviewToHostMessage;
+
+    switch (message.type) {
+      case 'READY':
+        this.callbacks.onReady?.(message);
+        break;
+      case 'MOUNTED':
+        this.callbacks.onMounted?.(message);
+        break;
+      case 'UPDATED':
+        this.callbacks.onUpdated?.(message);
+        break;
+      case 'ERROR':
+        this.callbacks.onError?.(message);
+        break;
+      default:
+        break;
+    }
+
+    this.messageHandlers.forEach((handler) => {
+      handler(message);
+    });
+  };
+
+  public constructor(
+    private readonly iframe: HTMLIFrameElement,
+    private sandbox: SandboxProfile,
+    private readonly callbacks: PreviewHostServiceCallbacks = {},
+  ) {
+    window.addEventListener('message', this.handleMessage);
+  }
+
+  public send(message: HostToPreviewMessage): void {
+    const targetOrigin = this.sandbox.trustedOrigins[0] ?? '*';
+    this.iframe.contentWindow?.postMessage(message, targetOrigin);
+  }
+
+  public onMessage(
+    handler: (message: PreviewToHostMessage) => void,
+  ): () => void {
+    this.messageHandlers.add(handler);
+    return () => {
+      this.messageHandlers.delete(handler);
+    };
+  }
+
+  public async mount(
+    document: BuilderDocument,
+    sandbox: SandboxProfile,
+  ): Promise<void> {
+    this.sandbox = sandbox;
+    this.send({
+      type: 'MOUNT_DOCUMENT',
+      document,
+      sandbox,
+      correlationId: this.createCorrelationId(),
+    });
+  }
+
+  public async mountDocument(document: BuilderDocument): Promise<void> {
+    await this.mount(document, this.sandbox);
+  }
+
+  public async update(document: BuilderDocument): Promise<void> {
+    this.send({
+      type: 'UPDATE_DOCUMENT',
+      document,
+      correlationId: this.createCorrelationId(),
+    });
+  }
+
+  public async updateDocument(document: BuilderDocument): Promise<void> {
+    await this.update(document);
+  }
+
+  public async teardown(): Promise<void> {
+    this.send({
+      type: 'TEARDOWN',
+      correlationId: this.createCorrelationId(),
+    });
+    this.messageHandlers.clear();
+    window.removeEventListener('message', this.handleMessage);
+  }
+
+  private createCorrelationId(): string {
+    return globalThis.crypto?.randomUUID?.() ?? `preview-${Date.now()}`;
+  }
 }

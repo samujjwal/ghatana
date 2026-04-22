@@ -79,14 +79,85 @@ export type ComponentObservabilityContract = z.infer<typeof ComponentObservabili
 // AI Policy
 // ============================================================================
 
+/**
+ * Canonical set of AI actions the builder can perform on a component.
+ * Use `permittedActions` to declare which of these the AI may apply
+ * autonomously (without human review for each change).
+ */
+export const AIActionTypeSchema = z.enum([
+  'set-prop',       // AI autonomously sets a prop value
+  'remove-prop',    // AI removes a prop
+  'add-node',       // AI inserts a child node into a slot
+  'remove-node',    // AI removes this node from the document
+  'reorder-node',   // AI reorders children within a slot
+  'add-binding',    // AI adds a data binding to this component
+  'remove-binding', // AI removes a binding
+  'resize',         // AI changes the component's size metadata
+  'reposition',     // AI changes the component's position metadata
+  'style-update',   // AI updates style/token-referenced props
+]);
+
+export type AIActionType = z.infer<typeof AIActionTypeSchema>;
+
 export const ComponentAIPolicySchema = z.object({
   allowAutonomousConfiguration: z.boolean().default(true),
+  /**
+   * Prop names whose values must be reviewed by a human before the AI
+   * change is applied. Applies regardless of `permittedActions`.
+   */
   reviewRequiredProps: z.array(z.string()).default([]),
   usageGuidance: z.string().optional(),
   autoApplyConfidenceThreshold: z.number().min(0).max(1).default(0.9),
+  /**
+   * AI action types the builder is allowed to apply autonomously (without
+   * per-change human approval). An empty list means all actions require
+   * human review. Defaults to all actions permitted.
+   */
+  permittedActions: z.array(AIActionTypeSchema).default([]),
 });
 
 export type ComponentAIPolicy = z.infer<typeof ComponentAIPolicySchema>;
+
+// ============================================================================
+// Builder Accessibility Obligations
+// ============================================================================
+
+/**
+ * Builder-level accessibility obligations for a component.
+ * Complements the per-component `metadata.a11y` field which documents what
+ * the component supports; this schema declares what the _builder_ must enforce
+ * at design time before the document is considered accessible.
+ */
+export const BuilderA11yObligationsSchema = z.object({
+  /**
+   * Prop names (or ARIA attribute names, e.g. `aria-label`) that the builder
+   * must prompt the author to set. Used by the builder inspector panel and
+   * document validators to warn about missing accessibility declarations.
+   */
+  requiredA11yProps: z.array(z.string()).default([]),
+  /**
+   * When true, the builder must verify there is a close affordance (button or
+   * keyboard handler) whenever this component traps focus (e.g. modals, drawers).
+   */
+  trapsFocusRequiresClose: z.boolean().default(false),
+  /**
+   * When true, the builder warns if the document contains this component
+   * without a `prefers-reduced-motion` safeguard declared in a sibling or
+   * parent contract.
+   */
+  motionRequiresReductionSupport: z.boolean().default(false),
+  /**
+   * The minimum WCAG success criteria level this component is designed to meet.
+   * `A` is the least strict, `AAA` the most strict.
+   */
+  wcagLevel: z.enum(['A', 'AA', 'AAA']).default('AA'),
+  /**
+   * Free-text guidance shown in the builder accessibility panel.
+   */
+  a11yGuidance: z.string().optional(),
+});
+
+export type BuilderA11yObligations = z.infer<typeof BuilderA11yObligationsSchema>;
 
 // ============================================================================
 // Preview Restrictions
@@ -129,6 +200,7 @@ export type ComponentConfiguratorHints = z.infer<typeof ComponentConfiguratorHin
 // ============================================================================
 
 export const ComponentLayoutSemanticsSchema = z.object({
+  /** Whether this component can contain child components in the builder. */
   isContainer: z.boolean().default(false),
   defaultDisplay: z.enum(['block', 'inline', 'inline-block', 'flex', 'grid', 'none']).default('block'),
   draggable: z.boolean().default(true),
@@ -138,9 +210,118 @@ export const ComponentLayoutSemanticsSchema = z.object({
     width: z.number().optional(),
     height: z.number().optional(),
   }).optional(),
+  /**
+   * Whether this component fills all available space in its parent container
+   * (e.g. a divider, spacer, or full-width banner that should not be inline).
+   */
+  fillsParent: z.boolean().default(false),
+  /** Components that this component should never be nested inside. */
+  forbiddenAncestors: z.array(z.string()).default([]),
+  /** Components that may be direct children of this component (whitelist). */
+  allowedChildTypes: z.array(z.string()).optional(),
 });
 
 export type ComponentLayoutSemantics = z.infer<typeof ComponentLayoutSemanticsSchema>;
+
+// ============================================================================
+// Responsive Behavior Metadata
+// ============================================================================
+
+/**
+ * Describes a breakpoint where this component's behavior or layout changes.
+ * Breakpoint names align with common CSS framework conventions.
+ */
+export const ResponsiveBreakpointBehaviorSchema = z.object({
+  /** Named breakpoint (e.g. 'sm', 'md', 'lg', 'xl'). */
+  breakpoint: z.enum(['xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+  /**
+   * Minimum viewport width (px) at which this breakpoint applies.
+   * Matches typical Tailwind / Bootstrap breakpoint semantics.
+   */
+  minWidth: z.number().int().min(0),
+  /**
+   * Props whose defaults change at this breakpoint.
+   * Record of propName → suggested default value at this viewport width.
+   */
+  propOverrides: z.record(z.string(), z.unknown()).optional(),
+  /** Whether this component is hidden by default at this breakpoint. */
+  hiddenByDefault: z.boolean().default(false),
+  /** Notes for documentation / code generation. */
+  notes: z.string().optional(),
+});
+
+export type ResponsiveBreakpointBehavior = z.infer<typeof ResponsiveBreakpointBehaviorSchema>;
+
+/**
+ * Captures how a component participates in responsive design.
+ * This metadata drives the builder's responsive-overrides panel and code
+ * generation of responsive utility classes or media-query wrappers.
+ */
+export const ComponentResponsiveMetadataSchema = z.object({
+  /**
+   * Whether this component changes its visual appearance or behavior
+   * at different viewport widths.
+   */
+  isResponsive: z.boolean().default(false),
+  /**
+   * Breakpoint-specific behavior declarations.
+   * Ordered from narrowest to widest (mobile-first).
+   */
+  breakpoints: z.array(ResponsiveBreakpointBehaviorSchema).default([]),
+  /**
+   * Props that can receive responsive overrides in the builder.
+   * Each name must match a prop defined in `ComponentContract.props`.
+   */
+  responsiveProps: z.array(z.string()).default([]),
+  /**
+   * Whether the component participates in a container-query-aware
+   * layout (as opposed to viewport-width breakpoints).
+   */
+  supportsContainerQuery: z.boolean().default(false),
+  /**
+   * The token-based responsive scale this component follows.
+   * Matches the theme's spacing/typography scale if applicable.
+   */
+  responsiveScale: z.enum(['none', 'typography', 'spacing', 'both']).default('none'),
+});
+
+export type ComponentResponsiveMetadata = z.infer<typeof ComponentResponsiveMetadataSchema>;
+
+// ============================================================================
+// Privacy Metadata
+// ============================================================================
+
+/**
+ * Privacy metadata specific to this component's role in a builder document.
+ * Complements per-prop `dataClassification`; this field captures component-
+ * level obligations that apply regardless of which specific prop is set.
+ */
+export const ComponentPrivacyContractSchema = z.object({
+  /**
+   * Whether using this component requires the user to explicitly confirm
+   * a data-handling consent flow before publishing.
+   */
+  requiresConsentFlow: z.boolean().default(false),
+  /**
+   * Whether rendering this component may surface PII on screen even if the
+   * individual props are not individually classified.
+   */
+  mayRenderPii: z.boolean().default(false),
+  /**
+   * If set, the component must not appear in previews with a trust level
+   * below this value (supplements preview restrictions).
+   * Valid values mirror `ComponentPreviewRestrictions.minimumTrustLevel`.
+   */
+  minimumPreviewTrustLevel: z
+    .enum(['trusted-local', 'trusted-controlled', 'semi-trusted', 'untrusted'])
+    .optional(),
+  /** Regulatory frameworks this component's usage must be reviewed under. */
+  regulatoryFrameworks: z.array(z.enum(['GDPR', 'CCPA', 'HIPAA', 'PCI-DSS', 'SOC2'])).default([]),
+  /** Free-text privacy guidance shown in the builder inspector panel. */
+  privacyGuidance: z.string().optional(),
+});
+
+export type ComponentPrivacyContract = z.infer<typeof ComponentPrivacyContractSchema>;
 
 // ============================================================================
 // Component Prop Schema
@@ -216,13 +397,45 @@ export const ComponentSlotSchema = z.object({
   disallowedComponents: z.array(z.string()).optional(), // Blacklist
   maxChildren: z.number().optional(),
   minChildren: z.number().optional(),
-  
+
+  /**
+   * Whether this slot is the default (unnamed) slot that receives children
+   * passed directly to the component. At most one slot per contract should
+   * have `isDefault: true`.
+   */
+  isDefault: z.boolean().default(false),
+
+  /**
+   * Whether children inside this slot can be sorted/reordered in the builder.
+   * Useful for list-like containers (e.g. NavigationMenu items).
+   */
+  allowsReorder: z.boolean().default(true),
+
+  /**
+   * Whether this slot accepts only a single child node.
+   * Equivalent to `maxChildren: 1` but more expressive in the builder UI.
+   */
+  isSingleChild: z.boolean().default(false),
+
+  /**
+   * The minimum aspect ratio the slot's bounding box should maintain
+   * when the builder renders a placeholder. Used to prevent layout collapse
+   * when the slot is empty during design time.
+   */
+  designTimeAspectRatio: z.number().optional(),
+
   // Builder metadata
   builderMetadata: z.object({
     displayName: z.string().optional(),
     icon: z.string().optional(),
     required: z.boolean().default(false),
     defaultContent: z.unknown().optional(),
+    /**
+     * Hint to the builder palette about where to display this slot's drop
+     * zone — 'inline' keeps the zone within the component's own frame,
+     * 'overlay' draws a separate drop zone on top.
+     */
+    dropZoneMode: z.enum(['inline', 'overlay']).default('inline'),
   }).optional(),
 });
 
@@ -348,10 +561,10 @@ export const ComponentContractSchema = z.object({
   builder: z.object({
     // Icon for component picker
     icon: z.string().optional(),
-    
+
     // Default props when dragging onto canvas
     defaultProps: z.record(z.string(), z.unknown()).optional(),
-    
+
     // Canvas behavior
     canvas: z.object({
       resizable: z.boolean().default(true),
@@ -359,12 +572,51 @@ export const ComponentContractSchema = z.object({
       selectable: z.boolean().default(true),
       container: z.boolean().default(false), // Can contain other components
     }).optional(),
-    
+
     // Code generation
     codegen: z.object({
       importPath: z.string(),
       componentName: z.string(),
       namedExport: z.boolean().default(true),
+      /**
+       * The HTML custom-element tag name used by the web/SSR renderer.
+       * Defaults to `ghatana-{contractName.toLowerCase()}` if not provided.
+       * Must be a valid custom element name (contain a hyphen).
+       */
+      htmlTagName: z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/).optional(),
+    }).optional(),
+
+    /**
+     * Palette identity — how this component appears in the builder's
+     * component picker and drag palette.
+     */
+    palette: z.object({
+      /**
+       * Group name for the component picker panel (e.g. 'Form Controls',
+       * 'Data Display', 'Layout').
+       */
+      group: z.string().optional(),
+      /**
+       * Sub-group within the palette group for finer-grained organisation
+       * (e.g. 'Text Inputs' under 'Form Controls').
+       */
+      subGroup: z.string().optional(),
+      /** Display name shown in the palette (defaults to contract.name). */
+      displayName: z.string().optional(),
+      /**
+       * Short description shown in the palette tooltip (defaults to
+       * contract.description).
+       */
+      tooltip: z.string().optional(),
+      /**
+       * Rank within the palette group — lower numbers appear first.
+       * Components with no rank are placed after ranked ones.
+       */
+      rank: z.number().int().optional(),
+      /** Keywords for palette search (in addition to name and description). */
+      searchKeywords: z.array(z.string()).default([]),
+      /** Whether this component is pinned to the "Favourites" section. */
+      featured: z.boolean().default(false),
     }).optional(),
   }).optional(),
   
@@ -385,6 +637,12 @@ export const ComponentContractSchema = z.object({
   preview: ComponentPreviewRestrictionsSchema.optional(),
   configurator: ComponentConfiguratorHintsSchema.optional(),
   layout: ComponentLayoutSemanticsSchema.optional(),
+  /** Responsive behavior metadata for builder responsive-editing features. */
+  responsive: ComponentResponsiveMetadataSchema.optional(),
+  /** Component-level privacy obligations for builder and preview flows. */
+  privacy: ComponentPrivacyContractSchema.optional(),
+  /** Builder-level accessibility obligations for this component. */
+  builderA11y: BuilderA11yObligationsSchema.optional(),
 });
 
 export type ComponentContract = z.infer<typeof ComponentContractSchema>;

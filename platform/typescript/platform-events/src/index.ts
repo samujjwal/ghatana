@@ -27,7 +27,7 @@ export {
 export type { CanvasEventPayloads } from './events/canvas-events.js';
 export { CanvasEvents } from './events/canvas-events.js';
 
-export type { BuilderEventPayloads } from './events/builder-events.js';
+export type { BuilderEventPayloads, CollabPayload, BuilderAISuggestionPayload, BuilderAIActionPayload } from './events/builder-events.js';
 export { BuilderEvents } from './events/builder-events.js';
 
 export type { DesignSystemEventPayloads } from './events/design-system-events.js';
@@ -55,6 +55,7 @@ export {
   isValidAutonomyLevel,
   isValidApprovalState,
   isValidAIChangeKind,
+  createAIVisibilityContract,
 } from './ai/types.js';
 
 export type {

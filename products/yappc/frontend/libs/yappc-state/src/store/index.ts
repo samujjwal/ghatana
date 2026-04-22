@@ -69,6 +69,9 @@ export * from './workspaceAtoms';
 // Project atoms
 export * from './projectAtoms';
 
+// Builder editor session atoms
+export * from './builderAtoms';
+
 // AI atoms
 export * from './aiAtoms';
 

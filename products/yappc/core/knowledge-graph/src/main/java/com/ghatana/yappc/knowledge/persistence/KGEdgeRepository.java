@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -221,6 +222,47 @@ public final class KGEdgeRepository {
                 statement.setString(1, tenantId);
                 statement.setString(2, edgeId);
                 return statement.executeUpdate() > 0;
+            }
+        });
+    }
+
+    public Promise<List<String>> findAllTargetIds(String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = "SELECT DISTINCT to_node_id FROM kg_edges WHERE tenant_id = ?";
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<String> targetIds = new ArrayList<>();
+                    while (resultSet.next()) {
+                        targetIds.add(resultSet.getString("to_node_id"));
+                    }
+                    return targetIds;
+                }
+            }
+        });
+    }
+
+    public Promise<List<YAPPCGraphEdge>> findArtifactEdges(String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT edge_id, from_node_id, to_node_id, relationship_type, properties_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at,
+                           updated_at, version, labels_json
+                    FROM kg_edges
+                    WHERE tenant_id = ? AND relationship_type LIKE 'ARTIFACT_%'
+                    ORDER BY updated_at DESC
+                    """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<YAPPCGraphEdge> edges = new ArrayList<>();
+                    while (resultSet.next()) {
+                        edges.add(mapEdge(resultSet));
+                    }
+                    return edges;
+                }
             }
         });
     }

@@ -35,25 +35,65 @@ export function generateReactCode(
   contracts: ReadonlyMap<string, ComponentContract>,
   options: GenerateOptions,
 ): CodeProjection {
-  const files: CodeFile[] = [];
   const lossPoints: LossPoint[] = [];
-  const ownership: CodeRegionOwnership[] = [];
 
-  // Generate main component
-  const mainFile = generateComponentFile(document, contracts, options);
-  files.push(mainFile);
-
-  // Track ownership
-  ownership.push({
-    region: 'component',
-    type: 'builder-generated',
-    lineStart: 1,
-    lineEnd: mainFile.content.split('\n').length,
-    builderNodeIds: Array.from(document.nodes.keys()),
-  });
-
-  // Check for custom code that might be lost
+  // Contract-aware round-trip loss analysis across all nodes in the document.
   for (const [nodeId, instance] of document.nodes) {
+    // 1. Missing contract — generated code will fall back to heuristic tag names.
+    if (!contracts.has(instance.contractName)) {
+      lossPoints.push({
+        type: 'unsupported-pattern',
+        location: nodeId,
+        description: `Node "${instance.contractName}" (${nodeId}) has no registered contract — generated code may be incomplete`,
+      });
+    }
+
+    // 2. Node ownership: user-authored or manual-merge-required content cannot
+    //    be fully recovered from static JSX output on re-import.
+    const nodeOwnership = instance.metadata.ownership;
+    if (nodeOwnership === 'user-authored' || nodeOwnership === 'manual-merge-required') {
+      lossPoints.push({
+        type: 'custom-code',
+        location: nodeId,
+        description: `Node "${instance.contractName}" (${nodeId}) has user-authored code — manual reconciliation required on re-import`,
+      });
+    } else if (nodeOwnership === 'protected') {
+      lossPoints.push({
+        type: 'custom-code',
+        location: nodeId,
+        description: `Node "${instance.contractName}" (${nodeId}) is protected — changes require explicit unlock before re-import`,
+      });
+    }
+
+    // 3. Active data bindings are dynamic and cannot be encoded in static JSX.
+    if (instance.bindings.length > 0) {
+      lossPoints.push({
+        type: 'unsupported-pattern',
+        location: nodeId,
+        description: `Node "${instance.contractName}" (${nodeId}) has ${instance.bindings.length} data binding(s) — dynamic bindings are not represented in generated static code`,
+      });
+    }
+
+    // 4. State variants are interaction-driven and not emitted into static code.
+    if (instance.metadata.stateVariants && instance.metadata.stateVariants.length > 0) {
+      lossPoints.push({
+        type: 'unsupported-pattern',
+        location: nodeId,
+        description: `Node "${instance.contractName}" (${nodeId}) has state variants that are not encoded in generated code`,
+      });
+    }
+
+    // 5. Responsive variants may require media-query wrappers not yet emitted.
+    if (instance.metadata.responsiveVariants && instance.metadata.responsiveVariants.length > 0) {
+      lossPoints.push({
+        type: 'unsupported-pattern',
+        location: nodeId,
+        description: `Node "${instance.contractName}" (${nodeId}) has responsive variants that may not be fully represented in generated code`,
+      });
+    }
+
+    // 6. Heuristic: local/custom import paths signal components whose source is
+    //    not managed by the design system registry.
     const contract = contracts.get(instance.contractName);
     if (contract?.builder?.codegen?.importPath.includes('custom')) {
       lossPoints.push({
@@ -64,26 +104,61 @@ export function generateReactCode(
     }
   }
 
+  const { file, nodeOwnership } = generateComponentFile(document, contracts, options);
+
+  // Confidence decays per loss point, weighted by severity.
+  const confidence = Math.max(
+    0,
+    lossPoints.reduce((acc, lp) => {
+      if (lp.type === 'custom-code') return acc - 0.2;
+      if (lp.type === 'unsupported-pattern') return acc - 0.15;
+      return acc - 0.1;
+    }, 1.0),
+  );
+
   const roundTripFidelity: RoundTripFidelity = {
     canRoundTrip: lossPoints.length === 0,
     lossPoints,
-    confidence: lossPoints.length === 0 ? 1.0 : 0.8,
+    confidence,
   };
 
   return {
     language: options.typescript ? 'tsx' : 'jsx',
-    files,
-    ownership,
+    files: [file],
+    ownership: nodeOwnership,
     roundTripFidelity,
   };
+}
+
+/**
+ * Collects all node IDs in the subtree rooted at `nodeId`, in depth-first
+ * order. Guards against circular references via the `visited` set.
+ */
+function collectSubtreeNodeIds(
+  nodeId: NodeId,
+  document: BuilderDocument,
+  visited: Set<NodeId> = new Set(),
+): NodeId[] {
+  if (visited.has(nodeId)) return [];
+  visited.add(nodeId);
+  const instance = document.nodes.get(nodeId);
+  if (!instance) return [];
+  const result: NodeId[] = [nodeId];
+  for (const slotChildren of Object.values(instance.slots)) {
+    for (const childId of slotChildren) {
+      result.push(...collectSubtreeNodeIds(childId, document, visited));
+    }
+  }
+  return result;
 }
 
 function generateComponentFile(
   document: BuilderDocument,
   contracts: ReadonlyMap<string, ComponentContract>,
   options: GenerateOptions,
-): CodeFile {
+): { file: CodeFile; nodeOwnership: CodeRegionOwnership[] } {
   const lines: string[] = [];
+  const nodeOwnership: CodeRegionOwnership[] = [];
 
   // Imports
   lines.push("import * as React from 'react';");
@@ -92,17 +167,28 @@ function generateComponentFile(
     lines.push(`// Builder platform targets: ${platformPlan.targets.join(', ')}`);
   }
   
-  // Collect component imports
-  const imports = new Set<string>();
+  // Collect component imports — group by importPath, collecting component names from contracts
+  type ImportSpec = { names: Set<string>; namedExport: boolean };
+  const importMap = new Map<string, ImportSpec>();
   for (const instance of document.nodes.values()) {
     const contract = contracts.get(instance.contractName);
-    if (contract?.builder?.codegen?.importPath) {
-      imports.add(contract.builder.codegen.importPath);
-    }
+    const codegen = contract?.builder?.codegen;
+    if (!codegen?.importPath) continue;
+    const spec = importMap.get(codegen.importPath) ?? { names: new Set<string>(), namedExport: codegen.namedExport ?? true };
+    spec.names.add(codegen.componentName);
+    importMap.set(codegen.importPath, spec);
   }
-  
-  for (const importPath of imports) {
-    lines.push(`import { ${getComponentNameFromPath(importPath)} } from '${importPath}';`);
+
+  for (const [importPath, spec] of importMap) {
+    const names = Array.from(spec.names).join(', ');
+    if (spec.namedExport) {
+      lines.push(`import { ${names} } from '${importPath}';`);
+    } else {
+      // default export — emit one import per name (each is a separate default export)
+      for (const name of spec.names) {
+        lines.push(`import ${name} from '${importPath}';`);
+      }
+    }
   }
 
   lines.push('');
@@ -118,13 +204,36 @@ function generateComponentFile(
   lines.push('}) => {');
   lines.push('  return (');
 
-  // Generate JSX for root nodes
+  // Generate JSX for root nodes — track per-root-node line ranges for ownership.
   for (const rootId of document.rootNodes) {
     const rootInstance = document.nodes.get(rootId);
     if (rootInstance) {
+      // lineStart is 1-based; capture current line count before adding JSX.
+      const linesBefore = lines.length + 1;
       const jsx = generateNodeJSX(rootInstance, document, contracts, platformPlan.nodes, 2);
       lines.push(...jsx.map((l) => '    ' + l));
+      const linesAfter = lines.length;
+
+      const subtreeIds = collectSubtreeNodeIds(rootId, document);
+      nodeOwnership.push({
+        region: `node-${rootId}`,
+        type: 'builder-generated',
+        lineStart: linesBefore,
+        lineEnd: linesAfter,
+        builderNodeIds: subtreeIds,
+      });
     }
+  }
+
+  // Fall back to a whole-component region when the document has no root nodes.
+  if (nodeOwnership.length === 0) {
+    nodeOwnership.push({
+      region: 'component',
+      type: 'builder-generated',
+      lineStart: 1,
+      lineEnd: lines.length,
+      builderNodeIds: [],
+    });
   }
 
   lines.push('  );');
@@ -133,15 +242,18 @@ function generateComponentFile(
   lines.push(`export default ${componentName};`);
 
   return {
-    path: `${componentName}.tsx`,
-    content: lines.join('\n'),
-    ownership: {
-      region: 'file',
-      type: 'builder-generated',
-      lineStart: 1,
-      lineEnd: lines.length,
-      builderNodeIds: [],
+    file: {
+      path: `${componentName}.tsx`,
+      content: lines.join('\n'),
+      ownership: {
+        region: 'file',
+        type: 'builder-generated',
+        lineStart: 1,
+        lineEnd: lines.length,
+        builderNodeIds: Array.from(document.nodes.keys()),
+      },
     },
+    nodeOwnership,
   };
 }
 
@@ -174,16 +286,17 @@ function generateNodeJSX(
     (slot) => slot.exposure === 'prop' && slot.childIds.length > 0,
   );
   const defaultSlot = nodePlan?.slots.find((slot) => slot.exposure === 'children');
+  const defaultSlotChildIds = defaultSlot?.childIds ?? [];
   const bodyLines = generateDefaultSlotBody(
     instance,
     document,
     contracts,
     platformPlans,
-    defaultSlot?.childIds ?? [],
+    defaultSlotChildIds,
     indent + 1,
     childVisited,
   );
-  const inlineProps = buildInlineProps(instance);
+  const inlineProps = buildInlineProps(instance, defaultSlotChildIds.length === 0);
 
   if (namedSlots.length === 0 && bodyLines.length === 0) {
     const props = inlineProps.length > 0 ? ` ${inlineProps.join(' ')}` : '';
@@ -207,7 +320,16 @@ function generateNodeJSX(
   }
 
   if (bodyLines.length === 0) {
-    lines.push(`${indentStr}/>` );
+    if (namedSlots.length === 0) {
+      lines.push(`${indentStr}/>`);
+      return lines;
+    }
+
+    lines.push(`${indentStr}>`);
+    for (const slotPlan of namedSlots) {
+      lines.push(`${indentStr}  {/* ${slotPlan.name} slot */}`);
+    }
+    lines.push(`${indentStr}</${componentName}>`);
     return lines;
   }
 
@@ -217,11 +339,14 @@ function generateNodeJSX(
   return lines;
 }
 
-function buildInlineProps(instance: ComponentInstance): string[] {
+function buildInlineProps(
+  instance: ComponentInstance,
+  includeChildrenProp: boolean,
+): string[] {
   const props: string[] = [];
 
   for (const [key, value] of Object.entries(instance.props)) {
-    if (key === 'children') continue;
+    if (key === 'children' && !includeChildrenProp) continue;
     if (typeof value === 'string') {
       props.push(`${key}=${JSON.stringify(value)}`);
     } else if (typeof value === 'number' || typeof value === 'boolean') {
@@ -232,11 +357,6 @@ function buildInlineProps(instance: ComponentInstance): string[] {
   }
 
   return props;
-}
-
-function getComponentNameFromPath(path: string): string {
-  const parts = path.split('/');
-  return parts[parts.length - 1] ?? 'Component';
 }
 
 function generateNamedSlotPropLines(
@@ -303,7 +423,7 @@ function generateDefaultSlotBody(
   const lines: string[] = [];
   const indentStr = '  '.repeat(indent);
 
-  if (typeof instance.props.children === 'string') {
+  if (childIds.length > 0 && typeof instance.props.children === 'string') {
     lines.push(`${indentStr}{${JSON.stringify(instance.props.children)}}`);
   }
 

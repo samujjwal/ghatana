@@ -87,7 +87,11 @@
       "@ghatana/design-system": ["../../../libs/typescript/ui/src"],
       "@ghatana/design-system/*": ["../../../libs/typescript/ui/src/*"],
       "@ghatana/api": ["../../../platform/typescript/api/src"],
-      "@ghatana/api/*": ["../../../platform/typescript/api/src/*"]
+      "@ghatana/api/*": ["../../../platform/typescript/api/src/*"],
+      "@ghatana/ui-builder": ["../../../platform/typescript/ui-builder/src"],
+      "@ghatana/ui-builder/*": ["../../../platform/typescript/ui-builder/src/*"],
+      "@ghatana/platform-utils": ["../../../platform/typescript/foundation/platform-utils/src"],
+      "@ghatana/platform-utils/*": ["../../../platform/typescript/foundation/platform-utils/src/*"]
     }
   },
   "include": [],

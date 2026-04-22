@@ -513,7 +513,7 @@ describe('@ghatana/ui-builder/core - Code Generation', () => {
       expect(content).toContain('content slot');
     });
 
-    it('should track ownership metadata for generated code', () => {
+    it('should track per-root-node ownership in the code projection', () => {
       const buttonId = createNodeId();
       const document: BuilderDocument = {
         id: createDocumentId(),
@@ -581,12 +581,15 @@ describe('@ghatana/ui-builder/core - Code Generation', () => {
 
       const result = generateReactCode(document, contracts, options);
 
+      // One root node → one per-root-node ownership region.
       expect(result.ownership).toHaveLength(1);
-      expect(result.ownership[0].region).toBe('component');
+      // Region is keyed by root node id.
+      expect(result.ownership[0].region).toBe(`node-${buttonId}`);
       expect(result.ownership[0].type).toBe('builder-generated');
       expect(result.ownership[0].builderNodeIds).toContain(buttonId);
-      expect(result.ownership[0].lineStart).toBe(1);
-      expect(result.ownership[0].lineEnd).toBeGreaterThan(0);
+      // JSX starts after imports + component scaffold, so lineStart > 1.
+      expect(result.ownership[0].lineStart).toBeGreaterThan(1);
+      expect(result.ownership[0].lineEnd).toBeGreaterThanOrEqual(result.ownership[0].lineStart);
     });
 
     it('should detect loss points for custom code components', () => {
@@ -824,6 +827,385 @@ describe('@ghatana/ui-builder/core - Code Generation', () => {
 
       expect(result.files).toHaveLength(1);
       expect(result.files[0].content).toContain('NonExistentComponent');
+      // Missing contract → unsupported-pattern loss point.
+      expect(result.roundTripFidelity.lossPoints).toHaveLength(1);
+      expect(result.roundTripFidelity.lossPoints[0].type).toBe('unsupported-pattern');
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+    });
+
+    it('should detect loss points for user-authored node ownership', () => {
+      const buttonId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'User-Authored Document',
+        designSystem: {
+          id: 'test-ds',
+          name: 'Test Design System',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [buttonId],
+        nodes: new Map([
+          [
+            buttonId,
+            {
+              id: buttonId,
+              contractName: 'Button',
+              props: { label: 'Test' },
+              slots: {},
+              bindings: [],
+              metadata: { ownership: 'user-authored' },
+            },
+          ],
+        ]),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      };
+
+      const contracts = new Map([
+        ['Button', {
+          name: 'Button',
+          version: '1.0.0',
+          props: [],
+          slots: [],
+          events: [],
+          styles: {},
+          metadata: { category: 'input', status: 'stable' as const, platforms: ['web' as const] },
+          builder: { codegen: { importPath: '@ghatana/design-system', componentName: 'Button' } },
+        }],
+      ]);
+
+      const options: GenerateOptions = {
+        format: 'functional',
+        typescript: true,
+        importPath: '@ghatana/design-system',
+        componentName: 'TestComponent',
+      };
+
+      const result = generateReactCode(document, contracts, options);
+
+      const customCodeLossPoints = result.roundTripFidelity.lossPoints.filter(
+        (lp) => lp.type === 'custom-code',
+      );
+      expect(customCodeLossPoints.length).toBeGreaterThanOrEqual(1);
+      expect(customCodeLossPoints[0].location).toBe(buttonId);
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+      expect(result.roundTripFidelity.confidence).toBeLessThan(1.0);
+    });
+
+    it('should detect loss points for nodes with active data bindings', () => {
+      const buttonId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Bound Document',
+        designSystem: {
+          id: 'test-ds',
+          name: 'Test Design System',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [buttonId],
+        nodes: new Map([
+          [
+            buttonId,
+            {
+              id: buttonId,
+              contractName: 'Button',
+              props: { label: 'Dynamic' },
+              slots: {},
+              bindings: [
+                { id: 'b1', type: 'data', source: 'store.label', target: 'label' },
+              ],
+              metadata: {},
+            },
+          ],
+        ]),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      };
+
+      const contracts = new Map([
+        ['Button', {
+          name: 'Button',
+          version: '1.0.0',
+          props: [],
+          slots: [],
+          events: [],
+          styles: {},
+          metadata: { category: 'input', status: 'stable' as const, platforms: ['web' as const] },
+          builder: { codegen: { importPath: '@ghatana/design-system', componentName: 'Button' } },
+        }],
+      ]);
+
+      const options: GenerateOptions = {
+        format: 'functional',
+        typescript: true,
+        importPath: '@ghatana/design-system',
+        componentName: 'TestComponent',
+      };
+
+      const result = generateReactCode(document, contracts, options);
+
+      const bindingLossPoints = result.roundTripFidelity.lossPoints.filter(
+        (lp) => lp.type === 'unsupported-pattern' && lp.location === buttonId,
+      );
+      expect(bindingLossPoints.length).toBeGreaterThanOrEqual(1);
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+    });
+
+    it('should produce 1.0 confidence for a clean document with no loss points', () => {
+      const buttonId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Clean Document',
+        designSystem: {
+          id: 'test-ds',
+          name: 'Test Design System',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [buttonId],
+        nodes: new Map([
+          [
+            buttonId,
+            {
+              id: buttonId,
+              contractName: 'Button',
+              props: { label: 'Clean' },
+              slots: {},
+              bindings: [],
+              metadata: {},
+            },
+          ],
+        ]),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      };
+
+      const contracts = new Map([
+        ['Button', {
+          name: 'Button',
+          version: '1.0.0',
+          props: [],
+          slots: [],
+          events: [],
+          styles: {},
+          metadata: { category: 'input', status: 'stable' as const, platforms: ['web' as const] },
+          builder: { codegen: { importPath: '@ghatana/design-system', componentName: 'Button' } },
+        }],
+      ]);
+
+      const options: GenerateOptions = {
+        format: 'functional',
+        typescript: true,
+        importPath: '@ghatana/design-system',
+        componentName: 'TestComponent',
+      };
+
+      const result = generateReactCode(document, contracts, options);
+
+      expect(result.roundTripFidelity.canRoundTrip).toBe(true);
+      expect(result.roundTripFidelity.lossPoints).toHaveLength(0);
+      expect(result.roundTripFidelity.confidence).toBe(1.0);
+    });
+
+    it('should produce a fallback ownership region for empty documents', () => {
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Empty Document',
+        designSystem: {
+          id: 'test-ds',
+          name: 'Test Design System',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [],
+        nodes: new Map(),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      };
+
+      const options: GenerateOptions = {
+        format: 'functional',
+        typescript: true,
+        importPath: '@ghatana/design-system',
+        componentName: 'EmptyComponent',
+      };
+
+      const result = generateReactCode(document, new Map(), options);
+
+      // Empty document → falls back to single 'component' region.
+      expect(result.ownership).toHaveLength(1);
+      expect(result.ownership[0].region).toBe('component');
+      expect(result.ownership[0].builderNodeIds).toHaveLength(0);
+    });
+
+    it('should detect loss points for protected node ownership', () => {
+      const nodeId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Protected Document',
+        designSystem: { id: 'ds', name: 'DS', version: '1.0.0', tokenSetIds: [], componentContracts: [], themeId: 'default' },
+        rootNodes: [nodeId],
+        nodes: new Map([[nodeId, { id: nodeId, contractName: 'Button', props: {}, slots: {}, bindings: [], metadata: { ownership: 'protected' } }]]),
+        metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      };
+      const contracts = new Map([['Button', { name: 'Button', version: '1.0.0', props: [], slots: [], events: [], styles: {}, metadata: { category: 'input', status: 'stable' as const, platforms: ['web' as const] }, builder: { codegen: { importPath: '@ghatana/design-system', componentName: 'Button' } } }]]);
+      const options: GenerateOptions = { format: 'functional', typescript: true, importPath: '@ghatana/design-system', componentName: 'TestComponent' };
+
+      const result = generateReactCode(document, contracts, options);
+
+      const protectedLoss = result.roundTripFidelity.lossPoints.filter((lp) => lp.type === 'custom-code' && lp.location === nodeId);
+      expect(protectedLoss.length).toBeGreaterThanOrEqual(1);
+      expect(protectedLoss[0].description).toMatch(/protected/i);
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+    });
+
+    it('should detect loss points for manual-merge-required node ownership', () => {
+      const nodeId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'ManualMerge Document',
+        designSystem: { id: 'ds', name: 'DS', version: '1.0.0', tokenSetIds: [], componentContracts: [], themeId: 'default' },
+        rootNodes: [nodeId],
+        nodes: new Map([[nodeId, { id: nodeId, contractName: 'Button', props: {}, slots: {}, bindings: [], metadata: { ownership: 'manual-merge-required' } }]]),
+        metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      };
+      const contracts = new Map([['Button', { name: 'Button', version: '1.0.0', props: [], slots: [], events: [], styles: {}, metadata: { category: 'input', status: 'stable' as const, platforms: ['web' as const] }, builder: { codegen: { importPath: '@ghatana/design-system', componentName: 'Button' } } }]]);
+      const options: GenerateOptions = { format: 'functional', typescript: true, importPath: '@ghatana/design-system', componentName: 'TestComponent' };
+
+      const result = generateReactCode(document, contracts, options);
+
+      const manualMergeLoss = result.roundTripFidelity.lossPoints.filter((lp) => lp.type === 'custom-code' && lp.location === nodeId);
+      expect(manualMergeLoss.length).toBeGreaterThanOrEqual(1);
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+    });
+
+    it('should detect loss points for nodes with state variants', () => {
+      const nodeId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'StateVariant Document',
+        designSystem: { id: 'ds', name: 'DS', version: '1.0.0', tokenSetIds: [], componentContracts: [], themeId: 'default' },
+        rootNodes: [nodeId],
+        nodes: new Map([[nodeId, { id: nodeId, contractName: 'Button', props: {}, slots: {}, bindings: [], metadata: { stateVariants: ['hover', 'focus'] } }]]),
+        metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      };
+      const contracts = new Map([['Button', { name: 'Button', version: '1.0.0', props: [], slots: [], events: [], styles: {}, metadata: { category: 'input', status: 'stable' as const, platforms: ['web' as const] }, builder: { codegen: { importPath: '@ghatana/design-system', componentName: 'Button' } } }]]);
+      const options: GenerateOptions = { format: 'functional', typescript: true, importPath: '@ghatana/design-system', componentName: 'TestComponent' };
+
+      const result = generateReactCode(document, contracts, options);
+
+      const stateVariantLoss = result.roundTripFidelity.lossPoints.filter(
+        (lp) => lp.type === 'unsupported-pattern' && lp.description.includes('state variant'),
+      );
+      expect(stateVariantLoss.length).toBeGreaterThanOrEqual(1);
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+    });
+
+    it('should detect loss points for nodes with responsive variants', () => {
+      const nodeId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'ResponsiveVariant Document',
+        designSystem: { id: 'ds', name: 'DS', version: '1.0.0', tokenSetIds: [], componentContracts: [], themeId: 'default' },
+        rootNodes: [nodeId],
+        nodes: new Map([[nodeId, { id: nodeId, contractName: 'Button', props: {}, slots: {}, bindings: [], metadata: { responsiveVariants: ['sm', 'lg'] } }]]),
+        metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      };
+      const contracts = new Map([['Button', { name: 'Button', version: '1.0.0', props: [], slots: [], events: [], styles: {}, metadata: { category: 'input', status: 'stable' as const, platforms: ['web' as const] }, builder: { codegen: { importPath: '@ghatana/design-system', componentName: 'Button' } } }]]);
+      const options: GenerateOptions = { format: 'functional', typescript: true, importPath: '@ghatana/design-system', componentName: 'TestComponent' };
+
+      const result = generateReactCode(document, contracts, options);
+
+      const responsiveLoss = result.roundTripFidelity.lossPoints.filter(
+        (lp) => lp.type === 'unsupported-pattern' && lp.description.includes('responsive variant'),
+      );
+      expect(responsiveLoss.length).toBeGreaterThanOrEqual(1);
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+    });
+
+    it('should decay confidence below 0.6 with multiple loss points', () => {
+      const nodeId1 = createNodeId();
+      const nodeId2 = createNodeId();
+      const nodeId3 = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Multi-Loss Document',
+        designSystem: { id: 'ds', name: 'DS', version: '1.0.0', tokenSetIds: [], componentContracts: [], themeId: 'default' },
+        rootNodes: [nodeId1, nodeId2, nodeId3],
+        nodes: new Map([
+          [nodeId1, { id: nodeId1, contractName: 'Missing1', props: {}, slots: {}, bindings: [], metadata: {} }],
+          [nodeId2, { id: nodeId2, contractName: 'Missing2', props: {}, slots: {}, bindings: [], metadata: { ownership: 'user-authored' } }],
+          [nodeId3, { id: nodeId3, contractName: 'Missing3', props: {}, slots: {}, bindings: [{ id: 'b1', type: 'data', source: 'store.x', target: 'x' }], metadata: {} }],
+        ]),
+        metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      };
+      // No contracts registered → all nodes are "missing contract" + additional losses
+      const options: GenerateOptions = { format: 'functional', typescript: true, importPath: '@ghatana/design-system', componentName: 'TestComponent' };
+
+      const result = generateReactCode(document, new Map(), options);
+
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+      expect(result.roundTripFidelity.lossPoints.length).toBeGreaterThanOrEqual(3);
+      expect(result.roundTripFidelity.confidence).toBeLessThan(0.6);
+    });
+
+    it('should not go below 0 confidence regardless of loss point count', () => {
+      // Create enough loss points to theoretically exceed 1.0 total decay
+      const nodeIds = Array.from({ length: 10 }, () => createNodeId());
+      const nodes = new Map(
+        nodeIds.map((id) => [
+          id,
+          {
+            id,
+            contractName: `Missing-${id}`,
+            props: {},
+            slots: {},
+            bindings: [{ id: `b-${id}`, type: 'data' as const, source: 'x', target: 'y' }],
+            metadata: { ownership: 'user-authored' as const, stateVariants: ['hover'], responsiveVariants: ['sm'] },
+          },
+        ]),
+      );
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Catastrophic Loss Document',
+        designSystem: { id: 'ds', name: 'DS', version: '1.0.0', tokenSetIds: [], componentContracts: [], themeId: 'default' },
+        rootNodes: nodeIds,
+        nodes,
+        metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      };
+      const options: GenerateOptions = { format: 'functional', typescript: true, importPath: '@ghatana/design-system', componentName: 'TestComponent' };
+
+      const result = generateReactCode(document, new Map(), options);
+
+      expect(result.roundTripFidelity.confidence).toBeGreaterThanOrEqual(0);
     });
   });
 });

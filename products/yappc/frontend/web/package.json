@@ -32,6 +32,7 @@
     "@emotion/styled": "^11.14.1",
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",
+    "@ghatana/ds-registry": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",

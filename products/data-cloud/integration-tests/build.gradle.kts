@@ -20,9 +20,12 @@ dependencies {
     testImplementation(libs.mockito.core)
 
     // Testcontainers for real provider integration tests
-    testImplementation("org.testcontainers:testcontainers:1.19.3")
-    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
-    testImplementation("org.testcontainers:postgresql:1.19.3")
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation(libs.testcontainers.redis)
+    testImplementation(libs.testcontainers.clickhouse)
 
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
@@ -30,7 +33,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform {
-        excludeTags("performance")
+        excludeTags("performance", "integration")
     }
 }
 

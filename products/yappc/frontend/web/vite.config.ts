@@ -250,6 +250,14 @@ export default defineConfig({
         __dirname,
         '../../../../platform/typescript/state/src/index.ts'
       ),
+      '@ghatana/ds-schema': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/ds-schema/src/index.ts'
+      ),
+      '@ghatana/ds-registry': path.resolve(
+        __dirname,
+        '../../../../platform/typescript/ds-registry/src/index.ts'
+      ),
 
       // Legacy compatibility - using shim to avoid complex cross-package resolution
       '@ghatana/canvas': path.resolve(__dirname, 'src/shims/ghatana-canvas.ts'),

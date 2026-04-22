@@ -121,6 +121,7 @@ hibernate-validator = "8.0.1.Final"
 javax-annotation = "1.3.2"
 jbcrypt = "0.4"
 mockwebserver = "4.12.0"
+javaparser = "3.26.4"
 
 [plugins]
 # Build Tools
@@ -188,6 +189,7 @@ testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", ve
 testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
 testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
 testcontainers-redis = { module = "com.redis:testcontainers-redis", version = "2.2.2" }
+testcontainers-clickhouse = { module = "org.testcontainers:clickhouse", version.ref = "testcontainers" }
 
 # =============================================================================
 # Database
@@ -279,6 +281,7 @@ iceberg-data = { module = "org.apache.iceberg:iceberg-data", version.ref = "iceb
 iceberg-parquet = { module = "org.apache.iceberg:iceberg-parquet", version.ref = "iceberg" }
 parquet-avro = { module = "org.apache.parquet:parquet-avro", version.ref = "parquet" }
 jgrapht-core = { module = "org.jgrapht:jgrapht-core", version.ref = "jgrapht" }
+javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }
 clickhouse-client = { module = "com.clickhouse:clickhouse-client", version.ref = "clickhouse" }
 clickhouse-http-client = { module = "com.clickhouse:clickhouse-http-client", version.ref = "clickhouse" }
 disruptor = { module = "com.lmax:disruptor", version.ref = "disruptor" }

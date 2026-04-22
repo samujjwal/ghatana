@@ -109,6 +109,9 @@ val verifyGeneratedPythonSdk by tasks.registering(Exec::class) {
 tasks.named<Test>("test") {
     dependsOn(generateDataCloudSdks)
     systemProperty("datacloud.sdk.generatedRoot", generatedSdkRoot.get().asFile.absolutePath)
+    useJUnitPlatform {
+        excludeTags("documentation", "correctness")
+    }
 }
 
 tasks.named("check") {

@@ -4,12 +4,12 @@
 
 import type { ComponentContract } from '@ghatana/ds-schema';
 import type {
+  AIChangeDescriptor,
   CodeOwnership,
   DataClassification,
   PrivacyMetadata,
   ProvenanceRecord,
   SyncStatus,
-  AIChangeDescriptor,
   TrustLevel,
   VisibilityContract,
 } from '@ghatana/platform-events';

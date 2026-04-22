@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package com.ghatana.yappc.artifact;
+
+option java_package = "com.ghatana.yappc.artifact.grpc";
+option java_multiple_files = true;
+
+// ArtifactNode represents a single extracted artifact node (component, page, model, etc.)
+message ArtifactNode {
+  string id = 1;
+  string type = 2;
+  string name = 3;
+  string file_path = 4;
+  string content = 5;
+  map<string, string> properties = 6;
+  repeated string tags = 7;
+  string tenant_id = 8;
+  string project_id = 9;
+}
+
+// ArtifactEdge represents a directed relationship between two artifact nodes.
+message ArtifactEdge {
+  string source_node_id = 1;
+  string target_node_id = 2;
+  string relationship_type = 3;
+  map<string, string> properties = 4;
+}
+
+// IngestArtifactGraphRequest streams nodes and edges for high-volume ingestion.
+message IngestArtifactGraphRequest {
+  string product_id = 1;
+  string tenant_id = 2;
+  repeated ArtifactNode nodes = 3;
+  repeated ArtifactEdge edges = 4;
+}
+
+message IngestArtifactGraphResponse {
+  bool success = 1;
+  int64 node_count = 2;
+  int64 edge_count = 3;
+  string version_id = 4;
+  string message = 5;
+}
+
+// ArtifactGraphAnalysisRequest requests one or more algorithms over a product graph.
+message ArtifactGraphAnalysisRequest {
+  string product_id = 1;
+  string tenant_id = 2;
+  repeated string algorithm_types = 3;
+  repeated string node_ids = 4;
+}
+
+message ArtifactGraphAnalysisResponse {
+  repeated AlgorithmResult results = 1;
+}
+
+message AlgorithmResult {
+  string algorithm = 1;
+  map<string, double> centrality_scores = 2;
+  repeated CycleList cycles = 3;
+  repeated CommunityList communities = 4;
+  repeated string topological_order = 5;
+  map<string, string> metadata = 6;
+}
+
+message CycleList {
+  repeated string node_ids = 1;
+}
+
+message CommunityList {
+  repeated string node_ids = 1;
+}
+
+// ArtifactGraphQueryRequest queries the graph by type (orphaned, dependencies, dependents, stats).
+message ArtifactGraphQueryRequest {
+  string product_id = 1;
+  string tenant_id = 2;
+  string query_type = 3;
+  repeated string seed_ids = 4;
+}
+
+message ArtifactGraphQueryResponse {
+  map<string, string> string_results = 1;
+  map<string, NodeList> list_results = 2;
+}
+
+message NodeList {
+  repeated string node_ids = 1;
+}
+
+// ArtifactGraphMergeRequest performs a three-way semantic merge.
+message ArtifactGraphMergeRequest {
+  string product_id = 1;
+  string tenant_id = 2;
+  string base_model_json = 3;
+  string left_model_json = 4;
+  string right_model_json = 5;
+  string resolution_strategy = 6;
+}
+
+message ArtifactGraphMergeResponse {
+  bool success = 1;
+  string merged_model_json = 2;
+  repeated MergeConflict conflicts = 3;
+  map<string, string> field_provenance = 4;
+  int64 conflict_count = 5;
+}
+
+message MergeConflict {
+  string field_path = 1;
+  string conflict_type = 2;
+  string base_value = 3;
+  string left_value = 4;
+  string right_value = 5;
+}
+
+// High-volume artifact streaming service between TypeScript scanner and Java backend.
+service ArtifactCompilerService {
+  rpc IngestArtifactGraph (stream IngestArtifactGraphRequest) returns (IngestArtifactGraphResponse);
+  rpc AnalyzeArtifactGraph (ArtifactGraphAnalysisRequest) returns (ArtifactGraphAnalysisResponse);
+  rpc QueryArtifactGraph (ArtifactGraphQueryRequest) returns (ArtifactGraphQueryResponse);
+  rpc MergeArtifactModels (ArtifactGraphMergeRequest) returns (ArtifactGraphMergeResponse);
+}

@@ -39,9 +39,11 @@ class SecurityAttackVectorTest {
         JwtTokenProvider tokenProvider = new JwtTokenProvider(TEST_SECRET, 60_000L);
         String validToken = tokenProvider.createToken("user-1", List.of("USER"), Map.of());
 
-        char last = validToken.charAt(validToken.length() - 1);
-        char replacement = last == 'a' ? 'b' : 'a';
-        String tamperedToken = validToken.substring(0, validToken.length() - 1) + replacement;
+        String[] parts = validToken.split("\\.");
+        char payloadLast = parts[1].charAt(parts[1].length() - 1);
+        char replacement = payloadLast == 'a' ? 'b' : 'a';
+        parts[1] = parts[1].substring(0, parts[1].length() - 1) + replacement;
+        String tamperedToken = String.join(".", parts);
 
         assertThat(tokenProvider.validateToken(validToken)).isTrue();
         assertThat(tokenProvider.validateToken(tamperedToken)).isFalse();

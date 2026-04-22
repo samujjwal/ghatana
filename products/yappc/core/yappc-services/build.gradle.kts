@@ -40,6 +40,14 @@ dependencies {
     // Async processing
     implementation(libs.activej.promise)
 
+    // Graph algorithms and caching
+    implementation(libs.jgrapht.core)
+    implementation(libs.caffeine)
+
+    // Language-specific heavy extractors
+    implementation(libs.javaparser.core)
+    implementation(libs.jooq)
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
@@ -48,11 +56,18 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("native")
+    }
 }
 
 // Handle duplicate entries in JAR tasks
 tasks.withType<org.gradle.jvm.tasks.Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Handle duplicate entries in processResources task
+tasks.processResources {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
@@ -105,4 +120,53 @@ tasks.register("serviceHealthCheck") {
     doLast {
         println("Running service health checks...")
     }
+}
+
+// --- Tree-sitter JNI native build --------------------------------------
+tasks.register<Exec>("cmakeConfigureTreeSitter") {
+    group = "native"
+    description = "Configure tree-sitter JNI build with CMake"
+
+    val nativeDir = file("src/main/native")
+    val nativeBuild = layout.buildDirectory.get().asFile.resolve("native")
+
+    inputs.dir(nativeDir)
+    outputs.dir(nativeBuild)
+
+    doFirst {
+        nativeBuild.mkdirs()
+    }
+
+    commandLine("cmake", "-S", nativeDir, "-B", nativeBuild, "-DCMAKE_BUILD_TYPE=Release")
+}
+
+tasks.register<Exec>("buildTreeSitterJni") {
+    group = "native"
+    description = "Build tree-sitter JNI shared library via CMake"
+    dependsOn("cmakeConfigureTreeSitter")
+
+    val nativeBuild = layout.buildDirectory.get().asFile.resolve("native")
+
+    inputs.dir(nativeBuild)
+    outputs.files(
+        file("${nativeBuild}/libtree_sitter_jni${System.mapLibraryName("").substringAfterLast(".")}"),
+        file("${nativeBuild}/tree_sitter_jni.dll")
+    )
+
+    commandLine("cmake", "--build", nativeBuild, "--parallel")
+
+    doLast {
+        println("Tree-sitter JNI native library built in: ${nativeBuild}")
+    }
+}
+
+tasks.register<Copy>("copyTreeSitterJni") {
+    group = "native"
+    description = "Copy built tree-sitter JNI library to run directory"
+    dependsOn("buildTreeSitterJni")
+
+    val nativeBuild = layout.buildDirectory.get().asFile.resolve("native")
+    val libName = System.mapLibraryName("tree_sitter_jni")
+    from(file("${nativeBuild}/${libName}"))
+    into(layout.buildDirectory.get().asFile.resolve("libs"))
 }

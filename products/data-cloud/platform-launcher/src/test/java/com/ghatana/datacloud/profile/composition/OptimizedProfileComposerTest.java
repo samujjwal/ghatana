@@ -245,9 +245,9 @@ class OptimizedProfileComposerTest {
 
             CollectionStorageProfile result = composer.composeMultiple(List.of(profile1, profile2, profile3));
 
-            // Priority 3 (lowest) should be base, then 2, then 1 (highest) overrides
-            assertThat(result.getPrimaryBackendId()).isEqualTo("postgres-primary");
-            assertThat(result.getFallbackBackendIds()).hasSize(4);
+            // Higher priority numbers take precedence: priority 3 (highest) overrides 2 and 1
+            assertThat(result.getPrimaryBackendId()).isEqualTo("s3-primary");
+            assertThat(result.getFallbackBackendIds()).hasSize(3); // Duplicates removed during merge
             assertThat(result.getBackendConfig()).containsEntry("max_connections", 10);
             assertThat(result.getBackendConfig()).containsEntry("timeout_ms", 5000);
             assertThat(result.getBackendConfig()).containsEntry("compression", true);
@@ -429,7 +429,7 @@ class OptimizedProfileComposerTest {
                 .build();
 
             composer.compose(base, override);
-            composer.invalidateCompositionCache("base-profile");
+            composer.clearAllCaches();
 
             OptimizedProfileComposer.CompositionStatistics stats = composer.getStatistics();
 

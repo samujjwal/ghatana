@@ -115,3 +115,18 @@ export type {
   SelectionRange,
   TextCursorIndicatorProps,
 } from './components';
+
+// Builder event bridge
+export { CollabEventBridge } from './CollabEventBridge';
+export type {
+  CollabEventBridgeConfig,
+  CollabEventEmit,
+  BuilderCollabEvent,
+} from './CollabEventBridge';
+
+// Realtime health monitor
+export { CollabRealtimeMonitor } from './CollabRealtimeMonitor';
+export type {
+  CollabRealtimeMonitorConfig,
+  CollabHealthMetric,
+} from './CollabRealtimeMonitor';

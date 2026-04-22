@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -162,11 +164,10 @@ class FeatureValidationTest {
     @Test
     @DisplayName("Should check feature completeness")
     void shouldCheckFeatureCompleteness() {
-        Map<String, Object> payload = Map.of(
-            "age", 25,
-            "name", "John",
-            "income", null  // Missing required field
-        );
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("age", 25);
+        payload.put("name", "John");
+        payload.put("income", null);  // Missing required field
 
         Set<String> requiredFields = Set.of("age", "name", "income", "email");
         Set<String> missingFields = new HashSet<>();
@@ -220,10 +221,9 @@ class FeatureValidationTest {
     @Test
     @DisplayName("Should handle empty strings vs null")
     void shouldHandleEmptyStringsVsNull() {
-        Map<String, Object> payload = Map.of(
-            "name", "",      // Empty string
-            "email", null   // Null value
-        );
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("name", "");      // Empty string
+        payload.put("email", null);   // Null value
 
         String name = (String) payload.get("name");
         String email = (String) payload.get("email");
@@ -259,7 +259,7 @@ class FeatureValidationTest {
 
         List<String> invalidEmails = new ArrayList<>();
         for (String email : emails) {
-            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            if (!email.matches("^[A-Za-z0-9+_.-]+@.+\\..+$")) {
                 invalidEmails.add(email);
             }
         }
@@ -279,10 +279,10 @@ class FeatureValidationTest {
         double taxRate = (Double) payload.get("tax_rate");
 
         // Price should have at most 2 decimal places
-        assertThat(price * 100).isEqualTo(Math.round(price * 100));
+        assertThat(Math.abs(price * 100 - Math.round(price * 100))).isLessThan(1e-6);
 
         // Tax rate should have at most 4 decimal places
-        assertThat(taxRate * 10000).isEqualTo(Math.round(taxRate * 10000));
+        assertThat(Math.abs(taxRate * 10000 - Math.round(taxRate * 10000))).isLessThan(1e-6);
     }
 
     @Test
@@ -326,15 +326,18 @@ class FeatureValidationTest {
         map1.put("ref", map2);
         map2.put("ref", map1);  // Circular reference
 
-        Set<Object> visited = new HashSet<>();
+        Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         boolean hasCircular = detectCircularReference(map1, visited);
 
         assertThat(hasCircular).isTrue();
     }
 
     private boolean detectCircularReference(Object obj, Set<Object> visited) {
-        if (obj == null || !visited.add(obj)) {
+        if (obj == null) {
             return false;
+        }
+        if (!visited.add(obj)) {
+            return true;
         }
 
         if (obj instanceof Map) {

@@ -34,7 +34,8 @@ public class YappcHttpServer extends HttpServerLauncher {
             ObserveApiController observeController,
             LearnApiController learnController,
             EvolveApiController evolveController,
-            LifecycleApiController lifecycleController) {
+            LifecycleApiController lifecycleController,
+            ArtifactGraphController artifactGraphController) {
 
         ApiVersionPolicy versionPolicy = new ApiVersionPolicy();
 
@@ -82,6 +83,13 @@ public class YappcHttpServer extends HttpServerLauncher {
 
                 // Full lifecycle orchestration endpoint
                 .with(HttpMethod.POST, "/api/v1/yappc/lifecycle/execute", secureVersioned(authFilter, lifecycleController::executeFullLifecycle, versionPolicy))
+
+                // Artifact Compiler endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/ingest", secureVersioned(authFilter, artifactGraphController::ingest, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/analyze", secureVersioned(authFilter, artifactGraphController::analyze, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/merge", secureVersioned(authFilter, artifactGraphController::merge, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/graph/query", secureVersioned(authFilter, artifactGraphController::query, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/artifact/residual/analyze", secureVersioned(authFilter, artifactGraphController::analyzeResidual, versionPolicy))
 
                 // API info
                 .with(HttpMethod.GET, "/api/v1/yappc/info", versionPolicy.apply(request ->

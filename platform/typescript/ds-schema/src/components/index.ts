@@ -9,6 +9,13 @@ export {
   ComponentEventSchema,
   ComponentStyleSchema,
   ComponentContractSchema,
+  ComponentLayoutSemanticsSchema,
+  ComponentResponsiveMetadataSchema,
+  ResponsiveBreakpointBehaviorSchema,
+  ComponentPrivacyContractSchema,
+  ComponentAIPolicySchema,
+  AIActionTypeSchema,
+  BuilderA11yObligationsSchema,
   validateComponentContract,
   computeContractHash,
 } from './contract';
@@ -29,6 +36,14 @@ export type {
   ComponentEvent,
   ComponentStyle,
   ComponentContract,
+  ComponentLayoutSemantics,
+  ComponentResponsiveMetadata,
+  ResponsiveBreakpointBehavior,
+  ComponentPrivacyContract,
+  ComponentPreviewRestrictions,
+  ComponentAIPolicy,
+  AIActionType,
+  BuilderA11yObligations,
 } from './contract';
 export type {
   BuilderPlatformTarget,

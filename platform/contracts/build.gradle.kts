@@ -4,6 +4,11 @@ plugins {
 
 description = "Platform Contracts - Shared Protobuf definitions and schemas"
 
+// Ensure generated proto sources are included in the main source set
+sourceSets.main {
+    java.srcDirs("build/generated/source/proto/main/java")
+}
+
 dependencies {
     implementation(libs.bundles.jackson.json)
     implementation(libs.bundles.jackson.yaml)
@@ -15,15 +20,4 @@ dependencies {
     implementation(libs.protobuf.java.util)
     testImplementation(libs.bundles.testing.core)
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-sourceSets {
-    create("generators") {
-        java {
-            srcDirs("src/main/java")
-            include("com/ghatana/contracts/schema/**/*.java")
-        }
-        compileClasspath += configurations.getByName("compileClasspath")
-        runtimeClasspath += configurations.getByName("runtimeClasspath")
-    }
 }

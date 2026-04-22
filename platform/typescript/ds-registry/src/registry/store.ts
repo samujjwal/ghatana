@@ -83,6 +83,26 @@ export interface RegistryStore {
   findComponentsByCategory(category: string): readonly ComponentEntry[];
   findComponentsByTag(tag: string): readonly ComponentEntry[];
   findPatternsByComponent(componentId: string): readonly PatternEntry[];
+
+  // Versioning queries
+  /**
+   * Returns the entry matching the given contract name and exact semver version.
+   * Returns `undefined` when no match is found.
+   */
+  getComponentByNameAndVersion(name: string, version: string): ComponentEntry | undefined;
+  /**
+   * Returns all registered entries for a given contract name, sorted
+   * chronologically (oldest first, newest last).
+   */
+  getAllVersionsOfComponent(name: string): readonly ComponentEntry[];
+  /**
+   * Returns the most recently registered entry for a given contract name.
+   * Uses registration order (last `registerComponent` call for this name wins)
+   * rather than timestamp comparison, which is stable under sub-millisecond
+   * test execution.
+   * Returns `undefined` when the component has never been registered.
+   */
+  resolveLatestComponent(name: string): ComponentEntry | undefined;
 }
 
 // ============================================================================
@@ -91,6 +111,12 @@ export interface RegistryStore {
 
 class InMemoryRegistryStore implements RegistryStore {
   private components = new Map<string, ComponentEntry>();
+  /**
+   * Secondary index: contractName → ordered list of entries (oldest first).
+   * Maintained in parallel with `components` for O(1) name+version lookup
+   * without scanning all entries.
+   */
+  private componentsByName = new Map<string, ComponentEntry[]>();
   private tokenSets = new Map<string, TokenSetEntry>();
   private themes = new Map<string, ThemeEntry>();
   private patterns = new Map<string, PatternEntry>();
@@ -104,6 +130,12 @@ class InMemoryRegistryStore implements RegistryStore {
       updatedAt: now,
     };
     this.components.set(entry.id, fullEntry);
+
+    // Update secondary name index
+    const name = entry.contract.name;
+    const existing = this.componentsByName.get(name) ?? [];
+    this.componentsByName.set(name, [...existing, fullEntry]);
+
     return fullEntry;
   }
 
@@ -139,6 +171,18 @@ class InMemoryRegistryStore implements RegistryStore {
   }
 
   unregisterComponent(id: string): boolean {
+    const entry = this.components.get(id);
+    if (entry) {
+      // Remove from secondary name index
+      const name = entry.contract.name;
+      const versions = this.componentsByName.get(name) ?? [];
+      const filtered = versions.filter((e) => e.id !== id);
+      if (filtered.length === 0) {
+        this.componentsByName.delete(name);
+      } else {
+        this.componentsByName.set(name, filtered);
+      }
+    }
     return this.components.delete(id);
   }
 
@@ -242,6 +286,25 @@ class InMemoryRegistryStore implements RegistryStore {
     return this.getAllPatterns().filter(
       (entry) => entry.componentIds.includes(componentId)
     );
+  }
+
+  // Versioning queries
+  getComponentByNameAndVersion(name: string, version: string): ComponentEntry | undefined {
+    const versions = this.componentsByName.get(name);
+    if (!versions) return undefined;
+    return versions.find((e) => e.version === version);
+  }
+
+  getAllVersionsOfComponent(name: string): readonly ComponentEntry[] {
+    return this.componentsByName.get(name) ?? [];
+  }
+
+  resolveLatestComponent(name: string): ComponentEntry | undefined {
+    const versions = this.componentsByName.get(name);
+    if (!versions || versions.length === 0) return undefined;
+    // The secondary index is append-only, so the last element is always the
+    // most recently registered entry (stable regardless of timestamp precision).
+    return versions[versions.length - 1];
   }
 }
 

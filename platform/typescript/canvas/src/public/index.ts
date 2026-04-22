@@ -370,7 +370,13 @@ export * from '../elements/whiteboard.js';
 export * from '../elements/portal.js';
 
 // ── UI Builder integration ─────────────────────────────────────────────────
-export * from '../ui-builder/index.js';
+// NOTE: @ghatana/canvas does not own builder-domain abstractions such as
+// UIComponentDefinition, UIBuilderManager, or PropertySchema.  Those are
+// declared in @ghatana/canvas/ui-builder (a deprecated subpath kept only for
+// backward compatibility) and should NOT be consumed by new code.  Use
+// @ghatana/ui-builder for BuilderDocument, scene projection, codegen, and
+// contract-aware builder operations instead.
+// export * from '../ui-builder/index.js'; // intentionally removed
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 export * from '../utils/export-import.js';

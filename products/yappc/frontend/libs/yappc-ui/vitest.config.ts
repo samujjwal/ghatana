@@ -22,6 +22,25 @@ export default defineConfig({
         __dirname,
         '../../../../../platform/typescript/platform-utils/src'
       ),
+      '@ghatana/state': resolve(
+        __dirname,
+        '../../../../../platform/typescript/state/src'
+      ),
+      '@ghatana/ui-builder': resolve(
+        __dirname,
+        '../../../../../platform/typescript/ui-builder/src'
+      ),
+      // Point design-system to source to bypass the broken dist TextField.js
+      '@ghatana/design-system': resolve(
+        __dirname,
+        '../../../../../platform/typescript/design-system/src'
+      ),
+      // Stub @tanstack/react-query — not installed in the workspace but pulled in
+      // transitively by @yappc/state barrel exports (hooks/useConfigData).
+      '@tanstack/react-query': resolve(
+        __dirname,
+        './src/components/test/__stubs__/react-query.stub.ts'
+      ),
     },
   },
 });

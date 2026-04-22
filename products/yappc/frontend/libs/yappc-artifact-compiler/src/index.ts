@@ -17,3 +17,4 @@ export * from "./residual/index";
 export * from "./extractors/index";
 export * from "./synthesis/index";
 export * from "./merge/index";
+export * from "./builder/index";
