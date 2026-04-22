@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: build dd [`5bd2113`](https://github.com/samujjwal/ghatana/commit/5bd21136f262964eedebfaf85d3634c30f91b3fb)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`6c58e61`](https://github.com/samujjwal/ghatana/commit/6c58e619b9c252465ccc38fdc1a8736f591e3fe5)
 - **Changed**: yappc partial 2 [`9554573`](https://github.com/samujjwal/ghatana/commit/9554573de2dc2a7655687b025a26ff9b6cb08e78)
 - **Changed**: build dfdgg [`93d5082`](https://github.com/samujjwal/ghatana/commit/93d50822f3529de457b0ce37fd8482b05464a8fd)
