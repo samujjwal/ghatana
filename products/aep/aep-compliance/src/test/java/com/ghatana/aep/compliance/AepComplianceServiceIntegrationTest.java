@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.compliance;
@@ -24,42 +24,42 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("AepComplianceServiceIntegrationTest")
+@DisplayName("AepComplianceServiceIntegrationTest [GH-90000]")
 class AepComplianceServiceIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("checkCompliance succeeds when broker and retention checks both pass")
-    void checkComplianceSucceedsWhenAllChecksPass() {
-        AtomicBoolean brokerCalled = new AtomicBoolean(false);
-        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> {
-            brokerCalled.set(true);
-            return Promise.complete();
+    @DisplayName("checkCompliance succeeds when broker and retention checks both pass [GH-90000]")
+    void checkComplianceSucceedsWhenAllChecksPass() { // GH-90000
+        AtomicBoolean brokerCalled = new AtomicBoolean(false); // GH-90000
+        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { // GH-90000
+            brokerCalled.set(true); // GH-90000
+            return Promise.complete(); // GH-90000
         };
-        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer();
-        ComplianceService service = new ComplianceService(broker, retention);
+        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); // GH-90000
+        ComplianceService service = new ComplianceService(broker, retention); // GH-90000
 
-        runPromise(() -> retention.registerRetention("tenant-a", "data-1", Duration.ofMinutes(5)));
-        runPromise(() -> service.checkCompliance("tenant-a", "subject-1", "data-1", "analytics"));
+        runPromise(() -> retention.registerRetention("tenant-a", "data-1", Duration.ofMinutes(5))); // GH-90000
+        runPromise(() -> service.checkCompliance("tenant-a", "subject-1", "data-1", "analytics")); // GH-90000
 
-        assertThat(brokerCalled).isTrue();
+        assertThat(brokerCalled).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("checkCompliance fails when retention has expired after access approval")
-    void checkComplianceFailsWhenRetentionExpired() {
-        AtomicBoolean brokerCalled = new AtomicBoolean(false);
-        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> {
-            brokerCalled.set(true);
-            return Promise.complete();
+    @DisplayName("checkCompliance fails when retention has expired after access approval [GH-90000]")
+    void checkComplianceFailsWhenRetentionExpired() { // GH-90000
+        AtomicBoolean brokerCalled = new AtomicBoolean(false); // GH-90000
+        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { // GH-90000
+            brokerCalled.set(true); // GH-90000
+            return Promise.complete(); // GH-90000
         };
-        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer();
-        ComplianceService service = new ComplianceService(broker, retention);
+        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); // GH-90000
+        ComplianceService service = new ComplianceService(broker, retention); // GH-90000
 
-        runPromise(() -> retention.registerRetention("tenant-a", "data-2", Duration.ZERO));
+        runPromise(() -> retention.registerRetention("tenant-a", "data-2", Duration.ZERO)); // GH-90000
 
-        assertThatThrownBy(() ->
-            runPromise(() -> service.checkCompliance("tenant-a", "subject-2", "data-2", "analytics")))
-            .isInstanceOf(RetentionExpiredException.class);
-        assertThat(brokerCalled).isTrue();
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> service.checkCompliance("tenant-a", "subject-2", "data-2", "analytics"))) // GH-90000
+            .isInstanceOf(RetentionExpiredException.class); // GH-90000
+        assertThat(brokerCalled).isTrue(); // GH-90000
     }
 }

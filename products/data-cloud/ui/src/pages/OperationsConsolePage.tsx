@@ -66,28 +66,11 @@ interface MetricCard {
 export const OperationsConsolePage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data - in production, this would come from real APIs
-  const healthStatuses: HealthStatus[] = [
-    { component: 'Launcher', status: 'healthy', lastCheck: '2s ago', uptime: '45d 12h' },
-    { component: 'API Gateway', status: 'healthy', lastCheck: '5s ago', uptime: '45d 12h' },
-    { component: 'Workflow Engine', status: 'healthy', lastCheck: '1s ago', uptime: '45d 11h' },
-    { component: 'Agent Registry', status: 'degraded', lastCheck: '10s ago', uptime: '45d 10h' },
-    { component: 'Event Stream', status: 'healthy', lastCheck: '3s ago', uptime: '45d 12h' },
-  ];
-
-  const alertSummary: AlertSummary = {
-    total: 23,
-    critical: 3,
-    warning: 12,
-    info: 8,
-  };
-
-  const metrics: MetricCard[] = [
-    { title: 'Request Rate', value: '1,234 req/s', change: '+5.2%', trend: 'up' },
-    { title: 'Error Rate', value: '0.12%', change: '-0.03%', trend: 'down' },
-    { title: 'P95 Latency', value: '245ms', change: '+12ms', trend: 'up' },
-    { title: 'Active Workflows', value: '1,892', change: '+45', trend: 'up' },
-  ];
+  // Real diagnostics data should come from backend health APIs.
+  // Stub arrays kept for type safety until API integration (ARCH-003).
+  const healthStatuses: HealthStatus[] = [];
+  const alertSummary: AlertSummary = { total: 0, critical: 0, warning: 0, info: 0 };
+  const metrics: MetricCard[] = [];
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -146,37 +129,9 @@ export const OperationsConsolePage: React.FC = () => {
             </button>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {metrics.map((metric) => (
-              <div key={metric.title} className={cn(cardStyles.base, 'p-4')}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {metric.title}
-                  </span>
-                  <span
-                    className={cn(
-                      'text-xs font-medium',
-                      metric.trend === 'up' && metric.title !== 'Error Rate'
-                        ? 'text-green-600 dark:text-green-400'
-                        : metric.trend === 'down'
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-gray-600 dark:text-gray-400'
-                    )}
-                  >
-                    {metric.change}
-                  </span>
-                </div>
-                <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
-                  {metric.value}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Main Grid */}
+          {/* Diagnostics Grid — scoped to real, backed surfaces only */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* System Health */}
+            {/* System Health — placeholder until health API wired (ARCH-003) */}
             <div className={cn(cardStyles.base, 'p-6')}>
               <div className="mb-4 flex items-center gap-2">
                 <Shield className="h-5 w-5 text-blue-500" />
@@ -184,37 +139,41 @@ export const OperationsConsolePage: React.FC = () => {
                   System Health
                 </h2>
               </div>
-              <div className="space-y-3">
-                {healthStatuses.map((status) => (
-                  <div
-                    key={status.component}
-                    className={cn(
-                      'flex items-center justify-between p-3 rounded-lg border',
-                      getStatusColor(status.status)
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(status.status)}
-                      <div>
+              {healthStatuses.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Health data will appear here once the diagnostics API is integrated (ARCH-003).
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {healthStatuses.map((status) => (
+                    <div
+                      key={status.component}
+                      className={cn(
+                        'flex items-center justify-between p-3 rounded-lg border',
+                        getStatusColor(status.status)
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(status.status)}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {status.component}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            Last check: {status.lastCheck}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Uptime</div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {status.component}
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          Last check: {status.lastCheck}
+                          {status.uptime}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        Uptime
-                      </div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {status.uptime}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Alert Summary */}
@@ -256,12 +215,12 @@ export const OperationsConsolePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Actions */}
+            {/* Operator Navigation — links to canonical first-class routes */}
             <div className={cn(cardStyles.base, 'p-6')}>
               <div className="mb-4 flex items-center gap-2">
                 <Terminal className="h-5 w-5 text-purple-500" />
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Quick Actions
+                  Operator Surfaces
                 </h2>
               </div>
               <div className="space-y-3">
@@ -305,57 +264,6 @@ export const OperationsConsolePage: React.FC = () => {
                   </span>
                   <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
                 </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Preview Tools Section */}
-          <div className="mt-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-              Preview Tools
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className={cn(cardStyles.base, 'p-4 border-l-4 border-l-yellow-400')}>
-                <div className="flex items-center gap-2 mb-2">
-                  <BarChart3 className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Fabric Metrics
-                  </span>
-                  <span className="ml-auto text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded">
-                    Preview
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Live data-fabric metrics are not yet exposed. Topology layout is available for design review.
-                </p>
-              </div>
-              <div className={cn(cardStyles.base, 'p-4 border-l-4 border-l-orange-400')}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Terminal className="h-4 w-4 text-orange-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    AI Pipeline Builder
-                  </span>
-                  <span className="ml-auto text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded">
-                    Unavailable
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Natural-language pipeline generation requires backend contract. Use manual editor instead.
-                </p>
-              </div>
-              <div className={cn(cardStyles.base, 'p-4 border-l-4 border-l-gray-400')}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Settings className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Dependency Graph
-                  </span>
-                  <span className="ml-auto text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded">
-                    Not in Deployment
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Plugin-to-plugin dependency graph is not published by the launcher API.
-                </p>
               </div>
             </div>
           </div>

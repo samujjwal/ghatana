@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link JwtAuthenticationProvider}.
  *
- * Covers: SEC-01 fix (no downcast), CORR-02 fix (getRemainingValidity),
- * CORR-03 fix (roles accumulated correctly), delegate flow, unsupported type.
+ * Covers: SEC-01 fix (no downcast), CORR-02 fix (getRemainingValidity), // GH-90000
+ * CORR-03 fix (roles accumulated correctly), delegate flow, unsupported type. // GH-90000
  */
 class JwtAuthenticationProviderTest extends EventloopTestBase {
 
@@ -29,15 +29,15 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     private static final String EXPIRED_TOKEN = "expired.jwt.token";
     private static final String BAD_TOKEN     = "bad.jwt.token";
     private static final String USER_ID       = "user-42";
-    private static final List<String> ROLES   = List.of("ROLE_ADMIN", "ROLE_USER");
+    private static final List<String> ROLES   = List.of("ROLE_ADMIN", "ROLE_USER"); // GH-90000
 
     private StubJwtTokenProvider stubJwt;
     private JwtAuthenticationProvider provider;
 
     @BeforeEach
-    void setUp() {
-        stubJwt = new StubJwtTokenProvider();
-        provider = new JwtAuthenticationProvider(stubJwt);
+    void setUp() { // GH-90000
+        stubJwt = new StubJwtTokenProvider(); // GH-90000
+        provider = new JwtAuthenticationProvider(stubJwt); // GH-90000
     }
 
     // -------------------------------------------------------------------------
@@ -45,12 +45,12 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    void authenticate_usesPortInterface_notConcreteImpl() {
+    void authenticate_usesPortInterface_notConcreteImpl() { // GH-90000
         // StubJwtTokenProvider is NOT the concrete jwt.JwtTokenProvider —
         // if SEC-01 downcast were still present this would throw ClassCastException
-        TokenCredentials creds = new TokenCredentials(VALID_TOKEN);
-        Optional<User> result = runPromise(() -> provider.authenticate(creds));
-        assertThat(result).isPresent();
+        TokenCredentials creds = new TokenCredentials(VALID_TOKEN); // GH-90000
+        Optional<User> result = runPromise(() -> provider.authenticate(creds)); // GH-90000
+        assertThat(result).isPresent(); // GH-90000
     }
 
     // -------------------------------------------------------------------------
@@ -58,25 +58,25 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    void authenticate_tokenCredentials_rolesApplied() {
-        TokenCredentials creds = new TokenCredentials(VALID_TOKEN);
+    void authenticate_tokenCredentials_rolesApplied() { // GH-90000
+        TokenCredentials creds = new TokenCredentials(VALID_TOKEN); // GH-90000
 
-        Optional<User> result = runPromise(() -> provider.authenticate(creds));
+        Optional<User> result = runPromise(() -> provider.authenticate(creds)); // GH-90000
 
-        assertThat(result).isPresent();
-        User user = result.get();
-        assertThat(user.getRoles()).containsExactlyInAnyOrderElementsOf(ROLES);
+        assertThat(result).isPresent(); // GH-90000
+        User user = result.get(); // GH-90000
+        assertThat(user.getRoles()).containsExactlyInAnyOrderElementsOf(ROLES); // GH-90000
     }
 
     @Test
-    void authenticate_tokenWithNoRoles_returnsUserWithEmptyRoles() {
-        stubJwt.roles = List.of();
-        TokenCredentials creds = new TokenCredentials(VALID_TOKEN);
+    void authenticate_tokenWithNoRoles_returnsUserWithEmptyRoles() { // GH-90000
+        stubJwt.roles = List.of(); // GH-90000
+        TokenCredentials creds = new TokenCredentials(VALID_TOKEN); // GH-90000
 
-        Optional<User> result = runPromise(() -> provider.authenticate(creds));
+        Optional<User> result = runPromise(() -> provider.authenticate(creds)); // GH-90000
 
-        assertThat(result).isPresent();
-        assertThat(result.get().getRoles()).isEmpty();
+        assertThat(result).isPresent(); // GH-90000
+        assertThat(result.get().getRoles()).isEmpty(); // GH-90000
     }
 
     // -------------------------------------------------------------------------
@@ -84,21 +84,21 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    void getRemainingValidity_validToken_returnsPositiveMs() {
-        long remaining = provider.getRemainingValidity(VALID_TOKEN);
-        assertThat(remaining).isGreaterThan(0L);
+    void getRemainingValidity_validToken_returnsPositiveMs() { // GH-90000
+        long remaining = provider.getRemainingValidity(VALID_TOKEN); // GH-90000
+        assertThat(remaining).isGreaterThan(0L); // GH-90000
     }
 
     @Test
-    void getRemainingValidity_expiredToken_returnsMinusOne() {
-        long remaining = provider.getRemainingValidity(EXPIRED_TOKEN);
-        assertThat(remaining).isEqualTo(-1L);
+    void getRemainingValidity_expiredToken_returnsMinusOne() { // GH-90000
+        long remaining = provider.getRemainingValidity(EXPIRED_TOKEN); // GH-90000
+        assertThat(remaining).isEqualTo(-1L); // GH-90000
     }
 
     @Test
-    void getRemainingValidity_invalidToken_returnsMinusOne() {
-        long remaining = provider.getRemainingValidity(BAD_TOKEN);
-        assertThat(remaining).isEqualTo(-1L);
+    void getRemainingValidity_invalidToken_returnsMinusOne() { // GH-90000
+        long remaining = provider.getRemainingValidity(BAD_TOKEN); // GH-90000
+        assertThat(remaining).isEqualTo(-1L); // GH-90000
     }
 
     // -------------------------------------------------------------------------
@@ -106,25 +106,25 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    void authenticate_invalidToken_returnsEmpty() {
-        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(BAD_TOKEN)));
-        assertThat(result).isEmpty();
+    void authenticate_invalidToken_returnsEmpty() { // GH-90000
+        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(BAD_TOKEN))); // GH-90000
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    void authenticate_noUserIdInToken_returnsEmpty() {
+    void authenticate_noUserIdInToken_returnsEmpty() { // GH-90000
         stubJwt.userId = null;
-        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(VALID_TOKEN)));
-        assertThat(result).isEmpty();
+        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(VALID_TOKEN))); // GH-90000
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    void authenticate_userId_setOnReturnedUser() {
-        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(VALID_TOKEN)));
-        assertThat(result).isPresent();
-        assertThat(result.get().getUserId()).isEqualTo(USER_ID);
-        assertThat(result.get().isAuthenticated()).isTrue();
-        assertThat(result.get().getAuthToken()).isEqualTo(VALID_TOKEN);
+    void authenticate_userId_setOnReturnedUser() { // GH-90000
+        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(VALID_TOKEN))); // GH-90000
+        assertThat(result).isPresent(); // GH-90000
+        assertThat(result.get().getUserId()).isEqualTo(USER_ID); // GH-90000
+        assertThat(result.get().isAuthenticated()).isTrue(); // GH-90000
+        assertThat(result.get().getAuthToken()).isEqualTo(VALID_TOKEN); // GH-90000
     }
 
     // -------------------------------------------------------------------------
@@ -132,10 +132,10 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    void authenticate_unsupportedType_returnsEmpty() {
-        Credentials unknownCreds = new Credentials("magic") {};
-        Optional<User> result = runPromise(() -> provider.authenticate(unknownCreds));
-        assertThat(result).isEmpty();
+    void authenticate_unsupportedType_returnsEmpty() { // GH-90000
+        Credentials unknownCreds = new Credentials("magic [GH-90000]") {};
+        Optional<User> result = runPromise(() -> provider.authenticate(unknownCreds)); // GH-90000
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     // -------------------------------------------------------------------------
@@ -143,44 +143,44 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    void authenticate_withDelegate_nonTokenCreds_generatesToken() {
-        User delegateUser = User.builder()
-                .userId("delegate-user")
-                .username("delegate-user")
-                .authenticated(true)
-                .build();
-        AuthenticationProvider delegate = new AuthenticationProvider() {
+    void authenticate_withDelegate_nonTokenCreds_generatesToken() { // GH-90000
+        User delegateUser = User.builder() // GH-90000
+                .userId("delegate-user [GH-90000]")
+                .username("delegate-user [GH-90000]")
+                .authenticated(true) // GH-90000
+                .build(); // GH-90000
+        AuthenticationProvider delegate = new AuthenticationProvider() { // GH-90000
             @Override
-            public Promise<Optional<User>> authenticate(Credentials c) {
-                return Promise.of(Optional.of(delegateUser));
+            public Promise<Optional<User>> authenticate(Credentials c) { // GH-90000
+                return Promise.of(Optional.of(delegateUser)); // GH-90000
             }
             @Override
-            public boolean supports(String type) { return true; }
+            public boolean supports(String type) { return true; } // GH-90000
         };
 
-        JwtAuthenticationProvider chained = new JwtAuthenticationProvider(stubJwt, delegate);
+        JwtAuthenticationProvider chained = new JwtAuthenticationProvider(stubJwt, delegate); // GH-90000
 
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("u", "p");
-        Optional<User> result = runPromise(() -> chained.authenticate(creds));
+        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("u", "p"); // GH-90000
+        Optional<User> result = runPromise(() -> chained.authenticate(creds)); // GH-90000
 
-        assertThat(result).isPresent();
-        assertThat(result.get().getAuthToken()).isNotNull();
+        assertThat(result).isPresent(); // GH-90000
+        assertThat(result.get().getAuthToken()).isNotNull(); // GH-90000
     }
 
     @Test
-    void authenticate_withDelegate_delegateReturnsEmpty_propagatesEmpty() {
-        AuthenticationProvider delegate = new AuthenticationProvider() {
+    void authenticate_withDelegate_delegateReturnsEmpty_propagatesEmpty() { // GH-90000
+        AuthenticationProvider delegate = new AuthenticationProvider() { // GH-90000
             @Override
-            public Promise<Optional<User>> authenticate(Credentials c) {
-                return Promise.of(Optional.empty());
+            public Promise<Optional<User>> authenticate(Credentials c) { // GH-90000
+                return Promise.of(Optional.empty()); // GH-90000
             }
             @Override
-            public boolean supports(String type) { return true; }
+            public boolean supports(String type) { return true; } // GH-90000
         };
-        JwtAuthenticationProvider chained = new JwtAuthenticationProvider(stubJwt, delegate);
+        JwtAuthenticationProvider chained = new JwtAuthenticationProvider(stubJwt, delegate); // GH-90000
 
-        Optional<User> result = runPromise(() -> chained.authenticate(new UsernamePasswordCredentials("u", "p")));
-        assertThat(result).isEmpty();
+        Optional<User> result = runPromise(() -> chained.authenticate(new UsernamePasswordCredentials("u", "p"))); // GH-90000
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     // -------------------------------------------------------------------------
@@ -188,73 +188,73 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    void generateToken_usesPortCreateToken() {
-        User user = User.builder().userId(USER_ID).username(USER_ID).build();
-        String token = provider.generateToken(user);
-        assertThat(token).isEqualTo("generated:" + USER_ID);
+    void generateToken_usesPortCreateToken() { // GH-90000
+        User user = User.builder().userId(USER_ID).username(USER_ID).build(); // GH-90000
+        String token = provider.generateToken(user); // GH-90000
+        assertThat(token).isEqualTo("generated:" + USER_ID); // GH-90000
     }
 
     @Test
-    void refreshToken_validToken_returnsNewToken() {
-        String refreshed = provider.refreshToken(VALID_TOKEN);
-        assertThat(refreshed).isEqualTo("generated:" + USER_ID);
+    void refreshToken_validToken_returnsNewToken() { // GH-90000
+        String refreshed = provider.refreshToken(VALID_TOKEN); // GH-90000
+        assertThat(refreshed).isEqualTo("generated:" + USER_ID); // GH-90000
     }
 
     @Test
-    void refreshToken_badToken_throwsRuntime() {
-        assertThatThrownBy(() -> provider.refreshToken(BAD_TOKEN))
-                .isInstanceOf(RuntimeException.class);
+    void refreshToken_badToken_throwsRuntime() { // GH-90000
+        assertThatThrownBy(() -> provider.refreshToken(BAD_TOKEN)) // GH-90000
+                .isInstanceOf(RuntimeException.class); // GH-90000
     }
 
     // -------------------------------------------------------------------------
-    // supports()
+    // supports() // GH-90000
     // -------------------------------------------------------------------------
 
     @Test
-    void supports_tokenType_returnsTrue() {
-        assertThat(provider.supports("token")).isTrue();
+    void supports_tokenType_returnsTrue() { // GH-90000
+        assertThat(provider.supports("token [GH-90000]")).isTrue();
     }
 
     @Test
-    void supports_otherType_returnsFalse() {
-        assertThat(provider.supports("basic")).isFalse();
+    void supports_otherType_returnsFalse() { // GH-90000
+        assertThat(provider.supports("basic [GH-90000]")).isFalse();
     }
 
     // =========================================================================
-    // Test double — implements the PORT interface only (not the concrete class)
+    // Test double — implements the PORT interface only (not the concrete class) // GH-90000
     // =========================================================================
 
     private static class StubJwtTokenProvider implements JwtTokenProvider {
 
         String userId = USER_ID;
         List<String> roles = ROLES;
-        long expiryEpochSeconds = (System.currentTimeMillis() / 1000L) + 3600; // 1 hour ahead
+        long expiryEpochSeconds = (System.currentTimeMillis() / 1000L) + 3600; // 1 hour ahead // GH-90000
 
         @Override
-        public String createToken(String uid, List<String> r, Map<String, Object> extra) {
+        public String createToken(String uid, List<String> r, Map<String, Object> extra) { // GH-90000
             return "generated:" + uid;
         }
 
         @Override
-        public boolean validateToken(String token) {
-            return VALID_TOKEN.equals(token);
+        public boolean validateToken(String token) { // GH-90000
+            return VALID_TOKEN.equals(token); // GH-90000
         }
 
         @Override
-        public Optional<String> getUserIdFromToken(String token) {
-            if (!VALID_TOKEN.equals(token)) return Optional.empty();
-            return Optional.ofNullable(userId);
+        public Optional<String> getUserIdFromToken(String token) { // GH-90000
+            if (!VALID_TOKEN.equals(token)) return Optional.empty(); // GH-90000
+            return Optional.ofNullable(userId); // GH-90000
         }
 
         @Override
-        public List<String> getRolesFromToken(String token) {
-            return VALID_TOKEN.equals(token) ? roles : List.of();
+        public List<String> getRolesFromToken(String token) { // GH-90000
+            return VALID_TOKEN.equals(token) ? roles : List.of(); // GH-90000
         }
 
         @Override
-        public Optional<Map<String, Object>> extractClaims(String token) {
-            if (!VALID_TOKEN.equals(token)) return Optional.empty();
-            return Optional.of(Map.of(
+        public Optional<Map<String, Object>> extractClaims(String token) { // GH-90000
+            if (!VALID_TOKEN.equals(token)) return Optional.empty(); // GH-90000
+            return Optional.of(Map.of( // GH-90000
                     "sub", USER_ID,
                     "exp", expiryEpochSeconds,
                     "roles", roles

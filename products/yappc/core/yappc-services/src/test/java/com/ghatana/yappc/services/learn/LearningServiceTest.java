@@ -27,104 +27,104 @@ import static org.mockito.Mockito.*;
 class LearningServiceTest extends EventloopTestBase {
 
     @Test
-    void shouldAnalyzeObservations() {
+    void shouldAnalyzeObservations() { // GH-90000
         // GIVEN
-        CompletionService aiService = mock(CompletionService.class);
-        AuditLogger auditLogger = mock(AuditLogger.class);
-        MetricsCollector metrics = mock(MetricsCollector.class);
+        CompletionService aiService = mock(CompletionService.class); // GH-90000
+        AuditLogger auditLogger = mock(AuditLogger.class); // GH-90000
+        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
 
-        when(aiService.complete(any(CompletionRequest.class)))
-                .thenReturn(Promise.of(CompletionResult.builder()
-                        .text("Pattern detected: High latency during peak hours")
-                        .modelUsed("gpt-4")
-                        .build()));
+        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
+                .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+                        .text("Pattern detected: High latency during peak hours [GH-90000]")
+                        .modelUsed("gpt-4 [GH-90000]")
+                        .build())); // GH-90000
 
-        when(auditLogger.log(any(Map.class)))
-                .thenReturn(Promise.complete());
+        when(auditLogger.log(any(Map.class))) // GH-90000
+                .thenReturn(Promise.complete()); // GH-90000
 
-        LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics);
-        Observation observation = Observation.builder()
-                .id("obs-123")
-                .runRef("run-123")
-                .metrics(List.of())
-                .logs(List.of())
-                .traces(List.of())
-                .build();
+        LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics); // GH-90000
+        Observation observation = Observation.builder() // GH-90000
+                .id("obs-123 [GH-90000]")
+                .runRef("run-123 [GH-90000]")
+                .metrics(List.of()) // GH-90000
+                .logs(List.of()) // GH-90000
+                .traces(List.of()) // GH-90000
+                .build(); // GH-90000
 
         // WHEN
-        Insights result = runPromise(() -> service.analyze(observation));
+        Insights result = runPromise(() -> service.analyze(observation)); // GH-90000
 
         // THEN
-        assertNotNull(result);
-        assertNotNull(result.id());
-        assertEquals("obs-123", result.observationRef());
-        assertNotNull(result.patterns());
-        assertNotNull(result.anomalies());
-        assertNotNull(result.recommendations());
+        assertNotNull(result); // GH-90000
+        assertNotNull(result.id()); // GH-90000
+        assertEquals("obs-123", result.observationRef()); // GH-90000
+        assertNotNull(result.patterns()); // GH-90000
+        assertNotNull(result.anomalies()); // GH-90000
+        assertNotNull(result.recommendations()); // GH-90000
 
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class));
-        verify(auditLogger, times(1)).log(any(Map.class));
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); // GH-90000
+        verify(auditLogger, times(1)).log(any(Map.class)); // GH-90000
     }
 
     @Test
-    void shouldDetectPatterns() {
+    void shouldDetectPatterns() { // GH-90000
         // GIVEN
-        CompletionService aiService = mock(CompletionService.class);
-        AuditLogger auditLogger = mock(AuditLogger.class);
-        MetricsCollector metrics = mock(MetricsCollector.class);
+        CompletionService aiService = mock(CompletionService.class); // GH-90000
+        AuditLogger auditLogger = mock(AuditLogger.class); // GH-90000
+        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
 
-        when(aiService.complete(any(CompletionRequest.class)))
-                .thenReturn(Promise.of(CompletionResult.builder()
-                        .text("Recurring pattern: Memory leak in service X")
-                        .modelUsed("gpt-4")
-                        .build()));
+        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
+                .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+                        .text("Recurring pattern: Memory leak in service X [GH-90000]")
+                        .modelUsed("gpt-4 [GH-90000]")
+                        .build())); // GH-90000
 
-        when(auditLogger.log(any(Map.class)))
-                .thenReturn(Promise.complete());
+        when(auditLogger.log(any(Map.class))) // GH-90000
+                .thenReturn(Promise.complete()); // GH-90000
 
-        LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics);
-        Observation observation = Observation.builder()
-                .id("obs-123")
-                .runRef("run-123")
-                .metrics(List.of())
-                .logs(List.of())
-                .traces(List.of())
-                .build();
+        LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics); // GH-90000
+        Observation observation = Observation.builder() // GH-90000
+                .id("obs-123 [GH-90000]")
+                .runRef("run-123 [GH-90000]")
+                .metrics(List.of()) // GH-90000
+                .logs(List.of()) // GH-90000
+                .traces(List.of()) // GH-90000
+                .build(); // GH-90000
 
         // WHEN
-        Insights result = runPromise(() -> service.analyze(observation));
+        Insights result = runPromise(() -> service.analyze(observation)); // GH-90000
 
         // THEN
-        assertNotNull(result);
-        assertFalse(result.patterns().isEmpty());
+        assertNotNull(result); // GH-90000
+        assertFalse(result.patterns().isEmpty()); // GH-90000
     }
 
     @Test
-    void shouldHandleAnalysisFailure() {
+    void shouldHandleAnalysisFailure() { // GH-90000
         // GIVEN
-        CompletionService aiService = mock(CompletionService.class);
-        AuditLogger auditLogger = mock(AuditLogger.class);
-        MetricsCollector metrics = mock(MetricsCollector.class);
+        CompletionService aiService = mock(CompletionService.class); // GH-90000
+        AuditLogger auditLogger = mock(AuditLogger.class); // GH-90000
+        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
 
-        when(aiService.complete(any(CompletionRequest.class)))
-                .thenReturn(Promise.ofException(new RuntimeException("Analysis failed")));
+        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
+                .thenReturn(Promise.ofException(new RuntimeException("Analysis failed [GH-90000]")));
 
-        when(auditLogger.log(any(Map.class)))
-                .thenReturn(Promise.complete());
+        when(auditLogger.log(any(Map.class))) // GH-90000
+                .thenReturn(Promise.complete()); // GH-90000
 
-        LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics);
-        Observation observation = Observation.builder()
-                .id("obs-123")
-                .runRef("run-123")
-                .build();
+        LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics); // GH-90000
+        Observation observation = Observation.builder() // GH-90000
+                .id("obs-123 [GH-90000]")
+                .runRef("run-123 [GH-90000]")
+                .build(); // GH-90000
 
                 // WHEN
-                Insights result = runPromise(() -> service.analyze(observation));
+                Insights result = runPromise(() -> service.analyze(observation)); // GH-90000
 
                 // THEN
-                assertNotNull(result);
-                assertEquals("obs-123", result.observationRef());
+                assertNotNull(result); // GH-90000
+                assertEquals("obs-123", result.observationRef()); // GH-90000
 
-                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.learn.analyze.fallback"), any(Map.class));
+                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.learn.analyze.fallback [GH-90000]"), any(Map.class));
     }
 }

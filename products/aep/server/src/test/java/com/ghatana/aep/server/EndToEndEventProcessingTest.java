@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.server;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 
  * <p>This test exercises the complete event processing pipeline:
  * <ol>
- *   <li>Event ingestion via AepEngine.process()</li>
+ *   <li>Event ingestion via AepEngine.process()</li> // GH-90000
  *   <li>Pattern detection using registered PatternDetector</li>
  *   <li>Delivery and notification of pattern matches</li>
  *   <li>Verification of processing metadata</li>
@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("End-to-End Event Processing Test")
+@DisplayName("End-to-End Event Processing Test [GH-90000]")
 class EndToEndEventProcessingTest extends EventloopTestBase {
 
     private AepEngine engine;
@@ -46,150 +46,150 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
     private PatternDetectionAgentAdapter detectorAdapter;
 
     @BeforeEach
-    void setUp() {
-        engine = Aep.forTesting();
+    void setUp() { // GH-90000
+        engine = Aep.forTesting(); // GH-90000
         
         // Create a simple NFA for pattern detection
-        NFA nfa = createSimpleNFA("test-pattern", "login.attempt");
+        NFA nfa = createSimpleNFA("test-pattern", "login.attempt"); // GH-90000
         
         // Create PatternDetectionAgent
-        patternAgent = PatternDetectionAgent.builder()
-            .operatorId(com.ghatana.core.operator.OperatorId.of("test", "pattern", "detector", "1.0"))
-            .name("Test Pattern Detector")
-            .nfa(nfa)
-            .confidenceThreshold(0.5)
-            .windowDuration(Duration.ofMinutes(5))
-            .build();
+        patternAgent = PatternDetectionAgent.builder() // GH-90000
+            .operatorId(com.ghatana.core.operator.OperatorId.of("test", "pattern", "detector", "1.0")) // GH-90000
+            .name("Test Pattern Detector [GH-90000]")
+            .nfa(nfa) // GH-90000
+            .confidenceThreshold(0.5) // GH-90000
+            .windowDuration(Duration.ofMinutes(5)) // GH-90000
+            .build(); // GH-90000
         
         // Initialize the agent
-        patternAgent.initialize(com.ghatana.core.operator.OperatorConfig.empty());
-        patternAgent.start();
+        patternAgent.initialize(com.ghatana.core.operator.OperatorConfig.empty()); // GH-90000
+        patternAgent.start(); // GH-90000
         
         // Create adapter and register with engine
-        detectorAdapter = PatternDetectionAgentAdapter.wrap(patternAgent, "pattern-1");
-        engine.registerPatternDetector("tenant-test", detectorAdapter);
+        detectorAdapter = PatternDetectionAgentAdapter.wrap(patternAgent, "pattern-1"); // GH-90000
+        engine.registerPatternDetector("tenant-test", detectorAdapter); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (detectorAdapter != null && engine != null) {
-            engine.unregisterPatternDetector("tenant-test", detectorAdapter);
+    void tearDown() { // GH-90000
+        if (detectorAdapter != null && engine != null) { // GH-90000
+            engine.unregisterPatternDetector("tenant-test", detectorAdapter); // GH-90000
         }
-        if (patternAgent != null) {
-            patternAgent.stop();
+        if (patternAgent != null) { // GH-90000
+            patternAgent.stop(); // GH-90000
         }
-        if (engine != null) {
-            engine.close();
+        if (engine != null) { // GH-90000
+            engine.close(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Event is processed end-to-end with pattern detection")
-    void eventIsProcessedWithPatternDetection() {
+    @DisplayName("Event is processed end-to-end with pattern detection [GH-90000]")
+    void eventIsProcessedWithPatternDetection() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
         String eventType = "login.attempt";
-        Map<String, Object> payload = Map.of("userId", "user-123", "ip", "192.168.1.1");
+        Map<String, Object> payload = Map.of("userId", "user-123", "ip", "192.168.1.1"); // GH-90000
 
         // WHEN
-        AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), 
-            java.time.Instant.now());
-        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
+        AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(),  // GH-90000
+            java.time.Instant.now()); // GH-90000
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); // GH-90000
 
         // THEN
-        assertThat(result.success()).isTrue();
-        assertThat(result.eventId()).isNotNull();
-        assertThat(result.metadata()).containsKey("processed");
-        assertThat(result.metadata()).containsKey("correlationId");
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.eventId()).isNotNull(); // GH-90000
+        assertThat(result.metadata()).containsKey("processed [GH-90000]");
+        assertThat(result.metadata()).containsKey("correlationId [GH-90000]");
     }
 
     @Test
-    @DisplayName("Pattern detection is invoked during event processing")
-    void patternDetectionIsInvoked() {
+    @DisplayName("Pattern detection is invoked during event processing [GH-90000]")
+    void patternDetectionIsInvoked() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
-        AepEngine.Event event = new AepEngine.Event("login.attempt", 
-            Map.of("userId", "user-456"), Map.of(), java.time.Instant.now());
+        AepEngine.Event event = new AepEngine.Event("login.attempt",  // GH-90000
+            Map.of("userId", "user-456"), Map.of(), java.time.Instant.now()); // GH-90000
 
         // WHEN
-        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); // GH-90000
 
         // THEN
-        assertThat(result.success()).isTrue();
+        assertThat(result.success()).isTrue(); // GH-90000
         // PatternDetectionAgent may or may not detect patterns depending on the NFA configuration
         // The important thing is that it was invoked without error
-        assertThat(result.eventId()).isNotNull();
+        assertThat(result.eventId()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Multiple events are processed sequentially")
-    void multipleEventsProcessedSequentially() {
+    @DisplayName("Multiple events are processed sequentially [GH-90000]")
+    void multipleEventsProcessedSequentially() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
-        List<AepEngine.Event> events = List.of(
-            new AepEngine.Event("event.1", Map.of("seq", 1), Map.of(), java.time.Instant.now()),
-            new AepEngine.Event("event.2", Map.of("seq", 2), Map.of(), java.time.Instant.now()),
-            new AepEngine.Event("event.3", Map.of("seq", 3), Map.of(), java.time.Instant.now())
+        List<AepEngine.Event> events = List.of( // GH-90000
+            new AepEngine.Event("event.1", Map.of("seq", 1), Map.of(), java.time.Instant.now()), // GH-90000
+            new AepEngine.Event("event.2", Map.of("seq", 2), Map.of(), java.time.Instant.now()), // GH-90000
+            new AepEngine.Event("event.3", Map.of("seq", 3), Map.of(), java.time.Instant.now()) // GH-90000
         );
 
         // WHEN
-        List<AepEngine.ProcessingResult> results = events.stream()
-            .map(event -> runPromise(() -> engine.process(tenantId, event)))
-            .toList();
+        List<AepEngine.ProcessingResult> results = events.stream() // GH-90000
+            .map(event -> runPromise(() -> engine.process(tenantId, event))) // GH-90000
+            .toList(); // GH-90000
 
         // THEN
-        assertThat(results).hasSize(3);
-        for (AepEngine.ProcessingResult result : results) {
-            assertThat(result.success()).isTrue();
-            assertThat(result.eventId()).isNotNull();
+        assertThat(results).hasSize(3); // GH-90000
+        for (AepEngine.ProcessingResult result : results) { // GH-90000
+            assertThat(result.success()).isTrue(); // GH-90000
+            assertThat(result.eventId()).isNotNull(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Pattern detections are included in processing result")
-    void patternDetectionsIncludedInResult() {
+    @DisplayName("Pattern detections are included in processing result [GH-90000]")
+    void patternDetectionsIncludedInResult() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
-        AepEngine.Event event = new AepEngine.Event("login.attempt", 
-            Map.of("userId", "user-789"), Map.of(), java.time.Instant.now());
+        AepEngine.Event event = new AepEngine.Event("login.attempt",  // GH-90000
+            Map.of("userId", "user-789"), Map.of(), java.time.Instant.now()); // GH-90000
 
         // WHEN
-        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); // GH-90000
 
         // THEN
-        assertThat(result.success()).isTrue();
-        assertThat(result.detections()).isNotNull();
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.detections()).isNotNull(); // GH-90000
         // Detections may be empty if pattern doesn't match, but should not be null
     }
 
     @Test
-    @DisplayName("Event metadata is populated correctly")
-    void eventMetadataPopulatedCorrectly() {
+    @DisplayName("Event metadata is populated correctly [GH-90000]")
+    void eventMetadataPopulatedCorrectly() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
-        AepEngine.Event event = new AepEngine.Event("test.event", 
-            Map.of("key", "value"), Map.of("correlationId", "corr-123"), java.time.Instant.now());
+        AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
+            Map.of("key", "value"), Map.of("correlationId", "corr-123"), java.time.Instant.now()); // GH-90000
 
         // WHEN
-        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event));
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); // GH-90000
 
         // THEN
-        assertThat(result.success()).isTrue();
-        assertThat(result.metadata()).containsKey("processed");
-        assertThat(result.metadata()).containsKey("correlationId");
-        assertThat(result.metadata()).containsKey("consentStatus");
-        assertThat(result.metadata()).containsKey("eventVersion");
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.metadata()).containsKey("processed [GH-90000]");
+        assertThat(result.metadata()).containsKey("correlationId [GH-90000]");
+        assertThat(result.metadata()).containsKey("consentStatus [GH-90000]");
+        assertThat(result.metadata()).containsKey("eventVersion [GH-90000]");
     }
 
     // Helper method to create a simple NFA
-    private NFA createSimpleNFA(String patternName, String eventType) {
-        NFA nfa = new NFA(patternName);
+    private NFA createSimpleNFA(String patternName, String eventType) { // GH-90000
+        NFA nfa = new NFA(patternName); // GH-90000
         
-        NFAState startState = nfa.getStartState();
-        NFAState acceptState = new NFAState("accept", com.ghatana.pattern.engine.nfa.NFAStateType.END);
+        NFAState startState = nfa.getStartState(); // GH-90000
+        NFAState acceptState = new NFAState("accept", com.ghatana.pattern.engine.nfa.NFAStateType.END); // GH-90000
         
-        nfa.addState(acceptState);
-        nfa.addTransition(startState, acceptState, eventType);
+        nfa.addState(acceptState); // GH-90000
+        nfa.addTransition(startState, acceptState, eventType); // GH-90000
         
         return nfa;
     }

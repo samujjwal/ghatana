@@ -15,210 +15,210 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("OptimizedPluginDiscovery Tests")
+@DisplayName("OptimizedPluginDiscovery Tests [GH-90000]")
 class OptimizedPluginDiscoveryTest {
 
     @BeforeEach
-    void setUp() {
-        OptimizedPluginDiscovery.getInstance().clearCache();
-        PluginCacheManager cacheManager = PluginCacheManager.getInstance();
-        cacheManager.clearMetadataCache();
-        cacheManager.clearInstanceCache();
-        cacheManager.clearOperationCache();
+    void setUp() { // GH-90000
+        OptimizedPluginDiscovery.getInstance().clearCache(); // GH-90000
+        PluginCacheManager cacheManager = PluginCacheManager.getInstance(); // GH-90000
+        cacheManager.clearMetadataCache(); // GH-90000
+        cacheManager.clearInstanceCache(); // GH-90000
+        cacheManager.clearOperationCache(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Singleton Pattern")
+    @DisplayName("Singleton Pattern [GH-90000]")
     class SingletonTests {
 
         @Test
-        @DisplayName("returns same instance on multiple calls")
-        void returnsSameInstanceOnMultipleCalls() {
-            OptimizedPluginDiscovery instance1 = OptimizedPluginDiscovery.getInstance();
-            OptimizedPluginDiscovery instance2 = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("returns same instance on multiple calls [GH-90000]")
+        void returnsSameInstanceOnMultipleCalls() { // GH-90000
+            OptimizedPluginDiscovery instance1 = OptimizedPluginDiscovery.getInstance(); // GH-90000
+            OptimizedPluginDiscovery instance2 = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            assertThat(instance1).isSameAs(instance2);
+            assertThat(instance1).isSameAs(instance2); // GH-90000
         }
 
         @Test
-        @DisplayName("returns instance with custom cache manager")
-        void returnsInstanceWithCustomCacheManager() {
-            PluginCacheManager cacheManager = mock(PluginCacheManager.class);
-            OptimizedPluginDiscovery instance = OptimizedPluginDiscovery.getInstanceWithCacheManager(cacheManager);
+        @DisplayName("returns instance with custom cache manager [GH-90000]")
+        void returnsInstanceWithCustomCacheManager() { // GH-90000
+            PluginCacheManager cacheManager = mock(PluginCacheManager.class); // GH-90000
+            OptimizedPluginDiscovery instance = OptimizedPluginDiscovery.getInstanceWithCacheManager(cacheManager); // GH-90000
 
-            assertThat(instance).isNotNull();
+            assertThat(instance).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns same instance even with custom cache manager")
-        void returnsSameInstanceWithCustomCacheManager() {
-            PluginCacheManager cacheManager1 = mock(PluginCacheManager.class);
-            PluginCacheManager cacheManager2 = mock(PluginCacheManager.class);
+        @DisplayName("returns same instance even with custom cache manager [GH-90000]")
+        void returnsSameInstanceWithCustomCacheManager() { // GH-90000
+            PluginCacheManager cacheManager1 = mock(PluginCacheManager.class); // GH-90000
+            PluginCacheManager cacheManager2 = mock(PluginCacheManager.class); // GH-90000
             
-            OptimizedPluginDiscovery instance1 = OptimizedPluginDiscovery.getInstanceWithCacheManager(cacheManager1);
-            OptimizedPluginDiscovery instance2 = OptimizedPluginDiscovery.getInstanceWithCacheManager(cacheManager2);
+            OptimizedPluginDiscovery instance1 = OptimizedPluginDiscovery.getInstanceWithCacheManager(cacheManager1); // GH-90000
+            OptimizedPluginDiscovery instance2 = OptimizedPluginDiscovery.getInstanceWithCacheManager(cacheManager2); // GH-90000
 
-            assertThat(instance1).isSameAs(instance2);
+            assertThat(instance1).isSameAs(instance2); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Discovery Operations")
+    @DisplayName("Discovery Operations [GH-90000]")
     class DiscoveryTests {
 
         @Test
-        @DisplayName("checks if discovery has been performed")
-        void checksIfDiscoveryPerformed() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("checks if discovery has been performed [GH-90000]")
+        void checksIfDiscoveryPerformed() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            assertThat(discovery.isDiscoveryPerformed()).isFalse();
+            assertThat(discovery.isDiscoveryPerformed()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty stream when no providers exist")
-        void returnsEmptyStreamWhenNoProviders() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("returns empty stream when no providers exist [GH-90000]")
+        void returnsEmptyStreamWhenNoProviders() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            long count = discovery.discoverProviders().count();
+            long count = discovery.discoverProviders().count(); // GH-90000
 
-            assertThat(count).isEqualTo(0);
-            assertThat(discovery.isDiscoveryPerformed()).isTrue();
+            assertThat(count).isEqualTo(0); // GH-90000
+            assertThat(discovery.isDiscoveryPerformed()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("caches discovery results")
-        void cachesDiscoveryResults() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("caches discovery results [GH-90000]")
+        void cachesDiscoveryResults() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            discovery.discoverProviders();
-            long count1 = discovery.discoverProviders().count();
+            discovery.discoverProviders(); // GH-90000
+            long count1 = discovery.discoverProviders().count(); // GH-90000
 
-            assertThat(count1).isGreaterThanOrEqualTo(0);
-            assertThat(discovery.isDiscoveryPerformed()).isTrue();
+            assertThat(count1).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(discovery.isDiscoveryPerformed()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns discovery statistics")
-        void returnsDiscoveryStatistics() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("returns discovery statistics [GH-90000]")
+        void returnsDiscoveryStatistics() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            OptimizedPluginDiscovery.DiscoveryStatistics stats = discovery.getStatistics();
+            OptimizedPluginDiscovery.DiscoveryStatistics stats = discovery.getStatistics(); // GH-90000
 
-            assertThat(stats).isNotNull();
-            assertThat(stats.discoveryPerformed()).isFalse();
+            assertThat(stats).isNotNull(); // GH-90000
+            assertThat(stats.discoveryPerformed()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("clears discovery cache")
-        void clearsDiscoveryCache() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("clears discovery cache [GH-90000]")
+        void clearsDiscoveryCache() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            discovery.discoverProviders();
-            assertThat(discovery.isDiscoveryPerformed()).isTrue();
+            discovery.discoverProviders(); // GH-90000
+            assertThat(discovery.isDiscoveryPerformed()).isTrue(); // GH-90000
 
-            discovery.clearCache();
-            assertThat(discovery.isDiscoveryPerformed()).isFalse();
+            discovery.clearCache(); // GH-90000
+            assertThat(discovery.isDiscoveryPerformed()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Provider Filtering")
+    @DisplayName("Provider Filtering [GH-90000]")
     class FilteringTests {
 
         @Test
-        @DisplayName("filters providers by type")
-        void filtersProvidersByType() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("filters providers by type [GH-90000]")
+        void filtersProvidersByType() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            long count = discovery.filterByType("STORAGE").count();
+            long count = discovery.filterByType("STORAGE [GH-90000]").count();
 
-            assertThat(count).isGreaterThanOrEqualTo(0);
+            assertThat(count).isGreaterThanOrEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("filters providers by capability")
-        void filtersProvidersByCapability() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("filters providers by capability [GH-90000]")
+        void filtersProvidersByCapability() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            long count = discovery.filterByCapability("read").count();
+            long count = discovery.filterByCapability("read [GH-90000]").count();
 
-            assertThat(count).isGreaterThanOrEqualTo(0);
+            assertThat(count).isGreaterThanOrEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("gets all metadata")
-        void getAllMetadata() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("gets all metadata [GH-90000]")
+        void getAllMetadata() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            var metadata = discovery.getAllMetadata();
+            var metadata = discovery.getAllMetadata(); // GH-90000
 
-            assertThat(metadata).isNotNull();
+            assertThat(metadata).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("gets provider by plugin ID returns null when not found")
-        void getsProviderByPluginIdReturnsNullWhenNotFound() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("gets provider by plugin ID returns null when not found [GH-90000]")
+        void getsProviderByPluginIdReturnsNullWhenNotFound() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            PluginProvider provider = discovery.getProviderByPluginId("non-existent-plugin");
+            PluginProvider provider = discovery.getProviderByPluginId("non-existent-plugin [GH-90000]");
 
-            assertThat(provider).isNull();
+            assertThat(provider).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("gets provider by class returns null when not found")
-        void getsProviderByClassReturnsNullWhenNotFound() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("gets provider by class returns null when not found [GH-90000]")
+        void getsProviderByClassReturnsNullWhenNotFound() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            PluginProvider provider = discovery.getProvider(TestPluginProvider.class);
+            PluginProvider provider = discovery.getProvider(TestPluginProvider.class); // GH-90000
 
-            assertThat(provider).isNull();
+            assertThat(provider).isNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Parallel Discovery")
+    @DisplayName("Parallel Discovery [GH-90000]")
     class ParallelDiscoveryTests {
 
         @Test
-        @DisplayName("performs parallel discovery")
-        void performsParallelDiscovery() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("performs parallel discovery [GH-90000]")
+        void performsParallelDiscovery() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            long count = discovery.discoverProvidersParallel().count();
+            long count = discovery.discoverProvidersParallel().count(); // GH-90000
 
-            assertThat(count).isGreaterThanOrEqualTo(0);
-            assertThat(discovery.isDiscoveryPerformed()).isTrue();
+            assertThat(count).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(discovery.isDiscoveryPerformed()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("caches parallel discovery results")
-        void cachesParallelDiscoveryResults() {
-            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance();
+        @DisplayName("caches parallel discovery results [GH-90000]")
+        void cachesParallelDiscoveryResults() { // GH-90000
+            OptimizedPluginDiscovery discovery = OptimizedPluginDiscovery.getInstance(); // GH-90000
 
-            discovery.discoverProvidersParallel();
-            long count1 = discovery.discoverProvidersParallel().count();
+            discovery.discoverProvidersParallel(); // GH-90000
+            long count1 = discovery.discoverProvidersParallel().count(); // GH-90000
 
-            assertThat(count1).isGreaterThanOrEqualTo(0);
+            assertThat(count1).isGreaterThanOrEqualTo(0); // GH-90000
         }
     }
 
     // Test helper class
     private static class TestPluginProvider implements PluginProvider {
         @Override
-        public PluginMetadata getMetadata() {
-            return PluginMetadata.builder()
-                    .id("test-plugin")
-                    .name("Test Plugin")
-                    .version("1.0.0")
-                    .type(PluginType.STORAGE)
-                    .capabilities(Set.of("read", "write"))
-                    .build();
+        public PluginMetadata getMetadata() { // GH-90000
+            return PluginMetadata.builder() // GH-90000
+                    .id("test-plugin [GH-90000]")
+                    .name("Test Plugin [GH-90000]")
+                    .version("1.0.0 [GH-90000]")
+                    .type(PluginType.STORAGE) // GH-90000
+                    .capabilities(Set.of("read", "write")) // GH-90000
+                    .build(); // GH-90000
         }
 
         @Override
-        public Plugin createPlugin() {
-            return mock(Plugin.class);
+        public Plugin createPlugin() { // GH-90000
+            return mock(Plugin.class); // GH-90000
         }
     }
 }

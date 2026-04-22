@@ -107,7 +107,7 @@ describe('Code Editor - Lazy Loading', () => {
                 unmount();
             });
 
-            expect(true).toBe(true);
+            expect(languages).toHaveLength(5);
         });
     });
 
@@ -132,7 +132,7 @@ describe('Code Editor - Lazy Loading', () => {
             );
 
             await waitFor(() => {
-                expect(true).toBe(true); // Async loading completed
+                expect(screen.getByText('Monaco Editor Bundle')).toBeInTheDocument();
             });
         });
 
@@ -245,7 +245,7 @@ describe('Code Editor - Lazy Loading', () => {
 
             unmount();
 
-            expect(true).toBe(true);
+            expect(document.body).toBeDefined();
         });
     });
 
@@ -261,7 +261,7 @@ describe('Code Editor - Lazy Loading', () => {
                 } as LazyMonacoEditorProps)
             );
 
-            expect(true).toBe(true);
+            expect(screen.getByText('Monaco Editor Bundle')).toBeInTheDocument();
         });
 
         it('should support theme selection', () => {
@@ -278,7 +278,7 @@ describe('Code Editor - Lazy Loading', () => {
                 unmount();
             });
 
-            expect(true).toBe(true);
+            expect(themes).toContain('vs-dark');
         });
 
         it('should support readonly mode', () => {
@@ -290,7 +290,7 @@ describe('Code Editor - Lazy Loading', () => {
                 } as LazyMonacoEditorProps)
             );
 
-            expect(true).toBe(true);
+            expect(screen.getByText('Monaco Editor Bundle')).toBeInTheDocument();
         });
 
         it('should support word wrap', () => {
@@ -302,7 +302,7 @@ describe('Code Editor - Lazy Loading', () => {
                 } as LazyMonacoEditorProps)
             );
 
-            expect(true).toBe(true);
+            expect(screen.getByText('Monaco Editor Bundle')).toBeInTheDocument();
         });
     });
 
@@ -322,7 +322,7 @@ describe('Code Editor - Lazy Loading', () => {
                 } as LazyMonacoEditorProps)
             );
 
-            expect(true).toBe(true);
+            expect(screen.getByText('Monaco Editor Bundle')).toBeInTheDocument();
         });
 
         it('should support onChange callback', () => {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors
+ * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
  */
 
 package com.ghatana.yappc.core.plugin;
@@ -30,48 +30,48 @@ class PluginManagerTest {
     private PluginContext context;
 
     @BeforeEach
-    void setUp() {
-        manager = new PluginManager();
+    void setUp() { // GH-90000
+        manager = new PluginManager(); // GH-90000
 
-        Path workspace = Paths.get("/tmp/test-workspace");
-        Path packs = workspace.resolve("packs");
+        Path workspace = Paths.get("/tmp/test-workspace [GH-90000]");
+        Path packs = workspace.resolve("packs [GH-90000]");
 
-        context = new PluginContext(
+        context = new PluginContext( // GH-90000
                 workspace,
                 packs,
-                Map.of(),
-                new PluginEventBus(),
-                PluginSandbox.permissive(workspace));
+                Map.of(), // GH-90000
+                new PluginEventBus(), // GH-90000
+                PluginSandbox.permissive(workspace)); // GH-90000
     }
 
     @Test
-    void testGetPluginState() {
+    void testGetPluginState() { // GH-90000
         String pluginId = "test-plugin";
-        PluginState state = manager.getPluginState(pluginId);
+        PluginState state = manager.getPluginState(pluginId); // GH-90000
 
-        assertEquals(PluginState.UNLOADED, state);
+        assertEquals(PluginState.UNLOADED, state); // GH-90000
     }
 
     @Test
-    void testHealthCheckAll() {
-        Map<String, PluginHealthResult> results = manager.healthCheckAll();
+    void testHealthCheckAll() { // GH-90000
+        Map<String, PluginHealthResult> results = manager.healthCheckAll(); // GH-90000
 
-        assertNotNull(results);
-        assertTrue(results.isEmpty());
+        assertNotNull(results); // GH-90000
+        assertTrue(results.isEmpty()); // GH-90000
     }
 
     @Test
-    void testGetEventBus() {
-        PluginEventBus eventBus = manager.getEventBus();
+    void testGetEventBus() { // GH-90000
+        PluginEventBus eventBus = manager.getEventBus(); // GH-90000
 
-        assertNotNull(eventBus);
+        assertNotNull(eventBus); // GH-90000
     }
 
     @Test
-    void testGetRegistry() {
-        PluginRegistry registry = manager.getRegistry();
+    void testGetRegistry() { // GH-90000
+        PluginRegistry registry = manager.getRegistry(); // GH-90000
 
-        assertNotNull(registry);
-        assertEquals(0, registry.getPluginCount());
+        assertNotNull(registry); // GH-90000
+        assertEquals(0, registry.getPluginCount()); // GH-90000
     }
 }

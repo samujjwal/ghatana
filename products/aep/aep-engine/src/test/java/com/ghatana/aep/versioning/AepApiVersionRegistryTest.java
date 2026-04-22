@@ -18,184 +18,184 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepApiVersionRegistry")
+@DisplayName("AepApiVersionRegistry [GH-90000]")
 class AepApiVersionRegistryTest {
 
-    private static final LocalDate FUTURE_DATE = LocalDate.now().plusMonths(3);
+    private static final LocalDate FUTURE_DATE = LocalDate.now().plusMonths(3); // GH-90000
 
-    private AepApiVersionRegistry buildStandard() {
-        return AepApiVersionRegistry.builder()
-                .register(AepApiVersionRegistry.ApiVersion.current("v3"))
-                .register(AepApiVersionRegistry.ApiVersion.deprecated("v2", FUTURE_DATE))
-                .register(AepApiVersionRegistry.ApiVersion.sunset("v1"))
-                .build();
+    private AepApiVersionRegistry buildStandard() { // GH-90000
+        return AepApiVersionRegistry.builder() // GH-90000
+                .register(AepApiVersionRegistry.ApiVersion.current("v3 [GH-90000]"))
+                .register(AepApiVersionRegistry.ApiVersion.deprecated("v2", FUTURE_DATE)) // GH-90000
+                .register(AepApiVersionRegistry.ApiVersion.sunset("v1 [GH-90000]"))
+                .build(); // GH-90000
     }
 
     // ─── currentVersion ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("currentVersion: returns the registered CURRENT version")
-    void currentVersion_returnsCurrentVersion() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.currentVersion()).isEqualTo("v3");
+    @DisplayName("currentVersion: returns the registered CURRENT version [GH-90000]")
+    void currentVersion_returnsCurrentVersion() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.currentVersion()).isEqualTo("v3 [GH-90000]");
     }
 
     @Test
-    @DisplayName("build: throws if no CURRENT version is registered")
-    void build_noCurrent_throwsISE() {
-        assertThatThrownBy(() ->
-                AepApiVersionRegistry.builder()
-                        .register(AepApiVersionRegistry.ApiVersion.deprecated("v1", FUTURE_DATE))
-                        .build())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("CURRENT");
+    @DisplayName("build: throws if no CURRENT version is registered [GH-90000]")
+    void build_noCurrent_throwsISE() { // GH-90000
+        assertThatThrownBy(() -> // GH-90000
+                AepApiVersionRegistry.builder() // GH-90000
+                        .register(AepApiVersionRegistry.ApiVersion.deprecated("v1", FUTURE_DATE)) // GH-90000
+                        .build()) // GH-90000
+                .isInstanceOf(IllegalStateException.class) // GH-90000
+                .hasMessageContaining("CURRENT [GH-90000]");
     }
 
     // ─── negotiate ────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("negotiate()")
+    @DisplayName("negotiate() [GH-90000]")
     class Negotiate {
 
         @Test
-        @DisplayName("current version is returned as-is")
-        void negotiate_currentVersion_returnedAsIs() {
-            AepApiVersionRegistry registry = buildStandard();
-            assertThat(registry.negotiate("v3")).contains("v3");
+        @DisplayName("current version is returned as-is [GH-90000]")
+        void negotiate_currentVersion_returnedAsIs() { // GH-90000
+            AepApiVersionRegistry registry = buildStandard(); // GH-90000
+            assertThat(registry.negotiate("v3 [GH-90000]")).contains("v3 [GH-90000]");
         }
 
         @Test
-        @DisplayName("deprecated version is returned (with a warning)")
-        void negotiate_deprecatedVersion_returned() {
-            AepApiVersionRegistry registry = buildStandard();
-            assertThat(registry.negotiate("v2")).contains("v2");
+        @DisplayName("deprecated version is returned (with a warning) [GH-90000]")
+        void negotiate_deprecatedVersion_returned() { // GH-90000
+            AepApiVersionRegistry registry = buildStandard(); // GH-90000
+            assertThat(registry.negotiate("v2 [GH-90000]")).contains("v2 [GH-90000]");
         }
 
         @Test
-        @DisplayName("sunset version → redirected to current")
-        void negotiate_sunsetVersion_redirectedToCurrent() {
-            AepApiVersionRegistry registry = buildStandard();
-            assertThat(registry.negotiate("v1")).contains("v3");
+        @DisplayName("sunset version → redirected to current [GH-90000]")
+        void negotiate_sunsetVersion_redirectedToCurrent() { // GH-90000
+            AepApiVersionRegistry registry = buildStandard(); // GH-90000
+            assertThat(registry.negotiate("v1 [GH-90000]")).contains("v3 [GH-90000]");
         }
 
         @Test
-        @DisplayName("unknown version → redirected to current")
-        void negotiate_unknownVersion_redirectedToCurrent() {
-            AepApiVersionRegistry registry = buildStandard();
-            assertThat(registry.negotiate("v99")).contains("v3");
+        @DisplayName("unknown version → redirected to current [GH-90000]")
+        void negotiate_unknownVersion_redirectedToCurrent() { // GH-90000
+            AepApiVersionRegistry registry = buildStandard(); // GH-90000
+            assertThat(registry.negotiate("v99 [GH-90000]")).contains("v3 [GH-90000]");
         }
 
         @Test
-        @DisplayName("null requestedVersion throws NullPointerException")
-        void negotiate_nullVersion_throwsNPE() {
-            AepApiVersionRegistry registry = buildStandard();
-            assertThatNullPointerException()
-                    .isThrownBy(() -> registry.negotiate(null));
+        @DisplayName("null requestedVersion throws NullPointerException [GH-90000]")
+        void negotiate_nullVersion_throwsNPE() { // GH-90000
+            AepApiVersionRegistry registry = buildStandard(); // GH-90000
+            assertThatNullPointerException() // GH-90000
+                    .isThrownBy(() -> registry.negotiate(null)); // GH-90000
         }
     }
 
     // ─── isDeprecated ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("isDeprecated: returns true for deprecated version")
-    void isDeprecated_trueForDeprecated() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.isDeprecated("v2")).isTrue();
+    @DisplayName("isDeprecated: returns true for deprecated version [GH-90000]")
+    void isDeprecated_trueForDeprecated() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.isDeprecated("v2 [GH-90000]")).isTrue();
     }
 
     @Test
-    @DisplayName("isDeprecated: returns false for current version")
-    void isDeprecated_falseForCurrent() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.isDeprecated("v3")).isFalse();
+    @DisplayName("isDeprecated: returns false for current version [GH-90000]")
+    void isDeprecated_falseForCurrent() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.isDeprecated("v3 [GH-90000]")).isFalse();
     }
 
     @Test
-    @DisplayName("isDeprecated: returns false for unknown version")
-    void isDeprecated_falseForUnknown() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.isDeprecated("v99")).isFalse();
+    @DisplayName("isDeprecated: returns false for unknown version [GH-90000]")
+    void isDeprecated_falseForUnknown() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.isDeprecated("v99 [GH-90000]")).isFalse();
     }
 
     // ─── isSunset ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("isSunset: returns true for sunset version")
-    void isSunset_trueForSunset() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.isSunset("v1")).isTrue();
+    @DisplayName("isSunset: returns true for sunset version [GH-90000]")
+    void isSunset_trueForSunset() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.isSunset("v1 [GH-90000]")).isTrue();
     }
 
     @Test
-    @DisplayName("isSunset: returns false for current version")
-    void isSunset_falseForCurrent() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.isSunset("v3")).isFalse();
+    @DisplayName("isSunset: returns false for current version [GH-90000]")
+    void isSunset_falseForCurrent() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.isSunset("v3 [GH-90000]")).isFalse();
     }
 
     // ─── sunsetDate ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("sunsetDate: returns date for deprecated version")
-    void sunsetDate_presentForDeprecated() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.sunsetDate("v2")).isPresent().contains(FUTURE_DATE);
+    @DisplayName("sunsetDate: returns date for deprecated version [GH-90000]")
+    void sunsetDate_presentForDeprecated() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.sunsetDate("v2 [GH-90000]")).isPresent().contains(FUTURE_DATE);
     }
 
     @Test
-    @DisplayName("sunsetDate: empty for current version")
-    void sunsetDate_emptyForCurrent() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.sunsetDate("v3")).isEmpty();
+    @DisplayName("sunsetDate: empty for current version [GH-90000]")
+    void sunsetDate_emptyForCurrent() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.sunsetDate("v3 [GH-90000]")).isEmpty();
     }
 
     @Test
-    @DisplayName("sunsetDate: empty for unknown version")
-    void sunsetDate_emptyForUnknown() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.sunsetDate("vUnknown")).isEmpty();
+    @DisplayName("sunsetDate: empty for unknown version [GH-90000]")
+    void sunsetDate_emptyForUnknown() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.sunsetDate("vUnknown [GH-90000]")).isEmpty();
     }
 
     // ─── registeredVersions ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("registeredVersions: contains all registered IDs")
-    void registeredVersions_containsAll() {
-        AepApiVersionRegistry registry = buildStandard();
-        assertThat(registry.registeredVersions()).containsExactlyInAnyOrder("v1", "v2", "v3");
+    @DisplayName("registeredVersions: contains all registered IDs [GH-90000]")
+    void registeredVersions_containsAll() { // GH-90000
+        AepApiVersionRegistry registry = buildStandard(); // GH-90000
+        assertThat(registry.registeredVersions()).containsExactlyInAnyOrder("v1", "v2", "v3"); // GH-90000
     }
 
     // ─── ApiVersion factories ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("ApiVersion.current: has CURRENT status and no sunset date")
-    void apiVersion_current_properties() {
-        var v = AepApiVersionRegistry.ApiVersion.current("v5");
-        assertThat(v.status()).isEqualTo(AepApiVersionRegistry.ApiVersion.Status.CURRENT);
-        assertThat(v.sunsetDate()).isEmpty();
-        assertThat(v.versionId()).isEqualTo("v5");
+    @DisplayName("ApiVersion.current: has CURRENT status and no sunset date [GH-90000]")
+    void apiVersion_current_properties() { // GH-90000
+        var v = AepApiVersionRegistry.ApiVersion.current("v5 [GH-90000]");
+        assertThat(v.status()).isEqualTo(AepApiVersionRegistry.ApiVersion.Status.CURRENT); // GH-90000
+        assertThat(v.sunsetDate()).isEmpty(); // GH-90000
+        assertThat(v.versionId()).isEqualTo("v5 [GH-90000]");
     }
 
     @Test
-    @DisplayName("ApiVersion.deprecated: has DEPRECATED status and a sunset date")
-    void apiVersion_deprecated_properties() {
-        var v = AepApiVersionRegistry.ApiVersion.deprecated("v4", FUTURE_DATE);
-        assertThat(v.status()).isEqualTo(AepApiVersionRegistry.ApiVersion.Status.DEPRECATED);
-        assertThat(v.sunsetDate()).contains(FUTURE_DATE);
+    @DisplayName("ApiVersion.deprecated: has DEPRECATED status and a sunset date [GH-90000]")
+    void apiVersion_deprecated_properties() { // GH-90000
+        var v = AepApiVersionRegistry.ApiVersion.deprecated("v4", FUTURE_DATE); // GH-90000
+        assertThat(v.status()).isEqualTo(AepApiVersionRegistry.ApiVersion.Status.DEPRECATED); // GH-90000
+        assertThat(v.sunsetDate()).contains(FUTURE_DATE); // GH-90000
     }
 
     @Test
-    @DisplayName("ApiVersion.sunset: has SUNSET status and no sunset date")
-    void apiVersion_sunset_properties() {
-        var v = AepApiVersionRegistry.ApiVersion.sunset("v0");
-        assertThat(v.status()).isEqualTo(AepApiVersionRegistry.ApiVersion.Status.SUNSET);
-        assertThat(v.sunsetDate()).isEmpty();
+    @DisplayName("ApiVersion.sunset: has SUNSET status and no sunset date [GH-90000]")
+    void apiVersion_sunset_properties() { // GH-90000
+        var v = AepApiVersionRegistry.ApiVersion.sunset("v0 [GH-90000]");
+        assertThat(v.status()).isEqualTo(AepApiVersionRegistry.ApiVersion.Status.SUNSET); // GH-90000
+        assertThat(v.sunsetDate()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("ApiVersion.current: null versionId throws NPE")
-    void apiVersion_current_nullId_throwsNPE() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> AepApiVersionRegistry.ApiVersion.current(null));
+    @DisplayName("ApiVersion.current: null versionId throws NPE [GH-90000]")
+    void apiVersion_current_nullId_throwsNPE() { // GH-90000
+        assertThatNullPointerException() // GH-90000
+                .isThrownBy(() -> AepApiVersionRegistry.ApiVersion.current(null)); // GH-90000
     }
 }

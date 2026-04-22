@@ -9,14 +9,23 @@
 import React from 'react';
 import { useForm, SubmitHandler, type Resolver } from 'react-hook-form';
 import { Button, TextField, TextArea, Switch } from '@ghatana/design-system';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Shield, Clock } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { SensitivityBadge, TrustBadge } from '../../../components/governance/TrustSignal';
+
+export const SensitivityLevelSchema = z.enum(['public', 'internal', 'confidential', 'pii', 'restricted']);
+export type SensitivityLevel = z.infer<typeof SensitivityLevelSchema>;
+
+export const RetentionPolicySchema = z.enum(['standard', 'short_term', 'long_term', 'indefinite', 'compliance']);
+export type RetentionPolicy = z.infer<typeof RetentionPolicySchema>;
 
 const collectionSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name must be less than 50 characters'),
   description: z.string().max(200, 'Description must be less than 200 characters').optional().default(''),
   isActive: z.boolean().default(true),
+  sensitivity: SensitivityLevelSchema.default('internal'),
+  retentionPolicy: RetentionPolicySchema.default('standard'),
   schema: z.object({
     name: z.string().min(2, 'Schema name is required'),
     fields: z.array(z.object({
@@ -113,7 +122,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
     <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Collection Details</h2>
-        
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
@@ -155,6 +164,62 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
             onToggle={(checked) => setValue('isActive', checked)}
           />
           <Label htmlFor="isActive">Active</Label>
+        </div>
+
+        {/* Trust Signals — sensitivity and retention */}
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Trust & Governance</h3>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="sensitivity">Data Sensitivity</Label>
+              <select
+                id="sensitivity"
+                {...register('sensitivity')}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="public">Public</option>
+                <option value="internal">Internal</option>
+                <option value="confidential">Confidential</option>
+                <option value="pii">PII (Personal Data)</option>
+                <option value="restricted">Restricted</option>
+              </select>
+              <div className="pt-1">
+                <SensitivityBadge level={watch('sensitivity') as SensitivityLevel} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="retentionPolicy">Retention Policy</Label>
+              <select
+                id="retentionPolicy"
+                {...register('retentionPolicy')}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="standard">Standard (1 year)</option>
+                <option value="short_term">Short-term (30 days)</option>
+                <option value="long_term">Long-term (7 years)</option>
+                <option value="indefinite">Indefinite</option>
+                <option value="compliance">Compliance (regulated)</option>
+              </select>
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <Clock className="h-3 w-3" />
+                {watch('retentionPolicy') === 'compliance' && (
+                  <TrustBadge status="warning" label="Requires review" />
+                )}
+                <span>
+                  {watch('retentionPolicy') === 'standard' && 'Data retained for 1 year then auto-purged'}
+                  {watch('retentionPolicy') === 'short_term' && 'Data purged after 30 days'}
+                  {watch('retentionPolicy') === 'long_term' && 'Data retained for 7 years for audit'}
+                  {watch('retentionPolicy') === 'indefinite' && 'Data retained until manually deleted'}
+                  {watch('retentionPolicy') === 'compliance' && 'Regulated retention — legal review required'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

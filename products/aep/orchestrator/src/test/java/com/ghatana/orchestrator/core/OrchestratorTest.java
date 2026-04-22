@@ -28,10 +28,10 @@ import org.mockito.MockitoAnnotations;
  * Unit tests for {@link Orchestrator}.
  *
  * <p>All async operations are executed within a managed ActiveJ Eventloop via
- * {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)} to prevent
+ * {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)} to prevent // GH-90000
  * NPE from unresolved Promises.
  */
-@DisplayName("Orchestrator")
+@DisplayName("Orchestrator [GH-90000]")
 class OrchestratorTest extends EventloopTestBase {
 
     @Mock
@@ -55,88 +55,88 @@ class OrchestratorTest extends EventloopTestBase {
     private Orchestrator orchestrator;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    void setUp() { // GH-90000
+        MockitoAnnotations.openMocks(this); // GH-90000
 
         // Mock configuration
-        when(config.getRefreshInterval()).thenReturn(Duration.ofMinutes(5));
-        when(config.getMaxConcurrentRefreshes()).thenReturn(3);
+        when(config.getRefreshInterval()).thenReturn(Duration.ofMinutes(5)); // GH-90000
+        when(config.getMaxConcurrentRefreshes()).thenReturn(3); // GH-90000
 
-        orchestrator = new Orchestrator(
+        orchestrator = new Orchestrator( // GH-90000
                 pipelineCache, agentRegistryClient, pipelineRegistryClient, config, metrics, specFormatLoader);
     }
 
     @Test
-    @DisplayName("start() loads pipelines and records startup timer")
-    void testStart() {
-        when(pipelineRegistryClient.listAllPipelines()).thenReturn(Promise.of(Collections.emptyList()));
-        when(pipelineCache.putAll(any())).thenReturn(Promise.of(null));
+    @DisplayName("start() loads pipelines and records startup timer [GH-90000]")
+    void testStart() { // GH-90000
+        when(pipelineRegistryClient.listAllPipelines()).thenReturn(Promise.of(Collections.emptyList())); // GH-90000
+        when(pipelineCache.putAll(any())).thenReturn(Promise.of(null)); // GH-90000
 
-        runPromise(() -> orchestrator.start());
+        runPromise(() -> orchestrator.start()); // GH-90000
 
-        verify(pipelineRegistryClient).listAllPipelines();
-        verify(metrics).recordTimer("orch.startup", 0L);
+        verify(pipelineRegistryClient).listAllPipelines(); // GH-90000
+        verify(metrics).recordTimer("orch.startup", 0L); // GH-90000
     }
 
     @Test
-    @DisplayName("stop() clears pipeline cache")
-    void testStop() {
+    @DisplayName("stop() clears pipeline cache [GH-90000]")
+    void testStop() { // GH-90000
         // Must start before stop will do anything
-        when(pipelineRegistryClient.listAllPipelines()).thenReturn(Promise.of(Collections.emptyList()));
-        when(pipelineCache.putAll(any())).thenReturn(Promise.of(null));
-        runPromise(() -> orchestrator.start());
+        when(pipelineRegistryClient.listAllPipelines()).thenReturn(Promise.of(Collections.emptyList())); // GH-90000
+        when(pipelineCache.putAll(any())).thenReturn(Promise.of(null)); // GH-90000
+        runPromise(() -> orchestrator.start()); // GH-90000
 
-        when(pipelineCache.clear()).thenReturn(Promise.of(null));
-        runPromise(() -> orchestrator.stop());
+        when(pipelineCache.clear()).thenReturn(Promise.of(null)); // GH-90000
+        runPromise(() -> orchestrator.stop()); // GH-90000
 
-        verify(pipelineCache).clear();
+        verify(pipelineCache).clear(); // GH-90000
     }
 
     @Test
-    @DisplayName("isHealthy() delegates to registry and agent clients")
-    void testHealthCheck() {
-        when(agentRegistryClient.isHealthy()).thenReturn(Promise.of(true));
-        when(pipelineRegistryClient.isHealthy()).thenReturn(Promise.of(true));
+    @DisplayName("isHealthy() delegates to registry and agent clients [GH-90000]")
+    void testHealthCheck() { // GH-90000
+        when(agentRegistryClient.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
+        when(pipelineRegistryClient.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
 
-        Boolean healthy = runPromise(() -> orchestrator.isHealthy());
+        Boolean healthy = runPromise(() -> orchestrator.isHealthy()); // GH-90000
 
-        assertNotNull(healthy);
+        assertNotNull(healthy); // GH-90000
     }
 
     @Test
-    @DisplayName("getStatus() reflects cached pipeline count")
-    void testGetStatus() {
-        when(pipelineCache.size()).thenReturn(5);
+    @DisplayName("getStatus() reflects cached pipeline count [GH-90000]")
+    void testGetStatus() { // GH-90000
+        when(pipelineCache.size()).thenReturn(5); // GH-90000
 
-        Orchestrator.OrchestratorStatus status = orchestrator.getStatus();
+        Orchestrator.OrchestratorStatus status = orchestrator.getStatus(); // GH-90000
 
-        assertNotNull(status);
-        assertEquals(5, status.getCachedPipelines());
+        assertNotNull(status); // GH-90000
+        assertEquals(5, status.getCachedPipelines()); // GH-90000
     }
 
     @Test
-    @DisplayName("getPipeline() retrieves entity from cache")
-    void testGetPipeline() {
+    @DisplayName("getPipeline() retrieves entity from cache [GH-90000]")
+    void testGetPipeline() { // GH-90000
         String pipelineId = "test-pipeline";
-        OrchestratorPipelineEntity mockPipeline = new OrchestratorPipelineEntity();
+        OrchestratorPipelineEntity mockPipeline = new OrchestratorPipelineEntity(); // GH-90000
         mockPipeline.id = pipelineId;
 
-        when(pipelineCache.get(pipelineId)).thenReturn(Promise.of(Optional.of(mockPipeline)));
+        when(pipelineCache.get(pipelineId)).thenReturn(Promise.of(Optional.of(mockPipeline))); // GH-90000
 
-        OrchestratorPipelineEntity result = runPromise(() -> orchestrator.getPipeline(pipelineId));
+        OrchestratorPipelineEntity result = runPromise(() -> orchestrator.getPipeline(pipelineId)); // GH-90000
 
-        assertNotNull(result);
-        verify(pipelineCache).get(pipelineId);
+        assertNotNull(result); // GH-90000
+        verify(pipelineCache).get(pipelineId); // GH-90000
     }
 
     @Test
-    @DisplayName("listPipelines() returns all cached pipelines")
-    void testListPipelines() {
-        when(pipelineCache.getAllPipelines()).thenReturn(Promise.of(Collections.emptyList()));
+    @DisplayName("listPipelines() returns all cached pipelines [GH-90000]")
+    void testListPipelines() { // GH-90000
+        when(pipelineCache.getAllPipelines()).thenReturn(Promise.of(Collections.emptyList())); // GH-90000
 
-        java.util.List<OrchestratorPipelineEntity> result = runPromise(() -> orchestrator.listPipelines());
+        java.util.List<OrchestratorPipelineEntity> result = runPromise(() -> orchestrator.listPipelines()); // GH-90000
 
-        assertNotNull(result);
-        verify(pipelineCache).getAllPipelines();
+        assertNotNull(result); // GH-90000
+        verify(pipelineCache).getAllPipelines(); // GH-90000
     }
 }

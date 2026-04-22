@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests focused on streaming transports (SSE, WebSocket) backed by the shared
+ * Integration tests focused on streaming transports (SSE, WebSocket) backed by the shared // GH-90000
  * JobProgressStreamer implementation.
 
  * @doc.type class
@@ -30,129 +30,129 @@ import org.junit.jupiter.api.Test;
 */
 class StreamingIntegrationTest extends IntegrationTestSupport {
 
-    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {}; // GH-90000
 
     @Test
-    void sseStreamReturnsExpectedEventSequence() throws Exception {
-        String jobId = TestJobs.submit(harness.getJobService(), "sse-seq-1").jobId();
+    void sseStreamReturnsExpectedEventSequence() throws Exception { // GH-90000
+        String jobId = TestJobs.submit(harness.getJobService(), "sse-seq-1").jobId(); // GH-90000
 
         HttpRequest request =
-                HttpRequest.newBuilder()
-                        .uri(
-                                URI.create(
-                                        harness.getHttpBaseUrl()
+                HttpRequest.newBuilder() // GH-90000
+                        .uri( // GH-90000
+                                URI.create( // GH-90000
+                                        harness.getHttpBaseUrl() // GH-90000
                                                 + "/api/v1/jobs/"
                                                 + jobId
                                                 + "/events"))
-                        .timeout(Duration.ofSeconds(5))
-                        .header("Accept", "text/event-stream")
-                        .GET()
-                        .build();
+                        .timeout(Duration.ofSeconds(5)) // GH-90000
+                        .header("Accept", "text/event-stream") // GH-90000
+                        .GET() // GH-90000
+                        .build(); // GH-90000
 
         HttpResponse<String> response =
-                httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // GH-90000
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        assertThat(response.headers().firstValue("Content-Type")).contains("text/event-stream");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        assertThat(response.headers().firstValue("Content-Type [GH-90000]")).contains("text/event-stream [GH-90000]");
 
-        String body = response.body();
-        int idxConnected = body.indexOf("event: connected");
-        int idxStatus = body.indexOf("event: status");
-        int idxProgress = body.indexOf("event: progress");
-        int idxComplete = body.indexOf("event: complete");
+        String body = response.body(); // GH-90000
+        int idxConnected = body.indexOf("event: connected [GH-90000]");
+        int idxStatus = body.indexOf("event: status [GH-90000]");
+        int idxProgress = body.indexOf("event: progress [GH-90000]");
+        int idxComplete = body.indexOf("event: complete [GH-90000]");
 
-        assertThat(idxConnected).isGreaterThanOrEqualTo(0);
-        assertThat(idxStatus).isGreaterThan(idxConnected);
-        assertThat(idxProgress).isGreaterThan(idxStatus);
-        assertThat(idxComplete).isGreaterThan(idxProgress);
-        assertThat(body).contains("data: {\"jobId\":\"" + jobId);
-        assertThat(body).contains("event: complete\ndata: {\"jobId\":\"" + jobId + "\"}");
+        assertThat(idxConnected).isGreaterThanOrEqualTo(0); // GH-90000
+        assertThat(idxStatus).isGreaterThan(idxConnected); // GH-90000
+        assertThat(idxProgress).isGreaterThan(idxStatus); // GH-90000
+        assertThat(idxComplete).isGreaterThan(idxProgress); // GH-90000
+        assertThat(body).contains("data: {\"jobId\":\"" + jobId); // GH-90000
+        assertThat(body).contains("event: complete\ndata: {\"jobId\":\"" + jobId + "\"}"); // GH-90000
     }
 
-    @Disabled("JDK HttpServer does not support WebSocket upgrade - requires alternative server impl")
+    @Disabled("JDK HttpServer does not support WebSocket upgrade - requires alternative server impl [GH-90000]")
     @Test
-    void webSocketStreamReturnsStructuredEvents() throws Exception {
-        String jobId = TestJobs.submit(harness.getJobService(), "ws-seq-1").jobId();
-        URI wsUri = URI.create("ws://localhost:" + harness.getHttpPort() + "/ws/jobs/" + jobId);
+    void webSocketStreamReturnsStructuredEvents() throws Exception { // GH-90000
+        String jobId = TestJobs.submit(harness.getJobService(), "ws-seq-1").jobId(); // GH-90000
+        URI wsUri = URI.create("ws://localhost:" + harness.getHttpPort() + "/ws/jobs/" + jobId); // GH-90000
 
-        List<String> payloads = new ArrayList<>();
-        CompletableFuture<List<String>> completed = new CompletableFuture<>();
+        List<String> payloads = new ArrayList<>(); // GH-90000
+        CompletableFuture<List<String>> completed = new CompletableFuture<>(); // GH-90000
 
         httpClient
-                .newWebSocketBuilder()
-                .connectTimeout(Duration.ofSeconds(5))
-                .buildAsync(
+                .newWebSocketBuilder() // GH-90000
+                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
+                .buildAsync( // GH-90000
                         wsUri,
-                        new WebSocket.Listener() {
+                        new WebSocket.Listener() { // GH-90000
                             @Override
-                            public void onOpen(WebSocket webSocket) {
-                                webSocket.request(1);
+                            public void onOpen(WebSocket webSocket) { // GH-90000
+                                webSocket.request(1); // GH-90000
                             }
 
                             @Override
-                            public CompletionStage<?> onText(
+                            public CompletionStage<?> onText( // GH-90000
                                     WebSocket webSocket, CharSequence data, boolean last) {
-                                payloads.add(data.toString());
-                                if (payloads.size() >= 4 && !completed.isDone()) {
-                                    completed.complete(List.copyOf(payloads));
+                                payloads.add(data.toString()); // GH-90000
+                                if (payloads.size() >= 4 && !completed.isDone()) { // GH-90000
+                                    completed.complete(List.copyOf(payloads)); // GH-90000
                                 }
-                                webSocket.request(1);
-                                return CompletableFuture.completedFuture(null);
+                                webSocket.request(1); // GH-90000
+                                return CompletableFuture.completedFuture(null); // GH-90000
                             }
 
                             @Override
-                            public void onError(WebSocket webSocket, Throwable error) {
-                                completed.completeExceptionally(error);
+                            public void onError(WebSocket webSocket, Throwable error) { // GH-90000
+                                completed.completeExceptionally(error); // GH-90000
                             }
 
                             @Override
-                            public CompletionStage<?> onClose(
+                            public CompletionStage<?> onClose( // GH-90000
                                     WebSocket webSocket, int statusCode, String reason) {
-                                if (!completed.isDone()) {
-                                    completed.complete(List.copyOf(payloads));
+                                if (!completed.isDone()) { // GH-90000
+                                    completed.complete(List.copyOf(payloads)); // GH-90000
                                 }
-                                return CompletableFuture.completedFuture(null);
+                                return CompletableFuture.completedFuture(null); // GH-90000
                             }
                         })
-                .join();
+                .join(); // GH-90000
 
-        List<String> messages = completed.get(5, TimeUnit.SECONDS);
-        assertThat(messages).hasSizeGreaterThanOrEqualTo(4);
+        List<String> messages = completed.get(5, TimeUnit.SECONDS); // GH-90000
+        assertThat(messages).hasSizeGreaterThanOrEqualTo(4); // GH-90000
 
         List<Map<String, Object>> events =
-                messages.stream()
-                        .map(
+                messages.stream() // GH-90000
+                        .map( // GH-90000
                                 message -> {
                                     try {
-                                        return objectMapper.readValue(message, MAP_TYPE);
-                                    } catch (Exception e) {
-                                        throw new IllegalStateException(
+                                        return objectMapper.readValue(message, MAP_TYPE); // GH-90000
+                                    } catch (Exception e) { // GH-90000
+                                        throw new IllegalStateException( // GH-90000
                                                 "Failed to parse WS payload", e);
                                     }
                                 })
-                        .toList();
+                        .toList(); // GH-90000
 
-        assertThat(events.get(0).get("event")).isEqualTo("connected");
-        assertThat(events.get(1).get("event")).isEqualTo("status");
-        assertThat(events.get(2).get("event")).isEqualTo("progress");
-        assertThat(events.get(3).get("event")).isEqualTo("complete");
+        assertThat(events.get(0).get("event [GH-90000]")).isEqualTo("connected [GH-90000]");
+        assertThat(events.get(1).get("event [GH-90000]")).isEqualTo("status [GH-90000]");
+        assertThat(events.get(2).get("event [GH-90000]")).isEqualTo("progress [GH-90000]");
+        assertThat(events.get(3).get("event [GH-90000]")).isEqualTo("complete [GH-90000]");
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> connected = (Map<String, Object>) events.get(0).get("data");
-        assertThat(connected).containsEntry("message", "Connected to job stream");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> connected = (Map<String, Object>) events.get(0).get("data [GH-90000]");
+        assertThat(connected).containsEntry("message", "Connected to job stream"); // GH-90000
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> status = (Map<String, Object>) events.get(1).get("data");
-        assertThat(status.get("jobId")).isEqualTo(jobId);
-        assertThat(status.get("state")).isEqualTo("QUEUED");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> status = (Map<String, Object>) events.get(1).get("data [GH-90000]");
+        assertThat(status.get("jobId [GH-90000]")).isEqualTo(jobId);
+        assertThat(status.get("state [GH-90000]")).isEqualTo("QUEUED [GH-90000]");
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> progress = (Map<String, Object>) events.get(2).get("data");
-        assertThat(progress.get("jobId")).isEqualTo(jobId);
-        assertThat(progress.get("eventType")).isEqualTo("progress");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> progress = (Map<String, Object>) events.get(2).get("data [GH-90000]");
+        assertThat(progress.get("jobId [GH-90000]")).isEqualTo(jobId);
+        assertThat(progress.get("eventType [GH-90000]")).isEqualTo("progress [GH-90000]");
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> complete = (Map<String, Object>) events.get(3).get("data");
-        assertThat(complete.get("jobId")).isEqualTo(jobId);
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> complete = (Map<String, Object>) events.get(3).get("data [GH-90000]");
+        assertThat(complete.get("jobId [GH-90000]")).isEqualTo(jobId);
     }
 }

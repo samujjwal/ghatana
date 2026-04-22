@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EntityValidationHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("EntityValidationHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class EntityValidationHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,32 +41,32 @@ class EntityValidationHandlerTest extends EventloopTestBase {
     private EntityValidationHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new EntityValidationHandler(schemaValidator, http);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new EntityValidationHandler(schemaValidator, http); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("single validation rejects missing tenant before reading body")
-    void singleValidationRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("single validation rejects missing tenant before reading body [GH-90000]")
+    void singleValidationRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleValidateEntity(request));
+        HttpResponse response = runPromise(() -> handler.handleValidateEntity(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
-        verify(schemaValidator, never()).validate("default", "default", java.util.Map.of());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
+        verify(schemaValidator, never()).validate("default", "default", java.util.Map.of()); // GH-90000
     }
 
     @Test
-    @DisplayName("batch validation rejects missing tenant before reading body")
-    void batchValidationRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("batch validation rejects missing tenant before reading body [GH-90000]")
+    void batchValidationRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleBatchValidateEntities(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchValidateEntities(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
-        verify(schemaValidator, never()).validate("default", "default", java.util.Map.of());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
+        verify(schemaValidator, never()).validate("default", "default", java.util.Map.of()); // GH-90000
     }
 }

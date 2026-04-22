@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * YAPPC Lifecycle Service
  */
 package com.ghatana.yappc.services.lifecycle.operators;
@@ -30,55 +30,55 @@ import static org.assertj.core.api.Assertions.assertThat;
  * thresholds and maximum per-operation latency budgets.
  *
  * <p>All async tests extend {@link EventloopTestBase} and use
- * {@code runPromise()} to execute ActiveJ Promises on the managed eventloop.
+ * {@code runPromise()} to execute ActiveJ Promises on the managed eventloop. // GH-90000
  *
  * @doc.type class
  * @doc.purpose Performance / throughput tests for YAPPC orchestration pipeline operators
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("YAPPC Orchestration Operators — Performance")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("YAPPC Orchestration Operators — Performance [GH-90000]")
 class YappcOrchestrationPerformanceTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "perf-tenant";
 
     // ─── shared event builders ────────────────────────────────────────────────
 
-    private static Event dispatchRequestedEvent(String agentId, int seq) {
-        return GEvent.builder()
-                .typeTenantVersion(TENANT_ID,
+    private static Event dispatchRequestedEvent(String agentId, int seq) { // GH-90000
+        return GEvent.builder() // GH-90000
+                .typeTenantVersion(TENANT_ID, // GH-90000
                         AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED, "v1")
-                .addPayload("eventId",   "perf-evt-" + seq)
-                .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED)
-                .addPayload("agentId",   agentId)
-                .addPayload("fromStage", "planning")
-                .addPayload("toStage",   "execution")
-                .addPayload("tenantId",  TENANT_ID)
-                .build();
+                .addPayload("eventId",   "perf-evt-" + seq) // GH-90000
+                .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED) // GH-90000
+                .addPayload("agentId",   agentId) // GH-90000
+                .addPayload("fromStage", "planning") // GH-90000
+                .addPayload("toStage",   "execution") // GH-90000
+                .addPayload("tenantId",  TENANT_ID) // GH-90000
+                .build(); // GH-90000
     }
 
-    private static Event dispatchValidatedEvent(String agentId, int seq) {
-        return GEvent.builder()
-                .typeTenantVersion(TENANT_ID,
+    private static Event dispatchValidatedEvent(String agentId, int seq) { // GH-90000
+        return GEvent.builder() // GH-90000
+                .typeTenantVersion(TENANT_ID, // GH-90000
                         AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED, "v1")
-                .addPayload("agentId",       agentId)
-                .addPayload("fromStage",     "planning")
-                .addPayload("toStage",       "execution")
-                .addPayload("tenantId",      TENANT_ID)
-                .addPayload("correlationId", "corr-" + seq)
-                .build();
+                .addPayload("agentId",       agentId) // GH-90000
+                .addPayload("fromStage",     "planning") // GH-90000
+                .addPayload("toStage",       "execution") // GH-90000
+                .addPayload("tenantId",      TENANT_ID) // GH-90000
+                .addPayload("correlationId", "corr-" + seq) // GH-90000
+                .build(); // GH-90000
     }
 
-    private static Event resultProducedEvent(String agentId, int seq) {
-        return GEvent.builder()
-                .typeTenantVersion(TENANT_ID,
+    private static Event resultProducedEvent(String agentId, int seq) { // GH-90000
+        return GEvent.builder() // GH-90000
+                .typeTenantVersion(TENANT_ID, // GH-90000
                         AgentExecutorOperator.EVENT_RESULT_PRODUCED, "v1")
-                .addPayload("agentId",       agentId)
-                .addPayload("status",        "SUCCESS")
-                .addPayload("tenantId",      TENANT_ID)
-                .addPayload("correlationId", "corr-" + seq)
-                .build();
+                .addPayload("agentId",       agentId) // GH-90000
+                .addPayload("status",        "SUCCESS") // GH-90000
+                .addPayload("tenantId",      TENANT_ID) // GH-90000
+                .addPayload("correlationId", "corr-" + seq) // GH-90000
+                .build(); // GH-90000
     }
 
     // =========================================================================
@@ -86,7 +86,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("BackpressureOperator — Performance")
+    @DisplayName("BackpressureOperator — Performance [GH-90000]")
     class BackpressurePerformanceTests {
 
         private static final int EVENT_COUNT = 500;
@@ -95,75 +95,75 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
         private BackpressureOperator operator;
 
         @BeforeEach
-        void setUp() {
-            operator = new BackpressureOperator(EVENT_COUNT);
+        void setUp() { // GH-90000
+            operator = new BackpressureOperator(EVENT_COUNT); // GH-90000
         }
 
         @Test
-        @DisplayName("processes " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms")
-        void throughputUnderLoad() {
-            Instant start = Instant.now();
+        @DisplayName("processes " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms") // GH-90000
+        void throughputUnderLoad() { // GH-90000
+            Instant start = Instant.now(); // GH-90000
 
-            for (int i = 0; i < EVENT_COUNT; i++) {
-                OperatorResult result = runPromise(() ->
-                        operator.process(dispatchRequestedEvent("perf-agent", 0)));
-                // Backpressure can return empty (queued) or a forwarded event — both are valid
-                assertThat(result).isNotNull();
+            for (int i = 0; i < EVENT_COUNT; i++) { // GH-90000
+                OperatorResult result = runPromise(() -> // GH-90000
+                        operator.process(dispatchRequestedEvent("perf-agent", 0))); // GH-90000
+                // Backpressure can return empty (queued) or a forwarded event — both are valid // GH-90000
+                assertThat(result).isNotNull(); // GH-90000
             }
 
-            long elapsedMs = Duration.between(start, Instant.now()).toMillis();
-            assertThat(elapsedMs)
-                    .as("Processing %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS)
-                    .isLessThanOrEqualTo(MAX_MILLIS);
+            long elapsedMs = Duration.between(start, Instant.now()).toMillis(); // GH-90000
+            assertThat(elapsedMs) // GH-90000
+                    .as("Processing %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS) // GH-90000
+                    .isLessThanOrEqualTo(MAX_MILLIS); // GH-90000
         }
 
         @Test
-        @DisplayName("single process() call completes in < 50 ms (latency budget)")
-        void singleOperationLatency() {
-            Event event = dispatchRequestedEvent("latency-agent", 1);
-            Instant start = Instant.now();
-            runPromise(() -> operator.process(event));
-            long elapsedMs = Duration.between(start, Instant.now()).toMillis();
-            assertThat(elapsedMs)
-                    .as("Single process() must complete in < 50 ms")
-                    .isLessThan(50);
+        @DisplayName("single process() call completes in < 50 ms (latency budget) [GH-90000]")
+        void singleOperationLatency() { // GH-90000
+            Event event = dispatchRequestedEvent("latency-agent", 1); // GH-90000
+            Instant start = Instant.now(); // GH-90000
+            runPromise(() -> operator.process(event)); // GH-90000
+            long elapsedMs = Duration.between(start, Instant.now()).toMillis(); // GH-90000
+            assertThat(elapsedMs) // GH-90000
+                    .as("Single process() must complete in < 50 ms [GH-90000]")
+                    .isLessThan(50); // GH-90000
         }
 
         @Test
-        @DisplayName("drops oldest event and accepts new when buffer full (DROP_OLDEST)")
-        void dropOldestWhenFull() {
-            // Fill the buffer exactly (size=5)
-            BackpressureOperator smallBuf = new BackpressureOperator(5);
-            for (int i = 0; i < 5; i++) {
+        @DisplayName("drops oldest event and accepts new when buffer full (DROP_OLDEST) [GH-90000]")
+        void dropOldestWhenFull() { // GH-90000
+            // Fill the buffer exactly (size=5) // GH-90000
+            BackpressureOperator smallBuf = new BackpressureOperator(5); // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
                 int seq = i;
-                runPromise(() -> smallBuf.process(dispatchRequestedEvent("drop-agent", seq)));
+                runPromise(() -> smallBuf.process(dispatchRequestedEvent("drop-agent", seq))); // GH-90000
             }
-            // Drain the 5 events that were queued (each process() queues+drains one)
+            // Drain the 5 events that were queued (each process() queues+drains one) // GH-90000
             // Now force overflow: send 10 more — should not throw, just drop oldest
-            for (int i = 5; i < 15; i++) {
+            for (int i = 5; i < 15; i++) { // GH-90000
                 int seq = i;
-                OperatorResult result = runPromise(() ->
-                        smallBuf.process(dispatchRequestedEvent("drop-agent", seq)));
-                assertThat(result).isNotNull();
+                OperatorResult result = runPromise(() -> // GH-90000
+                        smallBuf.process(dispatchRequestedEvent("drop-agent", seq))); // GH-90000
+                assertThat(result).isNotNull(); // GH-90000
             }
             // Buffer should not exceed capacity at any point — verify no exceptions thrown
         }
 
         @Test
-        @DisplayName("all events forwarded continuously when buffer never saturates")
-        void allEventsForwardedFromUnboundedBuffer() {
-            BackpressureOperator largeBuf = new BackpressureOperator(1000);
+        @DisplayName("all events forwarded continuously when buffer never saturates [GH-90000]")
+        void allEventsForwardedFromUnboundedBuffer() { // GH-90000
+            BackpressureOperator largeBuf = new BackpressureOperator(1000); // GH-90000
             int forwarded = 0;
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 100; i++) { // GH-90000
                 int seq = i;
-                OperatorResult result = runPromise(() ->
-                        largeBuf.process(dispatchRequestedEvent("fwd-agent", seq)));
-                if (result.isSuccess() && !result.getOutputEvents().isEmpty()) {
+                OperatorResult result = runPromise(() -> // GH-90000
+                        largeBuf.process(dispatchRequestedEvent("fwd-agent", seq))); // GH-90000
+                if (result.isSuccess() && !result.getOutputEvents().isEmpty()) { // GH-90000
                     forwarded++;
                 }
             }
             // With a large buffer, each event queued-and-immediately-drained → 100% forwarded
-            assertThat(forwarded).isEqualTo(100);
+            assertThat(forwarded).isEqualTo(100); // GH-90000
         }
     }
 
@@ -172,7 +172,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentDispatchValidatorOperator — Performance")
+    @DisplayName("AgentDispatchValidatorOperator — Performance [GH-90000]")
     class ValidatorPerformanceTests {
 
         private static final int EVENT_COUNT = 300;
@@ -181,28 +181,28 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
         private AgentDispatchValidatorOperator operator;
 
         @BeforeEach
-        void setUp() {
-            operator = new AgentDispatchValidatorOperator();
+        void setUp() { // GH-90000
+            operator = new AgentDispatchValidatorOperator(); // GH-90000
         }
 
         @Test
-        @DisplayName("validates " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms")
-        void validationThroughput() {
+        @DisplayName("validates " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms") // GH-90000
+        void validationThroughput() { // GH-90000
             int successCount = 0;
 
-            Instant start = Instant.now();
-            for (int i = 0; i < EVENT_COUNT; i++) {
+            Instant start = Instant.now(); // GH-90000
+            for (int i = 0; i < EVENT_COUNT; i++) { // GH-90000
                 int seq = i;
-                OperatorResult result = runPromise(() ->
-                        operator.process(dispatchRequestedEvent("validator-agent", seq)));
-                if (result.isSuccess()) successCount++;
+                OperatorResult result = runPromise(() -> // GH-90000
+                        operator.process(dispatchRequestedEvent("validator-agent", seq))); // GH-90000
+                if (result.isSuccess()) successCount++; // GH-90000
             }
-            long elapsedMs = Duration.between(start, Instant.now()).toMillis();
+            long elapsedMs = Duration.between(start, Instant.now()).toMillis(); // GH-90000
 
-            assertThat(successCount).isEqualTo(EVENT_COUNT);
-            assertThat(elapsedMs)
-                    .as("Validating %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS)
-                    .isLessThanOrEqualTo(MAX_MILLIS);
+            assertThat(successCount).isEqualTo(EVENT_COUNT); // GH-90000
+            assertThat(elapsedMs) // GH-90000
+                    .as("Validating %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS) // GH-90000
+                    .isLessThanOrEqualTo(MAX_MILLIS); // GH-90000
         }
     }
 
@@ -211,7 +211,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("MetricsCollectorOperator — Performance")
+    @DisplayName("MetricsCollectorOperator — Performance [GH-90000]")
     class MetricsPerformanceTests {
 
         private static final int EVENT_COUNT = 500;
@@ -220,26 +220,26 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
         private MetricsCollectorOperator operator;
 
         @BeforeEach
-        void setUp() {
-            operator = new MetricsCollectorOperator();
+        void setUp() { // GH-90000
+            operator = new MetricsCollectorOperator(); // GH-90000
         }
 
         @Test
-        @DisplayName("collects metrics for " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms")
-        void metricsThroughput() {
-            Instant start = Instant.now();
+        @DisplayName("collects metrics for " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms") // GH-90000
+        void metricsThroughput() { // GH-90000
+            Instant start = Instant.now(); // GH-90000
 
-            for (int i = 0; i < EVENT_COUNT; i++) {
+            for (int i = 0; i < EVENT_COUNT; i++) { // GH-90000
                 int seq = i;
-                OperatorResult result = runPromise(() ->
-                        operator.process(resultProducedEvent("metrics-agent", seq)));
-                assertThat(result).isNotNull();
+                OperatorResult result = runPromise(() -> // GH-90000
+                        operator.process(resultProducedEvent("metrics-agent", seq))); // GH-90000
+                assertThat(result).isNotNull(); // GH-90000
             }
 
-            long elapsedMs = Duration.between(start, Instant.now()).toMillis();
-            assertThat(elapsedMs)
-                    .as("Collecting metrics for %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS)
-                    .isLessThanOrEqualTo(MAX_MILLIS);
+            long elapsedMs = Duration.between(start, Instant.now()).toMillis(); // GH-90000
+            assertThat(elapsedMs) // GH-90000
+                    .as("Collecting metrics for %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS) // GH-90000
+                    .isLessThanOrEqualTo(MAX_MILLIS); // GH-90000
         }
     }
 
@@ -248,7 +248,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("ResultAggregatorOperator — Performance")
+    @DisplayName("ResultAggregatorOperator — Performance [GH-90000]")
     class AggregatorPerformanceTests {
 
         private static final int EVENT_COUNT = 300;
@@ -257,26 +257,26 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
         private ResultAggregatorOperator operator;
 
         @BeforeEach
-        void setUp() {
-            operator = new ResultAggregatorOperator();
+        void setUp() { // GH-90000
+            operator = new ResultAggregatorOperator(); // GH-90000
         }
 
         @Test
-        @DisplayName("aggregates " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms")
-        void aggregatorThroughput() {
-            Instant start = Instant.now();
+        @DisplayName("aggregates " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms") // GH-90000
+        void aggregatorThroughput() { // GH-90000
+            Instant start = Instant.now(); // GH-90000
 
-            for (int i = 0; i < EVENT_COUNT; i++) {
+            for (int i = 0; i < EVENT_COUNT; i++) { // GH-90000
                 int seq = i;
-                OperatorResult result = runPromise(() ->
-                        operator.process(resultProducedEvent("agg-agent", seq)));
-                assertThat(result).isNotNull();
+                OperatorResult result = runPromise(() -> // GH-90000
+                        operator.process(resultProducedEvent("agg-agent", seq))); // GH-90000
+                assertThat(result).isNotNull(); // GH-90000
             }
 
-            long elapsedMs = Duration.between(start, Instant.now()).toMillis();
-            assertThat(elapsedMs)
-                    .as("Aggregating %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS)
-                    .isLessThanOrEqualTo(MAX_MILLIS);
+            long elapsedMs = Duration.between(start, Instant.now()).toMillis(); // GH-90000
+            assertThat(elapsedMs) // GH-90000
+                    .as("Aggregating %d events must complete in ≤ %d ms", EVENT_COUNT, MAX_MILLIS) // GH-90000
+                    .isLessThanOrEqualTo(MAX_MILLIS); // GH-90000
         }
     }
 
@@ -285,7 +285,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Validator → Backpressure — Chained Pipeline Performance")
+    @DisplayName("Validator → Backpressure — Chained Pipeline Performance [GH-90000]")
     class PipelineChainPerformanceTests {
 
         private static final int EVENT_COUNT = 200;
@@ -295,53 +295,53 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
         private BackpressureOperator backpressure;
 
         @BeforeEach
-        void setUp() {
-            validator = new AgentDispatchValidatorOperator();
-            backpressure = new BackpressureOperator(EVENT_COUNT);
+        void setUp() { // GH-90000
+            validator = new AgentDispatchValidatorOperator(); // GH-90000
+            backpressure = new BackpressureOperator(EVENT_COUNT); // GH-90000
         }
 
         @Test
-        @DisplayName("chains validator → backpressure for " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms")
-        void chainedPipelineThroughput() {
-            List<OperatorResult> finalResults = new ArrayList<>();
-            Instant start = Instant.now();
+        @DisplayName("chains validator → backpressure for " + EVENT_COUNT + " events within " + MAX_MILLIS + " ms") // GH-90000
+        void chainedPipelineThroughput() { // GH-90000
+            List<OperatorResult> finalResults = new ArrayList<>(); // GH-90000
+            Instant start = Instant.now(); // GH-90000
 
-            for (int i = 0; i < EVENT_COUNT; i++) {
+            for (int i = 0; i < EVENT_COUNT; i++) { // GH-90000
                 int seq = i;
                 // Stage 1: Validate
-                OperatorResult validated = runPromise(() ->
-                        validator.process(dispatchRequestedEvent("chain-agent", seq)));
+                OperatorResult validated = runPromise(() -> // GH-90000
+                        validator.process(dispatchRequestedEvent("chain-agent", seq))); // GH-90000
 
                 // Stage 2: Route through backpressure
-                if (validated.isSuccess() && !validated.getOutputEvents().isEmpty()) {
-                    Event validatedEvent = validated.getOutputEvents().get(0);
-                    OperatorResult bpResult = runPromise(() ->
-                            backpressure.process(validatedEvent));
-                    finalResults.add(bpResult);
+                if (validated.isSuccess() && !validated.getOutputEvents().isEmpty()) { // GH-90000
+                    Event validatedEvent = validated.getOutputEvents().get(0); // GH-90000
+                    OperatorResult bpResult = runPromise(() -> // GH-90000
+                            backpressure.process(validatedEvent)); // GH-90000
+                    finalResults.add(bpResult); // GH-90000
                 }
             }
 
-            long elapsedMs = Duration.between(start, Instant.now()).toMillis();
+            long elapsedMs = Duration.between(start, Instant.now()).toMillis(); // GH-90000
 
-            assertThat(finalResults).hasSizeGreaterThan(0);
-            assertThat(elapsedMs)
-                    .as("Chained pipeline must process %d events in ≤ %d ms", EVENT_COUNT, MAX_MILLIS)
-                    .isLessThanOrEqualTo(MAX_MILLIS);
+            assertThat(finalResults).hasSizeGreaterThan(0); // GH-90000
+            assertThat(elapsedMs) // GH-90000
+                    .as("Chained pipeline must process %d events in ≤ %d ms", EVENT_COUNT, MAX_MILLIS) // GH-90000
+                    .isLessThanOrEqualTo(MAX_MILLIS); // GH-90000
         }
 
         @Test
-        @DisplayName("maintains 100% validation success rate across " + EVENT_COUNT + " events")
-        void validationSuccessRate() {
+        @DisplayName("maintains 100% validation success rate across " + EVENT_COUNT + " events") // GH-90000
+        void validationSuccessRate() { // GH-90000
             long successCount = 0;
-            for (int i = 0; i < EVENT_COUNT; i++) {
+            for (int i = 0; i < EVENT_COUNT; i++) { // GH-90000
                 int seq = i;
-                OperatorResult result = runPromise(() ->
-                        validator.process(dispatchRequestedEvent("rate-agent", seq)));
-                if (result.isSuccess()) successCount++;
+                OperatorResult result = runPromise(() -> // GH-90000
+                        validator.process(dispatchRequestedEvent("rate-agent", seq))); // GH-90000
+                if (result.isSuccess()) successCount++; // GH-90000
             }
-            assertThat(successCount)
-                    .as("All valid events must pass validation")
-                    .isEqualTo(EVENT_COUNT);
+            assertThat(successCount) // GH-90000
+                    .as("All valid events must pass validation [GH-90000]")
+                    .isEqualTo(EVENT_COUNT); // GH-90000
         }
     }
 }

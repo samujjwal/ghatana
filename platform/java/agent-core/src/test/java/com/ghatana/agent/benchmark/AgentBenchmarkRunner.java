@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  */
 package com.ghatana.agent.benchmark;
 
@@ -21,15 +21,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * JUnit runner for agent performance benchmarks.
  *
  * <p>Invokes JMH benchmarks from within the Gradle test infrastructure.
- * Disabled by default in CI (use {@code -DrunBenchmarks=true} to enable).
+ * Disabled by default in CI (use {@code -DrunBenchmarks=true} to enable). // GH-90000
  *
  * <p>Run with:
  * <pre>{@code
  * ./gradlew :platform:java:agent-framework:test --tests "*AgentBenchmarkRunner*" -DrunBenchmarks=true
  * }</pre>
  */
-@DisplayName("Agent Performance Benchmarks")
-@Tag("integration")
+@DisplayName("Agent Performance Benchmarks [GH-90000]")
+@Tag("integration [GH-90000]")
 class AgentBenchmarkRunner {
 
     /**
@@ -43,39 +43,39 @@ class AgentBenchmarkRunner {
      * </ul>
      */
     @Test
-    @DisplayName("Agent throughput meets production targets")
-    void runAgentBenchmarks() throws RunnerException {
-        Assumptions.assumeTrue(Boolean.getBoolean("runBenchmarks"),
+    @DisplayName("Agent throughput meets production targets [GH-90000]")
+    void runAgentBenchmarks() throws RunnerException { // GH-90000
+        Assumptions.assumeTrue(Boolean.getBoolean("runBenchmarks [GH-90000]"),
                 "JMH benchmarks are opt-in; enable with -DrunBenchmarks=true");
 
-        Options opt = new OptionsBuilder()
-                .include(AgentProcessingBenchmark.class.getSimpleName())
-                .forks(1)
-                .warmupIterations(2)
-                .measurementIterations(3)
-                .shouldFailOnError(true)
-                .build();
+        Options opt = new OptionsBuilder() // GH-90000
+                .include(AgentProcessingBenchmark.class.getSimpleName()) // GH-90000
+                .forks(1) // GH-90000
+                .warmupIterations(2) // GH-90000
+                .measurementIterations(3) // GH-90000
+                .shouldFailOnError(true) // GH-90000
+                .build(); // GH-90000
 
-        Collection<RunResult> results = new Runner(opt).run();
+        Collection<RunResult> results = new Runner(opt).run(); // GH-90000
 
-        for (RunResult result : results) {
-            String benchmarkName = result.getPrimaryResult().getLabel();
-            double opsPerSec = result.getPrimaryResult().getScore();
+        for (RunResult result : results) { // GH-90000
+            String benchmarkName = result.getPrimaryResult().getLabel(); // GH-90000
+            double opsPerSec = result.getPrimaryResult().getScore(); // GH-90000
 
-            System.out.printf("Benchmark: %s → %.0f ops/sec%n", benchmarkName, opsPerSec);
+            System.out.printf("Benchmark: %s → %.0f ops/sec%n", benchmarkName, opsPerSec); // GH-90000
 
-            if (benchmarkName.contains("deterministic")) {
-                assertThat(opsPerSec)
-                        .as("Deterministic agent throughput should exceed 100K ops/sec")
-                        .isGreaterThan(100_000);
-            } else if (benchmarkName.contains("probabilistic")) {
-                assertThat(opsPerSec)
-                        .as("Probabilistic agent throughput should exceed 10K ops/sec")
-                        .isGreaterThan(10_000);
-            } else if (benchmarkName.contains("adaptive")) {
-                assertThat(opsPerSec)
-                        .as("Adaptive agent throughput should exceed 50K ops/sec")
-                        .isGreaterThan(50_000);
+            if (benchmarkName.contains("deterministic [GH-90000]")) {
+                assertThat(opsPerSec) // GH-90000
+                        .as("Deterministic agent throughput should exceed 100K ops/sec [GH-90000]")
+                        .isGreaterThan(100_000); // GH-90000
+            } else if (benchmarkName.contains("probabilistic [GH-90000]")) {
+                assertThat(opsPerSec) // GH-90000
+                        .as("Probabilistic agent throughput should exceed 10K ops/sec [GH-90000]")
+                        .isGreaterThan(10_000); // GH-90000
+            } else if (benchmarkName.contains("adaptive [GH-90000]")) {
+                assertThat(opsPerSec) // GH-90000
+                        .as("Adaptive agent throughput should exceed 50K ops/sec [GH-90000]")
+                        .isGreaterThan(50_000); // GH-90000
             }
         }
     }

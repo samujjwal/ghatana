@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Ops IncidentResponseStep Tests")
+@DisplayName("Ops IncidentResponseStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles incident response step test operations
@@ -24,15 +24,15 @@ class IncidentResponseStepTest extends EventloopTestBase {
   private IncidentResponseStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new IncidentResponseStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new IncidentResponseStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("ops.incidentresponse");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("ops.incidentresponse [GH-90000]");
   }
 }

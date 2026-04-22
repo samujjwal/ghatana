@@ -29,229 +29,229 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   service
  * @doc.pattern Test
  */
-@DisplayName("OAuth 2.0 End-to-End Integration Tests")
-@Tag("integration")
+@DisplayName("OAuth 2.0 End-to-End Integration Tests [GH-90000]")
+@Tag("integration [GH-90000]")
 class OAuthEndToEndIntegrationTest extends EventloopTestBase {
 
     // ── Authorization code flow ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("authorization request includes required OAuth 2.0 parameters")
-    void authorizationRequestIncludesRequiredParameters() {
+    @DisplayName("authorization request includes required OAuth 2.0 parameters [GH-90000]")
+    void authorizationRequestIncludesRequiredParameters() { // GH-90000
         String clientId = "ghatana-client";
         String redirectUri = "https://app.ghatana.io/auth/callback";
-        String state = UUID.randomUUID().toString();
+        String state = UUID.randomUUID().toString(); // GH-90000
         String scope = "openid profile email";
 
-        Map<String, String> params = buildAuthorizationRequest(clientId, redirectUri, state, scope);
+        Map<String, String> params = buildAuthorizationRequest(clientId, redirectUri, state, scope); // GH-90000
 
-        assertThat(params).containsKey("client_id");
-        assertThat(params).containsKey("redirect_uri");
-        assertThat(params).containsKey("response_type");
-        assertThat(params).containsKey("state");
-        assertThat(params).containsKey("scope");
-        assertThat(params.get("response_type")).isEqualTo("code");
+        assertThat(params).containsKey("client_id [GH-90000]");
+        assertThat(params).containsKey("redirect_uri [GH-90000]");
+        assertThat(params).containsKey("response_type [GH-90000]");
+        assertThat(params).containsKey("state [GH-90000]");
+        assertThat(params).containsKey("scope [GH-90000]");
+        assertThat(params.get("response_type [GH-90000]")).isEqualTo("code [GH-90000]");
     }
 
     @Test
-    @DisplayName("state parameter is unique per authorization request (CSRF prevention)")
-    void stateParameterIsUniquePerRequest() {
-        String state1 = UUID.randomUUID().toString();
-        String state2 = UUID.randomUUID().toString();
+    @DisplayName("state parameter is unique per authorization request (CSRF prevention) [GH-90000]")
+    void stateParameterIsUniquePerRequest() { // GH-90000
+        String state1 = UUID.randomUUID().toString(); // GH-90000
+        String state2 = UUID.randomUUID().toString(); // GH-90000
 
-        assertThat(state1).isNotEqualTo(state2);
-        assertThat(state1.length()).isGreaterThanOrEqualTo(32);
+        assertThat(state1).isNotEqualTo(state2); // GH-90000
+        assertThat(state1.length()).isGreaterThanOrEqualTo(32); // GH-90000
     }
 
     @Test
-    @DisplayName("callback validates state to prevent CSRF attacks")
-    void callbackValidatesStateParameter() {
-        String originalState = UUID.randomUUID().toString();
-        String tamperedState = UUID.randomUUID().toString();
+    @DisplayName("callback validates state to prevent CSRF attacks [GH-90000]")
+    void callbackValidatesStateParameter() { // GH-90000
+        String originalState = UUID.randomUUID().toString(); // GH-90000
+        String tamperedState = UUID.randomUUID().toString(); // GH-90000
 
-        assertThat(originalState).isNotEqualTo(tamperedState);
+        assertThat(originalState).isNotEqualTo(tamperedState); // GH-90000
         // A valid callback must match the state stored in the user's session
-        assertThat(matchesStoredState(originalState, originalState)).isTrue();
-        assertThat(matchesStoredState(originalState, tamperedState)).isFalse();
+        assertThat(matchesStoredState(originalState, originalState)).isTrue(); // GH-90000
+        assertThat(matchesStoredState(originalState, tamperedState)).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("callback returns error for invalid authorization code")
-    void callbackReturnsErrorForInvalidCode() {
+    @DisplayName("callback returns error for invalid authorization code [GH-90000]")
+    void callbackReturnsErrorForInvalidCode() { // GH-90000
         String authCode = "";
 
         // Empty or null auth code must be rejected before token exchange
-        assertThat(authCode).isEmpty();
-        assertThat(isValidAuthCode(authCode)).isFalse();
+        assertThat(authCode).isEmpty(); // GH-90000
+        assertThat(isValidAuthCode(authCode)).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("callback returns error for expired authorization code")
-    void callbackReturnsErrorForExpiredCode() {
-        long codeIssuedAt = System.currentTimeMillis() - 10 * 60 * 1000L; // 10 min ago
-        long nowMs = System.currentTimeMillis();
+    @DisplayName("callback returns error for expired authorization code [GH-90000]")
+    void callbackReturnsErrorForExpiredCode() { // GH-90000
+        long codeIssuedAt = System.currentTimeMillis() - 10 * 60 * 1000L; // 10 min ago // GH-90000
+        long nowMs = System.currentTimeMillis(); // GH-90000
         long maxCodeAgeMs = 5 * 60 * 1000L; // 5 min TTL
 
-        boolean isExpired = (nowMs - codeIssuedAt) > maxCodeAgeMs;
-        assertThat(isExpired).isTrue();
+        boolean isExpired = (nowMs - codeIssuedAt) > maxCodeAgeMs; // GH-90000
+        assertThat(isExpired).isTrue(); // GH-90000
     }
 
-    // ── PKCE (RFC 7636) ───────────────────────────────────────────────────────
+    // ── PKCE (RFC 7636) ─────────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("PKCE code_verifier meets RFC 7636 entropy requirements")
-    void pkceCodeVerifierMeetsEntropyRequirements() {
-        String verifier = generateCodeVerifier();
+    @DisplayName("PKCE code_verifier meets RFC 7636 entropy requirements [GH-90000]")
+    void pkceCodeVerifierMeetsEntropyRequirements() { // GH-90000
+        String verifier = generateCodeVerifier(); // GH-90000
 
         // RFC 7636: 43–128 characters, base64url-encoded
-        assertThat(verifier.length()).isBetween(43, 128);
-        assertThat(verifier).matches("^[A-Za-z0-9\\-._~]+$");
+        assertThat(verifier.length()).isBetween(43, 128); // GH-90000
+        assertThat(verifier).matches("^[A-Za-z0-9\\-._~]+$ [GH-90000]");
     }
 
     @Test
-    @DisplayName("PKCE code_challenge is SHA-256 hash of verifier in base64url")
-    void pkceCodeChallengeIsCorrectHashOfVerifier() throws NoSuchAlgorithmException {
-        String verifier = generateCodeVerifier();
-        String challenge = generateCodeChallenge(verifier);
+    @DisplayName("PKCE code_challenge is SHA-256 hash of verifier in base64url [GH-90000]")
+    void pkceCodeChallengeIsCorrectHashOfVerifier() throws NoSuchAlgorithmException { // GH-90000
+        String verifier = generateCodeVerifier(); // GH-90000
+        String challenge = generateCodeChallenge(verifier); // GH-90000
 
         // Derive expected challenge
-        byte[] digest = MessageDigest.getInstance("SHA-256")
-                .digest(verifier.getBytes(StandardCharsets.US_ASCII));
-        String expected = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+                .digest(verifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
+        String expected = Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
 
-        assertThat(challenge).isEqualTo(expected);
+        assertThat(challenge).isEqualTo(expected); // GH-90000
     }
 
     @Test
-    @DisplayName("PKCE verifier and challenge pair validates correctly")
-    void pkceVerifierAndChallengePairValidates() throws NoSuchAlgorithmException {
-        String verifier = generateCodeVerifier();
-        String challenge = generateCodeChallenge(verifier);
+    @DisplayName("PKCE verifier and challenge pair validates correctly [GH-90000]")
+    void pkceVerifierAndChallengePairValidates() throws NoSuchAlgorithmException { // GH-90000
+        String verifier = generateCodeVerifier(); // GH-90000
+        String challenge = generateCodeChallenge(verifier); // GH-90000
 
         // Verify round-trip: re-derive challenge from verifier
-        byte[] digest = MessageDigest.getInstance("SHA-256")
-                .digest(verifier.getBytes(StandardCharsets.US_ASCII));
-        String rederived = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+                .digest(verifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
+        String rederived = Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
 
-        assertThat(rederived).isEqualTo(challenge);
+        assertThat(rederived).isEqualTo(challenge); // GH-90000
     }
 
     @Test
-    @DisplayName("PKCE verifier mismatch causes challenge verification to fail")
-    void pkceVerifierMismatchFails() throws NoSuchAlgorithmException {
-        String correctVerifier = generateCodeVerifier();
-        String wrongVerifier = generateCodeVerifier();
-        String challenge = generateCodeChallenge(correctVerifier);
+    @DisplayName("PKCE verifier mismatch causes challenge verification to fail [GH-90000]")
+    void pkceVerifierMismatchFails() throws NoSuchAlgorithmException { // GH-90000
+        String correctVerifier = generateCodeVerifier(); // GH-90000
+        String wrongVerifier = generateCodeVerifier(); // GH-90000
+        String challenge = generateCodeChallenge(correctVerifier); // GH-90000
 
-        byte[] digest = MessageDigest.getInstance("SHA-256")
-                .digest(wrongVerifier.getBytes(StandardCharsets.US_ASCII));
-        String wrongDerived = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+                .digest(wrongVerifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
+        String wrongDerived = Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
 
-        assertThat(wrongDerived).isNotEqualTo(challenge);
+        assertThat(wrongDerived).isNotEqualTo(challenge); // GH-90000
     }
 
     // ── Token exchange response ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("token exchange response must contain required OIDC fields")
-    void tokenExchangeResponseContainsRequiredOidcFields() {
-        Map<String, String> tokenResponse = buildMockTokenResponse();
+    @DisplayName("token exchange response must contain required OIDC fields [GH-90000]")
+    void tokenExchangeResponseContainsRequiredOidcFields() { // GH-90000
+        Map<String, String> tokenResponse = buildMockTokenResponse(); // GH-90000
 
-        assertThat(tokenResponse).containsKey("access_token");
-        assertThat(tokenResponse).containsKey("id_token");
-        assertThat(tokenResponse).containsKey("token_type");
-        assertThat(tokenResponse).containsKey("expires_in");
-        assertThat(tokenResponse.get("token_type")).isEqualToIgnoringCase("Bearer");
+        assertThat(tokenResponse).containsKey("access_token [GH-90000]");
+        assertThat(tokenResponse).containsKey("id_token [GH-90000]");
+        assertThat(tokenResponse).containsKey("token_type [GH-90000]");
+        assertThat(tokenResponse).containsKey("expires_in [GH-90000]");
+        assertThat(tokenResponse.get("token_type [GH-90000]")).isEqualToIgnoringCase("Bearer [GH-90000]");
     }
 
-    @ParameterizedTest(name = "scope={0} is requested during token exchange")
-    @ValueSource(strings = {"openid", "openid profile", "openid email", "openid profile email"})
-    @DisplayName("token exchange accepts OpenID Connect scopes")
-    void tokenExchangeAcceptsOidcScopes(String scope) {
-        Map<String, String> request = buildTokenExchangeRequest("auth-code-123", scope);
-        assertThat(request.get("scope")).isEqualTo(scope);
-        assertThat(request.get("scope")).contains("openid");
+    @ParameterizedTest(name = "scope={0} is requested during token exchange") // GH-90000
+    @ValueSource(strings = {"openid", "openid profile", "openid email", "openid profile email"}) // GH-90000
+    @DisplayName("token exchange accepts OpenID Connect scopes [GH-90000]")
+    void tokenExchangeAcceptsOidcScopes(String scope) { // GH-90000
+        Map<String, String> request = buildTokenExchangeRequest("auth-code-123", scope); // GH-90000
+        assertThat(request.get("scope [GH-90000]")).isEqualTo(scope);
+        assertThat(request.get("scope [GH-90000]")).contains("openid [GH-90000]");
     }
 
     @Test
-    @DisplayName("token exchange request uses grant_type=authorization_code")
-    void tokenExchangeUsesCorrectGrantType() {
-        Map<String, String> request = buildTokenExchangeRequest("auth-code-xyz", "openid");
-        assertThat(request.get("grant_type")).isEqualTo("authorization_code");
+    @DisplayName("token exchange request uses grant_type=authorization_code [GH-90000]")
+    void tokenExchangeUsesCorrectGrantType() { // GH-90000
+        Map<String, String> request = buildTokenExchangeRequest("auth-code-xyz", "openid"); // GH-90000
+        assertThat(request.get("grant_type [GH-90000]")).isEqualTo("authorization_code [GH-90000]");
     }
 
     // ── Scope enforcement ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("offline_access scope triggers refresh token issuance")
-    void offlineAccessScopeTriggersRefreshToken() {
-        Set<String> requestedScopes = Set.of("openid", "profile", "email", "offline_access");
-        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access");
-        assertThat(shouldIssueRefreshToken).isTrue();
+    @DisplayName("offline_access scope triggers refresh token issuance [GH-90000]")
+    void offlineAccessScopeTriggersRefreshToken() { // GH-90000
+        Set<String> requestedScopes = Set.of("openid", "profile", "email", "offline_access"); // GH-90000
+        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access [GH-90000]");
+        assertThat(shouldIssueRefreshToken).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("refresh token is absent when offline_access scope is not requested")
-    void refreshTokenAbsentWithoutOfflineAccessScope() {
-        Set<String> requestedScopes = Set.of("openid", "profile");
-        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access");
-        assertThat(shouldIssueRefreshToken).isFalse();
+    @DisplayName("refresh token is absent when offline_access scope is not requested [GH-90000]")
+    void refreshTokenAbsentWithoutOfflineAccessScope() { // GH-90000
+        Set<String> requestedScopes = Set.of("openid", "profile"); // GH-90000
+        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access [GH-90000]");
+        assertThat(shouldIssueRefreshToken).isFalse(); // GH-90000
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private Map<String, String> buildAuthorizationRequest(
+    private Map<String, String> buildAuthorizationRequest( // GH-90000
             String clientId, String redirectUri, String state, String scope) {
-        Map<String, String> params = new HashMap<>();
-        params.put("client_id", clientId);
-        params.put("redirect_uri", URLEncoder.encode(redirectUri, StandardCharsets.UTF_8));
-        params.put("response_type", "code");
-        params.put("state", state);
-        params.put("scope", scope);
+        Map<String, String> params = new HashMap<>(); // GH-90000
+        params.put("client_id", clientId); // GH-90000
+        params.put("redirect_uri", URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)); // GH-90000
+        params.put("response_type", "code"); // GH-90000
+        params.put("state", state); // GH-90000
+        params.put("scope", scope); // GH-90000
         return params;
     }
 
-    private boolean matchesStoredState(String stored, String received) {
-        return stored != null && stored.equals(received);
+    private boolean matchesStoredState(String stored, String received) { // GH-90000
+        return stored != null && stored.equals(received); // GH-90000
     }
 
-    private boolean isValidAuthCode(String code) {
-        return code != null && !code.isBlank();
+    private boolean isValidAuthCode(String code) { // GH-90000
+        return code != null && !code.isBlank(); // GH-90000
     }
 
-    private String generateCodeVerifier() {
+    private String generateCodeVerifier() { // GH-90000
         byte[] randomBytes = new byte[32];
-        new SecureRandom().nextBytes(randomBytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        new SecureRandom().nextBytes(randomBytes); // GH-90000
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes); // GH-90000
     }
 
-    private String generateCodeChallenge(String verifier) {
+    private String generateCodeChallenge(String verifier) { // GH-90000
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(verifier.getBytes(StandardCharsets.US_ASCII));
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not available", e);
+            byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+                    .digest(verifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
+        } catch (NoSuchAlgorithmException e) { // GH-90000
+            throw new RuntimeException("SHA-256 not available", e); // GH-90000
         }
     }
 
-    private Map<String, String> buildMockTokenResponse() {
-        Map<String, String> response = new HashMap<>();
-        response.put("access_token", "eyJhbGciOiJSUzI1NiJ9.access");
-        response.put("id_token", "eyJhbGciOiJSUzI1NiJ9.id");
-        response.put("refresh_token", "eyJhbGciOiJSUzI1NiJ9.refresh");
-        response.put("token_type", "Bearer");
-        response.put("expires_in", "3600");
-        response.put("scope", "openid profile email");
+    private Map<String, String> buildMockTokenResponse() { // GH-90000
+        Map<String, String> response = new HashMap<>(); // GH-90000
+        response.put("access_token", "eyJhbGciOiJSUzI1NiJ9.access"); // GH-90000
+        response.put("id_token", "eyJhbGciOiJSUzI1NiJ9.id"); // GH-90000
+        response.put("refresh_token", "eyJhbGciOiJSUzI1NiJ9.refresh"); // GH-90000
+        response.put("token_type", "Bearer"); // GH-90000
+        response.put("expires_in", "3600"); // GH-90000
+        response.put("scope", "openid profile email"); // GH-90000
         return response;
     }
 
-    private Map<String, String> buildTokenExchangeRequest(String code, String scope) {
-        Map<String, String> request = new HashMap<>();
-        request.put("grant_type", "authorization_code");
-        request.put("code", code);
-        request.put("scope", scope);
-        request.put("redirect_uri", "https://app.ghatana.io/auth/callback");
+    private Map<String, String> buildTokenExchangeRequest(String code, String scope) { // GH-90000
+        Map<String, String> request = new HashMap<>(); // GH-90000
+        request.put("grant_type", "authorization_code"); // GH-90000
+        request.put("code", code); // GH-90000
+        request.put("scope", scope); // GH-90000
+        request.put("redirect_uri", "https://app.ghatana.io/auth/callback"); // GH-90000
         return request;
     }
 }

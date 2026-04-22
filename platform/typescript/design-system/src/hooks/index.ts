@@ -1,5 +1,5 @@
 /**
- * Shared UI hooks exposed by @ghatana/ui
+ * Shared UI hooks exposed by @ghatana/design-system
  */
 
 export { useControllableState } from './useControllableState';

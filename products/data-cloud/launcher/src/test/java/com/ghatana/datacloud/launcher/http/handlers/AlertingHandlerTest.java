@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AlertingHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("AlertingHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class AlertingHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,30 +41,30 @@ class AlertingHandlerTest extends EventloopTestBase {
     private AlertingHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new AlertingHandler(client, http);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new AlertingHandler(client, http); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("list alerts rejects missing tenant before query access")
-    void listAlertsRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("list alerts rejects missing tenant before query access [GH-90000]")
+    void listAlertsRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleListAlerts(request));
+        HttpResponse response = runPromise(() -> handler.handleListAlerts(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).query("default", AlertingHandler.ALERTS_COLLECTION, DataCloudClient.Query.limit(1));
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).query("default", AlertingHandler.ALERTS_COLLECTION, DataCloudClient.Query.limit(1)); // GH-90000
     }
 
     @Test
-    @DisplayName("create alert rule rejects missing tenant before loading body")
-    void createAlertRuleRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("create alert rule rejects missing tenant before loading body [GH-90000]")
+    void createAlertRuleRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleCreateAlertRule(request));
+        HttpResponse response = runPromise(() -> handler.handleCreateAlertRule(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 }

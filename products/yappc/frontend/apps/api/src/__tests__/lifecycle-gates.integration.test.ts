@@ -113,9 +113,9 @@ async function createApprovedArtifacts(
 }
 
 if (!integrationDatabaseUrl) {
-  describe.skip('Integration: Lifecycle gate evaluation (set TEST_DATABASE_URL to enable)', () => {
+  describe.skip('Integration: Lifecycle gate evaluation (set TEST_DATABASE_URL to enable) [GH-90000]', () => {
     it('placeholder', () => {
-      expect(true).toBe(true);
+      expect(integrationDatabaseUrl).toBeUndefined();
     });
   });
 } else {

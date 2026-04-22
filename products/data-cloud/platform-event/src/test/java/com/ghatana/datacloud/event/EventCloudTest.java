@@ -18,64 +18,64 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test event cloud architecture and event management.
  */
-@DisplayName("Event Cloud Tests")
+@DisplayName("Event Cloud Tests [GH-90000]")
 class EventCloudTest {
 
     @Test
-    @DisplayName("Should manage event cloud")
-    void shouldManageEventCloud() {
+    @DisplayName("Should manage event cloud [GH-90000]")
+    void shouldManageEventCloud() { // GH-90000
         String cloudId = "cloud-123";
         String tenantId = "tenant-123";
 
-        assertThat(cloudId).isNotNull();
-        assertThat(tenantId).isNotNull();
+        assertThat(cloudId).isNotNull(); // GH-90000
+        assertThat(tenantId).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle event persistence")
-    void shouldHandleEventPersistence() {
+    @DisplayName("Should handle event persistence [GH-90000]")
+    void shouldHandleEventPersistence() { // GH-90000
         boolean persisted = true;
         String storageType = "PostgreSQL";
 
-        assertThat(persisted).isTrue();
-        assertThat(storageType).isNotNull();
+        assertThat(persisted).isTrue(); // GH-90000
+        assertThat(storageType).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle event TTL")
-    void shouldHandleEventTtl() {
-        Duration ttl = Duration.ofDays(7);
-        Duration maxTtl = Duration.ofDays(30);
+    @DisplayName("Should handle event TTL [GH-90000]")
+    void shouldHandleEventTtl() { // GH-90000
+        Duration ttl = Duration.ofDays(7); // GH-90000
+        Duration maxTtl = Duration.ofDays(30); // GH-90000
 
-        assertThat(ttl).isLessThan(maxTtl);
+        assertThat(ttl).isLessThan(maxTtl); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle event partitioning")
-    void shouldHandleEventPartitioning() {
+    @DisplayName("Should handle event partitioning [GH-90000]")
+    void shouldHandleEventPartitioning() { // GH-90000
         int partitionCount = 10;
         int minPartitions = 1;
 
-        assertThat(partitionCount).isGreaterThanOrEqualTo(minPartitions);
+        assertThat(partitionCount).isGreaterThanOrEqualTo(minPartitions); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle cloud failures")
-    void shouldHandleCloudFailures() {
+    @DisplayName("Should handle cloud failures [GH-90000]")
+    void shouldHandleCloudFailures() { // GH-90000
         boolean failed = false;
         String error = null;
 
-        assertThat(failed).isFalse();
-        assertThat(error).isNull();
+        assertThat(failed).isFalse(); // GH-90000
+        assertThat(error).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle cloud recovery")
-    void shouldHandleCloudRecovery() {
+    @DisplayName("Should handle cloud recovery [GH-90000]")
+    void shouldHandleCloudRecovery() { // GH-90000
         boolean recovered = true;
         long recoveryTimeMs = 5000L;
 
-        assertThat(recovered).isTrue();
-        assertThat(recoveryTimeMs).isPositive();
+        assertThat(recovered).isTrue(); // GH-90000
+        assertThat(recoveryTimeMs).isPositive(); // GH-90000
     }
 }

@@ -16,197 +16,197 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Covers builder, parameter management, OpenAI format conversion,
  * null validation, and immutability.
  */
-@DisplayName("ToolDefinition")
+@DisplayName("ToolDefinition [GH-90000]")
 class ToolDefinitionTest {
 
     @Nested
-    @DisplayName("builder")
+    @DisplayName("builder [GH-90000]")
     class BuilderTests {
 
         @Test
-        @DisplayName("builds with name and description")
-        void buildsWithNameAndDescription() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("search")
-                    .description("Search the codebase")
-                    .build();
-            assertThat(tool.getName()).isEqualTo("search");
-            assertThat(tool.getDescription()).isEqualTo("Search the codebase");
-            assertThat(tool.getParameters()).isEmpty();
-            assertThat(tool.getRequiredParameters()).isEmpty();
+        @DisplayName("builds with name and description [GH-90000]")
+        void buildsWithNameAndDescription() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("search [GH-90000]")
+                    .description("Search the codebase [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(tool.getName()).isEqualTo("search [GH-90000]");
+            assertThat(tool.getDescription()).isEqualTo("Search the codebase [GH-90000]");
+            assertThat(tool.getParameters()).isEmpty(); // GH-90000
+            assertThat(tool.getRequiredParameters()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("addParameter adds required parameter")
-        void addRequiredParameter() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("search")
-                    .description("Search")
-                    .addParameter("query", "string", "The search query", true)
-                    .build();
-            assertThat(tool.getParameters()).containsKey("query");
-            assertThat(tool.getRequiredParameters()).containsExactly("query");
+        @DisplayName("addParameter adds required parameter [GH-90000]")
+        void addRequiredParameter() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("search [GH-90000]")
+                    .description("Search [GH-90000]")
+                    .addParameter("query", "string", "The search query", true) // GH-90000
+                    .build(); // GH-90000
+            assertThat(tool.getParameters()).containsKey("query [GH-90000]");
+            assertThat(tool.getRequiredParameters()).containsExactly("query [GH-90000]");
         }
 
         @Test
-        @DisplayName("addParameter adds optional parameter")
-        void addOptionalParameter() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("search")
-                    .description("Search")
-                    .addParameter("limit", "integer", "Max results", false)
-                    .build();
-            assertThat(tool.getParameters()).containsKey("limit");
-            assertThat(tool.getRequiredParameters()).isEmpty();
+        @DisplayName("addParameter adds optional parameter [GH-90000]")
+        void addOptionalParameter() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("search [GH-90000]")
+                    .description("Search [GH-90000]")
+                    .addParameter("limit", "integer", "Max results", false) // GH-90000
+                    .build(); // GH-90000
+            assertThat(tool.getParameters()).containsKey("limit [GH-90000]");
+            assertThat(tool.getRequiredParameters()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("multiple parameters tracked correctly")
-        void multipleParameters() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("search")
-                    .description("Search")
-                    .addParameter("query", "string", "The query", true)
-                    .addParameter("limit", "integer", "Max results", false)
-                    .addParameter("format", "string", "Output format", true)
-                    .build();
-            assertThat(tool.getParameters()).hasSize(3);
-            assertThat(tool.getRequiredParameters()).containsExactlyInAnyOrder("query", "format");
+        @DisplayName("multiple parameters tracked correctly [GH-90000]")
+        void multipleParameters() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("search [GH-90000]")
+                    .description("Search [GH-90000]")
+                    .addParameter("query", "string", "The query", true) // GH-90000
+                    .addParameter("limit", "integer", "Max results", false) // GH-90000
+                    .addParameter("format", "string", "Output format", true) // GH-90000
+                    .build(); // GH-90000
+            assertThat(tool.getParameters()).hasSize(3); // GH-90000
+            assertThat(tool.getRequiredParameters()).containsExactlyInAnyOrder("query", "format"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("null validation")
+    @DisplayName("null validation [GH-90000]")
     class NullValidation {
 
         @Test
-        @DisplayName("null name throws NullPointerException")
-        void nullName() {
-            assertThatThrownBy(() -> ToolDefinition.builder()
-                    .description("desc")
-                    .build())
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("name");
+        @DisplayName("null name throws NullPointerException [GH-90000]")
+        void nullName() { // GH-90000
+            assertThatThrownBy(() -> ToolDefinition.builder() // GH-90000
+                    .description("desc [GH-90000]")
+                    .build()) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("name [GH-90000]");
         }
 
         @Test
-        @DisplayName("null description throws NullPointerException")
-        void nullDescription() {
-            assertThatThrownBy(() -> ToolDefinition.builder()
-                    .name("tool")
-                    .build())
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("description");
+        @DisplayName("null description throws NullPointerException [GH-90000]")
+        void nullDescription() { // GH-90000
+            assertThatThrownBy(() -> ToolDefinition.builder() // GH-90000
+                    .name("tool [GH-90000]")
+                    .build()) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("description [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("ParameterDefinition record")
+    @DisplayName("ParameterDefinition record [GH-90000]")
     class ParameterDefinitionTests {
 
         @Test
-        @DisplayName("creates with type and description")
-        void createsParameterDef() {
+        @DisplayName("creates with type and description [GH-90000]")
+        void createsParameterDef() { // GH-90000
             ToolDefinition.ParameterDefinition param =
-                    new ToolDefinition.ParameterDefinition("string", "A text query");
-            assertThat(param.type()).isEqualTo("string");
-            assertThat(param.description()).isEqualTo("A text query");
+                    new ToolDefinition.ParameterDefinition("string", "A text query"); // GH-90000
+            assertThat(param.type()).isEqualTo("string [GH-90000]");
+            assertThat(param.description()).isEqualTo("A text query [GH-90000]");
         }
 
         @Test
-        @DisplayName("null type throws NullPointerException")
-        void nullType() {
-            assertThatThrownBy(() -> new ToolDefinition.ParameterDefinition(null, "desc"))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("null type throws NullPointerException [GH-90000]")
+        void nullType() { // GH-90000
+            assertThatThrownBy(() -> new ToolDefinition.ParameterDefinition(null, "desc")) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null description throws NullPointerException")
-        void nullDescription() {
-            assertThatThrownBy(() -> new ToolDefinition.ParameterDefinition("string", null))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("null description throws NullPointerException [GH-90000]")
+        void nullDescription() { // GH-90000
+            assertThatThrownBy(() -> new ToolDefinition.ParameterDefinition("string", null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("toOpenAIFormat()")
-    @SuppressWarnings("unchecked")
+    @DisplayName("toOpenAIFormat() [GH-90000]")
+    @SuppressWarnings("unchecked [GH-90000]")
     class OpenAIFormat {
 
         @Test
-        @DisplayName("produces correct OpenAI function calling structure")
-        void correctStructure() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("search_code")
-                    .description("Search the codebase")
-                    .addParameter("query", "string", "The search query", true)
-                    .addParameter("limit", "integer", "Max results", false)
-                    .build();
+        @DisplayName("produces correct OpenAI function calling structure [GH-90000]")
+        void correctStructure() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("search_code [GH-90000]")
+                    .description("Search the codebase [GH-90000]")
+                    .addParameter("query", "string", "The search query", true) // GH-90000
+                    .addParameter("limit", "integer", "Max results", false) // GH-90000
+                    .build(); // GH-90000
 
-            Map<String, Object> format = tool.toOpenAIFormat();
+            Map<String, Object> format = tool.toOpenAIFormat(); // GH-90000
 
-            assertThat(format).containsEntry("type", "function");
-            Map<String, Object> function = (Map<String, Object>) format.get("function");
-            assertThat(function).containsEntry("name", "search_code");
-            assertThat(function).containsEntry("description", "Search the codebase");
+            assertThat(format).containsEntry("type", "function"); // GH-90000
+            Map<String, Object> function = (Map<String, Object>) format.get("function [GH-90000]");
+            assertThat(function).containsEntry("name", "search_code"); // GH-90000
+            assertThat(function).containsEntry("description", "Search the codebase"); // GH-90000
 
-            Map<String, Object> parameters = (Map<String, Object>) function.get("parameters");
-            assertThat(parameters).containsEntry("type", "object");
-            assertThat((List<String>) parameters.get("required")).containsExactly("query");
+            Map<String, Object> parameters = (Map<String, Object>) function.get("parameters [GH-90000]");
+            assertThat(parameters).containsEntry("type", "object"); // GH-90000
+            assertThat((List<String>) parameters.get("required [GH-90000]")).containsExactly("query [GH-90000]");
 
-            Map<String, Object> properties = (Map<String, Object>) parameters.get("properties");
-            assertThat(properties).containsKey("query");
-            assertThat(properties).containsKey("limit");
+            Map<String, Object> properties = (Map<String, Object>) parameters.get("properties [GH-90000]");
+            assertThat(properties).containsKey("query [GH-90000]");
+            assertThat(properties).containsKey("limit [GH-90000]");
 
-            Map<String, Object> queryProp = (Map<String, Object>) properties.get("query");
-            assertThat(queryProp).containsEntry("type", "string");
-            assertThat(queryProp).containsEntry("description", "The search query");
+            Map<String, Object> queryProp = (Map<String, Object>) properties.get("query [GH-90000]");
+            assertThat(queryProp).containsEntry("type", "string"); // GH-90000
+            assertThat(queryProp).containsEntry("description", "The search query"); // GH-90000
         }
 
         @Test
-        @DisplayName("empty parameters produce empty properties")
-        void emptyParameters() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("ping")
-                    .description("Ping the server")
-                    .build();
+        @DisplayName("empty parameters produce empty properties [GH-90000]")
+        void emptyParameters() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("ping [GH-90000]")
+                    .description("Ping the server [GH-90000]")
+                    .build(); // GH-90000
 
-            Map<String, Object> format = tool.toOpenAIFormat();
-            Map<String, Object> function = (Map<String, Object>) format.get("function");
-            Map<String, Object> parameters = (Map<String, Object>) function.get("parameters");
-            Map<String, Object> properties = (Map<String, Object>) parameters.get("properties");
-            assertThat(properties).isEmpty();
-            assertThat((List<String>) parameters.get("required")).isEmpty();
+            Map<String, Object> format = tool.toOpenAIFormat(); // GH-90000
+            Map<String, Object> function = (Map<String, Object>) format.get("function [GH-90000]");
+            Map<String, Object> parameters = (Map<String, Object>) function.get("parameters [GH-90000]");
+            Map<String, Object> properties = (Map<String, Object>) parameters.get("properties [GH-90000]");
+            assertThat(properties).isEmpty(); // GH-90000
+            assertThat((List<String>) parameters.get("required [GH-90000]")).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("immutability")
+    @DisplayName("immutability [GH-90000]")
     class Immutability {
 
         @Test
-        @DisplayName("parameters map is immutable")
-        void parametersImmutable() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("tool")
-                    .description("desc")
-                    .addParameter("p", "string", "param", true)
-                    .build();
-            assertThatThrownBy(() -> tool.getParameters().put("new",
-                    new ToolDefinition.ParameterDefinition("string", "new")))
-                    .isInstanceOf(UnsupportedOperationException.class);
+        @DisplayName("parameters map is immutable [GH-90000]")
+        void parametersImmutable() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("tool [GH-90000]")
+                    .description("desc [GH-90000]")
+                    .addParameter("p", "string", "param", true) // GH-90000
+                    .build(); // GH-90000
+            assertThatThrownBy(() -> tool.getParameters().put("new", // GH-90000
+                    new ToolDefinition.ParameterDefinition("string", "new"))) // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("requiredParameters list is immutable")
-        void requiredParamsImmutable() {
-            ToolDefinition tool = ToolDefinition.builder()
-                    .name("tool")
-                    .description("desc")
-                    .addParameter("p", "string", "param", true)
-                    .build();
-            assertThatThrownBy(() -> tool.getRequiredParameters().add("new"))
-                    .isInstanceOf(UnsupportedOperationException.class);
+        @DisplayName("requiredParameters list is immutable [GH-90000]")
+        void requiredParamsImmutable() { // GH-90000
+            ToolDefinition tool = ToolDefinition.builder() // GH-90000
+                    .name("tool [GH-90000]")
+                    .description("desc [GH-90000]")
+                    .addParameter("p", "string", "param", true) // GH-90000
+                    .build(); // GH-90000
+            assertThatThrownBy(() -> tool.getRequiredParameters().add("new [GH-90000]"))
+                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }
 }

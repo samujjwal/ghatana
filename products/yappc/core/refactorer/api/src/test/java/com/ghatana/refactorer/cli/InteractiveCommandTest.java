@@ -26,8 +26,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
+@ExtendWith(MockitoExtension.class) // GH-90000
+@MockitoSettings(strictness = Strictness.LENIENT) // GH-90000
 /**
  * @doc.type class
  * @doc.purpose Handles interactive command test operations
@@ -37,7 +37,7 @@ import org.mockito.quality.Strictness;
 class InteractiveCommandTest {
 
     private static final java.util.regex.Pattern ANSI_PATTERN =
-            java.util.regex.Pattern.compile("\\x1B\\[[;\\d]*m");
+            java.util.regex.Pattern.compile("\\x1B\\[[;\\d]*m [GH-90000]");
 
     @Mock private PolyfixCommand parentCommand;
 
@@ -51,18 +51,18 @@ class InteractiveCommandTest {
     private LineReader reader;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() throws Exception { // GH-90000
         // Setup test terminal
-        output = new ByteArrayOutputStream();
-        terminal = new DumbTerminal(new ByteArrayInputStream(new byte[0]), output);
+        output = new ByteArrayOutputStream(); // GH-90000
+        terminal = new DumbTerminal(new ByteArrayInputStream(new byte[0]), output); // GH-90000
 
         // Setup test command
         command =
-                new InteractiveCommand() {
+                new InteractiveCommand() { // GH-90000
                     @Override
-                    protected void initialize() throws IOException {
+                    protected void initialize() throws IOException { // GH-90000
                         this.terminal = InteractiveCommandTest.this.terminal;
-                        this.reader = mock(LineReader.class);
+                        this.reader = mock(LineReader.class); // GH-90000
                         this.context = mockContext;
                         this.orchestrator = mockOrchestrator;
                     }
@@ -72,115 +72,115 @@ class InteractiveCommandTest {
         command.parent = parentCommand;
 
         // Setup mocks
-        when(mockContext.getProjectRoot()).thenReturn(Path.of("/test/project"));
-        when(mockContext.getMaxPasses()).thenReturn(3);
-        when(mockContext.isDryRun()).thenReturn(false);
-        when(mockContext.getSourceFiles())
-                .thenReturn(Set.of(Path.of("test1.java"), Path.of("test2.py")));
-        when(mockContext.getActiveRules())
-                .thenReturn(
-                        List.of(
-                                new Rule(
+        when(mockContext.getProjectRoot()).thenReturn(Path.of("/test/project [GH-90000]"));
+        when(mockContext.getMaxPasses()).thenReturn(3); // GH-90000
+        when(mockContext.isDryRun()).thenReturn(false); // GH-90000
+        when(mockContext.getSourceFiles()) // GH-90000
+                .thenReturn(Set.of(Path.of("test1.java [GH-90000]"), Path.of("test2.py [GH-90000]")));
+        when(mockContext.getActiveRules()) // GH-90000
+                .thenReturn( // GH-90000
+                        List.of( // GH-90000
+                                new Rule( // GH-90000
                                         "test-rule-1",
                                         "Test Rule 1",
                                         "First test rule",
                                         Severity.ERROR),
-                                new Rule(
+                                new Rule( // GH-90000
                                         "test-rule-2",
                                         "Test Rule 2",
                                         "Second test rule",
                                         Severity.WARNING)));
 
-        when(mockOrchestrator.getSupportedLanguages())
-                .thenReturn(
-                        Map.of(
+        when(mockOrchestrator.getSupportedLanguages()) // GH-90000
+                .thenReturn( // GH-90000
+                        Map.of( // GH-90000
                                 "Java", true,
                                 "Python", true,
                                 "TypeScript", false));
     }
 
     @Test
-    void testDiagnoseCommand() throws Exception {
+    void testDiagnoseCommand() throws Exception { // GH-90000
         // Setup
-        command.initialize();
+        command.initialize(); // GH-90000
 
         // Execute
-        command.processCommand("diagnose");
-        terminal.writer().flush();
+        command.processCommand("diagnose [GH-90000]");
+        terminal.writer().flush(); // GH-90000
 
         // Verify output contains expected sections
-        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll("");
+        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll(" [GH-90000]");
 
-        assertAll(
-                () ->
-                        assertTrue(
-                                outputStr.contains("=== Running Diagnostics ==="),
+        assertAll( // GH-90000
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("=== Running Diagnostics === [GH-90000]"),
                                 "Should include diagnostics header"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("Project Structure"),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("Project Structure [GH-90000]"),
                                 "Should include project structure section"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("Language Support"),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("Language Support [GH-90000]"),
                                 "Should include language support section"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("Configuration"),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("Configuration [GH-90000]"),
                                 "Should include configuration section"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("File Analysis"),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("File Analysis [GH-90000]"),
                                 "Should include file analysis section"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("Active Rules"),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("Active Rules [GH-90000]"),
                                 "Should include active rules section"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("Performance Metrics"),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("Performance Metrics [GH-90000]"),
                                 "Should include performance metrics section"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("=== End of Diagnostics ==="),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("=== End of Diagnostics === [GH-90000]"),
                                 "Should include end of diagnostics marker"));
     }
 
     @Test
-    void testDiagnoseWithError() throws Exception {
+    void testDiagnoseWithError() throws Exception { // GH-90000
         // Setup to throw an exception
-        when(mockContext.getProjectRoot()).thenThrow(new RuntimeException("Test error"));
-        command.initialize();
+        when(mockContext.getProjectRoot()).thenThrow(new RuntimeException("Test error [GH-90000]"));
+        command.initialize(); // GH-90000
 
         // Execute
-        command.processCommand("diagnose");
-        terminal.writer().flush();
+        command.processCommand("diagnose [GH-90000]");
+        terminal.writer().flush(); // GH-90000
 
         // Verify error is handled and output contains error message
-        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll("");
-        assertTrue(outputStr.contains("Error running diagnostics"), "Should include error message");
-        assertTrue(outputStr.contains("Test error"), "Should include the actual error message");
+        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll(" [GH-90000]");
+        assertTrue(outputStr.contains("Error running diagnostics [GH-90000]"), "Should include error message");
+        assertTrue(outputStr.contains("Test error [GH-90000]"), "Should include the actual error message");
     }
 
     @Test
-    void testHelpCommand() throws Exception {
-        command.initialize();
-        command.processCommand("help");
-        terminal.writer().flush();
+    void testHelpCommand() throws Exception { // GH-90000
+        command.initialize(); // GH-90000
+        command.processCommand("help [GH-90000]");
+        terminal.writer().flush(); // GH-90000
 
-        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll("");
-        assertAll(
-                () ->
-                        assertTrue(
-                                outputStr.contains("Available commands:"),
+        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll(" [GH-90000]");
+        assertAll( // GH-90000
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("Available commands: [GH-90000]"),
                                 "Should include available commands header"),
-                () -> assertTrue(outputStr.contains("run"), "Should include run command"),
-                () -> assertTrue(outputStr.contains("diagnose"), "Should include diagnose command"),
-                () -> assertTrue(outputStr.contains("help"), "Should include help command"),
-                () -> assertTrue(outputStr.contains("clear"), "Should include clear command"),
-                () ->
-                        assertTrue(
-                                outputStr.contains("exit|quit"),
+                () -> assertTrue(outputStr.contains("run [GH-90000]"), "Should include run command"),
+                () -> assertTrue(outputStr.contains("diagnose [GH-90000]"), "Should include diagnose command"),
+                () -> assertTrue(outputStr.contains("help [GH-90000]"), "Should include help command"),
+                () -> assertTrue(outputStr.contains("clear [GH-90000]"), "Should include clear command"),
+                () -> // GH-90000
+                        assertTrue( // GH-90000
+                                outputStr.contains("exit|quit [GH-90000]"),
                                 "Should include exit/quit commands"));
     }
 }

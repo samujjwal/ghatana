@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  */
 package com.ghatana.datacloud.integration;
 
@@ -35,11 +35,11 @@ import static org.assertj.core.api.Assertions.offset;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Integration tests for AI metrics regression testing (DC-E3)
+ * @doc.purpose Integration tests for AI metrics regression testing (DC-E3) // GH-90000
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("AI Metrics Regression Integration Test")
+@DisplayName("AI Metrics Regression Integration Test [GH-90000]")
 class AiMetricsRegressionIntegrationTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -47,21 +47,21 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Regression Thresholds")
+    @DisplayName("Regression Thresholds [GH-90000]")
     class RegressionThresholdTests {
 
         @Test
-        @DisplayName("entity_suggest fallback rate should not exceed 30% threshold")
-        void entitySuggestFallbackRate_withinThreshold() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("entity_suggest fallback rate should not exceed 30% threshold [GH-90000]")
+        void entitySuggestFallbackRate_withinThreshold() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-regression-test";
             
             // Simulate typical traffic: 70% AI, 30% fallback
-            for (int i = 0; i < 70; i++) {
-                metrics.recordRecommendation(
+            for (int i = 0; i < 70; i++) { // GH-90000
+                metrics.recordRecommendation( // GH-90000
                     AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, 
                     tenantId, 
                     0.85, // high confidence
@@ -69,8 +69,8 @@ class AiMetricsRegressionIntegrationTest {
                     50L   // latency
                 );
             }
-            for (int i = 0; i < 30; i++) {
-                metrics.recordRecommendation(
+            for (int i = 0; i < 30; i++) { // GH-90000
+                metrics.recordRecommendation( // GH-90000
                     AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, 
                     tenantId, 
                     0.20, // heuristic confidence
@@ -79,28 +79,28 @@ class AiMetricsRegressionIntegrationTest {
                 );
             }
 
-            double fallbackRate = metrics.getFallbackRate(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST);
+            double fallbackRate = metrics.getFallbackRate(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST); // GH-90000
             
             // Regression threshold: fallback rate should not exceed 30%
-            assertThat(fallbackRate).isLessThanOrEqualTo(0.30);
+            assertThat(fallbackRate).isLessThanOrEqualTo(0.30); // GH-90000
             
             // Verify total count
-            assertThat(metrics.getRequestCount(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST)).isEqualTo(100);
+            assertThat(metrics.getRequestCount(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST)).isEqualTo(100); // GH-90000
         }
 
         @Test
-        @DisplayName("analytics_suggest mean confidence should not drop below 0.60 threshold")
-        void analyticsSuggestConfidence_aboveThreshold() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("analytics_suggest mean confidence should not drop below 0.60 threshold [GH-90000]")
+        void analyticsSuggestConfidence_aboveThreshold() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-regression-test";
             
             // Simulate typical confidence distribution
             double[] confidences = {0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45};
-            for (double conf : confidences) {
-                metrics.recordRecommendation(
+            for (double conf : confidences) { // GH-90000
+                metrics.recordRecommendation( // GH-90000
                     AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, 
                     tenantId, 
                     conf,
@@ -109,28 +109,28 @@ class AiMetricsRegressionIntegrationTest {
                 );
             }
 
-            double meanConfidence = metrics.getMeanConfidence(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST);
+            double meanConfidence = metrics.getMeanConfidence(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST); // GH-90000
             
             // Regression threshold: mean confidence should not drop below 0.60
-            assertThat(meanConfidence).isGreaterThanOrEqualTo(0.60);
+            assertThat(meanConfidence).isGreaterThanOrEqualTo(0.60); // GH-90000
             
             // Verify count
-            assertThat(metrics.getRequestCount(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST)).isEqualTo(10);
+            assertThat(metrics.getRequestCount(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST)).isEqualTo(10); // GH-90000
         }
 
         @Test
-        @DisplayName("pipeline_draft latency should not exceed 500ms P95 threshold")
-        void pipelineDraftLatency_withinThreshold() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("pipeline_draft latency should not exceed 500ms P95 threshold [GH-90000]")
+        void pipelineDraftLatency_withinThreshold() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-regression-test";
             
-            // Simulate typical latency distribution (ms)
+            // Simulate typical latency distribution (ms) // GH-90000
             long[] latencies = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550};
-            for (long latency : latencies) {
-                metrics.recordRecommendation(
+            for (long latency : latencies) { // GH-90000
+                metrics.recordRecommendation( // GH-90000
                     AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, 
                     tenantId, 
                     0.75,
@@ -140,11 +140,11 @@ class AiMetricsRegressionIntegrationTest {
             }
 
             // Verify all requests were recorded
-            assertThat(metrics.getRequestCount(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT)).isEqualTo(10);
+            assertThat(metrics.getRequestCount(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT)).isEqualTo(10); // GH-90000
             
             // Verify mean confidence is reasonable
-            assertThat(metrics.getMeanConfidence(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT))
-                .isGreaterThanOrEqualTo(0.70);
+            assertThat(metrics.getMeanConfidence(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT)) // GH-90000
+                .isGreaterThanOrEqualTo(0.70); // GH-90000
         }
     }
 
@@ -153,77 +153,77 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Quality Snapshot")
+    @DisplayName("Quality Snapshot [GH-90000]")
     class QualitySnapshotTests {
 
         @Test
-        @DisplayName("snapshot includes all known recommendation types")
-        void snapshot_includesAllKnownTypes() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("snapshot includes all known recommendation types [GH-90000]")
+        void snapshot_includesAllKnownTypes() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-snapshot-test";
             
             // Record at least one metric for each type
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.7, false, 20L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, 0.6, false, 30L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId, 0.5, false, 40L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, tenantId, 0.4, false, 50L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_VOICE_INTENT, tenantId, 0.3, false, 60L);
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.7, false, 20L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, 0.6, false, 30L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId, 0.5, false, 40L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, tenantId, 0.4, false, 50L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_VOICE_INTENT, tenantId, 0.3, false, 60L); // GH-90000
 
-            var snapshot = metrics.snapshot();
+            var snapshot = metrics.snapshot(); // GH-90000
             
-            assertThat(snapshot).hasSize(6);
-            assertThat(snapshot).allMatch(s -> s.requestCount() > 0);
+            assertThat(snapshot).hasSize(6); // GH-90000
+            assertThat(snapshot).allMatch(s -> s.requestCount() > 0); // GH-90000
         }
 
         @Test
-        @DisplayName("snapshot accurately reflects fallback rates")
-        void snapshot_accuratelyReflectsFallbackRates() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("snapshot accurately reflects fallback rates [GH-90000]")
+        void snapshot_accuratelyReflectsFallbackRates() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-fallback-test";
             
-            // Record with known fallback rate (50%)
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.2, true, 10L);
+            // Record with known fallback rate (50%) // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.2, true, 10L); // GH-90000
 
-            var snapshot = metrics.snapshot();
-            var entitySuggestSnapshot = snapshot.stream()
-                .filter(s -> s.type().equals(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST))
-                .findFirst()
-                .orElseThrow();
+            var snapshot = metrics.snapshot(); // GH-90000
+            var entitySuggestSnapshot = snapshot.stream() // GH-90000
+                .filter(s -> s.type().equals(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST)) // GH-90000
+                .findFirst() // GH-90000
+                .orElseThrow(); // GH-90000
             
-            assertThat(entitySuggestSnapshot.fallbackRate()).isEqualTo(0.50);
-            assertThat(entitySuggestSnapshot.fallbackCount()).isEqualTo(1);
+            assertThat(entitySuggestSnapshot.fallbackRate()).isEqualTo(0.50); // GH-90000
+            assertThat(entitySuggestSnapshot.fallbackCount()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("snapshot provides mean confidence for each type")
-        void snapshot_providesMeanConfidence() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("snapshot provides mean confidence for each type [GH-90000]")
+        void snapshot_providesMeanConfidence() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-confidence-test";
             
             // Record known confidence values
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.9, false, 10L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.7, false, 10L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.5, false, 10L);
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.9, false, 10L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.7, false, 10L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.5, false, 10L); // GH-90000
 
-            var snapshot = metrics.snapshot();
-            var analyticsSnapshot = snapshot.stream()
-                .filter(s -> s.type().equals(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST))
-                .findFirst()
-                .orElseThrow();
+            var snapshot = metrics.snapshot(); // GH-90000
+            var analyticsSnapshot = snapshot.stream() // GH-90000
+                .filter(s -> s.type().equals(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST)) // GH-90000
+                .findFirst() // GH-90000
+                .orElseThrow(); // GH-90000
             
-            // Mean should be (0.9 + 0.7 + 0.5) / 3 = 0.7
-            assertThat(analyticsSnapshot.meanConfidence()).isCloseTo(0.7, offset(0.01));
+            // Mean should be (0.9 + 0.7 + 0.5) / 3 = 0.7 // GH-90000
+            assertThat(analyticsSnapshot.meanConfidence()).isCloseTo(0.7, offset(0.01)); // GH-90000
         }
     }
 
@@ -232,46 +232,46 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("User Feedback Recording")
+    @DisplayName("User Feedback Recording [GH-90000]")
     class FeedbackRecordingTests {
 
         @Test
-        @DisplayName("thumbs-up feedback is recorded without affecting request count")
-        void thumbsUpFeedback_recordedWithoutAffectingRequestCount() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("thumbs-up feedback is recorded without affecting request count [GH-90000]")
+        void thumbsUpFeedback_recordedWithoutAffectingRequestCount() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-feedback-test";
             
             // Record a recommendation
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L);
-            long requestCountBefore = metrics.getRequestCount(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST);
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L); // GH-90000
+            long requestCountBefore = metrics.getRequestCount(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST); // GH-90000
             
             // Record positive feedback
-            metrics.recordFeedback(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, true);
+            metrics.recordFeedback(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, true); // GH-90000
             
             // Request count should not change
-            long requestCountAfter = metrics.getRequestCount(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST);
-            assertThat(requestCountAfter).isEqualTo(requestCountBefore);
+            long requestCountAfter = metrics.getRequestCount(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST); // GH-90000
+            assertThat(requestCountAfter).isEqualTo(requestCountBefore); // GH-90000
         }
 
         @Test
-        @DisplayName("thumbs-down feedback is recorded")
-        void thumbsDownFeedback_recorded() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("thumbs-down feedback is recorded [GH-90000]")
+        void thumbsDownFeedback_recorded() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-feedback-test";
             
             // Record negative feedback
-            metrics.recordFeedback(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, false);
+            metrics.recordFeedback(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, false); // GH-90000
             
             // Should not throw and metrics should remain functional
-            assertThatCode(() -> metrics.recordFeedback(
+            assertThatCode(() -> metrics.recordFeedback( // GH-90000
                 AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, false))
-                .doesNotThrowAnyException();
+                .doesNotThrowAnyException(); // GH-90000
         }
     }
 
@@ -280,46 +280,46 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Error Recording")
+    @DisplayName("Error Recording [GH-90000]")
     class ErrorRecordingTests {
 
         @Test
-        @DisplayName("errors are recorded without affecting request count")
-        void errors_recordedWithoutAffectingRequestCount() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("errors are recorded without affecting request count [GH-90000]")
+        void errors_recordedWithoutAffectingRequestCount() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-error-test";
             
             // Record a successful recommendation
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, tenantId, 0.8, false, 10L);
-            long requestCountBefore = metrics.getRequestCount(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN);
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, tenantId, 0.8, false, 10L); // GH-90000
+            long requestCountBefore = metrics.getRequestCount(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN); // GH-90000
             
             // Record an error
-            metrics.recordError(
+            metrics.recordError( // GH-90000
                 AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, 
                 tenantId, 
-                new RuntimeException("LLM timeout"));
+                new RuntimeException("LLM timeout [GH-90000]"));
             
             // Request count should not change
-            long requestCountAfter = metrics.getRequestCount(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN);
-            assertThat(requestCountAfter).isEqualTo(requestCountBefore);
+            long requestCountAfter = metrics.getRequestCount(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN); // GH-90000
+            assertThat(requestCountAfter).isEqualTo(requestCountBefore); // GH-90000
         }
 
         @Test
-        @DisplayName("error recording handles null cause gracefully")
-        void errorRecording_handlesNullCause() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("error recording handles null cause gracefully [GH-90000]")
+        void errorRecording_handlesNullCause() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-error-test";
             
             // Record error with null cause
-            assertThatCode(() -> metrics.recordError(
+            assertThatCode(() -> metrics.recordError( // GH-90000
                 AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId, null))
-                .doesNotThrowAnyException();
+                .doesNotThrowAnyException(); // GH-90000
         }
     }
 
@@ -328,52 +328,52 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Cross-Type Regression")
+    @DisplayName("Cross-Type Regression [GH-90000]")
     class CrossTypeRegressionTests {
 
         @Test
-        @DisplayName("overall fallback rate across all types can be monitored")
-        void overallFallbackRate_canBeMonitored() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("overall fallback rate across all types can be monitored [GH-90000]")
+        void overallFallbackRate_canBeMonitored() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-cross-type-test";
             
             // Record mixed traffic across types
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.2, true, 10L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.7, false, 20L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.3, true, 20L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, 0.6, false, 30L);
-            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, 0.4, true, 30L);
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.8, false, 10L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, 0.2, true, 10L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.7, false, 20L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, 0.3, true, 20L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, 0.6, false, 30L); // GH-90000
+            metrics.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_DRAFT, tenantId, 0.4, true, 30L); // GH-90000
 
-            var snapshot = metrics.snapshot();
+            var snapshot = metrics.snapshot(); // GH-90000
 
             // Filter to only types that have recorded data
-            var activeTypes = snapshot.stream()
-                .filter(s -> s.requestCount() > 0)
-                .toList();
+            var activeTypes = snapshot.stream() // GH-90000
+                .filter(s -> s.requestCount() > 0) // GH-90000
+                .toList(); // GH-90000
 
             // Each active type should have 50% fallback rate
-            assertThat(activeTypes).allMatch(s -> s.fallbackRate() == 0.50);
+            assertThat(activeTypes).allMatch(s -> s.fallbackRate() == 0.50); // GH-90000
 
             // Each active type should have 2 requests
-            assertThat(activeTypes).allMatch(s -> s.requestCount() == 2);
+            assertThat(activeTypes).allMatch(s -> s.requestCount() == 2); // GH-90000
         }
 
         @Test
-        @DisplayName("regression can detect quality degradation across types")
-        void regression_canDetectQualityDegradation() {
-            SimpleMeterRegistry registry = new SimpleMeterRegistry();
-            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry);
-            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector);
+        @DisplayName("regression can detect quality degradation across types [GH-90000]")
+        void regression_canDetectQualityDegradation() { // GH-90000
+            SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+            SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
+            AiRecommendationMetrics metrics = new AiRecommendationMetrics(collector); // GH-90000
 
             String tenantId = "tenant-degradation-test";
             
             // Simulate degraded quality: low confidence, high fallback
-            for (int i = 0; i < 100; i++) {
-                metrics.recordRecommendation(
+            for (int i = 0; i < 100; i++) { // GH-90000
+                metrics.recordRecommendation( // GH-90000
                     AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, 
                     tenantId, 
                     0.35, // low confidence
@@ -382,12 +382,12 @@ class AiMetricsRegressionIntegrationTest {
                 );
             }
 
-            double fallbackRate = metrics.getFallbackRate(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST);
-            double meanConfidence = metrics.getMeanConfidence(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST);
+            double fallbackRate = metrics.getFallbackRate(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST); // GH-90000
+            double meanConfidence = metrics.getMeanConfidence(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST); // GH-90000
             
             // Regression detection: these values should trigger alerts
-            assertThat(fallbackRate).isGreaterThan(0.50); // > 50% fallback
-            assertThat(meanConfidence).isLessThan(0.40); // < 40% confidence
+            assertThat(fallbackRate).isGreaterThan(0.50); // > 50% fallback // GH-90000
+            assertThat(meanConfidence).isLessThan(0.40); // < 40% confidence // GH-90000
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * HTTP request header contract tests for security boundaries.
  *
  * Validates authentication, authorization, and security header contracts.
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test, Contract
  */
-@DisplayName("HTTP Security Header Contracts")
+@DisplayName("HTTP Security Header Contracts [GH-90000]")
 class HttpSecurityHeaderContractTest extends EventloopTestBase {
 
     // =========================================================================
@@ -41,45 +41,45 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Authentication Header Contracts")
+    @DisplayName("Authentication Header Contracts [GH-90000]")
     class AuthenticationHeaderContract {
 
         @Test
-        @DisplayName("Authorization header must be accepted in Bearer scheme")
-        void authorizationHeaderMustAllowBearer() {
+        @DisplayName("Authorization header must be accepted in Bearer scheme [GH-90000]")
+        void authorizationHeaderMustAllowBearer() { // GH-90000
             String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
             String authHeader = "Bearer " + token;
 
-            assertThat(authHeader).startsWith("Bearer ");
-            assertThat(authHeader.substring("Bearer ".length())).isNotBlank();
+            assertThat(authHeader).startsWith("Bearer  [GH-90000]");
+            assertThat(authHeader.substring("Bearer ".length())).isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("missing Authorization header must fail for protected endpoints")
-        void missingAuthHeaderMustFail() {
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/users")
-                    .build();
+        @DisplayName("missing Authorization header must fail for protected endpoints [GH-90000]")
+        void missingAuthHeaderMustFail() { // GH-90000
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/users [GH-90000]")
+                    .build(); // GH-90000
 
             // No Authorization header set
-            assertThat(request.getHeader(HttpHeaders.of("Authorization"))).isNull();
+            assertThat(request.getHeader(HttpHeaders.of("Authorization [GH-90000]"))).isNull();
             // This should be detected by auth filter and return 401
         }
 
         @Test
-        @DisplayName("invalid Authorization scheme must be rejected")
-        void invalidAuthSchemeMustBeFail() {
+        @DisplayName("invalid Authorization scheme must be rejected [GH-90000]")
+        void invalidAuthSchemeMustBeFail() { // GH-90000
             String invalidAuth = "Basic " + "invalid-token";
-            assertThat(invalidAuth).startsWith("Basic ");
+            assertThat(invalidAuth).startsWith("Basic  [GH-90000]");
             // Only Bearer is supported for JWT; Basic is not
         }
 
         @Test
-        @DisplayName("expired Authorization token must be detected")
-        void expiredTokenMustBeDetected() {
+        @DisplayName("expired Authorization token must be detected [GH-90000]")
+        void expiredTokenMustBeDetected() { // GH-90000
             String expiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.expired.signature";
             String authHeader = "Bearer " + expiredToken;
 
-            assertThat(authHeader).contains("Bearer");
+            assertThat(authHeader).contains("Bearer [GH-90000]");
             // Token validation layer must verify expiration
         }
     }
@@ -89,48 +89,48 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Tenant Isolation Header Contracts")
+    @DisplayName("Tenant Isolation Header Contracts [GH-90000]")
     class TenantIsolationHeaderContract {
 
         @Test
-        @DisplayName("request must include tenant context header or derive from token")
-        void tenantContextMustBeProvided() {
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities")
-                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-abc-123")
-                    .build();
+        @DisplayName("request must include tenant context header or derive from token [GH-90000]")
+        void tenantContextMustBeProvided() { // GH-90000
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities [GH-90000]")
+                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-abc-123")
+                    .build(); // GH-90000
 
-            assertThat(request.getHeader(HttpHeaders.of("X-Tenant-ID")))
-                    .isEqualTo("tenant-abc-123");
+            assertThat(request.getHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]")))
+                    .isEqualTo("tenant-abc-123 [GH-90000]");
         }
 
         @Test
-        @DisplayName("tenant from header must match tenant in JWT token")
-        void tenantHeaderMustMatchToken() {
+        @DisplayName("tenant from header must match tenant in JWT token [GH-90000]")
+        void tenantHeaderMustMatchToken() { // GH-90000
             // JWT token claims tenant-1
             String token = "jwt.with.tenant-1.claim";
             String headerTenant = "tenant-1";
 
-            assertThat(token).contains(headerTenant);
-            assertThat(headerTenant).isNotBlank();
+            assertThat(token).contains(headerTenant); // GH-90000
+            assertThat(headerTenant).isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("mismatched tenant in header and token must be rejected")
-        void mismatchedTenantMustBeFail() {
+        @DisplayName("mismatched tenant in header and token must be rejected [GH-90000]")
+        void mismatchedTenantMustBeFail() { // GH-90000
             String tokenTenant = "tenant-a";
             String headerTenant = "tenant-b";
 
-            assertThat(tokenTenant).isNotEqualTo(headerTenant);
+            assertThat(tokenTenant).isNotEqualTo(headerTenant); // GH-90000
             // Auth filter must detect and reject mismatch
         }
 
         @Test
-        @DisplayName("request must not be able to switch tenants via header")
-        void tenantSwitchingMustBePrevented() {
+        @DisplayName("request must not be able to switch tenants via header [GH-90000]")
+        void tenantSwitchingMustBePrevented() { // GH-90000
             String authenticatedTenant = "tenant-1";
             String attemptedTenant = "tenant-2";
 
-            assertThat(authenticatedTenant).isNotEqualTo(attemptedTenant);
+            assertThat(authenticatedTenant).isNotEqualTo(attemptedTenant); // GH-90000
             // Even if header contains tenant-2, auth must use token's tenant-1
         }
     }
@@ -140,34 +140,34 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("CORS Header Contracts")
+    @DisplayName("CORS Header Contracts [GH-90000]")
     class CorsHeaderContract {
 
         @Test
-        @DisplayName("CORS preflight OPTIONS request must be handled")
-        void corsPreflightMustBeHandled() {
-            HttpRequest request = HttpRequest.builder(HttpMethod.OPTIONS, "http://localhost/api/v1/users")
-                    .withHeader(HttpHeaders.of("Origin"), "http://frontend.example.com")
-                    .withHeader(HttpHeaders.of("Access-Control-Request-Method"), "POST")
-                    .build();
+        @DisplayName("CORS preflight OPTIONS request must be handled [GH-90000]")
+        void corsPreflightMustBeHandled() { // GH-90000
+            HttpRequest request = HttpRequest.builder(HttpMethod.OPTIONS, "http://localhost/api/v1/users") // GH-90000
+                    .withHeader(HttpHeaders.of("Origin [GH-90000]"), "http://frontend.example.com")
+                    .withHeader(HttpHeaders.of("Access-Control-Request-Method [GH-90000]"), "POST")
+                    .build(); // GH-90000
 
-            assertThat(request.getMethod().toString()).isEqualTo("OPTIONS");
-            assertThat(request.getHeader(HttpHeaders.of("Origin"))).isNotBlank();
+            assertThat(request.getMethod().toString()).isEqualTo("OPTIONS [GH-90000]");
+            assertThat(request.getHeader(HttpHeaders.of("Origin [GH-90000]"))).isNotBlank();
         }
 
         @Test
-        @DisplayName("allowed origins must be validated against CORS policy")
-        void allowedOriginsMustBeValidated() {
+        @DisplayName("allowed origins must be validated against CORS policy [GH-90000]")
+        void allowedOriginsMustBeValidated() { // GH-90000
             String allowedOrigin = "http://trusted-frontend.com";
             String untrustedOrigin = "http://malicious-site.com";
 
-            assertThat(allowedOrigin).isNotEqualTo(untrustedOrigin);
+            assertThat(allowedOrigin).isNotEqualTo(untrustedOrigin); // GH-90000
             // CORS filter must only allow configured origins
         }
 
         @Test
-        @DisplayName("CORS response must include Access-Control-Allow-* headers")
-        void corsResponseMustIncludeHeaders() {
+        @DisplayName("CORS response must include Access-Control-Allow-* headers [GH-90000]")
+        void corsResponseMustIncludeHeaders() { // GH-90000
             // Response must include:
             // Access-Control-Allow-Origin
             // Access-Control-Allow-Methods
@@ -177,8 +177,8 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
             String allowOriginHeader = "Access-Control-Allow-Origin";
             String allowMethodsHeader = "Access-Control-Allow-Methods";
 
-            assertThat(allowOriginHeader).isNotBlank();
-            assertThat(allowMethodsHeader).isNotBlank();
+            assertThat(allowOriginHeader).isNotBlank(); // GH-90000
+            assertThat(allowMethodsHeader).isNotBlank(); // GH-90000
         }
     }
 
@@ -187,38 +187,38 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Rate Limiting Header Contracts")
+    @DisplayName("Rate Limiting Header Contracts [GH-90000]")
     class RateLimitingHeaderContract {
 
         @Test
-        @DisplayName("responses must include RateLimit headers")
-        void responseMustIncludeRateLimitHeaders() {
-            // Standard RateLimit headers (RFC 6585)
+        @DisplayName("responses must include RateLimit headers [GH-90000]")
+        void responseMustIncludeRateLimitHeaders() { // GH-90000
+            // Standard RateLimit headers (RFC 6585) // GH-90000
             String limitHeader = "RateLimit-Limit";
             String remainingHeader = "RateLimit-Remaining";
             String resetHeader = "RateLimit-Reset";
 
-            assertThat(limitHeader).contains("RateLimit");
-            assertThat(remainingHeader).contains("RateLimit");
-            assertThat(resetHeader).contains("RateLimit");
+            assertThat(limitHeader).contains("RateLimit [GH-90000]");
+            assertThat(remainingHeader).contains("RateLimit [GH-90000]");
+            assertThat(resetHeader).contains("RateLimit [GH-90000]");
         }
 
         @Test
-        @DisplayName("rate limit exceeded must return 429 Too Many Requests")
-        void rateLimitExceededMustReturn429() {
+        @DisplayName("rate limit exceeded must return 429 Too Many Requests [GH-90000]")
+        void rateLimitExceededMustReturn429() { // GH-90000
             int tooManyRequestsStatusCode = 429;
-            assertThat(tooManyRequestsStatusCode).isGreaterThan(400);
+            assertThat(tooManyRequestsStatusCode).isGreaterThan(400); // GH-90000
         }
 
         @Test
-        @DisplayName("rate limit reset time must be communicated to client")
-        void rateLimitResetMustBeCommunicated() {
+        @DisplayName("rate limit reset time must be communicated to client [GH-90000]")
+        void rateLimitResetMustBeCommunicated() { // GH-90000
             // Retry-After header or RateLimit-Reset header
             String retryAfterHeader = "Retry-After";
             String rateLimitResetHeader = "RateLimit-Reset";
 
-            assertThat(retryAfterHeader).isNotBlank();
-            assertThat(rateLimitResetHeader).isNotBlank();
+            assertThat(retryAfterHeader).isNotBlank(); // GH-90000
+            assertThat(rateLimitResetHeader).isNotBlank(); // GH-90000
         }
     }
 
@@ -227,48 +227,48 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Content Security Header Contracts")
+    @DisplayName("Content Security Header Contracts [GH-90000]")
     class ContentSecurityHeaderContract {
 
         @Test
-        @DisplayName("responses must include security headers (HSTS, CSP, etc)")
-        void responseMustIncludeSecurityHeaders() {
+        @DisplayName("responses must include security headers (HSTS, CSP, etc) [GH-90000]")
+        void responseMustIncludeSecurityHeaders() { // GH-90000
             String hstsHeader = "Strict-Transport-Security";
             String xContentTypeOptionsHeader = "X-Content-Type-Options";
             String xFrameOptionsHeader = "X-Frame-Options";
 
-            assertThat(hstsHeader).isNotBlank();
-            assertThat(xContentTypeOptionsHeader).isNotBlank();
-            assertThat(xFrameOptionsHeader).isNotBlank();
+            assertThat(hstsHeader).isNotBlank(); // GH-90000
+            assertThat(xContentTypeOptionsHeader).isNotBlank(); // GH-90000
+            assertThat(xFrameOptionsHeader).isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("HSTS header must enforce HTTPS")
-        void hstsMustEnforceHttps() {
+        @DisplayName("HSTS header must enforce HTTPS [GH-90000]")
+        void hstsMustEnforceHttps() { // GH-90000
             String hstsHeader = "Strict-Transport-Security";
             String hstsValue = "max-age=31536000; includeSubDomains"; // 1 year
 
-            assertThat(hstsHeader).isNotBlank();
-            assertThat(hstsValue).contains("max-age");
+            assertThat(hstsHeader).isNotBlank(); // GH-90000
+            assertThat(hstsValue).contains("max-age [GH-90000]");
         }
 
         @Test
-        @DisplayName("X-Content-Type-Options must prevent MIME type sniffing")
-        void xContentTypeOptionsMustPreventSniffing() {
+        @DisplayName("X-Content-Type-Options must prevent MIME type sniffing [GH-90000]")
+        void xContentTypeOptionsMustPreventSniffing() { // GH-90000
             String header = "X-Content-Type-Options";
             String value = "nosniff";
 
-            assertThat(value).isEqualTo("nosniff");
+            assertThat(value).isEqualTo("nosniff [GH-90000]");
         }
 
         @Test
-        @DisplayName("X-Frame-Options must prevent clickjacking")
-        void xFrameOptionsMustPreventClickjacking() {
+        @DisplayName("X-Frame-Options must prevent clickjacking [GH-90000]")
+        void xFrameOptionsMustPreventClickjacking() { // GH-90000
             String header = "X-Frame-Options";
             // Valid values: DENY, SAMEORIGIN, ALLOW-FROM uri
             String value = "DENY";
 
-            assertThat(value).isIn("DENY", "SAMEORIGIN");
+            assertThat(value).isIn("DENY", "SAMEORIGIN"); // GH-90000
         }
     }
 
@@ -277,39 +277,39 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Distributed Tracing Header Contracts")
+    @DisplayName("Distributed Tracing Header Contracts [GH-90000]")
     class TracingHeaderContract {
 
         @Test
-        @DisplayName("request may include X-Correlation-ID header for tracing")
-        void clientCanSupplyCorrelationId() {
+        @DisplayName("request may include X-Correlation-ID header for tracing [GH-90000]")
+        void clientCanSupplyCorrelationId() { // GH-90000
             String correlationId = "trace-abc-123";
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/users")
-                    .withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId)
-                    .build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/users [GH-90000]")
+                    .withHeader(HttpHeaders.of("X-Correlation-ID [GH-90000]"), correlationId)
+                    .build(); // GH-90000
 
-            assertThat(request.getHeader(HttpHeaders.of("X-Correlation-ID")))
-                    .isEqualTo(correlationId);
+            assertThat(request.getHeader(HttpHeaders.of("X-Correlation-ID [GH-90000]")))
+                    .isEqualTo(correlationId); // GH-90000
         }
 
         @Test
-        @DisplayName("response must echo correlation ID from request")
-        void responseMustEchoCorrelationId() {
+        @DisplayName("response must echo correlation ID from request [GH-90000]")
+        void responseMustEchoCorrelationId() { // GH-90000
             String clientCorrelationId = "trace-xyz-789";
             // Server receives X-Correlation-ID: trace-xyz-789
             // Server response should include same X-Correlation-ID
 
-            assertThat(clientCorrelationId).isNotBlank();
+            assertThat(clientCorrelationId).isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("server must generate correlation ID if not provided by client")
-        void serverMustGenerateCorrelationIdIfMissing() {
+        @DisplayName("server must generate correlation ID if not provided by client [GH-90000]")
+        void serverMustGenerateCorrelationIdIfMissing() { // GH-90000
             // Client doesn't send X-Correlation-ID
             // Server generates one: UUID or similar
 
-            String generatedId = "auto-generated-" + System.nanoTime();
-            assertThat(generatedId).isNotBlank();
+            String generatedId = "auto-generated-" + System.nanoTime(); // GH-90000
+            assertThat(generatedId).isNotBlank(); // GH-90000
         }
     }
 
@@ -318,29 +318,29 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Content Encoding Header Contracts")
+    @DisplayName("Content Encoding Header Contracts [GH-90000]")
     class ContentEncodingContract {
 
         @Test
-        @DisplayName("request may include Accept-Encoding header")
-        void clientCanSupplyAcceptEncoding() {
+        @DisplayName("request may include Accept-Encoding header [GH-90000]")
+        void clientCanSupplyAcceptEncoding() { // GH-90000
             String acceptEncoding = "gzip, deflate";
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/users")
-                    .withHeader(HttpHeaders.of("Accept-Encoding"), acceptEncoding)
-                    .build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/users [GH-90000]")
+                    .withHeader(HttpHeaders.of("Accept-Encoding [GH-90000]"), acceptEncoding)
+                    .build(); // GH-90000
 
-            assertThat(request.getHeader(HttpHeaders.of("Accept-Encoding")))
-                    .contains("gzip");
+            assertThat(request.getHeader(HttpHeaders.of("Accept-Encoding [GH-90000]")))
+                    .contains("gzip [GH-90000]");
         }
 
         @Test
-        @DisplayName("response must respect Accept-Encoding from request")
-        void responseMustRespectAcceptEncoding() {
+        @DisplayName("response must respect Accept-Encoding from request [GH-90000]")
+        void responseMustRespectAcceptEncoding() { // GH-90000
             // If client sends Accept-Encoding: gzip, deflate
             // Server should use gzip if available for large payloads
 
             String supportedEncodings = "gzip, deflate";
-            assertThat(supportedEncodings).contains("gzip");
+            assertThat(supportedEncodings).contains("gzip [GH-90000]");
         }
     }
 
@@ -349,23 +349,23 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Custom Header Contracts")
+    @DisplayName("Custom Header Contracts [GH-90000]")
     class CustomHeaderContract {
 
         @Test
-        @DisplayName("custom headers must be prefixed with X-")
-        void customHeadersMustHaveXPrefix() {
+        @DisplayName("custom headers must be prefixed with X- [GH-90000]")
+        void customHeadersMustHaveXPrefix() { // GH-90000
             String customHeader = "X-Custom-Data";
-            assertThat(customHeader).startsWith("X-");
+            assertThat(customHeader).startsWith("X- [GH-90000]");
         }
 
         @Test
-        @DisplayName("custom headers must not conflict with standard headers")
-        void customHeadersMustNotConflict() {
+        @DisplayName("custom headers must not conflict with standard headers [GH-90000]")
+        void customHeadersMustNotConflict() { // GH-90000
             String customHeader = "X-Custom-Tenant-Info";
             String standardHeader = "Authorization";
 
-            assertThat(customHeader).isNotEqualTo(standardHeader);
+            assertThat(customHeader).isNotEqualTo(standardHeader); // GH-90000
         }
     }
 }

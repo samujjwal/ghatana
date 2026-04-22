@@ -173,7 +173,7 @@ test.describe('Sprint 5: Performance Optimization', () => {
 });
 
 // Sprint 6: Advanced Canvas Features Tests
-test.describe.skip('Sprint 6: Advanced Canvas Features', () => {
+test.describe.skip('Sprint 6: Advanced Canvas Features [GH-90000]', () => {
   test.beforeEach(async ({ page }) => {
     await createTestCanvas(page);
   });
@@ -364,7 +364,7 @@ test.describe.skip('Sprint 6: Advanced Canvas Features', () => {
 });
 
 // Sprint 7: Integration & Polish Tests
-test.describe.skip('Sprint 7: Integration & Polish', () => {
+test.describe.skip('Sprint 7: Integration & Polish [GH-90000]', () => {
   test.beforeEach(async ({ page }) => {
     await createTestCanvas(page);
   });
@@ -585,7 +585,7 @@ test.describe.skip('Sprint 7: Integration & Polish', () => {
 });
 
 // Integration Tests - Full Workflow Integration Tests
-test.describe.skip('Full Workflow Integration', () => {
+test.describe.skip('Full Workflow Integration [GH-90000]', () => {
   test('should complete end-to-end canvas creation workflow', async ({
     page,
   }) => {

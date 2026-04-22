@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.profile;
@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.*;
  * <ul>
  *   <li>CollectionStorageProfile constructor validation</li>
  *   <li>CollectionStorageProfile builder validation</li>
- *   <li>Repository validation (InMemoryCollectionStorageProfileRepository)</li>
+ *   <li>Repository validation (InMemoryCollectionStorageProfileRepository)</li> // GH-90000
  *   <li>Edge cases and null safety</li>
  * </ul>
  *
@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Profile Validation Tests")
+@DisplayName("Profile Validation Tests [GH-90000]")
 class ProfileValidationTest extends EventloopTestBase {
 
     // =========================================================================
@@ -43,221 +43,221 @@ class ProfileValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("CollectionStorageProfile constructor validation")
+    @DisplayName("CollectionStorageProfile constructor validation [GH-90000]")
     class ConstructorValidation {
 
         @Test
-        @DisplayName("should reject null id")
-        void shouldRejectNullId() {
-            assertThatThrownBy(() -> new CollectionStorageProfile(
+        @DisplayName("should reject null id [GH-90000]")
+        void shouldRejectNullId() { // GH-90000
+            assertThatThrownBy(() -> new CollectionStorageProfile( // GH-90000
                 null,
                 "tenant-1",
                 "products",
                 "profile-1",
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 0,
-                Instant.now(),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("id must not be null");
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("id must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null collectionName")
-        void shouldRejectNullCollectionName() {
-            assertThatThrownBy(() -> new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should reject null collectionName [GH-90000]")
+        void shouldRejectNullCollectionName() { // GH-90000
+            assertThatThrownBy(() -> new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 null,
                 "profile-1",
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 0,
-                Instant.now(),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("collectionName must not be null");
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("collectionName must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null storageProfileId")
-        void shouldRejectNullStorageProfileId() {
-            assertThatThrownBy(() -> new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should reject null storageProfileId [GH-90000]")
+        void shouldRejectNullStorageProfileId() { // GH-90000
+            assertThatThrownBy(() -> new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 null,
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 0,
-                Instant.now(),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("storageProfileId must not be null");
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("storageProfileId must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null primaryBackendId")
-        void shouldRejectNullPrimaryBackendId() {
-            assertThatThrownBy(() -> new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should reject null primaryBackendId [GH-90000]")
+        void shouldRejectNullPrimaryBackendId() { // GH-90000
+            assertThatThrownBy(() -> new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 "profile-1",
                 null,
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 0,
-                Instant.now(),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("primaryBackendId must not be null");
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("primaryBackendId must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null createdAt")
-        void shouldRejectNullCreatedAt() {
-            assertThatThrownBy(() -> new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should reject null createdAt [GH-90000]")
+        void shouldRejectNullCreatedAt() { // GH-90000
+            assertThatThrownBy(() -> new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 "profile-1",
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 0,
                 null,
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("createdAt must not be null");
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("createdAt must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null updatedAt")
-        void shouldRejectNullUpdatedAt() {
-            assertThatThrownBy(() -> new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should reject null updatedAt [GH-90000]")
+        void shouldRejectNullUpdatedAt() { // GH-90000
+            assertThatThrownBy(() -> new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 "profile-1",
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 0,
-                Instant.now(),
+                Instant.now(), // GH-90000
                 null
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("updatedAt must not be null");
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("updatedAt must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should accept null tenantId")
-        void shouldAcceptNullTenantId() {
-            CollectionStorageProfile profile = new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should accept null tenantId [GH-90000]")
+        void shouldAcceptNullTenantId() { // GH-90000
+            CollectionStorageProfile profile = new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 null,
                 "products",
                 "profile-1",
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 0,
-                Instant.now(),
-                Instant.now()
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            assertThat(profile.getTenantId()).isNull();
+            assertThat(profile.getTenantId()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should accept null fallbackBackendIds")
-        void shouldAcceptNullFallbackBackendIds() {
-            CollectionStorageProfile profile = new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should accept null fallbackBackendIds [GH-90000]")
+        void shouldAcceptNullFallbackBackendIds() { // GH-90000
+            CollectionStorageProfile profile = new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 "profile-1",
                 "postgres-primary",
                 null,
-                Map.of(),
+                Map.of(), // GH-90000
                 true,
                 0,
-                Instant.now(),
-                Instant.now()
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            assertThat(profile.getFallbackBackendIds()).isEmpty();
+            assertThat(profile.getFallbackBackendIds()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should accept null backendConfig")
-        void shouldAcceptNullBackendConfig() {
-            CollectionStorageProfile profile = new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should accept null backendConfig [GH-90000]")
+        void shouldAcceptNullBackendConfig() { // GH-90000
+            CollectionStorageProfile profile = new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 "profile-1",
                 "postgres-primary",
-                List.of(),
+                List.of(), // GH-90000
                 null,
                 true,
                 0,
-                Instant.now(),
-                Instant.now()
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            assertThat(profile.getBackendConfig()).isEmpty();
+            assertThat(profile.getBackendConfig()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should accept null isActive with default true")
-        void shouldAcceptNullIsActiveWithDefaultTrue() {
-            CollectionStorageProfile profile = new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should accept null isActive with default true [GH-90000]")
+        void shouldAcceptNullIsActiveWithDefaultTrue() { // GH-90000
+            CollectionStorageProfile profile = new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 "profile-1",
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 null,
                 0,
-                Instant.now(),
-                Instant.now()
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            assertThat(profile.getIsActive()).isTrue();
+            assertThat(profile.getIsActive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should accept null priorityOrder with default 0")
-        void shouldAcceptNullPriorityOrderWithDefaultZero() {
-            CollectionStorageProfile profile = new CollectionStorageProfile(
-                UUID.randomUUID().toString(),
+        @DisplayName("should accept null priorityOrder with default 0 [GH-90000]")
+        void shouldAcceptNullPriorityOrderWithDefaultZero() { // GH-90000
+            CollectionStorageProfile profile = new CollectionStorageProfile( // GH-90000
+                UUID.randomUUID().toString(), // GH-90000
                 "tenant-1",
                 "products",
                 "profile-1",
                 "postgres-primary",
-                List.of(),
-                Map.of(),
+                List.of(), // GH-90000
+                Map.of(), // GH-90000
                 true,
                 null,
-                Instant.now(),
-                Instant.now()
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            assertThat(profile.getPriorityOrder()).isEqualTo(0);
+            assertThat(profile.getPriorityOrder()).isEqualTo(0); // GH-90000
         }
     }
 
@@ -266,117 +266,117 @@ class ProfileValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("CollectionStorageProfile builder validation")
+    @DisplayName("CollectionStorageProfile builder validation [GH-90000]")
     class BuilderValidation {
 
         @Test
-        @DisplayName("should auto-generate id when not provided")
-        void shouldAutoGenerateId() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should auto-generate id when not provided [GH-90000]")
+        void shouldAutoGenerateId() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(profile.getId()).isNotNull();
-            assertThat(profile.getId()).isNotEmpty();
+            assertThat(profile.getId()).isNotNull(); // GH-90000
+            assertThat(profile.getId()).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should auto-generate storageProfileId from collectionName")
-        void shouldAutoGenerateStorageProfileId() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should auto-generate storageProfileId from collectionName [GH-90000]")
+        void shouldAutoGenerateStorageProfileId() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(profile.getStorageProfileId()).isEqualTo("products-profile");
+            assertThat(profile.getStorageProfileId()).isEqualTo("products-profile [GH-90000]");
         }
 
         @Test
-        @DisplayName("should auto-generate createdAt when not provided")
-        void shouldAutoGenerateCreatedAt() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should auto-generate createdAt when not provided [GH-90000]")
+        void shouldAutoGenerateCreatedAt() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(profile.getCreatedAt()).isNotNull();
-            assertThat(profile.getCreatedAt()).isBeforeOrEqualTo(Instant.now());
+            assertThat(profile.getCreatedAt()).isNotNull(); // GH-90000
+            assertThat(profile.getCreatedAt()).isBeforeOrEqualTo(Instant.now()); // GH-90000
         }
 
         @Test
-        @DisplayName("should auto-generate updatedAt when not provided")
-        void shouldAutoGenerateUpdatedAt() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should auto-generate updatedAt when not provided [GH-90000]")
+        void shouldAutoGenerateUpdatedAt() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(profile.getUpdatedAt()).isNotNull();
-            assertThat(profile.getUpdatedAt()).isBeforeOrEqualTo(Instant.now());
+            assertThat(profile.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(profile.getUpdatedAt()).isBeforeOrEqualTo(Instant.now()); // GH-90000
         }
 
         @Test
-        @DisplayName("should use provided id when specified")
-        void shouldUseProvidedId() {
+        @DisplayName("should use provided id when specified [GH-90000]")
+        void shouldUseProvidedId() { // GH-90000
             String customId = "custom-id-123";
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .id(customId)
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .id(customId) // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(profile.getId()).isEqualTo(customId);
+            assertThat(profile.getId()).isEqualTo(customId); // GH-90000
         }
 
         @Test
-        @DisplayName("should use provided storageProfileId when specified")
-        void shouldUseProvidedStorageProfileId() {
+        @DisplayName("should use provided storageProfileId when specified [GH-90000]")
+        void shouldUseProvidedStorageProfileId() { // GH-90000
             String customProfileId = "custom-profile";
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .storageProfileId(customProfileId)
-                .primaryBackendId("postgres-primary")
-                .build();
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .storageProfileId(customProfileId) // GH-90000
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(profile.getStorageProfileId()).isEqualTo(customProfileId);
+            assertThat(profile.getStorageProfileId()).isEqualTo(customProfileId); // GH-90000
         }
 
         @Test
-        @DisplayName("should build valid profile with all fields")
-        void shouldBuildValidProfileWithAllFields() {
-            Instant now = Instant.now();
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .id("profile-123")
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .storageProfileId("hot-profile")
-                .primaryBackendId("postgres-primary")
-                .fallbackBackendIds(List.of("postgres-secondary", "redis-cache"))
-                .backendConfig(Map.of("timeout", 5000, "retries", 3))
-                .isActive(true)
-                .priorityOrder(10)
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
+        @DisplayName("should build valid profile with all fields [GH-90000]")
+        void shouldBuildValidProfileWithAllFields() { // GH-90000
+            Instant now = Instant.now(); // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .id("profile-123 [GH-90000]")
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .storageProfileId("hot-profile [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .fallbackBackendIds(List.of("postgres-secondary", "redis-cache")) // GH-90000
+                .backendConfig(Map.of("timeout", 5000, "retries", 3)) // GH-90000
+                .isActive(true) // GH-90000
+                .priorityOrder(10) // GH-90000
+                .createdAt(now) // GH-90000
+                .updatedAt(now) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getId()).isEqualTo("profile-123");
-            assertThat(profile.getTenantId()).isEqualTo("tenant-1");
-            assertThat(profile.getCollectionName()).isEqualTo("products");
-            assertThat(profile.getStorageProfileId()).isEqualTo("hot-profile");
-            assertThat(profile.getPrimaryBackendId()).isEqualTo("postgres-primary");
-            assertThat(profile.getFallbackBackendIds()).hasSize(2);
-            assertThat(profile.getBackendConfig()).hasSize(2);
-            assertThat(profile.getIsActive()).isTrue();
-            assertThat(profile.getPriorityOrder()).isEqualTo(10);
-            assertThat(profile.getCreatedAt()).isEqualTo(now);
-            assertThat(profile.getUpdatedAt()).isEqualTo(now);
+            assertThat(profile.getId()).isEqualTo("profile-123 [GH-90000]");
+            assertThat(profile.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(profile.getCollectionName()).isEqualTo("products [GH-90000]");
+            assertThat(profile.getStorageProfileId()).isEqualTo("hot-profile [GH-90000]");
+            assertThat(profile.getPrimaryBackendId()).isEqualTo("postgres-primary [GH-90000]");
+            assertThat(profile.getFallbackBackendIds()).hasSize(2); // GH-90000
+            assertThat(profile.getBackendConfig()).hasSize(2); // GH-90000
+            assertThat(profile.getIsActive()).isTrue(); // GH-90000
+            assertThat(profile.getPriorityOrder()).isEqualTo(10); // GH-90000
+            assertThat(profile.getCreatedAt()).isEqualTo(now); // GH-90000
+            assertThat(profile.getUpdatedAt()).isEqualTo(now); // GH-90000
         }
     }
 
@@ -385,116 +385,116 @@ class ProfileValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Repository validation")
+    @DisplayName("Repository validation [GH-90000]")
     class RepositoryValidation {
 
         private final InMemoryCollectionStorageProfileRepository repository = 
-            new InMemoryCollectionStorageProfileRepository();
+            new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
         @Test
-        @DisplayName("should reject null profile")
-        void shouldRejectNullProfile() {
-            Promise<CollectionStorageProfile> result = repository.save(null);
+        @DisplayName("should reject null profile [GH-90000]")
+        void shouldRejectNullProfile() { // GH-90000
+            Promise<CollectionStorageProfile> result = repository.save(null); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> result))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Profile cannot be null");
+            assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Profile cannot be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject blank tenantId")
-        void shouldRejectBlankTenantId() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should reject blank tenantId [GH-90000]")
+        void shouldRejectBlankTenantId() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId(" [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            Promise<CollectionStorageProfile> result = repository.save(profile);
+            Promise<CollectionStorageProfile> result = repository.save(profile); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> result))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("non-blank tenantId");
+            assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("non-blank tenantId [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null tenantId")
-        void shouldRejectNullTenantId() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId(null)
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should reject null tenantId [GH-90000]")
+        void shouldRejectNullTenantId() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId(null) // GH-90000
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            Promise<CollectionStorageProfile> result = repository.save(profile);
+            Promise<CollectionStorageProfile> result = repository.save(profile); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> result))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("non-blank tenantId");
+            assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("non-blank tenantId [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject blank collectionName")
-        void shouldRejectBlankCollectionName() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should reject blank collectionName [GH-90000]")
+        void shouldRejectBlankCollectionName() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName(" [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            Promise<CollectionStorageProfile> result = repository.save(profile);
+            Promise<CollectionStorageProfile> result = repository.save(profile); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> result))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("non-blank collectionName");
+            assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("non-blank collectionName [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null collectionName")
-        void shouldRejectNullCollectionName() {
-            assertThatThrownBy(() -> CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName(null)
-                .primaryBackendId("postgres-primary")
-                .build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("collectionName must not be null");
+        @DisplayName("should reject null collectionName [GH-90000]")
+        void shouldRejectNullCollectionName() { // GH-90000
+            assertThatThrownBy(() -> CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName(null) // GH-90000
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build()) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("collectionName must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should accept valid profile")
-        void shouldAcceptValidProfile() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .build();
+        @DisplayName("should accept valid profile [GH-90000]")
+        void shouldAcceptValidProfile() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .build(); // GH-90000
 
-            CollectionStorageProfile saved = runPromise(() -> repository.save(profile));
+            CollectionStorageProfile saved = runPromise(() -> repository.save(profile)); // GH-90000
 
-            assertThat(saved).isNotNull();
-            assertThat(saved.getTenantId()).isEqualTo("tenant-1");
-            assertThat(saved.getCollectionName()).isEqualTo("products");
+            assertThat(saved).isNotNull(); // GH-90000
+            assertThat(saved.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(saved.getCollectionName()).isEqualTo("products [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject blank tenantId in findByTenantAndName")
-        void shouldRejectBlankTenantIdInFindBy() {
-            Promise<?> result = repository.findByTenantAndName("", "products");
+        @DisplayName("should reject blank tenantId in findByTenantAndName [GH-90000]")
+        void shouldRejectBlankTenantIdInFindBy() { // GH-90000
+            Promise<?> result = repository.findByTenantAndName("", "products"); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> result))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("tenantId cannot be null or blank");
+            assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("tenantId cannot be null or blank [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject blank collectionName in findByTenantAndName")
-        void shouldRejectBlankCollectionNameInFindBy() {
-            Promise<?> result = repository.findByTenantAndName("tenant-1", "");
+        @DisplayName("should reject blank collectionName in findByTenantAndName [GH-90000]")
+        void shouldRejectBlankCollectionNameInFindBy() { // GH-90000
+            Promise<?> result = repository.findByTenantAndName("tenant-1", ""); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> result))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("collectionName cannot be null or blank");
+            assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("collectionName cannot be null or blank [GH-90000]");
         }
     }
 
@@ -503,147 +503,147 @@ class ProfileValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Edge cases and null safety")
+    @DisplayName("Edge cases and null safety [GH-90000]")
     class EdgeCasesAndNullSafety {
 
         @Test
-        @DisplayName("should handle empty fallbackBackendIds")
-        void shouldHandleEmptyFallbackBackendIds() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .fallbackBackendIds(List.of())
-                .build();
+        @DisplayName("should handle empty fallbackBackendIds [GH-90000]")
+        void shouldHandleEmptyFallbackBackendIds() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .fallbackBackendIds(List.of()) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getFallbackBackendIds()).isEmpty();
-            assertThat(profile.hasFailoverSupport()).isFalse();
+            assertThat(profile.getFallbackBackendIds()).isEmpty(); // GH-90000
+            assertThat(profile.hasFailoverSupport()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle empty backendConfig")
-        void shouldHandleEmptyBackendConfig() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .backendConfig(Map.of())
-                .build();
+        @DisplayName("should handle empty backendConfig [GH-90000]")
+        void shouldHandleEmptyBackendConfig() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .backendConfig(Map.of()) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getBackendConfig()).isEmpty();
+            assertThat(profile.getBackendConfig()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return empty backends when inactive")
-        void shouldReturnEmptyBackendsWhenInactive() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .fallbackBackendIds(List.of("redis-cache"))
-                .isActive(false)
-                .build();
+        @DisplayName("should return empty backends when inactive [GH-90000]")
+        void shouldReturnEmptyBackendsWhenInactive() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .fallbackBackendIds(List.of("redis-cache [GH-90000]"))
+                .isActive(false) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getAllAvailableBackends()).isEmpty();
-            assertThat(profile.supportsBackend("postgres-primary")).isFalse();
+            assertThat(profile.getAllAvailableBackends()).isEmpty(); // GH-90000
+            assertThat(profile.supportsBackend("postgres-primary [GH-90000]")).isFalse();
         }
 
         @Test
-        @DisplayName("should return all backends when active")
-        void shouldReturnAllBackendsWhenActive() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .fallbackBackendIds(List.of("redis-cache"))
-                .isActive(true)
-                .build();
+        @DisplayName("should return all backends when active [GH-90000]")
+        void shouldReturnAllBackendsWhenActive() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .fallbackBackendIds(List.of("redis-cache [GH-90000]"))
+                .isActive(true) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getAllAvailableBackends()).hasSize(2);
-            assertThat(profile.supportsBackend("postgres-primary")).isTrue();
-            assertThat(profile.supportsBackend("redis-cache")).isTrue();
+            assertThat(profile.getAllAvailableBackends()).hasSize(2); // GH-90000
+            assertThat(profile.supportsBackend("postgres-primary [GH-90000]")).isTrue();
+            assertThat(profile.supportsBackend("redis-cache [GH-90000]")).isTrue();
         }
 
         @Test
-        @DisplayName("should handle null fallbackBackendIds in builder")
-        void shouldHandleNullFallbackBackendIdsInBuilder() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .fallbackBackendIds(null)
-                .build();
+        @DisplayName("should handle null fallbackBackendIds in builder [GH-90000]")
+        void shouldHandleNullFallbackBackendIdsInBuilder() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .fallbackBackendIds(null) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getFallbackBackendIds()).isEmpty();
+            assertThat(profile.getFallbackBackendIds()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle null backendConfig in builder")
-        void shouldHandleNullBackendConfigInBuilder() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .backendConfig(null)
-                .build();
+        @DisplayName("should handle null backendConfig in builder [GH-90000]")
+        void shouldHandleNullBackendConfigInBuilder() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .backendConfig(null) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getBackendConfig()).isEmpty();
+            assertThat(profile.getBackendConfig()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle null isActive in builder")
-        void shouldHandleNullIsActiveInBuilder() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .isActive(null)
-                .build();
+        @DisplayName("should handle null isActive in builder [GH-90000]")
+        void shouldHandleNullIsActiveInBuilder() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .isActive(null) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getIsActive()).isTrue();
+            assertThat(profile.getIsActive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle null priorityOrder in builder")
-        void shouldHandleNullPriorityOrderInBuilder() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .priorityOrder(null)
-                .build();
+        @DisplayName("should handle null priorityOrder in builder [GH-90000]")
+        void shouldHandleNullPriorityOrderInBuilder() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .priorityOrder(null) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(profile.getPriorityOrder()).isEqualTo(0);
+            assertThat(profile.getPriorityOrder()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("should make fallbackBackendIds unmodifiable")
-        void shouldMakeFallbackBackendIdsUnmodifiable() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .fallbackBackendIds(List.of("redis-cache"))
-                .build();
+        @DisplayName("should make fallbackBackendIds unmodifiable [GH-90000]")
+        void shouldMakeFallbackBackendIdsUnmodifiable() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .fallbackBackendIds(List.of("redis-cache [GH-90000]"))
+                .build(); // GH-90000
 
-            List<String> fallbacks = profile.getFallbackBackendIds();
-            assertThatThrownBy(() -> fallbacks.add("another"))
-                .isInstanceOf(UnsupportedOperationException.class);
+            List<String> fallbacks = profile.getFallbackBackendIds(); // GH-90000
+            assertThatThrownBy(() -> fallbacks.add("another [GH-90000]"))
+                .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should make backendConfig unmodifiable")
-        void shouldMakeBackendConfigUnmodifiable() {
-            CollectionStorageProfile profile = CollectionStorageProfile.builder()
-                .tenantId("tenant-1")
-                .collectionName("products")
-                .primaryBackendId("postgres-primary")
-                .backendConfig(Map.of("key", "value"))
-                .build();
+        @DisplayName("should make backendConfig unmodifiable [GH-90000]")
+        void shouldMakeBackendConfigUnmodifiable() { // GH-90000
+            CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .collectionName("products [GH-90000]")
+                .primaryBackendId("postgres-primary [GH-90000]")
+                .backendConfig(Map.of("key", "value")) // GH-90000
+                .build(); // GH-90000
 
-            Map<String, Object> config = profile.getBackendConfig();
-            assertThatThrownBy(() -> config.put("another", "value"))
-                .isInstanceOf(UnsupportedOperationException.class);
+            Map<String, Object> config = profile.getBackendConfig(); // GH-90000
+            assertThatThrownBy(() -> config.put("another", "value")) // GH-90000
+                .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }
 }

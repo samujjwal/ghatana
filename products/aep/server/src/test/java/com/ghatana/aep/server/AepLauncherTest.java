@@ -30,141 +30,141 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer launcher
  * @doc.pattern Test
  */
-@DisplayName("AepLauncher")
+@DisplayName("AepLauncher [GH-90000]")
 class AepLauncherTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("production bootstrap fails when database configuration is missing")
-    void productionBootstrapFailsWithoutDatabase() {
-        assertThatThrownBy(() -> AepLauncher.createGovernanceInjector(Map.of(
+    @DisplayName("production bootstrap fails when database configuration is missing [GH-90000]")
+    void productionBootstrapFailsWithoutDatabase() { // GH-90000
+        assertThatThrownBy(() -> AepLauncher.createGovernanceInjector(Map.of( // GH-90000
             "AEP_PROFILE", "production",
             "AEP_JWT_SECRET", "test-secret")))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("AEP_DB_URL");
+            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .hasMessageContaining("AEP_DB_URL [GH-90000]");
     }
 
     @Test
-    @DisplayName("non-production bootstrap allows missing database configuration")
-    void nonProductionBootstrapAllowsMissingDatabase() {
-        Injector injector = AepLauncher.createGovernanceInjector(Map.of(
+    @DisplayName("non-production bootstrap allows missing database configuration [GH-90000]")
+    void nonProductionBootstrapAllowsMissingDatabase() { // GH-90000
+        Injector injector = AepLauncher.createGovernanceInjector(Map.of( // GH-90000
             "AEP_PROFILE", "development"));
 
-        assertThat(injector).isNotNull();
+        assertThat(injector).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("production gRPC registry bootstrap fails when Data Cloud connection is missing")
-    void productionGrpcRegistryBootstrapFailsWithoutDataCloud() {
-        assertThatThrownBy(() -> AepLauncher.createGrpcRegistryRuntime(Map.of(
+    @DisplayName("production gRPC registry bootstrap fails when Data Cloud connection is missing [GH-90000]")
+    void productionGrpcRegistryBootstrapFailsWithoutDataCloud() { // GH-90000
+        assertThatThrownBy(() -> AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "production")))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("DATACLOUD_URL");
+            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .hasMessageContaining("DATACLOUD_URL [GH-90000]");
     }
 
     @Test
-    @DisplayName("non-production gRPC registry bootstrap uses durable Data Cloud registry")
-    void nonProductionGrpcRegistryBootstrapUsesDurableRegistry() {
-        AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of(
+    @DisplayName("non-production gRPC registry bootstrap uses durable Data Cloud registry [GH-90000]")
+    void nonProductionGrpcRegistryBootstrapUsesDurableRegistry() { // GH-90000
+        AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "development"));
 
         try {
-            assertThat(runtime.agentRegistry()).isInstanceOf(DataCloudAgentRegistry.class);
-            assertThat(runtime.registryDataCloud()).isNotNull();
+            assertThat(runtime.agentRegistry()).isInstanceOf(DataCloudAgentRegistry.class); // GH-90000
+            assertThat(runtime.registryDataCloud()).isNotNull(); // GH-90000
         } finally {
-            runtime.close();
+            runtime.close(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("production gRPC registry bootstrap accepts explicit Data Cloud URL")
-    void productionGrpcRegistryBootstrapAcceptsExplicitDataCloudUrl() {
-        AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of(
+    @DisplayName("production gRPC registry bootstrap accepts explicit Data Cloud URL [GH-90000]")
+    void productionGrpcRegistryBootstrapAcceptsExplicitDataCloudUrl() { // GH-90000
+        AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "production",
             "DATACLOUD_URL", "http://localhost:8082"));
 
         try {
-            assertThat(runtime.agentRegistry()).isInstanceOf(DataCloudAgentRegistry.class);
+            assertThat(runtime.agentRegistry()).isInstanceOf(DataCloudAgentRegistry.class); // GH-90000
         } finally {
-            runtime.close();
+            runtime.close(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("durable registry metadata survives registry recreation on the same Data Cloud backend")
-    void registryMetadataSurvivesRegistryRecreation() {
-        AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of(
+    @DisplayName("durable registry metadata survives registry recreation on the same Data Cloud backend [GH-90000]")
+    void registryMetadataSurvivesRegistryRecreation() { // GH-90000
+        AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "development"));
 
-        DataCloudAgentRegistry firstRegistry = new DataCloudAgentRegistry(
-            runtime.registryDataCloud(),
+        DataCloudAgentRegistry firstRegistry = new DataCloudAgentRegistry( // GH-90000
+            runtime.registryDataCloud(), // GH-90000
             "platform"
         );
-        DataCloudAgentRegistry secondRegistry = new DataCloudAgentRegistry(
-            runtime.registryDataCloud(),
+        DataCloudAgentRegistry secondRegistry = new DataCloudAgentRegistry( // GH-90000
+            runtime.registryDataCloud(), // GH-90000
             "platform"
         );
 
         try {
-            TestAgent agent = new TestAgent("durable-agent-1");
-            AgentConfig config = AgentConfig.builder()
-                .agentId("durable-agent-1")
-                .type(AgentType.DETERMINISTIC)
-                .version("1.0.0")
-                .timeout(Duration.ofSeconds(5))
-                .build();
+            TestAgent agent = new TestAgent("durable-agent-1 [GH-90000]");
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                .agentId("durable-agent-1 [GH-90000]")
+                .type(AgentType.DETERMINISTIC) // GH-90000
+                .version("1.0.0 [GH-90000]")
+                .timeout(Duration.ofSeconds(5)) // GH-90000
+                .build(); // GH-90000
 
-            runPromise(() -> firstRegistry.register(agent, config));
+            runPromise(() -> firstRegistry.register(agent, config)); // GH-90000
 
-            Map<String, Object> stats = runPromise(secondRegistry::getStats);
-            Optional<TypedAgent<String, String>> rehydrated = runPromise(() -> secondRegistry.resolve("durable-agent-1"));
+            Map<String, Object> stats = runPromise(secondRegistry::getStats); // GH-90000
+            Optional<TypedAgent<String, String>> rehydrated = runPromise(() -> secondRegistry.resolve("durable-agent-1 [GH-90000]"));
 
-            assertThat(stats.get("persistedAgents")).isEqualTo(1L);
-            assertThat(stats.get("registeredAgents")).isEqualTo(0);
-            assertThat(rehydrated).isEmpty();
+            assertThat(stats.get("persistedAgents [GH-90000]")).isEqualTo(1L);
+            assertThat(stats.get("registeredAgents [GH-90000]")).isEqualTo(0);
+            assertThat(rehydrated).isEmpty(); // GH-90000
         } finally {
-            secondRegistry.close();
-            firstRegistry.close();
-            runtime.close();
+            secondRegistry.close(); // GH-90000
+            firstRegistry.close(); // GH-90000
+            runtime.close(); // GH-90000
         }
     }
 
     private static final class TestAgent implements TypedAgent<String, String> {
         private final AgentDescriptor descriptor;
 
-        private TestAgent(String agentId) {
-            this.descriptor = AgentDescriptor.builder()
-                .agentId(agentId)
-                .name("Test " + agentId)
-                .description("Launcher durability test agent")
-                .type(AgentType.DETERMINISTIC)
-                .version("1.0.0")
-                .capabilities(Set.of("registry-test"))
-                .build();
+        private TestAgent(String agentId) { // GH-90000
+            this.descriptor = AgentDescriptor.builder() // GH-90000
+                .agentId(agentId) // GH-90000
+                .name("Test " + agentId) // GH-90000
+                .description("Launcher durability test agent [GH-90000]")
+                .type(AgentType.DETERMINISTIC) // GH-90000
+                .version("1.0.0 [GH-90000]")
+                .capabilities(Set.of("registry-test [GH-90000]"))
+                .build(); // GH-90000
         }
 
         @Override
-        public AgentDescriptor descriptor() {
+        public AgentDescriptor descriptor() { // GH-90000
             return descriptor;
         }
 
         @Override
-        public Promise<Void> initialize(AgentConfig config) {
-            return Promise.complete();
+        public Promise<Void> initialize(AgentConfig config) { // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
         @Override
-        public Promise<Void> shutdown() {
-            return Promise.complete();
+        public Promise<Void> shutdown() { // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
         @Override
-        public Promise<HealthStatus> healthCheck() {
-            return Promise.of(HealthStatus.healthy("ok"));
+        public Promise<HealthStatus> healthCheck() { // GH-90000
+            return Promise.of(HealthStatus.healthy("ok [GH-90000]"));
         }
 
         @Override
-        public Promise<AgentResult<String>> process(AgentContext ctx, String input) {
-            return Promise.of(AgentResult.success(input, descriptor.getAgentId(), Duration.ZERO));
+        public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
+            return Promise.of(AgentResult.success(input, descriptor.getAgentId(), Duration.ZERO)); // GH-90000
         }
     }
 }

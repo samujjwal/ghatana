@@ -24,44 +24,44 @@ public class TestResourceInitializer {
      * Initializes test resources by ensuring the patterns file is available in the test classpath.
      * This method is called before any tests run.
      */
-    public static synchronized void initialize() {
-        if (initialized) {
+    public static synchronized void initialize() { // GH-90000
+        if (initialized) { // GH-90000
             return;
         }
 
         try {
             // Try to load the resource from classpath first
-            try (InputStream is =
+            try (InputStream is = // GH-90000
                     TestResourceInitializer.class
-                            .getClassLoader()
-                            .getResourceAsStream(PATTERNS_FILE)) {
-                if (is == null) {
-                    throw new IllegalStateException(
+                            .getClassLoader() // GH-90000
+                            .getResourceAsStream(PATTERNS_FILE)) { // GH-90000
+                if (is == null) { // GH-90000
+                    throw new IllegalStateException( // GH-90000
                             "Could not find " + PATTERNS_FILE + " in test resources");
                 }
 
                 // Create parent directories if they don't exist
-                Path targetDir = Path.of("config", "debug");
-                if (!Files.exists(targetDir)) {
-                    Files.createDirectories(targetDir);
+                Path targetDir = Path.of("config", "debug"); // GH-90000
+                if (!Files.exists(targetDir)) { // GH-90000
+                    Files.createDirectories(targetDir); // GH-90000
                 }
 
                 // Copy the resource to the target location
-                Path targetFile = targetDir.resolve("stacktrace.patterns.json");
-                Files.copy(is, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                Path targetFile = targetDir.resolve("stacktrace.patterns.json [GH-90000]");
+                Files.copy(is, targetFile, StandardCopyOption.REPLACE_EXISTING); // GH-90000
 
                 // Set system property to point to the patterns file
-                System.setProperty("stacktrace.patterns.file", targetFile.toString());
+                System.setProperty("stacktrace.patterns.file", targetFile.toString()); // GH-90000
 
                 initialized = true;
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to initialize test resources", e);
+        } catch (IOException e) { // GH-90000
+            throw new RuntimeException("Failed to initialize test resources", e); // GH-90000
         }
     }
 
     static {
         // Initialize resources when the class is loaded
-        initialize();
+        initialize(); // GH-90000
     }
 }

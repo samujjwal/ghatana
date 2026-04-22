@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.agent.registry.agents;
@@ -30,115 +30,115 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("Data Cloud Agent Implementations")
+@DisplayName("Data Cloud Agent Implementations [GH-90000]")
 class DataCloudAgentImplementationsTest extends EventloopTestBase {
 
     private AgentContext ctx;
 
     @BeforeEach
-    void setUp() {
-        ctx = mock(AgentContext.class);
+    void setUp() { // GH-90000
+        ctx = mock(AgentContext.class); // GH-90000
     }
 
     // ─── SchemaValidatorAgent ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("SchemaValidatorAgent")
+    @DisplayName("SchemaValidatorAgent [GH-90000]")
     class SchemaValidatorAgentTests {
 
         private SchemaValidatorAgent agent;
 
         @BeforeEach
-        void setUp() throws Exception {
-            agent = new SchemaValidatorAgent();
-            runPromise(() -> agent.initialize(mock(AgentConfig.class)));
+        void setUp() throws Exception { // GH-90000
+            agent = new SchemaValidatorAgent(); // GH-90000
+            runPromise(() -> agent.initialize(mock(AgentConfig.class))); // GH-90000
         }
 
         @Test
-        @DisplayName("descriptor has correct id and type")
-        void descriptorHasCorrectMetadata() {
-            AgentDescriptor d = agent.descriptor();
-            assertThat(d.getAgentId()).isEqualTo("data-cloud:agent.data-cloud.schema-validator");
-            assertThat(d.getType()).isEqualTo(AgentType.DETERMINISTIC);
-            assertThat(d.getCapabilities()).contains("schema-validation");
+        @DisplayName("descriptor has correct id and type [GH-90000]")
+        void descriptorHasCorrectMetadata() { // GH-90000
+            AgentDescriptor d = agent.descriptor(); // GH-90000
+            assertThat(d.getAgentId()).isEqualTo("data-cloud:agent.data-cloud.schema-validator [GH-90000]");
+            assertThat(d.getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
+            assertThat(d.getCapabilities()).contains("schema-validation [GH-90000]");
         }
 
         @Test
-        @DisplayName("passes when all required fields are present")
-        void passesWhenAllRequiredFieldsPresent() throws Exception {
-            var schema = new SchemaValidatorAgent.FieldSchema(
-                    List.of("name", "email"),
-                    Map.of("name", "string", "email", "string"));
-            var request = new SchemaValidatorAgent.SchemaValidationRequest(
+        @DisplayName("passes when all required fields are present [GH-90000]")
+        void passesWhenAllRequiredFieldsPresent() throws Exception { // GH-90000
+            var schema = new SchemaValidatorAgent.FieldSchema( // GH-90000
+                    List.of("name", "email"), // GH-90000
+                    Map.of("name", "string", "email", "string")); // GH-90000
+            var request = new SchemaValidatorAgent.SchemaValidationRequest( // GH-90000
                     "tenant-1", "users",
-                    Map.of("name", "Alice", "email", "alice@example.com"),
+                    Map.of("name", "Alice", "email", "alice@example.com"), // GH-90000
                     schema);
 
             AgentResult<SchemaValidatorAgent.SchemaValidationResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().valid()).isTrue();
-            assertThat(result.getOutput().violations()).isEmpty();
-            assertThat(result.getConfidence()).isEqualTo(1.0);
+            assertThat(result.getOutput().valid()).isTrue(); // GH-90000
+            assertThat(result.getOutput().violations()).isEmpty(); // GH-90000
+            assertThat(result.getConfidence()).isEqualTo(1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("fails when required field is missing")
-        void failsWhenRequiredFieldMissing() throws Exception {
-            var schema = new SchemaValidatorAgent.FieldSchema(
-                    List.of("name", "email"),
-                    Map.of("name", "string", "email", "string"));
-            var request = new SchemaValidatorAgent.SchemaValidationRequest(
+        @DisplayName("fails when required field is missing [GH-90000]")
+        void failsWhenRequiredFieldMissing() throws Exception { // GH-90000
+            var schema = new SchemaValidatorAgent.FieldSchema( // GH-90000
+                    List.of("name", "email"), // GH-90000
+                    Map.of("name", "string", "email", "string")); // GH-90000
+            var request = new SchemaValidatorAgent.SchemaValidationRequest( // GH-90000
                     "tenant-1", "users",
-                    Map.of("name", "Alice"), // email missing
+                    Map.of("name", "Alice"), // email missing // GH-90000
                     schema);
 
             AgentResult<SchemaValidatorAgent.SchemaValidationResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().valid()).isFalse();
-            assertThat(result.getOutput().violations()).hasSize(1);
-            assertThat(result.getOutput().violations().get(0)).contains("email");
+            assertThat(result.getOutput().valid()).isFalse(); // GH-90000
+            assertThat(result.getOutput().violations()).hasSize(1); // GH-90000
+            assertThat(result.getOutput().violations().get(0)).contains("email [GH-90000]");
         }
 
         @Test
-        @DisplayName("fails when field type does not match")
-        void failsOnTypeMismatch() throws Exception {
-            var schema = new SchemaValidatorAgent.FieldSchema(
-                    List.of("age"),
-                    Map.of("age", "integer"));
-            var request = new SchemaValidatorAgent.SchemaValidationRequest(
+        @DisplayName("fails when field type does not match [GH-90000]")
+        void failsOnTypeMismatch() throws Exception { // GH-90000
+            var schema = new SchemaValidatorAgent.FieldSchema( // GH-90000
+                    List.of("age [GH-90000]"),
+                    Map.of("age", "integer")); // GH-90000
+            var request = new SchemaValidatorAgent.SchemaValidationRequest( // GH-90000
                     "tenant-1", "profiles",
-                    Map.of("age", "not-a-number"), // String instead of Integer
+                    Map.of("age", "not-a-number"), // String instead of Integer // GH-90000
                     schema);
 
             AgentResult<SchemaValidatorAgent.SchemaValidationResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().valid()).isFalse();
-            assertThat(result.getOutput().violations()).anyMatch(v -> v.contains("age"));
+            assertThat(result.getOutput().valid()).isFalse(); // GH-90000
+            assertThat(result.getOutput().violations()).anyMatch(v -> v.contains("age [GH-90000]"));
         }
 
         @Test
-        @DisplayName("passes in lenient mode when schema is null")
-        void passesInLenientMode() throws Exception {
-            var request = new SchemaValidatorAgent.SchemaValidationRequest(
+        @DisplayName("passes in lenient mode when schema is null [GH-90000]")
+        void passesInLenientMode() throws Exception { // GH-90000
+            var request = new SchemaValidatorAgent.SchemaValidationRequest( // GH-90000
                     "tenant-1", "anything",
-                    Map.of("x", 1, "y", 2),
+                    Map.of("x", 1, "y", 2), // GH-90000
                     null); // no schema = lenient
 
             AgentResult<SchemaValidatorAgent.SchemaValidationResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().valid()).isTrue();
+            assertThat(result.getOutput().valid()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("re-initialisation without errors")
-        void reInitializesSuccessfully() throws Exception {
-            AgentConfig config = mock(AgentConfig.class);
+        @DisplayName("re-initialisation without errors [GH-90000]")
+        void reInitializesSuccessfully() throws Exception { // GH-90000
+            AgentConfig config = mock(AgentConfig.class); // GH-90000
             // agent is already READY from @BeforeEach; re-initialize should still work
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
             // no exception = pass
         }
     }
@@ -146,159 +146,159 @@ class DataCloudAgentImplementationsTest extends EventloopTestBase {
     // ─── DataSyncAgent ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DataSyncAgent")
+    @DisplayName("DataSyncAgent [GH-90000]")
     class DataSyncAgentTests {
 
         private DataSyncAgent agent;
 
         @BeforeEach
-        void setUp() throws Exception {
-            agent = new DataSyncAgent();
-            runPromise(() -> agent.initialize(mock(AgentConfig.class)));
+        void setUp() throws Exception { // GH-90000
+            agent = new DataSyncAgent(); // GH-90000
+            runPromise(() -> agent.initialize(mock(AgentConfig.class))); // GH-90000
         }
 
         @Test
-        @DisplayName("descriptor has correct id and type")
-        void descriptorHasCorrectMetadata() {
-            AgentDescriptor d = agent.descriptor();
-            assertThat(d.getAgentId()).isEqualTo("data-cloud:agent.data-cloud.data-sync");
-            assertThat(d.getType()).isEqualTo(AgentType.PLANNING);
-            assertThat(d.getCapabilities()).contains("data-sync");
+        @DisplayName("descriptor has correct id and type [GH-90000]")
+        void descriptorHasCorrectMetadata() { // GH-90000
+            AgentDescriptor d = agent.descriptor(); // GH-90000
+            assertThat(d.getAgentId()).isEqualTo("data-cloud:agent.data-cloud.data-sync [GH-90000]");
+            assertThat(d.getType()).isEqualTo(AgentType.PLANNING); // GH-90000
+            assertThat(d.getCapabilities()).contains("data-sync [GH-90000]");
         }
 
         @Test
-        @DisplayName("syncs all valid records in delta strategy")
-        void syncsAllValidRecords() throws Exception {
-            var records = List.of(
-                    Map.<String, Object>of("id", "rec-1", "value", 42),
-                    Map.<String, Object>of("id", "rec-2", "value", 99));
-            var request = new DataSyncAgent.DataSyncRequest(
+        @DisplayName("syncs all valid records in delta strategy [GH-90000]")
+        void syncsAllValidRecords() throws Exception { // GH-90000
+            var records = List.of( // GH-90000
+                    Map.<String, Object>of("id", "rec-1", "value", 42), // GH-90000
+                    Map.<String, Object>of("id", "rec-2", "value", 99)); // GH-90000
+            var request = new DataSyncAgent.DataSyncRequest( // GH-90000
                     "tenant-1", "source-col", "target-col",
                     DataSyncAgent.SyncStrategy.DELTA, records);
 
             AgentResult<DataSyncAgent.DataSyncResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().success()).isTrue();
-            assertThat(result.getOutput().synced()).isEqualTo(2);
-            assertThat(result.getOutput().failed()).isEqualTo(0);
-            assertThat(result.getOutput().totalRecords()).isEqualTo(2);
+            assertThat(result.getOutput().success()).isTrue(); // GH-90000
+            assertThat(result.getOutput().synced()).isEqualTo(2); // GH-90000
+            assertThat(result.getOutput().failed()).isEqualTo(0); // GH-90000
+            assertThat(result.getOutput().totalRecords()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("counts records without id as failed")
-        void countsRecordsWithoutIdAsFailed() throws Exception {
-            var records = List.of(
-                    Map.<String, Object>of("value", 42) // no id field
+        @DisplayName("counts records without id as failed [GH-90000]")
+        void countsRecordsWithoutIdAsFailed() throws Exception { // GH-90000
+            var records = List.of( // GH-90000
+                    Map.<String, Object>of("value", 42) // no id field // GH-90000
             );
-            var request = new DataSyncAgent.DataSyncRequest(
+            var request = new DataSyncAgent.DataSyncRequest( // GH-90000
                     "tenant-1", "src", "tgt",
                     DataSyncAgent.SyncStrategy.DELTA, records);
 
             AgentResult<DataSyncAgent.DataSyncResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().success()).isFalse();
-            assertThat(result.getOutput().failed()).isEqualTo(1);
+            assertThat(result.getOutput().success()).isFalse(); // GH-90000
+            assertThat(result.getOutput().failed()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("skips null and empty records")
-        void skipsNullAndEmptyRecords() throws Exception {
-            var records = List.<Map<String, Object>>of(
-                    Map.of("id", "rec-1"),
-                    Map.of()  // empty record
+        @DisplayName("skips null and empty records [GH-90000]")
+        void skipsNullAndEmptyRecords() throws Exception { // GH-90000
+            var records = List.<Map<String, Object>>of( // GH-90000
+                    Map.of("id", "rec-1"), // GH-90000
+                    Map.of()  // empty record // GH-90000
             );
-            var request = new DataSyncAgent.DataSyncRequest(
+            var request = new DataSyncAgent.DataSyncRequest( // GH-90000
                     "tenant-1", "src", "tgt",
                     DataSyncAgent.SyncStrategy.INCREMENTAL, records);
 
             AgentResult<DataSyncAgent.DataSyncResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().skipped()).isEqualTo(1);
-            assertThat(result.getOutput().synced()).isEqualTo(1);
+            assertThat(result.getOutput().skipped()).isEqualTo(1); // GH-90000
+            assertThat(result.getOutput().synced()).isEqualTo(1); // GH-90000
         }
     }
 
     // ─── DataAnomalyDetectorAgent ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DataAnomalyDetectorAgent")
+    @DisplayName("DataAnomalyDetectorAgent [GH-90000]")
     class DataAnomalyDetectorAgentTests {
 
         private DataAnomalyDetectorAgent agent;
 
         @BeforeEach
-        void setUp() throws Exception {
-            agent = new DataAnomalyDetectorAgent();
-            runPromise(() -> agent.initialize(mock(AgentConfig.class)));
+        void setUp() throws Exception { // GH-90000
+            agent = new DataAnomalyDetectorAgent(); // GH-90000
+            runPromise(() -> agent.initialize(mock(AgentConfig.class))); // GH-90000
         }
 
         @Test
-        @DisplayName("descriptor has correct id and type")
-        void descriptorHasCorrectMetadata() {
-            AgentDescriptor d = agent.descriptor();
-            assertThat(d.getAgentId()).isEqualTo("data-cloud:agent.data-cloud.anomaly-detector");
-            assertThat(d.getType()).isEqualTo(AgentType.PROBABILISTIC);
-            assertThat(d.getCapabilities()).contains("anomaly-detection");
+        @DisplayName("descriptor has correct id and type [GH-90000]")
+        void descriptorHasCorrectMetadata() { // GH-90000
+            AgentDescriptor d = agent.descriptor(); // GH-90000
+            assertThat(d.getAgentId()).isEqualTo("data-cloud:agent.data-cloud.anomaly-detector [GH-90000]");
+            assertThat(d.getType()).isEqualTo(AgentType.PROBABILISTIC); // GH-90000
+            assertThat(d.getCapabilities()).contains("anomaly-detection [GH-90000]");
         }
 
         @Test
-        @DisplayName("returns no anomalies for uniform data")
-        void returnsNoAnomaliesForUniformData() throws Exception {
-            var samples = List.of(1.0, 1.1, 0.9, 1.05, 0.95, 1.02, 0.98, 1.01);
-            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest(
+        @DisplayName("returns no anomalies for uniform data [GH-90000]")
+        void returnsNoAnomaliesForUniformData() throws Exception { // GH-90000
+            var samples = List.of(1.0, 1.1, 0.9, 1.05, 0.95, 1.02, 0.98, 1.01); // GH-90000
+            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest( // GH-90000
                     "tenant-1", "cpu-usage", samples, 2.5);
 
             AgentResult<DataAnomalyDetectorAgent.AnomalyDetectionResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().hasAnomalies()).isFalse();
-            assertThat(result.getOutput().anomalyCount()).isEqualTo(0);
+            assertThat(result.getOutput().hasAnomalies()).isFalse(); // GH-90000
+            assertThat(result.getOutput().anomalyCount()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("detects obvious outlier in dataset")
-        void detectsObviousOutlier() throws Exception {
+        @DisplayName("detects obvious outlier in dataset [GH-90000]")
+        void detectsObviousOutlier() throws Exception { // GH-90000
             // 100.0 is a clear outlier among values near 1.0
-            var samples = List.of(1.0, 1.1, 0.9, 1.05, 100.0, 0.95, 1.02, 0.98);
-            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest(
+            var samples = List.of(1.0, 1.1, 0.9, 1.05, 100.0, 0.95, 1.02, 0.98); // GH-90000
+            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest( // GH-90000
                     "tenant-1", "latency-ms", samples, 2.0);
 
             AgentResult<DataAnomalyDetectorAgent.AnomalyDetectionResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().hasAnomalies()).isTrue();
-            assertThat(result.getOutput().anomalyIndices()).contains(4); // index of 100.0
-            assertThat(result.getOutput().anomalyValues()).contains(100.0);
+            assertThat(result.getOutput().hasAnomalies()).isTrue(); // GH-90000
+            assertThat(result.getOutput().anomalyIndices()).contains(4); // index of 100.0 // GH-90000
+            assertThat(result.getOutput().anomalyValues()).contains(100.0); // GH-90000
         }
 
         @Test
-        @DisplayName("returns low-confidence result for insufficient data")
-        void returnsLowConfidenceForInsufficientData() throws Exception {
-            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest(
-                    "tenant-1", "metric", List.of(1.0, 2.0), -1);
+        @DisplayName("returns low-confidence result for insufficient data [GH-90000]")
+        void returnsLowConfidenceForInsufficientData() throws Exception { // GH-90000
+            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest( // GH-90000
+                    "tenant-1", "metric", List.of(1.0, 2.0), -1); // GH-90000
 
             AgentResult<DataAnomalyDetectorAgent.AnomalyDetectionResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getConfidence()).isEqualTo(0.0);
-            assertThat(result.getOutput().hasAnomalies()).isFalse();
+            assertThat(result.getConfidence()).isEqualTo(0.0); // GH-90000
+            assertThat(result.getOutput().hasAnomalies()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("uses default threshold when request threshold is zero")
-        void usesDefaultThresholdWhenZero() throws Exception {
+        @DisplayName("uses default threshold when request threshold is zero [GH-90000]")
+        void usesDefaultThresholdWhenZero() throws Exception { // GH-90000
             // All near-identical values — no anomaly
-            var samples = List.of(5.0, 5.1, 4.9, 5.2, 4.8, 5.05, 4.95, 5.0);
-            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest(
+            var samples = List.of(5.0, 5.1, 4.9, 5.2, 4.8, 5.05, 4.95, 5.0); // GH-90000
+            var request = new DataAnomalyDetectorAgent.AnomalyDetectionRequest( // GH-90000
                     "tenant-1", "response-time", samples, 0); // 0 = use default
 
             AgentResult<DataAnomalyDetectorAgent.AnomalyDetectionResult> result =
-                    runPromise(() -> agent.process(ctx, request));
+                    runPromise(() -> agent.process(ctx, request)); // GH-90000
 
-            assertThat(result.getOutput().hasAnomalies()).isFalse();
+            assertThat(result.getOutput().hasAnomalies()).isFalse(); // GH-90000
         }
     }
 }

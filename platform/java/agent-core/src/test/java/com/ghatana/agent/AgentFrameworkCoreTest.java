@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  */
 
 package com.ghatana.agent;
@@ -10,6 +10,7 @@ import com.ghatana.agent.framework.runtime.AbstractTypedAgent;
 import com.ghatana.platform.health.HealthStatus;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.*;
@@ -30,7 +32,7 @@ import static org.mockito.Mockito.mock;
  * Covers all enums, value objects, interfaces, and base classes
  * in the unified {@code com.ghatana.agent} package.
  */
-@DisplayName("Consolidated Agent Framework Core")
+@DisplayName("Consolidated Agent Framework Core [GH-90000]")
 class AgentFrameworkCoreTest {
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -38,14 +40,14 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AgentType")
+    @DisplayName("AgentType [GH-90000]")
     class AgentTypeTest {
 
         @Test
-        @DisplayName("has all 9 canonical agent types")
-        void shouldHaveAll9Types() {
-            assertThat(AgentType.values()).hasSize(9);
-            assertThat(AgentType.values()).containsExactly(
+        @DisplayName("has all 9 canonical agent types [GH-90000]")
+        void shouldHaveAll9Types() { // GH-90000
+            assertThat(AgentType.values()).hasSize(9); // GH-90000
+            assertThat(AgentType.values()).containsExactly( // GH-90000
                     AgentType.DETERMINISTIC,
                     AgentType.PROBABILISTIC,
                     AgentType.STREAM_PROCESSOR,
@@ -59,10 +61,10 @@ class AgentFrameworkCoreTest {
         }
 
         @Test
-        @DisplayName("valueOf round-trips correctly")
-        void shouldRoundTrip() {
-            for (AgentType type : AgentType.values()) {
-                assertThat(AgentType.valueOf(type.name())).isSameAs(type);
+        @DisplayName("valueOf round-trips correctly [GH-90000]")
+        void shouldRoundTrip() { // GH-90000
+            for (AgentType type : AgentType.values()) { // GH-90000
+                assertThat(AgentType.valueOf(type.name())).isSameAs(type); // GH-90000
             }
         }
     }
@@ -72,14 +74,14 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DeterminismGuarantee")
+    @DisplayName("DeterminismGuarantee [GH-90000]")
     class DeterminismGuaranteeTest {
 
         @Test
-        @DisplayName("has 4 values")
-        void shouldHave4Values() {
-            assertThat(DeterminismGuarantee.values()).hasSize(4);
-            assertThat(DeterminismGuarantee.values()).containsExactly(
+        @DisplayName("has 4 values [GH-90000]")
+        void shouldHave4Values() { // GH-90000
+            assertThat(DeterminismGuarantee.values()).hasSize(4); // GH-90000
+            assertThat(DeterminismGuarantee.values()).containsExactly( // GH-90000
                     DeterminismGuarantee.FULL,
                     DeterminismGuarantee.CONFIG_SCOPED,
                     DeterminismGuarantee.NONE,
@@ -93,13 +95,13 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("StateMutability")
+    @DisplayName("StateMutability [GH-90000]")
     class StateMutabilityTest {
 
         @Test
-        @DisplayName("has 4 values")
-        void shouldHave4Values() {
-            assertThat(StateMutability.values()).containsExactly(
+        @DisplayName("has 4 values [GH-90000]")
+        void shouldHave4Values() { // GH-90000
+            assertThat(StateMutability.values()).containsExactly( // GH-90000
                     StateMutability.STATELESS,
                     StateMutability.LOCAL_STATE,
                     StateMutability.EXTERNAL_STATE,
@@ -113,14 +115,14 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("FailureMode")
+    @DisplayName("FailureMode [GH-90000]")
     class FailureModeTest {
 
         @Test
-        @DisplayName("has 6 values")
-        void shouldHave6Values() {
-            assertThat(FailureMode.values()).hasSize(6);
-            assertThat(FailureMode.values()).containsExactly(
+        @DisplayName("has 6 values [GH-90000]")
+        void shouldHave6Values() { // GH-90000
+            assertThat(FailureMode.values()).hasSize(6); // GH-90000
+            assertThat(FailureMode.values()).containsExactly( // GH-90000
                     FailureMode.FAIL_FAST,
                     FailureMode.RETRY,
                     FailureMode.FALLBACK,
@@ -140,14 +142,14 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AgentResultStatus")
+    @DisplayName("AgentResultStatus [GH-90000]")
     class AgentResultStatusTest {
 
         @Test
-        @DisplayName("has 11 values")
-        void shouldHave7Values() {
-            assertThat(AgentResultStatus.values()).hasSize(11);
-            assertThat(AgentResultStatus.values()).containsExactly(
+        @DisplayName("has 11 values [GH-90000]")
+        void shouldHave7Values() { // GH-90000
+            assertThat(AgentResultStatus.values()).hasSize(11); // GH-90000
+            assertThat(AgentResultStatus.values()).containsExactly( // GH-90000
                     AgentResultStatus.SUCCESS,
                     AgentResultStatus.LOW_CONFIDENCE,
                     AgentResultStatus.SKIPPED,
@@ -168,160 +170,160 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AgentDescriptor")
+    @DisplayName("AgentDescriptor [GH-90000]")
     class AgentDescriptorTest {
 
         @Test
-        @DisplayName("builder with all fields")
-        void shouldBuildWithAllFields() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("fraud-v2")
-                    .name("Fraud Detector")
-                    .version("2.1.0")
-                    .description("Real-time fraud detection")
-                    .namespace("security")
-                    .type(AgentType.HYBRID)
-                    .subtype("ML_FALLBACK")
-                    .determinism(DeterminismGuarantee.CONFIG_SCOPED)
-                    .latencySla(Duration.ofMillis(50))
-                    .throughputTarget(5000)
-                    .stateMutability(StateMutability.LOCAL_STATE)
-                    .failureMode(FailureMode.CIRCUIT_BREAKER)
-                    .capabilities(Set.of("fraud-detection", "risk-scoring"))
-                    .inputEventTypes(Set.of("Transaction"))
-                    .outputEventTypes(Set.of("FraudAlert"))
-                    .metadata(Map.of("model", "xgboost-v3"))
-                    .labels(Map.of("team", "fraud-prevention"))
-                    .annotations(Map.of("doc-url", "http://docs/fraud"))
-                    .build();
+        @DisplayName("builder with all fields [GH-90000]")
+        void shouldBuildWithAllFields() { // GH-90000
+            AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
+                    .agentId("fraud-v2 [GH-90000]")
+                    .name("Fraud Detector [GH-90000]")
+                    .version("2.1.0 [GH-90000]")
+                    .description("Real-time fraud detection [GH-90000]")
+                    .namespace("security [GH-90000]")
+                    .type(AgentType.HYBRID) // GH-90000
+                    .subtype("ML_FALLBACK [GH-90000]")
+                    .determinism(DeterminismGuarantee.CONFIG_SCOPED) // GH-90000
+                    .latencySla(Duration.ofMillis(50)) // GH-90000
+                    .throughputTarget(5000) // GH-90000
+                    .stateMutability(StateMutability.LOCAL_STATE) // GH-90000
+                    .failureMode(FailureMode.CIRCUIT_BREAKER) // GH-90000
+                    .capabilities(Set.of("fraud-detection", "risk-scoring")) // GH-90000
+                    .inputEventTypes(Set.of("Transaction [GH-90000]"))
+                    .outputEventTypes(Set.of("FraudAlert [GH-90000]"))
+                    .metadata(Map.of("model", "xgboost-v3")) // GH-90000
+                    .labels(Map.of("team", "fraud-prevention")) // GH-90000
+                    .annotations(Map.of("doc-url", "http://docs/fraud")) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(desc.getAgentId()).isEqualTo("fraud-v2");
-            assertThat(desc.getName()).isEqualTo("Fraud Detector");
-            assertThat(desc.getVersion()).isEqualTo("2.1.0");
-            assertThat(desc.getDescription()).isEqualTo("Real-time fraud detection");
-            assertThat(desc.getNamespace()).isEqualTo("security");
-            assertThat(desc.getType()).isEqualTo(AgentType.HYBRID);
-            assertThat(desc.getSubtype()).isEqualTo("ML_FALLBACK");
-            assertThat(desc.getDeterminism()).isEqualTo(DeterminismGuarantee.CONFIG_SCOPED);
-            assertThat(desc.getLatencySla()).isEqualTo(Duration.ofMillis(50));
-            assertThat(desc.getThroughputTarget()).isEqualTo(5000);
-            assertThat(desc.getStateMutability()).isEqualTo(StateMutability.LOCAL_STATE);
-            assertThat(desc.getFailureMode()).isEqualTo(FailureMode.CIRCUIT_BREAKER);
-            assertThat(desc.getCapabilities()).containsExactlyInAnyOrder("fraud-detection", "risk-scoring");
-            assertThat(desc.getInputEventTypes()).containsExactly("Transaction");
-            assertThat(desc.getOutputEventTypes()).containsExactly("FraudAlert");
-            assertThat(desc.getMetadata()).containsEntry("model", "xgboost-v3");
-            assertThat(desc.getLabels()).containsEntry("team", "fraud-prevention");
+            assertThat(desc.getAgentId()).isEqualTo("fraud-v2 [GH-90000]");
+            assertThat(desc.getName()).isEqualTo("Fraud Detector [GH-90000]");
+            assertThat(desc.getVersion()).isEqualTo("2.1.0 [GH-90000]");
+            assertThat(desc.getDescription()).isEqualTo("Real-time fraud detection [GH-90000]");
+            assertThat(desc.getNamespace()).isEqualTo("security [GH-90000]");
+            assertThat(desc.getType()).isEqualTo(AgentType.HYBRID); // GH-90000
+            assertThat(desc.getSubtype()).isEqualTo("ML_FALLBACK [GH-90000]");
+            assertThat(desc.getDeterminism()).isEqualTo(DeterminismGuarantee.CONFIG_SCOPED); // GH-90000
+            assertThat(desc.getLatencySla()).isEqualTo(Duration.ofMillis(50)); // GH-90000
+            assertThat(desc.getThroughputTarget()).isEqualTo(5000); // GH-90000
+            assertThat(desc.getStateMutability()).isEqualTo(StateMutability.LOCAL_STATE); // GH-90000
+            assertThat(desc.getFailureMode()).isEqualTo(FailureMode.CIRCUIT_BREAKER); // GH-90000
+            assertThat(desc.getCapabilities()).containsExactlyInAnyOrder("fraud-detection", "risk-scoring"); // GH-90000
+            assertThat(desc.getInputEventTypes()).containsExactly("Transaction [GH-90000]");
+            assertThat(desc.getOutputEventTypes()).containsExactly("FraudAlert [GH-90000]");
+            assertThat(desc.getMetadata()).containsEntry("model", "xgboost-v3"); // GH-90000
+            assertThat(desc.getLabels()).containsEntry("team", "fraud-prevention"); // GH-90000
         }
 
         @Test
-        @DisplayName("defaults are sensible")
-        void shouldHaveSensibleDefaults() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("simple")
-                    .name("Simple Agent")
-                    .type(AgentType.DETERMINISTIC)
-                    .build();
+        @DisplayName("defaults are sensible [GH-90000]")
+        void shouldHaveSensibleDefaults() { // GH-90000
+            AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
+                    .agentId("simple [GH-90000]")
+                    .name("Simple Agent [GH-90000]")
+                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(desc.getVersion()).isEqualTo("1.0.0");
-            assertThat(desc.getNamespace()).isEqualTo("default");
-            assertThat(desc.getDeterminism()).isEqualTo(DeterminismGuarantee.NONE);
-            assertThat(desc.getLatencySla()).isEqualTo(Duration.ofSeconds(5));
-            assertThat(desc.getThroughputTarget()).isEqualTo(1000);
-            assertThat(desc.getStateMutability()).isEqualTo(StateMutability.STATELESS);
-            assertThat(desc.getFailureMode()).isEqualTo(FailureMode.FAIL_FAST);
-            assertThat(desc.getCapabilities()).isEmpty();
-            assertThat(desc.getInputEventTypes()).isEmpty();
-            assertThat(desc.getOutputEventTypes()).isEmpty();
-            assertThat(desc.getMetadata()).isEmpty();
-            assertThat(desc.getLabels()).isEmpty();
-            assertThat(desc.getAnnotations()).isEmpty();
+            assertThat(desc.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(desc.getNamespace()).isEqualTo("default [GH-90000]");
+            assertThat(desc.getDeterminism()).isEqualTo(DeterminismGuarantee.NONE); // GH-90000
+            assertThat(desc.getLatencySla()).isEqualTo(Duration.ofSeconds(5)); // GH-90000
+            assertThat(desc.getThroughputTarget()).isEqualTo(1000); // GH-90000
+            assertThat(desc.getStateMutability()).isEqualTo(StateMutability.STATELESS); // GH-90000
+            assertThat(desc.getFailureMode()).isEqualTo(FailureMode.FAIL_FAST); // GH-90000
+            assertThat(desc.getCapabilities()).isEmpty(); // GH-90000
+            assertThat(desc.getInputEventTypes()).isEmpty(); // GH-90000
+            assertThat(desc.getOutputEventTypes()).isEmpty(); // GH-90000
+            assertThat(desc.getMetadata()).isEmpty(); // GH-90000
+            assertThat(desc.getLabels()).isEmpty(); // GH-90000
+            assertThat(desc.getAnnotations()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("isDeterministic — FULL returns true")
-        void shouldDetectFullDeterminism() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("det")
-                    .name("Det")
-                    .type(AgentType.DETERMINISTIC)
-                    .determinism(DeterminismGuarantee.FULL)
-                    .build();
-            assertThat(desc.isDeterministic()).isTrue();
+        @DisplayName("isDeterministic — FULL returns true [GH-90000]")
+        void shouldDetectFullDeterminism() { // GH-90000
+            AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
+                    .agentId("det [GH-90000]")
+                    .name("Det [GH-90000]")
+                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .determinism(DeterminismGuarantee.FULL) // GH-90000
+                    .build(); // GH-90000
+            assertThat(desc.isDeterministic()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("isDeterministic — CONFIG_SCOPED returns true")
-        void shouldDetectConfigScopedDeterminism() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("cs")
-                    .name("ConfigScoped")
-                    .type(AgentType.HYBRID)
-                    .determinism(DeterminismGuarantee.CONFIG_SCOPED)
-                    .build();
-            assertThat(desc.isDeterministic()).isTrue();
+        @DisplayName("isDeterministic — CONFIG_SCOPED returns true [GH-90000]")
+        void shouldDetectConfigScopedDeterminism() { // GH-90000
+            AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
+                    .agentId("cs [GH-90000]")
+                    .name("ConfigScoped [GH-90000]")
+                    .type(AgentType.HYBRID) // GH-90000
+                    .determinism(DeterminismGuarantee.CONFIG_SCOPED) // GH-90000
+                    .build(); // GH-90000
+            assertThat(desc.isDeterministic()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("isDeterministic — NONE returns false")
-        void shouldDetectNonDeterminism() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("prob")
-                    .name("Prob")
-                    .type(AgentType.PROBABILISTIC)
-                    .determinism(DeterminismGuarantee.NONE)
-                    .build();
-            assertThat(desc.isDeterministic()).isFalse();
+        @DisplayName("isDeterministic — NONE returns false [GH-90000]")
+        void shouldDetectNonDeterminism() { // GH-90000
+            AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
+                    .agentId("prob [GH-90000]")
+                    .name("Prob [GH-90000]")
+                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .determinism(DeterminismGuarantee.NONE) // GH-90000
+                    .build(); // GH-90000
+            assertThat(desc.isDeterministic()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("isStateless")
-        void shouldDetectStateless() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("sl")
-                    .name("Stateless")
-                    .type(AgentType.DETERMINISTIC)
-                    .stateMutability(StateMutability.STATELESS)
-                    .build();
-            assertThat(desc.isStateless()).isTrue();
+        @DisplayName("isStateless [GH-90000]")
+        void shouldDetectStateless() { // GH-90000
+            AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
+                    .agentId("sl [GH-90000]")
+                    .name("Stateless [GH-90000]")
+                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .stateMutability(StateMutability.STATELESS) // GH-90000
+                    .build(); // GH-90000
+            assertThat(desc.isStateless()).isTrue(); // GH-90000
 
-            AgentDescriptor stateful = desc.toBuilder()
-                    .stateMutability(StateMutability.LOCAL_STATE)
-                    .build();
-            assertThat(stateful.isStateless()).isFalse();
+            AgentDescriptor stateful = desc.toBuilder() // GH-90000
+                    .stateMutability(StateMutability.LOCAL_STATE) // GH-90000
+                    .build(); // GH-90000
+            assertThat(stateful.isStateless()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("hasCapability")
-        void shouldDetectCapability() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("cap")
-                    .name("Cap")
-                    .type(AgentType.DETERMINISTIC)
-                    .capabilities(Set.of("fraud", "risk"))
-                    .build();
-            assertThat(desc.hasCapability("fraud")).isTrue();
-            assertThat(desc.hasCapability("enrichment")).isFalse();
+        @DisplayName("hasCapability [GH-90000]")
+        void shouldDetectCapability() { // GH-90000
+            AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
+                    .agentId("cap [GH-90000]")
+                    .name("Cap [GH-90000]")
+                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .capabilities(Set.of("fraud", "risk")) // GH-90000
+                    .build(); // GH-90000
+            assertThat(desc.hasCapability("fraud [GH-90000]")).isTrue();
+            assertThat(desc.hasCapability("enrichment [GH-90000]")).isFalse();
         }
 
         @Test
-        @DisplayName("toBuilder creates independent copy")
-        void shouldCopyWithToBuilder() {
-            AgentDescriptor original = AgentDescriptor.builder()
-                    .agentId("orig")
-                    .name("Original")
-                    .type(AgentType.DETERMINISTIC)
-                    .build();
+        @DisplayName("toBuilder creates independent copy [GH-90000]")
+        void shouldCopyWithToBuilder() { // GH-90000
+            AgentDescriptor original = AgentDescriptor.builder() // GH-90000
+                    .agentId("orig [GH-90000]")
+                    .name("Original [GH-90000]")
+                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .build(); // GH-90000
 
-            AgentDescriptor copy = original.toBuilder()
-                    .agentId("copy")
-                    .type(AgentType.PROBABILISTIC)
-                    .build();
+            AgentDescriptor copy = original.toBuilder() // GH-90000
+                    .agentId("copy [GH-90000]")
+                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(original.getAgentId()).isEqualTo("orig");
-            assertThat(copy.getAgentId()).isEqualTo("copy");
-            assertThat(copy.getType()).isEqualTo(AgentType.PROBABILISTIC);
-            assertThat(original.getType()).isEqualTo(AgentType.DETERMINISTIC);
+            assertThat(original.getAgentId()).isEqualTo("orig [GH-90000]");
+            assertThat(copy.getAgentId()).isEqualTo("copy [GH-90000]");
+            assertThat(copy.getType()).isEqualTo(AgentType.PROBABILISTIC); // GH-90000
+            assertThat(original.getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
         }
     }
 
@@ -330,119 +332,119 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AgentResult")
+    @DisplayName("AgentResult [GH-90000]")
     class AgentResultTest {
 
         @Test
-        @DisplayName("success factory method")
-        void shouldCreateSuccessResult() {
-            AgentResult<String> result = AgentResult.success("output", "agent-1", Duration.ofMillis(42));
-            assertThat(result.getOutput()).isEqualTo("output");
-            assertThat(result.getConfidence()).isEqualTo(1.0);
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS);
-            assertThat(result.getAgentId()).isEqualTo("agent-1");
-            assertThat(result.getProcessingTime()).isEqualTo(Duration.ofMillis(42));
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.isFailed()).isFalse();
-            assertThat(result.meetsConfidence(0.5)).isTrue();
-            assertThat(result.meetsConfidence(1.0)).isTrue();
+        @DisplayName("success factory method [GH-90000]")
+        void shouldCreateSuccessResult() { // GH-90000
+            AgentResult<String> result = AgentResult.success("output", "agent-1", Duration.ofMillis(42)); // GH-90000
+            assertThat(result.getOutput()).isEqualTo("output [GH-90000]");
+            assertThat(result.getConfidence()).isEqualTo(1.0); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            assertThat(result.getAgentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(result.getProcessingTime()).isEqualTo(Duration.ofMillis(42)); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.isFailed()).isFalse(); // GH-90000
+            assertThat(result.meetsConfidence(0.5)).isTrue(); // GH-90000
+            assertThat(result.meetsConfidence(1.0)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("successWithConfidence factory — above threshold")
-        void shouldCreateHighConfidenceResult() {
-            AgentResult<Integer> result = AgentResult.successWithConfidence(
-                    42, 0.85, "ml-agent", Duration.ofMillis(100), "Model v3 inference");
-            assertThat(result.getOutput()).isEqualTo(42);
-            assertThat(result.getConfidence()).isEqualTo(0.85);
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS);
-            assertThat(result.getExplanation()).isEqualTo("Model v3 inference");
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.meetsConfidence(0.8)).isTrue();
-            assertThat(result.meetsConfidence(0.9)).isFalse();
+        @DisplayName("successWithConfidence factory — above threshold [GH-90000]")
+        void shouldCreateHighConfidenceResult() { // GH-90000
+            AgentResult<Integer> result = AgentResult.successWithConfidence( // GH-90000
+                    42, 0.85, "ml-agent", Duration.ofMillis(100), "Model v3 inference"); // GH-90000
+            assertThat(result.getOutput()).isEqualTo(42); // GH-90000
+            assertThat(result.getConfidence()).isEqualTo(0.85); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            assertThat(result.getExplanation()).isEqualTo("Model v3 inference [GH-90000]");
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.meetsConfidence(0.8)).isTrue(); // GH-90000
+            assertThat(result.meetsConfidence(0.9)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("successWithConfidence factory — below threshold marks LOW_CONFIDENCE")
-        void shouldMarkLowConfidence() {
-            AgentResult<String> result = AgentResult.successWithConfidence(
-                    "uncertain", 0.3, "low-conf", Duration.ofMillis(50), "Weak signal");
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.LOW_CONFIDENCE);
-            assertThat(result.getConfidence()).isEqualTo(0.3);
-            assertThat(result.isSuccess()).isFalse(); // LOW_CONFIDENCE != SUCCESS
+        @DisplayName("successWithConfidence factory — below threshold marks LOW_CONFIDENCE [GH-90000]")
+        void shouldMarkLowConfidence() { // GH-90000
+            AgentResult<String> result = AgentResult.successWithConfidence( // GH-90000
+                    "uncertain", 0.3, "low-conf", Duration.ofMillis(50), "Weak signal"); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.LOW_CONFIDENCE); // GH-90000
+            assertThat(result.getConfidence()).isEqualTo(0.3); // GH-90000
+            assertThat(result.isSuccess()).isFalse(); // LOW_CONFIDENCE != SUCCESS // GH-90000
         }
 
         @Test
-        @DisplayName("failure factory method")
-        void shouldCreateFailureResult() {
-            RuntimeException error = new RuntimeException("NullPointerException");
-            AgentResult<Void> result = AgentResult.failure(error, "agent-2", Duration.ofMillis(10));
-            assertThat(result.getOutput()).isNull();
-            assertThat(result.getConfidence()).isEqualTo(0.0);
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED);
-            assertThat(result.isFailed()).isTrue();
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getExplanation()).contains("RuntimeException");
-            assertThat(result.getExplanation()).contains("NullPointerException");
+        @DisplayName("failure factory method [GH-90000]")
+        void shouldCreateFailureResult() { // GH-90000
+            RuntimeException error = new RuntimeException("NullPointerException [GH-90000]");
+            AgentResult<Void> result = AgentResult.failure(error, "agent-2", Duration.ofMillis(10)); // GH-90000
+            assertThat(result.getOutput()).isNull(); // GH-90000
+            assertThat(result.getConfidence()).isEqualTo(0.0); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); // GH-90000
+            assertThat(result.isFailed()).isTrue(); // GH-90000
+            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.getExplanation()).contains("RuntimeException [GH-90000]");
+            assertThat(result.getExplanation()).contains("NullPointerException [GH-90000]");
         }
 
         @Test
-        @DisplayName("failure factory rejects null error")
-        void shouldRejectNullError() {
-            assertThatThrownBy(() -> AgentResult.failure(null, "a", Duration.ZERO))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("failure factory rejects null error [GH-90000]")
+        void shouldRejectNullError() { // GH-90000
+            assertThatThrownBy(() -> AgentResult.failure(null, "a", Duration.ZERO)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("timeout factory method")
-        void shouldCreateTimeoutResult() {
-            AgentResult<Void> result = AgentResult.timeout("slow-agent", Duration.ofSeconds(5));
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.TIMEOUT);
-            assertThat(result.isFailed()).isTrue();
-            assertThat(result.getExplanation()).contains("5000ms");
+        @DisplayName("timeout factory method [GH-90000]")
+        void shouldCreateTimeoutResult() { // GH-90000
+            AgentResult<Void> result = AgentResult.timeout("slow-agent", Duration.ofSeconds(5)); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.TIMEOUT); // GH-90000
+            assertThat(result.isFailed()).isTrue(); // GH-90000
+            assertThat(result.getExplanation()).contains("5000ms [GH-90000]");
         }
 
         @Test
-        @DisplayName("skipped factory method")
-        void shouldCreateSkippedResult() {
-            AgentResult<Void> result = AgentResult.skipped("Input doesn't match", "filter-agent");
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED);
-            assertThat(result.getExplanation()).isEqualTo("Input doesn't match");
-            assertThat(result.getProcessingTime()).isEqualTo(Duration.ZERO);
+        @DisplayName("skipped factory method [GH-90000]")
+        void shouldCreateSkippedResult() { // GH-90000
+            AgentResult<Void> result = AgentResult.skipped("Input doesn't match", "filter-agent"); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            assertThat(result.getExplanation()).isEqualTo("Input doesn't match [GH-90000]");
+            assertThat(result.getProcessingTime()).isEqualTo(Duration.ZERO); // GH-90000
         }
 
         @Test
-        @DisplayName("delegated factory method")
-        void shouldCreateDelegatedResult() {
-            AgentResult<Void> result = AgentResult.delegated("ml-agent-v2", "router-agent");
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DELEGATED);
-            assertThat(result.getAgentId()).isEqualTo("router-agent");
-            assertThat(result.getExplanation()).contains("ml-agent-v2");
-            assertThat(result.getMetrics()).containsEntry("delegateAgentId", "ml-agent-v2");
+        @DisplayName("delegated factory method [GH-90000]")
+        void shouldCreateDelegatedResult() { // GH-90000
+            AgentResult<Void> result = AgentResult.delegated("ml-agent-v2", "router-agent"); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DELEGATED); // GH-90000
+            assertThat(result.getAgentId()).isEqualTo("router-agent [GH-90000]");
+            assertThat(result.getExplanation()).contains("ml-agent-v2 [GH-90000]");
+            assertThat(result.getMetrics()).containsEntry("delegateAgentId", "ml-agent-v2"); // GH-90000
         }
 
         @Test
-        @DisplayName("toBuilder creates modifiable copy")
-        void shouldSupportToBuilder() {
-            AgentResult<String> original = AgentResult.success("out", "a1", Duration.ofMillis(1));
-            AgentResult<String> modified = original.toBuilder()
-                    .confidence(0.5)
-                    .explanation("Overridden")
-                    .build();
-            assertThat(original.getConfidence()).isEqualTo(1.0);
-            assertThat(modified.getConfidence()).isEqualTo(0.5);
-            assertThat(modified.getExplanation()).isEqualTo("Overridden");
+        @DisplayName("toBuilder creates modifiable copy [GH-90000]")
+        void shouldSupportToBuilder() { // GH-90000
+            AgentResult<String> original = AgentResult.success("out", "a1", Duration.ofMillis(1)); // GH-90000
+            AgentResult<String> modified = original.toBuilder() // GH-90000
+                    .confidence(0.5) // GH-90000
+                    .explanation("Overridden [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(original.getConfidence()).isEqualTo(1.0); // GH-90000
+            assertThat(modified.getConfidence()).isEqualTo(0.5); // GH-90000
+            assertThat(modified.getExplanation()).isEqualTo("Overridden [GH-90000]");
         }
 
         @Test
-        @DisplayName("default builder produces SUCCESS with confidence 1.0")
-        void shouldDefaultToSuccess() {
-            AgentResult<String> result = AgentResult.<String>builder()
-                    .output("hello")
-                    .agentId("test")
-                    .build();
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS);
-            assertThat(result.getConfidence()).isEqualTo(1.0);
+        @DisplayName("default builder produces SUCCESS with confidence 1.0 [GH-90000]")
+        void shouldDefaultToSuccess() { // GH-90000
+            AgentResult<String> result = AgentResult.<String>builder() // GH-90000
+                    .output("hello [GH-90000]")
+                    .agentId("test [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            assertThat(result.getConfidence()).isEqualTo(1.0); // GH-90000
         }
     }
 
@@ -451,189 +453,189 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AgentConfig")
+    @DisplayName("AgentConfig [GH-90000]")
     class AgentConfigTest {
 
         @Test
-        @DisplayName("builder with all fields")
-        void shouldBuildWithAllFields() {
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("config-test")
-                    .type(AgentType.HYBRID)
-                    .version("2.0.0")
-                    .timeout(Duration.ofMillis(500))
-                    .confidenceThreshold(0.7)
-                    .maxRetries(3)
-                    .retryBackoff(Duration.ofMillis(200))
-                    .maxRetryBackoff(Duration.ofSeconds(10))
-                    .failureMode(FailureMode.RETRY)
-                    .circuitBreakerThreshold(10)
-                    .circuitBreakerReset(Duration.ofSeconds(60))
-                    .metricsEnabled(false)
-                    .tracingEnabled(false)
-                    .tracingSampleRate(0.5)
-                    .properties(Map.of("key", "val"))
-                    .labels(Map.of("env", "test"))
-                    .requiredCapabilities(Set.of("gpu"))
-                    .build();
+        @DisplayName("builder with all fields [GH-90000]")
+        void shouldBuildWithAllFields() { // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("config-test [GH-90000]")
+                    .type(AgentType.HYBRID) // GH-90000
+                    .version("2.0.0 [GH-90000]")
+                    .timeout(Duration.ofMillis(500)) // GH-90000
+                    .confidenceThreshold(0.7) // GH-90000
+                    .maxRetries(3) // GH-90000
+                    .retryBackoff(Duration.ofMillis(200)) // GH-90000
+                    .maxRetryBackoff(Duration.ofSeconds(10)) // GH-90000
+                    .failureMode(FailureMode.RETRY) // GH-90000
+                    .circuitBreakerThreshold(10) // GH-90000
+                    .circuitBreakerReset(Duration.ofSeconds(60)) // GH-90000
+                    .metricsEnabled(false) // GH-90000
+                    .tracingEnabled(false) // GH-90000
+                    .tracingSampleRate(0.5) // GH-90000
+                    .properties(Map.of("key", "val")) // GH-90000
+                    .labels(Map.of("env", "test")) // GH-90000
+                    .requiredCapabilities(Set.of("gpu [GH-90000]"))
+                    .build(); // GH-90000
 
-            assertThat(config.getAgentId()).isEqualTo("config-test");
-            assertThat(config.getType()).isEqualTo(AgentType.HYBRID);
-            assertThat(config.getVersion()).isEqualTo("2.0.0");
-            assertThat(config.getTimeout()).isEqualTo(Duration.ofMillis(500));
-            assertThat(config.getConfidenceThreshold()).isEqualTo(0.7);
-            assertThat(config.getMaxRetries()).isEqualTo(3);
-            assertThat(config.getRetryBackoff()).isEqualTo(Duration.ofMillis(200));
-            assertThat(config.getMaxRetryBackoff()).isEqualTo(Duration.ofSeconds(10));
-            assertThat(config.getFailureMode()).isEqualTo(FailureMode.RETRY);
-            assertThat(config.getCircuitBreakerThreshold()).isEqualTo(10);
-            assertThat(config.getCircuitBreakerReset()).isEqualTo(Duration.ofSeconds(60));
-            assertThat(config.isMetricsEnabled()).isFalse();
-            assertThat(config.isTracingEnabled()).isFalse();
-            assertThat(config.getTracingSampleRate()).isEqualTo(0.5);
-            assertThat(config.getProperties()).containsEntry("key", "val");
-            assertThat(config.getLabels()).containsEntry("env", "test");
-            assertThat(config.getRequiredCapabilities()).containsExactly("gpu");
+            assertThat(config.getAgentId()).isEqualTo("config-test [GH-90000]");
+            assertThat(config.getType()).isEqualTo(AgentType.HYBRID); // GH-90000
+            assertThat(config.getVersion()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(config.getTimeout()).isEqualTo(Duration.ofMillis(500)); // GH-90000
+            assertThat(config.getConfidenceThreshold()).isEqualTo(0.7); // GH-90000
+            assertThat(config.getMaxRetries()).isEqualTo(3); // GH-90000
+            assertThat(config.getRetryBackoff()).isEqualTo(Duration.ofMillis(200)); // GH-90000
+            assertThat(config.getMaxRetryBackoff()).isEqualTo(Duration.ofSeconds(10)); // GH-90000
+            assertThat(config.getFailureMode()).isEqualTo(FailureMode.RETRY); // GH-90000
+            assertThat(config.getCircuitBreakerThreshold()).isEqualTo(10); // GH-90000
+            assertThat(config.getCircuitBreakerReset()).isEqualTo(Duration.ofSeconds(60)); // GH-90000
+            assertThat(config.isMetricsEnabled()).isFalse(); // GH-90000
+            assertThat(config.isTracingEnabled()).isFalse(); // GH-90000
+            assertThat(config.getTracingSampleRate()).isEqualTo(0.5); // GH-90000
+            assertThat(config.getProperties()).containsEntry("key", "val"); // GH-90000
+            assertThat(config.getLabels()).containsEntry("env", "test"); // GH-90000
+            assertThat(config.getRequiredCapabilities()).containsExactly("gpu [GH-90000]");
         }
 
         @Test
-        @DisplayName("defaults are sensible")
-        void shouldHaveSensibleDefaults() {
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("default-test")
-                    .type(AgentType.DETERMINISTIC)
-                    .build();
+        @DisplayName("defaults are sensible [GH-90000]")
+        void shouldHaveSensibleDefaults() { // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("default-test [GH-90000]")
+                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(config.getVersion()).isEqualTo("1.0.0");
-            assertThat(config.getTimeout()).isEqualTo(Duration.ofSeconds(5));
-            assertThat(config.getConfidenceThreshold()).isEqualTo(0.5);
-            assertThat(config.getMaxRetries()).isEqualTo(0);
-            assertThat(config.getRetryBackoff()).isEqualTo(Duration.ofMillis(100));
-            assertThat(config.getMaxRetryBackoff()).isEqualTo(Duration.ofSeconds(5));
-            assertThat(config.getFailureMode()).isEqualTo(FailureMode.FAIL_FAST);
-            assertThat(config.getCircuitBreakerThreshold()).isEqualTo(5);
-            assertThat(config.getCircuitBreakerReset()).isEqualTo(Duration.ofSeconds(30));
-            assertThat(config.isMetricsEnabled()).isTrue();
-            assertThat(config.isTracingEnabled()).isTrue();
-            assertThat(config.getTracingSampleRate()).isEqualTo(0.1);
-            assertThat(config.getProperties()).isEmpty();
-            assertThat(config.getLabels()).isEmpty();
-            assertThat(config.getRequiredCapabilities()).isEmpty();
+            assertThat(config.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(config.getTimeout()).isEqualTo(Duration.ofSeconds(5)); // GH-90000
+            assertThat(config.getConfidenceThreshold()).isEqualTo(0.5); // GH-90000
+            assertThat(config.getMaxRetries()).isEqualTo(0); // GH-90000
+            assertThat(config.getRetryBackoff()).isEqualTo(Duration.ofMillis(100)); // GH-90000
+            assertThat(config.getMaxRetryBackoff()).isEqualTo(Duration.ofSeconds(5)); // GH-90000
+            assertThat(config.getFailureMode()).isEqualTo(FailureMode.FAIL_FAST); // GH-90000
+            assertThat(config.getCircuitBreakerThreshold()).isEqualTo(5); // GH-90000
+            assertThat(config.getCircuitBreakerReset()).isEqualTo(Duration.ofSeconds(30)); // GH-90000
+            assertThat(config.isMetricsEnabled()).isTrue(); // GH-90000
+            assertThat(config.isTracingEnabled()).isTrue(); // GH-90000
+            assertThat(config.getTracingSampleRate()).isEqualTo(0.1); // GH-90000
+            assertThat(config.getProperties()).isEmpty(); // GH-90000
+            assertThat(config.getLabels()).isEmpty(); // GH-90000
+            assertThat(config.getRequiredCapabilities()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("toBuilder creates independent copy")
-        void shouldSupportToBuilder() {
-            AgentConfig original = AgentConfig.builder()
-                    .agentId("orig")
-                    .type(AgentType.DETERMINISTIC)
-                    .build();
-            AgentConfig copy = original.toBuilder()
-                    .timeout(Duration.ofMillis(100))
-                    .maxRetries(5)
-                    .build();
-            assertThat(original.getTimeout()).isEqualTo(Duration.ofSeconds(5));
-            assertThat(copy.getTimeout()).isEqualTo(Duration.ofMillis(100));
-            assertThat(copy.getMaxRetries()).isEqualTo(5);
+        @DisplayName("toBuilder creates independent copy [GH-90000]")
+        void shouldSupportToBuilder() { // GH-90000
+            AgentConfig original = AgentConfig.builder() // GH-90000
+                    .agentId("orig [GH-90000]")
+                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .build(); // GH-90000
+            AgentConfig copy = original.toBuilder() // GH-90000
+                    .timeout(Duration.ofMillis(100)) // GH-90000
+                    .maxRetries(5) // GH-90000
+                    .build(); // GH-90000
+            assertThat(original.getTimeout()).isEqualTo(Duration.ofSeconds(5)); // GH-90000
+            assertThat(copy.getTimeout()).isEqualTo(Duration.ofMillis(100)); // GH-90000
+            assertThat(copy.getMaxRetries()).isEqualTo(5); // GH-90000
         }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // Enhanced AgentContext (framework.api — v2.0 additions)
+    // Enhanced AgentContext (framework.api — v2.0 additions) // GH-90000
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AgentContext v2.0 Enhancements")
+    @DisplayName("AgentContext v2.0 Enhancements [GH-90000]")
     class AgentContextV2Test {
 
         private MemoryStore memoryStore;
 
         @BeforeEach
-        void setup() {
-            memoryStore = mock(MemoryStore.class);
+        void setup() { // GH-90000
+            memoryStore = mock(MemoryStore.class); // GH-90000
         }
 
         @Test
-        @DisplayName("traceId is stored and retrievable")
-        void shouldStoreTraceId() {
-            AgentContext ctx = AgentContext.builder()
-                    .agentId("agent-1")
-                    .tenantId("tenant-1")
-                    .memoryStore(memoryStore)
-                    .traceId("trace-abc-123")
-                    .build();
-            assertThat(ctx.getTraceId()).isEqualTo("trace-abc-123");
+        @DisplayName("traceId is stored and retrievable [GH-90000]")
+        void shouldStoreTraceId() { // GH-90000
+            AgentContext ctx = AgentContext.builder() // GH-90000
+                    .agentId("agent-1 [GH-90000]")
+                    .tenantId("tenant-1 [GH-90000]")
+                    .memoryStore(memoryStore) // GH-90000
+                    .traceId("trace-abc-123 [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(ctx.getTraceId()).isEqualTo("trace-abc-123 [GH-90000]");
         }
 
         @Test
-        @DisplayName("traceId defaults to null")
-        void shouldDefaultTraceIdToNull() {
-            AgentContext ctx = AgentContext.builder()
-                    .agentId("agent-1")
-                    .tenantId("tenant-1")
-                    .memoryStore(memoryStore)
-                    .build();
-            assertThat(ctx.getTraceId()).isNull();
+        @DisplayName("traceId defaults to null [GH-90000]")
+        void shouldDefaultTraceIdToNull() { // GH-90000
+            AgentContext ctx = AgentContext.builder() // GH-90000
+                    .agentId("agent-1 [GH-90000]")
+                    .tenantId("tenant-1 [GH-90000]")
+                    .memoryStore(memoryStore) // GH-90000
+                    .build(); // GH-90000
+            assertThat(ctx.getTraceId()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("metadata get/set works")
-        void shouldSupportMetadata() {
-            AgentContext ctx = AgentContext.builder()
-                    .agentId("agent-1")
-                    .tenantId("tenant-1")
-                    .memoryStore(memoryStore)
-                    .build();
+        @DisplayName("metadata get/set works [GH-90000]")
+        void shouldSupportMetadata() { // GH-90000
+            AgentContext ctx = AgentContext.builder() // GH-90000
+                    .agentId("agent-1 [GH-90000]")
+                    .tenantId("tenant-1 [GH-90000]")
+                    .memoryStore(memoryStore) // GH-90000
+                    .build(); // GH-90000
 
-            ctx.setMetadata("pipeline.stage", "enrichment");
-            ctx.setMetadata("count", 42);
-            assertThat(ctx.getMetadata()).containsEntry("pipeline.stage", "enrichment");
-            assertThat(ctx.getMetadata()).containsEntry("count", 42);
+            ctx.setMetadata("pipeline.stage", "enrichment"); // GH-90000
+            ctx.setMetadata("count", 42); // GH-90000
+            assertThat(ctx.getMetadata()).containsEntry("pipeline.stage", "enrichment"); // GH-90000
+            assertThat(ctx.getMetadata()).containsEntry("count", 42); // GH-90000
         }
 
         @Test
-        @DisplayName("metadata initializes from builder")
-        void shouldInitMetadataFromBuilder() {
-            AgentContext ctx = AgentContext.builder()
-                    .agentId("agent-1")
-                    .tenantId("tenant-1")
-                    .memoryStore(memoryStore)
-                    .metadata(Map.of("key", "value"))
-                    .build();
+        @DisplayName("metadata initializes from builder [GH-90000]")
+        void shouldInitMetadataFromBuilder() { // GH-90000
+            AgentContext ctx = AgentContext.builder() // GH-90000
+                    .agentId("agent-1 [GH-90000]")
+                    .tenantId("tenant-1 [GH-90000]")
+                    .memoryStore(memoryStore) // GH-90000
+                    .metadata(Map.of("key", "value")) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(ctx.getMetadata()).containsEntry("key", "value");
+            assertThat(ctx.getMetadata()).containsEntry("key", "value"); // GH-90000
         }
 
         @Test
-        @DisplayName("deriveChild creates new context with child agent ID")
-        void shouldDeriveChild() {
-            AgentContext parent = AgentContext.builder()
-                    .agentId("parent-agent")
-                    .tenantId("tenant-1")
-                    .memoryStore(memoryStore)
-                    .traceId("trace-xyz")
-                    .build();
+        @DisplayName("deriveChild creates new context with child agent ID [GH-90000]")
+        void shouldDeriveChild() { // GH-90000
+            AgentContext parent = AgentContext.builder() // GH-90000
+                    .agentId("parent-agent [GH-90000]")
+                    .tenantId("tenant-1 [GH-90000]")
+                    .memoryStore(memoryStore) // GH-90000
+                    .traceId("trace-xyz [GH-90000]")
+                    .build(); // GH-90000
 
-            AgentContext child = parent.deriveChild("child-agent");
+            AgentContext child = parent.deriveChild("child-agent [GH-90000]");
 
-            assertThat(child.getAgentId()).isEqualTo("child-agent");
-            assertThat(child.getTenantId()).isEqualTo("tenant-1");
-            assertThat(child.getTraceId()).isEqualTo("trace-xyz");
-            assertThat(child.getTurnId()).isNotEqualTo(parent.getTurnId()); // New turn
+            assertThat(child.getAgentId()).isEqualTo("child-agent [GH-90000]");
+            assertThat(child.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(child.getTraceId()).isEqualTo("trace-xyz [GH-90000]");
+            assertThat(child.getTurnId()).isNotEqualTo(parent.getTurnId()); // New turn // GH-90000
         }
 
         @Test
-        @DisplayName("deriveChild preserves config")
-        void shouldPreserveConfigInChild() {
-            AgentContext parent = AgentContext.builder()
-                    .agentId("parent-agent")
-                    .tenantId("tenant-1")
-                    .memoryStore(memoryStore)
-                    .config(Map.of("key", "value"))
-                    .build();
+        @DisplayName("deriveChild preserves config [GH-90000]")
+        void shouldPreserveConfigInChild() { // GH-90000
+            AgentContext parent = AgentContext.builder() // GH-90000
+                    .agentId("parent-agent [GH-90000]")
+                    .tenantId("tenant-1 [GH-90000]")
+                    .memoryStore(memoryStore) // GH-90000
+                    .config(Map.of("key", "value")) // GH-90000
+                    .build(); // GH-90000
 
-            AgentContext child = parent.deriveChild("child-agent");
-            assertThat(child.getAllConfig()).containsEntry("key", "value");
+            AgentContext child = parent.deriveChild("child-agent [GH-90000]");
+            assertThat(child.getAllConfig()).containsEntry("key", "value"); // GH-90000
         }
     }
 
@@ -642,39 +644,39 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("TypedAgent / AbstractTypedAgent")
+    @DisplayName("TypedAgent / AbstractTypedAgent [GH-90000]")
     class AbstractTypedAgentTest {
 
         private MemoryStore memoryStore;
         private AgentContext ctx;
 
         @BeforeEach
-        void setup() {
-            memoryStore = mock(MemoryStore.class);
-            ctx = AgentContext.builder()
-                    .agentId("ctx-agent")
-                    .tenantId("test-tenant")
-                    .memoryStore(memoryStore)
-                    .build();
+        void setup() { // GH-90000
+            memoryStore = mock(MemoryStore.class); // GH-90000
+            ctx = AgentContext.builder() // GH-90000
+                    .agentId("ctx-agent [GH-90000]")
+                    .tenantId("test-tenant [GH-90000]")
+                    .memoryStore(memoryStore) // GH-90000
+                    .build(); // GH-90000
         }
 
         // Test agent: doubles the input integer
         static class DoublerAgent extends AbstractTypedAgent<Integer, Integer> {
             @Override
             @NotNull
-            public AgentDescriptor descriptor() {
-                return AgentDescriptor.builder()
-                        .agentId("doubler")
-                        .name("Doubler")
-                        .type(AgentType.DETERMINISTIC)
-                        .determinism(DeterminismGuarantee.FULL)
-                        .build();
+            public AgentDescriptor descriptor() { // GH-90000
+                return AgentDescriptor.builder() // GH-90000
+                        .agentId("doubler [GH-90000]")
+                        .name("Doubler [GH-90000]")
+                        .type(AgentType.DETERMINISTIC) // GH-90000
+                        .determinism(DeterminismGuarantee.FULL) // GH-90000
+                        .build(); // GH-90000
             }
 
             @Override
             @NotNull
-            protected Promise<AgentResult<Integer>> doProcess(@NotNull AgentContext ctx, @NotNull Integer input) {
-                return Promise.of(AgentResult.success(input * 2, "doubler", Duration.ZERO));
+            protected Promise<AgentResult<Integer>> doProcess(@NotNull AgentContext ctx, @NotNull Integer input) { // GH-90000
+                return Promise.of(AgentResult.success(input * 2, "doubler", Duration.ZERO)); // GH-90000
             }
         }
 
@@ -682,18 +684,37 @@ class AgentFrameworkCoreTest {
         static class FailingAgent extends AbstractTypedAgent<String, String> {
             @Override
             @NotNull
+            public AgentDescriptor descriptor() { // GH-90000
+                return AgentDescriptor.builder() // GH-90000
+                        .agentId("failing [GH-90000]")
+                        .name("Failing [GH-90000]")
+                        .type(AgentType.DETERMINISTIC) // GH-90000
+                        .build(); // GH-90000
+            }
+
+            @Override
+            @NotNull
+            protected Promise<AgentResult<String>> doProcess(@NotNull AgentContext ctx, @NotNull String input) { // GH-90000
+                throw new RuntimeException("Boom! [GH-90000]");
+            }
+        }
+
+        // Test agent: fails asynchronously via failed Promise
+        static class AsyncFailingAgent extends AbstractTypedAgent<String, String> {
+            @Override
+            @NotNull
             public AgentDescriptor descriptor() {
                 return AgentDescriptor.builder()
-                        .agentId("failing")
-                        .name("Failing")
-                        .type(AgentType.DETERMINISTIC)
-                        .build();
+                    .agentId("async-failing")
+                    .name("AsyncFailing")
+                    .type(AgentType.DETERMINISTIC)
+                    .build();
             }
 
             @Override
             @NotNull
             protected Promise<AgentResult<String>> doProcess(@NotNull AgentContext ctx, @NotNull String input) {
-                throw new RuntimeException("Boom!");
+                return Promise.ofException(new IllegalStateException("Async boom"));
             }
         }
 
@@ -704,276 +725,387 @@ class AgentFrameworkCoreTest {
 
             @Override
             @NotNull
-            public AgentDescriptor descriptor() {
-                return AgentDescriptor.builder()
-                        .agentId("lifecycle")
-                        .name("Lifecycle")
-                        .type(AgentType.DETERMINISTIC)
-                        .build();
+            public AgentDescriptor descriptor() { // GH-90000
+                return AgentDescriptor.builder() // GH-90000
+                        .agentId("lifecycle [GH-90000]")
+                        .name("Lifecycle [GH-90000]")
+                        .type(AgentType.DETERMINISTIC) // GH-90000
+                        .build(); // GH-90000
             }
 
             @Override
             @NotNull
-            protected Promise<Void> doInitialize(@NotNull AgentConfig config) {
+            protected Promise<Void> doInitialize(@NotNull AgentConfig config) { // GH-90000
                 initialized = true;
-                return Promise.complete();
+                return Promise.complete(); // GH-90000
+            }
+
+            @Override
+            @NotNull
+            protected Promise<AgentResult<String>> doProcess(@NotNull AgentContext ctx, @NotNull String input) { // GH-90000
+                return Promise.of(AgentResult.success(input.toUpperCase(), "lifecycle", Duration.ZERO)); // GH-90000
+            }
+
+            @Override
+            @NotNull
+            protected Promise<Void> doShutdown() { // GH-90000
+                shutDown = true;
+                return Promise.complete(); // GH-90000
+            }
+        }
+
+        static class LifecycleByTypeAgent extends AbstractTypedAgent<String, String> {
+            private final AgentType type;
+            private final String id;
+
+            LifecycleByTypeAgent(AgentType type) {
+                this.type = type;
+                this.id = "lifecycle-" + type.name().toLowerCase();
+            }
+
+            @Override
+            @NotNull
+            public AgentDescriptor descriptor() {
+                return AgentDescriptor.builder()
+                    .agentId(id)
+                    .name(id)
+                    .type(type)
+                    .build();
             }
 
             @Override
             @NotNull
             protected Promise<AgentResult<String>> doProcess(@NotNull AgentContext ctx, @NotNull String input) {
-                return Promise.of(AgentResult.success(input.toUpperCase(), "lifecycle", Duration.ZERO));
-            }
-
-            @Override
-            @NotNull
-            protected Promise<Void> doShutdown() {
-                shutDown = true;
-                return Promise.complete();
+                return Promise.of(AgentResult.success(type.name() + ":" + input, id, Duration.ZERO));
             }
         }
 
-        private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> promiseSupplier) {
-            Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
-            AtomicReference<T> ref = new AtomicReference<>();
-            AtomicReference<Exception> err = new AtomicReference<>();
-            eventloop.post(() -> promiseSupplier.get()
-                    .whenResult(ref::set)
-                    .whenException(err::set));
-            eventloop.run();
-            if (err.get() != null) {
-                throw new RuntimeException(err.get());
+        private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> promiseSupplier) { // GH-90000
+            Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
+            AtomicReference<T> ref = new AtomicReference<>(); // GH-90000
+            AtomicReference<Exception> err = new AtomicReference<>(); // GH-90000
+            eventloop.post(() -> promiseSupplier.get() // GH-90000
+                    .whenResult(ref::set) // GH-90000
+                    .whenException(err::set)); // GH-90000
+            eventloop.run(); // GH-90000
+            if (err.get() != null) { // GH-90000
+                throw new RuntimeException(err.get()); // GH-90000
             }
-            return ref.get();
+            return ref.get(); // GH-90000
         }
 
         @Test
-        @DisplayName("starts in CREATED state")
-        void shouldStartInCreatedState() {
-            DoublerAgent agent = new DoublerAgent();
-            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.CREATED);
+        @DisplayName("starts in CREATED state [GH-90000]")
+        void shouldStartInCreatedState() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.CREATED); // GH-90000
         }
 
         @Test
-        @DisplayName("descriptor available before initialize")
-        void shouldProvideDescriptorBeforeInit() {
-            DoublerAgent agent = new DoublerAgent();
-            assertThat(agent.descriptor().getAgentId()).isEqualTo("doubler");
-            assertThat(agent.descriptor().getType()).isEqualTo(AgentType.DETERMINISTIC);
+        @DisplayName("descriptor available before initialize [GH-90000]")
+        void shouldProvideDescriptorBeforeInit() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            assertThat(agent.descriptor().getAgentId()).isEqualTo("doubler [GH-90000]");
+            assertThat(agent.descriptor().getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
         }
 
         @Test
-        @DisplayName("initialize transitions to READY")
-        void shouldTransitionToReady() {
-            LifecycleAgent agent = new LifecycleAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("lifecycle").type(AgentType.DETERMINISTIC).build();
+        @DisplayName("initialize transitions to READY [GH-90000]")
+        void shouldTransitionToReady() { // GH-90000
+            LifecycleAgent agent = new LifecycleAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("lifecycle [GH-90000]").type(AgentType.DETERMINISTIC).build();
 
-            runOnEventloop(() -> agent.initialize(config));
-            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.READY);
-            assertThat(agent.initialized).isTrue();
-            assertThat(agent.getConfig()).isSameAs(config);
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.READY); // GH-90000
+            assertThat(agent.initialized).isTrue(); // GH-90000
+            assertThat(agent.getConfig()).isSameAs(config); // GH-90000
         }
 
         @Test
-        @DisplayName("process works after initialize")
-        void shouldProcessAfterInit() {
-            DoublerAgent agent = new DoublerAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("doubler").type(AgentType.DETERMINISTIC).build();
+        @DisplayName("process works after initialize [GH-90000]")
+        void shouldProcessAfterInit() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("doubler [GH-90000]").type(AgentType.DETERMINISTIC).build();
 
-            runOnEventloop(() -> agent.initialize(config));
-            AgentResult<Integer> result = runOnEventloop(() -> agent.process(ctx, 21));
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            AgentResult<Integer> result = runOnEventloop(() -> agent.process(ctx, 21)); // GH-90000
 
-            assertThat(result.getOutput()).isEqualTo(42);
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getAgentId()).isEqualTo("doubler");
-            assertThat(result.getProcessingTime()).isNotNull();
+            assertThat(result.getOutput()).isEqualTo(42); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getAgentId()).isEqualTo("doubler [GH-90000]");
+            assertThat(result.getProcessingTime()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("process fails when not initialized")
-        void shouldFailWhenNotInitialized() {
-            DoublerAgent agent = new DoublerAgent();
-            AgentResult<Integer> result = runOnEventloop(() -> agent.process(ctx, 21));
+        @DisplayName("process fails when not initialized [GH-90000]")
+        void shouldFailWhenNotInitialized() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            AgentResult<Integer> result = runOnEventloop(() -> agent.process(ctx, 21)); // GH-90000
 
-            assertThat(result.isFailed()).isTrue();
-            assertThat(result.getExplanation()).contains("not ready");
+            assertThat(result.isFailed()).isTrue(); // GH-90000
+            assertThat(result.getExplanation()).contains("not ready [GH-90000]");
         }
 
         @Test
-        @DisplayName("process catches synchronous exceptions")
-        void shouldCatchSyncExceptions() {
-            FailingAgent agent = new FailingAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("failing").type(AgentType.DETERMINISTIC).build();
+        @DisplayName("process catches synchronous exceptions [GH-90000]")
+        void shouldCatchSyncExceptions() { // GH-90000
+            FailingAgent agent = new FailingAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("failing [GH-90000]").type(AgentType.DETERMINISTIC).build();
 
-            runOnEventloop(() -> agent.initialize(config));
-            AgentResult<String> result = runOnEventloop(() -> agent.process(ctx, "test"));
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            AgentResult<String> result = runOnEventloop(() -> agent.process(ctx, "test")); // GH-90000
 
-            assertThat(result.isFailed()).isTrue();
-            assertThat(result.getExplanation()).contains("Boom!");
+            assertThat(result.isFailed()).isTrue(); // GH-90000
+            assertThat(result.getExplanation()).contains("Boom! [GH-90000]");
         }
 
         @Test
-        @DisplayName("shutdown transitions to STOPPED")
-        void shouldTransitionToStopped() {
-            LifecycleAgent agent = new LifecycleAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("lifecycle").type(AgentType.DETERMINISTIC).build();
+        @DisplayName("shutdown transitions to STOPPED [GH-90000]")
+        void shouldTransitionToStopped() { // GH-90000
+            LifecycleAgent agent = new LifecycleAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("lifecycle [GH-90000]").type(AgentType.DETERMINISTIC).build();
 
-            runOnEventloop(() -> agent.initialize(config));
-            runOnEventloop(() -> agent.shutdown());
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            runOnEventloop(() -> agent.shutdown()); // GH-90000
 
-            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.STOPPED);
-            assertThat(agent.shutDown).isTrue();
+            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.STOPPED); // GH-90000
+            assertThat(agent.shutDown).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("shutdown is idempotent")
-        void shouldBeIdempotentShutdown() {
-            LifecycleAgent agent = new LifecycleAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("lifecycle").type(AgentType.DETERMINISTIC).build();
+        @DisplayName("shutdown is idempotent [GH-90000]")
+        void shouldBeIdempotentShutdown() { // GH-90000
+            LifecycleAgent agent = new LifecycleAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("lifecycle [GH-90000]").type(AgentType.DETERMINISTIC).build();
 
-            runOnEventloop(() -> agent.initialize(config));
-            runOnEventloop(() -> agent.shutdown());
-            runOnEventloop(() -> agent.shutdown()); // Second call should succeed
-            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.STOPPED);
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            runOnEventloop(() -> agent.shutdown()); // GH-90000
+            runOnEventloop(() -> agent.shutdown()); // Second call should succeed // GH-90000
+            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.STOPPED); // GH-90000
         }
 
         @Test
-        @DisplayName("healthCheck returns status based on state")
-        void shouldReturnHealthBasedOnState() {
-            DoublerAgent agent = new DoublerAgent();
+        @DisplayName("healthCheck returns status based on state [GH-90000]")
+        void shouldReturnHealthBasedOnState() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
 
             // CREATED → UNHEALTHY
-            HealthStatus status = runOnEventloop(agent::healthCheck);
-            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY);
+            HealthStatus status = runOnEventloop(agent::healthCheck); // GH-90000
+            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY); // GH-90000
 
             // Initialize → READY → HEALTHY
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("doubler").type(AgentType.DETERMINISTIC).build();
-            runOnEventloop(() -> agent.initialize(config));
-            status = runOnEventloop(agent::healthCheck);
-            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("doubler [GH-90000]").type(AgentType.DETERMINISTIC).build();
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            status = runOnEventloop(agent::healthCheck); // GH-90000
+            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY); // GH-90000
 
             // Shutdown → STOPPED → UNHEALTHY
-            runOnEventloop(agent::shutdown);
-            status = runOnEventloop(agent::healthCheck);
-            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY);
+            runOnEventloop(agent::shutdown); // GH-90000
+            status = runOnEventloop(agent::healthCheck); // GH-90000
+            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY); // GH-90000
         }
 
         @Test
-        @DisplayName("metrics are tracked")
-        void shouldTrackMetrics() {
-            DoublerAgent agent = new DoublerAgent();
+        @DisplayName("metrics are tracked [GH-90000]")
+        void shouldTrackMetrics() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("doubler [GH-90000]").type(AgentType.DETERMINISTIC).build();
+
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, 1)); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, 2)); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, 3)); // GH-90000
+
+            assertThat(agent.getTotalInvocations()).isEqualTo(3); // GH-90000
+            assertThat(agent.getSuccessCount()).isEqualTo(3); // GH-90000
+            assertThat(agent.getFailureCount()).isEqualTo(0); // GH-90000
+            assertThat(agent.getAverageProcessingTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
+        }
+
+        @Test
+        @DisplayName("failure increments failure count [GH-90000]")
+        void shouldTrackFailures() { // GH-90000
+            FailingAgent agent = new FailingAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("failing [GH-90000]").type(AgentType.DETERMINISTIC).build();
+
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, "a")); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, "b")); // GH-90000
+
+            assertThat(agent.getTotalInvocations()).isEqualTo(2); // GH-90000
+            assertThat(agent.getFailureCount()).isEqualTo(2); // GH-90000
+            assertThat(agent.getSuccessCount()).isEqualTo(0); // GH-90000
+        }
+
+        @Test
+        @DisplayName("processBatch default delegates to process [GH-90000]")
+        void shouldProcessBatchViaDefault() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("doubler [GH-90000]").type(AgentType.DETERMINISTIC).build();
+
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            List<AgentResult<Integer>> results = runOnEventloop( // GH-90000
+                    () -> agent.processBatch(ctx, List.of(1, 2, 3))); // GH-90000
+
+            assertThat(results).hasSize(3); // GH-90000
+            assertThat(results.get(0).getOutput()).isEqualTo(2); // GH-90000
+            assertThat(results.get(1).getOutput()).isEqualTo(4); // GH-90000
+            assertThat(results.get(2).getOutput()).isEqualTo(6); // GH-90000
+        }
+
+        @Test
+        @DisplayName("reconfigure re-initializes agent [GH-90000]")
+        void shouldReconfigure() { // GH-90000
+            LifecycleAgent agent = new LifecycleAgent(); // GH-90000
+            AgentConfig config1 = AgentConfig.builder() // GH-90000
+                    .agentId("lifecycle [GH-90000]").type(AgentType.DETERMINISTIC).build();
+            AgentConfig config2 = config1.toBuilder().version("2.0.0 [GH-90000]").build();
+
+            runOnEventloop(() -> agent.initialize(config1)); // GH-90000
+            assertThat(agent.getConfig().getVersion()).isEqualTo("1.0.0 [GH-90000]");
+
+            runOnEventloop(() -> agent.reconfigure(config2)); // GH-90000
+            assertThat(agent.getConfig().getVersion()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.READY); // GH-90000
+        }
+
+        @Test
+        @DisplayName("A-3: lifecycle transitions are valid for each canonical agent type")
+        void shouldTransitionLifecycleForEveryAgentType() {
+            for (AgentType type : AgentType.values()) {
+                LifecycleByTypeAgent agent = new LifecycleByTypeAgent(type);
+                AgentConfig config = AgentConfig.builder()
+                    .agentId(agent.descriptor().getAgentId())
+                    .type(type)
+                    .build();
+
+                assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.CREATED);
+
+                runOnEventloop(() -> agent.initialize(config));
+                assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.READY);
+
+                AgentResult<String> result = runOnEventloop(() -> agent.process(ctx, "tick"));
+                assertThat(result.isSuccess()).isTrue();
+                assertThat(result.getAgentId()).isEqualTo(agent.descriptor().getAgentId());
+
+                runOnEventloop(agent::shutdown);
+                assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.STOPPED);
+            }
+        }
+
+        @Test
+        @DisplayName("A-4: two agents execute on the same event-loop without cross-interference")
+        void shouldExecuteTwoAgentsOnSameEventLoop() {
+            DoublerAgent firstAgent = new DoublerAgent();
+            DoublerAgent secondAgent = new DoublerAgent();
+
+            AgentConfig firstConfig = AgentConfig.builder()
+                .agentId("doubler-1")
+                .type(AgentType.DETERMINISTIC)
+                .build();
+            AgentConfig secondConfig = AgentConfig.builder()
+                .agentId("doubler-2")
+                .type(AgentType.DETERMINISTIC)
+                .build();
+
+            Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
+            AtomicReference<List<AgentResult<Integer>>> results = new AtomicReference<>();
+            AtomicReference<Exception> err = new AtomicReference<>();
+            AtomicInteger callbacks = new AtomicInteger(0);
+
+            eventloop.post(() ->
+                Promise.all(firstAgent.initialize(firstConfig), secondAgent.initialize(secondConfig))
+                    .then(() -> Promises.toList(List.of(
+                        firstAgent.process(ctx.toBuilder().agentId("ctx-agent-1").build(), 10),
+                        secondAgent.process(ctx.toBuilder().agentId("ctx-agent-2").build(), 20)
+                    )))
+                    .whenResult(r -> {
+                        callbacks.incrementAndGet();
+                        results.set(r);
+                    })
+                    .whenException(err::set)
+            );
+
+            eventloop.run();
+
+            assertThat(err.get()).isNull();
+            assertThat(results.get()).hasSize(2);
+            assertThat(results.get().get(0).getOutput()).isEqualTo(20);
+            assertThat(results.get().get(1).getOutput()).isEqualTo(40);
+            assertThat(firstAgent.getTotalInvocations()).isEqualTo(1);
+            assertThat(secondAgent.getTotalInvocations()).isEqualTo(1);
+            assertThat(callbacks.get()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("A-5: failed Promise from doProcess is surfaced as failed AgentResult")
+        void shouldSurfaceFailedPromiseAsFailedAgentResult() {
+            AsyncFailingAgent agent = new AsyncFailingAgent();
             AgentConfig config = AgentConfig.builder()
-                    .agentId("doubler").type(AgentType.DETERMINISTIC).build();
+                .agentId("async-failing")
+                .type(AgentType.DETERMINISTIC)
+                .build();
 
             runOnEventloop(() -> agent.initialize(config));
-            runOnEventloop(() -> agent.process(ctx, 1));
-            runOnEventloop(() -> agent.process(ctx, 2));
-            runOnEventloop(() -> agent.process(ctx, 3));
+            AgentResult<String> result = runOnEventloop(() -> agent.process(ctx, "input"));
 
-            assertThat(agent.getTotalInvocations()).isEqualTo(3);
-            assertThat(agent.getSuccessCount()).isEqualTo(3);
-            assertThat(agent.getFailureCount()).isEqualTo(0);
-            assertThat(agent.getAverageProcessingTimeMs()).isGreaterThanOrEqualTo(0);
+            assertThat(result.isFailed()).isTrue();
+            assertThat(result.getExplanation()).contains("Async boom");
+            assertThat(agent.getFailureCount()).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("failure increments failure count")
-        void shouldTrackFailures() {
-            FailingAgent agent = new FailingAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("failing").type(AgentType.DETERMINISTIC).build();
-
-            runOnEventloop(() -> agent.initialize(config));
-            runOnEventloop(() -> agent.process(ctx, "a"));
-            runOnEventloop(() -> agent.process(ctx, "b"));
-
-            assertThat(agent.getTotalInvocations()).isEqualTo(2);
-            assertThat(agent.getFailureCount()).isEqualTo(2);
-            assertThat(agent.getSuccessCount()).isEqualTo(0);
+        @DisplayName("validateInput default returns true [GH-90000]")
+        void shouldValidateInputDefault() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            assertThat(agent.validateInput(42)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("processBatch default delegates to process")
-        void shouldProcessBatchViaDefault() {
-            DoublerAgent agent = new DoublerAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("doubler").type(AgentType.DETERMINISTIC).build();
-
-            runOnEventloop(() -> agent.initialize(config));
-            List<AgentResult<Integer>> results = runOnEventloop(
-                    () -> agent.processBatch(ctx, List.of(1, 2, 3)));
-
-            assertThat(results).hasSize(3);
-            assertThat(results.get(0).getOutput()).isEqualTo(2);
-            assertThat(results.get(1).getOutput()).isEqualTo(4);
-            assertThat(results.get(2).getOutput()).isEqualTo(6);
-        }
-
-        @Test
-        @DisplayName("reconfigure re-initializes agent")
-        void shouldReconfigure() {
-            LifecycleAgent agent = new LifecycleAgent();
-            AgentConfig config1 = AgentConfig.builder()
-                    .agentId("lifecycle").type(AgentType.DETERMINISTIC).build();
-            AgentConfig config2 = config1.toBuilder().version("2.0.0").build();
-
-            runOnEventloop(() -> agent.initialize(config1));
-            assertThat(agent.getConfig().getVersion()).isEqualTo("1.0.0");
-
-            runOnEventloop(() -> agent.reconfigure(config2));
-            assertThat(agent.getConfig().getVersion()).isEqualTo("2.0.0");
-            assertThat(agent.getState()).isEqualTo(AbstractTypedAgent.State.READY);
-        }
-
-        @Test
-        @DisplayName("validateInput default returns true")
-        void shouldValidateInputDefault() {
-            DoublerAgent agent = new DoublerAgent();
-            assertThat(agent.validateInput(42)).isTrue();
-        }
-
-        @Test
-        @DisplayName("process rejects null context")
-        void shouldRejectNullContext() {
-            DoublerAgent agent = new DoublerAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("doubler").type(AgentType.DETERMINISTIC).build();
-            runOnEventloop(() -> agent.initialize(config));
+        @DisplayName("process rejects null context [GH-90000]")
+        void shouldRejectNullContext() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("doubler [GH-90000]").type(AgentType.DETERMINISTIC).build();
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
 
             // NPE thrown synchronously before Promise is created
-            assertThatThrownBy(() -> agent.process(null, 1))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("context");
+            assertThatThrownBy(() -> agent.process(null, 1)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("context [GH-90000]");
         }
 
         @Test
-        @DisplayName("process rejects null input")
-        void shouldRejectNullInput() {
-            DoublerAgent agent = new DoublerAgent();
-            AgentConfig config = AgentConfig.builder()
-                    .agentId("doubler").type(AgentType.DETERMINISTIC).build();
-            runOnEventloop(() -> agent.initialize(config));
+        @DisplayName("process rejects null input [GH-90000]")
+        void shouldRejectNullInput() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
+            AgentConfig config = AgentConfig.builder() // GH-90000
+                    .agentId("doubler [GH-90000]").type(AgentType.DETERMINISTIC).build();
+            runOnEventloop(() -> agent.initialize(config)); // GH-90000
 
             // NPE thrown synchronously before Promise is created
-            assertThatThrownBy(() -> agent.process(ctx, null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("input");
+            assertThatThrownBy(() -> agent.process(ctx, null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("input [GH-90000]");
         }
 
         @Test
-        @DisplayName("initialize rejects null config")
-        void shouldRejectNullConfig() {
-            DoublerAgent agent = new DoublerAgent();
+        @DisplayName("initialize rejects null config [GH-90000]")
+        void shouldRejectNullConfig() { // GH-90000
+            DoublerAgent agent = new DoublerAgent(); // GH-90000
             // NPE thrown synchronously before Promise is created
-            assertThatThrownBy(() -> agent.initialize(null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("config");
+            assertThatThrownBy(() -> agent.initialize(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("config [GH-90000]");
         }
     }
 

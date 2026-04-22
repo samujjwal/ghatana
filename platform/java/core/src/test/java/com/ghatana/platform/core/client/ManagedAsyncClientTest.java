@@ -7,51 +7,51 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ManagedAsyncClient")
+@DisplayName("ManagedAsyncClient [GH-90000]")
 class ManagedAsyncClientTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("tracks running state transitions")
-    void tracksRunningStateTransitions() {
-        TestManagedAsyncClient client = new TestManagedAsyncClient();
+    @DisplayName("tracks running state transitions [GH-90000]")
+    void tracksRunningStateTransitions() { // GH-90000
+        TestManagedAsyncClient client = new TestManagedAsyncClient(); // GH-90000
 
-        assertThat(client.isRunning()).isFalse();
-        assertThat(runPromise(client::start)).isNull();
-        assertThat(client.isRunning()).isTrue();
-        assertThat(runPromise(client::stop)).isNull();
-        assertThat(client.isRunning()).isFalse();
+        assertThat(client.isRunning()).isFalse(); // GH-90000
+        assertThat(runPromise(client::start)).isNull(); // GH-90000
+        assertThat(client.isRunning()).isTrue(); // GH-90000
+        assertThat(runPromise(client::stop)).isNull(); // GH-90000
+        assertThat(client.isRunning()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("markStarted and markStopped are idempotent")
-    void lifecycleMarkersAreIdempotent() {
-        TestManagedAsyncClient client = new TestManagedAsyncClient();
+    @DisplayName("markStarted and markStopped are idempotent [GH-90000]")
+    void lifecycleMarkersAreIdempotent() { // GH-90000
+        TestManagedAsyncClient client = new TestManagedAsyncClient(); // GH-90000
 
-        assertThat(client.markStartedForTest()).isTrue();
-        assertThat(client.markStartedForTest()).isFalse();
-        assertThat(client.markStoppedForTest()).isTrue();
-        assertThat(client.markStoppedForTest()).isFalse();
+        assertThat(client.markStartedForTest()).isTrue(); // GH-90000
+        assertThat(client.markStartedForTest()).isFalse(); // GH-90000
+        assertThat(client.markStoppedForTest()).isTrue(); // GH-90000
+        assertThat(client.markStoppedForTest()).isFalse(); // GH-90000
     }
 
     private static final class TestManagedAsyncClient extends ManagedAsyncClient {
         @Override
-        public Promise<Void> start() {
-            markStarted();
-            return Promise.complete();
+        public Promise<Void> start() { // GH-90000
+            markStarted(); // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
         @Override
-        public Promise<Void> stop() {
-            markStopped();
-            return Promise.complete();
+        public Promise<Void> stop() { // GH-90000
+            markStopped(); // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
-        boolean markStartedForTest() {
-            return markStarted();
+        boolean markStartedForTest() { // GH-90000
+            return markStarted(); // GH-90000
         }
 
-        boolean markStoppedForTest() {
-            return markStopped();
+        boolean markStoppedForTest() { // GH-90000
+            return markStopped(); // GH-90000
         }
     }
 }

@@ -26,6 +26,7 @@ import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.platform.resilience.RetryPolicy;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -80,6 +81,7 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
     private final CircuitBreaker circuitBreaker;
     private final RetryPolicy retryPolicy;
     private final AgentBulkhead bulkhead;
+    private final Duration timeout;
 
     private ResilientTypedAgent(Builder<I, O> builder) {
         this.delegate = Objects.requireNonNull(builder.delegate, "delegate");
@@ -87,6 +89,7 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
         this.circuitBreaker = builder.circuitBreaker;
         this.retryPolicy = builder.retryPolicy;
         this.bulkhead = builder.bulkhead;
+        this.timeout = builder.timeout;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -211,15 +214,23 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
         if (circuitBreaker != null && retryPolicy != null) {
             return circuitBreaker.execute(eventloop,
                     () -> retryPolicy.execute(eventloop,
-                            () -> delegate.process(ctx, input)));
+                            () -> executeDelegate(ctx, input)));
         }
         if (circuitBreaker != null) {
-            return circuitBreaker.execute(eventloop, () -> delegate.process(ctx, input));
+            return circuitBreaker.execute(eventloop, () -> executeDelegate(ctx, input));
         }
         if (retryPolicy != null) {
-            return retryPolicy.execute(eventloop, () -> delegate.process(ctx, input));
+            return retryPolicy.execute(eventloop, () -> executeDelegate(ctx, input));
         }
-        return delegate.process(ctx, input);
+        return executeDelegate(ctx, input);
+    }
+
+    private Promise<AgentResult<O>> executeDelegate(AgentContext ctx, I input) {
+        Promise<AgentResult<O>> promise = delegate.process(ctx, input);
+        if (timeout == null || timeout.isZero() || timeout.isNegative()) {
+            return promise;
+        }
+        return Promises.timeout(timeout, promise);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -236,6 +247,7 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
         private CircuitBreaker circuitBreaker;
         private RetryPolicy retryPolicy;
         private AgentBulkhead bulkhead;
+        private Duration timeout;
 
         private Builder() {}
 
@@ -261,6 +273,11 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
 
         public Builder<I, O> bulkhead(@Nullable AgentBulkhead bulkhead) {
             this.bulkhead = bulkhead;
+            return this;
+        }
+
+        public Builder<I, O> timeout(@Nullable Duration timeout) {
+            this.timeout = timeout;
             return this;
         }
 

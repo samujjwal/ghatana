@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("DataCloudHttpServer JWT authentication")
+@DisplayName("DataCloudHttpServer JWT authentication [GH-90000]")
 class DataCloudHttpServerJwtAuthTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
@@ -31,87 +31,87 @@ class DataCloudHttpServerJwtAuthTest {
     private int port;
 
     @BeforeEach
-    void setUp() throws Exception {
-        httpClient = HttpClient.newHttpClient();
-        port = findFreePort();
+    void setUp() throws Exception { // GH-90000
+        httpClient = HttpClient.newHttpClient(); // GH-90000
+        port = findFreePort(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) {
-            server.stop();
+    void tearDown() { // GH-90000
+        if (server != null) { // GH-90000
+            server.stop(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("protected routes accept valid JWT bearer tokens")
-    void protectedRoutesAcceptValidJwtBearerTokens() throws Exception {
-        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
-        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
+    @DisplayName("protected routes accept valid JWT bearer tokens [GH-90000]")
+    void protectedRoutesAcceptValidJwtBearerTokens() throws Exception { // GH-90000
+        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
+        String token = provider.createToken("ui-user", List.of("viewer [GH-90000]"), Map.of("tenant_id", "tenant-a"));
 
-        server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
-                .withJwtProvider(provider);
-        server.start();
+        server = new DataCloudHttpServer(mock(DataCloudClient.class), port) // GH-90000
+                .withJwtProvider(provider); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/brain/health", token);
+        HttpResponse<String> response = get("/api/v1/brain/health", token); // GH-90000
 
-        assertThat(response.statusCode()).isEqualTo(503);
+        assertThat(response.statusCode()).isEqualTo(503); // GH-90000
     }
 
     @Test
-    @DisplayName("health endpoints stay public when JWT auth is enabled")
-    void healthEndpointsStayPublicWhenJwtAuthEnabled() throws Exception {
-        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
+    @DisplayName("health endpoints stay public when JWT auth is enabled [GH-90000]")
+    void healthEndpointsStayPublicWhenJwtAuthEnabled() throws Exception { // GH-90000
+        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
 
-        server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
-                .withJwtProvider(provider);
-        server.start();
+        server = new DataCloudHttpServer(mock(DataCloudClient.class), port) // GH-90000
+                .withJwtProvider(provider); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/health", null);
+        HttpResponse<String> response = get("/health", null); // GH-90000
 
-        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("invalid JWT bearer tokens return 401 on protected routes")
-    void invalidJwtBearerTokensReturn401() throws Exception {
-        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
+    @DisplayName("invalid JWT bearer tokens return 401 on protected routes [GH-90000]")
+    void invalidJwtBearerTokensReturn401() throws Exception { // GH-90000
+        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
 
-        server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
-                .withJwtProvider(provider);
-        server.start();
+        server = new DataCloudHttpServer(mock(DataCloudClient.class), port) // GH-90000
+                .withJwtProvider(provider); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/brain/health", "bad-token");
+        HttpResponse<String> response = get("/api/v1/brain/health", "bad-token"); // GH-90000
 
-        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.statusCode()).isEqualTo(401); // GH-90000
     }
 
-    private HttpResponse<String> get(String path, String token) throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + path))
-                .GET();
-        if (token != null) {
-            builder.header("Authorization", "Bearer " + token);
+    private HttpResponse<String> get(String path, String token) throws Exception { // GH-90000
+        HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
+                .uri(URI.create("http://localhost:" + port + path)) // GH-90000
+                .GET(); // GH-90000
+        if (token != null) { // GH-90000
+            builder.header("Authorization", "Bearer " + token); // GH-90000
         }
 
-        HttpRequest request = builder.build();
+        HttpRequest request = builder.build(); // GH-90000
         int attempts = 0;
-        while (true) {
+        while (true) { // GH-90000
             try {
-                return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            } catch (ConnectException connectException) {
+                return httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // GH-90000
+            } catch (ConnectException connectException) { // GH-90000
                 attempts++;
-                if (attempts >= 10) {
+                if (attempts >= 10) { // GH-90000
                     throw connectException;
                 }
-                Thread.sleep(50L);
+                Thread.sleep(50L); // GH-90000
             }
         }
     }
 
-    private int findFreePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
+    private int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
+            return socket.getLocalPort(); // GH-90000
         }
     }
 }

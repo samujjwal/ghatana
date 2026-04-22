@@ -14,56 +14,56 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Agent Base Types (AgentInput / AgentOutput)")
+@DisplayName("Agent Base Types (AgentInput / AgentOutput) [GH-90000]")
 class AgentBaseTypesTest {
 
     // ─── AgentOutput ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AgentOutput.ExecutionStatus")
+    @DisplayName("AgentOutput.ExecutionStatus [GH-90000]")
     class ExecutionStatusTest {
 
         @Test
-        @DisplayName("defines four canonical status values")
-        void shouldDefineFourStatuses() {
-            var statuses = AgentOutput.ExecutionStatus.values();
-            assertThat(statuses).hasSize(4);
+        @DisplayName("defines four canonical status values [GH-90000]")
+        void shouldDefineFourStatuses() { // GH-90000
+            var statuses = AgentOutput.ExecutionStatus.values(); // GH-90000
+            assertThat(statuses).hasSize(4); // GH-90000
         }
 
         @Test
-        @DisplayName("SUCCESS is a valid status")
-        void successIsValid() {
-            assertThat(AgentOutput.ExecutionStatus.SUCCESS)
-                    .isNotNull();
+        @DisplayName("SUCCESS is a valid status [GH-90000]")
+        void successIsValid() { // GH-90000
+            assertThat(AgentOutput.ExecutionStatus.SUCCESS) // GH-90000
+                    .isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("FAILURE is a valid status")
-        void failureIsValid() {
-            assertThat(AgentOutput.ExecutionStatus.FAILURE)
-                    .isNotNull();
+        @DisplayName("FAILURE is a valid status [GH-90000]")
+        void failureIsValid() { // GH-90000
+            assertThat(AgentOutput.ExecutionStatus.FAILURE) // GH-90000
+                    .isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("PARTIAL_SUCCESS is a valid status")
-        void partialSuccessIsValid() {
-            assertThat(AgentOutput.ExecutionStatus.PARTIAL_SUCCESS)
-                    .isNotNull();
+        @DisplayName("PARTIAL_SUCCESS is a valid status [GH-90000]")
+        void partialSuccessIsValid() { // GH-90000
+            assertThat(AgentOutput.ExecutionStatus.PARTIAL_SUCCESS) // GH-90000
+                    .isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("PENDING is a valid status")
-        void pendingIsValid() {
-            assertThat(AgentOutput.ExecutionStatus.PENDING)
-                    .isNotNull();
+        @DisplayName("PENDING is a valid status [GH-90000]")
+        void pendingIsValid() { // GH-90000
+            assertThat(AgentOutput.ExecutionStatus.PENDING) // GH-90000
+                    .isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("can round-trip through valueOf")
-        void shouldRoundTripViaValueOf() {
-            for (var status : AgentOutput.ExecutionStatus.values()) {
-                assertThat(AgentOutput.ExecutionStatus.valueOf(status.name()))
-                        .isSameAs(status);
+        @DisplayName("can round-trip through valueOf [GH-90000]")
+        void shouldRoundTripViaValueOf() { // GH-90000
+            for (var status : AgentOutput.ExecutionStatus.values()) { // GH-90000
+                assertThat(AgentOutput.ExecutionStatus.valueOf(status.name())) // GH-90000
+                        .isSameAs(status); // GH-90000
             }
         }
     }
@@ -87,98 +87,98 @@ class AgentBaseTypesTest {
     }
 
     @Nested
-    @DisplayName("AgentInput builder and fields")
+    @DisplayName("AgentInput builder and fields [GH-90000]")
     class AgentInputTest {
 
         @Test
-        @DisplayName("builds with all common fields set")
-        void shouldBuildWithCommonFields() {
-            long now = System.currentTimeMillis();
-            var input = ConcreteInput.builder()
-                    .requestId("req-abc")
-                    .initiator("user-1")
-                    .timestamp(now)
-                    .context("some-context")
-                    .payload("hello")
-                    .build();
+        @DisplayName("builds with all common fields set [GH-90000]")
+        void shouldBuildWithCommonFields() { // GH-90000
+            long now = System.currentTimeMillis(); // GH-90000
+            var input = ConcreteInput.builder() // GH-90000
+                    .requestId("req-abc [GH-90000]")
+                    .initiator("user-1 [GH-90000]")
+                    .timestamp(now) // GH-90000
+                    .context("some-context [GH-90000]")
+                    .payload("hello [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(input.getRequestId()).isEqualTo("req-abc");
-            assertThat(input.getInitiator()).isEqualTo("user-1");
-            assertThat(input.getTimestamp()).isEqualTo(now);
-            assertThat(input.getContext()).isEqualTo("some-context");
-            assertThat(input.getPayload()).isEqualTo("hello");
+            assertThat(input.getRequestId()).isEqualTo("req-abc [GH-90000]");
+            assertThat(input.getInitiator()).isEqualTo("user-1 [GH-90000]");
+            assertThat(input.getTimestamp()).isEqualTo(now); // GH-90000
+            assertThat(input.getContext()).isEqualTo("some-context [GH-90000]");
+            assertThat(input.getPayload()).isEqualTo("hello [GH-90000]");
         }
 
         @Test
-        @DisplayName("allows null optional fields")
-        void shouldAllowNullOptionalFields() {
-            var input = ConcreteInput.builder()
-                    .requestId("req-xyz")
-                    .build();
+        @DisplayName("allows null optional fields [GH-90000]")
+        void shouldAllowNullOptionalFields() { // GH-90000
+            var input = ConcreteInput.builder() // GH-90000
+                    .requestId("req-xyz [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(input.getRequestId()).isEqualTo("req-xyz");
-            assertThat(input.getContext()).isNull();
-            assertThat(input.getInitiator()).isNull();
-            assertThat(input.getTimestamp()).isNull();
+            assertThat(input.getRequestId()).isEqualTo("req-xyz [GH-90000]");
+            assertThat(input.getContext()).isNull(); // GH-90000
+            assertThat(input.getInitiator()).isNull(); // GH-90000
+            assertThat(input.getTimestamp()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Lombok @Data generates equals/hashCode/toString")
-        void shouldSupportEquality() {
-            var a = ConcreteInput.builder().requestId("same").payload("p").build();
-            var b = ConcreteInput.builder().requestId("same").payload("p").build();
-            assertThat(a).isEqualTo(b);
-            assertThat(a.hashCode()).isEqualTo(b.hashCode());
+        @DisplayName("Lombok @Data generates equals/hashCode/toString [GH-90000]")
+        void shouldSupportEquality() { // GH-90000
+            var a = ConcreteInput.builder().requestId("same [GH-90000]").payload("p [GH-90000]").build();
+            var b = ConcreteInput.builder().requestId("same [GH-90000]").payload("p [GH-90000]").build();
+            assertThat(a).isEqualTo(b); // GH-90000
+            assertThat(a.hashCode()).isEqualTo(b.hashCode()); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("AgentOutput builder and fields")
+    @DisplayName("AgentOutput builder and fields [GH-90000]")
     class AgentOutputTest {
 
         @Test
-        @DisplayName("builds with all common fields set")
-        void shouldBuildWithCommonFields() {
-            long now = System.currentTimeMillis();
-            var output = ConcreteOutput.builder()
-                    .responseId("resp-001")
-                    .status(AgentOutput.ExecutionStatus.SUCCESS)
-                    .timestamp(now)
-                    .result("done")
-                    .build();
+        @DisplayName("builds with all common fields set [GH-90000]")
+        void shouldBuildWithCommonFields() { // GH-90000
+            long now = System.currentTimeMillis(); // GH-90000
+            var output = ConcreteOutput.builder() // GH-90000
+                    .responseId("resp-001 [GH-90000]")
+                    .status(AgentOutput.ExecutionStatus.SUCCESS) // GH-90000
+                    .timestamp(now) // GH-90000
+                    .result("done [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(output.getResponseId()).isEqualTo("resp-001");
-            assertThat(output.getStatus()).isEqualTo(AgentOutput.ExecutionStatus.SUCCESS);
-            assertThat(output.getTimestamp()).isEqualTo(now);
-            assertThat(output.getResult()).isEqualTo("done"); // y04-ok: domain getter, not ActiveJ Promise
+            assertThat(output.getResponseId()).isEqualTo("resp-001 [GH-90000]");
+            assertThat(output.getStatus()).isEqualTo(AgentOutput.ExecutionStatus.SUCCESS); // GH-90000
+            assertThat(output.getTimestamp()).isEqualTo(now); // GH-90000
+            assertThat(output.getResult()).isEqualTo("done [GH-90000]"); // y04-ok: domain getter, not ActiveJ Promise
         }
 
         @Test
-        @DisplayName("builds with errorMessage when status is FAILURE")
-        void shouldCaptureErrorMessage() {
-            var output = ConcreteOutput.builder()
-                    .responseId("resp-002")
-                    .status(AgentOutput.ExecutionStatus.FAILURE)
-                    .errorMessage("Something went wrong")
-                    .result(null)
-                    .build();
+        @DisplayName("builds with errorMessage when status is FAILURE [GH-90000]")
+        void shouldCaptureErrorMessage() { // GH-90000
+            var output = ConcreteOutput.builder() // GH-90000
+                    .responseId("resp-002 [GH-90000]")
+                    .status(AgentOutput.ExecutionStatus.FAILURE) // GH-90000
+                    .errorMessage("Something went wrong [GH-90000]")
+                    .result(null) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(output.getStatus()).isEqualTo(AgentOutput.ExecutionStatus.FAILURE);
-            assertThat(output.getErrorMessage()).isEqualTo("Something went wrong");
+            assertThat(output.getStatus()).isEqualTo(AgentOutput.ExecutionStatus.FAILURE); // GH-90000
+            assertThat(output.getErrorMessage()).isEqualTo("Something went wrong [GH-90000]");
         }
 
         @Test
-        @DisplayName("Lombok @Data generates equals/hashCode")
-        void shouldSupportEquality() {
-            var a = ConcreteOutput.builder()
-                    .responseId("resp-003")
-                    .status(AgentOutput.ExecutionStatus.PENDING)
-                    .build();
-            var b = ConcreteOutput.builder()
-                    .responseId("resp-003")
-                    .status(AgentOutput.ExecutionStatus.PENDING)
-                    .build();
-            assertThat(a).isEqualTo(b);
+        @DisplayName("Lombok @Data generates equals/hashCode [GH-90000]")
+        void shouldSupportEquality() { // GH-90000
+            var a = ConcreteOutput.builder() // GH-90000
+                    .responseId("resp-003 [GH-90000]")
+                    .status(AgentOutput.ExecutionStatus.PENDING) // GH-90000
+                    .build(); // GH-90000
+            var b = ConcreteOutput.builder() // GH-90000
+                    .responseId("resp-003 [GH-90000]")
+                    .status(AgentOutput.ExecutionStatus.PENDING) // GH-90000
+                    .build(); // GH-90000
+            assertThat(a).isEqualTo(b); // GH-90000
         }
     }
 }

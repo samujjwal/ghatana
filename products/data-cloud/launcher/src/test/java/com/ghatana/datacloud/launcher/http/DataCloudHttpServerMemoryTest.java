@@ -28,52 +28,52 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration tests for Data-Cloud HTTP agent-memory endpoints (DC-4).
+ * Integration tests for Data-Cloud HTTP agent-memory endpoints (DC-4). // GH-90000
  *
  * <p>Starts a real {@link DataCloudHttpServer} on a random port and makes
  * HTTP calls via the Java standard HttpClient.  The {@link DataCloudClient}
  * is mocked so tests do not touch real storage.
  *
  * @doc.type class
- * @doc.purpose Integration tests for /api/v1/memory/** HTTP endpoints (DC-4)
+ * @doc.purpose Integration tests for /api/v1/memory/** HTTP endpoints (DC-4) // GH-90000
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Memory Plane Endpoints (DC-4)")
+@DisplayName("DataCloudHttpServer – Memory Plane Endpoints (DC-4) [GH-90000]")
 class DataCloudHttpServerMemoryTest {
 
     private DataCloudClient mockClient;
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     @BeforeEach
-    void setUp() throws Exception {
-        mockClient = mock(DataCloudClient.class);
-        port = findFreePort();
-        httpClient = HttpClient.newBuilder().build();
+    void setUp() throws Exception { // GH-90000
+        mockClient = mock(DataCloudClient.class); // GH-90000
+        port = findFreePort(); // GH-90000
+        httpClient = HttpClient.newBuilder().build(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) server.stop();
+    void tearDown() { // GH-90000
+        if (server != null) server.stop(); // GH-90000
     }
 
     // ==================== GET /api/v1/memory/:agentId ====================
 
     @Test
-    @DisplayName("storeMemory: persists AGENT_MEMORY item with ttl-derived expiresAt")
-    void storeMemory_persistsAgentMemoryItem() throws Exception {
-        when(mockClient.save(anyString(), eq("dc_memory"), any(Map.class)))
-            .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
+    @DisplayName("storeMemory: persists AGENT_MEMORY item with ttl-derived expiresAt [GH-90000]")
+    void storeMemory_persistsAgentMemoryItem() throws Exception { // GH-90000
+        when(mockClient.save(anyString(), eq("dc_memory [GH-90000]"), any(Map.class)))
+            .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of( // GH-90000
                 "mem-100",
                 "dc_memory",
-                invocation.getArgument(2, Map.class))));
+                invocation.getArgument(2, Map.class)))); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = post(
+        HttpResponse<String> resp = post( // GH-90000
             "/api/v1/memory/bot-writer",
             """
             {
@@ -86,33 +86,33 @@ class DataCloudHttpServerMemoryTest {
             }
             """);
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("agentId")).isEqualTo("bot-writer");
-        assertThat(body.get("type")).isEqualTo("EPISODIC");
-        assertThat(body.get("content")).isEqualTo("User asked for a short summary");
-        assertThat(body.get("expiresAt")).isNotNull();
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body.get("agentId [GH-90000]")).isEqualTo("bot-writer [GH-90000]");
+        assertThat(body.get("type [GH-90000]")).isEqualTo("EPISODIC [GH-90000]");
+        assertThat(body.get("content [GH-90000]")).isEqualTo("User asked for a short summary [GH-90000]");
+        assertThat(body.get("expiresAt [GH-90000]")).isNotNull();
     }
 
     @Test
-    @DisplayName("getAgentMemory: returns context-window items ordered by salience then recency")
-    void getAgentMemory_returnsContextWindowItemsOrdered() throws Exception {
-        List<DataCloudClient.Entity> items = List.of(
-            DataCloudClient.Entity.of("m-low", "dc_memory", Map.of(
+    @DisplayName("getAgentMemory: returns context-window items ordered by salience then recency [GH-90000]")
+    void getAgentMemory_returnsContextWindowItemsOrdered() throws Exception { // GH-90000
+        List<DataCloudClient.Entity> items = List.of( // GH-90000
+            DataCloudClient.Entity.of("m-low", "dc_memory", Map.of( // GH-90000
                 "recordType", "AGENT_MEMORY",
                 "agentId", "bot-order",
                 "type", "EPISODIC",
                 "content", "low salience",
                 "salience", 0.1,
                 "createdAt", "2026-04-14T10:00:00Z")),
-            DataCloudClient.Entity.of("m-high-old", "dc_memory", Map.of(
+            DataCloudClient.Entity.of("m-high-old", "dc_memory", Map.of( // GH-90000
                 "recordType", "AGENT_MEMORY",
                 "agentId", "bot-order",
                 "type", "EPISODIC",
                 "content", "high but older",
                 "salience", 0.9,
                 "createdAt", "2026-04-14T11:00:00Z")),
-            DataCloudClient.Entity.of("m-high-new", "dc_memory", Map.of(
+            DataCloudClient.Entity.of("m-high-new", "dc_memory", Map.of( // GH-90000
                 "recordType", "AGENT_MEMORY",
                 "agentId", "bot-order",
                 "type", "SEMANTIC",
@@ -120,61 +120,61 @@ class DataCloudHttpServerMemoryTest {
                 "salience", 0.9,
                 "createdAt", "2026-04-14T12:00:00Z"))
         );
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(items));
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items)); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-order?limit=2");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-order?limit=2 [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        List<?> returnedItems = (List<?>) body.get("items");
-        assertThat(returnedItems).hasSize(2);
-        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id")).isEqualTo("m-high-new");
-        assertThat(((Map<?, ?>) returnedItems.get(1)).get("id")).isEqualTo("m-high-old");
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        List<?> returnedItems = (List<?>) body.get("items [GH-90000]");
+        assertThat(returnedItems).hasSize(2); // GH-90000
+        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id [GH-90000]")).isEqualTo("m-high-new [GH-90000]");
+        assertThat(((Map<?, ?>) returnedItems.get(1)).get("id [GH-90000]")).isEqualTo("m-high-old [GH-90000]");
     }
 
     @Test
-    @DisplayName("getAgentMemory: expired items are deleted and excluded from response")
-    void getAgentMemory_cleansUpExpiredItems() throws Exception {
-        List<DataCloudClient.Entity> items = List.of(
-            DataCloudClient.Entity.of("m-expired", "dc_memory", Map.of(
+    @DisplayName("getAgentMemory: expired items are deleted and excluded from response [GH-90000]")
+    void getAgentMemory_cleansUpExpiredItems() throws Exception { // GH-90000
+        List<DataCloudClient.Entity> items = List.of( // GH-90000
+            DataCloudClient.Entity.of("m-expired", "dc_memory", Map.of( // GH-90000
                 "recordType", "AGENT_MEMORY",
                 "agentId", "bot-exp",
                 "type", "EPISODIC",
                 "content", "expired",
-                "expiresAt", Instant.now().minusSeconds(60).toString())),
-            DataCloudClient.Entity.of("m-active", "dc_memory", Map.of(
+                "expiresAt", Instant.now().minusSeconds(60).toString())), // GH-90000
+            DataCloudClient.Entity.of("m-active", "dc_memory", Map.of( // GH-90000
                 "recordType", "AGENT_MEMORY",
                 "agentId", "bot-exp",
                 "type", "EPISODIC",
                 "content", "active",
-                "expiresAt", Instant.now().plusSeconds(60).toString()))
+                "expiresAt", Instant.now().plusSeconds(60).toString())) // GH-90000
         );
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(items));
-        when(mockClient.delete(anyString(), eq("dc_memory"), eq("m-expired")))
-            .thenReturn(Promise.complete());
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items)); // GH-90000
+        when(mockClient.delete(anyString(), eq("dc_memory [GH-90000]"), eq("m-expired [GH-90000]")))
+            .thenReturn(Promise.complete()); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-exp");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-exp [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(((Number) body.get("total")).intValue()).isEqualTo(1);
-        List<?> returnedItems = (List<?>) body.get("items");
-        assertThat(returnedItems).hasSize(1);
-        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id")).isEqualTo("m-active");
-        verify(mockClient).delete(anyString(), eq("dc_memory"), eq("m-expired"));
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(((Number) body.get("total [GH-90000]")).intValue()).isEqualTo(1);
+        List<?> returnedItems = (List<?>) body.get("items [GH-90000]");
+        assertThat(returnedItems).hasSize(1); // GH-90000
+        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id [GH-90000]")).isEqualTo("m-active [GH-90000]");
+        verify(mockClient).delete(anyString(), eq("dc_memory [GH-90000]"), eq("m-expired [GH-90000]"));
     }
 
     @Test
-    @DisplayName("listMemory root: returns filtered items for UI consumption")
-    void listMemoryRoot_returnsItemsWrapper() throws Exception {
-        List<DataCloudClient.Entity> items = List.of(
-            DataCloudClient.Entity.of("m-root-1", "dc_memory", Map.of(
+    @DisplayName("listMemory root: returns filtered items for UI consumption [GH-90000]")
+    void listMemoryRoot_returnsItemsWrapper() throws Exception { // GH-90000
+        List<DataCloudClient.Entity> items = List.of( // GH-90000
+            DataCloudClient.Entity.of("m-root-1", "dc_memory", Map.of( // GH-90000
                 "recordType", "AGENT_MEMORY",
                 "agentId", "bot-root",
                 "type", "SEMANTIC",
@@ -182,263 +182,263 @@ class DataCloudHttpServerMemoryTest {
                 "salience", 0.7,
                 "createdAt", "2026-04-14T12:00:00Z"))
         );
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(items));
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items)); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory?agentId=bot-root&type=semantic&limit=10");
+        HttpResponse<String> resp = get("/api/v1/memory?agentId=bot-root&type=semantic&limit=10 [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(((Number) body.get("total")).intValue()).isEqualTo(1);
-        List<?> returnedItems = (List<?>) body.get("items");
-        assertThat(returnedItems).hasSize(1);
-        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id")).isEqualTo("m-root-1");
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(((Number) body.get("total [GH-90000]")).intValue()).isEqualTo(1);
+        List<?> returnedItems = (List<?>) body.get("items [GH-90000]");
+        assertThat(returnedItems).hasSize(1); // GH-90000
+        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id [GH-90000]")).isEqualTo("m-root-1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("getAgentMemory: mixed-type items → 200 with correct byType counts")
-    void getAgentMemory_withMixedTypes_returnsByTypeCounts() throws Exception {
-        List<DataCloudClient.Entity> items = List.of(
-            DataCloudClient.Entity.of("m1", "dc_memory",
-                Map.of("agentId", "bot-1", "type", "EPISODIC")),
-            DataCloudClient.Entity.of("m2", "dc_memory",
-                Map.of("agentId", "bot-1", "type", "EPISODIC")),
-            DataCloudClient.Entity.of("m3", "dc_memory",
-                Map.of("agentId", "bot-1", "type", "EPISODIC")),
-            DataCloudClient.Entity.of("m4", "dc_memory",
-                Map.of("agentId", "bot-1", "type", "SEMANTIC")),
-            DataCloudClient.Entity.of("m5", "dc_memory",
-                Map.of("agentId", "bot-1", "type", "PROCEDURAL")),
-            DataCloudClient.Entity.of("m6", "dc_memory",
-                Map.of("agentId", "bot-1", "type", "PREFERENCE")),
-            DataCloudClient.Entity.of("m7", "dc_memory",
-                Map.of("agentId", "bot-1", "type", "CUSTOM"))   // → other
+    @DisplayName("getAgentMemory: mixed-type items → 200 with correct byType counts [GH-90000]")
+    void getAgentMemory_withMixedTypes_returnsByTypeCounts() throws Exception { // GH-90000
+        List<DataCloudClient.Entity> items = List.of( // GH-90000
+            DataCloudClient.Entity.of("m1", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-1", "type", "EPISODIC")), // GH-90000
+            DataCloudClient.Entity.of("m2", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-1", "type", "EPISODIC")), // GH-90000
+            DataCloudClient.Entity.of("m3", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-1", "type", "EPISODIC")), // GH-90000
+            DataCloudClient.Entity.of("m4", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-1", "type", "SEMANTIC")), // GH-90000
+            DataCloudClient.Entity.of("m5", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-1", "type", "PROCEDURAL")), // GH-90000
+            DataCloudClient.Entity.of("m6", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-1", "type", "PREFERENCE")), // GH-90000
+            DataCloudClient.Entity.of("m7", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-1", "type", "CUSTOM"))   // → other // GH-90000
         );
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(items));
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items)); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-1");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-1 [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("agentId")).isEqualTo("bot-1");
-        assertThat(((Number) body.get("total")).intValue()).isEqualTo(7);
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body.get("agentId [GH-90000]")).isEqualTo("bot-1 [GH-90000]");
+        assertThat(((Number) body.get("total [GH-90000]")).intValue()).isEqualTo(7);
 
-        Map<?, ?> byType = (Map<?, ?>) body.get("byType");
-        assertThat(((Number) byType.get("episodic")).intValue()).isEqualTo(3);
-        assertThat(((Number) byType.get("semantic")).intValue()).isEqualTo(1);
-        assertThat(((Number) byType.get("procedural")).intValue()).isEqualTo(1);
-        assertThat(((Number) byType.get("preference")).intValue()).isEqualTo(1);
-        assertThat(((Number) byType.get("other")).intValue()).isEqualTo(1);
+        Map<?, ?> byType = (Map<?, ?>) body.get("byType [GH-90000]");
+        assertThat(((Number) byType.get("episodic [GH-90000]")).intValue()).isEqualTo(3);
+        assertThat(((Number) byType.get("semantic [GH-90000]")).intValue()).isEqualTo(1);
+        assertThat(((Number) byType.get("procedural [GH-90000]")).intValue()).isEqualTo(1);
+        assertThat(((Number) byType.get("preference [GH-90000]")).intValue()).isEqualTo(1);
+        assertThat(((Number) byType.get("other [GH-90000]")).intValue()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("getAgentMemory: no items for agent → 200 with all-zero counts")
-    void getAgentMemory_whenEmpty_returnsAllZeros() throws Exception {
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+    @DisplayName("getAgentMemory: no items for agent → 200 with all-zero counts [GH-90000]")
+    void getAgentMemory_whenEmpty_returnsAllZeros() throws Exception { // GH-90000
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(List.of())); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-empty");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-empty [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("agentId")).isEqualTo("bot-empty");
-        assertThat(((Number) body.get("total")).intValue()).isEqualTo(0);
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body.get("agentId [GH-90000]")).isEqualTo("bot-empty [GH-90000]");
+        assertThat(((Number) body.get("total [GH-90000]")).intValue()).isEqualTo(0);
 
-        Map<?, ?> byType = (Map<?, ?>) body.get("byType");
-        assertThat(((Number) byType.get("episodic")).intValue()).isEqualTo(0);
-        assertThat(((Number) byType.get("semantic")).intValue()).isEqualTo(0);
-        assertThat(((Number) byType.get("procedural")).intValue()).isEqualTo(0);
-        assertThat(((Number) byType.get("preference")).intValue()).isEqualTo(0);
-        assertThat(((Number) byType.get("other")).intValue()).isEqualTo(0);
+        Map<?, ?> byType = (Map<?, ?>) body.get("byType [GH-90000]");
+        assertThat(((Number) byType.get("episodic [GH-90000]")).intValue()).isEqualTo(0);
+        assertThat(((Number) byType.get("semantic [GH-90000]")).intValue()).isEqualTo(0);
+        assertThat(((Number) byType.get("procedural [GH-90000]")).intValue()).isEqualTo(0);
+        assertThat(((Number) byType.get("preference [GH-90000]")).intValue()).isEqualTo(0);
+        assertThat(((Number) byType.get("other [GH-90000]")).intValue()).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("getAgentMemory: response contains required metadata fields")
-    void getAgentMemory_always_includesMetadataFields() throws Exception {
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+    @DisplayName("getAgentMemory: response contains required metadata fields [GH-90000]")
+    void getAgentMemory_always_includesMetadataFields() throws Exception { // GH-90000
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(List.of())); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-meta");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-meta [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("agentId")).isNotNull();
-        assertThat(body.get("tenantId")).isNotNull();
-        assertThat(body.get("total")).isNotNull();
-        assertThat(body.get("byType")).isNotNull();
-        assertThat(body.get("timestamp")).isNotNull();
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body.get("agentId [GH-90000]")).isNotNull();
+        assertThat(body.get("tenantId [GH-90000]")).isNotNull();
+        assertThat(body.get("total [GH-90000]")).isNotNull();
+        assertThat(body.get("byType [GH-90000]")).isNotNull();
+        assertThat(body.get("timestamp [GH-90000]")).isNotNull();
     }
 
     // ==================== GET /api/v1/memory/:agentId/:tier ====================
 
     @Test
-    @DisplayName("getAgentMemoryByTier(episodic): returns only EPISODIC items")
-    void getAgentMemoryByTier_episodic_returnsFilteredItems() throws Exception {
-        List<DataCloudClient.Entity> episodicItems = List.of(
-            DataCloudClient.Entity.of("ep1", "dc_memory",
-                Map.of("agentId", "bot-2", "type", "EPISODIC", "content", "I helped user X")),
-            DataCloudClient.Entity.of("ep2", "dc_memory",
-                Map.of("agentId", "bot-2", "type", "EPISODIC", "content", "I helped user Y"))
+    @DisplayName("getAgentMemoryByTier(episodic): returns only EPISODIC items [GH-90000]")
+    void getAgentMemoryByTier_episodic_returnsFilteredItems() throws Exception { // GH-90000
+        List<DataCloudClient.Entity> episodicItems = List.of( // GH-90000
+            DataCloudClient.Entity.of("ep1", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-2", "type", "EPISODIC", "content", "I helped user X")), // GH-90000
+            DataCloudClient.Entity.of("ep2", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-2", "type", "EPISODIC", "content", "I helped user Y")) // GH-90000
         );
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(episodicItems));
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(episodicItems)); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-2/episodic");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-2/episodic [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("agentId")).isEqualTo("bot-2");
-        assertThat(body.get("tier")).isEqualTo("episodic");
-        assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body.get("agentId [GH-90000]")).isEqualTo("bot-2 [GH-90000]");
+        assertThat(body.get("tier [GH-90000]")).isEqualTo("episodic [GH-90000]");
+        assertThat(((Number) body.get("count [GH-90000]")).intValue()).isEqualTo(2);
 
-        List<?> items = (List<?>) body.get("items");
-        assertThat(items).hasSize(2);
+        List<?> items = (List<?>) body.get("items [GH-90000]");
+        assertThat(items).hasSize(2); // GH-90000
     }
 
     @Test
-    @DisplayName("getAgentMemoryByTier(SEMANTIC): tier name is case-insensitive")
-    void getAgentMemoryByTier_tierNameIsCaseInsensitive() throws Exception {
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+    @DisplayName("getAgentMemoryByTier(SEMANTIC): tier name is case-insensitive [GH-90000]")
+    void getAgentMemoryByTier_tierNameIsCaseInsensitive() throws Exception { // GH-90000
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(List.of())); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
         // All four casing variants should return 200
-        for (String tier : List.of("SEMANTIC", "semantic", "Semantic")) {
-            HttpResponse<String> resp = get("/api/v1/memory/bot-3/" + tier);
-            assertThat(resp.statusCode())
-                .as("tier='%s' should be accepted", tier)
-                .isEqualTo(200);
+        for (String tier : List.of("SEMANTIC", "semantic", "Semantic")) { // GH-90000
+            HttpResponse<String> resp = get("/api/v1/memory/bot-3/" + tier); // GH-90000
+            assertThat(resp.statusCode()) // GH-90000
+                .as("tier='%s' should be accepted", tier) // GH-90000
+                .isEqualTo(200); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("getAgentMemoryByTier: invalid tier → 400 with error message")
-    void getAgentMemoryByTier_invalidTier_returns400() throws Exception {
-        startServer();
+    @DisplayName("getAgentMemoryByTier: invalid tier → 400 with error message [GH-90000]")
+    void getAgentMemoryByTier_invalidTier_returns400() throws Exception { // GH-90000
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-4/FLASHBACK");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-4/FLASHBACK [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(400);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("message").toString()).containsIgnoringCase("invalid tier");
+        assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body.get("message [GH-90000]").toString()).containsIgnoringCase("invalid tier [GH-90000]");
     }
 
     @Test
-    @DisplayName("getAgentMemoryByTier: response contains pagination metadata")
-    void getAgentMemoryByTier_always_includesPaginationFields() throws Exception {
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+    @DisplayName("getAgentMemoryByTier: response contains pagination metadata [GH-90000]")
+    void getAgentMemoryByTier_always_includesPaginationFields() throws Exception { // GH-90000
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(List.of())); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-5/procedural?limit=20&offset=10");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-5/procedural?limit=20&offset=10 [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("count")).isNotNull();
-        assertThat(body.get("offset")).isNotNull();
-        assertThat(body.get("limit")).isNotNull();
-        assertThat(body.get("items")).isNotNull();
-        assertThat(((Number) body.get("offset")).intValue()).isEqualTo(10);
-        assertThat(((Number) body.get("limit")).intValue()).isEqualTo(20);
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body.get("count [GH-90000]")).isNotNull();
+        assertThat(body.get("offset [GH-90000]")).isNotNull();
+        assertThat(body.get("limit [GH-90000]")).isNotNull();
+        assertThat(body.get("items [GH-90000]")).isNotNull();
+        assertThat(((Number) body.get("offset [GH-90000]")).intValue()).isEqualTo(10);
+        assertThat(((Number) body.get("limit [GH-90000]")).intValue()).isEqualTo(20);
     }
 
     @Test
-    @DisplayName("getAgentMemoryByTier: limit capped at 1000")
-    void getAgentMemoryByTier_limitCappedAt1000() throws Exception {
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+    @DisplayName("getAgentMemoryByTier: limit capped at 1000 [GH-90000]")
+    void getAgentMemoryByTier_limitCappedAt1000() throws Exception { // GH-90000
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(List.of())); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-6/preference?limit=9999");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-6/preference?limit=9999 [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
         // Server caps at 1000 — must not exceed that
-        assertThat(((Number) body.get("limit")).intValue()).isLessThanOrEqualTo(1000);
+        assertThat(((Number) body.get("limit [GH-90000]")).intValue()).isLessThanOrEqualTo(1000);
     }
 
     @Test
-    @DisplayName("getAgentMemoryByTier: response items contain expected fields")
-    void getAgentMemoryByTier_items_haveExpectedFields() throws Exception {
-        List<DataCloudClient.Entity> items = List.of(
-            DataCloudClient.Entity.of("pref-1", "dc_memory",
-                Map.of("agentId", "bot-7", "type", "PREFERENCE", "content", "Prefers short replies"))
+    @DisplayName("getAgentMemoryByTier: response items contain expected fields [GH-90000]")
+    void getAgentMemoryByTier_items_haveExpectedFields() throws Exception { // GH-90000
+        List<DataCloudClient.Entity> items = List.of( // GH-90000
+            DataCloudClient.Entity.of("pref-1", "dc_memory", // GH-90000
+                Map.of("agentId", "bot-7", "type", "PREFERENCE", "content", "Prefers short replies")) // GH-90000
         );
-        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(items));
+        when(mockClient.query(anyString(), eq("dc_memory [GH-90000]"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items)); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> resp = get("/api/v1/memory/bot-7/preference");
+        HttpResponse<String> resp = get("/api/v1/memory/bot-7/preference [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        List<?> returnedItems = (List<?>) body.get("items");
-        assertThat(returnedItems).hasSize(1);
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        List<?> returnedItems = (List<?>) body.get("items [GH-90000]");
+        assertThat(returnedItems).hasSize(1); // GH-90000
 
-        Map<?, ?> item = (Map<?, ?>) returnedItems.get(0);
-        assertThat(item.get("id")).isNotNull();
-        assertThat(item.get("agentId")).isNotNull();
-        assertThat(item.get("type")).isNotNull();
-        assertThat(item.get("content")).isNotNull();
-        assertThat(item.get("createdAt")).isNotNull();
+        Map<?, ?> item = (Map<?, ?>) returnedItems.get(0); // GH-90000
+        assertThat(item.get("id [GH-90000]")).isNotNull();
+        assertThat(item.get("agentId [GH-90000]")).isNotNull();
+        assertThat(item.get("type [GH-90000]")).isNotNull();
+        assertThat(item.get("content [GH-90000]")).isNotNull();
+        assertThat(item.get("createdAt [GH-90000]")).isNotNull();
     }
 
     // ==================== Helpers ====================
 
-    private void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port);
-        server.start();
-        waitForServerReady(port);
+    private void startServer() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port); // GH-90000
+        server.start(); // GH-90000
+        waitForServerReady(port); // GH-90000
     }
 
-    private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> get(String path) throws Exception { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+            .GET() // GH-90000
+            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+            .build(); // GH-90000
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+            .header("Content-Type", "application/json") // GH-90000
+            .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+            .build(); // GH-90000
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private static int findFreePort() throws IOException {
-        try (ServerSocket ss = new ServerSocket(0)) {
-            return ss.getLocalPort();
+    private static int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
+            return ss.getLocalPort(); // GH-90000
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception {
-        long deadline = System.currentTimeMillis() + 5_000;
-        while (System.currentTimeMillis() < deadline) {
+    private static void waitForServerReady(int port) throws Exception { // GH-90000
+        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
+        while (System.currentTimeMillis() < deadline) { // GH-90000
             try {
-                new Socket("127.0.0.1", port).close();
+                new Socket("127.0.0.1", port).close(); // GH-90000
                 return;
-            } catch (IOException ignored) {
-                Thread.sleep(50);
+            } catch (IOException ignored) { // GH-90000
+                Thread.sleep(50); // GH-90000
             }
         }
-        throw new AssertionError("Server did not start on port " + port + " within 5 s");
+        throw new AssertionError("Server did not start on port " + port + " within 5 s"); // GH-90000
     }
 }

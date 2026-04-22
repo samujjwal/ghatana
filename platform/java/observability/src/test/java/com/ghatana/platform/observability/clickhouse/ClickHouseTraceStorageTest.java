@@ -15,199 +15,199 @@ import static org.assertj.core.api.Assertions.*;
  *
  * Tests core functionality and configuration validation.
  */
-@DisplayName("ClickHouseTraceStorage Unit Tests")
+@DisplayName("ClickHouseTraceStorage Unit Tests [GH-90000]")
 class ClickHouseTraceStorageTest {
 
     private ClickHouseTraceStorage storage;
     private Instant baseTime;
 
     @BeforeEach
-    void setUp() {
-        storage = ClickHouseTraceStorage.builder()
-                .withHost("localhost")
-                .withPort(8123)
-                .withDatabase("observability")
-                .withBatchSize(5000)
-                .withFlushInterval(Duration.ofSeconds(5))
-                .build();
+    void setUp() { // GH-90000
+        storage = ClickHouseTraceStorage.builder() // GH-90000
+                .withHost("localhost [GH-90000]")
+                .withPort(8123) // GH-90000
+                .withDatabase("observability [GH-90000]")
+                .withBatchSize(5000) // GH-90000
+                .withFlushInterval(Duration.ofSeconds(5)) // GH-90000
+                .build(); // GH-90000
 
-        baseTime = Instant.now();
+        baseTime = Instant.now(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create storage with builder")
-    void testBuilderCreatesStorage() {
-        assertThat(storage).isNotNull();
+    @DisplayName("Should create storage with builder [GH-90000]")
+    void testBuilderCreatesStorage() { // GH-90000
+        assertThat(storage).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should accept valid span configuration")
-    void testValidSpanConfiguration() {
-        SpanData span = createTestSpan("trace-1", "span-1", null, "GET /users", "OK");
-        assertThat(span).isNotNull();
-        assertThat(span.traceId()).isEqualTo("trace-1");
-        assertThat(span.spanId()).isEqualTo("span-1");
+    @DisplayName("Should accept valid span configuration [GH-90000]")
+    void testValidSpanConfiguration() { // GH-90000
+        SpanData span = createTestSpan("trace-1", "span-1", null, "GET /users", "OK"); // GH-90000
+        assertThat(span).isNotNull(); // GH-90000
+        assertThat(span.traceId()).isEqualTo("trace-1 [GH-90000]");
+        assertThat(span.spanId()).isEqualTo("span-1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should build trace query with all filters")
-    void testBuildTraceQueryWithAllFilters() {
-        TraceQuery query = TraceQuery.builder()
-                .withServiceName("api-service")
-                .withOperationName("GET /users")
-                .withStatus("OK")
-                .withStartTime(baseTime)
-                .withEndTime(baseTime.plusSeconds(3600))
-                .withMinDurationMs(100)
-                .withMaxDurationMs(5000)
-                .withLimit(100)
-                .withOffset(0)
-                .build();
+    @DisplayName("Should build trace query with all filters [GH-90000]")
+    void testBuildTraceQueryWithAllFilters() { // GH-90000
+        TraceQuery query = TraceQuery.builder() // GH-90000
+                .withServiceName("api-service [GH-90000]")
+                .withOperationName("GET /users [GH-90000]")
+                .withStatus("OK [GH-90000]")
+                .withStartTime(baseTime) // GH-90000
+                .withEndTime(baseTime.plusSeconds(3600)) // GH-90000
+                .withMinDurationMs(100) // GH-90000
+                .withMaxDurationMs(5000) // GH-90000
+                .withLimit(100) // GH-90000
+                .withOffset(0) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(query).isNotNull();
-        assertThat(query.getServiceName()).contains("api-service");
-        assertThat(query.getOperationName()).contains("GET /users");
-        assertThat(query.getStatus()).contains("OK");
-        assertThat(query.getStartTime()).contains(baseTime);
-        assertThat(query.getLimit()).isEqualTo(100);
+        assertThat(query).isNotNull(); // GH-90000
+        assertThat(query.getServiceName()).contains("api-service [GH-90000]");
+        assertThat(query.getOperationName()).contains("GET /users [GH-90000]");
+        assertThat(query.getStatus()).contains("OK [GH-90000]");
+        assertThat(query.getStartTime()).contains(baseTime); // GH-90000
+        assertThat(query.getLimit()).isEqualTo(100); // GH-90000
     }
 
     @Test
-    @DisplayName("Should build statistics query")
-    void testBuildStatisticsQuery() {
-        TraceQuery query = TraceQuery.builder()
-                .withServiceName("api-service")
-                .withStatus("ERROR")
-                .withMinDurationMs(50)
-                .withMaxDurationMs(10000)
-                .build();
+    @DisplayName("Should build statistics query [GH-90000]")
+    void testBuildStatisticsQuery() { // GH-90000
+        TraceQuery query = TraceQuery.builder() // GH-90000
+                .withServiceName("api-service [GH-90000]")
+                .withStatus("ERROR [GH-90000]")
+                .withMinDurationMs(50) // GH-90000
+                .withMaxDurationMs(10000) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(query).isNotNull();
-        assertThat(query.getServiceName()).contains("api-service");
-        assertThat(query.getStatus()).contains("ERROR");
-        assertThat(query.getMinDurationMs()).contains(50L);
-        assertThat(query.getMaxDurationMs()).contains(10000L);
+        assertThat(query).isNotNull(); // GH-90000
+        assertThat(query.getServiceName()).contains("api-service [GH-90000]");
+        assertThat(query.getStatus()).contains("ERROR [GH-90000]");
+        assertThat(query.getMinDurationMs()).contains(50L); // GH-90000
+        assertThat(query.getMaxDurationMs()).contains(10000L); // GH-90000
     }
 
     @Test
-    @DisplayName("Should build query without filters")
-    void testBuildQueryWithoutFilters() {
-        TraceQuery query = TraceQuery.builder().build();
+    @DisplayName("Should build query without filters [GH-90000]")
+    void testBuildQueryWithoutFilters() { // GH-90000
+        TraceQuery query = TraceQuery.builder().build(); // GH-90000
 
-        assertThat(query).isNotNull();
-        assertThat(query.getServiceName()).isEmpty();
-        assertThat(query.getOperationName()).isEmpty();
-        assertThat(query.getStatus()).isEmpty();
+        assertThat(query).isNotNull(); // GH-90000
+        assertThat(query.getServiceName()).isEmpty(); // GH-90000
+        assertThat(query.getOperationName()).isEmpty(); // GH-90000
+        assertThat(query.getStatus()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should close storage")
-    void testClose() {
+    @DisplayName("Should close storage [GH-90000]")
+    void testClose() { // GH-90000
         // Should not throw
-        storage.close();
-        assertThat(storage).isNotNull();
+        storage.close(); // GH-90000
+        assertThat(storage).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle multiple close calls")
-    void testMultipleCloses() {
-        storage.close();
-        storage.close();
-        assertThat(storage).isNotNull();
+    @DisplayName("Should handle multiple close calls [GH-90000]")
+    void testMultipleCloses() { // GH-90000
+        storage.close(); // GH-90000
+        storage.close(); // GH-90000
+        assertThat(storage).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create span with required fields")
-    void testCreateSpanWithRequiredFields() {
-        SpanData span = SpanData.builder()
-                .withTraceId("trace-1")
-                .withSpanId("span-1")
-                .withServiceName("test-service")
-                .withOperationName("test-operation")
-                .withName("test-operation")
-                .withStartTime(baseTime)
-                .withEndTime(baseTime.plusMillis(100))
-                .withStatus("OK")
-                .build();
+    @DisplayName("Should create span with required fields [GH-90000]")
+    void testCreateSpanWithRequiredFields() { // GH-90000
+        SpanData span = SpanData.builder() // GH-90000
+                .withTraceId("trace-1 [GH-90000]")
+                .withSpanId("span-1 [GH-90000]")
+                .withServiceName("test-service [GH-90000]")
+                .withOperationName("test-operation [GH-90000]")
+                .withName("test-operation [GH-90000]")
+                .withStartTime(baseTime) // GH-90000
+                .withEndTime(baseTime.plusMillis(100)) // GH-90000
+                .withStatus("OK [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(span).isNotNull();
-        assertThat(span.traceId()).isEqualTo("trace-1");
-        assertThat(span.spanId()).isEqualTo("span-1");
-        assertThat(span.serviceName()).isEqualTo("test-service");
-        assertThat(span.operationName()).isEqualTo("test-operation");
+        assertThat(span).isNotNull(); // GH-90000
+        assertThat(span.traceId()).isEqualTo("trace-1 [GH-90000]");
+        assertThat(span.spanId()).isEqualTo("span-1 [GH-90000]");
+        assertThat(span.serviceName()).isEqualTo("test-service [GH-90000]");
+        assertThat(span.operationName()).isEqualTo("test-operation [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should create span with parent")
-    void testCreateSpanWithParent() {
-        SpanData span = SpanData.builder()
-                .withTraceId("trace-1")
-                .withSpanId("span-2")
-                .withParentSpanId("span-1")
-                .withServiceName("test-service")
-                .withOperationName("child-operation")
-                .withName("child-operation")
-                .withStartTime(baseTime.plusMillis(50))
-                .withEndTime(baseTime.plusMillis(150))
-                .withStatus("OK")
-                .build();
+    @DisplayName("Should create span with parent [GH-90000]")
+    void testCreateSpanWithParent() { // GH-90000
+        SpanData span = SpanData.builder() // GH-90000
+                .withTraceId("trace-1 [GH-90000]")
+                .withSpanId("span-2 [GH-90000]")
+                .withParentSpanId("span-1 [GH-90000]")
+                .withServiceName("test-service [GH-90000]")
+                .withOperationName("child-operation [GH-90000]")
+                .withName("child-operation [GH-90000]")
+                .withStartTime(baseTime.plusMillis(50)) // GH-90000
+                .withEndTime(baseTime.plusMillis(150)) // GH-90000
+                .withStatus("OK [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(span).isNotNull();
-        assertThat(span.parentSpanId()).contains("span-1");
+        assertThat(span).isNotNull(); // GH-90000
+        assertThat(span.parentSpanId()).contains("span-1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should create trace info")
-    void testCreateTraceInfo() {
-        TraceInfo trace = TraceInfo.builder()
-                .withTraceId("trace-1")
-                .withServiceName("api-service")
-                .withStartTime(baseTime)
-                .withEndTime(baseTime.plusSeconds(1))
-                .withDurationMs(1000)
-                .withStatus("OK")
-                .build();
+    @DisplayName("Should create trace info [GH-90000]")
+    void testCreateTraceInfo() { // GH-90000
+        TraceInfo trace = TraceInfo.builder() // GH-90000
+                .withTraceId("trace-1 [GH-90000]")
+                .withServiceName("api-service [GH-90000]")
+                .withStartTime(baseTime) // GH-90000
+                .withEndTime(baseTime.plusSeconds(1)) // GH-90000
+                .withDurationMs(1000) // GH-90000
+                .withStatus("OK [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(trace).isNotNull();
-        assertThat(trace.traceId()).isEqualTo("trace-1");
-        assertThat(trace.serviceName()).isEqualTo("api-service");
-        assertThat(trace.durationMs()).isEqualTo(1000);
+        assertThat(trace).isNotNull(); // GH-90000
+        assertThat(trace.traceId()).isEqualTo("trace-1 [GH-90000]");
+        assertThat(trace.serviceName()).isEqualTo("api-service [GH-90000]");
+        assertThat(trace.durationMs()).isEqualTo(1000); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create trace statistics")
-    void testCreateTraceStatistics() {
-        TraceStatistics stats = TraceStatistics.builder()
-                .withTotalTraces(100)
-                .withTotalSpans(500)
-                .withErrorCount(5)
-                .withMinDurationMs(10)
-                .withMaxDurationMs(5000)
-                .withAvgDurationMs(1000)
-                .withP50DurationMs(500)
-                .withP95DurationMs(4000)
-                .withP99DurationMs(4500)
-                .build();
+    @DisplayName("Should create trace statistics [GH-90000]")
+    void testCreateTraceStatistics() { // GH-90000
+        TraceStatistics stats = TraceStatistics.builder() // GH-90000
+                .withTotalTraces(100) // GH-90000
+                .withTotalSpans(500) // GH-90000
+                .withErrorCount(5) // GH-90000
+                .withMinDurationMs(10) // GH-90000
+                .withMaxDurationMs(5000) // GH-90000
+                .withAvgDurationMs(1000) // GH-90000
+                .withP50DurationMs(500) // GH-90000
+                .withP95DurationMs(4000) // GH-90000
+                .withP99DurationMs(4500) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(stats).isNotNull();
-        assertThat(stats.totalTraces()).isEqualTo(100);
-        assertThat(stats.totalSpans()).isEqualTo(500);
-        assertThat(stats.errorCount()).isEqualTo(5);
+        assertThat(stats).isNotNull(); // GH-90000
+        assertThat(stats.totalTraces()).isEqualTo(100); // GH-90000
+        assertThat(stats.totalSpans()).isEqualTo(500); // GH-90000
+        assertThat(stats.errorCount()).isEqualTo(5); // GH-90000
     }
 
     // Helper method
-    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId,
+    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId, // GH-90000
                                     String operationName, String status) {
-        return SpanData.builder()
-                .withTraceId(traceId)
-                .withSpanId(spanId)
-                .withParentSpanId(parentSpanId)
-                .withServiceName("test-service")
-                .withOperationName(operationName)
-                .withName(operationName)
-                .withStartTime(baseTime)
-                .withEndTime(baseTime.plusMillis(100))
-                .withStatus(status)
-                .build();
+        return SpanData.builder() // GH-90000
+                .withTraceId(traceId) // GH-90000
+                .withSpanId(spanId) // GH-90000
+                .withParentSpanId(parentSpanId) // GH-90000
+                .withServiceName("test-service [GH-90000]")
+                .withOperationName(operationName) // GH-90000
+                .withName(operationName) // GH-90000
+                .withStartTime(baseTime) // GH-90000
+                .withEndTime(baseTime.plusMillis(100)) // GH-90000
+                .withStatus(status) // GH-90000
+                .build(); // GH-90000
     }
 }

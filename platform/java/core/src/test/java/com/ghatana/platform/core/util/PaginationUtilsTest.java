@@ -14,188 +14,188 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link PaginationUtils}.
  */
-@DisplayName("PaginationUtils")
+@DisplayName("PaginationUtils [GH-90000]")
 class PaginationUtilsTest {
 
     @Nested
-    @DisplayName("validateRequest")
+    @DisplayName("validateRequest [GH-90000]")
     class ValidateRequest {
 
         @Test
-        void returnsDefaultsWhenBothNull() {
-            PageRequest req = PaginationUtils.validateRequest(null, null);
+        void returnsDefaultsWhenBothNull() { // GH-90000
+            PageRequest req = PaginationUtils.validateRequest(null, null); // GH-90000
 
-            assertThat(req.pageNumber()).isEqualTo(0);
-            assertThat(req.pageSize()).isEqualTo(PaginationUtils.DEFAULT_PAGE_SIZE);
+            assertThat(req.pageNumber()).isEqualTo(0); // GH-90000
+            assertThat(req.pageSize()).isEqualTo(PaginationUtils.DEFAULT_PAGE_SIZE); // GH-90000
         }
 
         @Test
-        void acceptsExplicitValidValues() {
-            PageRequest req = PaginationUtils.validateRequest(3, 25);
+        void acceptsExplicitValidValues() { // GH-90000
+            PageRequest req = PaginationUtils.validateRequest(3, 25); // GH-90000
 
-            assertThat(req.pageNumber()).isEqualTo(3);
-            assertThat(req.pageSize()).isEqualTo(25);
+            assertThat(req.pageNumber()).isEqualTo(3); // GH-90000
+            assertThat(req.pageSize()).isEqualTo(25); // GH-90000
         }
 
         @Test
-        void acceptsMaxPageSize() {
-            PageRequest req = PaginationUtils.validateRequest(0, PaginationUtils.MAX_PAGE_SIZE);
-            assertThat(req.pageSize()).isEqualTo(PaginationUtils.MAX_PAGE_SIZE);
+        void acceptsMaxPageSize() { // GH-90000
+            PageRequest req = PaginationUtils.validateRequest(0, PaginationUtils.MAX_PAGE_SIZE); // GH-90000
+            assertThat(req.pageSize()).isEqualTo(PaginationUtils.MAX_PAGE_SIZE); // GH-90000
         }
 
         @Test
-        void rejectsNegativePage() {
-            assertThatThrownBy(() -> PaginationUtils.validateRequest(-1, 10))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Page must be >= 0");
+        void rejectsNegativePage() { // GH-90000
+            assertThatThrownBy(() -> PaginationUtils.validateRequest(-1, 10)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Page must be >= 0 [GH-90000]");
         }
 
         @Test
-        void rejectsPageSizeAboveMax() {
-            assertThatThrownBy(() -> PaginationUtils.validateRequest(0, PaginationUtils.MAX_PAGE_SIZE + 1))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Page size must be between");
+        void rejectsPageSizeAboveMax() { // GH-90000
+            assertThatThrownBy(() -> PaginationUtils.validateRequest(0, PaginationUtils.MAX_PAGE_SIZE + 1)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Page size must be between [GH-90000]");
         }
 
         @Test
-        void rejectsZeroPageSize() {
-            assertThatThrownBy(() -> PaginationUtils.validateRequest(0, 0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Page size must be between");
+        void rejectsZeroPageSize() { // GH-90000
+            assertThatThrownBy(() -> PaginationUtils.validateRequest(0, 0)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Page size must be between [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("clampPageSize")
+    @DisplayName("clampPageSize [GH-90000]")
     class ClampPageSize {
 
         @Test
-        void clampsBelowMin() {
-            assertThat(PaginationUtils.clampPageSize(0)).isEqualTo(PaginationUtils.MIN_PAGE_SIZE);
+        void clampsBelowMin() { // GH-90000
+            assertThat(PaginationUtils.clampPageSize(0)).isEqualTo(PaginationUtils.MIN_PAGE_SIZE); // GH-90000
         }
 
         @Test
-        void clampsAboveMax() {
-            assertThat(PaginationUtils.clampPageSize(99999)).isEqualTo(PaginationUtils.MAX_PAGE_SIZE);
+        void clampsAboveMax() { // GH-90000
+            assertThat(PaginationUtils.clampPageSize(99999)).isEqualTo(PaginationUtils.MAX_PAGE_SIZE); // GH-90000
         }
 
         @Test
-        void preservesValidValue() {
-            assertThat(PaginationUtils.clampPageSize(100)).isEqualTo(100);
+        void preservesValidValue() { // GH-90000
+            assertThat(PaginationUtils.clampPageSize(100)).isEqualTo(100); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("calculateOffset")
+    @DisplayName("calculateOffset [GH-90000]")
     class CalculateOffset {
 
         @Test
-        void isZeroOnFirstPage() {
-            assertThat(PaginationUtils.calculateOffset(0, 20)).isEqualTo(0L);
+        void isZeroOnFirstPage() { // GH-90000
+            assertThat(PaginationUtils.calculateOffset(0, 20)).isEqualTo(0L); // GH-90000
         }
 
         @Test
-        void isCorrectOnSecondPage() {
-            assertThat(PaginationUtils.calculateOffset(1, 20)).isEqualTo(20L);
+        void isCorrectOnSecondPage() { // GH-90000
+            assertThat(PaginationUtils.calculateOffset(1, 20)).isEqualTo(20L); // GH-90000
         }
 
         @Test
-        void handlesLargePageNumbers() {
-            assertThat(PaginationUtils.calculateOffset(10_000, 1000)).isEqualTo(10_000_000L);
+        void handlesLargePageNumbers() { // GH-90000
+            assertThat(PaginationUtils.calculateOffset(10_000, 1000)).isEqualTo(10_000_000L); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("calculateTotalPages")
+    @DisplayName("calculateTotalPages [GH-90000]")
     class CalculateTotalPages {
 
         @Test
-        void exactDivisionYieldsCorrectPages() {
-            assertThat(PaginationUtils.calculateTotalPages(100, 20)).isEqualTo(5);
+        void exactDivisionYieldsCorrectPages() { // GH-90000
+            assertThat(PaginationUtils.calculateTotalPages(100, 20)).isEqualTo(5); // GH-90000
         }
 
         @Test
-        void remainderAddsOnePage() {
-            assertThat(PaginationUtils.calculateTotalPages(101, 20)).isEqualTo(6);
+        void remainderAddsOnePage() { // GH-90000
+            assertThat(PaginationUtils.calculateTotalPages(101, 20)).isEqualTo(6); // GH-90000
         }
 
         @Test
-        void zeroElementsYieldsZeroPages() {
-            assertThat(PaginationUtils.calculateTotalPages(0, 20)).isEqualTo(0);
+        void zeroElementsYieldsZeroPages() { // GH-90000
+            assertThat(PaginationUtils.calculateTotalPages(0, 20)).isEqualTo(0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("toPage")
+    @DisplayName("toPage [GH-90000]")
     class ToPage {
 
         @Test
-        void wrapsContentAndMetadata() {
-            PageRequest req = PageRequest.of(2, 10);
-            List<String> items = List.of("a", "b", "c");
+        void wrapsContentAndMetadata() { // GH-90000
+            PageRequest req = PageRequest.of(2, 10); // GH-90000
+            List<String> items = List.of("a", "b", "c"); // GH-90000
 
-            Page<String> page = PaginationUtils.toPage(items, req, 55);
+            Page<String> page = PaginationUtils.toPage(items, req, 55); // GH-90000
 
-            assertThat(page.content()).containsExactly("a", "b", "c");
-            assertThat(page.pageNumber()).isEqualTo(2);
-            assertThat(page.pageSize()).isEqualTo(10);
-            assertThat(page.totalElements()).isEqualTo(55);
+            assertThat(page.content()).containsExactly("a", "b", "c"); // GH-90000
+            assertThat(page.pageNumber()).isEqualTo(2); // GH-90000
+            assertThat(page.pageSize()).isEqualTo(10); // GH-90000
+            assertThat(page.totalElements()).isEqualTo(55); // GH-90000
         }
 
         @Test
-        void hasNextWhenNotLastPage() {
-            PageRequest req = PageRequest.of(0, 10);
-            Page<String> page = PaginationUtils.toPage(List.of("x"), req, 25);
-            assertThat(page.hasNext()).isTrue();
+        void hasNextWhenNotLastPage() { // GH-90000
+            PageRequest req = PageRequest.of(0, 10); // GH-90000
+            Page<String> page = PaginationUtils.toPage(List.of("x [GH-90000]"), req, 25);
+            assertThat(page.hasNext()).isTrue(); // GH-90000
         }
 
         @Test
-        void hasNoPreviousOnFirstPage() {
-            PageRequest req = PageRequest.of(0, 10);
-            Page<String> page = PaginationUtils.toPage(List.of("x"), req, 5);
-            assertThat(page.hasPrevious()).isFalse();
+        void hasNoPreviousOnFirstPage() { // GH-90000
+            PageRequest req = PageRequest.of(0, 10); // GH-90000
+            Page<String> page = PaginationUtils.toPage(List.of("x [GH-90000]"), req, 5);
+            assertThat(page.hasPrevious()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("cursor encoding")
+    @DisplayName("cursor encoding [GH-90000]")
     class CursorEncoding {
 
         @Test
-        void roundTripWithSortValue() {
-            String cursor = PaginationUtils.encodeCursor("entity-42", "2026-01-15T10:00:00Z");
-            PaginationUtils.CursorData data = PaginationUtils.decodeCursor(cursor);
+        void roundTripWithSortValue() { // GH-90000
+            String cursor = PaginationUtils.encodeCursor("entity-42", "2026-01-15T10:00:00Z"); // GH-90000
+            PaginationUtils.CursorData data = PaginationUtils.decodeCursor(cursor); // GH-90000
 
-            assertThat(data.lastId()).isEqualTo("entity-42");
-            assertThat(data.lastSortValue()).isEqualTo("2026-01-15T10:00:00Z");
+            assertThat(data.lastId()).isEqualTo("entity-42 [GH-90000]");
+            assertThat(data.lastSortValue()).isEqualTo("2026-01-15T10:00:00Z [GH-90000]");
         }
 
         @Test
-        void roundTripWithoutSortValue() {
-            String cursor = PaginationUtils.encodeCursor("entity-99", null);
-            PaginationUtils.CursorData data = PaginationUtils.decodeCursor(cursor);
+        void roundTripWithoutSortValue() { // GH-90000
+            String cursor = PaginationUtils.encodeCursor("entity-99", null); // GH-90000
+            PaginationUtils.CursorData data = PaginationUtils.decodeCursor(cursor); // GH-90000
 
-            assertThat(data.lastId()).isEqualTo("entity-99");
-            assertThat(data.lastSortValue()).isNull();
+            assertThat(data.lastId()).isEqualTo("entity-99 [GH-90000]");
+            assertThat(data.lastSortValue()).isNull(); // GH-90000
         }
 
         @Test
-        void encodedCursorIsUrlSafe() {
-            String cursor = PaginationUtils.encodeCursor("abc", "2026-01-15T10:00:00Z");
-            assertThat(cursor).doesNotContain("+", "/", "=");
+        void encodedCursorIsUrlSafe() { // GH-90000
+            String cursor = PaginationUtils.encodeCursor("abc", "2026-01-15T10:00:00Z"); // GH-90000
+            assertThat(cursor).doesNotContain("+", "/", "="); // GH-90000
         }
 
         @Test
-        void decodingInvalidCursorThrows() {
-            assertThatThrownBy(() -> PaginationUtils.decodeCursor("not-base64!!!"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Invalid cursor");
+        void decodingInvalidCursorThrows() { // GH-90000
+            assertThatThrownBy(() -> PaginationUtils.decodeCursor("not-base64!!! [GH-90000]"))
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Invalid cursor [GH-90000]");
         }
 
         @Test
-        void encodingNullIdThrows() {
-            assertThatThrownBy(() -> PaginationUtils.encodeCursor(null, "sort"))
-                .isInstanceOf(NullPointerException.class);
+        void encodingNullIdThrows() { // GH-90000
+            assertThatThrownBy(() -> PaginationUtils.encodeCursor(null, "sort")) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 }

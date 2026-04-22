@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 Ghatana, Inc.
+ * Copyright (c) 2024 Ghatana, Inc. // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -33,100 +33,100 @@ import org.junit.jupiter.api.io.TempDir;
 class HookExecutorTest {
 
     @Test
-    void testSuccessfulHookExecution(@TempDir Path tempDir) {
-        DefaultHookExecutor executor = new DefaultHookExecutor();
+    void testSuccessfulHookExecution(@TempDir Path tempDir) { // GH-90000
+        DefaultHookExecutor executor = new DefaultHookExecutor(); // GH-90000
 
         // Use allowed executables: git --version always exits 0 and prints output
-        List<String> hooks = List.of("git --version", "git --version");
-        Map<String, Object> context = Map.of("test", "value");
+        List<String> hooks = List.of("git --version", "git --version"); // GH-90000
+        Map<String, Object> context = Map.of("test", "value"); // GH-90000
 
         HookExecutor.HookExecutionResult result =
-                executor.executePostGeneration(hooks, tempDir, context);
+                executor.executePostGeneration(hooks, tempDir, context); // GH-90000
 
-        assertTrue(result.successful());
-        assertEquals(2, result.hookResults().size());
-        assertTrue(result.errors().isEmpty());
-        assertTrue(result.totalExecutionTimeMs() >= 0);
+        assertTrue(result.successful()); // GH-90000
+        assertEquals(2, result.hookResults().size()); // GH-90000
+        assertTrue(result.errors().isEmpty()); // GH-90000
+        assertTrue(result.totalExecutionTimeMs() >= 0); // GH-90000
 
-        for (HookExecutor.HookResult hookResult : result.hookResults()) {
-            assertTrue(hookResult.successful());
-            assertEquals(0, hookResult.exitCode());
-            assertFalse(hookResult.stdout().isEmpty());
+        for (HookExecutor.HookResult hookResult : result.hookResults()) { // GH-90000
+            assertTrue(hookResult.successful()); // GH-90000
+            assertEquals(0, hookResult.exitCode()); // GH-90000
+            assertFalse(hookResult.stdout().isEmpty()); // GH-90000
         }
     }
 
     @Test
-    void testFailedHookExecution(@TempDir Path tempDir) {
-        DefaultHookExecutor executor = new DefaultHookExecutor();
+    void testFailedHookExecution(@TempDir Path tempDir) { // GH-90000
+        DefaultHookExecutor executor = new DefaultHookExecutor(); // GH-90000
 
         // git status on a non-git directory exits non-zero; git --version always succeeds
-        List<String> hooks = List.of("git status", "git --version");
-        Map<String, Object> context = Map.of();
+        List<String> hooks = List.of("git status", "git --version"); // GH-90000
+        Map<String, Object> context = Map.of(); // GH-90000
 
         HookExecutor.HookExecutionResult result =
-                executor.executePostGeneration(hooks, tempDir, context);
+                executor.executePostGeneration(hooks, tempDir, context); // GH-90000
 
-        assertFalse(result.successful());
-        assertEquals(2, result.hookResults().size());
-        assertFalse(result.errors().isEmpty());
+        assertFalse(result.successful()); // GH-90000
+        assertEquals(2, result.hookResults().size()); // GH-90000
+        assertFalse(result.errors().isEmpty()); // GH-90000
 
-        // First hook (git status on non-git dir) should fail
-        assertFalse(result.hookResults().get(0).successful());
-        assertNotEquals(0, result.hookResults().get(0).exitCode());
+        // First hook (git status on non-git dir) should fail // GH-90000
+        assertFalse(result.hookResults().get(0).successful()); // GH-90000
+        assertNotEquals(0, result.hookResults().get(0).exitCode()); // GH-90000
 
-        // Second hook (git --version) should succeed
-        assertTrue(result.hookResults().get(1).successful());
-        assertEquals(0, result.hookResults().get(1).exitCode());
+        // Second hook (git --version) should succeed // GH-90000
+        assertTrue(result.hookResults().get(1).successful()); // GH-90000
+        assertEquals(0, result.hookResults().get(1).exitCode()); // GH-90000
     }
 
     @Test
-    void testYappcHookSimulation(@TempDir Path tempDir) {
-        DefaultHookExecutor executor = new DefaultHookExecutor();
+    void testYappcHookSimulation(@TempDir Path tempDir) { // GH-90000
+        DefaultHookExecutor executor = new DefaultHookExecutor(); // GH-90000
 
-        List<String> hooks = List.of("yappc doctor", "yappc init --help");
-        Map<String, Object> context = Map.of();
+        List<String> hooks = List.of("yappc doctor", "yappc init --help"); // GH-90000
+        Map<String, Object> context = Map.of(); // GH-90000
 
         HookExecutor.HookExecutionResult result =
-                executor.executePreGeneration(hooks, tempDir, context);
+                executor.executePreGeneration(hooks, tempDir, context); // GH-90000
 
-        assertTrue(result.successful());
-        assertEquals(2, result.hookResults().size());
+        assertTrue(result.successful()); // GH-90000
+        assertEquals(2, result.hookResults().size()); // GH-90000
 
-        for (HookExecutor.HookResult hookResult : result.hookResults()) {
-            assertTrue(hookResult.successful());
-            assertEquals(0, hookResult.exitCode());
-            assertFalse(hookResult.stdout().isEmpty());
+        for (HookExecutor.HookResult hookResult : result.hookResults()) { // GH-90000
+            assertTrue(hookResult.successful()); // GH-90000
+            assertEquals(0, hookResult.exitCode()); // GH-90000
+            assertFalse(hookResult.stdout().isEmpty()); // GH-90000
         }
     }
 
     @Test
-    void testEmptyHooksList(@TempDir Path tempDir) {
-        DefaultHookExecutor executor = new DefaultHookExecutor();
+    void testEmptyHooksList(@TempDir Path tempDir) { // GH-90000
+        DefaultHookExecutor executor = new DefaultHookExecutor(); // GH-90000
 
-        List<String> hooks = List.of();
-        Map<String, Object> context = Map.of();
+        List<String> hooks = List.of(); // GH-90000
+        Map<String, Object> context = Map.of(); // GH-90000
 
         HookExecutor.HookExecutionResult result =
-                executor.executePostGeneration(hooks, tempDir, context);
+                executor.executePostGeneration(hooks, tempDir, context); // GH-90000
 
-        assertTrue(result.successful());
-        assertEquals(0, result.hookResults().size());
-        assertTrue(result.errors().isEmpty());
-        assertEquals(0, result.totalExecutionTimeMs());
+        assertTrue(result.successful()); // GH-90000
+        assertEquals(0, result.hookResults().size()); // GH-90000
+        assertTrue(result.errors().isEmpty()); // GH-90000
+        assertEquals(0, result.totalExecutionTimeMs()); // GH-90000
     }
 
     @Test
-    void testNullHooksList(@TempDir Path tempDir) {
-        DefaultHookExecutor executor = new DefaultHookExecutor();
+    void testNullHooksList(@TempDir Path tempDir) { // GH-90000
+        DefaultHookExecutor executor = new DefaultHookExecutor(); // GH-90000
 
-        Map<String, Object> context = Map.of();
+        Map<String, Object> context = Map.of(); // GH-90000
 
         HookExecutor.HookExecutionResult result =
-                executor.executePostGeneration(null, tempDir, context);
+                executor.executePostGeneration(null, tempDir, context); // GH-90000
 
-        assertTrue(result.successful());
-        assertEquals(0, result.hookResults().size());
-        assertTrue(result.errors().isEmpty());
-        assertEquals(0, result.totalExecutionTimeMs());
+        assertTrue(result.successful()); // GH-90000
+        assertEquals(0, result.hookResults().size()); // GH-90000
+        assertTrue(result.errors().isEmpty()); // GH-90000
+        assertEquals(0, result.totalExecutionTimeMs()); // GH-90000
     }
 }

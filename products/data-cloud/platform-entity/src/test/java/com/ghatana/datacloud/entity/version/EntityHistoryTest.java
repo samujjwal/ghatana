@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.entity.version;
@@ -35,8 +35,8 @@ import static org.mockito.Mockito.*;
  * @doc.layer domain
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("Entity History Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("Entity History Tests [GH-90000]")
 class EntityHistoryTest extends EventloopTestBase {
 
     @Mock
@@ -50,20 +50,20 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("EntityVersion creation")
+    @DisplayName("EntityVersion creation [GH-90000]")
     class EntityVersionCreation {
 
         @Test
-        @DisplayName("should create EntityVersion with all required fields")
-        void shouldCreateEntityVersionWithRequiredFields() {
-            UUID versionId = UUID.randomUUID();
+        @DisplayName("should create EntityVersion with all required fields [GH-90000]")
+        void shouldCreateEntityVersionWithRequiredFields() { // GH-90000
+            UUID versionId = UUID.randomUUID(); // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
             Integer versionNumber = 1;
-            Instant createdAt = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "Initial creation");
+            Instant createdAt = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "Initial creation"); // GH-90000
 
-            EntityVersion version = new EntityVersion(
+            EntityVersion version = new EntityVersion( // GH-90000
                 versionId,
                 tenantId,
                 entityId,
@@ -73,182 +73,182 @@ class EntityHistoryTest extends EventloopTestBase {
                 createdAt
             );
 
-            assertThat(version.getId()).isEqualTo(versionId);
-            assertThat(version.getTenantId()).isEqualTo(tenantId);
-            assertThat(version.getEntityId()).isEqualTo(entityId);
-            assertThat(version.getEntitySnapshot()).isEqualTo(entity);
-            assertThat(version.getVersionNumber()).isEqualTo(versionNumber);
-            assertThat(version.getMetadata()).isEqualTo(metadata);
-            assertThat(version.getCreatedAt()).isEqualTo(createdAt);
+            assertThat(version.getId()).isEqualTo(versionId); // GH-90000
+            assertThat(version.getTenantId()).isEqualTo(tenantId); // GH-90000
+            assertThat(version.getEntityId()).isEqualTo(entityId); // GH-90000
+            assertThat(version.getEntitySnapshot()).isEqualTo(entity); // GH-90000
+            assertThat(version.getVersionNumber()).isEqualTo(versionNumber); // GH-90000
+            assertThat(version.getMetadata()).isEqualTo(metadata); // GH-90000
+            assertThat(version.getCreatedAt()).isEqualTo(createdAt); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject null ID")
-        void shouldRejectNullId() {
-            assertThatThrownBy(() -> new EntityVersion(
+        @DisplayName("should reject null ID [GH-90000]")
+        void shouldRejectNullId() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 null,
                 "tenant-123",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 entity,
                 1,
-                new VersionMetadata("user-456", Instant.now(), "test"),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("ID must not be null");
+                new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("ID must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null tenant ID")
-        void shouldRejectNullTenantId() {
-            assertThatThrownBy(() -> new EntityVersion(
-                UUID.randomUUID(),
+        @DisplayName("should reject null tenant ID [GH-90000]")
+        void shouldRejectNullTenantId() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 null,
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 entity,
                 1,
-                new VersionMetadata("user-456", Instant.now(), "test"),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("Tenant ID must not be null");
+                new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("Tenant ID must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null entity ID")
-        void shouldRejectNullEntityId() {
-            assertThatThrownBy(() -> new EntityVersion(
-                UUID.randomUUID(),
+        @DisplayName("should reject null entity ID [GH-90000]")
+        void shouldRejectNullEntityId() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-123",
                 null,
                 entity,
                 1,
-                new VersionMetadata("user-456", Instant.now(), "test"),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("Entity ID must not be null");
+                new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("Entity ID must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null entity snapshot")
-        void shouldRejectNullEntitySnapshot() {
-            assertThatThrownBy(() -> new EntityVersion(
-                UUID.randomUUID(),
+        @DisplayName("should reject null entity snapshot [GH-90000]")
+        void shouldRejectNullEntitySnapshot() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-123",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 null,
                 1,
-                new VersionMetadata("user-456", Instant.now(), "test"),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("Entity snapshot must not be null");
+                new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("Entity snapshot must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null version number")
-        void shouldRejectNullVersionNumber() {
-            assertThatThrownBy(() -> new EntityVersion(
-                UUID.randomUUID(),
+        @DisplayName("should reject null version number [GH-90000]")
+        void shouldRejectNullVersionNumber() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-123",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 entity,
                 null,
-                new VersionMetadata("user-456", Instant.now(), "test"),
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("Version number must not be null");
+                new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("Version number must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject version number less than 1")
-        void shouldRejectVersionNumberLessThan1() {
-            assertThatThrownBy(() -> new EntityVersion(
-                UUID.randomUUID(),
+        @DisplayName("should reject version number less than 1 [GH-90000]")
+        void shouldRejectVersionNumberLessThan1() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-123",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 entity,
                 0,
-                new VersionMetadata("user-456", Instant.now(), "test"),
-                Instant.now()
-            )).isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining("Version number must be >= 1");
+                new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
+                Instant.now() // GH-90000
+            )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+              .hasMessageContaining("Version number must be >= 1 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null metadata")
-        void shouldRejectNullMetadata() {
-            assertThatThrownBy(() -> new EntityVersion(
-                UUID.randomUUID(),
+        @DisplayName("should reject null metadata [GH-90000]")
+        void shouldRejectNullMetadata() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-123",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 entity,
                 1,
                 null,
-                Instant.now()
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("Metadata must not be null");
+                Instant.now() // GH-90000
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("Metadata must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null createdAt")
-        void shouldRejectNullCreatedAt() {
-            assertThatThrownBy(() -> new EntityVersion(
-                UUID.randomUUID(),
+        @DisplayName("should reject null createdAt [GH-90000]")
+        void shouldRejectNullCreatedAt() { // GH-90000
+            assertThatThrownBy(() -> new EntityVersion( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-123",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 entity,
                 1,
-                new VersionMetadata("user-456", Instant.now(), "test"),
+                new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 null
-            )).isInstanceOf(NullPointerException.class)
-              .hasMessageContaining("Created at must not be null");
+            )).isInstanceOf(NullPointerException.class) // GH-90000
+              .hasMessageContaining("Created at must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should create EntityVersion using builder")
-        void shouldCreateEntityVersionUsingBuilder() {
-            UUID entityId = UUID.randomUUID();
-            Instant createdAt = Instant.now();
+        @DisplayName("should create EntityVersion using builder [GH-90000]")
+        void shouldCreateEntityVersionUsingBuilder() { // GH-90000
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            Instant createdAt = Instant.now(); // GH-90000
 
-            EntityVersion version = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(entityId)
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(new VersionMetadata("user-456", createdAt, "Initial creation"))
-                .createdAt(createdAt)
-                .build();
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(entityId) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(new VersionMetadata("user-456", createdAt, "Initial creation")) // GH-90000
+                .createdAt(createdAt) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(version.getTenantId()).isEqualTo("tenant-123");
-            assertThat(version.getEntityId()).isEqualTo(entityId);
-            assertThat(version.getVersionNumber()).isEqualTo(1);
+            assertThat(version.getTenantId()).isEqualTo("tenant-123 [GH-90000]");
+            assertThat(version.getEntityId()).isEqualTo(entityId); // GH-90000
+            assertThat(version.getVersionNumber()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("builder should auto-generate ID if not provided")
-        void builderShouldAutoGenerateIdIfNotProvided() {
-            EntityVersion version = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(new VersionMetadata("user-456", Instant.now(), "test"))
-                .build();
+        @DisplayName("builder should auto-generate ID if not provided [GH-90000]")
+        void builderShouldAutoGenerateIdIfNotProvided() { // GH-90000
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(new VersionMetadata("user-456", Instant.now(), "test")) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(version.getId()).isNotNull();
+            assertThat(version.getId()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("builder should auto-generate createdAt if not provided")
-        void builderShouldAutoGenerateCreatedAtIfNotProvided() {
-            EntityVersion version = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(new VersionMetadata("user-456", Instant.now(), "test"))
-                .build();
+        @DisplayName("builder should auto-generate createdAt if not provided [GH-90000]")
+        void builderShouldAutoGenerateCreatedAtIfNotProvided() { // GH-90000
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(new VersionMetadata("user-456", Instant.now(), "test")) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(version.getCreatedAt()).isNotNull();
-            assertThat(version.getCreatedAt()).isBeforeOrEqualTo(Instant.now());
+            assertThat(version.getCreatedAt()).isNotNull(); // GH-90000
+            assertThat(version.getCreatedAt()).isBeforeOrEqualTo(Instant.now()); // GH-90000
         }
     }
 
@@ -257,52 +257,52 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("EntityVersion accessors")
+    @DisplayName("EntityVersion accessors [GH-90000]")
     class EntityVersionAccessors {
 
         @Test
-        @DisplayName("should get author from metadata")
-        void shouldGetAuthorFromMetadata() {
-            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "test");
-            EntityVersion version = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(metadata)
-                .build();
+        @DisplayName("should get author from metadata [GH-90000]")
+        void shouldGetAuthorFromMetadata() { // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "test"); // GH-90000
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(metadata) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(version.getAuthor()).isEqualTo("user-456");
+            assertThat(version.getAuthor()).isEqualTo("user-456 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should get reason from metadata")
-        void shouldGetReasonFromMetadata() {
-            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "Updated contact info");
-            EntityVersion version = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(metadata)
-                .build();
+        @DisplayName("should get reason from metadata [GH-90000]")
+        void shouldGetReasonFromMetadata() { // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "Updated contact info"); // GH-90000
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(metadata) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(version.getReason()).isEqualTo("Updated contact info");
+            assertThat(version.getReason()).isEqualTo("Updated contact info [GH-90000]");
         }
 
         @Test
-        @DisplayName("should return null reason if metadata reason is null")
-        void shouldReturnNullReasonIfMetadataReasonIsNull() {
-            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), null);
-            EntityVersion version = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(metadata)
-                .build();
+        @DisplayName("should return null reason if metadata reason is null [GH-90000]")
+        void shouldReturnNullReasonIfMetadataReasonIsNull() { // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), null); // GH-90000
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(metadata) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(version.getReason()).isNull();
+            assertThat(version.getReason()).isNull(); // GH-90000
         }
     }
 
@@ -311,50 +311,50 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("EntityVersion equality")
+    @DisplayName("EntityVersion equality [GH-90000]")
     class EntityVersionEquality {
 
         @Test
-        @DisplayName("should be equal when IDs match")
-        void shouldBeEqualWhenIdsMatch() {
-            UUID id = UUID.randomUUID();
-            UUID entityId = UUID.randomUUID();
-            Instant createdAt = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "test");
+        @DisplayName("should be equal when IDs match [GH-90000]")
+        void shouldBeEqualWhenIdsMatch() { // GH-90000
+            UUID id = UUID.randomUUID(); // GH-90000
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            Instant createdAt = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "test"); // GH-90000
 
-            EntityVersion version1 = new EntityVersion(id, "tenant-123", entityId, entity, 1, metadata, createdAt);
-            EntityVersion version2 = new EntityVersion(id, "tenant-123", entityId, entity, 1, metadata, createdAt);
+            EntityVersion version1 = new EntityVersion(id, "tenant-123", entityId, entity, 1, metadata, createdAt); // GH-90000
+            EntityVersion version2 = new EntityVersion(id, "tenant-123", entityId, entity, 1, metadata, createdAt); // GH-90000
 
-            assertThat(version1).isEqualTo(version2);
-            assertThat(version1.hashCode()).isEqualTo(version2.hashCode());
+            assertThat(version1).isEqualTo(version2); // GH-90000
+            assertThat(version1.hashCode()).isEqualTo(version2.hashCode()); // GH-90000
         }
 
         @Test
-        @DisplayName("should not be equal when IDs differ")
-        void shouldNotBeEqualWhenIdsDiffer() {
-            UUID entityId = UUID.randomUUID();
-            Instant createdAt = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "test");
+        @DisplayName("should not be equal when IDs differ [GH-90000]")
+        void shouldNotBeEqualWhenIdsDiffer() { // GH-90000
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            Instant createdAt = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "test"); // GH-90000
 
-            EntityVersion version1 = new EntityVersion(UUID.randomUUID(), "tenant-123", entityId, entity, 1, metadata, createdAt);
-            EntityVersion version2 = new EntityVersion(UUID.randomUUID(), "tenant-123", entityId, entity, 1, metadata, createdAt);
+            EntityVersion version1 = new EntityVersion(UUID.randomUUID(), "tenant-123", entityId, entity, 1, metadata, createdAt); // GH-90000
+            EntityVersion version2 = new EntityVersion(UUID.randomUUID(), "tenant-123", entityId, entity, 1, metadata, createdAt); // GH-90000
 
-            assertThat(version1).isNotEqualTo(version2);
+            assertThat(version1).isNotEqualTo(version2); // GH-90000
         }
 
         @Test
-        @DisplayName("toString should include key fields")
-        void toStringShouldIncludeKeyFields() {
-            UUID entityId = UUID.randomUUID();
-            Instant createdAt = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "test");
+        @DisplayName("toString should include key fields [GH-90000]")
+        void toStringShouldIncludeKeyFields() { // GH-90000
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            Instant createdAt = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "test"); // GH-90000
 
-            EntityVersion version = new EntityVersion(UUID.randomUUID(), "tenant-123", entityId, entity, 1, metadata, createdAt);
+            EntityVersion version = new EntityVersion(UUID.randomUUID(), "tenant-123", entityId, entity, 1, metadata, createdAt); // GH-90000
 
-            assertThat(version.toString())
-                .contains("entityId=")
-                .contains("versionNumber=1")
-                .contains("author='user-456'");
+            assertThat(version.toString()) // GH-90000
+                .contains("entityId= [GH-90000]")
+                .contains("versionNumber=1 [GH-90000]")
+                .contains("author='user-456' [GH-90000]");
         }
     }
 
@@ -363,87 +363,87 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("VersionMetadata")
+    @DisplayName("VersionMetadata [GH-90000]")
     class VersionMetadataTests {
 
         @Test
-        @DisplayName("should create VersionMetadata with required fields")
-        void shouldCreateVersionMetadataWithRequiredFields() {
+        @DisplayName("should create VersionMetadata with required fields [GH-90000]")
+        void shouldCreateVersionMetadataWithRequiredFields() { // GH-90000
             String author = "user-456";
-            Instant timestamp = Instant.now();
+            Instant timestamp = Instant.now(); // GH-90000
             String reason = "Updated contact info";
 
-            VersionMetadata metadata = new VersionMetadata(author, timestamp, reason);
+            VersionMetadata metadata = new VersionMetadata(author, timestamp, reason); // GH-90000
 
-            assertThat(metadata.author()).isEqualTo(author);
-            assertThat(metadata.timestamp()).isEqualTo(timestamp);
-            assertThat(metadata.reason()).isEqualTo(reason);
+            assertThat(metadata.author()).isEqualTo(author); // GH-90000
+            assertThat(metadata.timestamp()).isEqualTo(timestamp); // GH-90000
+            assertThat(metadata.reason()).isEqualTo(reason); // GH-90000
         }
 
         @Test
-        @DisplayName("should create VersionMetadata with null reason")
-        void shouldCreateVersionMetadataWithNullReason() {
+        @DisplayName("should create VersionMetadata with null reason [GH-90000]")
+        void shouldCreateVersionMetadataWithNullReason() { // GH-90000
             String author = "user-456";
-            Instant timestamp = Instant.now();
+            Instant timestamp = Instant.now(); // GH-90000
 
-            VersionMetadata metadata = new VersionMetadata(author, timestamp, null);
+            VersionMetadata metadata = new VersionMetadata(author, timestamp, null); // GH-90000
 
-            assertThat(metadata.author()).isEqualTo(author);
-            assertThat(metadata.timestamp()).isEqualTo(timestamp);
-            assertThat(metadata.reason()).isNull();
+            assertThat(metadata.author()).isEqualTo(author); // GH-90000
+            assertThat(metadata.timestamp()).isEqualTo(timestamp); // GH-90000
+            assertThat(metadata.reason()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject null author")
-        void shouldRejectNullAuthor() {
-            assertThatThrownBy(() -> new VersionMetadata(null, Instant.now(), "test"))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("Author must not be null");
+        @DisplayName("should reject null author [GH-90000]")
+        void shouldRejectNullAuthor() { // GH-90000
+            assertThatThrownBy(() -> new VersionMetadata(null, Instant.now(), "test")) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("Author must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null timestamp")
-        void shouldRejectNullTimestamp() {
-            assertThatThrownBy(() -> new VersionMetadata("user-456", null, "test"))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("Timestamp must not be null");
+        @DisplayName("should reject null timestamp [GH-90000]")
+        void shouldRejectNullTimestamp() { // GH-90000
+            assertThatThrownBy(() -> new VersionMetadata("user-456", null, "test")) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("Timestamp must not be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should generate summary with reason")
-        void shouldGenerateSummaryWithReason() {
-            Instant timestamp = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", timestamp, "Updated contact info");
+        @DisplayName("should generate summary with reason [GH-90000]")
+        void shouldGenerateSummaryWithReason() { // GH-90000
+            Instant timestamp = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", timestamp, "Updated contact info"); // GH-90000
 
-            String summary = metadata.getSummary();
+            String summary = metadata.getSummary(); // GH-90000
 
-            assertThat(summary).contains("Updated contact info");
-            assertThat(summary).contains("user-456");
-            assertThat(summary).contains(timestamp.toString());
+            assertThat(summary).contains("Updated contact info [GH-90000]");
+            assertThat(summary).contains("user-456 [GH-90000]");
+            assertThat(summary).contains(timestamp.toString()); // GH-90000
         }
 
         @Test
-        @DisplayName("should generate summary without reason")
-        void shouldGenerateSummaryWithoutReason() {
-            Instant timestamp = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", timestamp, null);
+        @DisplayName("should generate summary without reason [GH-90000]")
+        void shouldGenerateSummaryWithoutReason() { // GH-90000
+            Instant timestamp = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", timestamp, null); // GH-90000
 
-            String summary = metadata.getSummary();
+            String summary = metadata.getSummary(); // GH-90000
 
-            assertThat(summary).contains("Modified by user-456");
-            assertThat(summary).contains(timestamp.toString());
+            assertThat(summary).contains("Modified by user-456 [GH-90000]");
+            assertThat(summary).contains(timestamp.toString()); // GH-90000
         }
 
         @Test
-        @DisplayName("should generate summary with empty reason")
-        void shouldGenerateSummaryWithEmptyReason() {
-            Instant timestamp = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", timestamp, "");
+        @DisplayName("should generate summary with empty reason [GH-90000]")
+        void shouldGenerateSummaryWithEmptyReason() { // GH-90000
+            Instant timestamp = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", timestamp, ""); // GH-90000
 
-            String summary = metadata.getSummary();
+            String summary = metadata.getSummary(); // GH-90000
 
-            assertThat(summary).contains("Modified by user-456");
-            assertThat(summary).contains(timestamp.toString());
+            assertThat(summary).contains("Modified by user-456 [GH-90000]");
+            assertThat(summary).contains(timestamp.toString()); // GH-90000
         }
     }
 
@@ -452,157 +452,157 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("VersionRecord operations")
+    @DisplayName("VersionRecord operations [GH-90000]")
     class VersionRecordOperations {
 
         @Test
-        @DisplayName("should save version")
-        void shouldSaveVersion() {
+        @DisplayName("should save version [GH-90000]")
+        void shouldSaveVersion() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
-            Instant createdAt = Instant.now();
-            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "Initial creation");
-            EntityVersion version = EntityVersion.builder()
-                .tenantId(tenantId)
-                .entityId(entityId)
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(metadata)
-                .createdAt(createdAt)
-                .build();
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            Instant createdAt = Instant.now(); // GH-90000
+            VersionMetadata metadata = new VersionMetadata("user-456", createdAt, "Initial creation"); // GH-90000
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .entityId(entityId) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(metadata) // GH-90000
+                .createdAt(createdAt) // GH-90000
+                .build(); // GH-90000
 
-            when(versionRecord.saveVersion(tenantId, entity, metadata))
-                .thenReturn(Promise.of(version));
+            when(versionRecord.saveVersion(tenantId, entity, metadata)) // GH-90000
+                .thenReturn(Promise.of(version)); // GH-90000
 
-            EntityVersion result = runPromise(() -> versionRecord.saveVersion(tenantId, entity, metadata));
+            EntityVersion result = runPromise(() -> versionRecord.saveVersion(tenantId, entity, metadata)); // GH-90000
 
-            assertThat(result).isEqualTo(version);
-            verify(versionRecord).saveVersion(tenantId, entity, metadata);
+            assertThat(result).isEqualTo(version); // GH-90000
+            verify(versionRecord).saveVersion(tenantId, entity, metadata); // GH-90000
         }
 
         @Test
-        @DisplayName("should get version history")
-        void shouldGetVersionHistory() {
+        @DisplayName("should get version history [GH-90000]")
+        void shouldGetVersionHistory() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
-            List<EntityVersion> versions = List.of(
-                EntityVersion.builder()
-                    .tenantId(tenantId)
-                    .entityId(entityId)
-                    .entitySnapshot(entity)
-                    .versionNumber(1)
-                    .metadata(new VersionMetadata("user-456", Instant.now(), "v1"))
-                    .build(),
-                EntityVersion.builder()
-                    .tenantId(tenantId)
-                    .entityId(entityId)
-                    .entitySnapshot(entity)
-                    .versionNumber(2)
-                    .metadata(new VersionMetadata("user-456", Instant.now(), "v2"))
-                    .build()
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            List<EntityVersion> versions = List.of( // GH-90000
+                EntityVersion.builder() // GH-90000
+                    .tenantId(tenantId) // GH-90000
+                    .entityId(entityId) // GH-90000
+                    .entitySnapshot(entity) // GH-90000
+                    .versionNumber(1) // GH-90000
+                    .metadata(new VersionMetadata("user-456", Instant.now(), "v1")) // GH-90000
+                    .build(), // GH-90000
+                EntityVersion.builder() // GH-90000
+                    .tenantId(tenantId) // GH-90000
+                    .entityId(entityId) // GH-90000
+                    .entitySnapshot(entity) // GH-90000
+                    .versionNumber(2) // GH-90000
+                    .metadata(new VersionMetadata("user-456", Instant.now(), "v2")) // GH-90000
+                    .build() // GH-90000
             );
 
-            when(versionRecord.getVersionHistory(tenantId, entityId))
-                .thenReturn(Promise.of(versions));
+            when(versionRecord.getVersionHistory(tenantId, entityId)) // GH-90000
+                .thenReturn(Promise.of(versions)); // GH-90000
 
-            List<EntityVersion> result = runPromise(() -> versionRecord.getVersionHistory(tenantId, entityId));
+            List<EntityVersion> result = runPromise(() -> versionRecord.getVersionHistory(tenantId, entityId)); // GH-90000
 
-            assertThat(result).hasSize(2);
-            assertThat(result.get(0).getVersionNumber()).isEqualTo(1);
-            assertThat(result.get(1).getVersionNumber()).isEqualTo(2);
+            assertThat(result).hasSize(2); // GH-90000
+            assertThat(result.get(0).getVersionNumber()).isEqualTo(1); // GH-90000
+            assertThat(result.get(1).getVersionNumber()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("should get specific version by number")
-        void shouldGetSpecificVersionByNumber() {
+        @DisplayName("should get specific version by number [GH-90000]")
+        void shouldGetSpecificVersionByNumber() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
-            EntityVersion version = EntityVersion.builder()
-                .tenantId(tenantId)
-                .entityId(entityId)
-                .entitySnapshot(entity)
-                .versionNumber(2)
-                .metadata(new VersionMetadata("user-456", Instant.now(), "v2"))
-                .build();
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            EntityVersion version = EntityVersion.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .entityId(entityId) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(2) // GH-90000
+                .metadata(new VersionMetadata("user-456", Instant.now(), "v2")) // GH-90000
+                .build(); // GH-90000
 
-            when(versionRecord.getVersion(tenantId, entityId, 2))
-                .thenReturn(Promise.of(version));
+            when(versionRecord.getVersion(tenantId, entityId, 2)) // GH-90000
+                .thenReturn(Promise.of(version)); // GH-90000
 
-            EntityVersion result = runPromise(() -> versionRecord.getVersion(tenantId, entityId, 2));
+            EntityVersion result = runPromise(() -> versionRecord.getVersion(tenantId, entityId, 2)); // GH-90000
 
-            assertThat(result.getVersionNumber()).isEqualTo(2);
+            assertThat(result.getVersionNumber()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("should get latest version")
-        void shouldGetLatestVersion() {
+        @DisplayName("should get latest version [GH-90000]")
+        void shouldGetLatestVersion() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
-            EntityVersion latestVersion = EntityVersion.builder()
-                .tenantId(tenantId)
-                .entityId(entityId)
-                .entitySnapshot(entity)
-                .versionNumber(3)
-                .metadata(new VersionMetadata("user-456", Instant.now(), "latest"))
-                .build();
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            EntityVersion latestVersion = EntityVersion.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .entityId(entityId) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(3) // GH-90000
+                .metadata(new VersionMetadata("user-456", Instant.now(), "latest")) // GH-90000
+                .build(); // GH-90000
 
-            when(versionRecord.getLatestVersion(tenantId, entityId))
-                .thenReturn(Promise.of(latestVersion));
+            when(versionRecord.getLatestVersion(tenantId, entityId)) // GH-90000
+                .thenReturn(Promise.of(latestVersion)); // GH-90000
 
-            EntityVersion result = runPromise(() -> versionRecord.getLatestVersion(tenantId, entityId));
+            EntityVersion result = runPromise(() -> versionRecord.getLatestVersion(tenantId, entityId)); // GH-90000
 
-            assertThat(result.getVersionNumber()).isEqualTo(3);
+            assertThat(result.getVersionNumber()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("should count versions")
-        void shouldCountVersions() {
+        @DisplayName("should count versions [GH-90000]")
+        void shouldCountVersions() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
 
-            when(versionRecord.countVersions(tenantId, entityId))
-                .thenReturn(Promise.of(5));
+            when(versionRecord.countVersions(tenantId, entityId)) // GH-90000
+                .thenReturn(Promise.of(5)); // GH-90000
 
-            Integer result = runPromise(() -> versionRecord.countVersions(tenantId, entityId));
+            Integer result = runPromise(() -> versionRecord.countVersions(tenantId, entityId)); // GH-90000
 
-            assertThat(result).isEqualTo(5);
+            assertThat(result).isEqualTo(5); // GH-90000
         }
 
         @Test
-        @DisplayName("should compute diff between versions")
-        void shouldComputeDiffBetweenVersions() {
+        @DisplayName("should compute diff between versions [GH-90000]")
+        void shouldComputeDiffBetweenVersions() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
-            VersionDiff diff = new VersionDiff(
-                Map.of("name", new VersionDiff.FieldChange("Old", "New")),
-                Set.of("email"),
-                Set.of("phone")
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            VersionDiff diff = new VersionDiff( // GH-90000
+                Map.of("name", new VersionDiff.FieldChange("Old", "New")), // GH-90000
+                Set.of("email [GH-90000]"),
+                Set.of("phone [GH-90000]")
             );
 
-            when(versionRecord.computeDiff(tenantId, entityId, 1, 2))
-                .thenReturn(Promise.of(diff));
+            when(versionRecord.computeDiff(tenantId, entityId, 1, 2)) // GH-90000
+                .thenReturn(Promise.of(diff)); // GH-90000
 
-            VersionDiff result = runPromise(() -> versionRecord.computeDiff(tenantId, entityId, 1, 2));
+            VersionDiff result = runPromise(() -> versionRecord.computeDiff(tenantId, entityId, 1, 2)); // GH-90000
 
-            assertThat(result.hasChanges()).isTrue();
-            assertThat(result.getChanged()).hasSize(1);
-            assertThat(result.getAdded()).contains("email");
-            assertThat(result.getRemoved()).contains("phone");
+            assertThat(result.hasChanges()).isTrue(); // GH-90000
+            assertThat(result.getChanged()).hasSize(1); // GH-90000
+            assertThat(result.getAdded()).contains("email [GH-90000]");
+            assertThat(result.getRemoved()).contains("phone [GH-90000]");
         }
 
         @Test
-        @DisplayName("should delete version history")
-        void shouldDeleteVersionHistory() {
+        @DisplayName("should delete version history [GH-90000]")
+        void shouldDeleteVersionHistory() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
 
-            when(versionRecord.deleteVersionHistory(tenantId, entityId))
-                .thenReturn(Promise.of(3));
+            when(versionRecord.deleteVersionHistory(tenantId, entityId)) // GH-90000
+                .thenReturn(Promise.of(3)); // GH-90000
 
-            Integer result = runPromise(() -> versionRecord.deleteVersionHistory(tenantId, entityId));
+            Integer result = runPromise(() -> versionRecord.deleteVersionHistory(tenantId, entityId)); // GH-90000
 
-            assertThat(result).isEqualTo(3);
-            verify(versionRecord).deleteVersionHistory(tenantId, entityId);
+            assertThat(result).isEqualTo(3); // GH-90000
+            verify(versionRecord).deleteVersionHistory(tenantId, entityId); // GH-90000
         }
     }
 
@@ -611,82 +611,82 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Version sequence validation")
+    @DisplayName("Version sequence validation [GH-90000]")
     class VersionSequenceValidation {
 
         @Test
-        @DisplayName("should maintain sequential version numbers")
-        void shouldMaintainSequentialVersionNumbers() {
+        @DisplayName("should maintain sequential version numbers [GH-90000]")
+        void shouldMaintainSequentialVersionNumbers() { // GH-90000
             String tenantId = "tenant-123";
-            UUID entityId = UUID.randomUUID();
-            Instant createdAt = Instant.now();
+            UUID entityId = UUID.randomUUID(); // GH-90000
+            Instant createdAt = Instant.now(); // GH-90000
 
-            EntityVersion v1 = EntityVersion.builder()
-                .tenantId(tenantId)
-                .entityId(entityId)
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(new VersionMetadata("user-456", createdAt, "v1"))
-                .build();
+            EntityVersion v1 = EntityVersion.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .entityId(entityId) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(new VersionMetadata("user-456", createdAt, "v1")) // GH-90000
+                .build(); // GH-90000
 
-            EntityVersion v2 = EntityVersion.builder()
-                .tenantId(tenantId)
-                .entityId(entityId)
-                .entitySnapshot(entity)
-                .versionNumber(2)
-                .metadata(new VersionMetadata("user-456", createdAt.plusSeconds(1), "v2"))
-                .build();
+            EntityVersion v2 = EntityVersion.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .entityId(entityId) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(2) // GH-90000
+                .metadata(new VersionMetadata("user-456", createdAt.plusSeconds(1), "v2")) // GH-90000
+                .build(); // GH-90000
 
-            EntityVersion v3 = EntityVersion.builder()
-                .tenantId(tenantId)
-                .entityId(entityId)
-                .entitySnapshot(entity)
-                .versionNumber(3)
-                .metadata(new VersionMetadata("user-456", createdAt.plusSeconds(2), "v3"))
-                .build();
+            EntityVersion v3 = EntityVersion.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .entityId(entityId) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(3) // GH-90000
+                .metadata(new VersionMetadata("user-456", createdAt.plusSeconds(2), "v3")) // GH-90000
+                .build(); // GH-90000
 
-            List<EntityVersion> versions = List.of(v1, v2, v3);
+            List<EntityVersion> versions = List.of(v1, v2, v3); // GH-90000
 
-            assertThat(versions.get(0).getVersionNumber()).isEqualTo(1);
-            assertThat(versions.get(1).getVersionNumber()).isEqualTo(2);
-            assertThat(versions.get(2).getVersionNumber()).isEqualTo(3);
+            assertThat(versions.get(0).getVersionNumber()).isEqualTo(1); // GH-90000
+            assertThat(versions.get(1).getVersionNumber()).isEqualTo(2); // GH-90000
+            assertThat(versions.get(2).getVersionNumber()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("versions should be ordered chronologically")
-        void versionsShouldBeOrderedChronologically() {
-            Instant now = Instant.now();
-            EntityVersion v1 = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(1)
-                .metadata(new VersionMetadata("user-456", now, "v1"))
-                .createdAt(now)
-                .build();
+        @DisplayName("versions should be ordered chronologically [GH-90000]")
+        void versionsShouldBeOrderedChronologically() { // GH-90000
+            Instant now = Instant.now(); // GH-90000
+            EntityVersion v1 = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(1) // GH-90000
+                .metadata(new VersionMetadata("user-456", now, "v1")) // GH-90000
+                .createdAt(now) // GH-90000
+                .build(); // GH-90000
 
-            EntityVersion v2 = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(2)
-                .metadata(new VersionMetadata("user-456", now.plusSeconds(10), "v2"))
-                .createdAt(now.plusSeconds(10))
-                .build();
+            EntityVersion v2 = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(2) // GH-90000
+                .metadata(new VersionMetadata("user-456", now.plusSeconds(10), "v2")) // GH-90000
+                .createdAt(now.plusSeconds(10)) // GH-90000
+                .build(); // GH-90000
 
-            EntityVersion v3 = EntityVersion.builder()
-                .tenantId("tenant-123")
-                .entityId(UUID.randomUUID())
-                .entitySnapshot(entity)
-                .versionNumber(3)
-                .metadata(new VersionMetadata("user-456", now.plusSeconds(20), "v3"))
-                .createdAt(now.plusSeconds(20))
-                .build();
+            EntityVersion v3 = EntityVersion.builder() // GH-90000
+                .tenantId("tenant-123 [GH-90000]")
+                .entityId(UUID.randomUUID()) // GH-90000
+                .entitySnapshot(entity) // GH-90000
+                .versionNumber(3) // GH-90000
+                .metadata(new VersionMetadata("user-456", now.plusSeconds(20), "v3")) // GH-90000
+                .createdAt(now.plusSeconds(20)) // GH-90000
+                .build(); // GH-90000
 
-            List<EntityVersion> versions = List.of(v1, v2, v3);
+            List<EntityVersion> versions = List.of(v1, v2, v3); // GH-90000
 
-            assertThat(versions.get(0).getCreatedAt()).isBefore(versions.get(1).getCreatedAt());
-            assertThat(versions.get(1).getCreatedAt()).isBefore(versions.get(2).getCreatedAt());
+            assertThat(versions.get(0).getCreatedAt()).isBefore(versions.get(1).getCreatedAt()); // GH-90000
+            assertThat(versions.get(1).getCreatedAt()).isBefore(versions.get(2).getCreatedAt()); // GH-90000
         }
     }
 
@@ -695,41 +695,41 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Tenant isolation")
+    @DisplayName("Tenant isolation [GH-90000]")
     class TenantIsolation {
 
         @Test
-        @DisplayName("should not return versions from different tenant")
-        void shouldNotReturnVersionsFromDifferentTenant() {
+        @DisplayName("should not return versions from different tenant [GH-90000]")
+        void shouldNotReturnVersionsFromDifferentTenant() { // GH-90000
             String tenantB = "tenant-b";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
 
-            when(versionRecord.getVersionHistory(tenantB, entityId))
-                .thenReturn(Promise.of(List.of()));
+            when(versionRecord.getVersionHistory(tenantB, entityId)) // GH-90000
+                .thenReturn(Promise.of(List.of())); // GH-90000
 
-            List<EntityVersion> result = runPromise(() -> versionRecord.getVersionHistory(tenantB, entityId));
+            List<EntityVersion> result = runPromise(() -> versionRecord.getVersionHistory(tenantB, entityId)); // GH-90000
 
-            assertThat(result).isEmpty();
+            assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should save version with correct tenant ID")
-        void shouldSaveVersionWithCorrectTenantId() {
+        @DisplayName("should save version with correct tenant ID [GH-90000]")
+        void shouldSaveVersionWithCorrectTenantId() { // GH-90000
             String tenantId = "tenant-123";
-            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "test");
+            VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "test"); // GH-90000
 
-            when(versionRecord.saveVersion(eq(tenantId), any(), any()))
-                .thenReturn(Promise.of(EntityVersion.builder()
-                    .tenantId(tenantId)
-                    .entityId(UUID.randomUUID())
-                    .entitySnapshot(entity)
-                    .versionNumber(1)
-                    .metadata(metadata)
-                    .build()));
+            when(versionRecord.saveVersion(eq(tenantId), any(), any())) // GH-90000
+                .thenReturn(Promise.of(EntityVersion.builder() // GH-90000
+                    .tenantId(tenantId) // GH-90000
+                    .entityId(UUID.randomUUID()) // GH-90000
+                    .entitySnapshot(entity) // GH-90000
+                    .versionNumber(1) // GH-90000
+                    .metadata(metadata) // GH-90000
+                    .build())); // GH-90000
 
-            EntityVersion result = runPromise(() -> versionRecord.saveVersion(tenantId, entity, metadata));
+            EntityVersion result = runPromise(() -> versionRecord.saveVersion(tenantId, entity, metadata)); // GH-90000
 
-            assertThat(result.getTenantId()).isEqualTo(tenantId);
+            assertThat(result.getTenantId()).isEqualTo(tenantId); // GH-90000
         }
     }
 }

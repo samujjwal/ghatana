@@ -31,140 +31,140 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test Data Cloud event integration, consumption, and processing with actual persistence.
  */
-@DisplayName("Data Cloud Event Integration Tests")
+@DisplayName("Data Cloud Event Integration Tests [GH-90000]")
 class DataCloudEventIntegrationTest extends EventloopTestBase {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(); // GH-90000
 
     private DataCloudClient dataCloud;
     private AepEngine engine;
 
     @BeforeEach
-    void setUp() {
-        dataCloud = DataCloud.embedded();
-        engine = Aep.forTesting(new DataCloudClientEventCloud(dataCloud));
+    void setUp() { // GH-90000
+        dataCloud = DataCloud.embedded(); // GH-90000
+        engine = Aep.forTesting(new DataCloudClientEventCloud(dataCloud)); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (engine != null) {
-            engine.close();
+    void tearDown() { // GH-90000
+        if (engine != null) { // GH-90000
+            engine.close(); // GH-90000
         }
-        if (dataCloud != null) {
-            dataCloud.close();
+        if (dataCloud != null) { // GH-90000
+            dataCloud.close(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Event Persistence")
+    @DisplayName("Event Persistence [GH-90000]")
     class PersistenceTests {
 
         @Test
-        @DisplayName("events persist to Data Cloud and can be retrieved")
-        void eventsPersistToDataCloudAndCanBeRetrieved() {
+        @DisplayName("events persist to Data Cloud and can be retrieved [GH-90000]")
+        void eventsPersistToDataCloudAndCanBeRetrieved() { // GH-90000
             String tenantId = "tenant-persistence";
             String eventType = "test.event";
 
             // Ingest event
-            AepEngine.Event event = new AepEngine.Event(
+            AepEngine.Event event = new AepEngine.Event( // GH-90000
                 eventType,
-                Map.of("value", 42, "status", "active"),
-                Map.of("correlationId", "corr-123", "traceId", "trace-456"),
-                Instant.now()
+                Map.of("value", 42, "status", "active"), // GH-90000
+                Map.of("correlationId", "corr-123", "traceId", "trace-456"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            runPromise(() -> engine.ingestEvent(tenantId, event));
+            runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
 
             // Verify event persisted in Data Cloud
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType(eventType))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType(eventType)) // GH-90000
             );
 
-            assertThat(retrievedEvents).isNotEmpty();
-            assertThat(retrievedEvents.get(0).type()).isEqualTo(eventType);
-            assertThat(retrievedEvents.get(0).payload()).containsEntry("value", 42);
+            assertThat(retrievedEvents).isNotEmpty(); // GH-90000
+            assertThat(retrievedEvents.get(0).type()).isEqualTo(eventType); // GH-90000
+            assertThat(retrievedEvents.get(0).payload()).containsEntry("value", 42); // GH-90000
         }
 
         @Test
-        @DisplayName("events with same correlationId are grouped in Data Cloud")
-        void eventsWithSameCorrelationIdAreGroupedInDataCloud() {
+        @DisplayName("events with same correlationId are grouped in Data Cloud [GH-90000]")
+        void eventsWithSameCorrelationIdAreGroupedInDataCloud() { // GH-90000
             String tenantId = "tenant-grouping";
             String correlationId = "corr-group-123";
 
             // Ingest multiple events with same correlationId
-            for (int i = 0; i < 5; i++) {
-                AepEngine.Event event = new AepEngine.Event(
+            for (int i = 0; i < 5; i++) { // GH-90000
+                AepEngine.Event event = new AepEngine.Event( // GH-90000
                     "grouped.event",
-                    Map.of("index", i),
-                    Map.of("correlationId", correlationId),
-                    Instant.now()
+                    Map.of("index", i), // GH-90000
+                    Map.of("correlationId", correlationId), // GH-90000
+                    Instant.now() // GH-90000
                 );
-                runPromise(() -> engine.ingestEvent(tenantId, event));
+                runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
             }
 
             // Verify all events persisted with correlationId
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.all())
-            ).stream()
-                .filter(retrievedEvent -> retrievedEvent.headers() != null
-                    && correlationId.equals(retrievedEvent.headers().get("correlationId")))
-                .toList();
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.all()) // GH-90000
+            ).stream() // GH-90000
+                .filter(retrievedEvent -> retrievedEvent.headers() != null // GH-90000
+                    && correlationId.equals(retrievedEvent.headers().get("correlationId [GH-90000]")))
+                .toList(); // GH-90000
 
-            assertThat(retrievedEvents).hasSize(5);
-            assertThat(retrievedEvents).allMatch(e -> 
-                e.headers() != null && correlationId.equals(e.headers().get("correlationId"))
+            assertThat(retrievedEvents).hasSize(5); // GH-90000
+            assertThat(retrievedEvents).allMatch(e ->  // GH-90000
+                e.headers() != null && correlationId.equals(e.headers().get("correlationId [GH-90000]"))
             );
         }
 
         @Test
-        @DisplayName("persisted events survive engine restart")
-        void persistedEventsSurviveEngineRestart() {
+        @DisplayName("persisted events survive engine restart [GH-90000]")
+        void persistedEventsSurviveEngineRestart() { // GH-90000
             String tenantId = "tenant-restart";
             String eventType = "restart.event";
 
             // Ingest event with first engine instance
-            AepEngine.Event event = new AepEngine.Event(
+            AepEngine.Event event = new AepEngine.Event( // GH-90000
                 eventType,
-                Map.of("key", "value"),
-                Map.of("correlationId", "corr-restart"),
-                Instant.now()
+                Map.of("key", "value"), // GH-90000
+                Map.of("correlationId", "corr-restart"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            runPromise(() -> engine.ingestEvent(tenantId, event));
+            runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
 
             // Close engine
-            engine.close();
+            engine.close(); // GH-90000
 
             // Create new engine instance
-            AepEngine newEngine = Aep.forTesting();
+            AepEngine newEngine = Aep.forTesting(); // GH-90000
 
             // Verify event still accessible via Data Cloud
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType(eventType))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType(eventType)) // GH-90000
             );
 
-            assertThat(retrievedEvents).hasSize(1);
+            assertThat(retrievedEvents).hasSize(1); // GH-90000
 
-            newEngine.close();
+            newEngine.close(); // GH-90000
             engine = null;
         }
     }
 
     @Nested
-    @DisplayName("Event Processing")
+    @DisplayName("Event Processing [GH-90000]")
     class ProcessingTests {
 
         @Test
-        @DisplayName("events are processed by registered patterns")
-        void eventsAreProcessedByRegisteredPatterns() {
+        @DisplayName("events are processed by registered patterns [GH-90000]")
+        void eventsAreProcessedByRegisteredPatterns() { // GH-90000
             String tenantId = "tenant-processing";
 
             // Register a pattern
-            AepEngine.Pipeline pipeline = new AepEngine.Pipeline(
+            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
                 "processing-pipeline",
                 "Processing Pipeline",
-                List.of(
-                    new AepEngine.PipelineStep("process-step", "register_pattern", Map.of(
+                List.of( // GH-90000
+                    new AepEngine.PipelineStep("process-step", "register_pattern", Map.of( // GH-90000
                         "name", "processing-pattern",
                         "patternType", "THRESHOLD",
                         "field", "value",
@@ -173,269 +173,269 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
                 )
             );
 
-            engine.submitPipeline(tenantId, pipeline);
+            engine.submitPipeline(tenantId, pipeline); // GH-90000
 
             // Ingest event that matches pattern
-            AepEngine.Event event = new AepEngine.Event(
+            AepEngine.Event event = new AepEngine.Event( // GH-90000
                 "processing.event",
-                Map.of("value", 75),
-                Map.of("correlationId", "corr-process"),
-                Instant.now()
+                Map.of("value", 75), // GH-90000
+                Map.of("correlationId", "corr-process"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            runPromise(() -> engine.ingestEvent(tenantId, event));
+            runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
 
             // Verify event persisted
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("processing.event"))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("processing.event [GH-90000]"))
             );
 
-            assertThat(retrievedEvents).isNotEmpty();
+            assertThat(retrievedEvents).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("event processing errors do not prevent persistence")
-        void eventProcessingErrorsDoNotPreventPersistence() {
+        @DisplayName("event processing errors do not prevent persistence [GH-90000]")
+        void eventProcessingErrorsDoNotPreventPersistence() { // GH-90000
             String tenantId = "tenant-error-handling";
 
-            // Ingest event (even if processing fails, should persist)
-            AepEngine.Event event = new AepEngine.Event(
+            // Ingest event (even if processing fails, should persist) // GH-90000
+            AepEngine.Event event = new AepEngine.Event( // GH-90000
                 "error.event",
-                Map.of("value", "invalid"),
-                Map.of("correlationId", "corr-error"),
-                Instant.now()
+                Map.of("value", "invalid"), // GH-90000
+                Map.of("correlationId", "corr-error"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            runPromise(() -> engine.ingestEvent(tenantId, event));
+            runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
 
             // Verify event persisted despite potential processing errors
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("error.event"))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("error.event [GH-90000]"))
             );
 
-            assertThat(retrievedEvents).isNotEmpty();
+            assertThat(retrievedEvents).isNotEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Event Versioning")
+    @DisplayName("Event Versioning [GH-90000]")
     class VersioningTests {
 
         @Test
-        @DisplayName("events with different versions are stored separately")
-        void eventsWithDifferentVersionsAreStoredSeparately() {
+        @DisplayName("events with different versions are stored separately [GH-90000]")
+        void eventsWithDifferentVersionsAreStoredSeparately() { // GH-90000
             String tenantId = "tenant-versioning";
 
             // Ingest events with different versions
-            AepEngine.Event eventV1 = new AepEngine.Event(
+            AepEngine.Event eventV1 = new AepEngine.Event( // GH-90000
                 "versioned.event",
-                Map.of("version", 1, "data", "v1-data"),
-                Map.of("correlationId", "corr-v1", "eventVersion", "1.0"),
-                Instant.now()
+                Map.of("version", 1, "data", "v1-data"), // GH-90000
+                Map.of("correlationId", "corr-v1", "eventVersion", "1.0"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            AepEngine.Event eventV2 = new AepEngine.Event(
+            AepEngine.Event eventV2 = new AepEngine.Event( // GH-90000
                 "versioned.event",
-                Map.of("version", 2, "data", "v2-data"),
-                Map.of("correlationId", "corr-v2", "eventVersion", "2.0"),
-                Instant.now()
+                Map.of("version", 2, "data", "v2-data"), // GH-90000
+                Map.of("correlationId", "corr-v2", "eventVersion", "2.0"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            runPromise(() -> engine.ingestEvent(tenantId, eventV1));
-            runPromise(() -> engine.ingestEvent(tenantId, eventV2));
+            runPromise(() -> engine.ingestEvent(tenantId, eventV1)); // GH-90000
+            runPromise(() -> engine.ingestEvent(tenantId, eventV2)); // GH-90000
 
             // Verify both versions persisted
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("versioned.event"))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("versioned.event [GH-90000]"))
             );
 
-            assertThat(retrievedEvents).hasSize(2);
-            assertThat(retrievedEvents).extracting(e -> e.payload().get("version"))
-                .containsExactly(1, 2);
+            assertThat(retrievedEvents).hasSize(2); // GH-90000
+            assertThat(retrievedEvents).extracting(e -> e.payload().get("version [GH-90000]"))
+                .containsExactly(1, 2); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Event Schema Validation")
+    @DisplayName("Event Schema Validation [GH-90000]")
     class SchemaValidationTests {
 
         @Test
-        @DisplayName("events with valid schema are persisted")
-        void eventsWithValidSchemaArePersisted() {
+        @DisplayName("events with valid schema are persisted [GH-90000]")
+        void eventsWithValidSchemaArePersisted() { // GH-90000
             String tenantId = "tenant-schema-valid";
 
-            AepEngine.Event event = new AepEngine.Event(
+            AepEngine.Event event = new AepEngine.Event( // GH-90000
                 "schema.valid",
-                Map.of("requiredField", "value", "optionalField", "optional"),
-                Map.of("correlationId", "corr-schema"),
-                Instant.now()
+                Map.of("requiredField", "value", "optionalField", "optional"), // GH-90000
+                Map.of("correlationId", "corr-schema"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            runPromise(() -> engine.ingestEvent(tenantId, event));
+            runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
 
             // Verify persisted
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.valid"))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.valid [GH-90000]"))
             );
 
-            assertThat(retrievedEvents).hasSize(1);
+            assertThat(retrievedEvents).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("events with missing required fields are rejected")
-        void eventsWithMissingRequiredFieldsAreRejected() {
+        @DisplayName("events with missing required fields are rejected [GH-90000]")
+        void eventsWithMissingRequiredFieldsAreRejected() { // GH-90000
             String tenantId = "tenant-schema-invalid";
 
             // Event without required field
-            AepEngine.Event event = new AepEngine.Event(
+            AepEngine.Event event = new AepEngine.Event( // GH-90000
                 "schema.invalid",
-                Map.of("optionalField", "value"), // Missing requiredField
-                Map.of("correlationId", "corr-invalid"),
-                Instant.now()
+                Map.of("optionalField", "value"), // Missing requiredField // GH-90000
+                Map.of("correlationId", "corr-invalid"), // GH-90000
+                Instant.now() // GH-90000
             );
 
             // Should not throw, but may not persist
-            runPromise(() -> engine.ingestEvent(tenantId, event));
+            runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
 
             // Verify not persisted or handled appropriately
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.invalid"))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.invalid [GH-90000]"))
             );
 
             // Either not persisted or handled with error tracking
             // For now, we verify the system doesn't crash
-            assertThat(engine).isNotNull();
+            assertThat(engine).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Event Transformation")
+    @DisplayName("Event Transformation [GH-90000]")
     class TransformationTests {
 
         @Test
-        @DisplayName("events are transformed before persistence")
-        void eventsAreTransformedBeforePersistence() {
+        @DisplayName("events are transformed before persistence [GH-90000]")
+        void eventsAreTransformedBeforePersistence() { // GH-90000
             String tenantId = "tenant-transform";
 
-            AepEngine.Event event = new AepEngine.Event(
+            AepEngine.Event event = new AepEngine.Event( // GH-90000
                 "transform.event",
-                Map.of("rawValue", "100"),
-                Map.of("correlationId", "corr-transform"),
-                Instant.now()
+                Map.of("rawValue", "100"), // GH-90000
+                Map.of("correlationId", "corr-transform"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            runPromise(() -> engine.ingestEvent(tenantId, event));
+            runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
 
-            // Verify transformation applied (e.g., string to number)
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("transform.event"))
+            // Verify transformation applied (e.g., string to number) // GH-90000
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("transform.event [GH-90000]"))
             );
 
-            assertThat(retrievedEvents).isNotEmpty();
+            assertThat(retrievedEvents).isNotEmpty(); // GH-90000
             // Verify payload structure
-            assertThat(retrievedEvents.get(0).payload()).containsKey("rawValue");
+            assertThat(retrievedEvents.get(0).payload()).containsKey("rawValue [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Event Batching")
+    @DisplayName("Event Batching [GH-90000]")
     class BatchingTests {
 
         @Test
-        @DisplayName("multiple events can be ingested in batch")
-        void multipleEventsCanBeIngestedInBatch() {
+        @DisplayName("multiple events can be ingested in batch [GH-90000]")
+        void multipleEventsCanBeIngestedInBatch() { // GH-90000
             String tenantId = "tenant-batch";
 
             // Ingest multiple events
-            for (int i = 0; i < 10; i++) {
-                AepEngine.Event event = new AepEngine.Event(
+            for (int i = 0; i < 10; i++) { // GH-90000
+                AepEngine.Event event = new AepEngine.Event( // GH-90000
                     "batch.event",
-                    Map.of("index", i),
-                    Map.of("correlationId", "corr-batch-" + i),
-                    Instant.now()
+                    Map.of("index", i), // GH-90000
+                    Map.of("correlationId", "corr-batch-" + i), // GH-90000
+                    Instant.now() // GH-90000
                 );
-                runPromise(() -> engine.ingestEvent(tenantId, event));
+                runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
             }
 
             // Verify all persisted
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("batch.event"))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("batch.event [GH-90000]"))
             );
 
-            assertThat(retrievedEvents).hasSize(10);
+            assertThat(retrievedEvents).hasSize(10); // GH-90000
         }
 
         @Test
-        @DisplayName("batch ingestion maintains event order")
-        void batchIngestionMaintainsEventOrder() {
+        @DisplayName("batch ingestion maintains event order [GH-90000]")
+        void batchIngestionMaintainsEventOrder() { // GH-90000
             String tenantId = "tenant-order";
 
             // Ingest events in sequence
-            for (int i = 0; i < 5; i++) {
-                AepEngine.Event event = new AepEngine.Event(
+            for (int i = 0; i < 5; i++) { // GH-90000
+                AepEngine.Event event = new AepEngine.Event( // GH-90000
                     "order.event",
-                    Map.of("sequence", i),
-                    Map.of("correlationId", "corr-order-" + i),
-                    Instant.now().plusMillis(i * 10) // Ensure distinct timestamps
+                    Map.of("sequence", i), // GH-90000
+                    Map.of("correlationId", "corr-order-" + i), // GH-90000
+                    Instant.now().plusMillis(i * 10) // Ensure distinct timestamps // GH-90000
                 );
-                runPromise(() -> engine.ingestEvent(tenantId, event));
+                runPromise(() -> engine.ingestEvent(tenantId, event)); // GH-90000
             }
 
             // Verify order preserved
-            List<DataCloudClient.Event> retrievedEvents = runPromise(() ->
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("order.event"))
+            List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("order.event [GH-90000]"))
             );
 
-            assertThat(retrievedEvents).hasSize(5);
-            // Verify sequence order (may need to sort by timestamp)
-            List<Integer> sequences = retrievedEvents.stream()
-                .map(e -> (Integer) e.payload().get("sequence"))
-                .toList();
-            assertThat(sequences).containsExactly(0, 1, 2, 3, 4);
+            assertThat(retrievedEvents).hasSize(5); // GH-90000
+            // Verify sequence order (may need to sort by timestamp) // GH-90000
+            List<Integer> sequences = retrievedEvents.stream() // GH-90000
+                .map(e -> (Integer) e.payload().get("sequence [GH-90000]"))
+                .toList(); // GH-90000
+            assertThat(sequences).containsExactly(0, 1, 2, 3, 4); // GH-90000
         }
     }
 
     private final class DataCloudClientEventCloud implements EventCloud {
         private final DataCloudClient dataCloudClient;
 
-        private DataCloudClientEventCloud(DataCloudClient dataCloudClient) {
+        private DataCloudClientEventCloud(DataCloudClient dataCloudClient) { // GH-90000
             this.dataCloudClient = dataCloudClient;
         }
 
         @Override
-        public String append(String tenantId, String eventType, byte[] payload) {
+        public String append(String tenantId, String eventType, byte[] payload) { // GH-90000
             try {
-                Map<String, Object> envelope = OBJECT_MAPPER.readValue(payload, new TypeReference<>() {});
-                @SuppressWarnings("unchecked")
-                Map<String, Object> eventPayload = (Map<String, Object>) envelope.getOrDefault("payload", Map.of());
-                @SuppressWarnings("unchecked")
-                Map<String, String> headers = (Map<String, String>) envelope.getOrDefault("headers", Map.of());
-                Instant timestamp = Instant.parse(envelope.getOrDefault("timestamp", Instant.now().toString()).toString());
+                Map<String, Object> envelope = OBJECT_MAPPER.readValue(payload, new TypeReference<>() {}); // GH-90000
+                @SuppressWarnings("unchecked [GH-90000]")
+                Map<String, Object> eventPayload = (Map<String, Object>) envelope.getOrDefault("payload", Map.of()); // GH-90000
+                @SuppressWarnings("unchecked [GH-90000]")
+                Map<String, String> headers = (Map<String, String>) envelope.getOrDefault("headers", Map.of()); // GH-90000
+                Instant timestamp = Instant.parse(envelope.getOrDefault("timestamp", Instant.now().toString()).toString()); // GH-90000
 
-                io.activej.promise.Promise<DataCloudClient.Offset> appendPromise = dataCloudClient.appendEvent(
+                io.activej.promise.Promise<DataCloudClient.Offset> appendPromise = dataCloudClient.appendEvent( // GH-90000
                     tenantId,
-                    new DataCloudClient.Event(eventType, eventPayload, headers, timestamp)
+                    new DataCloudClient.Event(eventType, eventPayload, headers, timestamp) // GH-90000
                 );
-                if (appendPromise.getException() != null) {
-                    throw appendPromise.getException();
+                if (appendPromise.getException() != null) { // GH-90000
+                    throw appendPromise.getException(); // GH-90000
                 }
-                DataCloudClient.Offset offset = appendPromise.getResult();
-                return Long.toString(offset.value());
-            } catch (Exception exception) {
-                throw new IllegalStateException("Failed to append event to DataCloud test adapter", exception);
+                DataCloudClient.Offset offset = appendPromise.getResult(); // GH-90000
+                return Long.toString(offset.value()); // GH-90000
+            } catch (Exception exception) { // GH-90000
+                throw new IllegalStateException("Failed to append event to DataCloud test adapter", exception); // GH-90000
             }
         }
 
         @Override
-        public Subscription subscribe(String tenantId, String eventType, EventHandler handler) {
-            return new Subscription() {
+        public Subscription subscribe(String tenantId, String eventType, EventHandler handler) { // GH-90000
+            return new Subscription() { // GH-90000
                 @Override
-                public void cancel() {
+                public void cancel() { // GH-90000
                     // No-op for this persistence-focused test adapter.
                 }
 
                 @Override
-                public boolean isCancelled() {
+                public boolean isCancelled() { // GH-90000
                     return false;
                 }
             };

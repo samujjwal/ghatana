@@ -13,221 +13,221 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * Covers builder defaults, validation, authentication, and toString safety.
  */
-@DisplayName("HttpWebhookSourceConfig")
+@DisplayName("HttpWebhookSourceConfig [GH-90000]")
 class HttpWebhookSourceConfigTest {
 
-    private static final TenantId TENANT = TenantId.of("test-tenant");
+    private static final TenantId TENANT = TenantId.of("test-tenant [GH-90000]");
 
-    private HttpWebhookSourceConfig.Builder validBuilder() {
-        return HttpWebhookSourceConfig.builder()
-                .withTenantId(TENANT);
+    private HttpWebhookSourceConfig.Builder validBuilder() { // GH-90000
+        return HttpWebhookSourceConfig.builder() // GH-90000
+                .withTenantId(TENANT); // GH-90000
     }
 
     @Nested
-    @DisplayName("builder defaults")
+    @DisplayName("builder defaults [GH-90000]")
     class BuilderDefaults {
 
         @Test
-        @DisplayName("serverPort defaults to 8080")
-        void defaultPort() {
-            HttpWebhookSourceConfig config = validBuilder().build();
-            assertThat(config.getServerPort()).isEqualTo(8080);
+        @DisplayName("serverPort defaults to 8080 [GH-90000]")
+        void defaultPort() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder().build(); // GH-90000
+            assertThat(config.getServerPort()).isEqualTo(8080); // GH-90000
         }
 
         @Test
-        @DisplayName("path defaults to /webhook")
-        void defaultPath() {
-            HttpWebhookSourceConfig config = validBuilder().build();
-            assertThat(config.getPath()).isEqualTo("/webhook");
+        @DisplayName("path defaults to /webhook [GH-90000]")
+        void defaultPath() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder().build(); // GH-90000
+            assertThat(config.getPath()).isEqualTo("/webhook [GH-90000]");
         }
 
         @Test
-        @DisplayName("maxContentLength defaults to 1MB")
-        void defaultMaxContentLength() {
-            HttpWebhookSourceConfig config = validBuilder().build();
-            assertThat(config.getMaxContentLength()).isEqualTo(1024 * 1024);
+        @DisplayName("maxContentLength defaults to 1MB [GH-90000]")
+        void defaultMaxContentLength() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder().build(); // GH-90000
+            assertThat(config.getMaxContentLength()).isEqualTo(1024 * 1024); // GH-90000
         }
 
         @Test
-        @DisplayName("readTimeout defaults to 30000ms")
-        void defaultReadTimeout() {
-            HttpWebhookSourceConfig config = validBuilder().build();
-            assertThat(config.getReadTimeout()).isEqualTo(30000);
+        @DisplayName("readTimeout defaults to 30000ms [GH-90000]")
+        void defaultReadTimeout() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder().build(); // GH-90000
+            assertThat(config.getReadTimeout()).isEqualTo(30000); // GH-90000
         }
 
         @Test
-        @DisplayName("no authentication by default")
-        void noAuthByDefault() {
-            HttpWebhookSourceConfig config = validBuilder().build();
-            assertThat(config.getBasicAuthUsername()).isNull();
-            assertThat(config.getBasicAuthPassword()).isNull();
-            assertThat(config.getBearerToken()).isNull();
+        @DisplayName("no authentication by default [GH-90000]")
+        void noAuthByDefault() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder().build(); // GH-90000
+            assertThat(config.getBasicAuthUsername()).isNull(); // GH-90000
+            assertThat(config.getBasicAuthPassword()).isNull(); // GH-90000
+            assertThat(config.getBearerToken()).isNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("builder customization")
+    @DisplayName("builder customization [GH-90000]")
     class BuilderCustomization {
 
         @Test
-        @DisplayName("all fields set correctly")
-        void allFields() {
-            HttpWebhookSourceConfig config = HttpWebhookSourceConfig.builder()
-                    .withTenantId(TENANT)
-                    .withServerPort(9090)
-                    .withPath("/api/v1/events")
-                    .withBasicAuth("user", "pass")
-                    .withMaxContentLength(5 * 1024 * 1024)
-                    .withReadTimeout(60000)
-                    .build();
+        @DisplayName("all fields set correctly [GH-90000]")
+        void allFields() { // GH-90000
+            HttpWebhookSourceConfig config = HttpWebhookSourceConfig.builder() // GH-90000
+                    .withTenantId(TENANT) // GH-90000
+                    .withServerPort(9090) // GH-90000
+                    .withPath("/api/v1/events [GH-90000]")
+                    .withBasicAuth("user", "pass") // GH-90000
+                    .withMaxContentLength(5 * 1024 * 1024) // GH-90000
+                    .withReadTimeout(60000) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(config.getTenantId()).isEqualTo(TENANT);
-            assertThat(config.getServerPort()).isEqualTo(9090);
-            assertThat(config.getPath()).isEqualTo("/api/v1/events");
-            assertThat(config.getBasicAuthUsername()).isEqualTo("user");
-            assertThat(config.getBasicAuthPassword()).isEqualTo("pass");
-            assertThat(config.getMaxContentLength()).isEqualTo(5 * 1024 * 1024);
-            assertThat(config.getReadTimeout()).isEqualTo(60000);
+            assertThat(config.getTenantId()).isEqualTo(TENANT); // GH-90000
+            assertThat(config.getServerPort()).isEqualTo(9090); // GH-90000
+            assertThat(config.getPath()).isEqualTo("/api/v1/events [GH-90000]");
+            assertThat(config.getBasicAuthUsername()).isEqualTo("user [GH-90000]");
+            assertThat(config.getBasicAuthPassword()).isEqualTo("pass [GH-90000]");
+            assertThat(config.getMaxContentLength()).isEqualTo(5 * 1024 * 1024); // GH-90000
+            assertThat(config.getReadTimeout()).isEqualTo(60000); // GH-90000
         }
 
         @Test
-        @DisplayName("bearer token set correctly")
-        void bearerToken() {
-            HttpWebhookSourceConfig config = validBuilder()
-                    .withBearerToken("sk_live_abc")
-                    .build();
-            assertThat(config.getBearerToken()).isEqualTo("sk_live_abc");
+        @DisplayName("bearer token set correctly [GH-90000]")
+        void bearerToken() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder() // GH-90000
+                    .withBearerToken("sk_live_abc [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(config.getBearerToken()).isEqualTo("sk_live_abc [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("validation")
+    @DisplayName("validation [GH-90000]")
     class Validation {
 
         @Test
-        @DisplayName("null tenantId throws IllegalArgumentException")
-        void nullTenantId() {
-            assertThatThrownBy(() -> HttpWebhookSourceConfig.builder().build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("TenantId");
+        @DisplayName("null tenantId throws IllegalArgumentException [GH-90000]")
+        void nullTenantId() { // GH-90000
+            assertThatThrownBy(() -> HttpWebhookSourceConfig.builder().build()) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("TenantId [GH-90000]");
         }
 
         @Test
-        @DisplayName("port 0 throws IllegalArgumentException")
-        void portZero() {
-            assertThatThrownBy(() -> validBuilder().withServerPort(0).build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("port");
+        @DisplayName("port 0 throws IllegalArgumentException [GH-90000]")
+        void portZero() { // GH-90000
+            assertThatThrownBy(() -> validBuilder().withServerPort(0).build()) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("port [GH-90000]");
         }
 
         @Test
-        @DisplayName("port 65536 throws IllegalArgumentException")
-        void portTooHigh() {
-            assertThatThrownBy(() -> validBuilder().withServerPort(65536).build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("port");
+        @DisplayName("port 65536 throws IllegalArgumentException [GH-90000]")
+        void portTooHigh() { // GH-90000
+            assertThatThrownBy(() -> validBuilder().withServerPort(65536).build()) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("port [GH-90000]");
         }
 
         @Test
-        @DisplayName("valid port boundaries (1 and 65535)")
-        void validPortBoundaries() {
-            HttpWebhookSourceConfig low = validBuilder().withServerPort(1).build();
-            HttpWebhookSourceConfig high = validBuilder().withServerPort(65535).build();
-            assertThat(low.getServerPort()).isEqualTo(1);
-            assertThat(high.getServerPort()).isEqualTo(65535);
+        @DisplayName("valid port boundaries (1 and 65535) [GH-90000]")
+        void validPortBoundaries() { // GH-90000
+            HttpWebhookSourceConfig low = validBuilder().withServerPort(1).build(); // GH-90000
+            HttpWebhookSourceConfig high = validBuilder().withServerPort(65535).build(); // GH-90000
+            assertThat(low.getServerPort()).isEqualTo(1); // GH-90000
+            assertThat(high.getServerPort()).isEqualTo(65535); // GH-90000
         }
 
         @Test
-        @DisplayName("null path throws IllegalArgumentException")
-        void nullPath() {
-            assertThatThrownBy(() -> validBuilder().withPath(null).build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Path");
+        @DisplayName("null path throws IllegalArgumentException [GH-90000]")
+        void nullPath() { // GH-90000
+            assertThatThrownBy(() -> validBuilder().withPath(null).build()) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("Path [GH-90000]");
         }
 
         @Test
-        @DisplayName("empty path throws IllegalArgumentException")
-        void emptyPath() {
-            assertThatThrownBy(() -> validBuilder().withPath("").build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Path");
+        @DisplayName("empty path throws IllegalArgumentException [GH-90000]")
+        void emptyPath() { // GH-90000
+            assertThatThrownBy(() -> validBuilder().withPath(" [GH-90000]").build())
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("Path [GH-90000]");
         }
 
         @Test
-        @DisplayName("path not starting with / throws IllegalArgumentException")
-        void pathNoSlash() {
-            assertThatThrownBy(() -> validBuilder().withPath("webhook").build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Path must start with '/'");
+        @DisplayName("path not starting with / throws IllegalArgumentException [GH-90000]")
+        void pathNoSlash() { // GH-90000
+            assertThatThrownBy(() -> validBuilder().withPath("webhook [GH-90000]").build())
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("Path must start with '/' [GH-90000]");
         }
 
         @Test
-        @DisplayName("non-positive maxContentLength throws IllegalArgumentException")
-        void nonPositiveMaxContentLength() {
-            assertThatThrownBy(() -> validBuilder().withMaxContentLength(0).build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("content length");
+        @DisplayName("non-positive maxContentLength throws IllegalArgumentException [GH-90000]")
+        void nonPositiveMaxContentLength() { // GH-90000
+            assertThatThrownBy(() -> validBuilder().withMaxContentLength(0).build()) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("content length [GH-90000]");
         }
 
         @Test
-        @DisplayName("negative readTimeout throws IllegalArgumentException")
-        void negativeReadTimeout() {
-            assertThatThrownBy(() -> validBuilder().withReadTimeout(-1).build())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("timeout");
+        @DisplayName("negative readTimeout throws IllegalArgumentException [GH-90000]")
+        void negativeReadTimeout() { // GH-90000
+            assertThatThrownBy(() -> validBuilder().withReadTimeout(-1).build()) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("timeout [GH-90000]");
         }
 
         @Test
-        @DisplayName("zero readTimeout is valid")
-        void zeroReadTimeout() {
-            HttpWebhookSourceConfig config = validBuilder().withReadTimeout(0).build();
-            assertThat(config.getReadTimeout()).isZero();
+        @DisplayName("zero readTimeout is valid [GH-90000]")
+        void zeroReadTimeout() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder().withReadTimeout(0).build(); // GH-90000
+            assertThat(config.getReadTimeout()).isZero(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("authentication validation")
+    @DisplayName("authentication validation [GH-90000]")
     class AuthValidation {
 
         @Test
-        @DisplayName("basic auth requires both username and password")
-        void basicAuthRequiresBoth() {
+        @DisplayName("basic auth requires both username and password [GH-90000]")
+        void basicAuthRequiresBoth() { // GH-90000
             // username without password — there's no single-field setter in the builder,
             // but we can verify through the withBasicAuth method behavior
-            HttpWebhookSourceConfig config = validBuilder()
-                    .withBasicAuth("user", "pass")
-                    .build();
-            assertThat(config.getBasicAuthUsername()).isEqualTo("user");
-            assertThat(config.getBasicAuthPassword()).isEqualTo("pass");
+            HttpWebhookSourceConfig config = validBuilder() // GH-90000
+                    .withBasicAuth("user", "pass") // GH-90000
+                    .build(); // GH-90000
+            assertThat(config.getBasicAuthUsername()).isEqualTo("user [GH-90000]");
+            assertThat(config.getBasicAuthPassword()).isEqualTo("pass [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("toString")
+    @DisplayName("toString [GH-90000]")
     class ToString {
 
         @Test
-        @DisplayName("toString does not leak credentials")
-        void toStringNoCredentials() {
-            HttpWebhookSourceConfig config = validBuilder()
-                    .withBasicAuth("secretuser", "secretpass")
-                    .withBearerToken("sk_secret_token")
-                    .build();
-            String str = config.toString();
-            assertThat(str).doesNotContain("secretuser");
-            assertThat(str).doesNotContain("secretpass");
-            assertThat(str).doesNotContain("sk_secret_token");
-            assertThat(str).contains("hasBasicAuth=true");
-            assertThat(str).contains("hasBearerToken=true");
+        @DisplayName("toString does not leak credentials [GH-90000]")
+        void toStringNoCredentials() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder() // GH-90000
+                    .withBasicAuth("secretuser", "secretpass") // GH-90000
+                    .withBearerToken("sk_secret_token [GH-90000]")
+                    .build(); // GH-90000
+            String str = config.toString(); // GH-90000
+            assertThat(str).doesNotContain("secretuser [GH-90000]");
+            assertThat(str).doesNotContain("secretpass [GH-90000]");
+            assertThat(str).doesNotContain("sk_secret_token [GH-90000]");
+            assertThat(str).contains("hasBasicAuth=true [GH-90000]");
+            assertThat(str).contains("hasBearerToken=true [GH-90000]");
         }
 
         @Test
-        @DisplayName("toString shows hasBasicAuth=false when no auth")
-        void toStringNoAuth() {
-            HttpWebhookSourceConfig config = validBuilder().build();
-            String str = config.toString();
-            assertThat(str).contains("hasBasicAuth=false");
-            assertThat(str).contains("hasBearerToken=false");
+        @DisplayName("toString shows hasBasicAuth=false when no auth [GH-90000]")
+        void toStringNoAuth() { // GH-90000
+            HttpWebhookSourceConfig config = validBuilder().build(); // GH-90000
+            String str = config.toString(); // GH-90000
+            assertThat(str).contains("hasBasicAuth=false [GH-90000]");
+            assertThat(str).contains("hasBearerToken=false [GH-90000]");
         }
     }
 }

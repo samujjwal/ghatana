@@ -16,167 +16,167 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("InMemoryPolicyRepository — in-memory RBAC policy store")
+@DisplayName("InMemoryPolicyRepository — in-memory RBAC policy store [GH-90000]")
 class InMemoryPolicyRepositoryTest {
 
     private InMemoryPolicyRepository repository;
 
     @BeforeEach
-    void setUp() {
-        repository = new InMemoryPolicyRepository();
+    void setUp() { // GH-90000
+        repository = new InMemoryPolicyRepository(); // GH-90000
     }
 
-    private Policy buildPolicy(String role, String resource, String... permissions) {
-        Policy policy = Policy.builder()
-                .name("test-policy-" + role)
-                .role(role)
-                .resource(resource)
-                .permissions(Set.of(permissions))
-                .build();
+    private Policy buildPolicy(String role, String resource, String... permissions) { // GH-90000
+        Policy policy = Policy.builder() // GH-90000
+                .name("test-policy-" + role) // GH-90000
+                .role(role) // GH-90000
+                .resource(resource) // GH-90000
+                .permissions(Set.of(permissions)) // GH-90000
+                .build(); // GH-90000
         return policy;
     }
 
     @Test
-    @DisplayName("findById returns empty Optional when policy not found")
-    void findByIdReturnsEmptyWhenNotFound() {
-        Optional<Policy> result = repository.findById("non-existent-id");
+    @DisplayName("findById returns empty Optional when policy not found [GH-90000]")
+    void findByIdReturnsEmptyWhenNotFound() { // GH-90000
+        Optional<Policy> result = repository.findById("non-existent-id [GH-90000]");
 
-        assertThat(result).isEmpty();
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("save and findById round-trip works")
-    void saveAndFindByIdRoundTrip() {
-        Policy policy = buildPolicy("admin", "users", "read", "write");
-        Policy saved = repository.save(policy);
+    @DisplayName("save and findById round-trip works [GH-90000]")
+    void saveAndFindByIdRoundTrip() { // GH-90000
+        Policy policy = buildPolicy("admin", "users", "read", "write"); // GH-90000
+        Policy saved = repository.save(policy); // GH-90000
 
-        Optional<Policy> found = repository.findById(saved.getId());
+        Optional<Policy> found = repository.findById(saved.getId()); // GH-90000
 
-        assertThat(found).isPresent();
-        assertThat(found.get().getRole()).isEqualTo("admin");
-        assertThat(found.get().getResource()).isEqualTo("users");
+        assertThat(found).isPresent(); // GH-90000
+        assertThat(found.get().getRole()).isEqualTo("admin [GH-90000]");
+        assertThat(found.get().getResource()).isEqualTo("users [GH-90000]");
     }
 
     @Test
-    @DisplayName("save returns the same policy")
-    void saveReturnsSavedPolicy() {
-        Policy policy = buildPolicy("viewer", "reports", "read");
+    @DisplayName("save returns the same policy [GH-90000]")
+    void saveReturnsSavedPolicy() { // GH-90000
+        Policy policy = buildPolicy("viewer", "reports", "read"); // GH-90000
 
-        Policy returned = repository.save(policy);
+        Policy returned = repository.save(policy); // GH-90000
 
-        assertThat(returned).isSameAs(policy);
+        assertThat(returned).isSameAs(policy); // GH-90000
     }
 
     @Test
-    @DisplayName("save null policy throws IllegalArgumentException")
-    void saveNullThrows() {
-        assertThatThrownBy(() -> repository.save(null))
-                .isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("save null policy throws IllegalArgumentException [GH-90000]")
+    void saveNullThrows() { // GH-90000
+        assertThatThrownBy(() -> repository.save(null)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("findByRole returns policies for the given role")
-    void findByRoleReturnsPoliciesForRole() {
-        Policy admin1 = repository.save(buildPolicy("admin", "users", "read"));
-        Policy admin2 = repository.save(buildPolicy("admin", "reports", "read"));
-        repository.save(buildPolicy("viewer", "users", "read"));
+    @DisplayName("findByRole returns policies for the given role [GH-90000]")
+    void findByRoleReturnsPoliciesForRole() { // GH-90000
+        Policy admin1 = repository.save(buildPolicy("admin", "users", "read")); // GH-90000
+        Policy admin2 = repository.save(buildPolicy("admin", "reports", "read")); // GH-90000
+        repository.save(buildPolicy("viewer", "users", "read")); // GH-90000
 
-        List<Policy> adminPolicies = repository.findByRole("admin");
+        List<Policy> adminPolicies = repository.findByRole("admin [GH-90000]");
 
-        assertThat(adminPolicies).hasSize(2)
-                .extracting(Policy::getRole)
-                .containsOnly("admin");
+        assertThat(adminPolicies).hasSize(2) // GH-90000
+                .extracting(Policy::getRole) // GH-90000
+                .containsOnly("admin [GH-90000]");
     }
 
     @Test
-    @DisplayName("findByRole returns empty list when no policies for role")
-    void findByRoleReturnsEmptyListWhenNoneFound() {
-        repository.save(buildPolicy("admin", "users", "read"));
+    @DisplayName("findByRole returns empty list when no policies for role [GH-90000]")
+    void findByRoleReturnsEmptyListWhenNoneFound() { // GH-90000
+        repository.save(buildPolicy("admin", "users", "read")); // GH-90000
 
-        List<Policy> result = repository.findByRole("nonexistent-role");
+        List<Policy> result = repository.findByRole("nonexistent-role [GH-90000]");
 
-        assertThat(result).isEmpty();
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("findByResource returns policies matching resource")
-    void findByResourceReturnsMatchingPolicies() {
-        repository.save(buildPolicy("admin", "users", "read"));
-        repository.save(buildPolicy("viewer", "users", "read"));
-        repository.save(buildPolicy("admin", "reports", "read"));
+    @DisplayName("findByResource returns policies matching resource [GH-90000]")
+    void findByResourceReturnsMatchingPolicies() { // GH-90000
+        repository.save(buildPolicy("admin", "users", "read")); // GH-90000
+        repository.save(buildPolicy("viewer", "users", "read")); // GH-90000
+        repository.save(buildPolicy("admin", "reports", "read")); // GH-90000
 
-        List<Policy> result = repository.findByResource("users");
+        List<Policy> result = repository.findByResource("users [GH-90000]");
 
-        assertThat(result).hasSize(2)
-                .allMatch(p -> p.appliesTo("users"));
+        assertThat(result).hasSize(2) // GH-90000
+                .allMatch(p -> p.appliesTo("users [GH-90000]"));
     }
 
     @Test
-    @DisplayName("findAll returns all stored policies")
-    void findAllReturnsAllPolicies() {
-        repository.save(buildPolicy("admin", "users", "read"));
-        repository.save(buildPolicy("viewer", "reports", "read"));
-        repository.save(buildPolicy("editor", "documents", "write"));
+    @DisplayName("findAll returns all stored policies [GH-90000]")
+    void findAllReturnsAllPolicies() { // GH-90000
+        repository.save(buildPolicy("admin", "users", "read")); // GH-90000
+        repository.save(buildPolicy("viewer", "reports", "read")); // GH-90000
+        repository.save(buildPolicy("editor", "documents", "write")); // GH-90000
 
-        List<Policy> all = repository.findAll();
+        List<Policy> all = repository.findAll(); // GH-90000
 
-        assertThat(all).hasSize(3);
+        assertThat(all).hasSize(3); // GH-90000
     }
 
     @Test
-    @DisplayName("findAll returns empty list when no policies stored")
-    void findAllReturnsEmptyWhenNoPolocies() {
-        assertThat(repository.findAll()).isEmpty();
+    @DisplayName("findAll returns empty list when no policies stored [GH-90000]")
+    void findAllReturnsEmptyWhenNoPolocies() { // GH-90000
+        assertThat(repository.findAll()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("deleteById removes policy")
-    void deleteByIdRemovesPolicy() {
-        Policy policy = repository.save(buildPolicy("admin", "users", "read"));
-        assertThat(repository.existsById(policy.getId())).isTrue();
+    @DisplayName("deleteById removes policy [GH-90000]")
+    void deleteByIdRemovesPolicy() { // GH-90000
+        Policy policy = repository.save(buildPolicy("admin", "users", "read")); // GH-90000
+        assertThat(repository.existsById(policy.getId())).isTrue(); // GH-90000
 
-        repository.deleteById(policy.getId());
+        repository.deleteById(policy.getId()); // GH-90000
 
-        assertThat(repository.findById(policy.getId())).isEmpty();
-        assertThat(repository.existsById(policy.getId())).isFalse();
+        assertThat(repository.findById(policy.getId())).isEmpty(); // GH-90000
+        assertThat(repository.existsById(policy.getId())).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("deleteById does nothing when policy not found")
-    void deleteByIdDoesNothingWhenNotFound() {
-        assertThat(repository.existsById("nonexistent-id")).isFalse();
-        repository.deleteById("nonexistent-id");
-        assertThat(repository.existsById("nonexistent-id")).isFalse();
+    @DisplayName("deleteById does nothing when policy not found [GH-90000]")
+    void deleteByIdDoesNothingWhenNotFound() { // GH-90000
+        assertThat(repository.existsById("nonexistent-id [GH-90000]")).isFalse();
+        repository.deleteById("nonexistent-id [GH-90000]");
+        assertThat(repository.existsById("nonexistent-id [GH-90000]")).isFalse();
     }
 
     @Test
-    @DisplayName("clear removes all policies")
-    void clearRemovesAllPolicies() {
-        repository.save(buildPolicy("admin", "users", "read"));
-        repository.save(buildPolicy("viewer", "reports", "read"));
+    @DisplayName("clear removes all policies [GH-90000]")
+    void clearRemovesAllPolicies() { // GH-90000
+        repository.save(buildPolicy("admin", "users", "read")); // GH-90000
+        repository.save(buildPolicy("viewer", "reports", "read")); // GH-90000
 
-        repository.clear();
+        repository.clear(); // GH-90000
 
-        assertThat(repository.findAll()).isEmpty();
+        assertThat(repository.findAll()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("overwriting policy with same id replaces it")
-    void overwritingPolicyWithSameIdReplacesIt() {
-        Policy original = buildPolicy("admin", "users", "read");
-        original.setName("original");
-        repository.save(original);
+    @DisplayName("overwriting policy with same id replaces it [GH-90000]")
+    void overwritingPolicyWithSameIdReplacesIt() { // GH-90000
+        Policy original = buildPolicy("admin", "users", "read"); // GH-90000
+        original.setName("original [GH-90000]");
+        repository.save(original); // GH-90000
 
-        Policy updated = Policy.builder()
-                .id(original.getId())
-                .name("updated")
-                .role("admin")
-                .resource("users")
-                .permissions(Set.of("read", "write"))
-                .build();
-        repository.save(updated);
+        Policy updated = Policy.builder() // GH-90000
+                .id(original.getId()) // GH-90000
+                .name("updated [GH-90000]")
+                .role("admin [GH-90000]")
+                .resource("users [GH-90000]")
+                .permissions(Set.of("read", "write")) // GH-90000
+                .build(); // GH-90000
+        repository.save(updated); // GH-90000
 
-        assertThat(repository.findAll()).hasSize(1);
-        assertThat(repository.findById(original.getId()).get().getName()).isEqualTo("updated");
+        assertThat(repository.findAll()).hasSize(1); // GH-90000
+        assertThat(repository.findById(original.getId()).get().getName()).isEqualTo("updated [GH-90000]");
     }
 }

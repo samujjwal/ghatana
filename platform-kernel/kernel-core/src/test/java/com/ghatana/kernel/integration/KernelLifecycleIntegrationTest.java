@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer test
  * @author Ghatana Kernel Team
  */
-@DisplayName("Kernel Lifecycle Integration Tests")
+@DisplayName("Kernel Lifecycle Integration Tests [GH-90000]")
 class KernelLifecycleIntegrationTest {
 
     private KernelRegistryImpl registry;
@@ -43,167 +43,167 @@ class KernelLifecycleIntegrationTest {
     private KernelContext context;
 
     @BeforeEach
-    void setUp() {
-        registry = new KernelRegistryImpl();
-        eventloop = Eventloop.create();
+    void setUp() { // GH-90000
+        registry = new KernelRegistryImpl(); // GH-90000
+        eventloop = Eventloop.create(); // GH-90000
 
-        KernelConfigResolver configResolver = new TestConfigResolverAdapter();
+        KernelConfigResolver configResolver = new TestConfigResolverAdapter(); // GH-90000
 
-        context = new DefaultKernelContext(registry, configResolver, eventloop, "1.0.0", "test");
-        context.registerService(KernelConfigResolver.class, configResolver);
+        context = new DefaultKernelContext(registry, configResolver, eventloop, "1.0.0", "test"); // GH-90000
+        context.registerService(KernelConfigResolver.class, configResolver); // GH-90000
     }
 
     @Test
-    @DisplayName("Should start modules in dependency order")
-    void shouldStartModulesInDependencyOrder() {
-        List<String> startOrder = new ArrayList<>();
+    @DisplayName("Should start modules in dependency order [GH-90000]")
+    void shouldStartModulesInDependencyOrder() { // GH-90000
+        List<String> startOrder = new ArrayList<>(); // GH-90000
 
         // Create modules with dependencies: A <- B <- C
-        KernelModule moduleA = createTrackingModule("module-a", Set.of(), startOrder);
-        KernelModule moduleB = createTrackingModule("module-b",
-            Set.of(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder);
-        KernelModule moduleC = createTrackingModule("module-c",
-            Set.of(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder);
+        KernelModule moduleA = createTrackingModule("module-a", Set.of(), startOrder); // GH-90000
+        KernelModule moduleB = createTrackingModule("module-b", // GH-90000
+            Set.of(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder); // GH-90000
+        KernelModule moduleC = createTrackingModule("module-c", // GH-90000
+            Set.of(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder); // GH-90000
 
-        registry.registerModule(moduleA);
-        registry.registerModule(moduleB);
-        registry.registerModule(moduleC);
+        registry.registerModule(moduleA); // GH-90000
+        registry.registerModule(moduleB); // GH-90000
+        registry.registerModule(moduleC); // GH-90000
 
         // Initialize all modules
-        moduleA.initialize(context);
-        moduleB.initialize(context);
-        moduleC.initialize(context);
+        moduleA.initialize(context); // GH-90000
+        moduleB.initialize(context); // GH-90000
+        moduleC.initialize(context); // GH-90000
 
         // Start all
-        registry.startAllModules().getResult();
+        registry.startAllModules().getResult(); // GH-90000
 
         // Verify order: A should start before B, B before C
-        assertEquals("module-a", startOrder.get(0));
-        assertEquals("module-b", startOrder.get(1));
-        assertEquals("module-c", startOrder.get(2));
+        assertEquals("module-a", startOrder.get(0)); // GH-90000
+        assertEquals("module-b", startOrder.get(1)); // GH-90000
+        assertEquals("module-c", startOrder.get(2)); // GH-90000
     }
 
     @Test
-    @DisplayName("Should stop modules in reverse dependency order")
-    void shouldStopModulesInReverseDependencyOrder() {
-        List<String> stopOrder = new ArrayList<>();
+    @DisplayName("Should stop modules in reverse dependency order [GH-90000]")
+    void shouldStopModulesInReverseDependencyOrder() { // GH-90000
+        List<String> stopOrder = new ArrayList<>(); // GH-90000
 
         // Create modules with dependencies: A <- B <- C
-        KernelModule moduleA = createTrackingModuleWithStop("module-a", Set.of(), new ArrayList<>(), stopOrder);
-        KernelModule moduleB = createTrackingModuleWithStop("module-b",
-            Set.of(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)),
-            new ArrayList<>(), stopOrder);
-        KernelModule moduleC = createTrackingModuleWithStop("module-c",
-            Set.of(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false)),
-            new ArrayList<>(), stopOrder);
+        KernelModule moduleA = createTrackingModuleWithStop("module-a", Set.of(), new ArrayList<>(), stopOrder); // GH-90000
+        KernelModule moduleB = createTrackingModuleWithStop("module-b", // GH-90000
+            Set.of(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)), // GH-90000
+            new ArrayList<>(), stopOrder); // GH-90000
+        KernelModule moduleC = createTrackingModuleWithStop("module-c", // GH-90000
+            Set.of(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false)), // GH-90000
+            new ArrayList<>(), stopOrder); // GH-90000
 
-        registry.registerModule(moduleA);
-        registry.registerModule(moduleB);
-        registry.registerModule(moduleC);
+        registry.registerModule(moduleA); // GH-90000
+        registry.registerModule(moduleB); // GH-90000
+        registry.registerModule(moduleC); // GH-90000
 
-        moduleA.initialize(context);
-        moduleB.initialize(context);
-        moduleC.initialize(context);
+        moduleA.initialize(context); // GH-90000
+        moduleB.initialize(context); // GH-90000
+        moduleC.initialize(context); // GH-90000
 
-        registry.startAllModules().getResult();
-        registry.stopAllModules().getResult();
+        registry.startAllModules().getResult(); // GH-90000
+        registry.stopAllModules().getResult(); // GH-90000
 
         // Verify reverse order: C should stop before B, B before A
-        assertEquals("module-c", stopOrder.get(0));
-        assertEquals("module-b", stopOrder.get(1));
-        assertEquals("module-a", stopOrder.get(2));
+        assertEquals("module-c", stopOrder.get(0)); // GH-90000
+        assertEquals("module-b", stopOrder.get(1)); // GH-90000
+        assertEquals("module-a", stopOrder.get(2)); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle diamond dependency pattern")
-    void shouldHandleDiamondDependencyPattern() {
-        List<String> startOrder = new ArrayList<>();
+    @DisplayName("Should handle diamond dependency pattern [GH-90000]")
+    void shouldHandleDiamondDependencyPattern() { // GH-90000
+        List<String> startOrder = new ArrayList<>(); // GH-90000
 
         // Diamond pattern: A <- B <- D
         //                    <- C <-
-        KernelModule moduleA = createTrackingModule("diamond-a", Set.of(), startOrder);
-        KernelModule moduleB = createTrackingModule("diamond-b",
-            Set.of(new KernelDependency("diamond-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder);
-        KernelModule moduleC = createTrackingModule("diamond-c",
-            Set.of(new KernelDependency("diamond-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder);
-        KernelModule moduleD = createTrackingModule("diamond-d",
-            Set.of(
-                new KernelDependency("diamond-b", "1.0.0", KernelDependency.DependencyType.MODULE, false),
-                new KernelDependency("diamond-c", "1.0.0", KernelDependency.DependencyType.MODULE, false)
+        KernelModule moduleA = createTrackingModule("diamond-a", Set.of(), startOrder); // GH-90000
+        KernelModule moduleB = createTrackingModule("diamond-b", // GH-90000
+            Set.of(new KernelDependency("diamond-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder); // GH-90000
+        KernelModule moduleC = createTrackingModule("diamond-c", // GH-90000
+            Set.of(new KernelDependency("diamond-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)), startOrder); // GH-90000
+        KernelModule moduleD = createTrackingModule("diamond-d", // GH-90000
+            Set.of( // GH-90000
+                new KernelDependency("diamond-b", "1.0.0", KernelDependency.DependencyType.MODULE, false), // GH-90000
+                new KernelDependency("diamond-c", "1.0.0", KernelDependency.DependencyType.MODULE, false) // GH-90000
             ), startOrder);
 
-        registry.registerModule(moduleA);
-        registry.registerModule(moduleB);
-        registry.registerModule(moduleC);
-        registry.registerModule(moduleD);
+        registry.registerModule(moduleA); // GH-90000
+        registry.registerModule(moduleB); // GH-90000
+        registry.registerModule(moduleC); // GH-90000
+        registry.registerModule(moduleD); // GH-90000
 
-        moduleA.initialize(context);
-        moduleB.initialize(context);
-        moduleC.initialize(context);
-        moduleD.initialize(context);
+        moduleA.initialize(context); // GH-90000
+        moduleB.initialize(context); // GH-90000
+        moduleC.initialize(context); // GH-90000
+        moduleD.initialize(context); // GH-90000
 
-        registry.startAllModules().getResult();
+        registry.startAllModules().getResult(); // GH-90000
 
         // A must be first, D must be last
-        assertEquals("diamond-a", startOrder.get(0));
-        assertEquals("diamond-d", startOrder.get(3));
+        assertEquals("diamond-a", startOrder.get(0)); // GH-90000
+        assertEquals("diamond-d", startOrder.get(3)); // GH-90000
 
         // B and C should be between A and D
-        assertTrue(startOrder.indexOf("diamond-b") < startOrder.indexOf("diamond-d"));
-        assertTrue(startOrder.indexOf("diamond-c") < startOrder.indexOf("diamond-d"));
+        assertTrue(startOrder.indexOf("diamond-b [GH-90000]") < startOrder.indexOf("diamond-d [GH-90000]"));
+        assertTrue(startOrder.indexOf("diamond-c [GH-90000]") < startOrder.indexOf("diamond-d [GH-90000]"));
     }
 
     @Test
-    @DisplayName("Should validate dependencies before allowing registration")
-    void shouldValidateDependenciesBeforeAllowingRegistration() {
-        KernelModule moduleWithMissingDep = createBasicModule("orphan",
-            Set.of(new KernelDependency("non-existent", "1.0.0", KernelDependency.DependencyType.MODULE, false)));
+    @DisplayName("Should validate dependencies before allowing registration [GH-90000]")
+    void shouldValidateDependenciesBeforeAllowingRegistration() { // GH-90000
+        KernelModule moduleWithMissingDep = createBasicModule("orphan", // GH-90000
+            Set.of(new KernelDependency("non-existent", "1.0.0", KernelDependency.DependencyType.MODULE, false))); // GH-90000
 
         // Should throw when trying to register with missing dependency
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-            () -> registry.registerModule(moduleWithMissingDep));
-        assertTrue(exception.getMessage().contains("Dependency validation failed"));
+        IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
+            () -> registry.registerModule(moduleWithMissingDep)); // GH-90000
+        assertTrue(exception.getMessage().contains("Dependency validation failed [GH-90000]"));
     }
 
     @Test
-    @DisplayName("Should allow optional dependencies to be missing")
-    void shouldAllowOptionalDependenciesToBeMissing() {
-        KernelModule moduleWithOptionalDep = createBasicModule("with-optional",
-            Set.of(new KernelDependency("optional-dep", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true)));
+    @DisplayName("Should allow optional dependencies to be missing [GH-90000]")
+    void shouldAllowOptionalDependenciesToBeMissing() { // GH-90000
+        KernelModule moduleWithOptionalDep = createBasicModule("with-optional", // GH-90000
+            Set.of(new KernelDependency("optional-dep", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true))); // GH-90000
 
         // Should not throw for optional dependency
-        assertDoesNotThrow(() -> registry.registerModule(moduleWithOptionalDep));
+        assertDoesNotThrow(() -> registry.registerModule(moduleWithOptionalDep)); // GH-90000
     }
 
     @Test
-    @DisplayName("Should propagate health status across module chain")
-    void shouldPropagateHealthStatusAcrossModuleChain() {
-        AtomicBoolean makeUnhealthy = new AtomicBoolean(false);
+    @DisplayName("Should propagate health status across module chain [GH-90000]")
+    void shouldPropagateHealthStatusAcrossModuleChain() { // GH-90000
+        AtomicBoolean makeUnhealthy = new AtomicBoolean(false); // GH-90000
 
-        KernelModule healthyModule = createHealthTrackingModule("healthy", HealthStatus.healthy(), makeUnhealthy);
-        KernelModule unhealthyModule = createHealthTrackingModule("unhealthy",
-            HealthStatus.unhealthy("test failure"), makeUnhealthy);
+        KernelModule healthyModule = createHealthTrackingModule("healthy", HealthStatus.healthy(), makeUnhealthy); // GH-90000
+        KernelModule unhealthyModule = createHealthTrackingModule("unhealthy", // GH-90000
+            HealthStatus.unhealthy("test failure [GH-90000]"), makeUnhealthy);
 
-        registry.registerModule(healthyModule);
-        registry.registerModule(unhealthyModule);
+        registry.registerModule(healthyModule); // GH-90000
+        registry.registerModule(unhealthyModule); // GH-90000
 
-        healthyModule.initialize(context);
-        unhealthyModule.initialize(context);
+        healthyModule.initialize(context); // GH-90000
+        unhealthyModule.initialize(context); // GH-90000
 
-        HealthStatus aggregate = registry.getAggregateHealthStatus();
+        HealthStatus aggregate = registry.getAggregateHealthStatus(); // GH-90000
 
-        assertEquals(HealthStatus.Status.DEGRADED, aggregate.getStatus());
-        assertTrue(aggregate.getChecks().containsKey("healthy"));
-        assertTrue(aggregate.getChecks().containsKey("unhealthy"));
+        assertEquals(HealthStatus.Status.DEGRADED, aggregate.getStatus()); // GH-90000
+        assertTrue(aggregate.getChecks().containsKey("healthy [GH-90000]"));
+        assertTrue(aggregate.getChecks().containsKey("unhealthy [GH-90000]"));
     }
 
     @Test
-    @DisplayName("Should detect circular dependencies")
-    void shouldDetectCircularDependencies() {
+    @DisplayName("Should detect circular dependencies [GH-90000]")
+    void shouldDetectCircularDependencies() { // GH-90000
         // This test would require cycle detection in the topological sort
         // For now, we test that the system handles the case gracefully
 
-        List<String> startOrder = new ArrayList<>();
+        List<String> startOrder = new ArrayList<>(); // GH-90000
 
         // Create circular dependency: A -> B -> C -> A
         // Note: In real implementation, this should be detected and rejected
@@ -211,200 +211,200 @@ class KernelLifecycleIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle module initialization failure gracefully")
-    void shouldHandleModuleInitializationFailureGracefully() {
-        KernelModule failingModule = new KernelModule() {
-            @Override public String getModuleId() { return "failing"; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); }
-            @Override public Set<KernelDependency> getDependencies() { return Set.of(); }
-            @Override public void initialize(KernelContext ctx) {
-                throw new RuntimeException("Init failed");
+    @DisplayName("Should handle module initialization failure gracefully [GH-90000]")
+    void shouldHandleModuleInitializationFailureGracefully() { // GH-90000
+        KernelModule failingModule = new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return "failing"; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
+            @Override public void initialize(KernelContext ctx) { // GH-90000
+                throw new RuntimeException("Init failed [GH-90000]");
             }
-            @Override public Promise<Void> start() { return Promise.complete(); }
-            @Override public Promise<Void> stop() { return Promise.complete(); }
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("init failed"); }
+            @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
+            @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("init failed [GH-90000]"); }
         };
 
-        assertThrows(RuntimeException.class, () -> failingModule.initialize(context));
+        assertThrows(RuntimeException.class, () -> failingModule.initialize(context)); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle module start failure with rollback")
-    void shouldHandleModuleStartFailureWithRollback() {
-        AtomicInteger stopCount = new AtomicInteger(0);
+    @DisplayName("Should handle module start failure with rollback [GH-90000]")
+    void shouldHandleModuleStartFailureWithRollback() { // GH-90000
+        AtomicInteger stopCount = new AtomicInteger(0); // GH-90000
 
-        KernelModule moduleA = new KernelModule() {
-            @Override public String getModuleId() { return "rollback-a"; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); }
-            @Override public Set<KernelDependency> getDependencies() { return Set.of(); }
-            @Override public void initialize(KernelContext ctx) {}
-            @Override public Promise<Void> start() { return Promise.complete(); }
-            @Override public Promise<Void> stop() {
-                stopCount.incrementAndGet();
-                return Promise.complete();
+        KernelModule moduleA = new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return "rollback-a"; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
+            @Override public void initialize(KernelContext ctx) {} // GH-90000
+            @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
+            @Override public Promise<Void> stop() { // GH-90000
+                stopCount.incrementAndGet(); // GH-90000
+                return Promise.complete(); // GH-90000
             }
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); }
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
         };
-        KernelModule moduleB = new KernelModule() {
-            @Override public String getModuleId() { return "rollback-b"; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); }
-            @Override public Set<KernelDependency> getDependencies() {
-                return Set.of(new KernelDependency("rollback-a", "1.0.0", KernelDependency.DependencyType.MODULE, false));
+        KernelModule moduleB = new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return "rollback-b"; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { // GH-90000
+                return Set.of(new KernelDependency("rollback-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)); // GH-90000
             }
-            @Override public void initialize(KernelContext ctx) {}
-            @Override public Promise<Void> start() {
-                return Promise.ofException(new RuntimeException("Start failed"));
+            @Override public void initialize(KernelContext ctx) {} // GH-90000
+            @Override public Promise<Void> start() { // GH-90000
+                return Promise.ofException(new RuntimeException("Start failed [GH-90000]"));
             }
-            @Override public Promise<Void> stop() { return Promise.complete(); }
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("start failed"); }
+            @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("start failed [GH-90000]"); }
         };
 
-        registry.registerModule(moduleA);
-        registry.registerModule(moduleB);
+        registry.registerModule(moduleA); // GH-90000
+        registry.registerModule(moduleB); // GH-90000
 
-        moduleA.initialize(context);
-        moduleB.initialize(context);
+        moduleA.initialize(context); // GH-90000
+        moduleB.initialize(context); // GH-90000
 
         // Start should fail
-        Promise<Void> startPromise = registry.startAllModules();
-        assertNotNull(startPromise);
-        assertEquals(1, stopCount.get());
+        Promise<Void> startPromise = registry.startAllModules(); // GH-90000
+        assertNotNull(startPromise); // GH-90000
+        assertEquals(1, stopCount.get()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should resolve all dependent modules correctly")
-    void shouldResolveAllDependentModulesCorrectly() {
-        KernelModule base = createBasicModule("base", Set.of());
-        KernelModule dependent1 = createBasicModule("dep-1",
-            Set.of(new KernelDependency("base", "1.0.0", KernelDependency.DependencyType.MODULE, false)));
-        KernelModule dependent2 = createBasicModule("dep-2",
-            Set.of(new KernelDependency("base", "1.0.0", KernelDependency.DependencyType.MODULE, false)));
+    @DisplayName("Should resolve all dependent modules correctly [GH-90000]")
+    void shouldResolveAllDependentModulesCorrectly() { // GH-90000
+        KernelModule base = createBasicModule("base", Set.of()); // GH-90000
+        KernelModule dependent1 = createBasicModule("dep-1", // GH-90000
+            Set.of(new KernelDependency("base", "1.0.0", KernelDependency.DependencyType.MODULE, false))); // GH-90000
+        KernelModule dependent2 = createBasicModule("dep-2", // GH-90000
+            Set.of(new KernelDependency("base", "1.0.0", KernelDependency.DependencyType.MODULE, false))); // GH-90000
 
-        registry.registerModule(base);
-        registry.registerModule(dependent1);
-        registry.registerModule(dependent2);
+        registry.registerModule(base); // GH-90000
+        registry.registerModule(dependent1); // GH-90000
+        registry.registerModule(dependent2); // GH-90000
 
-        var dependents = registry.getDependentModules("base");
+        var dependents = registry.getDependentModules("base [GH-90000]");
 
-        assertEquals(2, dependents.size());
-        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-1")));
-        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-2")));
+        assertEquals(2, dependents.size()); // GH-90000
+        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-1 [GH-90000]")));
+        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-2 [GH-90000]")));
     }
 
     @Test
-    @DisplayName("Should maintain capability registry consistency")
-    void shouldMaintainCapabilityRegistryConsistency() {
-        KernelCapability cap1 = new KernelCapability("test.cap.1", "Test 1", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of());
-        KernelCapability cap2 = new KernelCapability("test.cap.2", "Test 2", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of());
+    @DisplayName("Should maintain capability registry consistency [GH-90000]")
+    void shouldMaintainCapabilityRegistryConsistency() { // GH-90000
+        KernelCapability cap1 = new KernelCapability("test.cap.1", "Test 1", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of()); // GH-90000
+        KernelCapability cap2 = new KernelCapability("test.cap.2", "Test 2", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of()); // GH-90000
 
-        KernelModule module1 = createModuleWithCapability("mod-1", cap1);
-        KernelModule module2 = createModuleWithCapability("mod-2", cap2);
+        KernelModule module1 = createModuleWithCapability("mod-1", cap1); // GH-90000
+        KernelModule module2 = createModuleWithCapability("mod-2", cap2); // GH-90000
 
-        registry.registerModule(module1);
-        registry.registerModule(module2);
+        registry.registerModule(module1); // GH-90000
+        registry.registerModule(module2); // GH-90000
 
-        assertTrue(registry.isCapabilityAvailable("test.cap.1"));
-        assertTrue(registry.isCapabilityAvailable("test.cap.2"));
+        assertTrue(registry.isCapabilityAvailable("test.cap.1 [GH-90000]"));
+        assertTrue(registry.isCapabilityAvailable("test.cap.2 [GH-90000]"));
 
         // Unregister module and verify capability removed
-        registry.unregisterModule("mod-1");
+        registry.unregisterModule("mod-1 [GH-90000]");
 
-        assertFalse(registry.isCapabilityAvailable("test.cap.1"));
-        assertTrue(registry.isCapabilityAvailable("test.cap.2"));
+        assertFalse(registry.isCapabilityAvailable("test.cap.1 [GH-90000]"));
+        assertTrue(registry.isCapabilityAvailable("test.cap.2 [GH-90000]"));
     }
 
     // ==================== Test Helpers ====================
 
-    private KernelModule createTrackingModule(String id, Set<KernelDependency> deps, List<String> order) {
-        return new KernelModule() {
-            @Override public String getModuleId() { return id; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); }
-            @Override public Set<KernelDependency> getDependencies() { return deps; }
-            @Override public void initialize(KernelContext ctx) {}
-            @Override public Promise<Void> start() {
-                order.add(id);
-                return Promise.complete();
+    private KernelModule createTrackingModule(String id, Set<KernelDependency> deps, List<String> order) { // GH-90000
+        return new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return id; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { return deps; } // GH-90000
+            @Override public void initialize(KernelContext ctx) {} // GH-90000
+            @Override public Promise<Void> start() { // GH-90000
+                order.add(id); // GH-90000
+                return Promise.complete(); // GH-90000
             }
-            @Override public Promise<Void> stop() { return Promise.complete(); }
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); }
+            @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
         };
     }
 
-    private KernelModule createTrackingModuleWithStop(String id, Set<KernelDependency> deps,
+    private KernelModule createTrackingModuleWithStop(String id, Set<KernelDependency> deps, // GH-90000
                                                        List<String> startOrder, List<String> stopOrder) {
-        return new KernelModule() {
-            @Override public String getModuleId() { return id; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); }
-            @Override public Set<KernelDependency> getDependencies() { return deps; }
-            @Override public void initialize(KernelContext ctx) {}
-            @Override public Promise<Void> start() {
-                startOrder.add(id);
-                return Promise.complete();
+        return new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return id; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { return deps; } // GH-90000
+            @Override public void initialize(KernelContext ctx) {} // GH-90000
+            @Override public Promise<Void> start() { // GH-90000
+                startOrder.add(id); // GH-90000
+                return Promise.complete(); // GH-90000
             }
-            @Override public Promise<Void> stop() {
-                stopOrder.add(id);
-                return Promise.complete();
+            @Override public Promise<Void> stop() { // GH-90000
+                stopOrder.add(id); // GH-90000
+                return Promise.complete(); // GH-90000
             }
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); }
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
         };
     }
 
-    private KernelModule createBasicModule(String id, Set<KernelDependency> deps) {
-        return new KernelModule() {
-            @Override public String getModuleId() { return id; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); }
-            @Override public Set<KernelDependency> getDependencies() { return deps; }
-            @Override public void initialize(KernelContext ctx) {}
-            @Override public Promise<Void> start() { return Promise.complete(); }
-            @Override public Promise<Void> stop() { return Promise.complete(); }
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); }
+    private KernelModule createBasicModule(String id, Set<KernelDependency> deps) { // GH-90000
+        return new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return id; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { return deps; } // GH-90000
+            @Override public void initialize(KernelContext ctx) {} // GH-90000
+            @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
+            @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
         };
     }
 
-    private KernelModule createHealthTrackingModule(String id, HealthStatus status, AtomicBoolean toggle) {
-        return new KernelModule() {
-            @Override public String getModuleId() { return id; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); }
-            @Override public Set<KernelDependency> getDependencies() { return Set.of(); }
-            @Override public void initialize(KernelContext ctx) {}
-            @Override public Promise<Void> start() { return Promise.complete(); }
-            @Override public Promise<Void> stop() { return Promise.complete(); }
-            @Override public HealthStatus getHealthStatus() {
-                return toggle.get() ? HealthStatus.unhealthy("toggled") : status;
+    private KernelModule createHealthTrackingModule(String id, HealthStatus status, AtomicBoolean toggle) { // GH-90000
+        return new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return id; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
+            @Override public void initialize(KernelContext ctx) {} // GH-90000
+            @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
+            @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
+            @Override public HealthStatus getHealthStatus() { // GH-90000
+                return toggle.get() ? HealthStatus.unhealthy("toggled [GH-90000]") : status;
             }
         };
     }
 
-    private KernelModule createModuleWithCapability(String id, KernelCapability capability) {
-        return new KernelModule() {
-            @Override public String getModuleId() { return id; }
-            @Override public String getVersion() { return "1.0.0"; }
-            @Override public Set<KernelCapability> getCapabilities() { return Set.of(capability); }
-            @Override public Set<KernelDependency> getDependencies() { return Set.of(); }
-            @Override public void initialize(KernelContext ctx) {}
-            @Override public Promise<Void> start() { return Promise.complete(); }
-            @Override public Promise<Void> stop() { return Promise.complete(); }
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); }
+    private KernelModule createModuleWithCapability(String id, KernelCapability capability) { // GH-90000
+        return new KernelModule() { // GH-90000
+            @Override public String getModuleId() { return id; } // GH-90000
+            @Override public String getVersion() { return "1.0.0"; } // GH-90000
+            @Override public Set<KernelCapability> getCapabilities() { return Set.of(capability); } // GH-90000
+            @Override public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
+            @Override public void initialize(KernelContext ctx) {} // GH-90000
+            @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
+            @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
         };
     }
 
     static class TestConfigResolverAdapter implements KernelConfigResolver, KernelLifecycleAware {
-        @Override public <T> T resolve(String key, Class<T> type, KernelTenantContext ctx) { throw new IllegalArgumentException("not found: " + key); }
-        @Override public <T> T resolveWithDefault(String key, Class<T> type, T def, KernelTenantContext ctx) { return def; }
-        @Override public <T> java.util.Optional<T> resolveOptional(String key, Class<T> type, KernelTenantContext ctx) { return java.util.Optional.empty(); }
-        @Override public void addConfigProvider(KernelConfigResolver.ConfigProvider p) {}
-        @Override public Promise<Void> reloadConfig(String tenantId) { return Promise.complete(); }
-        @Override public java.util.List<String> getAvailableKeys(KernelTenantContext ctx) { return java.util.List.of(); }
-        @Override public Promise<Void> start() { return Promise.complete(); }
-        @Override public Promise<Void> stop() { return Promise.complete(); }
-        @Override public boolean isHealthy() { return true; }
-        @Override public String getName() { return "test-config-resolver"; }
+        @Override public <T> T resolve(String key, Class<T> type, KernelTenantContext ctx) { throw new IllegalArgumentException("not found: " + key); } // GH-90000
+        @Override public <T> T resolveWithDefault(String key, Class<T> type, T def, KernelTenantContext ctx) { return def; } // GH-90000
+        @Override public <T> java.util.Optional<T> resolveOptional(String key, Class<T> type, KernelTenantContext ctx) { return java.util.Optional.empty(); } // GH-90000
+        @Override public void addConfigProvider(KernelConfigResolver.ConfigProvider p) {} // GH-90000
+        @Override public Promise<Void> reloadConfig(String tenantId) { return Promise.complete(); } // GH-90000
+        @Override public java.util.List<String> getAvailableKeys(KernelTenantContext ctx) { return java.util.List.of(); } // GH-90000
+        @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
+        @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
+        @Override public boolean isHealthy() { return true; } // GH-90000
+        @Override public String getName() { return "test-config-resolver"; } // GH-90000
     }
 }

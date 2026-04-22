@@ -37,13 +37,13 @@ class ReferenceResolverTest {
     private static final String JAVA = "java";
 
     @BeforeEach
-    void setUp() throws Exception {
-        referenceResolver = new ReferenceResolverImpl();
+    void setUp() throws Exception { // GH-90000
+        referenceResolver = new ReferenceResolverImpl(); // GH-90000
 
         // Create test files
-        javaFile = tempDir.resolve("TestJava.java");
-        pythonFile = tempDir.resolve("test_python.py");
-        typescriptFile = tempDir.resolve("test_typescript.ts");
+        javaFile = tempDir.resolve("TestJava.java [GH-90000]");
+        pythonFile = tempDir.resolve("test_python.py [GH-90000]");
+        typescriptFile = tempDir.resolve("test_typescript.ts [GH-90000]");
 
         // Create a simple Java file that references Python and TypeScript
         String javaCode =
@@ -52,17 +52,17 @@ class ReferenceResolverTest {
                 import com.example.TypeScriptService;
 
                 public class TestJava {
-                    private PythonService pythonService = new PythonService();
-                    private TypeScriptService tsService = new TypeScriptService();
+                    private PythonService pythonService = new PythonService(); // GH-90000
+                    private TypeScriptService tsService = new TypeScriptService(); // GH-90000
 
-                    public void doSomething() {
+                    public void doSomething() { // GH-90000
                         // Call Python function
-                        String result = pythonService.process("test");
-                        System.out.println("Python result: " + result);
+                        String result = pythonService.process("test [GH-90000]");
+                        System.out.println("Python result: " + result); // GH-90000
 
                         // Call TypeScript function
-                        int count = tsService.countItems("one", "two", "three");
-                        System.out.println("TypeScript count: " + count);
+                        int count = tsService.countItems("one", "two", "three"); // GH-90000
+                        System.out.println("TypeScript count: " + count); // GH-90000
                     }
                 }
                 """;
@@ -71,99 +71,99 @@ class ReferenceResolverTest {
         String pythonCode =
                 """
                 class PythonService:
-                    def process(self, input_str):
+                    def process(self, input_str): // GH-90000
                         # Call a Java method
                         from java.lang import System
-                        System.out.println("Processing in Python: " + input_str)
-                        return input_str.upper()
+                        System.out.println("Processing in Python: " + input_str) // GH-90000
+                        return input_str.upper() // GH-90000
                 """;
 
         // Create a TypeScript file that might be called from Java
         String typescriptCode =
                 """
                 export class TypeScriptService {
-                    countItems(...items: string[]): number {
+                    countItems(...items: string[]): number { // GH-90000
                         // Call a Java method
-                        const System = Java.type('java.lang.System');
-                        System.out.println(`Counting ${items.length} items in TypeScript`);
+                        const System = Java.type('java.lang.System'); // GH-90000
+                        System.out.println(`Counting ${items.length} items in TypeScript`); // GH-90000
                         return items.length;
                     }
                 }
                 """;
 
-        Files.writeString(javaFile, javaCode);
-        Files.writeString(pythonFile, pythonCode);
-        Files.writeString(typescriptFile, typescriptCode);
+        Files.writeString(javaFile, javaCode); // GH-90000
+        Files.writeString(pythonFile, pythonCode); // GH-90000
+        Files.writeString(typescriptFile, typescriptCode); // GH-90000
     }
 
     @Test
-    void shouldFindOutgoingReferencesFromJava() {
+    void shouldFindOutgoingReferencesFromJava() { // GH-90000
         // When
         List<CrossLanguageReference> references =
-                referenceResolver.findOutgoingReferences(javaFile);
+                referenceResolver.findOutgoingReferences(javaFile); // GH-90000
 
         // Then
-        assertThat(references).isNotEmpty();
+        assertThat(references).isNotEmpty(); // GH-90000
 
         // Should find references to Python and TypeScript
         boolean hasPythonRef =
-                references.stream()
-                        .anyMatch(
+                references.stream() // GH-90000
+                        .anyMatch( // GH-90000
                                 ref ->
-                                        ref.getTargetFile() != null
-                                                && ref.getTargetFile().endsWith(".py"));
+                                        ref.getTargetFile() != null // GH-90000
+                                                && ref.getTargetFile().endsWith(".py [GH-90000]"));
 
         boolean hasTypeScriptRef =
-                references.stream()
-                        .anyMatch(
+                references.stream() // GH-90000
+                        .anyMatch( // GH-90000
                                 ref ->
-                                        ref.getTargetFile() != null
-                                                && ref.getTargetFile().endsWith(".ts"));
+                                        ref.getTargetFile() != null // GH-90000
+                                                && ref.getTargetFile().endsWith(".ts [GH-90000]"));
 
-        assertThat(hasPythonRef).isTrue();
-        assertThat(hasTypeScriptRef).isTrue();
+        assertThat(hasPythonRef).isTrue(); // GH-90000
+        assertThat(hasTypeScriptRef).isTrue(); // GH-90000
 
         // Log the references for debugging
-        references.forEach(
+        references.forEach( // GH-90000
                 ref ->
-                        System.out.printf(
-                                "Reference: %s -> %s (%s)%n",
-                                ref.getSourceFile(),
-                                ref.getTargetFile() != null
-                                        ? ref.getTargetFile()
-                                        : ref.getTargetElement(),
-                                ref.getReferenceType()));
+                        System.out.printf( // GH-90000
+                                "Reference: %s -> %s (%s)%n", // GH-90000
+                                ref.getSourceFile(), // GH-90000
+                                ref.getTargetFile() != null // GH-90000
+                                        ? ref.getTargetFile() // GH-90000
+                                        : ref.getTargetElement(), // GH-90000
+                                ref.getReferenceType())); // GH-90000
     }
 
     @Test
-    void shouldFindIncomingReferencesToPython() {
+    void shouldFindIncomingReferencesToPython() { // GH-90000
         try {
             // Create a Python file with a class and method
-            Path pythonFile = tempDir.resolve("python_service.py");
+            Path pythonFile = tempDir.resolve("python_service.py [GH-90000]");
             String pythonCode =
                     "class PythonService:\n"
-                            + "    def process(self, input_str):\n"
+                            + "    def process(self, input_str):\n" // GH-90000
                             + "        return f\"Processed: {input_str}\"\n";
-            Files.writeString(pythonFile, pythonCode);
+            Files.writeString(pythonFile, pythonCode); // GH-90000
 
             // Create a Java file that imports and uses the Python class
-            Path javaFile = tempDir.resolve("PythonUser.java");
+            Path javaFile = tempDir.resolve("PythonUser.java [GH-90000]");
             String javaCode =
                     "// This is a Java class that uses a Python service\n"
                             + "public class PythonUser {\n"
                             + "    // Create an instance of the Python service\n"
-                            + "    private PythonService pythonService = new PythonService();\n"
+                            + "    private PythonService pythonService = new PythonService();\n" // GH-90000
                             + INDENTATION
                             + "    // Method that uses the Python service\n"
-                            + "    public String processWithPython(String input) {\n"
+                            + "    public String processWithPython(String input) {\n" // GH-90000
                             + "        // Call the Python service\n"
-                            + "        String result = pythonService.process(input);\n"
+                            + "        String result = pythonService.process(input);\n" // GH-90000
                             + INDENTATION
                             + "        // Also test direct reference to PythonService class\n"
-                            + "        PythonService service = new PythonService();\n"
+                            + "        PythonService service = new PythonService();\n" // GH-90000
                             + INDENTATION
                             + "        // Test method call\n"
-                            + "        service.process(\"test\");\n"
+                            + "        service.process(\"test\");\n" // GH-90000
                             + INDENTATION
                             + "        // Test variable declaration\n"
                             + "        PythonService anotherService;\n"
@@ -171,117 +171,117 @@ class ReferenceResolverTest {
                             + "        return result;\n"
                             + "    }\n"
                             + "}\n";
-            Files.writeString(javaFile, javaCode);
+            Files.writeString(javaFile, javaCode); // GH-90000
 
             // Print test file paths and contents for debugging
-            System.out.println("=== Test Files ===");
-            System.out.println("Python file: " + pythonFile);
-            System.out.println("Python content:\n" + pythonCode);
-            System.out.println("Java file: " + javaFile);
-            System.out.println("Java content:\n" + javaCode);
+            System.out.println("=== Test Files === [GH-90000]");
+            System.out.println("Python file: " + pythonFile); // GH-90000
+            System.out.println("Python content:\n" + pythonCode); // GH-90000
+            System.out.println("Java file: " + javaFile); // GH-90000
+            System.out.println("Java content:\n" + javaCode); // GH-90000
 
             // Verify files exist
-            System.out.println("\n=== File Check ===");
-            System.out.println("Python file exists: " + Files.exists(pythonFile));
-            System.out.println("Java file exists: " + Files.exists(javaFile));
-            System.out.println("Temp dir: " + tempDir);
-            System.out.println(
+            System.out.println("\n=== File Check === [GH-90000]");
+            System.out.println("Python file exists: " + Files.exists(pythonFile)); // GH-90000
+            System.out.println("Java file exists: " + Files.exists(javaFile)); // GH-90000
+            System.out.println("Temp dir: " + tempDir); // GH-90000
+            System.out.println( // GH-90000
                     "Files in temp dir: "
-                            + Files.list(tempDir)
-                                    .map(Path::toString)
-                                    .collect(Collectors.joining(", ")));
+                            + Files.list(tempDir) // GH-90000
+                                    .map(Path::toString) // GH-90000
+                                    .collect(Collectors.joining(",  [GH-90000]")));
 
             // When: Find incoming references to the Python file
-            System.out.println("\n=== Finding References ===");
+            System.out.println("\n=== Finding References === [GH-90000]");
             List<CrossLanguageReference> references =
-                    referenceResolver.findIncomingReferences(pythonFile);
+                    referenceResolver.findIncomingReferences(pythonFile); // GH-90000
 
             // Then: Verify the references
-            assertThat(references).isNotNull();
+            assertThat(references).isNotNull(); // GH-90000
 
             // Log the references for debugging
-            System.out.println(
-                    "Found " + references.size() + " incoming references to Python file:");
-            references.forEach(
+            System.out.println( // GH-90000
+                    "Found " + references.size() + " incoming references to Python file:"); // GH-90000
+            references.forEach( // GH-90000
                     ref ->
-                            System.out.printf(
-                                    "  %s -> %s (%s:%s)%n",
-                                    ref.getSourceFile() != null
-                                            ? ref.getSourceFile()
-                                                    .substring(
-                                                            ref.getSourceFile().lastIndexOf('/')
+                            System.out.printf( // GH-90000
+                                    "  %s -> %s (%s:%s)%n", // GH-90000
+                                    ref.getSourceFile() != null // GH-90000
+                                            ? ref.getSourceFile() // GH-90000
+                                                    .substring( // GH-90000
+                                                            ref.getSourceFile().lastIndexOf('/') // GH-90000
                                                                     + 1)
-                                            : ref.getSourceElement(),
-                                    ref.getTargetElement(),
-                                    ref.getReferenceType(),
-                                    ref.getSourceElementType()));
+                                            : ref.getSourceElement(), // GH-90000
+                                    ref.getTargetElement(), // GH-90000
+                                    ref.getReferenceType(), // GH-90000
+                                    ref.getSourceElementType())); // GH-90000
 
             // Verify we found at least one reference from Java to Python
             boolean hasJavaReference =
-                    references.stream()
-                            .anyMatch(
+                    references.stream() // GH-90000
+                            .anyMatch( // GH-90000
                                     ref ->
-                                            ref.getSourceLanguage() != null
-                                                    && ref.getSourceLanguage().equals(JAVA)
-                                                    && ref.getSourceFile() != null
-                                                    && ref.getSourceFile().endsWith(".java"));
+                                            ref.getSourceLanguage() != null // GH-90000
+                                                    && ref.getSourceLanguage().equals(JAVA) // GH-90000
+                                                    && ref.getSourceFile() != null // GH-90000
+                                                    && ref.getSourceFile().endsWith(".java [GH-90000]"));
 
             // Enable this assertion once the implementation is complete
-            // assertThat(hasJavaReference).isTrue();
+            // assertThat(hasJavaReference).isTrue(); // GH-90000
 
             // Log a warning if no references were found
-            if (!hasJavaReference) {
-                System.out.println(
+            if (!hasJavaReference) { // GH-90000
+                System.out.println( // GH-90000
                         "WARNING: No Java to Python references found. This may indicate an issue"
                                 + " with reference detection.");
             }
 
-        } catch (IOException e) {
-            fail("Failed to create test file: " + e.getMessage(), e);
+        } catch (IOException e) { // GH-90000
+            fail("Failed to create test file: " + e.getMessage(), e); // GH-90000
         }
     }
 
     @Test
-    void shouldResolveCrossLanguageReference() {
+    void shouldResolveCrossLanguageReference() { // GH-90000
         // Given
         CrossLanguageReference reference =
-                CrossLanguageReference.builder()
-                        .sourceFile(javaFile.toString())
-                        .sourceLanguage(JAVA)
-                        .sourceElement("pythonService.process")
-                        .sourceElementType("method_call")
-                        .sourcePosition(10, 30)
-                        .targetElement("PythonService.process")
-                        .targetLanguage("python")
-                        .build();
+                CrossLanguageReference.builder() // GH-90000
+                        .sourceFile(javaFile.toString()) // GH-90000
+                        .sourceLanguage(JAVA) // GH-90000
+                        .sourceElement("pythonService.process [GH-90000]")
+                        .sourceElementType("method_call [GH-90000]")
+                        .sourcePosition(10, 30) // GH-90000
+                        .targetElement("PythonService.process [GH-90000]")
+                        .targetLanguage("python [GH-90000]")
+                        .build(); // GH-90000
 
         // When
-        CrossLanguageReference resolved = referenceResolver.resolveReference(reference);
+        CrossLanguageReference resolved = referenceResolver.resolveReference(reference); // GH-90000
 
         // Then
-        assertThat(resolved).isNotNull();
-        assertThat(resolved.getTargetFile()).isEqualTo(pythonFile.toString());
-        assertThat(resolved.getTargetElement()).isEqualTo("PythonService.process");
+        assertThat(resolved).isNotNull(); // GH-90000
+        assertThat(resolved.getTargetFile()).isEqualTo(pythonFile.toString()); // GH-90000
+        assertThat(resolved.getTargetElement()).isEqualTo("PythonService.process [GH-90000]");
     }
 
     @Test
-    void shouldDetectCrossLanguageReferences() {
+    void shouldDetectCrossLanguageReferences() { // GH-90000
         // Given
         CrossLanguageReference javaToPython =
-                CrossLanguageReference.builder()
-                        .sourceLanguage(JAVA)
-                        .targetLanguage("python")
-                        .build();
+                CrossLanguageReference.builder() // GH-90000
+                        .sourceLanguage(JAVA) // GH-90000
+                        .targetLanguage("python [GH-90000]")
+                        .build(); // GH-90000
 
         CrossLanguageReference javaToJava =
-                CrossLanguageReference.builder()
-                        .sourceLanguage(JAVA)
-                        .targetLanguage("java")
-                        .build();
+                CrossLanguageReference.builder() // GH-90000
+                        .sourceLanguage(JAVA) // GH-90000
+                        .targetLanguage("java [GH-90000]")
+                        .build(); // GH-90000
 
         // When/Then
-        assertThat(referenceResolver.isCrossLanguageReference(javaToPython)).isTrue();
-        assertThat(referenceResolver.isCrossLanguageReference(javaToJava)).isFalse();
-        assertThat(referenceResolver.isCrossLanguageReference(null)).isFalse();
+        assertThat(referenceResolver.isCrossLanguageReference(javaToPython)).isTrue(); // GH-90000
+        assertThat(referenceResolver.isCrossLanguageReference(javaToJava)).isFalse(); // GH-90000
+        assertThat(referenceResolver.isCrossLanguageReference(null)).isFalse(); // GH-90000
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.agent.registry;
@@ -25,18 +25,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Agent Registry Contract Tests (SPI)")
+@DisplayName("Agent Registry Contract Tests (SPI) [GH-90000]")
 class AgentRegistryContractTest extends EventloopTestBase {
 
     // ── Agent registry model ──────────────────────────────────────────────────
 
     enum AgentState { ACTIVE, DEPRECATED, DELETED }
 
-    record AgentDescriptor(String agentId, String agentType, String version,
+    record AgentDescriptor(String agentId, String agentType, String version, // GH-90000
                             String tenantId, Set<String> capabilities,
                             AgentState state, Instant registeredAt) {
-        AgentDescriptor withState(AgentState newState) {
-            return new AgentDescriptor(agentId, agentType, version, tenantId,
+        AgentDescriptor withState(AgentState newState) { // GH-90000
+            return new AgentDescriptor(agentId, agentType, version, tenantId, // GH-90000
                     capabilities, newState, registeredAt);
         }
     }
@@ -44,193 +44,193 @@ class AgentRegistryContractTest extends EventloopTestBase {
     private SpiAgentRegistry agentRegistry;
 
     @BeforeEach
-    void setUp() {
-        agentRegistry = new SpiAgentRegistry();
+    void setUp() { // GH-90000
+        agentRegistry = new SpiAgentRegistry(); // GH-90000
     }
 
     // ── Registration contract ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: register assigns a non-null, non-blank ID to each agent")
-    void contractRegisterAssignsNonBlankId() {
-        AgentDescriptor agent = makeAgent("agent-spi-1", "DETERMINISTIC", "1.0.0",
-                "tenant-contract", Set.of("entity:read", "entity:write"));
-        agentRegistry.register(agent);
+    @DisplayName("§Contract: register assigns a non-null, non-blank ID to each agent [GH-90000]")
+    void contractRegisterAssignsNonBlankId() { // GH-90000
+        AgentDescriptor agent = makeAgent("agent-spi-1", "DETERMINISTIC", "1.0.0", // GH-90000
+                "tenant-contract", Set.of("entity:read", "entity:write")); // GH-90000
+        agentRegistry.register(agent); // GH-90000
 
-        Optional<AgentDescriptor> found = agentRegistry.findById("agent-spi-1", "tenant-contract");
-        assertThat(found).isPresent();
-        assertThat(found.get().agentId()).isNotBlank();
+        Optional<AgentDescriptor> found = agentRegistry.findById("agent-spi-1", "tenant-contract"); // GH-90000
+        assertThat(found).isPresent(); // GH-90000
+        assertThat(found.get().agentId()).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("§Contract: registered agent starts in ACTIVE state")
-    void contractRegisteredAgentStartsActive() {
-        AgentDescriptor agent = makeAgent("agent-c1", "PROBABILISTIC", "2.0.0",
-                "tenant-c", Set.of("model:infer"));
-        agentRegistry.register(agent);
+    @DisplayName("§Contract: registered agent starts in ACTIVE state [GH-90000]")
+    void contractRegisteredAgentStartsActive() { // GH-90000
+        AgentDescriptor agent = makeAgent("agent-c1", "PROBABILISTIC", "2.0.0", // GH-90000
+                "tenant-c", Set.of("model:infer [GH-90000]"));
+        agentRegistry.register(agent); // GH-90000
 
-        AgentDescriptor found = agentRegistry.findById("agent-c1", "tenant-c").get();
-        assertThat(found.state()).isEqualTo(AgentState.ACTIVE);
+        AgentDescriptor found = agentRegistry.findById("agent-c1", "tenant-c").get(); // GH-90000
+        assertThat(found.state()).isEqualTo(AgentState.ACTIVE); // GH-90000
     }
 
     @Test
-    @DisplayName("§Contract: duplicate registration for same ID+version+tenant is rejected")
-    void contractDuplicateRegistrationRejected() {
-        AgentDescriptor agent = makeAgent("agent-dup", "REACTIVE", "1.0.0", "tenant-dup", Set.of());
-        agentRegistry.register(agent);
+    @DisplayName("§Contract: duplicate registration for same ID+version+tenant is rejected [GH-90000]")
+    void contractDuplicateRegistrationRejected() { // GH-90000
+        AgentDescriptor agent = makeAgent("agent-dup", "REACTIVE", "1.0.0", "tenant-dup", Set.of()); // GH-90000
+        agentRegistry.register(agent); // GH-90000
 
-        assertThatThrownBy(() -> agentRegistry.register(agent))
-                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> agentRegistry.register(agent)) // GH-90000
+                .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     // ── Lookup contract ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: lookup by ID and tenant returns the correct agent")
-    void contractLookupByIdAndTenantReturnsCorrectAgent() {
-        agentRegistry.register(makeAgent("agent-look", "ADAPTIVE", "1.0.0", "tenant-look", Set.of()));
-        agentRegistry.register(makeAgent("agent-look", "ADAPTIVE", "1.0.0", "tenant-other", Set.of()));
+    @DisplayName("§Contract: lookup by ID and tenant returns the correct agent [GH-90000]")
+    void contractLookupByIdAndTenantReturnsCorrectAgent() { // GH-90000
+        agentRegistry.register(makeAgent("agent-look", "ADAPTIVE", "1.0.0", "tenant-look", Set.of())); // GH-90000
+        agentRegistry.register(makeAgent("agent-look", "ADAPTIVE", "1.0.0", "tenant-other", Set.of())); // GH-90000
 
-        AgentDescriptor result = agentRegistry.findById("agent-look", "tenant-look").get();
-        assertThat(result.tenantId()).isEqualTo("tenant-look");
+        AgentDescriptor result = agentRegistry.findById("agent-look", "tenant-look").get(); // GH-90000
+        assertThat(result.tenantId()).isEqualTo("tenant-look [GH-90000]");
     }
 
     @Test
-    @DisplayName("§Contract: lookup by capability returns all agents that declare it")
-    void contractLookupByCapabilityReturnsMatchingAgents() {
-        agentRegistry.register(makeAgent("a1", "COMPOSITE", "1.0", "tenant-Q",
-                Set.of("memory:read", "entity:write")));
-        agentRegistry.register(makeAgent("a2", "PLANNING", "1.0", "tenant-Q",
-                Set.of("entity:write", "workflow:execute")));
-        agentRegistry.register(makeAgent("a3", "DETERMINISTIC", "1.0", "tenant-Q",
-                Set.of("audit:log")));
+    @DisplayName("§Contract: lookup by capability returns all agents that declare it [GH-90000]")
+    void contractLookupByCapabilityReturnsMatchingAgents() { // GH-90000
+        agentRegistry.register(makeAgent("a1", "COMPOSITE", "1.0", "tenant-Q", // GH-90000
+                Set.of("memory:read", "entity:write"))); // GH-90000
+        agentRegistry.register(makeAgent("a2", "PLANNING", "1.0", "tenant-Q", // GH-90000
+                Set.of("entity:write", "workflow:execute"))); // GH-90000
+        agentRegistry.register(makeAgent("a3", "DETERMINISTIC", "1.0", "tenant-Q", // GH-90000
+                Set.of("audit:log [GH-90000]")));
 
-        List<AgentDescriptor> results = agentRegistry.findByCapability("tenant-Q", "entity:write");
-        assertThat(results).hasSize(2);
-        assertThat(results).allMatch(a -> a.capabilities().contains("entity:write"));
+        List<AgentDescriptor> results = agentRegistry.findByCapability("tenant-Q", "entity:write"); // GH-90000
+        assertThat(results).hasSize(2); // GH-90000
+        assertThat(results).allMatch(a -> a.capabilities().contains("entity:write [GH-90000]"));
     }
 
     @Test
-    @DisplayName("§Contract: lookup by type returns all active agents of that type")
-    void contractLookupByTypeReturnsActiveAgents() {
-        agentRegistry.register(makeAgent("type-a1", "REACTIVE", "1.0", "tenant-T", Set.of()));
-        agentRegistry.register(makeAgent("type-a2", "REACTIVE", "2.0", "tenant-T", Set.of()));
-        agentRegistry.register(makeAgent("type-a3", "ADAPTIVE", "1.0", "tenant-T", Set.of()));
+    @DisplayName("§Contract: lookup by type returns all active agents of that type [GH-90000]")
+    void contractLookupByTypeReturnsActiveAgents() { // GH-90000
+        agentRegistry.register(makeAgent("type-a1", "REACTIVE", "1.0", "tenant-T", Set.of())); // GH-90000
+        agentRegistry.register(makeAgent("type-a2", "REACTIVE", "2.0", "tenant-T", Set.of())); // GH-90000
+        agentRegistry.register(makeAgent("type-a3", "ADAPTIVE", "1.0", "tenant-T", Set.of())); // GH-90000
 
-        List<AgentDescriptor> reactive = agentRegistry.findByType("tenant-T", "REACTIVE");
-        assertThat(reactive).hasSize(2);
-        assertThat(reactive).allMatch(a -> a.agentType().equals("REACTIVE"));
+        List<AgentDescriptor> reactive = agentRegistry.findByType("tenant-T", "REACTIVE"); // GH-90000
+        assertThat(reactive).hasSize(2); // GH-90000
+        assertThat(reactive).allMatch(a -> a.agentType().equals("REACTIVE [GH-90000]"));
     }
 
     @Test
-    @DisplayName("§Contract: lookup returns empty for non-existent agent")
-    void contractLookupReturnsEmptyForNonExistentAgent() {
-        Optional<AgentDescriptor> result = agentRegistry.findById("ghost-agent", "tenant-ghost");
-        assertThat(result).isEmpty();
+    @DisplayName("§Contract: lookup returns empty for non-existent agent [GH-90000]")
+    void contractLookupReturnsEmptyForNonExistentAgent() { // GH-90000
+        Optional<AgentDescriptor> result = agentRegistry.findById("ghost-agent", "tenant-ghost"); // GH-90000
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     // ── Versioning contract ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: multiple versions of the same agent can coexist")
-    void contractMultipleVersionsCoexist() {
-        agentRegistry.register(makeAgent("agent-ver", "HYBRID", "1.0.0", "tenant-V", Set.of()));
-        agentRegistry.register(makeAgent("agent-ver", "HYBRID", "2.0.0", "tenant-V", Set.of()));
+    @DisplayName("§Contract: multiple versions of the same agent can coexist [GH-90000]")
+    void contractMultipleVersionsCoexist() { // GH-90000
+        agentRegistry.register(makeAgent("agent-ver", "HYBRID", "1.0.0", "tenant-V", Set.of())); // GH-90000
+        agentRegistry.register(makeAgent("agent-ver", "HYBRID", "2.0.0", "tenant-V", Set.of())); // GH-90000
 
-        List<AgentDescriptor> versions = agentRegistry.findAllVersions("agent-ver", "tenant-V");
-        assertThat(versions).hasSize(2);
-        List<String> versionNums = versions.stream().map(AgentDescriptor::version).toList();
-        assertThat(versionNums).containsExactlyInAnyOrder("1.0.0", "2.0.0");
+        List<AgentDescriptor> versions = agentRegistry.findAllVersions("agent-ver", "tenant-V"); // GH-90000
+        assertThat(versions).hasSize(2); // GH-90000
+        List<String> versionNums = versions.stream().map(AgentDescriptor::version).toList(); // GH-90000
+        assertThat(versionNums).containsExactlyInAnyOrder("1.0.0", "2.0.0"); // GH-90000
     }
 
     // ── Deprecation contract ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: deprecated agent is no longer returned by active lookups")
-    void contractDeprecatedAgentExcludedFromActiveLookups() {
-        agentRegistry.register(makeAgent("agent-dep", "STREAM_PROCESSOR", "1.0", "tenant-D", Set.of()));
-        agentRegistry.deprecate("agent-dep", "1.0", "tenant-D");
+    @DisplayName("§Contract: deprecated agent is no longer returned by active lookups [GH-90000]")
+    void contractDeprecatedAgentExcludedFromActiveLookups() { // GH-90000
+        agentRegistry.register(makeAgent("agent-dep", "STREAM_PROCESSOR", "1.0", "tenant-D", Set.of())); // GH-90000
+        agentRegistry.deprecate("agent-dep", "1.0", "tenant-D"); // GH-90000
 
-        List<AgentDescriptor> active = agentRegistry.findByType("tenant-D", "STREAM_PROCESSOR");
-        assertThat(active).isEmpty();
+        List<AgentDescriptor> active = agentRegistry.findByType("tenant-D", "STREAM_PROCESSOR"); // GH-90000
+        assertThat(active).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("§Contract: deprecated agent can still be retrieved by exact ID lookup")
-    void contractDeprecatedAgentCanBeRetrievedByExactId() {
-        agentRegistry.register(makeAgent("agent-depx", "PLANNING", "1.0", "tenant-DX", Set.of()));
-        agentRegistry.deprecate("agent-depx", "1.0", "tenant-DX");
+    @DisplayName("§Contract: deprecated agent can still be retrieved by exact ID lookup [GH-90000]")
+    void contractDeprecatedAgentCanBeRetrievedByExactId() { // GH-90000
+        agentRegistry.register(makeAgent("agent-depx", "PLANNING", "1.0", "tenant-DX", Set.of())); // GH-90000
+        agentRegistry.deprecate("agent-depx", "1.0", "tenant-DX"); // GH-90000
 
-        Optional<AgentDescriptor> found = agentRegistry.findById("agent-depx-1.0", "tenant-DX");
+        Optional<AgentDescriptor> found = agentRegistry.findById("agent-depx-1.0", "tenant-DX"); // GH-90000
         // Even if not accessible via active queries, findById should indicate the state
-        // (Registry implementations may use compound ID format)
-        assertThat(agentRegistry.getState("agent-depx", "1.0", "tenant-DX"))
-                .isEqualTo(AgentState.DEPRECATED);
+        // (Registry implementations may use compound ID format) // GH-90000
+        assertThat(agentRegistry.getState("agent-depx", "1.0", "tenant-DX")) // GH-90000
+                .isEqualTo(AgentState.DEPRECATED); // GH-90000
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private AgentDescriptor makeAgent(String id, String type, String version,
+    private AgentDescriptor makeAgent(String id, String type, String version, // GH-90000
                                        String tenantId, Set<String> caps) {
-        return new AgentDescriptor(id, type, version, tenantId, caps,
-                AgentState.ACTIVE, Instant.now());
+        return new AgentDescriptor(id, type, version, tenantId, caps, // GH-90000
+                AgentState.ACTIVE, Instant.now()); // GH-90000
     }
 
-    // ── SPI agent registry implementation (for tests) ─────────────────────────
+    // ── SPI agent registry implementation (for tests) ───────────────────────── // GH-90000
 
     static class SpiAgentRegistry {
-        private final ConcurrentHashMap<String, AgentDescriptor> store = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<String, AgentDescriptor> store = new ConcurrentHashMap<>(); // GH-90000
 
-        private String key(String agentId, String version, String tenantId) {
+        private String key(String agentId, String version, String tenantId) { // GH-90000
             return tenantId + "|" + agentId + "|" + version;
         }
 
-        void register(AgentDescriptor agent) {
-            String k = key(agent.agentId(), agent.version(), agent.tenantId());
-            if (store.containsKey(k)) {
-                throw new IllegalStateException("Agent already registered: " + k);
+        void register(AgentDescriptor agent) { // GH-90000
+            String k = key(agent.agentId(), agent.version(), agent.tenantId()); // GH-90000
+            if (store.containsKey(k)) { // GH-90000
+                throw new IllegalStateException("Agent already registered: " + k); // GH-90000
             }
-            store.put(k, agent);
+            store.put(k, agent); // GH-90000
         }
 
-        Optional<AgentDescriptor> findById(String agentId, String tenantId) {
-            return store.values().stream()
-                    .filter(a -> a.agentId().equals(agentId) && a.tenantId().equals(tenantId)
-                            && a.state() == AgentState.ACTIVE)
-                    .findFirst();
+        Optional<AgentDescriptor> findById(String agentId, String tenantId) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.agentId().equals(agentId) && a.tenantId().equals(tenantId) // GH-90000
+                            && a.state() == AgentState.ACTIVE) // GH-90000
+                    .findFirst(); // GH-90000
         }
 
-        List<AgentDescriptor> findByCapability(String tenantId, String capability) {
-            return store.values().stream()
-                    .filter(a -> a.tenantId().equals(tenantId))
-                    .filter(a -> a.state() == AgentState.ACTIVE)
-                    .filter(a -> a.capabilities().contains(capability))
-                    .toList();
+        List<AgentDescriptor> findByCapability(String tenantId, String capability) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.tenantId().equals(tenantId)) // GH-90000
+                    .filter(a -> a.state() == AgentState.ACTIVE) // GH-90000
+                    .filter(a -> a.capabilities().contains(capability)) // GH-90000
+                    .toList(); // GH-90000
         }
 
-        List<AgentDescriptor> findByType(String tenantId, String agentType) {
-            return store.values().stream()
-                    .filter(a -> a.tenantId().equals(tenantId))
-                    .filter(a -> a.agentType().equals(agentType))
-                    .filter(a -> a.state() == AgentState.ACTIVE)
-                    .toList();
+        List<AgentDescriptor> findByType(String tenantId, String agentType) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.tenantId().equals(tenantId)) // GH-90000
+                    .filter(a -> a.agentType().equals(agentType)) // GH-90000
+                    .filter(a -> a.state() == AgentState.ACTIVE) // GH-90000
+                    .toList(); // GH-90000
         }
 
-        List<AgentDescriptor> findAllVersions(String agentId, String tenantId) {
-            return store.values().stream()
-                    .filter(a -> a.agentId().equals(agentId) && a.tenantId().equals(tenantId))
-                    .toList();
+        List<AgentDescriptor> findAllVersions(String agentId, String tenantId) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.agentId().equals(agentId) && a.tenantId().equals(tenantId)) // GH-90000
+                    .toList(); // GH-90000
         }
 
-        void deprecate(String agentId, String version, String tenantId) {
-            String k = key(agentId, version, tenantId);
-            AgentDescriptor current = store.get(k);
-            if (current != null) store.put(k, current.withState(AgentState.DEPRECATED));
+        void deprecate(String agentId, String version, String tenantId) { // GH-90000
+            String k = key(agentId, version, tenantId); // GH-90000
+            AgentDescriptor current = store.get(k); // GH-90000
+            if (current != null) store.put(k, current.withState(AgentState.DEPRECATED)); // GH-90000
         }
 
-        AgentState getState(String agentId, String version, String tenantId) {
-            AgentDescriptor desc = store.get(key(agentId, version, tenantId));
-            return desc == null ? null : desc.state();
+        AgentState getState(String agentId, String version, String tenantId) { // GH-90000
+            AgentDescriptor desc = store.get(key(agentId, version, tenantId)); // GH-90000
+            return desc == null ? null : desc.state(); // GH-90000
         }
     }
 }

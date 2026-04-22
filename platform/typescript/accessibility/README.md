@@ -3,7 +3,7 @@
 Unified Ghatana accessibility library — WCAG auditing, scoring, reporting, and audit logging.
 
 Replaces the former two separate packages:
-- `@ghatana/accessibility-audit` → use `@ghatana/accessibility` instead
+- Canonical package name: `@ghatana/accessibility`
 - `@ghatana/audit-components` → use `@ghatana/accessibility` instead
 
 ## Usage

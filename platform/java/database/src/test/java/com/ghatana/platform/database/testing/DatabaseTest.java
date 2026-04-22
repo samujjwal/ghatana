@@ -23,21 +23,21 @@ import java.lang.annotation.Target;
  * - Migration Tests - Specify migration locations
  *
  * <p><b>Configuration Attributes</b><br>
- * - <b>image</b>: Docker image (default: postgres:15-alpine)
- * - <b>database</b>: Database name (default: testdb)
- * - <b>username</b>: Database username (default: test)
- * - <b>password</b>: Database password (default: test)
- * - <b>migrations</b>: Flyway migration locations (default: none)
- * - <b>entityPackages</b>: JPA entity package scanning (default: com.ghatana)
- * - <b>resetBetweenTests</b>: Rollback transactions between tests (default: true)
- * - <b>showSql</b>: Log SQL statements (default: false)
- * - <b>formatSql</b>: Format SQL output (default: false)
- * - <b>poolSize</b>: HikariCP pool size (default: 10)
+ * - <b>image</b>: Docker image (default: postgres:15-alpine) // GH-90000
+ * - <b>database</b>: Database name (default: testdb) // GH-90000
+ * - <b>username</b>: Database username (default: test) // GH-90000
+ * - <b>password</b>: Database password (default: test) // GH-90000
+ * - <b>migrations</b>: Flyway migration locations (default: none) // GH-90000
+ * - <b>entityPackages</b>: JPA entity package scanning (default: com.ghatana) // GH-90000
+ * - <b>resetBetweenTests</b>: Rollback transactions between tests (default: true) // GH-90000
+ * - <b>showSql</b>: Log SQL statements (default: false) // GH-90000
+ * - <b>formatSql</b>: Format SQL output (default: false) // GH-90000
+ * - <b>poolSize</b>: HikariCP pool size (default: 10) // GH-90000
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
  * // 1. Basic usage with defaults
- * @ExtendWith(DatabaseTestExtension.class)
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
  * @DatabaseTest
  * class UserRepositoryTest {
  *     // Uses default PostgreSQL 15 container
@@ -47,8 +47,8 @@ import java.lang.annotation.Target;
  * }
  *
  * // 2. Custom PostgreSQL version and database
- * @ExtendWith(DatabaseTestExtension.class)
- * @DatabaseTest(
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
+ * @DatabaseTest( // GH-90000
  *     image = "postgres:14.9-alpine",
  *     database = "integration_test",
  *     username = "testuser",
@@ -59,8 +59,8 @@ import java.lang.annotation.Target;
  * }
  *
  * // 3. With Flyway migrations
- * @ExtendWith(DatabaseTestExtension.class)
- * @DatabaseTest(
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
+ * @DatabaseTest( // GH-90000
  *     migrations = {
  *         "classpath:db/migration",        // Production migrations
  *         "classpath:db/test-data"         // Test data setup
@@ -68,19 +68,19 @@ import java.lang.annotation.Target;
  * )
  * class MigrationTest {
  *     @Test
- *     void shouldHaveSchema(JdbcTemplate jdbc) {
+ *     void shouldHaveSchema(JdbcTemplate jdbc) { // GH-90000
  *         // Database has schema from migrations
- *         Integer count = jdbc.queryForObject(
- *             "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'users'",
- *             (rs, rowNum) -> rs.getInt(1)
+ *         Integer count = jdbc.queryForObject( // GH-90000
+ *             "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'users'", // GH-90000
+ *             (rs, rowNum) -> rs.getInt(1) // GH-90000
  *         );
- *         assertThat(count).isEqualTo(1);
+ *         assertThat(count).isEqualTo(1); // GH-90000
  *     }
  * }
  *
  * // 4. Custom entity packages
- * @ExtendWith(DatabaseTestExtension.class)
- * @DatabaseTest(
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
+ * @DatabaseTest( // GH-90000
  *     entityPackages = {
  *         "com.example.domain.user",
  *         "com.example.domain.order",
@@ -92,53 +92,53 @@ import java.lang.annotation.Target;
  * }
  *
  * // 5. SQL logging for debugging
- * @ExtendWith(DatabaseTestExtension.class)
- * @DatabaseTest(
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
+ * @DatabaseTest( // GH-90000
  *     showSql = true,
  *     formatSql = true
  * )
  * class DebugTest {
  *     @Test
- *     void debugQuery(TransactionManager txManager) {
+ *     void debugQuery(TransactionManager txManager) { // GH-90000
  *         // All SQL logged to console with formatting
- *         txManager.inTransaction(em -> {
- *             em.persist(new User("john@example.com"));
+ *         txManager.inTransaction(em -> { // GH-90000
+ *             em.persist(new User("john@example.com [GH-90000]"));
  *             return null;
  *         });
  *     }
  * }
  *
  * // 6. Performance testing with larger pool
- * @ExtendWith(DatabaseTestExtension.class)
- * @DatabaseTest(
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
+ * @DatabaseTest( // GH-90000
  *     poolSize = 50,
  *     resetBetweenTests = false  // Share data across tests
  * )
  * class PerformanceTest {
  *     @BeforeAll
- *     static void loadTestData(TransactionManager txManager) {
+ *     static void loadTestData(TransactionManager txManager) { // GH-90000
  *         // Load once, reuse across all tests
- *         txManager.inTransaction(em -> {
- *             for (int i = 0; i < 10000; i++) {
- *                 em.persist(new User("user" + i + "@example.com"));
+ *         txManager.inTransaction(em -> { // GH-90000
+ *             for (int i = 0; i < 10000; i++) { // GH-90000
+ *                 em.persist(new User("user" + i + "@example.com")); // GH-90000
  *             }
  *             return null;
  *         });
  *     }
  *
  *     @Test
- *     void benchmarkQuery() {
+ *     void benchmarkQuery() { // GH-90000
  *         // Data persists from @BeforeAll
  *     }
  * }
  *
- * // 7. Method-level override (not yet supported - class-level only)
- * @ExtendWith(DatabaseTestExtension.class)
- * @DatabaseTest(entityPackages = "com.example.entity")
+ * // 7. Method-level override (not yet supported - class-level only) // GH-90000
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
+ * @DatabaseTest(entityPackages = "com.example.entity") // GH-90000
  * class MethodOverrideTest {
  *
  *     @Test
- *     void testWithClassConfig() {
+ *     void testWithClassConfig() { // GH-90000
  *         // Uses class-level @DatabaseTest configuration
  *     }
  *
@@ -147,24 +147,24 @@ import java.lang.annotation.Target;
  * }
  *
  * // 8. Multi-tenant testing
- * @ExtendWith(DatabaseTestExtension.class)
- * @DatabaseTest(
+ * @ExtendWith(DatabaseTestExtension.class) // GH-90000
+ * @DatabaseTest( // GH-90000
  *     database = "tenant_test",
  *     migrations = "classpath:db/migration/multi-tenant"
  * )
  * class MultiTenantTest {
  *     @Test
- *     void shouldIsolateTenants(JdbcTemplate jdbc) {
+ *     void shouldIsolateTenants(JdbcTemplate jdbc) { // GH-90000
  *         // Test tenant isolation logic
- *         jdbc.update("SET search_path TO tenant_1");
- *         jdbc.update("INSERT INTO users (email) VALUES (?)", "user1@tenant1.com");
+ *         jdbc.update("SET search_path TO tenant_1 [GH-90000]");
+ *         jdbc.update("INSERT INTO users (email) VALUES (?)", "user1@tenant1.com"); // GH-90000
  *
- *         jdbc.update("SET search_path TO tenant_2");
- *         Integer count = jdbc.queryForObject(
- *             "SELECT COUNT(*) FROM users",
- *             (rs, rowNum) -> rs.getInt(1)
+ *         jdbc.update("SET search_path TO tenant_2 [GH-90000]");
+ *         Integer count = jdbc.queryForObject( // GH-90000
+ *             "SELECT COUNT(*) FROM users", // GH-90000
+ *             (rs, rowNum) -> rs.getInt(1) // GH-90000
  *         );
- *         assertThat(count).isEqualTo(0);  // Isolated
+ *         assertThat(count).isEqualTo(0);  // Isolated // GH-90000
  *     }
  * }
  * }</pre>
@@ -174,25 +174,25 @@ import java.lang.annotation.Target;
  * - database: "testdb"
  * - username: "test"
  * - password: "test"
- * - migrations: [] (empty, no migrations)
- * - entityPackages: ["com.ghatana"] (default package)
- * - resetBetweenTests: true (rollback after each test)
- * - showSql: false (no SQL logging)
- * - formatSql: false (no formatting)
- * - poolSize: 10 (HikariCP connections)
+ * - migrations: [] (empty, no migrations) // GH-90000
+ * - entityPackages: ["com.ghatana"] (default package) // GH-90000
+ * - resetBetweenTests: true (rollback after each test) // GH-90000
+ * - showSql: false (no SQL logging) // GH-90000
+ * - formatSql: false (no formatting) // GH-90000
+ * - poolSize: 10 (HikariCP connections) // GH-90000
  *
  * <p><b>Reset Between Tests</b><br>
- * When true (default), transactions roll back after each test:
+ * When true (default), transactions roll back after each test: // GH-90000
  * <pre>{@code
- * @DatabaseTest(resetBetweenTests = true)  // Default
+ * @DatabaseTest(resetBetweenTests = true)  // Default // GH-90000
  * class IsolatedTest {
  *     @Test
- *     void test1() {
+ *     void test1() { // GH-90000
  *         // Insert data
  *     }
  *
  *     @Test
- *     void test2() {
+ *     void test2() { // GH-90000
  *         // Data from test1 NOT visible - rolled back
  *     }
  * }
@@ -201,20 +201,20 @@ import java.lang.annotation.Target;
  * <p><b>Shared Data Across Tests</b><br>
  * Set resetBetweenTests=false to share data:
  * <pre>{@code
- * @DatabaseTest(resetBetweenTests = false)
+ * @DatabaseTest(resetBetweenTests = false) // GH-90000
  * class SharedDataTest {
  *     @BeforeAll
- *     static void loadData() {
+ *     static void loadData() { // GH-90000
  *         // Load once
  *     }
  *
  *     @Test
- *     void test1() {
+ *     void test1() { // GH-90000
  *         // See data from @BeforeAll
  *     }
  *
  *     @Test
- *     void test2() {
+ *     void test2() { // GH-90000
  *         // Also see data from @BeforeAll
  *     }
  * }
@@ -228,7 +228,7 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * <p><b>Migration Locations</b><br>
- * Flyway migration paths (classpath or filesystem):
+ * Flyway migration paths (classpath or filesystem): // GH-90000
  * <pre>
  * migrations = "classpath:db/migration"           // Single location
  * migrations = {
@@ -238,20 +238,20 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * <p><b>SQL Logging</b><br>
- * Enable for debugging (disable in CI for performance):
+ * Enable for debugging (disable in CI for performance): // GH-90000
  * - showSql=true: Log all SQL statements
- * - formatSql=true: Pretty-print SQL (multi-line)
+ * - formatSql=true: Pretty-print SQL (multi-line) // GH-90000
  *
  * <p><b>Best Practices</b><br>
- * - Use resetBetweenTests=true for test isolation (default)
- * - Use resetBetweenTests=false for performance tests (shared data)
- * - Enable showSql/formatSql only for debugging (slow in CI)
+ * - Use resetBetweenTests=true for test isolation (default) // GH-90000
+ * - Use resetBetweenTests=false for performance tests (shared data) // GH-90000
+ * - Enable showSql/formatSql only for debugging (slow in CI) // GH-90000
  * - Specify entityPackages explicitly for clarity
  * - Use migrations for complex schema setup
  * - Increase poolSize for parallel/performance tests
  *
  * <p><b>Limitations</b><br>
- * - Class-level only (method-level not supported)
+ * - Class-level only (method-level not supported) // GH-90000
  * - Container created once per test class
  * - Cannot change configuration per test method
  *
@@ -263,37 +263,37 @@ import java.lang.annotation.Target;
  * @doc.pattern Configuration
  */
 
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD}) // GH-90000
+@Retention(RetentionPolicy.RUNTIME) // GH-90000
 public @interface DatabaseTest {
 
     /**
      * The PostgreSQL Docker image to use.
      *
-     * @return The Docker image name (default: "postgres:15.4")
+     * @return The Docker image name (default: "postgres:15.4") // GH-90000
      */
-    String image() default "";
+    String image() default ""; // GH-90000
 
     /**
      * The database name to create.
      *
-     * @return The database name (default: "testdb")
+     * @return The database name (default: "testdb") // GH-90000
      */
-    String database() default "";
+    String database() default ""; // GH-90000
 
     /**
      * The database username.
      *
-     * @return The username (default: "testuser")
+     * @return The username (default: "testuser") // GH-90000
      */
-    String username() default "";
+    String username() default ""; // GH-90000
 
     /**
      * The database password.
      *
-     * @return The password (default: "testpass")
+     * @return The password (default: "testpass") // GH-90000
      */
-    String password() default "";
+    String password() default ""; // GH-90000
 
     /**
      * The migration locations to run on startup.
@@ -301,20 +301,20 @@ public @interface DatabaseTest {
      * <p>If specified, migrations will be automatically executed
      * when the container starts.
      *
-     * @return Array of migration locations (default: none)
+     * @return Array of migration locations (default: none) // GH-90000
      */
-    String[] migrations() default {};
+    String[] migrations() default {}; // GH-90000
 
     /**
      * The entity packages to scan for JPA entities.
      *
-     * <p>If specified, JPA components (EntityManagerFactory,
+     * <p>If specified, JPA components (EntityManagerFactory, // GH-90000
      * EntityManagerProvider, TransactionManager) will be created
      * and made available for injection.
      *
-     * @return Array of entity package names (default: none)
+     * @return Array of entity package names (default: none) // GH-90000
      */
-    String[] entityPackages() default {};
+    String[] entityPackages() default {}; // GH-90000
 
     /**
      * Whether to reset the database between test methods.
@@ -323,7 +323,7 @@ public @interface DatabaseTest {
      * re-run before each test method. This ensures test isolation
      * but may impact performance.
      *
-     * @return true to reset between tests (default: false)
+     * @return true to reset between tests (default: false) // GH-90000
      */
-    boolean resetBetweenTests() default false;
+    boolean resetBetweenTests() default false; // GH-90000
 }

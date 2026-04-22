@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -35,12 +35,12 @@ import static org.mockito.Mockito.*;
  * <p>Verifies TX-3: prompts, memory fragments, and tool payloads are redacted
  * by default, while non-sensitive attributes pass through unchanged.
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("TelemetryRedactionFilter")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("TelemetryRedactionFilter [GH-90000]")
 class TelemetryRedactionFilterTest {
 
     @RegisterExtension
-    static final OpenTelemetryExtension otelTesting = OpenTelemetryExtension.create();
+    static final OpenTelemetryExtension otelTesting = OpenTelemetryExtension.create(); // GH-90000
 
     @Mock
     private SpanExporter delegate;
@@ -48,161 +48,161 @@ class TelemetryRedactionFilterTest {
     // ────────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("wrap() — default sensitive keys")
+    @DisplayName("wrap() — default sensitive keys [GH-90000]")
     class DefaultSensitiveKeys {
 
         @Test
-        @DisplayName("redacts prompt attribute")
-        void redactsPromptAttribute() {
-            List<SpanData> received = captureExportedSpans(
-                    TelemetryRedactionFilter.wrap(delegate),
-                    Attributes.of(AttributeKey.stringKey("ghatana.agent.prompt"), "secret prompt text"));
+        @DisplayName("redacts prompt attribute [GH-90000]")
+        void redactsPromptAttribute() { // GH-90000
+            List<SpanData> received = captureExportedSpans( // GH-90000
+                    TelemetryRedactionFilter.wrap(delegate), // GH-90000
+                    Attributes.of(AttributeKey.stringKey("ghatana.agent.prompt [GH-90000]"), "secret prompt text"));
 
-            assertRedacted(received, "ghatana.agent.prompt");
+            assertRedacted(received, "ghatana.agent.prompt"); // GH-90000
         }
 
         @Test
-        @DisplayName("redacts tool.input attribute")
-        void redactsToolInput() {
-            List<SpanData> received = captureExportedSpans(
-                    TelemetryRedactionFilter.wrap(delegate),
-                    Attributes.of(AttributeKey.stringKey("ghatana.agent.tool.input"), "sensitive input"));
+        @DisplayName("redacts tool.input attribute [GH-90000]")
+        void redactsToolInput() { // GH-90000
+            List<SpanData> received = captureExportedSpans( // GH-90000
+                    TelemetryRedactionFilter.wrap(delegate), // GH-90000
+                    Attributes.of(AttributeKey.stringKey("ghatana.agent.tool.input [GH-90000]"), "sensitive input"));
 
-            assertRedacted(received, "ghatana.agent.tool.input");
+            assertRedacted(received, "ghatana.agent.tool.input"); // GH-90000
         }
 
         @Test
-        @DisplayName("redacts tool.output attribute")
-        void redactsToolOutput() {
-            List<SpanData> received = captureExportedSpans(
-                    TelemetryRedactionFilter.wrap(delegate),
-                    Attributes.of(AttributeKey.stringKey("ghatana.agent.tool.output"), "sensitive output"));
+        @DisplayName("redacts tool.output attribute [GH-90000]")
+        void redactsToolOutput() { // GH-90000
+            List<SpanData> received = captureExportedSpans( // GH-90000
+                    TelemetryRedactionFilter.wrap(delegate), // GH-90000
+                    Attributes.of(AttributeKey.stringKey("ghatana.agent.tool.output [GH-90000]"), "sensitive output"));
 
-            assertRedacted(received, "ghatana.agent.tool.output");
+            assertRedacted(received, "ghatana.agent.tool.output"); // GH-90000
         }
 
         @Test
-        @DisplayName("redacts memory.content attribute")
-        void redactsMemoryContent() {
-            List<SpanData> received = captureExportedSpans(
-                    TelemetryRedactionFilter.wrap(delegate),
-                    Attributes.of(AttributeKey.stringKey("ghatana.memory.content"), "private memory"));
+        @DisplayName("redacts memory.content attribute [GH-90000]")
+        void redactsMemoryContent() { // GH-90000
+            List<SpanData> received = captureExportedSpans( // GH-90000
+                    TelemetryRedactionFilter.wrap(delegate), // GH-90000
+                    Attributes.of(AttributeKey.stringKey("ghatana.memory.content [GH-90000]"), "private memory"));
 
-            assertRedacted(received, "ghatana.memory.content");
+            assertRedacted(received, "ghatana.memory.content"); // GH-90000
         }
 
         @Test
-        @DisplayName("redacts embedding attribute")
-        void redactsEmbedding() {
-            List<SpanData> received = captureExportedSpans(
-                    TelemetryRedactionFilter.wrap(delegate),
-                    Attributes.of(AttributeKey.stringKey("ghatana.embedding.vector"), "float,values"));
+        @DisplayName("redacts embedding attribute [GH-90000]")
+        void redactsEmbedding() { // GH-90000
+            List<SpanData> received = captureExportedSpans( // GH-90000
+                    TelemetryRedactionFilter.wrap(delegate), // GH-90000
+                    Attributes.of(AttributeKey.stringKey("ghatana.embedding.vector [GH-90000]"), "float,values"));
 
-            assertRedacted(received, "ghatana.embedding.vector");
+            assertRedacted(received, "ghatana.embedding.vector"); // GH-90000
         }
 
         @Test
-        @DisplayName("passes through non-sensitive attributes unchanged")
-        void passesThroughNonSensitiveAttributes() {
-            List<SpanData> received = captureExportedSpans(
-                    TelemetryRedactionFilter.wrap(delegate),
-                    Attributes.of(
-                            AttributeKey.stringKey(AgentTelemetryContract.ATTR_AGENT_ID), "my-agent",
-                            AttributeKey.stringKey(AgentTelemetryContract.ATTR_TENANT_ID), "tenant-1"));
+        @DisplayName("passes through non-sensitive attributes unchanged [GH-90000]")
+        void passesThroughNonSensitiveAttributes() { // GH-90000
+            List<SpanData> received = captureExportedSpans( // GH-90000
+                    TelemetryRedactionFilter.wrap(delegate), // GH-90000
+                    Attributes.of( // GH-90000
+                            AttributeKey.stringKey(AgentTelemetryContract.ATTR_AGENT_ID), "my-agent", // GH-90000
+                            AttributeKey.stringKey(AgentTelemetryContract.ATTR_TENANT_ID), "tenant-1")); // GH-90000
 
-            assertThat(received).hasSize(1);
-            Attributes attrs = received.get(0).getAttributes();
-            assertThat(attrs.get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_AGENT_ID)))
-                    .isEqualTo("my-agent");
-            assertThat(attrs.get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_TENANT_ID)))
-                    .isEqualTo("tenant-1");
+            assertThat(received).hasSize(1); // GH-90000
+            Attributes attrs = received.get(0).getAttributes(); // GH-90000
+            assertThat(attrs.get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_AGENT_ID))) // GH-90000
+                    .isEqualTo("my-agent [GH-90000]");
+            assertThat(attrs.get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_TENANT_ID))) // GH-90000
+                    .isEqualTo("tenant-1 [GH-90000]");
         }
 
         @Test
-        @DisplayName("mixed span: sensitive attrs redacted, safe attrs preserved")
-        void mixedSpanRedactsSensitiveOnly() {
-            List<SpanData> received = captureExportedSpans(
-                    TelemetryRedactionFilter.wrap(delegate),
-                    Attributes.of(
-                            AttributeKey.stringKey("ghatana.agent.id"), "agent-1",
-                            AttributeKey.stringKey("ghatana.agent.prompt"), "do not leak me"));
+        @DisplayName("mixed span: sensitive attrs redacted, safe attrs preserved [GH-90000]")
+        void mixedSpanRedactsSensitiveOnly() { // GH-90000
+            List<SpanData> received = captureExportedSpans( // GH-90000
+                    TelemetryRedactionFilter.wrap(delegate), // GH-90000
+                    Attributes.of( // GH-90000
+                            AttributeKey.stringKey("ghatana.agent.id [GH-90000]"), "agent-1",
+                            AttributeKey.stringKey("ghatana.agent.prompt [GH-90000]"), "do not leak me"));
 
-            assertThat(received).hasSize(1);
-            Attributes attrs = received.get(0).getAttributes();
-            assertThat(attrs.get(AttributeKey.stringKey("ghatana.agent.id"))).isEqualTo("agent-1");
-            assertThat(attrs.get(AttributeKey.stringKey("ghatana.agent.prompt")))
-                    .isEqualTo(TelemetryRedactionFilter.REDACTED_MARKER);
+            assertThat(received).hasSize(1); // GH-90000
+            Attributes attrs = received.get(0).getAttributes(); // GH-90000
+            assertThat(attrs.get(AttributeKey.stringKey("ghatana.agent.id [GH-90000]"))).isEqualTo("agent-1 [GH-90000]");
+            assertThat(attrs.get(AttributeKey.stringKey("ghatana.agent.prompt [GH-90000]")))
+                    .isEqualTo(TelemetryRedactionFilter.REDACTED_MARKER); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("builder() — custom key patterns")
+    @DisplayName("builder() — custom key patterns [GH-90000]")
     class CustomKeyPatterns {
 
         @Test
-        @DisplayName("custom pattern redacts matching attributes")
-        void customPatternRedactsMatchingAttributes() {
-            TelemetryRedactionFilter filter = TelemetryRedactionFilter.builder(delegate)
-                    .addSensitiveKey("ssn")
-                    .build();
+        @DisplayName("custom pattern redacts matching attributes [GH-90000]")
+        void customPatternRedactsMatchingAttributes() { // GH-90000
+            TelemetryRedactionFilter filter = TelemetryRedactionFilter.builder(delegate) // GH-90000
+                    .addSensitiveKey("ssn [GH-90000]")
+                    .build(); // GH-90000
 
-            List<SpanData> received = captureExportedSpans(filter,
-                    Attributes.of(AttributeKey.stringKey("user.ssn"), "123-45-6789"));
+            List<SpanData> received = captureExportedSpans(filter, // GH-90000
+                    Attributes.of(AttributeKey.stringKey("user.ssn [GH-90000]"), "123-45-6789"));
 
-            assertRedacted(received, "user.ssn");
+            assertRedacted(received, "user.ssn"); // GH-90000
         }
 
         @Test
-        @DisplayName("builder without withDefaults() does not redact default patterns")
-        void builderWithoutDefaultsDoesNotRedactDefaults() {
-            TelemetryRedactionFilter filter = TelemetryRedactionFilter.builder(delegate)
-                    .addSensitiveKey("custom.key")
-                    .build();
+        @DisplayName("builder without withDefaults() does not redact default patterns [GH-90000]")
+        void builderWithoutDefaultsDoesNotRedactDefaults() { // GH-90000
+            TelemetryRedactionFilter filter = TelemetryRedactionFilter.builder(delegate) // GH-90000
+                    .addSensitiveKey("custom.key [GH-90000]")
+                    .build(); // GH-90000
 
-            List<SpanData> received = captureExportedSpans(filter,
-                    Attributes.of(AttributeKey.stringKey("ghatana.agent.prompt"), "should pass through"));
+            List<SpanData> received = captureExportedSpans(filter, // GH-90000
+                    Attributes.of(AttributeKey.stringKey("ghatana.agent.prompt [GH-90000]"), "should pass through"));
 
             // prompt is NOT redacted because defaults weren't included
-            assertThat(received).hasSize(1);
-            assertThat(received.get(0).getAttributes()
-                    .get(AttributeKey.stringKey("ghatana.agent.prompt")))
-                    .isEqualTo("should pass through");
+            assertThat(received).hasSize(1); // GH-90000
+            assertThat(received.get(0).getAttributes() // GH-90000
+                    .get(AttributeKey.stringKey("ghatana.agent.prompt [GH-90000]")))
+                    .isEqualTo("should pass through [GH-90000]");
         }
 
         @Test
-        @DisplayName("withDefaults() reinstates all default sensitive patterns")
-        void withDefaultsReinstatesDefaultPatterns() {
-            TelemetryRedactionFilter filter = TelemetryRedactionFilter.builder(delegate)
-                    .withDefaults()
-                    .build();
+        @DisplayName("withDefaults() reinstates all default sensitive patterns [GH-90000]")
+        void withDefaultsReinstatesDefaultPatterns() { // GH-90000
+            TelemetryRedactionFilter filter = TelemetryRedactionFilter.builder(delegate) // GH-90000
+                    .withDefaults() // GH-90000
+                    .build(); // GH-90000
 
-            List<SpanData> received = captureExportedSpans(filter,
-                    Attributes.of(AttributeKey.stringKey("ghatana.agent.prompt"), "sensitive"));
+            List<SpanData> received = captureExportedSpans(filter, // GH-90000
+                    Attributes.of(AttributeKey.stringKey("ghatana.agent.prompt [GH-90000]"), "sensitive"));
 
-            assertRedacted(received, "ghatana.agent.prompt");
+            assertRedacted(received, "ghatana.agent.prompt"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("lifecycle delegation")
+    @DisplayName("lifecycle delegation [GH-90000]")
     class Lifecycle {
 
         @Test
-        @DisplayName("flush delegates to downstream")
-        void flushDelegates() {
-            when(delegate.flush()).thenReturn(io.opentelemetry.sdk.common.CompletableResultCode.ofSuccess());
-            TelemetryRedactionFilter filter = TelemetryRedactionFilter.wrap(delegate);
-            filter.flush();
-            verify(delegate).flush();
+        @DisplayName("flush delegates to downstream [GH-90000]")
+        void flushDelegates() { // GH-90000
+            when(delegate.flush()).thenReturn(io.opentelemetry.sdk.common.CompletableResultCode.ofSuccess()); // GH-90000
+            TelemetryRedactionFilter filter = TelemetryRedactionFilter.wrap(delegate); // GH-90000
+            filter.flush(); // GH-90000
+            verify(delegate).flush(); // GH-90000
         }
 
         @Test
-        @DisplayName("shutdown delegates to downstream")
-        void shutdownDelegates() {
-            when(delegate.shutdown()).thenReturn(io.opentelemetry.sdk.common.CompletableResultCode.ofSuccess());
-            TelemetryRedactionFilter filter = TelemetryRedactionFilter.wrap(delegate);
-            filter.shutdown();
-            verify(delegate).shutdown();
+        @DisplayName("shutdown delegates to downstream [GH-90000]")
+        void shutdownDelegates() { // GH-90000
+            when(delegate.shutdown()).thenReturn(io.opentelemetry.sdk.common.CompletableResultCode.ofSuccess()); // GH-90000
+            TelemetryRedactionFilter filter = TelemetryRedactionFilter.wrap(delegate); // GH-90000
+            filter.shutdown(); // GH-90000
+            verify(delegate).shutdown(); // GH-90000
         }
     }
 
@@ -214,35 +214,35 @@ class TelemetryRedactionFilterTest {
      * Instruments a span with the given attributes, exports it through {@code filter},
      * and returns the list of {@link SpanData} received by the delegate.
      */
-    @SuppressWarnings("unchecked")
-    private List<SpanData> captureExportedSpans(SpanExporter filter, Attributes spanAttributes) {
-        List<SpanData> received = new ArrayList<>();
-        when(delegate.export(any())).thenAnswer(inv -> {
-            received.addAll((java.util.Collection<SpanData>) inv.getArgument(0));
-            return io.opentelemetry.sdk.common.CompletableResultCode.ofSuccess();
+    @SuppressWarnings("unchecked [GH-90000]")
+    private List<SpanData> captureExportedSpans(SpanExporter filter, Attributes spanAttributes) { // GH-90000
+        List<SpanData> received = new ArrayList<>(); // GH-90000
+        when(delegate.export(any())).thenAnswer(inv -> { // GH-90000
+            received.addAll((java.util.Collection<SpanData>) inv.getArgument(0)); // GH-90000
+            return io.opentelemetry.sdk.common.CompletableResultCode.ofSuccess(); // GH-90000
         });
 
         // Build a minimal SpanData using TestSpanData from the OTel testing library
         io.opentelemetry.sdk.testing.trace.TestSpanData spanData =
-                io.opentelemetry.sdk.testing.trace.TestSpanData.builder()
-                        .setName("test-span")
-                        .setStartEpochNanos(0L)
-                        .setEndEpochNanos(1000L)
-                        .setHasEnded(true)
-                        .setKind(io.opentelemetry.api.trace.SpanKind.INTERNAL)
-                        .setStatus(io.opentelemetry.sdk.trace.data.StatusData.ok())
-                        .setAttributes(spanAttributes)
-                        .build();
+                io.opentelemetry.sdk.testing.trace.TestSpanData.builder() // GH-90000
+                        .setName("test-span [GH-90000]")
+                        .setStartEpochNanos(0L) // GH-90000
+                        .setEndEpochNanos(1000L) // GH-90000
+                        .setHasEnded(true) // GH-90000
+                        .setKind(io.opentelemetry.api.trace.SpanKind.INTERNAL) // GH-90000
+                        .setStatus(io.opentelemetry.sdk.trace.data.StatusData.ok()) // GH-90000
+                        .setAttributes(spanAttributes) // GH-90000
+                        .build(); // GH-90000
 
-        filter.export(List.of(spanData));
+        filter.export(List.of(spanData)); // GH-90000
         return received;
     }
 
-    private static void assertRedacted(List<SpanData> spans, String attributeKey) {
-        assertThat(spans).hasSize(1);
-        String value = spans.get(0).getAttributes().get(AttributeKey.stringKey(attributeKey));
-        assertThat(value)
-                .as("Attribute '%s' should be redacted", attributeKey)
-                .isEqualTo(TelemetryRedactionFilter.REDACTED_MARKER);
+    private static void assertRedacted(List<SpanData> spans, String attributeKey) { // GH-90000
+        assertThat(spans).hasSize(1); // GH-90000
+        String value = spans.get(0).getAttributes().get(AttributeKey.stringKey(attributeKey)); // GH-90000
+        assertThat(value) // GH-90000
+                .as("Attribute '%s' should be redacted", attributeKey) // GH-90000
+                .isEqualTo(TelemetryRedactionFilter.REDACTED_MARKER); // GH-90000
     }
 }

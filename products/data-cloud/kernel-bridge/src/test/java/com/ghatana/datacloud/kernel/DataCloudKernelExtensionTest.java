@@ -37,8 +37,8 @@ import static org.mockito.Mockito.verify;
  * @doc.layer adapter
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("DataCloudKernelExtension")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("DataCloudKernelExtension [GH-90000]")
 class DataCloudKernelExtensionTest extends EventloopTestBase {
 
     @Mock
@@ -51,128 +51,128 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     private DataCloudKernelExtension extension;
 
     @BeforeEach
-    void setUp() {
-        stubClient = new StubDataCloudClient();
-        extension = new DataCloudKernelExtension(stubClient);
+    void setUp() { // GH-90000
+        stubClient = new StubDataCloudClient(); // GH-90000
+        extension = new DataCloudKernelExtension(stubClient); // GH-90000
     }
 
     // ==================== Identity ====================
 
     @Test
-    @DisplayName("extension ID is 'data-cloud-kernel-bridge'")
-    void extensionIdIsCorrect() {
-        assertThat(extension.getExtensionId()).isEqualTo("data-cloud-kernel-bridge");
+    @DisplayName("extension ID is 'data-cloud-kernel-bridge' [GH-90000]")
+    void extensionIdIsCorrect() { // GH-90000
+        assertThat(extension.getExtensionId()).isEqualTo("data-cloud-kernel-bridge [GH-90000]");
     }
 
     @Test
-    @DisplayName("extension name is human-readable")
-    void extensionNameIsHumanReadable() {
-        assertThat(extension.getName()).isEqualTo("Data-Cloud Kernel Bridge");
+    @DisplayName("extension name is human-readable [GH-90000]")
+    void extensionNameIsHumanReadable() { // GH-90000
+        assertThat(extension.getName()).isEqualTo("Data-Cloud Kernel Bridge [GH-90000]");
     }
 
     @Test
-    @DisplayName("extension version follows semver")
-    void extensionVersionIsSemver() {
-        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.*");
+    @DisplayName("extension version follows semver [GH-90000]")
+    void extensionVersionIsSemver() { // GH-90000
+        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.* [GH-90000]");
     }
 
     // ==================== Descriptor ====================
 
     @Test
-    @DisplayName("descriptor type is EXTENSION")
-    void descriptorTypeIsExtension() {
-        KernelDescriptor descriptor = extension.getDescriptor();
-        assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION);
+    @DisplayName("descriptor type is EXTENSION [GH-90000]")
+    void descriptorTypeIsExtension() { // GH-90000
+        KernelDescriptor descriptor = extension.getDescriptor(); // GH-90000
+        assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); // GH-90000
     }
 
     @Test
-    @DisplayName("descriptor ID matches extension ID")
-    void descriptorIdMatchesExtensionId() {
-        assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId());
+    @DisplayName("descriptor ID matches extension ID [GH-90000]")
+    void descriptorIdMatchesExtensionId() { // GH-90000
+        assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); // GH-90000
     }
 
     // ==================== Capabilities ====================
 
     @Test
-    @DisplayName("contributes three Data-Cloud capabilities")
-    void contributesThreeCapabilities() {
-        Set<KernelCapability> caps = extension.getContributedCapabilities();
-        assertThat(caps).hasSize(3);
+    @DisplayName("contributes three Data-Cloud capabilities [GH-90000]")
+    void contributesThreeCapabilities() { // GH-90000
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+        assertThat(caps).hasSize(3); // GH-90000
     }
 
     @Test
-    @DisplayName("contributes data-cloud.storage capability")
-    void contributesStorageCapability() {
-        Set<KernelCapability> caps = extension.getContributedCapabilities();
-        assertThat(caps)
-            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.storage"));
+    @DisplayName("contributes data-cloud.storage capability [GH-90000]")
+    void contributesStorageCapability() { // GH-90000
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+        assertThat(caps) // GH-90000
+            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.storage [GH-90000]"));
     }
 
     @Test
-    @DisplayName("contributes data-cloud.transactions capability")
-    void contributesTransactionCapability() {
-        Set<KernelCapability> caps = extension.getContributedCapabilities();
-        assertThat(caps)
-            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.transactions"));
+    @DisplayName("contributes data-cloud.transactions capability [GH-90000]")
+    void contributesTransactionCapability() { // GH-90000
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+        assertThat(caps) // GH-90000
+            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.transactions [GH-90000]"));
     }
 
     @Test
-    @DisplayName("contributes data-cloud.streaming capability")
-    void contributesStreamingCapability() {
-        Set<KernelCapability> caps = extension.getContributedCapabilities();
-        assertThat(caps)
-            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.streaming"));
+    @DisplayName("contributes data-cloud.streaming capability [GH-90000]")
+    void contributesStreamingCapability() { // GH-90000
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+        assertThat(caps) // GH-90000
+            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.streaming [GH-90000]"));
     }
 
     // ==================== Compatibility ====================
 
     @Test
-    @DisplayName("is compatible with any non-null module")
-    void isCompatibleWithAnyModule() {
-        assertThat(extension.isCompatible(hostModule)).isTrue();
+    @DisplayName("is compatible with any non-null module [GH-90000]")
+    void isCompatibleWithAnyModule() { // GH-90000
+        assertThat(extension.isCompatible(hostModule)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("is not compatible with null module")
-    void isNotCompatibleWithNullModule() {
-        assertThat(extension.isCompatible(null)).isFalse();
+    @DisplayName("is not compatible with null module [GH-90000]")
+    void isNotCompatibleWithNullModule() { // GH-90000
+        assertThat(extension.isCompatible(null)).isFalse(); // GH-90000
     }
 
     // ==================== Lifecycle ====================
 
     @Test
-    @DisplayName("onModuleInitialized registers DataCloudKernelAdapter into context")
-    void onModuleInitializedRegistersAdapter() {
-        extension.onModuleInitialized(context);
+    @DisplayName("onModuleInitialized registers DataCloudKernelAdapter into context [GH-90000]")
+    void onModuleInitializedRegistersAdapter() { // GH-90000
+        extension.onModuleInitialized(context); // GH-90000
 
-        verify(context).registerService(eq(DataCloudKernelAdapter.class), any(DataCloudKernelAdapter.class));
+        verify(context).registerService(eq(DataCloudKernelAdapter.class), any(DataCloudKernelAdapter.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("onModuleInitialized is idempotent — second call is no-op")
-    void onModuleInitializedIsIdempotent() {
-        extension.onModuleInitialized(context);
-        extension.onModuleInitialized(context);  // second call must be silent no-op
+    @DisplayName("onModuleInitialized is idempotent — second call is no-op [GH-90000]")
+    void onModuleInitializedIsIdempotent() { // GH-90000
+        extension.onModuleInitialized(context); // GH-90000
+        extension.onModuleInitialized(context);  // second call must be silent no-op // GH-90000
 
-        // registerService called exactly once (AbstractKernelExtension CAS guard)
-        verify(context).registerService(eq(DataCloudKernelAdapter.class), any(DataCloudKernelAdapter.class));
+        // registerService called exactly once (AbstractKernelExtension CAS guard) // GH-90000
+        verify(context).registerService(eq(DataCloudKernelAdapter.class), any(DataCloudKernelAdapter.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("full lifecycle runs without error")
-    void fullLifecycleRunsWithoutError() {
-        extension.onModuleInitialized(context);
-        extension.onModuleStarted(context);
-        extension.onModuleStopped(context);
+    @DisplayName("full lifecycle runs without error [GH-90000]")
+    void fullLifecycleRunsWithoutError() { // GH-90000
+        extension.onModuleInitialized(context); // GH-90000
+        extension.onModuleStarted(context); // GH-90000
+        extension.onModuleStopped(context); // GH-90000
     }
 
     // ==================== Construction guard ====================
 
     @Test
-    @DisplayName("null client is rejected at construction")
-    void nullClientIsRejected() {
-        assertThatThrownBy(() -> new DataCloudKernelExtension(null))
-            .isInstanceOf(NullPointerException.class);
+    @DisplayName("null client is rejected at construction [GH-90000]")
+    void nullClientIsRejected() { // GH-90000
+        assertThatThrownBy(() -> new DataCloudKernelExtension(null)) // GH-90000
+            .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     // ==================== Helpers ====================
@@ -181,80 +181,80 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     private static class StubDataCloudClient implements DataCloudKernelAdapterImpl.DataCloudClient {
 
         @Override
-        public CompletableFuture<DataResult> read(String datasetId, String recordId, Map<String, String> options) {
-            return CompletableFuture.completedFuture(
-                new DataResult(recordId, new byte[0], Map.of(), Instant.now().toEpochMilli()));
+        public CompletableFuture<DataResult> read(String datasetId, String recordId, Map<String, String> options) { // GH-90000
+            return CompletableFuture.completedFuture( // GH-90000
+                new DataResult(recordId, new byte[0], Map.of(), Instant.now().toEpochMilli())); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Void> write(String datasetId, String recordId, byte[] data, Map<String, String> metadata) {
-            return CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> write(String datasetId, String recordId, byte[] data, Map<String, String> metadata) { // GH-90000
+            return CompletableFuture.completedFuture(null); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Void> delete(String datasetId, String recordId) {
-            return CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> delete(String datasetId, String recordId) { // GH-90000
+            return CompletableFuture.completedFuture(null); // GH-90000
         }
 
         @Override
-        public CompletableFuture<List<DataResult>> query(String datasetId, String query, Map<String, Object> params, int limit, int offset) {
-            return CompletableFuture.completedFuture(List.of());
+        public CompletableFuture<List<DataResult>> query(String datasetId, String query, Map<String, Object> params, int limit, int offset) { // GH-90000
+            return CompletableFuture.completedFuture(List.of()); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Void> createDataset(String datasetId, Map<String, String> schema, Map<String, String> options) {
-            return CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> createDataset(String datasetId, Map<String, String> schema, Map<String, String> options) { // GH-90000
+            return CompletableFuture.completedFuture(null); // GH-90000
         }
 
         @Override
-        public CompletableFuture<SchemaInfo> getSchema(String datasetId) {
-            return CompletableFuture.completedFuture(
-                new SchemaInfo(datasetId, Map.of(), Instant.now().toEpochMilli(), Instant.now().toEpochMilli()));
+        public CompletableFuture<SchemaInfo> getSchema(String datasetId) { // GH-90000
+            return CompletableFuture.completedFuture( // GH-90000
+                new SchemaInfo(datasetId, Map.of(), Instant.now().toEpochMilli(), Instant.now().toEpochMilli())); // GH-90000
         }
 
         @Override
-        public CompletableFuture<List<DatasetInfo>> listDatasets() {
-            return CompletableFuture.completedFuture(List.of());
+        public CompletableFuture<List<DatasetInfo>> listDatasets() { // GH-90000
+            return CompletableFuture.completedFuture(List.of()); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Object> beginTransaction() {
-            return CompletableFuture.completedFuture("tx-stub");
+        public CompletableFuture<Object> beginTransaction() { // GH-90000
+            return CompletableFuture.completedFuture("tx-stub [GH-90000]");
         }
 
         @Override
-        public CompletableFuture<Void> commitTransaction(Object transaction) {
-            return CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> commitTransaction(Object transaction) { // GH-90000
+            return CompletableFuture.completedFuture(null); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Void> rollbackTransaction(Object transaction) {
-            return CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> rollbackTransaction(Object transaction) { // GH-90000
+            return CompletableFuture.completedFuture(null); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Object> openReadStream(String datasetId, Map<String, String> options) {
-            return CompletableFuture.completedFuture("read-stream-stub");
+        public CompletableFuture<Object> openReadStream(String datasetId, Map<String, String> options) { // GH-90000
+            return CompletableFuture.completedFuture("read-stream-stub [GH-90000]");
         }
 
         @Override
-        public CompletableFuture<Object> openWriteStream(String datasetId, Map<String, String> options) {
-            return CompletableFuture.completedFuture("write-stream-stub");
+        public CompletableFuture<Object> openWriteStream(String datasetId, Map<String, String> options) { // GH-90000
+            return CompletableFuture.completedFuture("write-stream-stub [GH-90000]");
         }
 
         @Override
-        public CompletableFuture<byte[]> readStreamChunk(Object stream) {
-            return CompletableFuture.completedFuture(new byte[0]);
+        public CompletableFuture<byte[]> readStreamChunk(Object stream) { // GH-90000
+            return CompletableFuture.completedFuture(new byte[0]); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Void> writeStreamChunk(Object stream, byte[] data) {
-            return CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> writeStreamChunk(Object stream, byte[] data) { // GH-90000
+            return CompletableFuture.completedFuture(null); // GH-90000
         }
 
         @Override
-        public CompletableFuture<Void> closeStream(Object stream) {
-            return CompletableFuture.completedFuture(null);
+        public CompletableFuture<Void> closeStream(Object stream) { // GH-90000
+            return CompletableFuture.completedFuture(null); // GH-90000
         }
     }
 }

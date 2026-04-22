@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("RbacPermissionEvaluator")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("RbacPermissionEvaluator [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class RbacPermissionEvaluatorTest {
 
     @Mock
@@ -32,60 +32,60 @@ class RbacPermissionEvaluatorTest {
     private RbacPermissionEvaluator evaluator;
 
     @BeforeEach
-    void setUp() {
-        evaluator = new RbacPermissionEvaluator(policyService);
+    void setUp() { // GH-90000
+        evaluator = new RbacPermissionEvaluator(policyService); // GH-90000
     }
 
     @Nested
-    @DisplayName("hasPermission(role, permission)")
+    @DisplayName("hasPermission(role, permission) [GH-90000]")
     class SingleRole {
 
         @Test
-        @DisplayName("should return true when policy grants permission")
-        void shouldReturnTrueWhenGranted() {
-            when(policyService.hasPermission("ADMIN", "*", "event:read:all")).thenReturn(true);
+        @DisplayName("should return true when policy grants permission [GH-90000]")
+        void shouldReturnTrueWhenGranted() { // GH-90000
+            when(policyService.hasPermission("ADMIN", "*", "event:read:all")).thenReturn(true); // GH-90000
 
-            assertThat(evaluator.hasPermission("ADMIN", "event:read:all")).isTrue();
+            assertThat(evaluator.hasPermission("ADMIN", "event:read:all")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return false when policy denies permission")
-        void shouldReturnFalseWhenDenied() {
-            when(policyService.hasPermission("GUEST", "*", "event:write:all")).thenReturn(false);
+        @DisplayName("should return false when policy denies permission [GH-90000]")
+        void shouldReturnFalseWhenDenied() { // GH-90000
+            when(policyService.hasPermission("GUEST", "*", "event:write:all")).thenReturn(false); // GH-90000
 
-            assertThat(evaluator.hasPermission("GUEST", "event:write:all")).isFalse();
+            assertThat(evaluator.hasPermission("GUEST", "event:write:all")).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("hasPermission(role, roles, permission)")
+    @DisplayName("hasPermission(role, roles, permission) [GH-90000]")
     class MultipleRoles {
 
         @Test
-        @DisplayName("should return true when any role has permission")
-        void shouldReturnTrueWhenAnyRoleMatches() {
-            lenient().when(policyService.hasPermission("READER", "*", "event:read:all")).thenReturn(false);
-            when(policyService.hasPermission("ADMIN", "*", "event:read:all")).thenReturn(true);
+        @DisplayName("should return true when any role has permission [GH-90000]")
+        void shouldReturnTrueWhenAnyRoleMatches() { // GH-90000
+            lenient().when(policyService.hasPermission("READER", "*", "event:read:all")).thenReturn(false); // GH-90000
+            when(policyService.hasPermission("ADMIN", "*", "event:read:all")).thenReturn(true); // GH-90000
 
-            assertThat(evaluator.hasPermission("ignored", Set.of("READER", "ADMIN"), "event:read:all"))
-                    .isTrue();
+            assertThat(evaluator.hasPermission("ignored", Set.of("READER", "ADMIN"), "event:read:all")) // GH-90000
+                    .isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return false when no role has permission")
-        void shouldReturnFalseWhenNoRoleMatches() {
-            when(policyService.hasPermission("GUEST", "*", "event:write:all")).thenReturn(false);
-            when(policyService.hasPermission("VIEWER", "*", "event:write:all")).thenReturn(false);
+        @DisplayName("should return false when no role has permission [GH-90000]")
+        void shouldReturnFalseWhenNoRoleMatches() { // GH-90000
+            when(policyService.hasPermission("GUEST", "*", "event:write:all")).thenReturn(false); // GH-90000
+            when(policyService.hasPermission("VIEWER", "*", "event:write:all")).thenReturn(false); // GH-90000
 
-            assertThat(evaluator.hasPermission("ignored", Set.of("GUEST", "VIEWER"), "event:write:all"))
-                    .isFalse();
+            assertThat(evaluator.hasPermission("ignored", Set.of("GUEST", "VIEWER"), "event:write:all")) // GH-90000
+                    .isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return false for empty roles set")
-        void shouldReturnFalseForEmptyRoles() {
-            assertThat(evaluator.hasPermission("role", Set.of(), "event:read:all"))
-                    .isFalse();
+        @DisplayName("should return false for empty roles set [GH-90000]")
+        void shouldReturnFalseForEmptyRoles() { // GH-90000
+            assertThat(evaluator.hasPermission("role", Set.of(), "event:read:all")) // GH-90000
+                    .isFalse(); // GH-90000
         }
     }
 }

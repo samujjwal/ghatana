@@ -27,8 +27,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EntityCrudHandler tenant enforcement")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("EntityCrudHandler tenant enforcement [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
 
     @Mock
@@ -52,100 +52,100 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     private EntityCrudHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new EntityCrudHandler(client, http, wsBroadcaster)
-            .withTraceSupport(TraceSpanSupport.disabled())
-            .withOpenSearchConnector(openSearchConnector);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new EntityCrudHandler(client, http, wsBroadcaster) // GH-90000
+            .withTraceSupport(TraceSpanSupport.disabled()) // GH-90000
+            .withOpenSearchConnector(openSearchConnector); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("save rejects missing tenant before loading body")
-    void saveRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("save rejects missing tenant before loading body [GH-90000]")
+    void saveRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
+        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 
     @Test
-    @DisplayName("get rejects missing tenant before store access")
-    void getRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("get rejects missing tenant before store access [GH-90000]")
+    void getRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleGetEntity(request));
+        HttpResponse response = runPromise(() -> handler.handleGetEntity(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).findById("default", "default", "default");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).findById("default", "default", "default"); // GH-90000
     }
 
     @Test
-    @DisplayName("query rejects missing tenant before store access")
-    void queryRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("query rejects missing tenant before store access [GH-90000]")
+    void queryRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleQueryEntities(request));
+        HttpResponse response = runPromise(() -> handler.handleQueryEntities(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).query("default", "default", DataCloudClient.Query.limit(1));
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).query("default", "default", DataCloudClient.Query.limit(1)); // GH-90000
     }
 
     @Test
-    @DisplayName("delete rejects missing tenant before store access")
-    void deleteRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("delete rejects missing tenant before store access [GH-90000]")
+    void deleteRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleDeleteEntity(request));
+        HttpResponse response = runPromise(() -> handler.handleDeleteEntity(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).findById("default", "default", "default");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).findById("default", "default", "default"); // GH-90000
     }
 
     @Test
-    @DisplayName("batch save rejects missing tenant before loading body")
-    void batchSaveRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("batch save rejects missing tenant before loading body [GH-90000]")
+    void batchSaveRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleBatchSaveEntities(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchSaveEntities(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 
     @Test
-    @DisplayName("batch delete rejects missing tenant before loading body")
-    void batchDeleteRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("batch delete rejects missing tenant before loading body [GH-90000]")
+    void batchDeleteRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request));
+        HttpResponse response = runPromise(() -> handler.handleBatchDeleteEntities(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 
     @Test
-    @DisplayName("full text search rejects missing tenant before search execution")
-    void fullTextSearchRejectsMissingTenant() {
-        when(request.getPathParameter("collection")).thenReturn("orders");
-        when(request.getQueryParameter("q")).thenReturn("status:open");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("full text search rejects missing tenant before search execution [GH-90000]")
+    void fullTextSearchRejectsMissingTenant() { // GH-90000
+        when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+        when(request.getQueryParameter("q [GH-90000]")).thenReturn("status:open [GH-90000]");
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleFullTextSearch(request));
+        HttpResponse response = runPromise(() -> handler.handleFullTextSearch(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verifyNoInteractions(openSearchConnector);
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verifyNoInteractions(openSearchConnector); // GH-90000
     }
 
     @Test
-    @DisplayName("as-of query rejects missing tenant before store access")
-    void asOfRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("as-of query rejects missing tenant before store access [GH-90000]")
+    void asOfRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleGetEntityAsOf(request));
+        HttpResponse response = runPromise(() -> handler.handleGetEntityAsOf(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).findById("default", "default", "default");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).findById("default", "default", "default"); // GH-90000
     }
 }

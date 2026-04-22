@@ -11,97 +11,97 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RetryContext — value-object construction and retry metadata")
+@DisplayName("RetryContext — value-object construction and retry metadata [GH-90000]")
 class RetryContextTest {
 
     @Test
-    @DisplayName("first() creates initial context with attempt 1 and no error")
-    void firstCreatesInitialContext() {
-        RetryContext ctx = RetryContext.first(4);
+    @DisplayName("first() creates initial context with attempt 1 and no error [GH-90000]")
+    void firstCreatesInitialContext() { // GH-90000
+        RetryContext ctx = RetryContext.first(4); // GH-90000
 
-        assertThat(ctx.getAttemptNumber()).isEqualTo(1);
-        assertThat(ctx.getMaxAttempts()).isEqualTo(4);
-        assertThat(ctx.isRetry()).isFalse();
-        assertThat(ctx.getLastError()).isNull();
+        assertThat(ctx.getAttemptNumber()).isEqualTo(1); // GH-90000
+        assertThat(ctx.getMaxAttempts()).isEqualTo(4); // GH-90000
+        assertThat(ctx.isRetry()).isFalse(); // GH-90000
+        assertThat(ctx.getLastError()).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("first() with maxAttempts=1 is the last and only attempt")
-    void firstWithOneMaxAttemptIsLastAttempt() {
-        RetryContext ctx = RetryContext.first(1);
+    @DisplayName("first() with maxAttempts=1 is the last and only attempt [GH-90000]")
+    void firstWithOneMaxAttemptIsLastAttempt() { // GH-90000
+        RetryContext ctx = RetryContext.first(1); // GH-90000
 
-        assertThat(ctx.isLastAttempt()).isTrue();
-        assertThat(ctx.attemptsRemaining()).isEqualTo(0);
+        assertThat(ctx.isLastAttempt()).isTrue(); // GH-90000
+        assertThat(ctx.attemptsRemaining()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("retry() creates context with isRetry=true and lastError set")
-    void retryCreatesContextWithError() {
-        Throwable error = new RuntimeException("network failure");
-        RetryContext ctx = RetryContext.retry(2, 4, error);
+    @DisplayName("retry() creates context with isRetry=true and lastError set [GH-90000]")
+    void retryCreatesContextWithError() { // GH-90000
+        Throwable error = new RuntimeException("network failure [GH-90000]");
+        RetryContext ctx = RetryContext.retry(2, 4, error); // GH-90000
 
-        assertThat(ctx.getAttemptNumber()).isEqualTo(2);
-        assertThat(ctx.getMaxAttempts()).isEqualTo(4);
-        assertThat(ctx.isRetry()).isTrue();
-        assertThat(ctx.getLastError()).isSameAs(error);
+        assertThat(ctx.getAttemptNumber()).isEqualTo(2); // GH-90000
+        assertThat(ctx.getMaxAttempts()).isEqualTo(4); // GH-90000
+        assertThat(ctx.isRetry()).isTrue(); // GH-90000
+        assertThat(ctx.getLastError()).isSameAs(error); // GH-90000
     }
 
     @Test
-    @DisplayName("attemptsRemaining returns correct remaining count")
-    void attemptsRemainingIsCorrect() {
-        RetryContext ctx = RetryContext.retry(3, 5, new RuntimeException());
+    @DisplayName("attemptsRemaining returns correct remaining count [GH-90000]")
+    void attemptsRemainingIsCorrect() { // GH-90000
+        RetryContext ctx = RetryContext.retry(3, 5, new RuntimeException()); // GH-90000
 
-        assertThat(ctx.attemptsRemaining()).isEqualTo(2);
+        assertThat(ctx.attemptsRemaining()).isEqualTo(2); // GH-90000
     }
 
     @Test
-    @DisplayName("isLastAttempt returns true when attemptNumber == maxAttempts")
-    void isLastAttemptWhenAttemptEqualsMax() {
-        RetryContext ctx = RetryContext.retry(4, 4, new RuntimeException());
+    @DisplayName("isLastAttempt returns true when attemptNumber == maxAttempts [GH-90000]")
+    void isLastAttemptWhenAttemptEqualsMax() { // GH-90000
+        RetryContext ctx = RetryContext.retry(4, 4, new RuntimeException()); // GH-90000
 
-        assertThat(ctx.isLastAttempt()).isTrue();
+        assertThat(ctx.isLastAttempt()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("isLastAttempt returns false before last attempt")
-    void isNotLastAttemptBeforeMax() {
-        RetryContext ctx = RetryContext.retry(3, 4, new RuntimeException());
+    @DisplayName("isLastAttempt returns false before last attempt [GH-90000]")
+    void isNotLastAttemptBeforeMax() { // GH-90000
+        RetryContext ctx = RetryContext.retry(3, 4, new RuntimeException()); // GH-90000
 
-        assertThat(ctx.isLastAttempt()).isFalse();
+        assertThat(ctx.isLastAttempt()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("first() throws for attemptNumber validation (via constructor)")
-    void firstInvalidMaxAttempts() {
-        assertThatThrownBy(() -> RetryContext.first(0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("maxAttempts");
+    @DisplayName("first() throws for attemptNumber validation (via constructor) [GH-90000]")
+    void firstInvalidMaxAttempts() { // GH-90000
+        assertThatThrownBy(() -> RetryContext.first(0)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("maxAttempts [GH-90000]");
     }
 
     @Test
-    @DisplayName("retry() throws when lastError is null")
-    void retryThrowsForNullLastError() {
-        assertThatThrownBy(() -> RetryContext.retry(2, 4, null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("lastError");
+    @DisplayName("retry() throws when lastError is null [GH-90000]")
+    void retryThrowsForNullLastError() { // GH-90000
+        assertThatThrownBy(() -> RetryContext.retry(2, 4, null)) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("lastError [GH-90000]");
     }
 
     @Test
-    @DisplayName("retry() throws for invalid attemptNumber")
-    void retryThrowsForAttemptNumberLessThanOne() {
-        assertThatThrownBy(() -> RetryContext.retry(0, 4, new RuntimeException()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("attemptNumber");
+    @DisplayName("retry() throws for invalid attemptNumber [GH-90000]")
+    void retryThrowsForAttemptNumberLessThanOne() { // GH-90000
+        assertThatThrownBy(() -> RetryContext.retry(0, 4, new RuntimeException())) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("attemptNumber [GH-90000]");
     }
 
     @Test
-    @DisplayName("toString includes attempt and max attempt info")
-    void toStringContainsAttemptInfo() {
-        RetryContext ctx = RetryContext.retry(2, 5, new RuntimeException("err"));
-        String str = ctx.toString();
+    @DisplayName("toString includes attempt and max attempt info [GH-90000]")
+    void toStringContainsAttemptInfo() { // GH-90000
+        RetryContext ctx = RetryContext.retry(2, 5, new RuntimeException("err [GH-90000]"));
+        String str = ctx.toString(); // GH-90000
 
-        assertThat(str).contains("2");
-        assertThat(str).contains("5");
-        assertThat(str).contains("isRetry=true");
+        assertThat(str).contains("2 [GH-90000]");
+        assertThat(str).contains("5 [GH-90000]");
+        assertThat(str).contains("isRetry=true [GH-90000]");
     }
 }

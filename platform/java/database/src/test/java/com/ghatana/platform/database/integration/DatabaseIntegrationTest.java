@@ -28,91 +28,91 @@ import static org.mockito.Mockito.*;
  * Real database interaction tests with transaction management,
  * connection pooling, and failure scenarios.
  */
-@DisplayName("Database Integration Tests")
+@DisplayName("Database Integration Tests [GH-90000]")
 class DatabaseIntegrationTest {
 
     @Test
-    @DisplayName("Should handle database connection pooling")
-    void shouldHandleDatabaseConnectionPooling() {
-        DataSource mockDataSource = mock(DataSource.class);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
+    @DisplayName("Should handle database connection pooling [GH-90000]")
+    void shouldHandleDatabaseConnectionPooling() { // GH-90000
+        DataSource mockDataSource = mock(DataSource.class); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
 
-        assertThat(jdbcTemplate.getDataSource()).isNotNull();
+        assertThat(jdbcTemplate.getDataSource()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle transaction commit and rollback")
-    void shouldHandleTransactionCommitAndRollback() {
-        DataSource mockDataSource = mock(DataSource.class);
-        Connection mockConnection = mock(Connection.class);
-        PreparedStatement mockPreparedStatement = mock(PreparedStatement.class);
+    @DisplayName("Should handle transaction commit and rollback [GH-90000]")
+    void shouldHandleTransactionCommitAndRollback() { // GH-90000
+        DataSource mockDataSource = mock(DataSource.class); // GH-90000
+        Connection mockConnection = mock(Connection.class); // GH-90000
+        PreparedStatement mockPreparedStatement = mock(PreparedStatement.class); // GH-90000
 
         try {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.getAutoCommit()).thenReturn(true);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+            when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
+            when(mockConnection.getAutoCommit()).thenReturn(true); // GH-90000
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement); // GH-90000
+            when(mockPreparedStatement.executeUpdate()).thenReturn(1); // GH-90000
 
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-            jdbcTemplate.inTransaction((JdbcTemplate.VoidTransactionCallback) jdbc ->
-                    jdbc.update("INSERT INTO test_table (value) VALUES (?)", "test"));
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+            jdbcTemplate.inTransaction((JdbcTemplate.VoidTransactionCallback) jdbc -> // GH-90000
+                    jdbc.update("INSERT INTO test_table (value) VALUES (?)", "test")); // GH-90000
 
-            verify(mockPreparedStatement).executeUpdate();
-            verify(mockConnection).setAutoCommit(false);
-            verify(mockConnection).commit();
-            verify(mockConnection).setAutoCommit(true);
-        } catch (java.sql.SQLException e) {
-            throw new RuntimeException(e);
+            verify(mockPreparedStatement).executeUpdate(); // GH-90000
+            verify(mockConnection).setAutoCommit(false); // GH-90000
+            verify(mockConnection).commit(); // GH-90000
+            verify(mockConnection).setAutoCommit(true); // GH-90000
+        } catch (java.sql.SQLException e) { // GH-90000
+            throw new RuntimeException(e); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should handle database connection failures gracefully")
-    void shouldHandleDatabaseConnectionFailuresGracefully() {
-        DataSource mockDataSource = mock(DataSource.class);
+    @DisplayName("Should handle database connection failures gracefully [GH-90000]")
+    void shouldHandleDatabaseConnectionFailuresGracefully() { // GH-90000
+        DataSource mockDataSource = mock(DataSource.class); // GH-90000
 
         try {
-            when(mockDataSource.getConnection()).thenThrow(new java.sql.SQLException("Connection failed"));
+            when(mockDataSource.getConnection()).thenThrow(new java.sql.SQLException("Connection failed [GH-90000]"));
 
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
 
-            org.junit.jupiter.api.Assertions.assertThrows(
+            org.junit.jupiter.api.Assertions.assertThrows( // GH-90000
                 com.ghatana.core.database.jdbc.JdbcException.class,
-                () -> jdbcTemplate.queryForObject("SELECT 1", rs -> rs.getInt(1))
+                () -> jdbcTemplate.queryForObject("SELECT 1", rs -> rs.getInt(1)) // GH-90000
             );
-        } catch (java.sql.SQLException e) {
-            throw new RuntimeException(e);
+        } catch (java.sql.SQLException e) { // GH-90000
+            throw new RuntimeException(e); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should handle concurrent database operations")
-    void shouldHandleConcurrentDatabaseOperations() {
-        DatabaseClient mockClient = mock(DatabaseClient.class);
+    @DisplayName("Should handle concurrent database operations [GH-90000]")
+    void shouldHandleConcurrentDatabaseOperations() { // GH-90000
+        DatabaseClient mockClient = mock(DatabaseClient.class); // GH-90000
 
-        when(mockClient.query(anyString(), any(), anyInt()))
-            .thenReturn(Promise.of(List.of(Map.of("id", "1"))));
+        when(mockClient.query(anyString(), any(), anyInt())) // GH-90000
+            .thenReturn(Promise.of(List.of(Map.of("id", "1")))); // GH-90000
 
-        Promise<List<Map<String, Object>>> result = mockClient.query("test", Map.of(), 10);
+        Promise<List<Map<String, Object>>> result = mockClient.query("test", Map.of(), 10); // GH-90000
 
-        assertThat(result.getResult()).isNotNull();
+        assertThat(result.getResult()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle database query timeouts")
-    void shouldHandleDatabaseQueryTimeouts() {
-        DataSource mockDataSource = mock(DataSource.class);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
+    @DisplayName("Should handle database query timeouts [GH-90000]")
+    void shouldHandleDatabaseQueryTimeouts() { // GH-90000
+        DataSource mockDataSource = mock(DataSource.class); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
 
-        assertThat(jdbcTemplate).isNotNull();
+        assertThat(jdbcTemplate).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle database schema validation")
-    void shouldHandleDatabaseSchemaValidation() {
-        DataSource mockDataSource = mock(DataSource.class);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
+    @DisplayName("Should handle database schema validation [GH-90000]")
+    void shouldHandleDatabaseSchemaValidation() { // GH-90000
+        DataSource mockDataSource = mock(DataSource.class); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
 
-        assertThat(jdbcTemplate).isNotNull();
+        assertThat(jdbcTemplate).isNotNull(); // GH-90000
     }
 }

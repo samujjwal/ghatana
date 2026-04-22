@@ -8,17 +8,17 @@ import java.util.List;
 public final class TestDenyAllConsentProvider implements ConsentProvider {
 
     @Override
-    public String name() {
+    public String name() { // GH-90000
         return "deny-all-test";
     }
 
     @Override
-    public Promise<ConsentDecision> evaluateConsent(String tenantId, AepEngine.Event event) {
-        return Promise.of(ConsentDecision.deny("test provider denied consent"));
+    public Promise<ConsentDecision> evaluateConsent(String tenantId, AepEngine.Event event) { // GH-90000
+        return Promise.of(ConsentDecision.deny("test provider denied consent [GH-90000]"));
     }
 
     @Override
-    public Promise<List<String>> getAllowedPurposes(String tenantId, String userId, String purpose) {
-        return Promise.of(List.of());
+    public Promise<List<String>> getAllowedPurposes(String tenantId, String userId, String purpose) { // GH-90000
+        return Promise.of(List.of()); // GH-90000
     }
 }

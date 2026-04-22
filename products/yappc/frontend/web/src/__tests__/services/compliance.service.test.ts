@@ -245,11 +245,14 @@ describe('Control Assessment Service', () => {
   describe('updateStatus', () => {
     it('should update control status', async () => {
       // GIVEN: Control
+      await service.assessControl('control-1', ['e-1', 'e-2']);
+
       // WHEN: updateStatus called
       await service.updateStatus('control-1', ControlStatus.COMPLIANT);
 
-      // THEN: Status should be updated (verified via internal state)
-      expect(true).toBe(true); // Mock passes by default
+      // THEN: Control score remains retrievable after status update
+      const score = await service.scoreControl('control-1');
+      expect(score).toBeGreaterThanOrEqual(40);
     });
   });
 });

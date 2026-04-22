@@ -11,46 +11,46 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link TraceHttpService}.
  */
-@DisplayName("TraceHttpService Tests")
+@DisplayName("TraceHttpService Tests [GH-90000]")
 class TraceHttpServiceTest {
 
     private MockTraceStorage storage;
 
     @BeforeEach
-    void setUp() {
-        storage = new MockTraceStorage();
+    void setUp() { // GH-90000
+        storage = new MockTraceStorage(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create service with valid storage")
-    void shouldCreateServiceWithValidStorage() {
+    @DisplayName("Should create service with valid storage [GH-90000]")
+    void shouldCreateServiceWithValidStorage() { // GH-90000
         // When
-        TraceHttpService service = new TraceHttpService(storage);
+        TraceHttpService service = new TraceHttpService(storage); // GH-90000
 
         // Then
-        assertThat(service).isNotNull();
-        assertThat(service.getServiceName()).isEqualTo("trace-http-service");
+        assertThat(service).isNotNull(); // GH-90000
+        assertThat(service.getServiceName()).isEqualTo("trace-http-service [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should throw exception when storage is null")
-    void shouldThrowExceptionWhenStorageIsNull() {
+    @DisplayName("Should throw exception when storage is null [GH-90000]")
+    void shouldThrowExceptionWhenStorageIsNull() { // GH-90000
         // When/Then
-        assertThatThrownBy(() -> new TraceHttpService(null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("TraceStorage cannot be null");
+        assertThatThrownBy(() -> new TraceHttpService(null)) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .hasMessageContaining("TraceStorage cannot be null [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should return correct service name")
-    void shouldReturnCorrectServiceName() {
+    @DisplayName("Should return correct service name [GH-90000]")
+    void shouldReturnCorrectServiceName() { // GH-90000
         // Given
-        TraceHttpService service = new TraceHttpService(storage);
+        TraceHttpService service = new TraceHttpService(storage); // GH-90000
 
         // When
-        String serviceName = service.getServiceName();
+        String serviceName = service.getServiceName(); // GH-90000
 
         // Then
-        assertThat(serviceName).isEqualTo("trace-http-service");
+        assertThat(serviceName).isEqualTo("trace-http-service [GH-90000]");
     }
 }

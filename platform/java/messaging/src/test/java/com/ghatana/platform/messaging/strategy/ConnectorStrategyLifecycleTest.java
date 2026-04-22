@@ -31,121 +31,121 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Connector strategy lifecycle")
+@DisplayName("Connector strategy lifecycle [GH-90000]")
 class ConnectorStrategyLifecycleTest extends EventloopTestBase {
 
     private HttpServer server;
 
     @AfterEach
-    void tearDown() {
-        if (server != null) {
-            server.stop(0);
+    void tearDown() { // GH-90000
+        if (server != null) { // GH-90000
+            server.stop(0); // GH-90000
             server = null;
         }
     }
 
     @Test
-    @DisplayName("HttpWebhookEgressStrategy posts payload and headers to configured endpoint")
-    void shouldDeliverWebhookPayload() throws Exception {
-        CountDownLatch requestReceived = new CountDownLatch(1);
-        AtomicReference<String> bodyRef = new AtomicReference<>();
-        AtomicReference<String> headerRef = new AtomicReference<>();
-        server = startHttpServer("/events", exchange -> {
-            bodyRef.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            headerRef.set(exchange.getRequestHeaders().getFirst("X-Test-Header"));
-            exchange.sendResponseHeaders(202, -1);
-            exchange.close();
-            requestReceived.countDown();
+    @DisplayName("HttpWebhookEgressStrategy posts payload and headers to configured endpoint [GH-90000]")
+    void shouldDeliverWebhookPayload() throws Exception { // GH-90000
+        CountDownLatch requestReceived = new CountDownLatch(1); // GH-90000
+        AtomicReference<String> bodyRef = new AtomicReference<>(); // GH-90000
+        AtomicReference<String> headerRef = new AtomicReference<>(); // GH-90000
+        server = startHttpServer("/events", exchange -> { // GH-90000
+            bodyRef.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)); // GH-90000
+            headerRef.set(exchange.getRequestHeaders().getFirst("X-Test-Header [GH-90000]"));
+            exchange.sendResponseHeaders(202, -1); // GH-90000
+            exchange.close(); // GH-90000
+            requestReceived.countDown(); // GH-90000
         });
 
-        HttpWebhookEgressStrategy strategy = new HttpWebhookEgressStrategy(httpConfig(server));
-        runPromise(strategy::start);
+        HttpWebhookEgressStrategy strategy = new HttpWebhookEgressStrategy(httpConfig(server)); // GH-90000
+        runPromise(strategy::start); // GH-90000
 
-        boolean sent = strategy.send(new QueueMessage(
+        boolean sent = strategy.send(new QueueMessage( // GH-90000
             "msg-1",
             "{\"event\":\"created\"}",
-            Map.of("X-Test-Header", "present")
+            Map.of("X-Test-Header", "present") // GH-90000
         ));
 
-        assertThat(sent).isTrue();
-        assertThat(requestReceived.await(2, TimeUnit.SECONDS)).isTrue();
-        assertThat(bodyRef.get()).isEqualTo("{\"event\":\"created\"}");
-        assertThat(headerRef.get()).isEqualTo("present");
+        assertThat(sent).isTrue(); // GH-90000
+        assertThat(requestReceived.await(2, TimeUnit.SECONDS)).isTrue(); // GH-90000
+        assertThat(bodyRef.get()).isEqualTo("{\"event\":\"created\"}"); // GH-90000
+        assertThat(headerRef.get()).isEqualTo("present [GH-90000]");
 
-        runPromise(strategy::stop);
-        assertThat(strategy.isRunning()).isFalse();
+        runPromise(strategy::stop); // GH-90000
+        assertThat(strategy.isRunning()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("HttpPollingIngressStrategy polls endpoint and forwards non-empty responses")
-    void shouldPollHttpEndpoint() throws Exception {
-        CountDownLatch bodyReceived = new CountDownLatch(1);
-        AtomicReference<String> bodyRef = new AtomicReference<>();
-        server = startHttpServer("/poll", exchange -> {
-            byte[] response = "queued-message".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, response.length);
-            try (OutputStream outputStream = exchange.getResponseBody()) {
-                outputStream.write(response);
+    @DisplayName("HttpPollingIngressStrategy polls endpoint and forwards non-empty responses [GH-90000]")
+    void shouldPollHttpEndpoint() throws Exception { // GH-90000
+        CountDownLatch bodyReceived = new CountDownLatch(1); // GH-90000
+        AtomicReference<String> bodyRef = new AtomicReference<>(); // GH-90000
+        server = startHttpServer("/poll", exchange -> { // GH-90000
+            byte[] response = "queued-message".getBytes(StandardCharsets.UTF_8); // GH-90000
+            exchange.sendResponseHeaders(200, response.length); // GH-90000
+            try (OutputStream outputStream = exchange.getResponseBody()) { // GH-90000
+                outputStream.write(response); // GH-90000
             }
         });
 
-        HttpPollingIngressStrategy strategy = new HttpPollingIngressStrategy(
-            HttpIngressConfig.builder()
-                .endpoint("http://localhost:" + server.getAddress().getPort())
-                .path("/poll")
-                .retryConfig(RetryConfig.NO_RETRY)
-                .build(),
+        HttpPollingIngressStrategy strategy = new HttpPollingIngressStrategy( // GH-90000
+            HttpIngressConfig.builder() // GH-90000
+                .endpoint("http://localhost:" + server.getAddress().getPort()) // GH-90000
+                .path("/poll [GH-90000]")
+                .retryConfig(RetryConfig.NO_RETRY) // GH-90000
+                .build(), // GH-90000
             body -> {
-                bodyRef.set(body);
-                bodyReceived.countDown();
+                bodyRef.set(body); // GH-90000
+                bodyReceived.countDown(); // GH-90000
             },
-            Duration.ofMillis(50)
+            Duration.ofMillis(50) // GH-90000
         );
 
-        runPromise(strategy::start);
+        runPromise(strategy::start); // GH-90000
 
-        assertThat(bodyReceived.await(2, TimeUnit.SECONDS)).isTrue();
-        assertThat(bodyRef.get()).isEqualTo("queued-message");
+        assertThat(bodyReceived.await(2, TimeUnit.SECONDS)).isTrue(); // GH-90000
+        assertThat(bodyRef.get()).isEqualTo("queued-message [GH-90000]");
 
-        runPromise(strategy::stop);
-        assertThat(strategy.isRunning()).isFalse();
+        runPromise(strategy::stop); // GH-90000
+        assertThat(strategy.isRunning()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("DefaultS3StorageStrategy toggles lifecycle state and accepts messages")
-    void shouldToggleS3LifecycleState() {
-        DefaultS3StorageStrategy strategy = new DefaultS3StorageStrategy(S3Config.builder()
-            .bucketName("audit-bucket")
-            .region("us-east-1")
-            .build());
+    @DisplayName("DefaultS3StorageStrategy toggles lifecycle state and accepts messages [GH-90000]")
+    void shouldToggleS3LifecycleState() { // GH-90000
+        DefaultS3StorageStrategy strategy = new DefaultS3StorageStrategy(S3Config.builder() // GH-90000
+            .bucketName("audit-bucket [GH-90000]")
+            .region("us-east-1 [GH-90000]")
+            .build()); // GH-90000
 
-        assertThat(strategy.isRunning()).isFalse();
+        assertThat(strategy.isRunning()).isFalse(); // GH-90000
 
-        runPromise(strategy::start);
-        assertThat(strategy.isRunning()).isTrue();
-        assertThat(strategy.send(new QueueMessage("id-1", "payload", Map.of()))).isTrue();
+        runPromise(strategy::start); // GH-90000
+        assertThat(strategy.isRunning()).isTrue(); // GH-90000
+        assertThat(strategy.send(new QueueMessage("id-1", "payload", Map.of()))).isTrue(); // GH-90000
 
-        runPromise(strategy::stop);
-        assertThat(strategy.isRunning()).isFalse();
+        runPromise(strategy::stop); // GH-90000
+        assertThat(strategy.isRunning()).isFalse(); // GH-90000
     }
 
-    private static HttpIngressConfig httpConfig(HttpServer server) {
-        return HttpIngressConfig.builder()
-            .endpoint("http://localhost:" + server.getAddress().getPort())
-            .path("/events")
-            .retryConfig(RetryConfig.NO_RETRY)
-            .build();
+    private static HttpIngressConfig httpConfig(HttpServer server) { // GH-90000
+        return HttpIngressConfig.builder() // GH-90000
+            .endpoint("http://localhost:" + server.getAddress().getPort()) // GH-90000
+            .path("/events [GH-90000]")
+            .retryConfig(RetryConfig.NO_RETRY) // GH-90000
+            .build(); // GH-90000
     }
 
-    private static HttpServer startHttpServer(String path, HttpHandler handler) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
-        server.createContext(path, exchange -> handler.handle(exchange));
-        server.start();
+    private static HttpServer startHttpServer(String path, HttpHandler handler) throws IOException { // GH-90000
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0); // GH-90000
+        server.createContext(path, exchange -> handler.handle(exchange)); // GH-90000
+        server.start(); // GH-90000
         return server;
     }
 
     @FunctionalInterface
     private interface HttpHandler {
-        void handle(HttpExchange exchange) throws IOException;
+        void handle(HttpExchange exchange) throws IOException; // GH-90000
     }
 }

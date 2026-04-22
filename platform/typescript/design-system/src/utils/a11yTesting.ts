@@ -14,7 +14,7 @@
  *
  * @example
  * ```tsx
- * import { a11yTestHelpers, checkTouchTargets, checkLabelAssociations } from '@ghatana/ui';
+ * import { a11yTestHelpers, checkTouchTargets, checkLabelAssociations } from '@ghatana/design-system';
  *
  * describe('MyComponent', () => {
  *   it('meets accessibility requirements', () => {

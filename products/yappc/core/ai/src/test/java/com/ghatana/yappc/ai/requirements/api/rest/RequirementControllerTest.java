@@ -51,7 +51,7 @@ import org.mockito.MockitoAnnotations;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("RequirementController Tests")
+@DisplayName("RequirementController Tests [GH-90000]")
 class RequirementControllerTest extends EventloopTestBase {
 
   @Mock private RequirementEmbeddingService embeddingService;
@@ -61,282 +61,282 @@ class RequirementControllerTest extends EventloopTestBase {
   private ObjectMapper objectMapper;
   private static final String BASE_URL = "http://localhost:8082";
 
-  private static String url(String path) {
+  private static String url(String path) { // GH-90000
     return BASE_URL + path;
   }
 
   @BeforeEach
-  void setUp() {
-    MockitoAnnotations.openMocks(this);
-    objectMapper = new ObjectMapper();
-    when(embeddingService.generateSuggestions(anyString(), anyString(), anyString()))
-        .thenReturn(Promise.of(List.of()));
-    when(embeddingService.findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat()))
-        .thenReturn(Promise.of(List.of()));
-    when(embeddingService.embedAndStore(anyString(), anyString(), anyString()))
-        .thenReturn(Promise.of((Void) null));
-    when(embeddingService.updateEmbedding(anyString(), anyString()))
-        .thenReturn(Promise.of((Void) null));
+  void setUp() { // GH-90000
+    MockitoAnnotations.openMocks(this); // GH-90000
+    objectMapper = new ObjectMapper(); // GH-90000
+    when(embeddingService.generateSuggestions(anyString(), anyString(), anyString())) // GH-90000
+        .thenReturn(Promise.of(List.of())); // GH-90000
+    when(embeddingService.findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat())) // GH-90000
+        .thenReturn(Promise.of(List.of())); // GH-90000
+    when(embeddingService.embedAndStore(anyString(), anyString(), anyString())) // GH-90000
+        .thenReturn(Promise.of((Void) null)); // GH-90000
+    when(embeddingService.updateEmbedding(anyString(), anyString())) // GH-90000
+        .thenReturn(Promise.of((Void) null)); // GH-90000
 
-    requirementService = new RequirementService(embeddingService);
-    controller = new RequirementController(requirementService, embeddingService);
+    requirementService = new RequirementService(embeddingService); // GH-90000
+    controller = new RequirementController(requirementService, embeddingService); // GH-90000
   }
 
   @Test
-  @DisplayName("Should create requirement controller with valid service")
-  void shouldCreateController() {
-    assertThat(controller).isNotNull();
+  @DisplayName("Should create requirement controller with valid service [GH-90000]")
+  void shouldCreateController() { // GH-90000
+    assertThat(controller).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should throw NullPointerException when service is null")
-  void shouldThrowWhenServiceNull() {
-    assertThatThrownBy(() -> new RequirementController(null))
-        .isInstanceOf(NullPointerException.class);
+  @DisplayName("Should throw NullPointerException when service is null [GH-90000]")
+  void shouldThrowWhenServiceNull() { // GH-90000
+    assertThatThrownBy(() -> new RequirementController(null)) // GH-90000
+        .isInstanceOf(NullPointerException.class); // GH-90000
   }
 
   @Test
-  @DisplayName("Should create requirement when valid request")
-  void shouldCreateRequirementWhenValidRequest() throws Exception {
-    CreateRequirementRequest request = new CreateRequirementRequest("Test requirement", "HIGH");
-    UUID projectId = UUID.randomUUID();
+  @DisplayName("Should create requirement when valid request [GH-90000]")
+  void shouldCreateRequirementWhenValidRequest() throws Exception { // GH-90000
+    CreateRequirementRequest request = new CreateRequirementRequest("Test requirement", "HIGH"); // GH-90000
+    UUID projectId = UUID.randomUUID(); // GH-90000
 
-    HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
-        .withBody(objectMapper.writeValueAsBytes(request))
-        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-        .build();
+    HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
+        .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
+        .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+        .build(); // GH-90000
 
-    HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest));
+    HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest)); // GH-90000
 
-    assertThat(response.getCode()).isEqualTo(201);
-    assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json");
+    assertThat(response.getCode()).isEqualTo(201); // GH-90000
+    assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json [GH-90000]");
 
-    ByteBuf bodyBuf = runPromise(() -> response.loadBody());
-    String responseBody = bodyBuf.asString(StandardCharsets.UTF_8);
-    JsonNode jsonResponse = objectMapper.readTree(responseBody);
+    ByteBuf bodyBuf = runPromise(() -> response.loadBody()); // GH-90000
+    String responseBody = bodyBuf.asString(StandardCharsets.UTF_8); // GH-90000
+    JsonNode jsonResponse = objectMapper.readTree(responseBody); // GH-90000
 
-    assertThat(jsonResponse.has("id")).isTrue();
-    assertThat(jsonResponse.has("text")).isTrue();
-    assertThat(jsonResponse.get("text").asText()).isEqualTo("Test requirement");
-    assertThat(jsonResponse.has("status")).isTrue();
-    assertThat(jsonResponse.get("status").asText()).isEqualTo("DRAFT");
-    assertThat(jsonResponse.has("qualityScore")).isTrue();
-    assertThat(jsonResponse.get("qualityScore").asDouble()).isGreaterThan(0.0);
-    assertThat(jsonResponse.has("duplicateWarnings")).isTrue();
-    assertThat(jsonResponse.get("duplicateWarnings").isArray()).isTrue();
-    assertThat(jsonResponse.has("suggestions")).isTrue();
-    assertThat(jsonResponse.get("suggestions").isArray()).isTrue();
+    assertThat(jsonResponse.has("id [GH-90000]")).isTrue();
+    assertThat(jsonResponse.has("text [GH-90000]")).isTrue();
+    assertThat(jsonResponse.get("text [GH-90000]").asText()).isEqualTo("Test requirement [GH-90000]");
+    assertThat(jsonResponse.has("status [GH-90000]")).isTrue();
+    assertThat(jsonResponse.get("status [GH-90000]").asText()).isEqualTo("DRAFT [GH-90000]");
+    assertThat(jsonResponse.has("qualityScore [GH-90000]")).isTrue();
+    assertThat(jsonResponse.get("qualityScore [GH-90000]").asDouble()).isGreaterThan(0.0);
+    assertThat(jsonResponse.has("duplicateWarnings [GH-90000]")).isTrue();
+    assertThat(jsonResponse.get("duplicateWarnings [GH-90000]").isArray()).isTrue();
+    assertThat(jsonResponse.has("suggestions [GH-90000]")).isTrue();
+    assertThat(jsonResponse.get("suggestions [GH-90000]").isArray()).isTrue();
 
-    verify(embeddingService)
-        .embedAndStore(anyString(), eq("Test requirement"), eq(projectId.toString()));
+    verify(embeddingService) // GH-90000
+        .embedAndStore(anyString(), eq("Test requirement [GH-90000]"), eq(projectId.toString()));
   }
 
   @Test
-  @DisplayName("Should return detailed requirement with suggestions and similar items")
-  void shouldGetRequirementWithSuggestionsAndSimilar() throws Exception {
-    UUID projectId = UUID.randomUUID();
+  @DisplayName("Should return detailed requirement with suggestions and similar items [GH-90000]")
+  void shouldGetRequirementWithSuggestionsAndSimilar() throws Exception { // GH-90000
+    UUID projectId = UUID.randomUUID(); // GH-90000
 
-    CreateRequirementRequest create = new CreateRequirementRequest("Initial requirement", "HIGH");
+    CreateRequirementRequest create = new CreateRequirementRequest("Initial requirement", "HIGH"); // GH-90000
     HttpResponse createResponse =
-        runPromise(
-            () ->
-                controller.createRequirement(
-                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
-                        .withBody(objectMapper.writeValueAsBytes(create))
-                        .build()));
-    JsonNode created = objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8));
-    String requirementId = created.get("id").asText();
+        runPromise( // GH-90000
+            () -> // GH-90000
+                controller.createRequirement( // GH-90000
+                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
+                        .withBody(objectMapper.writeValueAsBytes(create)) // GH-90000
+                        .build())); // GH-90000
+    JsonNode created = objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
+    String requirementId = created.get("id [GH-90000]").asText();
 
-    when(embeddingService.generateSuggestions(anyString(), anyString(), any()))
-        .thenReturn(
-            Promise.of(
-                List.of(
-                    sampleSuggestion(
+    when(embeddingService.generateSuggestions(anyString(), anyString(), any())) // GH-90000
+        .thenReturn( // GH-90000
+            Promise.of( // GH-90000
+                List.of( // GH-90000
+                    sampleSuggestion( // GH-90000
                         requirementId, Persona.DEVELOPER, "Add logging for mobile flows"))));
 
-    doReturn(Promise.of(
-                List.of(
-                    new VectorSearchResult(
-                        UUID.randomUUID().toString(), "Preview requirement text", new float[0], 0.91, 0))))
-        .when(embeddingService).findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat());
+    doReturn(Promise.of( // GH-90000
+                List.of( // GH-90000
+                    new VectorSearchResult( // GH-90000
+                        UUID.randomUUID().toString(), "Preview requirement text", new float[0], 0.91, 0)))) // GH-90000
+        .when(embeddingService).findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat()); // GH-90000
 
     HttpRequest getRequest =
-        HttpRequest.get(
-            url(
+        HttpRequest.get( // GH-90000
+            url( // GH-90000
                 "/api/v1/requirements/"
                     + requirementId
                     + "?includeSuggestions=true&includeSimilar=true"))
-            .build();
+            .build(); // GH-90000
 
-    HttpResponse getResponse = runPromise(() -> controller.getRequirement(getRequest));
+    HttpResponse getResponse = runPromise(() -> controller.getRequirement(getRequest)); // GH-90000
 
-    assertThat(getResponse.getCode()).isEqualTo(200);
-    JsonNode body = objectMapper.readTree(runPromise(() -> getResponse.loadBody()).asString(StandardCharsets.UTF_8));
-    assertThat(body.get("suggestions")).hasSize(1);
-    assertThat(body.get("similarRequirements")).hasSize(1);
-    assertThat(body.get("qualityScore").asDouble()).isGreaterThan(0.0);
+    assertThat(getResponse.getCode()).isEqualTo(200); // GH-90000
+    JsonNode body = objectMapper.readTree(runPromise(() -> getResponse.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
+    assertThat(body.get("suggestions [GH-90000]")).hasSize(1);
+    assertThat(body.get("similarRequirements [GH-90000]")).hasSize(1);
+    assertThat(body.get("qualityScore [GH-90000]").asDouble()).isGreaterThan(0.0);
   }
 
   @Test
-  @DisplayName("Should return 400 when creating requirement with invalid data")
-  void shouldReturn400WhenCreatingRequirementWithInvalidData() throws Exception {
-    UUID projectId = UUID.randomUUID();
+  @DisplayName("Should return 400 when creating requirement with invalid data [GH-90000]")
+  void shouldReturn400WhenCreatingRequirementWithInvalidData() throws Exception { // GH-90000
+    UUID projectId = UUID.randomUUID(); // GH-90000
     HttpRequest httpRequest =
-                HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
-            .withBody(new byte[0])
-            .build();
+                HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
+            .withBody(new byte[0]) // GH-90000
+            .build(); // GH-90000
 
-    HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest));
+    HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest)); // GH-90000
 
-    assertThat(response.getCode()).isEqualTo(400);
-    verify(embeddingService, never()).embedAndStore(anyString(), anyString(), anyString());
+    assertThat(response.getCode()).isEqualTo(400); // GH-90000
+    verify(embeddingService, never()).embedAndStore(anyString(), anyString(), anyString()); // GH-90000
   }
 
   @Test
-  @DisplayName("Should find similar requirements when valid request")
-  void shouldFindSimilarRequirementsWhenValidRequest() throws Exception {
-    UUID projectId = UUID.randomUUID();
+  @DisplayName("Should find similar requirements when valid request [GH-90000]")
+  void shouldFindSimilarRequirementsWhenValidRequest() throws Exception { // GH-90000
+    UUID projectId = UUID.randomUUID(); // GH-90000
     HttpResponse createResponse =
-        runPromise(
-            () ->
-                controller.createRequirement(
-                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
-                        .withBody(
-                            objectMapper.writeValueAsBytes(
-                                new CreateRequirementRequest("Req text", "HIGH")))
-                        .build()));
+        runPromise( // GH-90000
+            () -> // GH-90000
+                controller.createRequirement( // GH-90000
+                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
+                        .withBody( // GH-90000
+                            objectMapper.writeValueAsBytes( // GH-90000
+                                new CreateRequirementRequest("Req text", "HIGH"))) // GH-90000
+                        .build())); // GH-90000
     String requirementId =
-        objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8))
-            .get("id")
-            .asText();
+        objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)) // GH-90000
+            .get("id [GH-90000]")
+            .asText(); // GH-90000
 
-    doReturn(Promise.of(
-                List.of(
-                    new VectorSearchResult(
-                        UUID.randomUUID().toString(), "Potentially similar requirement", new float[0], 0.88, 0))))
-        .when(embeddingService).findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat());
+    doReturn(Promise.of( // GH-90000
+                List.of( // GH-90000
+                    new VectorSearchResult( // GH-90000
+                        UUID.randomUUID().toString(), "Potentially similar requirement", new float[0], 0.88, 0)))) // GH-90000
+        .when(embeddingService).findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat()); // GH-90000
 
     HttpRequest httpRequest =
-        HttpRequest.get(
-                        url("/api/v1/requirements/" + requirementId + "/similar?limit=2&minSimilarity=0.8"))
-            .build();
+        HttpRequest.get( // GH-90000
+                        url("/api/v1/requirements/" + requirementId + "/similar?limit=2&minSimilarity=0.8")) // GH-90000
+            .build(); // GH-90000
 
-    HttpResponse response = runPromise(() -> controller.findSimilar(httpRequest));
-    assertThat(response.getCode()).isEqualTo(200);
-        JsonNode body = objectMapper.readTree(runPromise(() -> response.loadBody()).asString(StandardCharsets.UTF_8));
-    assertThat(body.isArray()).isTrue();
-    assertThat(body).hasSize(1);
+    HttpResponse response = runPromise(() -> controller.findSimilar(httpRequest)); // GH-90000
+    assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        JsonNode body = objectMapper.readTree(runPromise(() -> response.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
+    assertThat(body.isArray()).isTrue(); // GH-90000
+    assertThat(body).hasSize(1); // GH-90000
   }
 
   @Test
-  @DisplayName("Should generate suggestions and allow recording feedback")
-  void shouldGenerateSuggestionsAndRecordFeedback() throws Exception {
-    UUID projectId = UUID.randomUUID();
+  @DisplayName("Should generate suggestions and allow recording feedback [GH-90000]")
+  void shouldGenerateSuggestionsAndRecordFeedback() throws Exception { // GH-90000
+    UUID projectId = UUID.randomUUID(); // GH-90000
     HttpResponse createResponse =
-        runPromise(
-            () ->
-                controller.createRequirement(
-                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
-                        .withBody(
-                            objectMapper.writeValueAsBytes(
-                                new CreateRequirementRequest("Req text", "HIGH")))
-                        .build()));
+        runPromise( // GH-90000
+            () -> // GH-90000
+                controller.createRequirement( // GH-90000
+                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
+                        .withBody( // GH-90000
+                            objectMapper.writeValueAsBytes( // GH-90000
+                                new CreateRequirementRequest("Req text", "HIGH"))) // GH-90000
+                        .build())); // GH-90000
     String requirementId =
-        objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8))
-            .get("id")
-            .asText();
+        objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)) // GH-90000
+            .get("id [GH-90000]")
+            .asText(); // GH-90000
 
     AISuggestion suggestion =
-        sampleSuggestion(requirementId, Persona.PRODUCT_MANAGER, "Align roadmap with API");
-    when(embeddingService.generateSuggestions(anyString(), anyString(), any()))
-        .thenReturn(Promise.of(List.of(suggestion)));
-    when(embeddingService.recordFeedback(any(), any()))
-        .thenReturn(Promise.of(suggestion.withStatus(SuggestionStatus.APPROVED)));
+        sampleSuggestion(requirementId, Persona.PRODUCT_MANAGER, "Align roadmap with API"); // GH-90000
+    when(embeddingService.generateSuggestions(anyString(), anyString(), any())) // GH-90000
+        .thenReturn(Promise.of(List.of(suggestion))); // GH-90000
+    when(embeddingService.recordFeedback(any(), any())) // GH-90000
+        .thenReturn(Promise.of(suggestion.withStatus(SuggestionStatus.APPROVED))); // GH-90000
 
     HttpRequest generateRequest =
-        HttpRequest.post(url("/api/v1/requirements/" + requirementId + "/suggestions"))
-            .withBody(
+        HttpRequest.post(url("/api/v1/requirements/" + requirementId + "/suggestions")) // GH-90000
+            .withBody( // GH-90000
                 """
                 {
                   "featureDescription": "Custom feature",
                   "personas": ["PRODUCT_MANAGER"],
                   "limit": 1
                 }
-                """.getBytes(StandardCharsets.UTF_8))
-            .build();
+                """.getBytes(StandardCharsets.UTF_8)) // GH-90000
+            .build(); // GH-90000
 
     HttpResponse suggestionsResponse =
-        runPromise(() -> controller.generateSuggestions(generateRequest));
-    assertThat(suggestionsResponse.getCode()).isEqualTo(200);
+        runPromise(() -> controller.generateSuggestions(generateRequest)); // GH-90000
+    assertThat(suggestionsResponse.getCode()).isEqualTo(200); // GH-90000
     JsonNode suggestions =
-        objectMapper.readTree(runPromise(() -> suggestionsResponse.loadBody()).asString(StandardCharsets.UTF_8));
-    String suggestionId = suggestions.get(0).get("id").asText();
+        objectMapper.readTree(runPromise(() -> suggestionsResponse.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
+    String suggestionId = suggestions.get(0).get("id [GH-90000]").asText();
 
-    RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", 5, "Great insight");
+    RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", 5, "Great insight"); // GH-90000
     HttpResponse feedbackResponse =
-        runPromise(
-            () ->
-                controller.recordFeedback(
-                    HttpRequest.post(url("/api/v1/suggestions/" + suggestionId + "/feedback"))
-                        .withBody(objectMapper.writeValueAsBytes(feedback))
-                        .build()));
+        runPromise( // GH-90000
+            () -> // GH-90000
+                controller.recordFeedback( // GH-90000
+                    HttpRequest.post(url("/api/v1/suggestions/" + suggestionId + "/feedback")) // GH-90000
+                        .withBody(objectMapper.writeValueAsBytes(feedback)) // GH-90000
+                        .build())); // GH-90000
 
-    assertThat(feedbackResponse.getCode()).isEqualTo(204);
-    verify(embeddingService).recordFeedback(any(), any());
+    assertThat(feedbackResponse.getCode()).isEqualTo(204); // GH-90000
+    verify(embeddingService).recordFeedback(any(), any()); // GH-90000
   }
 
   @Test
-  @DisplayName("Should reject feedback with invalid rating")
-  void shouldRejectInvalidRating() {
-    assertThatThrownBy(() -> new RecordFeedbackRequest("HELPFUL", 6, "Text"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("rating");
+  @DisplayName("Should reject feedback with invalid rating [GH-90000]")
+  void shouldRejectInvalidRating() { // GH-90000
+    assertThatThrownBy(() -> new RecordFeedbackRequest("HELPFUL", 6, "Text")) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("rating [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should accept feedback with valid rating 1-5")
-  void shouldAcceptValidRatings() {
-    for (int rating = 1; rating <= 5; rating++) {
-      RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", rating, "Text");
-      assertThat(feedback.getRating()).isEqualTo(rating);
+  @DisplayName("Should accept feedback with valid rating 1-5 [GH-90000]")
+  void shouldAcceptValidRatings() { // GH-90000
+    for (int rating = 1; rating <= 5; rating++) { // GH-90000
+      RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", rating, "Text"); // GH-90000
+      assertThat(feedback.getRating()).isEqualTo(rating); // GH-90000
     }
   }
 
   @Test
-  @DisplayName("Should handle feedback with null rating")
-  void shouldHandleNullRating() {
-    RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", null, "Text");
-    assertThat(feedback.hasRating()).isFalse();
+  @DisplayName("Should handle feedback with null rating [GH-90000]")
+  void shouldHandleNullRating() { // GH-90000
+    RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", null, "Text"); // GH-90000
+    assertThat(feedback.hasRating()).isFalse(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should create valid CreateRequirementRequest")
-  void shouldCreateValidRequest() {
-    CreateRequirementRequest req = new CreateRequirementRequest("Add OAuth2", "HIGH");
+  @DisplayName("Should create valid CreateRequirementRequest [GH-90000]")
+  void shouldCreateValidRequest() { // GH-90000
+    CreateRequirementRequest req = new CreateRequirementRequest("Add OAuth2", "HIGH"); // GH-90000
 
-    assertThat(req.text()).isEqualTo("Add OAuth2");
-    assertThat(req.priority()).isEqualTo("HIGH");
+    assertThat(req.text()).isEqualTo("Add OAuth2 [GH-90000]");
+    assertThat(req.priority()).isEqualTo("HIGH [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should set default priority in CreateRequirementRequest")
-  void shouldSetDefaultPriority() {
-    CreateRequirementRequest req = new CreateRequirementRequest("Add OAuth2", null);
+  @DisplayName("Should set default priority in CreateRequirementRequest [GH-90000]")
+  void shouldSetDefaultPriority() { // GH-90000
+    CreateRequirementRequest req = new CreateRequirementRequest("Add OAuth2", null); // GH-90000
 
-    assertThat(req.priority()).isEqualTo("MEDIUM");
+    assertThat(req.priority()).isEqualTo("MEDIUM [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should reject empty requirement text")
-  void shouldRejectEmptyText() {
-    assertThatThrownBy(() -> new CreateRequirementRequest("   ", "HIGH"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("cannot be empty");
+  @DisplayName("Should reject empty requirement text [GH-90000]")
+  void shouldRejectEmptyText() { // GH-90000
+    assertThatThrownBy(() -> new CreateRequirementRequest("   ", "HIGH")) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("cannot be empty [GH-90000]");
   }
 
-  private AISuggestion sampleSuggestion(
+  private AISuggestion sampleSuggestion( // GH-90000
       String requirementId, Persona persona, String suggestionText) {
-    return new AISuggestion(
+    return new AISuggestion( // GH-90000
         requirementId,
         suggestionText,
         persona,

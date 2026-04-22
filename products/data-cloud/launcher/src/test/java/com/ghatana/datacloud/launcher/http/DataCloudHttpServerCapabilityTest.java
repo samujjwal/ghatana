@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("DataCloudHttpServer capability registry")
+@DisplayName("DataCloudHttpServer capability registry [GH-90000]")
 class DataCloudHttpServerCapabilityTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
@@ -29,61 +29,61 @@ class DataCloudHttpServerCapabilityTest {
     private DataCloudHttpServer server;
     private HttpClient httpClient;
     private int port;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     @BeforeEach
-    void setUp() throws Exception {
-        httpClient = HttpClient.newHttpClient();
-        port = findFreePort();
+    void setUp() throws Exception { // GH-90000
+        httpClient = HttpClient.newHttpClient(); // GH-90000
+        port = findFreePort(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) {
-            server.stop();
+    void tearDown() { // GH-90000
+        if (server != null) { // GH-90000
+            server.stop(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("capabilities endpoint reports configured and degraded features")
-    @SuppressWarnings("unchecked")
-    void capabilitiesEndpointReportsConfiguredAndDegradedFeatures() throws Exception {
-        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L);
-        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
+    @DisplayName("capabilities endpoint reports configured and degraded features [GH-90000]")
+    @SuppressWarnings("unchecked [GH-90000]")
+    void capabilitiesEndpointReportsConfiguredAndDegradedFeatures() throws Exception { // GH-90000
+        JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
+        String token = provider.createToken("ui-user", List.of("viewer [GH-90000]"), Map.of("tenant_id", "tenant-a"));
 
-        server = new DataCloudHttpServer(mock(DataCloudClient.class), port)
-            .withJwtProvider(provider)
-            .withHealthSubsystem("database", () -> Map.of("status", "DOWN"));
-        server.start();
+        server = new DataCloudHttpServer(mock(DataCloudClient.class), port) // GH-90000
+            .withJwtProvider(provider) // GH-90000
+            .withHealthSubsystem("database", () -> Map.of("status", "DOWN")); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/capabilities", token);
+        HttpResponse<String> response = get("/api/v1/capabilities", token); // GH-90000
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        Map<String, Object> data = (Map<String, Object>) body.get("data");
-        Map<String, Object> capabilities = (Map<String, Object>) data.get("capabilities");
-        Map<String, Object> jwtCapability = (Map<String, Object>) capabilities.get("authentication.jwt");
-        Map<String, Object> databaseCapability = (Map<String, Object>) capabilities.get("health.database");
-        Map<String, Object> searchCapability = (Map<String, Object>) capabilities.get("search.openSearch");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        Map<String, Object> data = (Map<String, Object>) body.get("data [GH-90000]");
+        Map<String, Object> capabilities = (Map<String, Object>) data.get("capabilities [GH-90000]");
+        Map<String, Object> jwtCapability = (Map<String, Object>) capabilities.get("authentication.jwt [GH-90000]");
+        Map<String, Object> databaseCapability = (Map<String, Object>) capabilities.get("health.database [GH-90000]");
+        Map<String, Object> searchCapability = (Map<String, Object>) capabilities.get("search.openSearch [GH-90000]");
 
-        assertThat(jwtCapability).containsEntry("status", "ACTIVE");
-        assertThat(databaseCapability).containsEntry("status", "DEGRADED");
-        assertThat(databaseCapability).containsEntry("dependencyStatus", "DOWN");
-        assertThat(searchCapability).containsEntry("status", "NOT_CONFIGURED");
+        assertThat(jwtCapability).containsEntry("status", "ACTIVE"); // GH-90000
+        assertThat(databaseCapability).containsEntry("status", "DEGRADED"); // GH-90000
+        assertThat(databaseCapability).containsEntry("dependencyStatus", "DOWN"); // GH-90000
+        assertThat(searchCapability).containsEntry("status", "NOT_CONFIGURED"); // GH-90000
     }
 
-    private HttpResponse<String> get(String path, String token) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:" + port + path))
-            .header("Authorization", "Bearer " + token)
-            .GET()
-            .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> get(String path, String token) throws Exception { // GH-90000
+        HttpRequest request = HttpRequest.newBuilder() // GH-90000
+            .uri(URI.create("http://localhost:" + port + path)) // GH-90000
+            .header("Authorization", "Bearer " + token) // GH-90000
+            .GET() // GH-90000
+            .build(); // GH-90000
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private int findFreePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
+    private int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
+            return socket.getLocalPort(); // GH-90000
         }
     }
 }

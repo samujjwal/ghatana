@@ -13,195 +13,195 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for {@link CompletionResult}.
  *
  * Covers builder, convenience methods, tool call detection, immutability,
- * and the {@code of()} factory.
+ * and the {@code of()} factory. // GH-90000
  */
-@DisplayName("CompletionResult")
+@DisplayName("CompletionResult [GH-90000]")
 class CompletionResultTest {
 
     @Nested
-    @DisplayName("of() factory")
+    @DisplayName("of() factory [GH-90000]")
     class OfFactory {
 
         @Test
-        @DisplayName("of(text) creates result with 'stop' finishReason")
-        void ofCreatesSimpleResult() {
-            CompletionResult result = CompletionResult.of("Hello world");
-            assertThat(result.getText()).isEqualTo("Hello world");
-            assertThat(result.getFinishReason()).isEqualTo("stop");
-            assertThat(result.hasToolCalls()).isFalse();
+        @DisplayName("of(text) creates result with 'stop' finishReason [GH-90000]")
+        void ofCreatesSimpleResult() { // GH-90000
+            CompletionResult result = CompletionResult.of("Hello world [GH-90000]");
+            assertThat(result.getText()).isEqualTo("Hello world [GH-90000]");
+            assertThat(result.getFinishReason()).isEqualTo("stop [GH-90000]");
+            assertThat(result.hasToolCalls()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("of(null) defaults text to empty string")
-        void ofNullText() {
-            CompletionResult result = CompletionResult.of(null);
-            assertThat(result.getText()).isEmpty();
+        @DisplayName("of(null) defaults text to empty string [GH-90000]")
+        void ofNullText() { // GH-90000
+            CompletionResult result = CompletionResult.of(null); // GH-90000
+            assertThat(result.getText()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("convenience methods")
+    @DisplayName("convenience methods [GH-90000]")
     class ConvenienceMethods {
 
         @Test
-        @DisplayName("text() is alias for getText()")
-        void textAlias() {
-            CompletionResult result = CompletionResult.of("response");
-            assertThat(result.text()).isEqualTo(result.getText());
+        @DisplayName("text() is alias for getText() [GH-90000]")
+        void textAlias() { // GH-90000
+            CompletionResult result = CompletionResult.of("response [GH-90000]");
+            assertThat(result.text()).isEqualTo(result.getText()); // GH-90000
         }
 
         @Test
-        @DisplayName("model() is alias for getModelUsed()")
-        void modelAlias() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("hi")
-                    .modelUsed("gpt-4")
-                    .build();
-            assertThat(result.model()).isEqualTo("gpt-4");
-            assertThat(result.model()).isEqualTo(result.getModelUsed());
+        @DisplayName("model() is alias for getModelUsed() [GH-90000]")
+        void modelAlias() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text("hi [GH-90000]")
+                    .modelUsed("gpt-4 [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(result.model()).isEqualTo("gpt-4 [GH-90000]");
+            assertThat(result.model()).isEqualTo(result.getModelUsed()); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("tool call detection")
+    @DisplayName("tool call detection [GH-90000]")
     class ToolCallDetection {
 
         @Test
-        @DisplayName("hasToolCalls returns false when no tool calls")
-        void noToolCalls() {
-            CompletionResult result = CompletionResult.of("text");
-            assertThat(result.hasToolCalls()).isFalse();
+        @DisplayName("hasToolCalls returns false when no tool calls [GH-90000]")
+        void noToolCalls() { // GH-90000
+            CompletionResult result = CompletionResult.of("text [GH-90000]");
+            assertThat(result.hasToolCalls()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("hasToolCalls returns true when tool calls present")
-        void withToolCalls() {
-            ToolCall call = ToolCall.of("search", Map.of("q", "test"));
-            CompletionResult result = CompletionResult.builder()
-                    .text("")
-                    .toolCalls(List.of(call))
-                    .finishReason("tool_calls")
-                    .build();
-            assertThat(result.hasToolCalls()).isTrue();
-            assertThat(result.getToolCalls()).hasSize(1);
+        @DisplayName("hasToolCalls returns true when tool calls present [GH-90000]")
+        void withToolCalls() { // GH-90000
+            ToolCall call = ToolCall.of("search", Map.of("q", "test")); // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text(" [GH-90000]")
+                    .toolCalls(List.of(call)) // GH-90000
+                    .finishReason("tool_calls [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(result.hasToolCalls()).isTrue(); // GH-90000
+            assertThat(result.getToolCalls()).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("isToolUseFinish for 'tool_calls' reason")
-        void toolCallsFinish() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("")
-                    .finishReason("tool_calls")
-                    .build();
-            assertThat(result.isToolUseFinish()).isTrue();
+        @DisplayName("isToolUseFinish for 'tool_calls' reason [GH-90000]")
+        void toolCallsFinish() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text(" [GH-90000]")
+                    .finishReason("tool_calls [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(result.isToolUseFinish()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("isToolUseFinish for 'function_call' reason")
-        void functionCallFinish() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("")
-                    .finishReason("function_call")
-                    .build();
-            assertThat(result.isToolUseFinish()).isTrue();
+        @DisplayName("isToolUseFinish for 'function_call' reason [GH-90000]")
+        void functionCallFinish() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text(" [GH-90000]")
+                    .finishReason("function_call [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(result.isToolUseFinish()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("isToolUseFinish false for 'stop' reason")
-        void stopFinish() {
-            CompletionResult result = CompletionResult.of("text");
-            assertThat(result.isToolUseFinish()).isFalse();
+        @DisplayName("isToolUseFinish false for 'stop' reason [GH-90000]")
+        void stopFinish() { // GH-90000
+            CompletionResult result = CompletionResult.of("text [GH-90000]");
+            assertThat(result.isToolUseFinish()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("isToolUseFinish false for null reason")
-        void nullFinish() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("text")
-                    .build();
-            assertThat(result.isToolUseFinish()).isFalse();
+        @DisplayName("isToolUseFinish false for null reason [GH-90000]")
+        void nullFinish() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text("text [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(result.isToolUseFinish()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("builder fields")
+    @DisplayName("builder fields [GH-90000]")
     class BuilderFields {
 
         @Test
-        @DisplayName("all token fields set correctly")
-        void tokenFields() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("output")
-                    .tokensUsed(150)
-                    .promptTokens(50)
-                    .completionTokens(100)
-                    .build();
-            assertThat(result.getTokensUsed()).isEqualTo(150);
-            assertThat(result.getPromptTokens()).isEqualTo(50);
-            assertThat(result.getCompletionTokens()).isEqualTo(100);
+        @DisplayName("all token fields set correctly [GH-90000]")
+        void tokenFields() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text("output [GH-90000]")
+                    .tokensUsed(150) // GH-90000
+                    .promptTokens(50) // GH-90000
+                    .completionTokens(100) // GH-90000
+                    .build(); // GH-90000
+            assertThat(result.getTokensUsed()).isEqualTo(150); // GH-90000
+            assertThat(result.getPromptTokens()).isEqualTo(50); // GH-90000
+            assertThat(result.getCompletionTokens()).isEqualTo(100); // GH-90000
         }
 
         @Test
-        @DisplayName("latencyMs set correctly")
-        void latencyMs() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("output")
-                    .latencyMs(250L)
-                    .build();
-            assertThat(result.getLatencyMs()).isEqualTo(250L);
+        @DisplayName("latencyMs set correctly [GH-90000]")
+        void latencyMs() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text("output [GH-90000]")
+                    .latencyMs(250L) // GH-90000
+                    .build(); // GH-90000
+            assertThat(result.getLatencyMs()).isEqualTo(250L); // GH-90000
         }
 
         @Test
-        @DisplayName("metadata defaults to empty map")
-        void metadataDefaults() {
-            CompletionResult result = CompletionResult.of("text");
-            assertThat(result.getMetadata()).isNotNull().isEmpty();
+        @DisplayName("metadata defaults to empty map [GH-90000]")
+        void metadataDefaults() { // GH-90000
+            CompletionResult result = CompletionResult.of("text [GH-90000]");
+            assertThat(result.getMetadata()).isNotNull().isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("metadata is set correctly")
-        void metadataSet() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("text")
-                    .metadata(Map.of("provider", "openai"))
-                    .build();
-            assertThat(result.getMetadata()).containsEntry("provider", "openai");
+        @DisplayName("metadata is set correctly [GH-90000]")
+        void metadataSet() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text("text [GH-90000]")
+                    .metadata(Map.of("provider", "openai")) // GH-90000
+                    .build(); // GH-90000
+            assertThat(result.getMetadata()).containsEntry("provider", "openai"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("immutability")
+    @DisplayName("immutability [GH-90000]")
     class Immutability {
 
         @Test
-        @DisplayName("toolCalls list is immutable")
-        void toolCallsImmutable() {
-            ToolCall call = ToolCall.of("search", Map.of());
-            CompletionResult result = CompletionResult.builder()
-                    .text("")
-                    .toolCalls(List.of(call))
-                    .build();
-            assertThat(result.getToolCalls()).isUnmodifiable();
+        @DisplayName("toolCalls list is immutable [GH-90000]")
+        void toolCallsImmutable() { // GH-90000
+            ToolCall call = ToolCall.of("search", Map.of()); // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text(" [GH-90000]")
+                    .toolCalls(List.of(call)) // GH-90000
+                    .build(); // GH-90000
+            assertThat(result.getToolCalls()).isUnmodifiable(); // GH-90000
         }
 
         @Test
-        @DisplayName("metadata map is immutable")
-        void metadataImmutable() {
-            CompletionResult result = CompletionResult.builder()
-                    .text("")
-                    .metadata(Map.of("k", "v"))
-                    .build();
-            assertThat(result.getMetadata()).isUnmodifiable();
+        @DisplayName("metadata map is immutable [GH-90000]")
+        void metadataImmutable() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text(" [GH-90000]")
+                    .metadata(Map.of("k", "v")) // GH-90000
+                    .build(); // GH-90000
+            assertThat(result.getMetadata()).isUnmodifiable(); // GH-90000
         }
 
         @Test
-        @DisplayName("null text defaults to empty string")
-        void nullTextDefaults() {
-            CompletionResult result = CompletionResult.builder()
-                    .text(null)
-                    .finishReason("stop")
-                    .build();
-            assertThat(result.getText()).isEmpty();
+        @DisplayName("null text defaults to empty string [GH-90000]")
+        void nullTextDefaults() { // GH-90000
+            CompletionResult result = CompletionResult.builder() // GH-90000
+                    .text(null) // GH-90000
+                    .finishReason("stop [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(result.getText()).isEmpty(); // GH-90000
         }
     }
 }

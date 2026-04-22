@@ -16,46 +16,46 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AepPipelineMetrics")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("AepPipelineMetrics [GH-90000]")
 class AepPipelineMetricsTest {
 
     @Mock
     private MetricsCollector collector;
 
     @Test
-    @DisplayName("recordStarted emits pipeline started counter with correct tags")
-    void recordStartedShouldEmitStartedCounterWithPipelineAndTenantTags() {
-        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector);
+    @DisplayName("recordStarted emits pipeline started counter with correct tags [GH-90000]")
+    void recordStartedShouldEmitStartedCounterWithPipelineAndTenantTags() { // GH-90000
+        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
-        metrics.recordStarted("pipe-42", "tenant-a");
+        metrics.recordStarted("pipe-42", "tenant-a"); // GH-90000
 
-        verify(collector).incrementCounter(
+        verify(collector).incrementCounter( // GH-90000
                 AepPipelineMetrics.METRIC_STARTED,
                 AepPipelineMetrics.TAG_PIPELINE_ID, "pipe-42",
                 AepPipelineMetrics.TAG_TENANT_ID,   "tenant-a"
         );
-        verifyNoMoreInteractions(collector);
+        verifyNoMoreInteractions(collector); // GH-90000
     }
 
     @Test
-    @DisplayName("recordSucceeded emits succeeded counter, latency timer, and per-stage counters")
-    void recordSucceededShouldEmitSucceededCounterLatencyAndStageCounters() {
-        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector);
+    @DisplayName("recordSucceeded emits succeeded counter, latency timer, and per-stage counters [GH-90000]")
+    void recordSucceededShouldEmitSucceededCounterLatencyAndStageCounters() { // GH-90000
+        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
-        metrics.recordSucceeded("pipe-42", "tenant-a", 150L, 2);
+        metrics.recordSucceeded("pipe-42", "tenant-a", 150L, 2); // GH-90000
 
-        verify(collector).incrementCounter(
+        verify(collector).incrementCounter( // GH-90000
                 AepPipelineMetrics.METRIC_SUCCEEDED,
                 AepPipelineMetrics.TAG_PIPELINE_ID, "pipe-42",
                 AepPipelineMetrics.TAG_TENANT_ID,   "tenant-a"
         );
-        verify(collector).recordTimer(
+        verify(collector).recordTimer( // GH-90000
                 AepPipelineMetrics.METRIC_LATENCY, 150L,
                 AepPipelineMetrics.TAG_PIPELINE_ID, "pipe-42",
                 AepPipelineMetrics.TAG_TENANT_ID,   "tenant-a"
         );
-        verify(collector, times(2)).incrementCounter(
+        verify(collector, times(2)).incrementCounter( // GH-90000
                 AepPipelineMetrics.METRIC_STAGES,
                 AepPipelineMetrics.TAG_PIPELINE_ID, "pipe-42",
                 AepPipelineMetrics.TAG_TENANT_ID,   "tenant-a"
@@ -63,45 +63,45 @@ class AepPipelineMetricsTest {
     }
 
     @Test
-    @DisplayName("recordFailed emits failed counter and latency timer with correct tags")
-    void recordFailedShouldEmitFailedCounterAndLatencyTimer() {
-        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector);
+    @DisplayName("recordFailed emits failed counter and latency timer with correct tags [GH-90000]")
+    void recordFailedShouldEmitFailedCounterAndLatencyTimer() { // GH-90000
+        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
-        metrics.recordFailed("pipe-99", "tenant-b", 75L);
+        metrics.recordFailed("pipe-99", "tenant-b", 75L); // GH-90000
 
-        verify(collector).incrementCounter(
+        verify(collector).incrementCounter( // GH-90000
                 AepPipelineMetrics.METRIC_FAILED,
                 AepPipelineMetrics.TAG_PIPELINE_ID, "pipe-99",
                 AepPipelineMetrics.TAG_TENANT_ID,   "tenant-b"
         );
-        verify(collector).recordTimer(
+        verify(collector).recordTimer( // GH-90000
                 AepPipelineMetrics.METRIC_LATENCY, 75L,
                 AepPipelineMetrics.TAG_PIPELINE_ID, "pipe-99",
                 AepPipelineMetrics.TAG_TENANT_ID,   "tenant-b"
         );
-        verifyNoMoreInteractions(collector);
+        verifyNoMoreInteractions(collector); // GH-90000
     }
 
     @Test
-    @DisplayName("noop does not emit any metrics")
-    void noopShouldNeverCallCollector() {
-        AepPipelineMetrics noop = AepPipelineMetrics.noop();
+    @DisplayName("noop does not emit any metrics [GH-90000]")
+    void noopShouldNeverCallCollector() { // GH-90000
+        AepPipelineMetrics noop = AepPipelineMetrics.noop(); // GH-90000
 
-        noop.recordStarted("pipe-1", "tenant-x");
-        noop.recordSucceeded("pipe-1", "tenant-x", 100L, 3);
-        noop.recordFailed("pipe-1", "tenant-x", 50L);
+        noop.recordStarted("pipe-1", "tenant-x"); // GH-90000
+        noop.recordSucceeded("pipe-1", "tenant-x", 100L, 3); // GH-90000
+        noop.recordFailed("pipe-1", "tenant-x", 50L); // GH-90000
 
-        verifyNoInteractions(collector);
+        verifyNoInteractions(collector); // GH-90000
     }
 
     @Test
-    @DisplayName("recordStarted with null values uses 'unknown' tag fallback and does not throw")
-    void recordStartedShouldUseUnknownFallbackForNullValues() {
-        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector);
+    @DisplayName("recordStarted with null values uses 'unknown' tag fallback and does not throw [GH-90000]")
+    void recordStartedShouldUseUnknownFallbackForNullValues() { // GH-90000
+        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
-        assertThatCode(() -> metrics.recordStarted(null, null)).doesNotThrowAnyException();
+        assertThatCode(() -> metrics.recordStarted(null, null)).doesNotThrowAnyException(); // GH-90000
 
-        verify(collector).incrementCounter(
+        verify(collector).incrementCounter( // GH-90000
                 AepPipelineMetrics.METRIC_STARTED,
                 AepPipelineMetrics.TAG_PIPELINE_ID, "unknown",
                 AepPipelineMetrics.TAG_TENANT_ID,   "unknown"
@@ -109,15 +109,15 @@ class AepPipelineMetricsTest {
     }
 
     @Test
-    @DisplayName("never throws even when the collector itself throws")
-    void shouldNeverPropagateExceptionsFromCollector() {
-        doThrow(new RuntimeException("collector failure"))
-                .when(collector)
-                .incrementCounter(anyString(), any(String[].class));
+    @DisplayName("never throws even when the collector itself throws [GH-90000]")
+    void shouldNeverPropagateExceptionsFromCollector() { // GH-90000
+        doThrow(new RuntimeException("collector failure [GH-90000]"))
+                .when(collector) // GH-90000
+                .incrementCounter(anyString(), any(String[].class)); // GH-90000
 
-        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector);
+        AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
-        assertThatCode(() -> metrics.recordStarted("pipe-1", "tenant-a")).doesNotThrowAnyException();
-        assertThatCode(() -> metrics.recordFailed("pipe-1", "tenant-a", 10L)).doesNotThrowAnyException();
+        assertThatCode(() -> metrics.recordStarted("pipe-1", "tenant-a")).doesNotThrowAnyException(); // GH-90000
+        assertThatCode(() -> metrics.recordFailed("pipe-1", "tenant-a", 10L)).doesNotThrowAnyException(); // GH-90000
     }
 }

@@ -42,15 +42,15 @@ class PolyfixProjectContextTest {
     private Logger logger;
 
     @BeforeEach
-    void setUp() {
+    void setUp() { // GH-90000
         // Setup test data
         config
-                = new PolyfixConfig(
-                        List.of("java", "python"),
-                        List.of("schema1.json"),
-                        new PolyfixConfig.Budgets(5, 1000),
-                        new PolyfixConfig.Policies(true, true, false, true),
-                        new PolyfixConfig.Tools(
+                = new PolyfixConfig( // GH-90000
+                        List.of("java", "python"), // GH-90000
+                        List.of("schema1.json [GH-90000]"),
+                        new PolyfixConfig.Budgets(5, 1000), // GH-90000
+                        new PolyfixConfig.Policies(true, true, false, true), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 "node",
                                 "eslint",
                                 "tsc",
@@ -65,57 +65,57 @@ class PolyfixProjectContextTest {
                                 "semgrep"));
 
         // Setup mock language services
-        mockLanguageService1 = mock(LanguageService.class);
-        mockLanguageService2 = mock(LanguageService.class);
+        mockLanguageService1 = mock(LanguageService.class); // GH-90000
+        mockLanguageService2 = mock(LanguageService.class); // GH-90000
 
         // Setup test context
-        executor = Executors.newSingleThreadExecutor();
-        logger = LogManager.getLogger(PolyfixProjectContextTest.class);
+        executor = Executors.newSingleThreadExecutor(); // GH-90000
+        logger = LogManager.getLogger(PolyfixProjectContextTest.class); // GH-90000
 
         context
-                = new PolyfixProjectContext(
+                = new PolyfixProjectContext( // GH-90000
                         tempDir,
                         config,
-                        List.of(mockLanguageService1, mockLanguageService2),
+                        List.of(mockLanguageService1, mockLanguageService2), // GH-90000
                         executor,
                         logger);
     }
 
     @Test
-    void testGetProjectRoot() {
-        assertEquals(tempDir, context.getProjectRoot());
+    void testGetProjectRoot() { // GH-90000
+        assertEquals(tempDir, context.getProjectRoot()); // GH-90000
     }
 
     @Test
-    void testGetMaxPasses() {
-        assertEquals(5, context.getMaxPasses());
+    void testGetMaxPasses() { // GH-90000
+        assertEquals(5, context.getMaxPasses()); // GH-90000
     }
 
     @Test
-    void testIsDryRun() {
-        assertFalse(context.isDryRun());
+    void testIsDryRun() { // GH-90000
+        assertFalse(context.isDryRun()); // GH-90000
     }
 
     @Test
-    void testGetSourceFiles() throws IOException {
+    void testGetSourceFiles() throws IOException { // GH-90000
         // Setup filesystem
-        Path file1 = Files.createFile(tempDir.resolve("file1.java"));
-        Path file2 = Files.createFile(tempDir.resolve("file2.py"));
+        Path file1 = Files.createFile(tempDir.resolve("file1.java [GH-90000]"));
+        Path file2 = Files.createFile(tempDir.resolve("file2.py [GH-90000]"));
 
-        when(mockLanguageService1.supports(any(Path.class))).thenReturn(false);
-        when(mockLanguageService2.supports(any(Path.class))).thenReturn(false);
+        when(mockLanguageService1.supports(any(Path.class))).thenReturn(false); // GH-90000
+        when(mockLanguageService2.supports(any(Path.class))).thenReturn(false); // GH-90000
 
-        when(mockLanguageService1.supports(file1)).thenReturn(true);
-        when(mockLanguageService2.supports(file2)).thenReturn(true);
+        when(mockLanguageService1.supports(file1)).thenReturn(true); // GH-90000
+        when(mockLanguageService2.supports(file2)).thenReturn(true); // GH-90000
 
-        var sourceFiles = context.getSourceFiles();
-        assertEquals(2, sourceFiles.size());
-        assertTrue(sourceFiles.contains(file1));
-        assertTrue(sourceFiles.contains(file2));
+        var sourceFiles = context.getSourceFiles(); // GH-90000
+        assertEquals(2, sourceFiles.size()); // GH-90000
+        assertTrue(sourceFiles.contains(file1)); // GH-90000
+        assertTrue(sourceFiles.contains(file2)); // GH-90000
     }
 
     @Test
-    void testGetActiveRules() {
-        assertTrue(context.getActiveRules().isEmpty());
+    void testGetActiveRules() { // GH-90000
+        assertTrue(context.getActiveRules().isEmpty()); // GH-90000
     }
 }

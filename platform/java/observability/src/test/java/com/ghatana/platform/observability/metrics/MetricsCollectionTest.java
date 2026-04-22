@@ -23,75 +23,75 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests metrics registration, collection, aggregation, and export functionality
  * for the platform observability module.
  */
-@DisplayName("Metrics Collection Tests")
+@DisplayName("Metrics Collection Tests [GH-90000]")
 class MetricsCollectionTest {
 
     @Test
-    @DisplayName("Should register and collect counter metrics")
-    void shouldRegisterAndCollectCounterMetrics() {
-        MeterRegistry registry = new SimpleMeterRegistry();
-        MetricsCollector collector = new SimpleMetricsCollector(registry);
+    @DisplayName("Should register and collect counter metrics [GH-90000]")
+    void shouldRegisterAndCollectCounterMetrics() { // GH-90000
+        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+        MetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
 
-        collector.incrementCounter("requests.total", "method", "POST", "status", "200");
-        collector.incrementCounter("requests.total", "method", "GET", "status", "200");
+        collector.incrementCounter("requests.total", "method", "POST", "status", "200"); // GH-90000
+        collector.incrementCounter("requests.total", "method", "GET", "status", "200"); // GH-90000
 
-        assertThat(registry.find("requests.total").counters()).isNotEmpty();
-        double totalCount = registry.find("requests.total").counters().stream()
-            .mapToDouble(Counter::count)
-            .sum();
-        assertThat(totalCount).isEqualTo(2.0);
+        assertThat(registry.find("requests.total [GH-90000]").counters()).isNotEmpty();
+        double totalCount = registry.find("requests.total [GH-90000]").counters().stream()
+            .mapToDouble(Counter::count) // GH-90000
+            .sum(); // GH-90000
+        assertThat(totalCount).isEqualTo(2.0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and collect gauge metrics")
-    void shouldRegisterAndCollectGaugeMetrics() {
-        MeterRegistry registry = new SimpleMeterRegistry();
-        MetricsCollector collector = new SimpleMetricsCollector(registry);
+    @DisplayName("Should register and collect gauge metrics [GH-90000]")
+    void shouldRegisterAndCollectGaugeMetrics() { // GH-90000
+        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+        MetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
 
-        assertThat(collector).isNotNull();
+        assertThat(collector).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and collect histogram metrics")
-    void shouldRegisterAndCollectHistogramMetrics() {
-        MeterRegistry registry = new SimpleMeterRegistry();
-        MetricsCollector collector = new SimpleMetricsCollector(registry);
+    @DisplayName("Should register and collect histogram metrics [GH-90000]")
+    void shouldRegisterAndCollectHistogramMetrics() { // GH-90000
+        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+        MetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
 
-        assertThat(collector).isNotNull();
+        assertThat(collector).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should aggregate metrics across multiple sources")
-    void shouldAggregateMetricsAcrossMultipleSources() {
-        MeterRegistry registry = new SimpleMeterRegistry();
-        MetricsCollector collector = new SimpleMetricsCollector(registry);
+    @DisplayName("Should aggregate metrics across multiple sources [GH-90000]")
+    void shouldAggregateMetricsAcrossMultipleSources() { // GH-90000
+        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+        MetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
 
-        collector.incrementCounter("requests.total", "service", "api", "status", "200");
-        collector.incrementCounter("requests.total", "service", "worker", "status", "200");
+        collector.incrementCounter("requests.total", "service", "api", "status", "200"); // GH-90000
+        collector.incrementCounter("requests.total", "service", "worker", "status", "200"); // GH-90000
 
-        assertThat(registry.find("requests.total").counters()).hasSize(2);
+        assertThat(registry.find("requests.total [GH-90000]").counters()).hasSize(2);
     }
 
     @Test
-    @DisplayName("Should export metrics in Prometheus format")
-    void shouldExportMetricsInPrometheusFormat() {
-        MeterRegistry registry = new SimpleMeterRegistry();
-        MetricsCollector collector = new SimpleMetricsCollector(registry);
+    @DisplayName("Should export metrics in Prometheus format [GH-90000]")
+    void shouldExportMetricsInPrometheusFormat() { // GH-90000
+        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+        MetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
 
-        collector.incrementCounter("test.metric", "label", "value");
+        collector.incrementCounter("test.metric", "label", "value"); // GH-90000
 
-        assertThat(registry.find("test.metric")).isNotNull();
+        assertThat(registry.find("test.metric [GH-90000]")).isNotNull();
     }
 
     @Test
-    @DisplayName("Should handle metric registration conflicts")
-    void shouldHandleMetricRegistrationConflicts() {
-        MeterRegistry registry = new SimpleMeterRegistry();
-        MetricsCollector collector = new SimpleMetricsCollector(registry);
+    @DisplayName("Should handle metric registration conflicts [GH-90000]")
+    void shouldHandleMetricRegistrationConflicts() { // GH-90000
+        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+        MetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
 
-        collector.incrementCounter("conflict.metric", "label", "value1");
-        collector.incrementCounter("conflict.metric", "label", "value2");
+        collector.incrementCounter("conflict.metric", "label", "value1"); // GH-90000
+        collector.incrementCounter("conflict.metric", "label", "value2"); // GH-90000
 
-        assertThat(registry.find("conflict.metric").counters()).hasSize(2);
+        assertThat(registry.find("conflict.metric [GH-90000]").counters()).hasSize(2);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana
+ * Copyright (c) 2025 Ghatana // GH-90000
  */
 package com.ghatana.services.auth;
 
@@ -25,203 +25,203 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AuthGatewayLauncher ServiceLauncher Migration Tests")
-@Tag("integration")
+@DisplayName("AuthGatewayLauncher ServiceLauncher Migration Tests [GH-90000]")
+@Tag("integration [GH-90000]")
 class AuthGatewayLauncherIntegrationTest {
 
     /**
      * Test that verifies AuthGatewayLauncher extends ServiceLauncher.
      */
     @Test
-    @DisplayName("AuthGatewayLauncher extends ServiceLauncher")
-    void authGatewayLauncherExtendsServiceLauncher() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        assertThat(launcher).isInstanceOf(com.ghatana.core.activej.launcher.ServiceLauncher.class);
+    @DisplayName("AuthGatewayLauncher extends ServiceLauncher [GH-90000]")
+    void authGatewayLauncherExtendsServiceLauncher() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        assertThat(launcher).isInstanceOf(com.ghatana.core.activej.launcher.ServiceLauncher.class); // GH-90000
     }
 
     /**
-     * Test that verifies createModule() returns a valid module.
+     * Test that verifies createModule() returns a valid module. // GH-90000
      */
     @Test
-    @DisplayName("createModule() returns valid module")
-    void createModuleReturnsValidModule() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
-        assertThat(module).isNotNull();
+    @DisplayName("createModule() returns valid module [GH-90000]")
+    void createModuleReturnsValidModule() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
+        assertThat(module).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides Eventloop binding.
      */
     @Test
-    @DisplayName("Module provides Eventloop binding")
-    void moduleProvidesEventloopBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides Eventloop binding [GH-90000]")
+    void moduleProvidesEventloopBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify Eventloop is provided
-        Eventloop eventloop = injector.getInstance(Eventloop.class);
-        assertThat(eventloop).isNotNull();
+        Eventloop eventloop = injector.getInstance(Eventloop.class); // GH-90000
+        assertThat(eventloop).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides MeterRegistry binding.
      */
     @Test
-    @DisplayName("Module provides MeterRegistry binding")
-    void moduleProvidesMeterRegistryBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides MeterRegistry binding [GH-90000]")
+    void moduleProvidesMeterRegistryBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify MeterRegistry is provided
-        MeterRegistry meterRegistry = injector.getInstance(MeterRegistry.class);
-        assertThat(meterRegistry).isNotNull();
-        assertThat(meterRegistry).isInstanceOf(SimpleMeterRegistry.class);
+        MeterRegistry meterRegistry = injector.getInstance(MeterRegistry.class); // GH-90000
+        assertThat(meterRegistry).isNotNull(); // GH-90000
+        assertThat(meterRegistry).isInstanceOf(SimpleMeterRegistry.class); // GH-90000
     }
 
     /**
      * Test that verifies the module provides MetricsCollector binding.
      */
     @Test
-    @DisplayName("Module provides MetricsCollector binding")
-    void moduleProvidesMetricsCollectorBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides MetricsCollector binding [GH-90000]")
+    void moduleProvidesMetricsCollectorBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify MetricsCollector is provided
         com.ghatana.platform.observability.MetricsCollector metricsCollector = 
-            injector.getInstance(com.ghatana.platform.observability.MetricsCollector.class);
-        assertThat(metricsCollector).isNotNull();
+            injector.getInstance(com.ghatana.platform.observability.MetricsCollector.class); // GH-90000
+        assertThat(metricsCollector).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides ConfigManager binding.
      */
     @Test
-    @DisplayName("Module provides ConfigManager binding")
-    void moduleProvidesConfigManagerBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides ConfigManager binding [GH-90000]")
+    void moduleProvidesConfigManagerBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify ConfigManager is provided
         com.ghatana.platform.config.ConfigManager configManager = 
-            injector.getInstance(com.ghatana.platform.config.ConfigManager.class);
-        assertThat(configManager).isNotNull();
+            injector.getInstance(com.ghatana.platform.config.ConfigManager.class); // GH-90000
+        assertThat(configManager).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides JwtTokenProvider binding.
      */
     @Test
-    @DisplayName("Module provides JwtTokenProvider binding")
-    void moduleProvidesJwtTokenProviderBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides JwtTokenProvider binding [GH-90000]")
+    void moduleProvidesJwtTokenProviderBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify JwtTokenProvider is provided
         com.ghatana.platform.security.port.JwtTokenProvider tokenProvider = 
-            injector.getInstance(com.ghatana.platform.security.port.JwtTokenProvider.class);
-        assertThat(tokenProvider).isNotNull();
+            injector.getInstance(com.ghatana.platform.security.port.JwtTokenProvider.class); // GH-90000
+        assertThat(tokenProvider).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides CredentialStore binding.
      */
     @Test
-    @DisplayName("Module provides CredentialStore binding")
-    void moduleProvidesCredentialStoreBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides CredentialStore binding [GH-90000]")
+    void moduleProvidesCredentialStoreBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify CredentialStore is provided
-        CredentialStore credentialStore = injector.getInstance(CredentialStore.class);
-        assertThat(credentialStore).isNotNull();
+        CredentialStore credentialStore = injector.getInstance(CredentialStore.class); // GH-90000
+        assertThat(credentialStore).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides TenantExtractor binding.
      */
     @Test
-    @DisplayName("Module provides TenantExtractor binding")
-    void moduleProvidesTenantExtractorBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides TenantExtractor binding [GH-90000]")
+    void moduleProvidesTenantExtractorBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify TenantExtractor is provided
-        TenantExtractor tenantExtractor = injector.getInstance(TenantExtractor.class);
-        assertThat(tenantExtractor).isNotNull();
+        TenantExtractor tenantExtractor = injector.getInstance(TenantExtractor.class); // GH-90000
+        assertThat(tenantExtractor).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides RateLimiter binding.
      */
     @Test
-    @DisplayName("Module provides RateLimiter binding")
-    void moduleProvidesRateLimiterBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides RateLimiter binding [GH-90000]")
+    void moduleProvidesRateLimiterBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify RateLimiter is provided
         com.ghatana.platform.security.ratelimit.RateLimiter rateLimiter = 
-            injector.getInstance(com.ghatana.platform.security.ratelimit.RateLimiter.class);
-        assertThat(rateLimiter).isNotNull();
+            injector.getInstance(com.ghatana.platform.security.ratelimit.RateLimiter.class); // GH-90000
+        assertThat(rateLimiter).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides RoutingServlet binding.
      */
     @Test
-    @DisplayName("Module provides RoutingServlet binding")
-    void moduleProvidesRoutingServletBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides RoutingServlet binding [GH-90000]")
+    void moduleProvidesRoutingServletBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify RoutingServlet is provided
-        io.activej.http.RoutingServlet servlet = injector.getInstance(io.activej.http.RoutingServlet.class);
-        assertThat(servlet).isNotNull();
+        io.activej.http.RoutingServlet servlet = injector.getInstance(io.activej.http.RoutingServlet.class); // GH-90000
+        assertThat(servlet).isNotNull(); // GH-90000
     }
 
     /**
      * Test that verifies the module provides HttpServer binding.
      */
     @Test
-    @DisplayName("Module provides HttpServer binding")
-    void moduleProvidesHttpServerBinding() {
-        AuthGatewayLauncher launcher = new AuthGatewayLauncher();
-        Module module = launcher.createModule();
+    @DisplayName("Module provides HttpServer binding [GH-90000]")
+    void moduleProvidesHttpServerBinding() { // GH-90000
+        AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
+        Module module = launcher.createModule(); // GH-90000
         
         // Create injector from the module
-        Injector injector = Injector.of(module);
+        Injector injector = Injector.of(module); // GH-90000
         
         // Verify HttpServer is provided
-        io.activej.http.HttpServer httpServer = injector.getInstance(io.activej.http.HttpServer.class);
-        assertThat(httpServer).isNotNull();
+        io.activej.http.HttpServer httpServer = injector.getInstance(io.activej.http.HttpServer.class); // GH-90000
+        assertThat(httpServer).isNotNull(); // GH-90000
     }
 }

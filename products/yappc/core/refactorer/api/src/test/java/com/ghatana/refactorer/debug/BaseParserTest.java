@@ -18,70 +18,70 @@ public abstract class BaseParserTest<T extends StackTraceParser> {
      *
      * @return a new parser instance
      */
-    protected abstract T createParser();
+    protected abstract T createParser(); // GH-90000
 
     /**
      * Returns the expected file name for the first frame in the test stack trace.
      *
      * @return expected file name
      */
-    protected abstract String getExpectedFileName();
+    protected abstract String getExpectedFileName(); // GH-90000
 
     /**
      * Returns the expected line number for the first frame in the test stack trace.
      *
      * @return expected line number
      */
-    protected abstract int getExpectedLineNumber();
+    protected abstract int getExpectedLineNumber(); // GH-90000
 
     /**
      * Returns a sample stack trace string for testing.
      *
      * @return a valid stack trace string
      */
-    protected abstract String getSampleStackTrace();
+    protected abstract String getSampleStackTrace(); // GH-90000
 
     @Test
-    void parse_returnsNonEmptyList() {
-        T parser = createParser();
-        String trace = getSampleStackTrace();
+    void parse_returnsNonEmptyList() { // GH-90000
+        T parser = createParser(); // GH-90000
+        String trace = getSampleStackTrace(); // GH-90000
 
-        List<StackTraceParser.TraceFrame> frames = parser.parse(trace);
+        List<StackTraceParser.TraceFrame> frames = parser.parse(trace); // GH-90000
 
-        assertNotNull(frames, "Parser returned null");
-        assertFalse(frames.isEmpty(), "Parser returned empty list");
+        assertNotNull(frames, "Parser returned null"); // GH-90000
+        assertFalse(frames.isEmpty(), "Parser returned empty list"); // GH-90000
     }
 
     @Test
-    void parse_extractsCorrectFileAndLine() {
-        T parser = createParser();
-        String trace = getSampleStackTrace();
+    void parse_extractsCorrectFileAndLine() { // GH-90000
+        T parser = createParser(); // GH-90000
+        String trace = getSampleStackTrace(); // GH-90000
 
-        List<StackTraceParser.TraceFrame> frames = parser.parse(trace);
+        List<StackTraceParser.TraceFrame> frames = parser.parse(trace); // GH-90000
 
-        assertFalse(frames.isEmpty(), "No frames parsed");
-        var frame = frames.get(0);
-        assertEquals(getExpectedFileName(), frame.file(), "Incorrect file name");
-        assertEquals(getExpectedLineNumber(), frame.line(), "Incorrect line number");
+        assertFalse(frames.isEmpty(), "No frames parsed"); // GH-90000
+        var frame = frames.get(0); // GH-90000
+        assertEquals(getExpectedFileName(), frame.file(), "Incorrect file name"); // GH-90000
+        assertEquals(getExpectedLineNumber(), frame.line(), "Incorrect line number"); // GH-90000
     }
 
     @Test
-    void parse_handlesEmptyInput() {
-        T parser = createParser();
+    void parse_handlesEmptyInput() { // GH-90000
+        T parser = createParser(); // GH-90000
 
-        List<StackTraceParser.TraceFrame> frames = parser.parse("");
+        List<StackTraceParser.TraceFrame> frames = parser.parse(" [GH-90000]");
 
-        assertNotNull(frames, "Parser returned null for empty input");
-        assertTrue(frames.isEmpty(), "Parser should return empty list for empty input");
+        assertNotNull(frames, "Parser returned null for empty input"); // GH-90000
+        assertTrue(frames.isEmpty(), "Parser should return empty list for empty input"); // GH-90000
     }
 
     @Test
-    void parse_handlesNullInput() {
-        T parser = createParser();
+    void parse_handlesNullInput() { // GH-90000
+        T parser = createParser(); // GH-90000
 
-        List<StackTraceParser.TraceFrame> frames = parser.parse(null);
+        List<StackTraceParser.TraceFrame> frames = parser.parse(null); // GH-90000
 
-        assertNotNull(frames, "Parser returned null for null input");
-        assertTrue(frames.isEmpty(), "Parser should return empty list for null input");
+        assertNotNull(frames, "Parser returned null for null input"); // GH-90000
+        assertTrue(frames.isEmpty(), "Parser should return empty list for null input"); // GH-90000
     }
 }

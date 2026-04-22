@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors
+ * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -58,196 +58,196 @@ class E2EMonorepoTest {
     private Tracer tracer;
 
     @BeforeEach
-    void setUp() {
-        templateEngine = new SimpleTemplateEngine();
-        gradleAdapter = new GradleGroovyAdapter(templateEngine);
-        nxAdapter = new NxAdapter(templateEngine);
+    void setUp() { // GH-90000
+        templateEngine = new SimpleTemplateEngine(); // GH-90000
+        gradleAdapter = new GradleGroovyAdapter(templateEngine); // GH-90000
+        nxAdapter = new NxAdapter(templateEngine); // GH-90000
 
         // Initialize OpenTelemetry tracer for observability
-        tracer = OpenTelemetry.noop().getTracer("yappc-e2e");
+        tracer = OpenTelemetry.noop().getTracer("yappc-e2e [GH-90000]");
     }
 
     @Test
-    void shouldGenerateCompleteMonorepoWithJavaAndTypeScript() throws Exception {
-        Span span = tracer.spanBuilder("e2e-monorepo-generation").startSpan();
-        try (Scope scope = span.makeCurrent()) {
+    void shouldGenerateCompleteMonorepoWithJavaAndTypeScript() throws Exception { // GH-90000
+        Span span = tracer.spanBuilder("e2e-monorepo-generation [GH-90000]").startSpan();
+        try (Scope scope = span.makeCurrent()) { // GH-90000
             // Day 15 Deliverable: End-to-end integration test
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-monorepo");
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-monorepo [GH-90000]");
 
             // Generate combined Gradle + Nx workspace
-            generateWorkspaceFiles(spec);
+            generateWorkspaceFiles(spec); // GH-90000
 
-            // Verify Gradle infrastructure (Java services)
-            verifyGradleInfrastructure();
+            // Verify Gradle infrastructure (Java services) // GH-90000
+            verifyGradleInfrastructure(); // GH-90000
 
-            // Verify Nx infrastructure (TypeScript workspaces)
-            verifyNxInfrastructure();
+            // Verify Nx infrastructure (TypeScript workspaces) // GH-90000
+            verifyNxInfrastructure(); // GH-90000
 
-            // Verify pnpm workspace policies (Day 14 integration)
-            verifyPnpmPolicies();
+            // Verify pnpm workspace policies (Day 14 integration) // GH-90000
+            verifyPnpmPolicies(); // GH-90000
 
             // Store artifacts for observability
-            storeArtifacts();
+            storeArtifacts(); // GH-90000
 
-            span.addEvent("e2e-monorepo-generation-complete");
+            span.addEvent("e2e-monorepo-generation-complete [GH-90000]");
         } finally {
-            span.end();
+            span.end(); // GH-90000
         }
     }
 
     @Test
-    void shouldRunDoctorCommandSuccessfully() throws Exception {
-        Span span = tracer.spanBuilder("e2e-doctor-command").startSpan();
-        try (Scope scope = span.makeCurrent()) {
+    void shouldRunDoctorCommandSuccessfully() throws Exception { // GH-90000
+        Span span = tracer.spanBuilder("e2e-doctor-command [GH-90000]").startSpan();
+        try (Scope scope = span.makeCurrent()) { // GH-90000
             // Initialize workspace
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace");
-            generateWorkspaceFiles(spec);
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace [GH-90000]");
+            generateWorkspaceFiles(spec); // GH-90000
 
-            // Run doctor command (inject fake runner to avoid external tool dependency in CI)
+            // Run doctor command (inject fake runner to avoid external tool dependency in CI) // GH-90000
             com.ghatana.yappc.core.doctor.DoctorRunner fakeRunner =
-                    new com.ghatana.yappc.core.doctor.DoctorRunner() {
+                    new com.ghatana.yappc.core.doctor.DoctorRunner() { // GH-90000
                         @Override
                         public java.util.List<com.ghatana.yappc.core.doctor.ToolCheckResult>
-                                runAllChecks() {
+                                runAllChecks() { // GH-90000
                             java.util.List<com.ghatana.yappc.core.doctor.ToolCheckResult> list =
-                                    new java.util.ArrayList<>();
+                                    new java.util.ArrayList<>(); // GH-90000
                             // Simulate all tools available
-                            list.add(
-                                    new com.ghatana.yappc.core.doctor.ToolCheckResult(
-                                            new com.ghatana.yappc.core.doctor.ToolCheck(
-                                                    "java", java.util.List.of("java", "--version")),
+                            list.add( // GH-90000
+                                    new com.ghatana.yappc.core.doctor.ToolCheckResult( // GH-90000
+                                            new com.ghatana.yappc.core.doctor.ToolCheck( // GH-90000
+                                                    "java", java.util.List.of("java", "--version")), // GH-90000
                                             true,
                                             "openjdk 21"));
-                            list.add(
-                                    new com.ghatana.yappc.core.doctor.ToolCheckResult(
-                                            new com.ghatana.yappc.core.doctor.ToolCheck(
-                                                    "node", java.util.List.of("node", "--version")),
+                            list.add( // GH-90000
+                                    new com.ghatana.yappc.core.doctor.ToolCheckResult( // GH-90000
+                                            new com.ghatana.yappc.core.doctor.ToolCheck( // GH-90000
+                                                    "node", java.util.List.of("node", "--version")), // GH-90000
                                             true,
                                             "v20"));
-                            list.add(
-                                    new com.ghatana.yappc.core.doctor.ToolCheckResult(
-                                            new com.ghatana.yappc.core.doctor.ToolCheck(
-                                                    "pnpm", java.util.List.of("pnpm", "--version")),
+                            list.add( // GH-90000
+                                    new com.ghatana.yappc.core.doctor.ToolCheckResult( // GH-90000
+                                            new com.ghatana.yappc.core.doctor.ToolCheck( // GH-90000
+                                                    "pnpm", java.util.List.of("pnpm", "--version")), // GH-90000
                                             true,
                                             "8.15.0"));
                             return list;
                         }
                     };
 
-            DoctorCommand doctorCommand = new DoctorCommand(fakeRunner);
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(outputStream));
+            DoctorCommand doctorCommand = new DoctorCommand(fakeRunner); // GH-90000
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(); // GH-90000
+            System.setOut(new PrintStream(outputStream)); // GH-90000
 
-            CommandLine cmd = new CommandLine(doctorCommand);
-            int exitCode = cmd.execute();
+            CommandLine cmd = new CommandLine(doctorCommand); // GH-90000
+            int exitCode = cmd.execute(); // GH-90000
 
             // Verify doctor output
-            String output = outputStream.toString();
-            assertEquals(0, exitCode, "Doctor command should succeed");
-            assertTrue(output.contains("System Requirements Check"), "Should show doctor output");
+            String output = outputStream.toString(); // GH-90000
+            assertEquals(0, exitCode, "Doctor command should succeed"); // GH-90000
+            assertTrue(output.contains("System Requirements Check [GH-90000]"), "Should show doctor output");
 
-            span.addEvent("doctor-command-complete");
+            span.addEvent("doctor-command-complete [GH-90000]");
         } finally {
-            span.end();
+            span.end(); // GH-90000
         }
     }
 
     @Test
-    void shouldRunGraphCommandSuccessfully() throws Exception {
-        Span span = tracer.spanBuilder("e2e-graph-command").startSpan();
-        try (Scope scope = span.makeCurrent()) {
+    void shouldRunGraphCommandSuccessfully() throws Exception { // GH-90000
+        Span span = tracer.spanBuilder("e2e-graph-command [GH-90000]").startSpan();
+        try (Scope scope = span.makeCurrent()) { // GH-90000
             // Initialize workspace
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace");
-            generateWorkspaceFiles(spec);
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace [GH-90000]");
+            generateWorkspaceFiles(spec); // GH-90000
 
             // Run graph command
-            GraphCommand graphCommand = new GraphCommand();
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(outputStream));
+            GraphCommand graphCommand = new GraphCommand(); // GH-90000
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(); // GH-90000
+            System.setOut(new PrintStream(outputStream)); // GH-90000
 
-            CommandLine cmd = new CommandLine(graphCommand);
-            int exitCode = cmd.execute("--format", "json");
+            CommandLine cmd = new CommandLine(graphCommand); // GH-90000
+            int exitCode = cmd.execute("--format", "json"); // GH-90000
 
             // Verify graph output
-            String output = outputStream.toString();
-            assertEquals(0, exitCode, "Graph command should succeed");
-            assertTrue(
-                    output.contains("adapters") || output.contains("tasks"),
+            String output = outputStream.toString(); // GH-90000
+            assertEquals(0, exitCode, "Graph command should succeed"); // GH-90000
+            assertTrue( // GH-90000
+                    output.contains("adapters [GH-90000]") || output.contains("tasks [GH-90000]"),
                     "Should show graph data");
 
-            span.addEvent("graph-command-complete");
+            span.addEvent("graph-command-complete [GH-90000]");
         } finally {
-            span.end();
+            span.end(); // GH-90000
         }
     }
 
     @Test
-    void shouldRunCIDryRunSuccessfully() throws Exception {
-        Span span = tracer.spanBuilder("e2e-ci-dry-run").startSpan();
-        try (Scope scope = span.makeCurrent()) {
+    void shouldRunCIDryRunSuccessfully() throws Exception { // GH-90000
+        Span span = tracer.spanBuilder("e2e-ci-dry-run [GH-90000]").startSpan();
+        try (Scope scope = span.makeCurrent()) { // GH-90000
             // Initialize workspace with CI configuration
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace");
-            generateWorkspaceFiles(spec);
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace [GH-90000]");
+            generateWorkspaceFiles(spec); // GH-90000
 
             // Create basic CI configuration for dry-run
-            createBasicCIConfig();
+            createBasicCIConfig(); // GH-90000
 
-            // Simulate CI dry-run (validation without execution)
-            boolean ciValid = validateCIConfiguration();
-            assertTrue(ciValid, "CI configuration should be valid");
+            // Simulate CI dry-run (validation without execution) // GH-90000
+            boolean ciValid = validateCIConfiguration(); // GH-90000
+            assertTrue(ciValid, "CI configuration should be valid"); // GH-90000
 
-            span.addEvent("ci-dry-run-complete");
+            span.addEvent("ci-dry-run-complete [GH-90000]");
         } finally {
-            span.end();
+            span.end(); // GH-90000
         }
     }
 
-    private void generateWorkspaceFiles(WorkspaceSpec spec) throws Exception {
-        // Generate Gradle infrastructure (Days 11-12)
-        gradleAdapter.generateBuildFiles(spec, tempDir);
+    private void generateWorkspaceFiles(WorkspaceSpec spec) throws Exception { // GH-90000
+        // Generate Gradle infrastructure (Days 11-12) // GH-90000
+        gradleAdapter.generateBuildFiles(spec, tempDir); // GH-90000
 
-        // Generate Nx infrastructure (Days 13-14)
-        nxAdapter.generateWorkspaceFiles(spec, tempDir);
+        // Generate Nx infrastructure (Days 13-14) // GH-90000
+        nxAdapter.generateWorkspaceFiles(spec, tempDir); // GH-90000
     }
 
-    private void verifyGradleInfrastructure() {
+    private void verifyGradleInfrastructure() { // GH-90000
         // Verify Gradle files exist
-        assertTrue(
-                Files.exists(tempDir.resolve("settings.gradle")), "settings.gradle should exist");
-        assertTrue(
-                Files.exists(tempDir.resolve("gradle/libs.versions.toml")),
+        assertTrue( // GH-90000
+                Files.exists(tempDir.resolve("settings.gradle [GH-90000]")), "settings.gradle should exist");
+        assertTrue( // GH-90000
+                Files.exists(tempDir.resolve("gradle/libs.versions.toml [GH-90000]")),
                 "Version catalog should exist");
-        assertTrue(Files.exists(tempDir.resolve("build.gradle")), "Root build.gradle should exist");
-        assertTrue(
-                Files.exists(tempDir.resolve("gradle.properties")),
+        assertTrue(Files.exists(tempDir.resolve("build.gradle [GH-90000]")), "Root build.gradle should exist");
+        assertTrue( // GH-90000
+                Files.exists(tempDir.resolve("gradle.properties [GH-90000]")),
                 "gradle.properties should exist");
     }
 
-    private void verifyNxInfrastructure() {
+    private void verifyNxInfrastructure() { // GH-90000
         // Verify Nx files exist
-        assertTrue(Files.exists(tempDir.resolve("nx.json")), "nx.json should exist");
-        assertTrue(Files.exists(tempDir.resolve("package.json")), "package.json should exist");
-        assertTrue(
-                Files.exists(tempDir.resolve("tsconfig.base.json")),
+        assertTrue(Files.exists(tempDir.resolve("nx.json [GH-90000]")), "nx.json should exist");
+        assertTrue(Files.exists(tempDir.resolve("package.json [GH-90000]")), "package.json should exist");
+        assertTrue( // GH-90000
+                Files.exists(tempDir.resolve("tsconfig.base.json [GH-90000]")),
                 "tsconfig.base.json should exist");
-        assertTrue(
-                Files.exists(tempDir.resolve("eslint.config.mjs")),
+        assertTrue( // GH-90000
+                Files.exists(tempDir.resolve("eslint.config.mjs [GH-90000]")),
                 "eslint.config.mjs should exist");
     }
 
-    private void verifyPnpmPolicies() {
-        // Verify pnpm workspace policies (Day 14)
-        assertTrue(
-                Files.exists(tempDir.resolve("pnpm-workspace.yaml")),
+    private void verifyPnpmPolicies() { // GH-90000
+        // Verify pnpm workspace policies (Day 14) // GH-90000
+        assertTrue( // GH-90000
+                Files.exists(tempDir.resolve("pnpm-workspace.yaml [GH-90000]")),
                 "pnpm-workspace.yaml should exist");
-        assertTrue(Files.exists(tempDir.resolve(".npmrc")), ".npmrc should exist");
-        assertTrue(Files.exists(tempDir.resolve("pnpm-lock.yaml")), "pnpm-lock.yaml should exist");
+        assertTrue(Files.exists(tempDir.resolve(".npmrc [GH-90000]")), ".npmrc should exist");
+        assertTrue(Files.exists(tempDir.resolve("pnpm-lock.yaml [GH-90000]")), "pnpm-lock.yaml should exist");
     }
 
-    private void createBasicCIConfig() throws Exception {
+    private void createBasicCIConfig() throws Exception { // GH-90000
         // Create minimal CI configuration for testing
-        Path ciDir = tempDir.resolve(".github/workflows");
-        Files.createDirectories(ciDir);
+        Path ciDir = tempDir.resolve(".github/workflows [GH-90000]");
+        Files.createDirectories(ciDir); // GH-90000
 
         String ciConfig =
                 """
@@ -270,53 +270,53 @@ class E2EMonorepoTest {
                   - run: pnpm test
             """;
 
-        Files.writeString(ciDir.resolve("ci.yml"), ciConfig);
+        Files.writeString(ciDir.resolve("ci.yml [GH-90000]"), ciConfig);
     }
 
-    private boolean validateCIConfiguration() {
+    private boolean validateCIConfiguration() { // GH-90000
         // Validate CI configuration exists and is well-formed
-        Path ciFile = tempDir.resolve(".github/workflows/ci.yml");
-        if (!Files.exists(ciFile)) {
+        Path ciFile = tempDir.resolve(".github/workflows/ci.yml [GH-90000]");
+        if (!Files.exists(ciFile)) { // GH-90000
             return false;
         }
 
         try {
-            String content = Files.readString(ciFile);
-            return content.contains("gradle")
-                    && content.contains("pnpm")
-                    && content.contains("test");
-        } catch (Exception e) {
+            String content = Files.readString(ciFile); // GH-90000
+            return content.contains("gradle [GH-90000]")
+                    && content.contains("pnpm [GH-90000]")
+                    && content.contains("test [GH-90000]");
+        } catch (Exception e) { // GH-90000
             return false;
         }
     }
 
-    private void storeArtifacts() throws Exception {
+    private void storeArtifacts() throws Exception { // GH-90000
         // Day 15 Requirement: Store artifacts under reports/e2e/week3/
-        Path week3Reports = reportsDir.resolve("e2e/week3");
-        Files.createDirectories(week3Reports);
+        Path week3Reports = reportsDir.resolve("e2e/week3 [GH-90000]");
+        Files.createDirectories(week3Reports); // GH-90000
 
         // Create manifest of generated files
-        StringBuilder manifest = new StringBuilder();
-        manifest.append("# E2E Monorepo Generation Report\n");
-        manifest.append("Generated: ").append(java.time.Instant.now()).append("\n\n");
-        manifest.append("## Generated Files:\n");
+        StringBuilder manifest = new StringBuilder(); // GH-90000
+        manifest.append("# E2E Monorepo Generation Report\n [GH-90000]");
+        manifest.append("Generated:  [GH-90000]").append(java.time.Instant.now()).append("\n\n [GH-90000]");
+        manifest.append("## Generated Files:\n [GH-90000]");
 
-        Files.walk(tempDir)
-                .filter(Files::isRegularFile)
-                .forEach(
+        Files.walk(tempDir) // GH-90000
+                .filter(Files::isRegularFile) // GH-90000
+                .forEach( // GH-90000
                         file -> {
-                            String relativePath = tempDir.relativize(file).toString();
-                            manifest.append("- ").append(relativePath).append("\n");
+                            String relativePath = tempDir.relativize(file).toString(); // GH-90000
+                            manifest.append("-  [GH-90000]").append(relativePath).append("\n [GH-90000]");
                         });
 
-        Files.writeString(week3Reports.resolve("generation-manifest.md"), manifest.toString());
+        Files.writeString(week3Reports.resolve("generation-manifest.md [GH-90000]"), manifest.toString());
 
         // Copy key configuration files for verification
-        if (Files.exists(tempDir.resolve("nx.json"))) {
-            Files.copy(tempDir.resolve("nx.json"), week3Reports.resolve("nx.json"));
+        if (Files.exists(tempDir.resolve("nx.json [GH-90000]"))) {
+            Files.copy(tempDir.resolve("nx.json [GH-90000]"), week3Reports.resolve("nx.json [GH-90000]"));
         }
-        if (Files.exists(tempDir.resolve("settings.gradle"))) {
-            Files.copy(tempDir.resolve("settings.gradle"), week3Reports.resolve("settings.gradle"));
+        if (Files.exists(tempDir.resolve("settings.gradle [GH-90000]"))) {
+            Files.copy(tempDir.resolve("settings.gradle [GH-90000]"), week3Reports.resolve("settings.gradle [GH-90000]"));
         }
     }
 }

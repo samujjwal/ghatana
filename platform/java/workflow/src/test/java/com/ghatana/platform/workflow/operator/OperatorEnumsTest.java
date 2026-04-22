@@ -14,32 +14,32 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("Operator Enums")
+@DisplayName("Operator Enums [GH-90000]")
 class OperatorEnumsTest {
 
     @Nested
-    @DisplayName("OperatorState")
+    @DisplayName("OperatorState [GH-90000]")
     class OperatorStateTests {
 
         @Test
-        @DisplayName("should have all expected states")
-        void shouldHaveAllStates() {
-            assertThat(OperatorState.values())
-                    .extracting(OperatorState::name)
-                    .containsExactlyInAnyOrder("CREATED", "INITIALIZED", "RUNNING", "STOPPED", "FAILED");
+        @DisplayName("should have all expected states [GH-90000]")
+        void shouldHaveAllStates() { // GH-90000
+            assertThat(OperatorState.values()) // GH-90000
+                    .extracting(OperatorState::name) // GH-90000
+                    .containsExactlyInAnyOrder("CREATED", "INITIALIZED", "RUNNING", "STOPPED", "FAILED"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("OperatorType")
+    @DisplayName("OperatorType [GH-90000]")
     class OperatorTypeTests {
 
         @Test
-        @DisplayName("should have all expected types")
-        void shouldHaveAllTypes() {
-            assertThat(OperatorType.values())
-                    .extracting(OperatorType::name)
-                    .containsExactlyInAnyOrder("STREAM", "PATTERN", "LEARNING");
+        @DisplayName("should have all expected types [GH-90000]")
+        void shouldHaveAllTypes() { // GH-90000
+            assertThat(OperatorType.values()) // GH-90000
+                    .extracting(OperatorType::name) // GH-90000
+                    .containsExactlyInAnyOrder("STREAM", "PATTERN", "LEARNING"); // GH-90000
         }
     }
 }

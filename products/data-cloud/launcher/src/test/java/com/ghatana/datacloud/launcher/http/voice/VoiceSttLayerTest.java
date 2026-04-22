@@ -15,11 +15,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link HttpWhisperSttAdapter}.
  *
  * @doc.type class
- * @doc.purpose Unit tests for Voice STT port/adapter layer (DC-E4)
+ * @doc.purpose Unit tests for Voice STT port/adapter layer (DC-E4) // GH-90000
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Voice STT Layer Tests (DC-E4)")
+@DisplayName("Voice STT Layer Tests (DC-E4) [GH-90000]")
 class VoiceSttLayerTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -27,29 +27,29 @@ class VoiceSttLayerTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("SttTranscription")
+    @DisplayName("SttTranscription [GH-90000]")
     class SttTranscriptionTests {
 
         @Test
-        @DisplayName("of() creates non-fallback result with expected fields")
-        void ofCreatesNonFallbackResult() {
-            SttTranscription result = SttTranscription.of("list my pipelines", 0.92, "whisper");
+        @DisplayName("of() creates non-fallback result with expected fields [GH-90000]")
+        void ofCreatesNonFallbackResult() { // GH-90000
+            SttTranscription result = SttTranscription.of("list my pipelines", 0.92, "whisper"); // GH-90000
 
-            assertThat(result.text()).isEqualTo("list my pipelines");
-            assertThat(result.confidence()).isEqualTo(0.92);
-            assertThat(result.provider()).isEqualTo("whisper");
-            assertThat(result.fallback()).isFalse();
+            assertThat(result.text()).isEqualTo("list my pipelines [GH-90000]");
+            assertThat(result.confidence()).isEqualTo(0.92); // GH-90000
+            assertThat(result.provider()).isEqualTo("whisper [GH-90000]");
+            assertThat(result.fallback()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("unavailable() creates fallback result with empty text")
-        void unavailableCreatesFallbackResult() {
-            SttTranscription result = SttTranscription.unavailable();
+        @DisplayName("unavailable() creates fallback result with empty text [GH-90000]")
+        void unavailableCreatesFallbackResult() { // GH-90000
+            SttTranscription result = SttTranscription.unavailable(); // GH-90000
 
-            assertThat(result.text()).isEmpty();
-            assertThat(result.confidence()).isEqualTo(0.0);
-            assertThat(result.provider()).isEqualTo("nop");
-            assertThat(result.fallback()).isTrue();
+            assertThat(result.text()).isEmpty(); // GH-90000
+            assertThat(result.confidence()).isEqualTo(0.0); // GH-90000
+            assertThat(result.provider()).isEqualTo("nop [GH-90000]");
+            assertThat(result.fallback()).isTrue(); // GH-90000
         }
     }
 
@@ -58,33 +58,33 @@ class VoiceSttLayerTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("NopVoiceSttAdapter")
+    @DisplayName("NopVoiceSttAdapter [GH-90000]")
     class NopVoiceSttAdapterTests {
 
         @Test
-        @DisplayName("isAvailable() returns false")
-        void isNotAvailable() {
-            assertThat(NopVoiceSttAdapter.INSTANCE.isAvailable()).isFalse();
+        @DisplayName("isAvailable() returns false [GH-90000]")
+        void isNotAvailable() { // GH-90000
+            assertThat(NopVoiceSttAdapter.INSTANCE.isAvailable()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("transcribe() resolves to SttTranscription.unavailable()")
-        void transcribeReturnsFallback() {
-            byte[] audio = "dummy-audio".getBytes(StandardCharsets.UTF_8);
+        @DisplayName("transcribe() resolves to SttTranscription.unavailable() [GH-90000]")
+        void transcribeReturnsFallback() { // GH-90000
+            byte[] audio = "dummy-audio".getBytes(StandardCharsets.UTF_8); // GH-90000
 
             SttTranscription result = NopVoiceSttAdapter.INSTANCE
-                .transcribe(audio, "audio/wav", "en")
-                .getResult();
+                .transcribe(audio, "audio/wav", "en") // GH-90000
+                .getResult(); // GH-90000
 
-            assertThat(result).isNotNull();
-            assertThat(result.fallback()).isTrue();
-            assertThat(result.text()).isEmpty();
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.fallback()).isTrue(); // GH-90000
+            assertThat(result.text()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("INSTANCE singleton is non-null")
-        void instanceIsNonNull() {
-            assertThat(NopVoiceSttAdapter.INSTANCE).isNotNull();
+        @DisplayName("INSTANCE singleton is non-null [GH-90000]")
+        void instanceIsNonNull() { // GH-90000
+            assertThat(NopVoiceSttAdapter.INSTANCE).isNotNull(); // GH-90000
         }
     }
 
@@ -93,119 +93,119 @@ class VoiceSttLayerTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("WhisperSttConfig")
+    @DisplayName("WhisperSttConfig [GH-90000]")
     class WhisperSttConfigTests {
 
         @Test
-        @DisplayName("fromEnv() returns disabled config when DC_STT_URL not set")
-        void fromEnvReturnsDisabledWhenUrlNotSet() {
+        @DisplayName("fromEnv() returns disabled config when DC_STT_URL not set [GH-90000]")
+        void fromEnvReturnsDisabledWhenUrlNotSet() { // GH-90000
             // DC_STT_URL is not set in CI — config should be disabled
-            WhisperSttConfig config = WhisperSttConfig.fromEnv();
+            WhisperSttConfig config = WhisperSttConfig.fromEnv(); // GH-90000
             // Only assert invariants that hold regardless of env state
-            assertThat(config).isNotNull();
+            assertThat(config).isNotNull(); // GH-90000
             // If disabled, fields must be safe to inspect
-            if (!config.enabled()) {
-                assertThat(config.endpointUrl()).isNotNull();
+            if (!config.enabled()) { // GH-90000
+                assertThat(config.endpointUrl()).isNotNull(); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("disabled config: enabled=false, empty endpointUrl")
-        void disabledConfigHasSafeDefaults() {
-            WhisperSttConfig config = new WhisperSttConfig(false, "", null, "whisper-1", 0);
+        @DisplayName("disabled config: enabled=false, empty endpointUrl [GH-90000]")
+        void disabledConfigHasSafeDefaults() { // GH-90000
+            WhisperSttConfig config = new WhisperSttConfig(false, "", null, "whisper-1", 0); // GH-90000
 
-            assertThat(config.enabled()).isFalse();
-            assertThat(config.endpointUrl()).isEmpty();
-            assertThat(config.model()).isEqualTo("whisper-1");
-            assertThat(config.maxAudioBytes()).isEqualTo(0);
+            assertThat(config.enabled()).isFalse(); // GH-90000
+            assertThat(config.endpointUrl()).isEmpty(); // GH-90000
+            assertThat(config.model()).isEqualTo("whisper-1 [GH-90000]");
+            assertThat(config.maxAudioBytes()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("enabled config records all fields")
-        void enabledConfigRecordsAllFields() {
-            WhisperSttConfig config = new WhisperSttConfig(
+        @DisplayName("enabled config records all fields [GH-90000]")
+        void enabledConfigRecordsAllFields() { // GH-90000
+            WhisperSttConfig config = new WhisperSttConfig( // GH-90000
                 true, "https://api.openai.com", "sk-test", "whisper-1", 5_000_000);
 
-            assertThat(config.enabled()).isTrue();
-            assertThat(config.endpointUrl()).isEqualTo("https://api.openai.com");
-            assertThat(config.apiKey()).isEqualTo("sk-test");
-            assertThat(config.model()).isEqualTo("whisper-1");
-            assertThat(config.maxAudioBytes()).isEqualTo(5_000_000);
+            assertThat(config.enabled()).isTrue(); // GH-90000
+            assertThat(config.endpointUrl()).isEqualTo("https://api.openai.com [GH-90000]");
+            assertThat(config.apiKey()).isEqualTo("sk-test [GH-90000]");
+            assertThat(config.model()).isEqualTo("whisper-1 [GH-90000]");
+            assertThat(config.maxAudioBytes()).isEqualTo(5_000_000); // GH-90000
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // HttpWhisperSttAdapter — unit-level error paths (no network required)
+    // HttpWhisperSttAdapter — unit-level error paths (no network required) // GH-90000
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("HttpWhisperSttAdapter – error paths")
+    @DisplayName("HttpWhisperSttAdapter – error paths [GH-90000]")
     class HttpWhisperSttAdapterTests {
 
-        private HttpWhisperSttAdapter adapter(boolean enabled) {
-            WhisperSttConfig config = new WhisperSttConfig(enabled,
+        private HttpWhisperSttAdapter adapter(boolean enabled) { // GH-90000
+            WhisperSttConfig config = new WhisperSttConfig(enabled, // GH-90000
                 "http://localhost:9999", null, "whisper-1", 0);
-            return new HttpWhisperSttAdapter(config, new com.fasterxml.jackson.databind.ObjectMapper(),
-                Executors.newVirtualThreadPerTaskExecutor());
+            return new HttpWhisperSttAdapter(config, new com.fasterxml.jackson.databind.ObjectMapper(), // GH-90000
+                Executors.newVirtualThreadPerTaskExecutor()); // GH-90000
         }
 
         @Test
-        @DisplayName("isAvailable() mirrors config.enabled()")
-        void isAvailableMatchesConfig() {
-            assertThat(adapter(true).isAvailable()).isTrue();
-            assertThat(adapter(false).isAvailable()).isFalse();
+        @DisplayName("isAvailable() mirrors config.enabled() [GH-90000]")
+        void isAvailableMatchesConfig() { // GH-90000
+            assertThat(adapter(true).isAvailable()).isTrue(); // GH-90000
+            assertThat(adapter(false).isAvailable()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("transcribe() returns NopResult when disabled")
-        void transcribeReturnsNopWhenDisabled() {
-            SttTranscription result = adapter(false)
-                .transcribe("audio".getBytes(StandardCharsets.UTF_8), "audio/wav", null)
-                .getResult();
+        @DisplayName("transcribe() returns NopResult when disabled [GH-90000]")
+        void transcribeReturnsNopWhenDisabled() { // GH-90000
+            SttTranscription result = adapter(false) // GH-90000
+                .transcribe("audio".getBytes(StandardCharsets.UTF_8), "audio/wav", null) // GH-90000
+                .getResult(); // GH-90000
 
-            assertThat(result.fallback()).isTrue();
+            assertThat(result.fallback()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("transcribe() fails promise with exception for empty audio")
-        void transcribeRejectsEmptyAudio() {
+        @DisplayName("transcribe() fails promise with exception for empty audio [GH-90000]")
+        void transcribeRejectsEmptyAudio() { // GH-90000
             io.activej.promise.Promise<SttTranscription> p =
-                adapter(true).transcribe(new byte[0], "audio/wav", null);
+                adapter(true).transcribe(new byte[0], "audio/wav", null); // GH-90000
 
-            assertThat(p.getException())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("audioData must not be empty");
+            assertThat(p.getException()) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("audioData must not be empty [GH-90000]");
         }
 
         @Test
-        @DisplayName("transcribe() fails promise with exception for null audio")
-        void transcribeRejectsNullAudio() {
+        @DisplayName("transcribe() fails promise with exception for null audio [GH-90000]")
+        void transcribeRejectsNullAudio() { // GH-90000
             io.activej.promise.Promise<SttTranscription> p =
-                adapter(true).transcribe(null, "audio/wav", null);
+                adapter(true).transcribe(null, "audio/wav", null); // GH-90000
 
-            assertThat(p.getException())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("audioData must not be empty");
+            assertThat(p.getException()) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("audioData must not be empty [GH-90000]");
         }
 
         @Test
-        @DisplayName("transcribe() rejects audio exceeding configured maxAudioBytes")
-        void transcribeRejectsOversizedAudio() {
-            WhisperSttConfig config = new WhisperSttConfig(true,
+        @DisplayName("transcribe() rejects audio exceeding configured maxAudioBytes [GH-90000]")
+        void transcribeRejectsOversizedAudio() { // GH-90000
+            WhisperSttConfig config = new WhisperSttConfig(true, // GH-90000
                 "http://localhost:9999", null, "whisper-1", 10); // 10-byte limit
-            HttpWhisperSttAdapter tightAdapter = new HttpWhisperSttAdapter(config,
-                new com.fasterxml.jackson.databind.ObjectMapper(),
-                Executors.newVirtualThreadPerTaskExecutor());
+            HttpWhisperSttAdapter tightAdapter = new HttpWhisperSttAdapter(config, // GH-90000
+                new com.fasterxml.jackson.databind.ObjectMapper(), // GH-90000
+                Executors.newVirtualThreadPerTaskExecutor()); // GH-90000
 
             byte[] bigAudio = new byte[100];
             io.activej.promise.Promise<SttTranscription> p =
-                tightAdapter.transcribe(bigAudio, "audio/wav", null);
+                tightAdapter.transcribe(bigAudio, "audio/wav", null); // GH-90000
 
-            assertThat(p.getException())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("exceeds limit");
+            assertThat(p.getException()) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("exceeds limit [GH-90000]");
         }
-        // NOTE: The async dispatch path (Promise.ofBlocking network call) requires
+        // NOTE: The async dispatch path (Promise.ofBlocking network call) requires // GH-90000
         // an ActiveJ eventloop context. End-to-end coverage for this path is in
         // DataCloudHttpServerVoiceTest via the /api/v1/voice/intent HTTP endpoint.
     }

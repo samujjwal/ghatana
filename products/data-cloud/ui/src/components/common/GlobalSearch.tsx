@@ -18,9 +18,9 @@ import {
     Database,
     Workflow,
     FileText,
-    Settings,
     BarChart3,
     Shield,
+    Bell,
     ArrowRight,
     Loader2,
 } from 'lucide-react';
@@ -51,11 +51,11 @@ const quickNavItems: SearchResult[] = [
     { id: 'nav-data', title: 'Data', type: 'page', icon: <Database className="h-4 w-4" />, path: '/data' },
     { id: 'nav-pipelines', title: 'Pipelines', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/pipelines' },
     { id: 'nav-query', title: 'Query', type: 'page', icon: <FileText className="h-4 w-4" />, path: '/query' },
-    { id: 'nav-lineage', title: 'Lineage Preview', description: 'Open the Data Explorer lineage preview', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/data?view=lineage' },
+    { id: 'nav-lineage', title: 'Lineage', description: 'Open the Data Explorer lineage view', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/data?view=lineage' },
     { id: 'nav-insights', title: 'Insights', type: 'page', icon: <BarChart3 className="h-4 w-4" />, path: '/insights', minimumShellRole: 'operator' },
     { id: 'nav-trust', title: 'Trust', type: 'page', icon: <Shield className="h-4 w-4" />, path: '/trust', minimumShellRole: 'operator' },
     { id: 'nav-events', title: 'Events', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/events', minimumShellRole: 'operator' },
-    { id: 'nav-settings', title: 'Settings', type: 'page', icon: <Settings className="h-4 w-4" />, path: '/settings', minimumShellRole: 'admin' },
+    { id: 'nav-alerts', title: 'Alerts', type: 'page', icon: <Bell className="h-4 w-4" />, path: '/alerts', minimumShellRole: 'operator' },
 ];
 
 function getVisibleQuickNavItems(shellRole: ShellRole): SearchResult[] {

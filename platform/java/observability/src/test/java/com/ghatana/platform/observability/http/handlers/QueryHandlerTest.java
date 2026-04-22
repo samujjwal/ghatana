@@ -25,8 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests trace retrieval and search functionality using ActiveJ test utilities.
  * </p>
  */
-@ExtendWith(EventloopExtension.class)
-@DisplayName("QueryHandler Tests")
+@ExtendWith(EventloopExtension.class) // GH-90000
+@DisplayName("QueryHandler Tests [GH-90000]")
 class QueryHandlerTest {
 
     private MockTraceStorage storage;
@@ -34,23 +34,23 @@ class QueryHandlerTest {
     private QueryHandler handler;
 
     @BeforeEach
-    void setup() {
-        storage = new MockTraceStorage();
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        handler = new QueryHandler(storage, objectMapper);
+    void setup() { // GH-90000
+        storage = new MockTraceStorage(); // GH-90000
+        objectMapper = new ObjectMapper(); // GH-90000
+        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
+        handler = new QueryHandler(storage, objectMapper); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (storage != null) {
-            storage.close();
+    void tearDown() { // GH-90000
+        if (storage != null) { // GH-90000
+            storage.close(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/{traceId} - should return trace when found")
-    void shouldGetTraceById(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
+    @DisplayName("GET /api/v1/traces/{traceId} - should return trace when found [GH-90000]")
+    void shouldGetTraceById(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         // Setup: Add span to storage
         String jsonBody = """
                 {
@@ -63,196 +63,196 @@ class QueryHandlerTest {
                     "status": "OK"
                 }
                 """;
-        HttpRequest ingestReq = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans")
-                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8))
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
-        IngestHandler ingestHandler = new IngestHandler(storage, objectMapper);
+        HttpRequest ingestReq = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans") // GH-90000
+                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .build(); // GH-90000
+        IngestHandler ingestHandler = new IngestHandler(storage, objectMapper); // GH-90000
         // Note: In real scenario, we'd use the ingest endpoint to populate data
         // For now, we assume MockTraceStorage can be populated directly via internal methods
 
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/trace-1")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/trace-1") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleGetTraceById(req, "trace-1"), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleGetTraceById(req, "trace-1"), request, runner); // GH-90000
 
-        // Should return 200 if trace exists in storage (depends on storage implementation)
-        assertThat(response.getCode()).isIn(200, 404);
+        // Should return 200 if trace exists in storage (depends on storage implementation) // GH-90000
+        assertThat(response.getCode()).isIn(200, 404); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/{traceId} - should return 404 when trace not found")
-    void shouldReturn404ForTraceNotFound(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/nonexistent")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces/{traceId} - should return 404 when trace not found [GH-90000]")
+    void shouldReturn404ForTraceNotFound(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/nonexistent") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleGetTraceById(req, "nonexistent"), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleGetTraceById(req, "nonexistent"), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(404);
-        String body = response.getBody().getString(StandardCharsets.UTF_8);
-        assertThat(body).contains("code");
+        assertThat(response.getCode()).isEqualTo(404); // GH-90000
+        String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
+        assertThat(body).contains("code [GH-90000]");
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/{traceId} - should return 400 for blank trace ID")
-    void shouldReturn400ForBlankTraceId(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/ ")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces/{traceId} - should return 400 for blank trace ID [GH-90000]")
+    void shouldReturn400ForBlankTraceId(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/ ") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleGetTraceById(req, " "), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleGetTraceById(req, " "), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isIn(400, 404);
+        assertThat(response.getCode()).isIn(400, 404); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should search traces without filters")
-    void shouldSearchTracesWithoutFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should search traces without filters [GH-90000]")
+    void shouldSearchTracesWithoutFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        String body = response.getBody().getString(StandardCharsets.UTF_8);
-        assertThat(body).isNotNull();
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
+        assertThat(body).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept serviceName filter")
-    void shouldAcceptServiceNameFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?serviceName=service-a")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept serviceName filter [GH-90000]")
+    void shouldAcceptServiceNameFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?serviceName=service-a") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept operationName filter")
-    void shouldAcceptOperationNameFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?operationName=specific-op")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept operationName filter [GH-90000]")
+    void shouldAcceptOperationNameFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?operationName=specific-op") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept status filter")
-    void shouldAcceptStatusFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?status=OK")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept status filter [GH-90000]")
+    void shouldAcceptStatusFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?status=OK") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept startTime filter")
-    void shouldAcceptStartTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?startTime=2024-01-01T00:00:00Z")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept startTime filter [GH-90000]")
+    void shouldAcceptStartTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?startTime=2024-01-01T00:00:00Z") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept endTime filter")
-    void shouldAcceptEndTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?endTime=2024-12-31T23:59:59Z")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept endTime filter [GH-90000]")
+    void shouldAcceptEndTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?endTime=2024-12-31T23:59:59Z") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept minDuration filter")
-    void shouldAcceptMinDurationFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?minDuration=100")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept minDuration filter [GH-90000]")
+    void shouldAcceptMinDurationFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?minDuration=100") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept maxDuration filter")
-    void shouldAcceptMaxDurationFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?maxDuration=5000")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept maxDuration filter [GH-90000]")
+    void shouldAcceptMaxDurationFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?maxDuration=5000") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept limit parameter")
-    void shouldAcceptLimitParameter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?limit=50")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept limit parameter [GH-90000]")
+    void shouldAcceptLimitParameter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?limit=50") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept offset parameter")
-    void shouldAcceptOffsetParameter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?offset=10")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+    @DisplayName("GET /api/v1/traces - should accept offset parameter [GH-90000]")
+    void shouldAcceptOffsetParameter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?offset=10") // GH-90000
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept combined filters")
-    void shouldAcceptCombinedFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET,
+    @DisplayName("GET /api/v1/traces - should accept combined filters [GH-90000]")
+    void shouldAcceptCombinedFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, // GH-90000
                 "http://localhost/api/v1/traces?serviceName=svc&operationName=op&status=OK&limit=25")
-                .withHeader(HttpHeaders.ACCEPT, "application/json")
-                .build();
+                .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = ActiveJServletTestUtil.serve(
-                req -> handler.handleSearchTraces(req), request, runner);
+        HttpResponse response = ActiveJServletTestUtil.serve( // GH-90000
+                req -> handler.handleSearchTraces(req), request, runner); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 }

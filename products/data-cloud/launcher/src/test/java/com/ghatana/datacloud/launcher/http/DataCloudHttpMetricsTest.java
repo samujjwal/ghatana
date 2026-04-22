@@ -11,86 +11,86 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 class DataCloudHttpMetricsTest {
 
     @Test
-    void recordRequestShouldEmitStandardizedRequestMetricWithTenantAndStatusTags() {
-        MetricsCollector collector = mock(MetricsCollector.class);
-        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+    void recordRequestShouldEmitStandardizedRequestMetricWithTenantAndStatusTags() { // GH-90000
+        MetricsCollector collector = mock(MetricsCollector.class); // GH-90000
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector); // GH-90000
 
-        metrics.recordRequest("AnalyticsHandler", "handleAnalyticsQuery", "tenant-a", 200);
+        metrics.recordRequest("AnalyticsHandler", "handleAnalyticsQuery", "tenant-a", 200); // GH-90000
 
-        verify(collector).incrementCounter(
+        verify(collector).incrementCounter( // GH-90000
                 DataCloudHttpMetrics.METRIC_REQUESTS,
                 DataCloudHttpMetrics.TAG_HANDLER, "AnalyticsHandler",
                 DataCloudHttpMetrics.TAG_OPERATION, "handleAnalyticsQuery",
                 DataCloudHttpMetrics.TAG_TENANT, "tenant-a",
                 DataCloudHttpMetrics.TAG_STATUS, "200"
         );
-        verifyNoMoreInteractions(collector);
+        verifyNoMoreInteractions(collector); // GH-90000
     }
 
     @Test
-    void recordLatencyShouldEmitStandardizedLatencyMetric() {
-        MetricsCollector collector = mock(MetricsCollector.class);
-        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+    void recordLatencyShouldEmitStandardizedLatencyMetric() { // GH-90000
+        MetricsCollector collector = mock(MetricsCollector.class); // GH-90000
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector); // GH-90000
 
-        metrics.recordLatency("AiModelHandler", "handleListAiModels", 42L);
+        metrics.recordLatency("AiModelHandler", "handleListAiModels", 42L); // GH-90000
 
-        verify(collector).recordTimer(
+        verify(collector).recordTimer( // GH-90000
                 DataCloudHttpMetrics.METRIC_LATENCY,
                 42L,
                 DataCloudHttpMetrics.TAG_HANDLER, "AiModelHandler",
                 DataCloudHttpMetrics.TAG_OPERATION, "handleListAiModels"
         );
-        verifyNoMoreInteractions(collector);
+        verifyNoMoreInteractions(collector); // GH-90000
     }
 
     @Test
-    void recordErrorShouldEmitStandardizedErrorMetric() {
-        MetricsCollector collector = mock(MetricsCollector.class);
-        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+    void recordErrorShouldEmitStandardizedErrorMetric() { // GH-90000
+        MetricsCollector collector = mock(MetricsCollector.class); // GH-90000
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector); // GH-90000
 
-        metrics.recordError("AnalyticsHandler", "handleAnalyticsQuery", "IllegalStateException");
+        metrics.recordError("AnalyticsHandler", "handleAnalyticsQuery", "IllegalStateException"); // GH-90000
 
-        verify(collector).incrementCounter(
+        verify(collector).incrementCounter( // GH-90000
                 DataCloudHttpMetrics.METRIC_ERRORS,
                 DataCloudHttpMetrics.TAG_HANDLER, "AnalyticsHandler",
                 DataCloudHttpMetrics.TAG_OPERATION, "handleAnalyticsQuery",
                 DataCloudHttpMetrics.TAG_ERROR_TYPE, "IllegalStateException"
         );
-        verifyNoMoreInteractions(collector);
+        verifyNoMoreInteractions(collector); // GH-90000
     }
 
     @Test
-    void metricsRecordingShouldNeverThrowIfCollectorFails() {
-        MetricsCollector collector = new MetricsCollector() {
+    void metricsRecordingShouldNeverThrowIfCollectorFails() { // GH-90000
+        MetricsCollector collector = new MetricsCollector() { // GH-90000
             @Override
-            public void increment(String metricName, double amount, java.util.Map<String, String> tags) {
-                throw new RuntimeException("boom");
+            public void increment(String metricName, double amount, java.util.Map<String, String> tags) { // GH-90000
+                throw new RuntimeException("boom [GH-90000]");
             }
 
             @Override
-            public void recordError(String metricName, Exception e, java.util.Map<String, String> tags) {
-                throw new RuntimeException("boom");
+            public void recordError(String metricName, Exception e, java.util.Map<String, String> tags) { // GH-90000
+                throw new RuntimeException("boom [GH-90000]");
             }
 
             @Override
-            public void incrementCounter(String metricName, String... keyValues) {
-                throw new RuntimeException("boom");
+            public void incrementCounter(String metricName, String... keyValues) { // GH-90000
+                throw new RuntimeException("boom [GH-90000]");
             }
 
             @Override
-            public io.micrometer.core.instrument.MeterRegistry getMeterRegistry() {
-                return new SimpleMeterRegistry();
+            public io.micrometer.core.instrument.MeterRegistry getMeterRegistry() { // GH-90000
+                return new SimpleMeterRegistry(); // GH-90000
             }
 
             @Override
-            public void recordTimer(String name, long durationMs, String... keyValues) {
-                throw new RuntimeException("boom");
+            public void recordTimer(String name, long durationMs, String... keyValues) { // GH-90000
+                throw new RuntimeException("boom [GH-90000]");
             }
         };
-        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector); // GH-90000
 
-        metrics.recordRequest("H", "op", "tenant", 500);
-        metrics.recordLatency("H", "op", 123L);
-        metrics.recordError("H", "op", "RuntimeException");
+        metrics.recordRequest("H", "op", "tenant", 500); // GH-90000
+        metrics.recordLatency("H", "op", 123L); // GH-90000
+        metrics.recordError("H", "op", "RuntimeException"); // GH-90000
     }
 }

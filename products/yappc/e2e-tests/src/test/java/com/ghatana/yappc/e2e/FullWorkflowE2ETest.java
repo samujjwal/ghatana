@@ -30,8 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * End-to-End tests for complete YAPPC full workflow.
  * Tests the complete lifecycle from Intent through Evolve with real service interactions.
  */
-@DisplayName("YAPPC Full Workflow E2E Tests")
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@DisplayName("YAPPC Full Workflow E2E Tests [GH-90000]")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
 class FullWorkflowE2ETest extends EventloopTestBase {
 
     private static FullWorkflowPlatform platform;
@@ -42,831 +42,831 @@ class FullWorkflowE2ETest extends EventloopTestBase {
     private static String codeReviewerAgentId;
 
     @BeforeAll
-    static void setUpPlatform() {
-        platform = new MockFullWorkflowPlatform();
+    static void setUpPlatform() { // GH-90000
+        platform = new MockFullWorkflowPlatform(); // GH-90000
     }
 
     // ── Phase 1: Intent & Project Creation ───────────────────────────────────────
 
     @Test
-    @Order(1)
-    @DisplayName("Full Workflow: Should create project with intent")
-    void testCreateProjectWithIntent() throws Exception {
-        CreateProjectRequest request = CreateProjectRequest.builder()
-                .tenantId(tenantId)
-                .projectName("E2E Full Workflow Microservice")
-                .intent("Build a user authentication microservice with JWT, OAuth2 integration, and role-based access control")
-                .techStack(List.of("Java", "Spring Boot", "PostgreSQL", "Redis"))
-                .build();
+    @Order(1) // GH-90000
+    @DisplayName("Full Workflow: Should create project with intent [GH-90000]")
+    void testCreateProjectWithIntent() throws Exception { // GH-90000
+        CreateProjectRequest request = CreateProjectRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .projectName("E2E Full Workflow Microservice [GH-90000]")
+                .intent("Build a user authentication microservice with JWT, OAuth2 integration, and role-based access control [GH-90000]")
+                .techStack(List.of("Java", "Spring Boot", "PostgreSQL", "Redis")) // GH-90000
+                .build(); // GH-90000
 
-        Promise<Project> promise = platform.createProject(request);
-        Project project = runPromise(() -> promise);
+        Promise<Project> promise = platform.createProject(request); // GH-90000
+        Project project = runPromise(() -> promise); // GH-90000
 
-        assertThat(project).isNotNull();
-        assertThat(project.id()).isNotNull();
-        assertThat(project.name()).isEqualTo("E2E Full Workflow Microservice");
-        assertThat(project.status()).isEqualTo("CREATED");
-        assertThat(project.currentPhase()).isEqualTo("PLANNING");
-        assertThat(project.techStack()).contains("Java", "Spring Boot");
+        assertThat(project).isNotNull(); // GH-90000
+        assertThat(project.id()).isNotNull(); // GH-90000
+        assertThat(project.name()).isEqualTo("E2E Full Workflow Microservice [GH-90000]");
+        assertThat(project.status()).isEqualTo("CREATED [GH-90000]");
+        assertThat(project.currentPhase()).isEqualTo("PLANNING [GH-90000]");
+        assertThat(project.techStack()).contains("Java", "Spring Boot"); // GH-90000
 
-        projectId = project.id();
+        projectId = project.id(); // GH-90000
     }
 
     @Test
-    @Order(2)
-    @DisplayName("Full Workflow: Should register agents for the workflow")
-    void testRegisterAgentsForWorkflow() throws Exception {
-        AgentRegistrationRequest javaRequest = AgentRegistrationRequest.builder()
-                .tenantId(tenantId)
-                .agentConfigPath("agents/java-expert.yaml")
-                .build();
+    @Order(2) // GH-90000
+    @DisplayName("Full Workflow: Should register agents for the workflow [GH-90000]")
+    void testRegisterAgentsForWorkflow() throws Exception { // GH-90000
+        AgentRegistrationRequest javaRequest = AgentRegistrationRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .agentConfigPath("agents/java-expert.yaml [GH-90000]")
+                .build(); // GH-90000
 
-        AgentRegistrationResult javaResult = runPromise(() -> platform.registerAgent(javaRequest));
-        assertThat(javaResult.agentId()).isNotNull();
-        assertThat(javaResult.agentName()).isEqualTo("Java Expert");
-        javaExpertAgentId = javaResult.agentId();
+        AgentRegistrationResult javaResult = runPromise(() -> platform.registerAgent(javaRequest)); // GH-90000
+        assertThat(javaResult.agentId()).isNotNull(); // GH-90000
+        assertThat(javaResult.agentName()).isEqualTo("Java Expert [GH-90000]");
+        javaExpertAgentId = javaResult.agentId(); // GH-90000
 
-        AgentRegistrationRequest reviewerRequest = AgentRegistrationRequest.builder()
-                .tenantId(tenantId)
-                .agentConfigPath("agents/code-reviewer.yaml")
-                .build();
+        AgentRegistrationRequest reviewerRequest = AgentRegistrationRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .agentConfigPath("agents/code-reviewer.yaml [GH-90000]")
+                .build(); // GH-90000
 
-        AgentRegistrationResult reviewerResult = runPromise(() -> platform.registerAgent(reviewerRequest));
-        assertThat(reviewerResult.agentId()).isNotNull();
-        assertThat(reviewerResult.agentName()).isEqualTo("Code Reviewer");
-        codeReviewerAgentId = reviewerResult.agentId();
+        AgentRegistrationResult reviewerResult = runPromise(() -> platform.registerAgent(reviewerRequest)); // GH-90000
+        assertThat(reviewerResult.agentId()).isNotNull(); // GH-90000
+        assertThat(reviewerResult.agentName()).isEqualTo("Code Reviewer [GH-90000]");
+        codeReviewerAgentId = reviewerResult.agentId(); // GH-90000
     }
 
     // ── Phase 2: Planning ──────────────────────────────────────────────────────
 
     @Test
-    @Order(3)
-    @DisplayName("Full Workflow: Should complete PLANNING phase with AI-generated plan")
-    void testCompletePlanningPhase() throws Exception {
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder()
-                .projectId(projectId)
-                .phase("PLANNING")
-                .tenantId(tenantId)
-                .agentId(javaExpertAgentId)
-                .build();
+    @Order(3) // GH-90000
+    @DisplayName("Full Workflow: Should complete PLANNING phase with AI-generated plan [GH-90000]")
+    void testCompletePlanningPhase() throws Exception { // GH-90000
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
+                .projectId(projectId) // GH-90000
+                .phase("PLANNING [GH-90000]")
+                .tenantId(tenantId) // GH-90000
+                .agentId(javaExpertAgentId) // GH-90000
+                .build(); // GH-90000
 
-        Promise<PhaseResult> promise = platform.executePhase(request);
-        PhaseResult result = runPromise(() -> promise);
+        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
+        PhaseResult result = runPromise(() -> promise); // GH-90000
 
-        assertThat(result).isNotNull();
-        assertThat(result.success()).isTrue();
-        assertThat(result.phase()).isEqualTo("PLANNING");
-        assertThat(result.artifacts()).containsKey("requirements");
-        assertThat(result.artifacts()).containsKey("architecture");
-        assertThat(result.artifacts()).containsKey("techStack");
-        assertThat(result.executionTimeMs()).isGreaterThan(0);
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.phase()).isEqualTo("PLANNING [GH-90000]");
+        assertThat(result.artifacts()).containsKey("requirements [GH-90000]");
+        assertThat(result.artifacts()).containsKey("architecture [GH-90000]");
+        assertThat(result.artifacts()).containsKey("techStack [GH-90000]");
+        assertThat(result.executionTimeMs()).isGreaterThan(0); // GH-90000
     }
 
     @Test
-    @Order(4)
-    @DisplayName("Full Workflow: Should generate AI workflow plan")
-    void testGenerateAiWorkflowPlan() throws Exception {
-        CreateWorkflowRequest request = CreateWorkflowRequest.builder()
-                .tenantId(tenantId)
-                .projectId(projectId)
-                .name("Auth Microservice Workflow")
-                .description("Complete workflow for auth microservice development")
-                .objective("Implement JWT-based authentication with OAuth2 integration")
-                .build();
+    @Order(4) // GH-90000
+    @DisplayName("Full Workflow: Should generate AI workflow plan [GH-90000]")
+    void testGenerateAiWorkflowPlan() throws Exception { // GH-90000
+        CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .projectId(projectId) // GH-90000
+                .name("Auth Microservice Workflow [GH-90000]")
+                .description("Complete workflow for auth microservice development [GH-90000]")
+                .objective("Implement JWT-based authentication with OAuth2 integration [GH-90000]")
+                .build(); // GH-90000
 
-        Promise<AiWorkflow> promise = platform.createWorkflow(request);
-        AiWorkflow workflow = runPromise(() -> promise);
+        Promise<AiWorkflow> promise = platform.createWorkflow(request); // GH-90000
+        AiWorkflow workflow = runPromise(() -> promise); // GH-90000
 
-        assertThat(workflow).isNotNull();
-        assertThat(workflow.id()).isNotNull();
-        assertThat(workflow.status()).isEqualTo("DRAFT");
-        workflowId = workflow.id();
+        assertThat(workflow).isNotNull(); // GH-90000
+        assertThat(workflow.id()).isNotNull(); // GH-90000
+        assertThat(workflow.status()).isEqualTo("DRAFT [GH-90000]");
+        workflowId = workflow.id(); // GH-90000
     }
 
     @Test
-    @Order(5)
-    @DisplayName("Full Workflow: Should approve and start AI workflow")
-    void testApproveAndStartAiWorkflow() throws Exception {
+    @Order(5) // GH-90000
+    @DisplayName("Full Workflow: Should approve and start AI workflow [GH-90000]")
+    void testApproveAndStartAiWorkflow() throws Exception { // GH-90000
         // Generate plan
-        AiPlan plan = runPromise(() -> platform.generatePlan(workflowId, tenantId, "Implement auth microservice"));
-        assertThat(plan).isNotNull();
-        assertThat(plan.steps()).isNotEmpty();
+        AiPlan plan = runPromise(() -> platform.generatePlan(workflowId, tenantId, "Implement auth microservice")); // GH-90000
+        assertThat(plan).isNotNull(); // GH-90000
+        assertThat(plan.steps()).isNotEmpty(); // GH-90000
 
         // Approve plan
-        AiPlan approvedPlan = runPromise(() -> platform.approvePlan(plan.id(), tenantId));
-        assertThat(approvedPlan.status()).isEqualTo("APPROVED");
+        AiPlan approvedPlan = runPromise(() -> platform.approvePlan(plan.id(), tenantId)); // GH-90000
+        assertThat(approvedPlan.status()).isEqualTo("APPROVED [GH-90000]");
 
         // Start workflow
-        AiWorkflow startedWorkflow = runPromise(() -> platform.startWorkflow(workflowId, tenantId));
-        assertThat(startedWorkflow.status()).isEqualTo("IN_PROGRESS");
+        AiWorkflow startedWorkflow = runPromise(() -> platform.startWorkflow(workflowId, tenantId)); // GH-90000
+        assertThat(startedWorkflow.status()).isEqualTo("IN_PROGRESS [GH-90000]");
     }
 
     // ── Phase 3: Design ────────────────────────────────────────────────────────
 
     @Test
-    @Order(6)
-    @DisplayName("Full Workflow: Should complete DESIGN phase with API spec and data model")
-    void testCompleteDesignPhase() throws Exception {
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder()
-                .projectId(projectId)
-                .phase("DESIGN")
-                .tenantId(tenantId)
-                .agentId(javaExpertAgentId)
-                .build();
+    @Order(6) // GH-90000
+    @DisplayName("Full Workflow: Should complete DESIGN phase with API spec and data model [GH-90000]")
+    void testCompleteDesignPhase() throws Exception { // GH-90000
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
+                .projectId(projectId) // GH-90000
+                .phase("DESIGN [GH-90000]")
+                .tenantId(tenantId) // GH-90000
+                .agentId(javaExpertAgentId) // GH-90000
+                .build(); // GH-90000
 
-        Promise<PhaseResult> promise = platform.executePhase(request);
-        PhaseResult result = runPromise(() -> promise);
+        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
+        PhaseResult result = runPromise(() -> promise); // GH-90000
 
-        assertThat(result.success()).isTrue();
-        assertThat(result.phase()).isEqualTo("DESIGN");
-        assertThat(result.artifacts()).containsKey("apiSpec");
-        assertThat(result.artifacts()).containsKey("dataModel");
-        assertThat(result.artifacts()).containsKey("sequenceDiagram");
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.phase()).isEqualTo("DESIGN [GH-90000]");
+        assertThat(result.artifacts()).containsKey("apiSpec [GH-90000]");
+        assertThat(result.artifacts()).containsKey("dataModel [GH-90000]");
+        assertThat(result.artifacts()).containsKey("sequenceDiagram [GH-90000]");
     }
 
     @Test
-    @Order(7)
-    @DisplayName("Full Workflow: Should perform code review on design artifacts")
-    void testCodeReviewOnDesignArtifacts() throws Exception {
+    @Order(7) // GH-90000
+    @DisplayName("Full Workflow: Should perform code review on design artifacts [GH-90000]")
+    void testCodeReviewOnDesignArtifacts() throws Exception { // GH-90000
         String designCode = """
                 public class AuthController {
-                    @PostMapping("/login")
-                    public ResponseEntity<AuthToken> login(@RequestBody LoginRequest request) {
-                        return authService.authenticate(request);
+                    @PostMapping("/login [GH-90000]")
+                    public ResponseEntity<AuthToken> login(@RequestBody LoginRequest request) { // GH-90000
+                        return authService.authenticate(request); // GH-90000
                     }
                 }
                 """;
 
-        CodeReviewRequest request = CodeReviewRequest.builder()
-                .tenantId(tenantId)
-                .agentId(codeReviewerAgentId)
-                .code(designCode)
-                .language("java")
-                .reviewType("security")
-                .build();
+        CodeReviewRequest request = CodeReviewRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .agentId(codeReviewerAgentId) // GH-90000
+                .code(designCode) // GH-90000
+                .language("java [GH-90000]")
+                .reviewType("security [GH-90000]")
+                .build(); // GH-90000
 
-        CodeReviewResult result = runPromise(() -> platform.reviewCode(request));
+        CodeReviewResult result = runPromise(() -> platform.reviewCode(request)); // GH-90000
 
-        assertThat(result).isNotNull();
-        assertThat(result.success()).isTrue();
-        assertThat(result.issues()).isNotNull();
-        assertThat(result.overallScore()).isBetween(0, 100);
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.issues()).isNotNull(); // GH-90000
+        assertThat(result.overallScore()).isBetween(0, 100); // GH-90000
     }
 
     // ── Phase 4: Implementation ─────────────────────────────────────────────────
 
     @Test
-    @Order(8)
-    @DisplayName("Full Workflow: Should complete IMPLEMENTATION phase with generated code")
-    void testCompleteImplementationPhase() throws Exception {
-        CodeGenerationRequest codeRequest = CodeGenerationRequest.builder()
-                .tenantId(tenantId)
-                .agentId(javaExpertAgentId)
-                .language("java")
-                .framework("spring-boot")
-                .description("Generate authentication microservice implementation")
-                .requirements(List.of(
+    @Order(8) // GH-90000
+    @DisplayName("Full Workflow: Should complete IMPLEMENTATION phase with generated code [GH-90000]")
+    void testCompleteImplementationPhase() throws Exception { // GH-90000
+        CodeGenerationRequest codeRequest = CodeGenerationRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .agentId(javaExpertAgentId) // GH-90000
+                .language("java [GH-90000]")
+                .framework("spring-boot [GH-90000]")
+                .description("Generate authentication microservice implementation [GH-90000]")
+                .requirements(List.of( // GH-90000
                         "JWT token generation and validation",
                         "OAuth2 integration",
                         "Role-based access control",
                         "User entity with roles",
                         "Refresh token support"
                 ))
-                .build();
+                .build(); // GH-90000
 
-        Promise<CodeGenerationResult> codePromise = platform.generateCode(codeRequest);
-        CodeGenerationResult codeResult = runPromise(() -> codePromise);
+        Promise<CodeGenerationResult> codePromise = platform.generateCode(codeRequest); // GH-90000
+        CodeGenerationResult codeResult = runPromise(() -> codePromise); // GH-90000
 
-        assertThat(codeResult).isNotNull();
-        assertThat(codeResult.success()).isTrue();
-        assertThat(codeResult.generatedFiles()).isNotEmpty();
-        assertThat(codeResult.generatedFiles()).containsKey("AuthController.java");
-        assertThat(codeResult.generatedFiles()).containsKey("AuthService.java");
+        assertThat(codeResult).isNotNull(); // GH-90000
+        assertThat(codeResult.success()).isTrue(); // GH-90000
+        assertThat(codeResult.generatedFiles()).isNotEmpty(); // GH-90000
+        assertThat(codeResult.generatedFiles()).containsKey("AuthController.java [GH-90000]");
+        assertThat(codeResult.generatedFiles()).containsKey("AuthService.java [GH-90000]");
 
-        PhaseExecutionRequest phaseRequest = PhaseExecutionRequest.builder()
-                .projectId(projectId)
-                .phase("IMPLEMENTATION")
-                .tenantId(tenantId)
-                .agentId(javaExpertAgentId)
-                .artifacts(codeResult.generatedFiles())
-                .build();
+        PhaseExecutionRequest phaseRequest = PhaseExecutionRequest.builder() // GH-90000
+                .projectId(projectId) // GH-90000
+                .phase("IMPLEMENTATION [GH-90000]")
+                .tenantId(tenantId) // GH-90000
+                .agentId(javaExpertAgentId) // GH-90000
+                .artifacts(codeResult.generatedFiles()) // GH-90000
+                .build(); // GH-90000
 
-        Promise<PhaseResult> phasePromise = platform.executePhase(phaseRequest);
-        PhaseResult phaseResult = runPromise(() -> phasePromise);
+        Promise<PhaseResult> phasePromise = platform.executePhase(phaseRequest); // GH-90000
+        PhaseResult phaseResult = runPromise(() -> phasePromise); // GH-90000
 
-        assertThat(phaseResult.success()).isTrue();
-        assertThat(phaseResult.phase()).isEqualTo("IMPLEMENTATION");
-        assertThat(phaseResult.artifacts()).containsKey("sourceCode");
-        assertThat(phaseResult.artifacts()).containsKey("buildConfig");
+        assertThat(phaseResult.success()).isTrue(); // GH-90000
+        assertThat(phaseResult.phase()).isEqualTo("IMPLEMENTATION [GH-90000]");
+        assertThat(phaseResult.artifacts()).containsKey("sourceCode [GH-90000]");
+        assertThat(phaseResult.artifacts()).containsKey("buildConfig [GH-90000]");
     }
 
     @Test
-    @Order(9)
-    @DisplayName("Full Workflow: Should execute workflow steps via agent routing")
-    void testWorkflowStepsViaAgentRouting() throws Exception {
-        AepEvent stepEvent = AepEvent.builder()
-                .eventType("workflow.step.requested")
-                .tenantId(tenantId)
-                .correlationId(UUID.randomUUID().toString())
-                .payload(Map.of(
+    @Order(9) // GH-90000
+    @DisplayName("Full Workflow: Should execute workflow steps via agent routing [GH-90000]")
+    void testWorkflowStepsViaAgentRouting() throws Exception { // GH-90000
+        AepEvent stepEvent = AepEvent.builder() // GH-90000
+                .eventType("workflow.step.requested [GH-90000]")
+                .tenantId(tenantId) // GH-90000
+                .correlationId(UUID.randomUUID().toString()) // GH-90000
+                .payload(Map.of( // GH-90000
                         "workflowId", workflowId,
                         "stepId", "step-implementation",
                         "stepType", "CODE_GENERATION"
                 ))
-                .build();
+                .build(); // GH-90000
 
-        AepEvent result = runPromise(() -> platform.routeEvent(stepEvent));
+        AepEvent result = runPromise(() -> platform.routeEvent(stepEvent)); // GH-90000
 
-        assertThat(result).isNotNull();
-        assertThat(result.eventType()).isEqualTo("workflow.step.completed");
-        assertThat(result.tenantId()).isEqualTo(tenantId);
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.eventType()).isEqualTo("workflow.step.completed [GH-90000]");
+        assertThat(result.tenantId()).isEqualTo(tenantId); // GH-90000
     }
 
     // ── Phase 5: Testing ───────────────────────────────────────────────────────
 
     @Test
-    @Order(10)
-    @DisplayName("Full Workflow: Should complete TESTING phase with test results")
-    void testCompleteTestingPhase() throws Exception {
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder()
-                .projectId(projectId)
-                .phase("TESTING")
-                .tenantId(tenantId)
-                .agentId(javaExpertAgentId)
-                .build();
+    @Order(10) // GH-90000
+    @DisplayName("Full Workflow: Should complete TESTING phase with test results [GH-90000]")
+    void testCompleteTestingPhase() throws Exception { // GH-90000
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
+                .projectId(projectId) // GH-90000
+                .phase("TESTING [GH-90000]")
+                .tenantId(tenantId) // GH-90000
+                .agentId(javaExpertAgentId) // GH-90000
+                .build(); // GH-90000
 
-        Promise<PhaseResult> promise = platform.executePhase(request);
-        PhaseResult result = runPromise(() -> promise);
+        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
+        PhaseResult result = runPromise(() -> promise); // GH-90000
 
-        assertThat(result.success()).isTrue();
-        assertThat(result.phase()).isEqualTo("TESTING");
-        assertThat(result.artifacts()).containsKey("testResults");
-        assertThat(result.artifacts()).containsKey("coverageReport");
-        assertThat(result.artifacts()).containsKey("testMetrics");
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.phase()).isEqualTo("TESTING [GH-90000]");
+        assertThat(result.artifacts()).containsKey("testResults [GH-90000]");
+        assertThat(result.artifacts()).containsKey("coverageReport [GH-90000]");
+        assertThat(result.artifacts()).containsKey("testMetrics [GH-90000]");
     }
 
     @Test
-    @Order(11)
-    @DisplayName("Full Workflow: Should verify test coverage meets threshold")
-    void testVerifyTestCoverageThreshold() throws Exception {
-        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId);
-        ProjectMetrics metrics = runPromise(() -> promise);
+    @Order(11) // GH-90000
+    @DisplayName("Full Workflow: Should verify test coverage meets threshold [GH-90000]")
+    void testVerifyTestCoverageThreshold() throws Exception { // GH-90000
+        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); // GH-90000
+        ProjectMetrics metrics = runPromise(() -> promise); // GH-90000
 
-        assertThat(metrics).isNotNull();
-        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80);
-        assertThat(metrics.totalTests()).isGreaterThan(0);
+        assertThat(metrics).isNotNull(); // GH-90000
+        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80); // GH-90000
+        assertThat(metrics.totalTests()).isGreaterThan(0); // GH-90000
     }
 
     // ── Phase 6: Deploy ────────────────────────────────────────────────────────
 
     @Test
-    @Order(12)
-    @DisplayName("Full Workflow: Should complete DEPLOY phase with deployment artifacts")
-    void testCompleteDeployPhase() throws Exception {
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder()
-                .projectId(projectId)
-                .phase("DEPLOY")
-                .tenantId(tenantId)
-                .agentId(javaExpertAgentId)
-                .build();
+    @Order(12) // GH-90000
+    @DisplayName("Full Workflow: Should complete DEPLOY phase with deployment artifacts [GH-90000]")
+    void testCompleteDeployPhase() throws Exception { // GH-90000
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
+                .projectId(projectId) // GH-90000
+                .phase("DEPLOY [GH-90000]")
+                .tenantId(tenantId) // GH-90000
+                .agentId(javaExpertAgentId) // GH-90000
+                .build(); // GH-90000
 
-        Promise<PhaseResult> promise = platform.executePhase(request);
-        PhaseResult result = runPromise(() -> promise);
+        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
+        PhaseResult result = runPromise(() -> promise); // GH-90000
 
-        assertThat(result.success()).isTrue();
-        assertThat(result.phase()).isEqualTo("DEPLOY");
-        assertThat(result.artifacts()).containsKey("dockerImage");
-        assertThat(result.artifacts()).containsKey("k8sManifest");
-        assertThat(result.artifacts()).containsKey("deploymentConfig");
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.phase()).isEqualTo("DEPLOY [GH-90000]");
+        assertThat(result.artifacts()).containsKey("dockerImage [GH-90000]");
+        assertThat(result.artifacts()).containsKey("k8sManifest [GH-90000]");
+        assertThat(result.artifacts()).containsKey("deploymentConfig [GH-90000]");
     }
 
     @Test
-    @Order(13)
-    @DisplayName("Full Workflow: Should verify deployment health check")
-    void testVerifyDeploymentHealthCheck() throws Exception {
-        DeploymentHealthCheck check = runPromise(() -> platform.checkDeploymentHealth(projectId, tenantId));
+    @Order(13) // GH-90000
+    @DisplayName("Full Workflow: Should verify deployment health check [GH-90000]")
+    void testVerifyDeploymentHealthCheck() throws Exception { // GH-90000
+        DeploymentHealthCheck check = runPromise(() -> platform.checkDeploymentHealth(projectId, tenantId)); // GH-90000
 
-        assertThat(check).isNotNull();
-        assertThat(check.healthy()).isTrue();
-        assertThat(check.uptimeSeconds()).isGreaterThan(0);
-        assertThat(check.memoryUsageMb()).isGreaterThan(0);
+        assertThat(check).isNotNull(); // GH-90000
+        assertThat(check.healthy()).isTrue(); // GH-90000
+        assertThat(check.uptimeSeconds()).isGreaterThan(0); // GH-90000
+        assertThat(check.memoryUsageMb()).isGreaterThan(0); // GH-90000
     }
 
     // ── Phase 7: Evolve ────────────────────────────────────────────────────────
 
     @Test
-    @Order(14)
-    @DisplayName("Full Workflow: Should handle EVOLVE phase with feature additions")
-    void testCompleteEvolvePhase() throws Exception {
-        EvolveRequest request = EvolveRequest.builder()
-                .projectId(projectId)
-                .tenantId(tenantId)
-                .agentId(javaExpertAgentId)
-                .newFeatures(List.of(
+    @Order(14) // GH-90000
+    @DisplayName("Full Workflow: Should handle EVOLVE phase with feature additions [GH-90000]")
+    void testCompleteEvolvePhase() throws Exception { // GH-90000
+        EvolveRequest request = EvolveRequest.builder() // GH-90000
+                .projectId(projectId) // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .agentId(javaExpertAgentId) // GH-90000
+                .newFeatures(List.of( // GH-90000
                         "Add multi-factor authentication support",
                         "Implement audit logging for all auth events",
                         "Add rate limiting per user"
                 ))
-                .build();
+                .build(); // GH-90000
 
-        Promise<EvolveResult> promise = platform.evolve(request);
-        EvolveResult result = runPromise(() -> promise);
+        Promise<EvolveResult> promise = platform.evolve(request); // GH-90000
+        EvolveResult result = runPromise(() -> promise); // GH-90000
 
-        assertThat(result).isNotNull();
-        assertThat(result.success()).isTrue();
-        assertThat(result.addedFeatures()).hasSize(3);
-        assertThat(result.modifiedFiles()).isNotEmpty();
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.addedFeatures()).hasSize(3); // GH-90000
+        assertThat(result.modifiedFiles()).isNotEmpty(); // GH-90000
     }
 
     // ── Complete Workflow Verification ───────────────────────────────────────────
 
     @Test
-    @Order(15)
-    @DisplayName("Full Workflow: Should retrieve complete project with all phases")
-    void testGetCompleteProject() throws Exception {
-        Promise<Project> promise = platform.getProject(projectId, tenantId);
-        Project project = runPromise(() -> promise);
+    @Order(15) // GH-90000
+    @DisplayName("Full Workflow: Should retrieve complete project with all phases [GH-90000]")
+    void testGetCompleteProject() throws Exception { // GH-90000
+        Promise<Project> promise = platform.getProject(projectId, tenantId); // GH-90000
+        Project project = runPromise(() -> promise); // GH-90000
 
-        assertThat(project).isNotNull();
-        assertThat(project.id()).isEqualTo(projectId);
-        assertThat(project.completedPhases()).hasSizeGreaterThanOrEqualTo(6);
-        assertThat(project.completedPhases()).contains(
+        assertThat(project).isNotNull(); // GH-90000
+        assertThat(project.id()).isEqualTo(projectId); // GH-90000
+        assertThat(project.completedPhases()).hasSizeGreaterThanOrEqualTo(6); // GH-90000
+        assertThat(project.completedPhases()).contains( // GH-90000
                 "PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING", "DEPLOY", "EVOLVE"
         );
-        assertThat(project.status()).isEqualTo("COMPLETED");
+        assertThat(project.status()).isEqualTo("COMPLETED [GH-90000]");
     }
 
     @Test
-    @Order(16)
-    @DisplayName("Full Workflow: Should track complete workflow metrics")
-    void testCompleteWorkflowMetrics() throws Exception {
-        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId);
-        ProjectMetrics metrics = runPromise(() -> promise);
+    @Order(16) // GH-90000
+    @DisplayName("Full Workflow: Should track complete workflow metrics [GH-90000]")
+    void testCompleteWorkflowMetrics() throws Exception { // GH-90000
+        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); // GH-90000
+        ProjectMetrics metrics = runPromise(() -> promise); // GH-90000
 
-        assertThat(metrics).isNotNull();
-        assertThat(metrics.totalPhases()).isGreaterThanOrEqualTo(6);
-        assertThat(metrics.completedPhases()).isGreaterThanOrEqualTo(6);
-        assertThat(metrics.totalExecutionTimeMs()).isGreaterThan(0);
-        assertThat(metrics.agentInvocations()).isGreaterThan(0);
-        assertThat(metrics.codeFilesGenerated()).isGreaterThan(0);
-        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80);
+        assertThat(metrics).isNotNull(); // GH-90000
+        assertThat(metrics.totalPhases()).isGreaterThanOrEqualTo(6); // GH-90000
+        assertThat(metrics.completedPhases()).isGreaterThanOrEqualTo(6); // GH-90000
+        assertThat(metrics.totalExecutionTimeMs()).isGreaterThan(0); // GH-90000
+        assertThat(metrics.agentInvocations()).isGreaterThan(0); // GH-90000
+        assertThat(metrics.codeFilesGenerated()).isGreaterThan(0); // GH-90000
+        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80); // GH-90000
     }
 
     @Test
-    @Order(17)
-    @DisplayName("Full Workflow: Should verify AI workflow completion")
-    void testVerifyAiWorkflowCompletion() throws Exception {
-        Promise<AiWorkflow> promise = platform.getWorkflow(workflowId, tenantId);
-        AiWorkflow workflow = runPromise(() -> promise);
+    @Order(17) // GH-90000
+    @DisplayName("Full Workflow: Should verify AI workflow completion [GH-90000]")
+    void testVerifyAiWorkflowCompletion() throws Exception { // GH-90000
+        Promise<AiWorkflow> promise = platform.getWorkflow(workflowId, tenantId); // GH-90000
+        AiWorkflow workflow = runPromise(() -> promise); // GH-90000
 
-        assertThat(workflow).isNotNull();
-        assertThat(workflow.status()).isEqualTo("COMPLETED");
-        assertThat(workflow.completedSteps()).isGreaterThan(0);
+        assertThat(workflow).isNotNull(); // GH-90000
+        assertThat(workflow.status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(workflow.completedSteps()).isGreaterThan(0); // GH-90000
     }
 
     // ── Error Handling and Edge Cases ───────────────────────────────────────────
 
     @Test
-    @Order(18)
-    @DisplayName("Full Workflow: Should handle workflow pause and resume")
-    void testWorkflowPauseAndResume() throws Exception {
+    @Order(18) // GH-90000
+    @DisplayName("Full Workflow: Should handle workflow pause and resume [GH-90000]")
+    void testWorkflowPauseAndResume() throws Exception { // GH-90000
         // Create new workflow for pause test
-        CreateWorkflowRequest request = CreateWorkflowRequest.builder()
-                .tenantId(tenantId)
-                .projectId(projectId)
-                .name("Pause Test Workflow")
-                .description("Test pause and resume")
-                .objective("Test pause functionality")
-                .build();
+        CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .projectId(projectId) // GH-90000
+                .name("Pause Test Workflow [GH-90000]")
+                .description("Test pause and resume [GH-90000]")
+                .objective("Test pause functionality [GH-90000]")
+                .build(); // GH-90000
 
-        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request));
-        String pauseWorkflowId = workflow.id();
+        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
+        String pauseWorkflowId = workflow.id(); // GH-90000
 
-        AiPlan plan = runPromise(() -> platform.generatePlan(pauseWorkflowId, tenantId, "Test objective"));
-        runPromise(() -> platform.approvePlan(plan.id(), tenantId));
-        runPromise(() -> platform.startWorkflow(pauseWorkflowId, tenantId));
+        AiPlan plan = runPromise(() -> platform.generatePlan(pauseWorkflowId, tenantId, "Test objective")); // GH-90000
+        runPromise(() -> platform.approvePlan(plan.id(), tenantId)); // GH-90000
+        runPromise(() -> platform.startWorkflow(pauseWorkflowId, tenantId)); // GH-90000
 
         // Pause
-        AiWorkflow paused = runPromise(() -> platform.pauseWorkflow(pauseWorkflowId, tenantId));
-        assertThat(paused.status()).isEqualTo("PAUSED");
+        AiWorkflow paused = runPromise(() -> platform.pauseWorkflow(pauseWorkflowId, tenantId)); // GH-90000
+        assertThat(paused.status()).isEqualTo("PAUSED [GH-90000]");
 
         // Resume
-        AiWorkflow resumed = runPromise(() -> platform.resumeWorkflow(pauseWorkflowId, tenantId));
-        assertThat(resumed.status()).isEqualTo("IN_PROGRESS");
+        AiWorkflow resumed = runPromise(() -> platform.resumeWorkflow(pauseWorkflowId, tenantId)); // GH-90000
+        assertThat(resumed.status()).isEqualTo("IN_PROGRESS [GH-90000]");
     }
 
     @Test
-    @Order(19)
-    @DisplayName("Full Workflow: Should handle workflow cancellation")
-    void testWorkflowCancellation() throws Exception {
-        CreateWorkflowRequest request = CreateWorkflowRequest.builder()
-                .tenantId(tenantId)
-                .projectId(projectId)
-                .name("Cancel Test Workflow")
-                .description("Test cancellation")
-                .objective("Test cancel functionality")
-                .build();
+    @Order(19) // GH-90000
+    @DisplayName("Full Workflow: Should handle workflow cancellation [GH-90000]")
+    void testWorkflowCancellation() throws Exception { // GH-90000
+        CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .projectId(projectId) // GH-90000
+                .name("Cancel Test Workflow [GH-90000]")
+                .description("Test cancellation [GH-90000]")
+                .objective("Test cancel functionality [GH-90000]")
+                .build(); // GH-90000
 
-        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request));
-        String cancelWorkflowId = workflow.id();
+        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
+        String cancelWorkflowId = workflow.id(); // GH-90000
 
-        AiWorkflow cancelled = runPromise(() -> platform.cancelWorkflow(cancelWorkflowId, tenantId));
-        assertThat(cancelled.status()).isEqualTo("CANCELLED");
+        AiWorkflow cancelled = runPromise(() -> platform.cancelWorkflow(cancelWorkflowId, tenantId)); // GH-90000
+        assertThat(cancelled.status()).isEqualTo("CANCELLED [GH-90000]");
     }
 
-    @ParameterizedTest(name = "concurrent={0}")
-    @Order(20)
-    @ValueSource(ints = {2, 5, 10})
-    @DisplayName("Full Workflow: Should handle concurrent workflow executions")
-    void testConcurrentWorkflowExecutions(int concurrentCount) throws Exception {
-        AtomicInteger successCount = new AtomicInteger(0);
+    @ParameterizedTest(name = "concurrent={0}") // GH-90000
+    @Order(20) // GH-90000
+    @ValueSource(ints = {2, 5, 10}) // GH-90000
+    @DisplayName("Full Workflow: Should handle concurrent workflow executions [GH-90000]")
+    void testConcurrentWorkflowExecutions(int concurrentCount) throws Exception { // GH-90000
+        AtomicInteger successCount = new AtomicInteger(0); // GH-90000
 
-        for (int i = 0; i < concurrentCount; i++) {
-            CreateWorkflowRequest request = CreateWorkflowRequest.builder()
-                    .tenantId(tenantId)
-                    .projectId(projectId)
-                    .name("Concurrent Workflow " + i)
-                    .description("Test concurrent execution")
-                    .objective("Concurrent test " + i)
-                    .build();
+        for (int i = 0; i < concurrentCount; i++) { // GH-90000
+            CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
+                    .tenantId(tenantId) // GH-90000
+                    .projectId(projectId) // GH-90000
+                    .name("Concurrent Workflow " + i) // GH-90000
+                    .description("Test concurrent execution [GH-90000]")
+                    .objective("Concurrent test " + i) // GH-90000
+                    .build(); // GH-90000
 
             try {
-                AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request));
-                AiPlan plan = runPromise(() -> platform.generatePlan(workflow.id(), tenantId, "Objective " + i));
-                runPromise(() -> platform.approvePlan(plan.id(), tenantId));
-                runPromise(() -> platform.startWorkflow(workflow.id(), tenantId));
-                successCount.incrementAndGet();
-            } catch (Exception e) {
+                AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
+                AiPlan plan = runPromise(() -> platform.generatePlan(workflow.id(), tenantId, "Objective " + i)); // GH-90000
+                runPromise(() -> platform.approvePlan(plan.id(), tenantId)); // GH-90000
+                runPromise(() -> platform.startWorkflow(workflow.id(), tenantId)); // GH-90000
+                successCount.incrementAndGet(); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Handle errors
             }
         }
 
-        assertThat(successCount.get()).isEqualTo(concurrentCount);
+        assertThat(successCount.get()).isEqualTo(concurrentCount); // GH-90000
     }
 
     // ── Supporting types and mock ───────────────────────────────────────────────
 
     interface FullWorkflowPlatform {
-        Promise<Project> createProject(CreateProjectRequest request);
-        Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request);
-        Promise<PhaseResult> executePhase(PhaseExecutionRequest request);
-        Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request);
-        Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective);
-        Promise<AiPlan> approvePlan(String planId, String tenantId);
-        Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId);
-        Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId);
-        Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId);
-        Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId);
-        Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId);
-        Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request);
-        Promise<CodeReviewResult> reviewCode(CodeReviewRequest request);
-        Promise<AepEvent> routeEvent(AepEvent event);
-        Promise<Project> getProject(String projectId, String tenantId);
-        Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId);
-        Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId);
-        Promise<EvolveResult> evolve(EvolveRequest request);
+        Promise<Project> createProject(CreateProjectRequest request); // GH-90000
+        Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request); // GH-90000
+        Promise<PhaseResult> executePhase(PhaseExecutionRequest request); // GH-90000
+        Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request); // GH-90000
+        Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective); // GH-90000
+        Promise<AiPlan> approvePlan(String planId, String tenantId); // GH-90000
+        Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId); // GH-90000
+        Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId); // GH-90000
+        Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId); // GH-90000
+        Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId); // GH-90000
+        Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId); // GH-90000
+        Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request); // GH-90000
+        Promise<CodeReviewResult> reviewCode(CodeReviewRequest request); // GH-90000
+        Promise<AepEvent> routeEvent(AepEvent event); // GH-90000
+        Promise<Project> getProject(String projectId, String tenantId); // GH-90000
+        Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId); // GH-90000
+        Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId); // GH-90000
+        Promise<EvolveResult> evolve(EvolveRequest request); // GH-90000
     }
 
-    record CreateProjectRequest(String tenantId, String projectName, String intent, List<String> techStack) {
-        static Builder builder() { return new Builder(); }
+    record CreateProjectRequest(String tenantId, String projectName, String intent, List<String> techStack) { // GH-90000
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String tenantId, projectName, intent;
-            private List<String> techStack = List.of();
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder projectName(String v) { projectName = v; return this; }
-            Builder intent(String v) { intent = v; return this; }
-            Builder techStack(List<String> v) { techStack = v; return this; }
-            CreateProjectRequest build() { return new CreateProjectRequest(tenantId, projectName, intent, techStack); }
+            private List<String> techStack = List.of(); // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder projectName(String v) { projectName = v; return this; } // GH-90000
+            Builder intent(String v) { intent = v; return this; } // GH-90000
+            Builder techStack(List<String> v) { techStack = v; return this; } // GH-90000
+            CreateProjectRequest build() { return new CreateProjectRequest(tenantId, projectName, intent, techStack); } // GH-90000
         }
     }
 
-    record Project(
+    record Project( // GH-90000
             String id, String name, String tenantId, String status, String currentPhase,
             List<String> completedPhases, List<String> techStack, Instant createdAt
     ) {}
 
-    record PhaseExecutionRequest(
+    record PhaseExecutionRequest( // GH-90000
             String projectId, String phase, String tenantId, String agentId, Map<String, String> artifacts
     ) {
-        static Builder builder() { return new Builder(); }
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String projectId, phase, tenantId, agentId;
-            private Map<String, String> artifacts = Map.of();
-            Builder projectId(String v) { projectId = v; return this; }
-            Builder phase(String v) { phase = v; return this; }
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder agentId(String v) { agentId = v; return this; }
-            Builder artifacts(Map<String, String> v) { artifacts = v; return this; }
-            PhaseExecutionRequest build() { return new PhaseExecutionRequest(projectId, phase, tenantId, agentId, artifacts); }
+            private Map<String, String> artifacts = Map.of(); // GH-90000
+            Builder projectId(String v) { projectId = v; return this; } // GH-90000
+            Builder phase(String v) { phase = v; return this; } // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder agentId(String v) { agentId = v; return this; } // GH-90000
+            Builder artifacts(Map<String, String> v) { artifacts = v; return this; } // GH-90000
+            PhaseExecutionRequest build() { return new PhaseExecutionRequest(projectId, phase, tenantId, agentId, artifacts); } // GH-90000
         }
     }
 
-    record PhaseResult(boolean success, String phase, Map<String, Object> artifacts, long executionTimeMs) {}
+    record PhaseResult(boolean success, String phase, Map<String, Object> artifacts, long executionTimeMs) {} // GH-90000
 
-    record AgentRegistrationRequest(String tenantId, String agentConfigPath) {
-        static Builder builder() { return new Builder(); }
+    record AgentRegistrationRequest(String tenantId, String agentConfigPath) { // GH-90000
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String tenantId, agentConfigPath;
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder agentConfigPath(String v) { agentConfigPath = v; return this; }
-            AgentRegistrationRequest build() { return new AgentRegistrationRequest(tenantId, agentConfigPath); }
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder agentConfigPath(String v) { agentConfigPath = v; return this; } // GH-90000
+            AgentRegistrationRequest build() { return new AgentRegistrationRequest(tenantId, agentConfigPath); } // GH-90000
         }
     }
 
-    record AgentRegistrationResult(String agentId, String agentName, List<String> capabilities) {}
+    record AgentRegistrationResult(String agentId, String agentName, List<String> capabilities) {} // GH-90000
 
-    record CreateWorkflowRequest(
+    record CreateWorkflowRequest( // GH-90000
             String tenantId, String projectId, String name, String description, String objective
     ) {
-        static Builder builder() { return new Builder(); }
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String tenantId, projectId, name, description, objective;
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder projectId(String v) { projectId = v; return this; }
-            Builder name(String v) { name = v; return this; }
-            Builder description(String v) { description = v; return this; }
-            Builder objective(String v) { objective = v; return this; }
-            CreateWorkflowRequest build() { return new CreateWorkflowRequest(tenantId, projectId, name, description, objective); }
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder projectId(String v) { projectId = v; return this; } // GH-90000
+            Builder name(String v) { name = v; return this; } // GH-90000
+            Builder description(String v) { description = v; return this; } // GH-90000
+            Builder objective(String v) { objective = v; return this; } // GH-90000
+            CreateWorkflowRequest build() { return new CreateWorkflowRequest(tenantId, projectId, name, description, objective); } // GH-90000
         }
     }
 
-    record AiWorkflow(String id, String name, String status, int completedSteps) {}
+    record AiWorkflow(String id, String name, String status, int completedSteps) {} // GH-90000
 
-    record AiPlan(String id, String status, List<String> steps) {}
+    record AiPlan(String id, String status, List<String> steps) {} // GH-90000
 
-    record CodeGenerationRequest(
+    record CodeGenerationRequest( // GH-90000
             String tenantId, String agentId, String language, String framework,
             String description, List<String> requirements
     ) {
-        static Builder builder() { return new Builder(); }
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String tenantId, agentId, language, framework, description;
-            private List<String> requirements = List.of();
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder agentId(String v) { agentId = v; return this; }
-            Builder language(String v) { language = v; return this; }
-            Builder framework(String v) { framework = v; return this; }
-            Builder description(String v) { description = v; return this; }
-            Builder requirements(List<String> v) { requirements = v; return this; }
-            CodeGenerationRequest build() { return new CodeGenerationRequest(tenantId, agentId, language, framework, description, requirements); }
+            private List<String> requirements = List.of(); // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder agentId(String v) { agentId = v; return this; } // GH-90000
+            Builder language(String v) { language = v; return this; } // GH-90000
+            Builder framework(String v) { framework = v; return this; } // GH-90000
+            Builder description(String v) { description = v; return this; } // GH-90000
+            Builder requirements(List<String> v) { requirements = v; return this; } // GH-90000
+            CodeGenerationRequest build() { return new CodeGenerationRequest(tenantId, agentId, language, framework, description, requirements); } // GH-90000
         }
     }
 
-    record CodeGenerationResult(boolean success, Map<String, String> generatedFiles, String language) {}
+    record CodeGenerationResult(boolean success, Map<String, String> generatedFiles, String language) {} // GH-90000
 
-    record CodeReviewRequest(String tenantId, String agentId, String code, String language, String reviewType) {
-        static Builder builder() { return new Builder(); }
+    record CodeReviewRequest(String tenantId, String agentId, String code, String language, String reviewType) { // GH-90000
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String tenantId, agentId, code, language, reviewType;
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder agentId(String v) { agentId = v; return this; }
-            Builder code(String v) { code = v; return this; }
-            Builder language(String v) { language = v; return this; }
-            Builder reviewType(String v) { reviewType = v; return this; }
-            CodeReviewRequest build() { return new CodeReviewRequest(tenantId, agentId, code, language, reviewType); }
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder agentId(String v) { agentId = v; return this; } // GH-90000
+            Builder code(String v) { code = v; return this; } // GH-90000
+            Builder language(String v) { language = v; return this; } // GH-90000
+            Builder reviewType(String v) { reviewType = v; return this; } // GH-90000
+            CodeReviewRequest build() { return new CodeReviewRequest(tenantId, agentId, code, language, reviewType); } // GH-90000
         }
     }
 
-    record CodeReviewResult(boolean success, List<String> issues, int overallScore) {}
+    record CodeReviewResult(boolean success, List<String> issues, int overallScore) {} // GH-90000
 
-    record AepEvent(String eventType, String tenantId, String correlationId, Map<String, Object> payload) {
-        static Builder builder() { return new Builder(); }
+    record AepEvent(String eventType, String tenantId, String correlationId, Map<String, Object> payload) { // GH-90000
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String eventType, tenantId, correlationId;
-            private Map<String, Object> payload = Map.of();
-            Builder eventType(String v) { eventType = v; return this; }
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder correlationId(String v) { correlationId = v; return this; }
-            Builder payload(Map<String, Object> v) { payload = v; return this; }
-            AepEvent build() { return new AepEvent(eventType, tenantId, correlationId, payload); }
+            private Map<String, Object> payload = Map.of(); // GH-90000
+            Builder eventType(String v) { eventType = v; return this; } // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder correlationId(String v) { correlationId = v; return this; } // GH-90000
+            Builder payload(Map<String, Object> v) { payload = v; return this; } // GH-90000
+            AepEvent build() { return new AepEvent(eventType, tenantId, correlationId, payload); } // GH-90000
         }
     }
 
-    record ProjectMetrics(
+    record ProjectMetrics( // GH-90000
             int totalPhases, int completedPhases, long totalExecutionTimeMs,
             int agentInvocations, int codeFilesGenerated, int testCoverage, int totalTests
     ) {}
 
-    record DeploymentHealthCheck(boolean healthy, long uptimeSeconds, int memoryUsageMb) {}
+    record DeploymentHealthCheck(boolean healthy, long uptimeSeconds, int memoryUsageMb) {} // GH-90000
 
-    record EvolveRequest(String projectId, String tenantId, String agentId, List<String> newFeatures) {
-        static Builder builder() { return new Builder(); }
+    record EvolveRequest(String projectId, String tenantId, String agentId, List<String> newFeatures) { // GH-90000
+        static Builder builder() { return new Builder(); } // GH-90000
         static class Builder {
             private String projectId, tenantId, agentId;
-            private List<String> newFeatures = List.of();
-            Builder projectId(String v) { projectId = v; return this; }
-            Builder tenantId(String v) { tenantId = v; return this; }
-            Builder agentId(String v) { agentId = v; return this; }
-            Builder newFeatures(List<String> v) { newFeatures = v; return this; }
-            EvolveRequest build() { return new EvolveRequest(projectId, tenantId, agentId, newFeatures); }
+            private List<String> newFeatures = List.of(); // GH-90000
+            Builder projectId(String v) { projectId = v; return this; } // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
+            Builder agentId(String v) { agentId = v; return this; } // GH-90000
+            Builder newFeatures(List<String> v) { newFeatures = v; return this; } // GH-90000
+            EvolveRequest build() { return new EvolveRequest(projectId, tenantId, agentId, newFeatures); } // GH-90000
         }
     }
 
-    record EvolveResult(boolean success, List<String> addedFeatures, List<String> modifiedFiles) {}
+    record EvolveResult(boolean success, List<String> addedFeatures, List<String> modifiedFiles) {} // GH-90000
 
     static class MockFullWorkflowPlatform implements FullWorkflowPlatform {
-        private final Map<String, Project> projects = new ConcurrentHashMap<>();
-        private final Map<String, Map<String, AgentRegistrationResult>> tenantAgents = new ConcurrentHashMap<>();
-        private final Map<String, AiWorkflow> workflows = new ConcurrentHashMap<>();
-        private final Map<String, AiPlan> plans = new ConcurrentHashMap<>();
-        private final Map<String, ProjectMetrics> projectMetrics = new ConcurrentHashMap<>();
+        private final Map<String, Project> projects = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, Map<String, AgentRegistrationResult>> tenantAgents = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, AiWorkflow> workflows = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, AiPlan> plans = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, ProjectMetrics> projectMetrics = new ConcurrentHashMap<>(); // GH-90000
 
         @Override
-        public Promise<Project> createProject(CreateProjectRequest request) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                String id = UUID.randomUUID().toString();
-                Project project = new Project(
-                        id, request.projectName(), request.tenantId(), "CREATED", "PLANNING",
-                        List.of(), request.techStack(), Instant.now()
+        public Promise<Project> createProject(CreateProjectRequest request) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                String id = UUID.randomUUID().toString(); // GH-90000
+                Project project = new Project( // GH-90000
+                        id, request.projectName(), request.tenantId(), "CREATED", "PLANNING", // GH-90000
+                        List.of(), request.techStack(), Instant.now() // GH-90000
                 );
-                projects.put(id, project);
-                projectMetrics.put(id, new ProjectMetrics(6, 0, 0, 0, 0, 0, 0));
+                projects.put(id, project); // GH-90000
+                projectMetrics.put(id, new ProjectMetrics(6, 0, 0, 0, 0, 0, 0)); // GH-90000
                 return project;
             });
         }
 
         @Override
-        public Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                String agentId = UUID.randomUUID().toString();
-                AgentRegistrationResult result = switch (request.agentConfigPath()) {
-                    case "agents/java-expert.yaml" -> new AgentRegistrationResult(
-                            agentId, "Java Expert", List.of("code-analysis", "architecture-review")
+        public Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                String agentId = UUID.randomUUID().toString(); // GH-90000
+                AgentRegistrationResult result = switch (request.agentConfigPath()) { // GH-90000
+                    case "agents/java-expert.yaml" -> new AgentRegistrationResult( // GH-90000
+                            agentId, "Java Expert", List.of("code-analysis", "architecture-review") // GH-90000
                     );
-                    case "agents/code-reviewer.yaml" -> new AgentRegistrationResult(
-                            agentId, "Code Reviewer", List.of("review", "analysis")
+                    case "agents/code-reviewer.yaml" -> new AgentRegistrationResult( // GH-90000
+                            agentId, "Code Reviewer", List.of("review", "analysis") // GH-90000
                     );
-                    default -> new AgentRegistrationResult(agentId, "Unknown Agent", List.of());
+                    default -> new AgentRegistrationResult(agentId, "Unknown Agent", List.of()); // GH-90000
                 };
-                tenantAgents.computeIfAbsent(request.tenantId(), k -> new ConcurrentHashMap<>()).put(agentId, result);
+                tenantAgents.computeIfAbsent(request.tenantId(), k -> new ConcurrentHashMap<>()).put(agentId, result); // GH-90000
                 return result;
             });
         }
 
         @Override
-        public Promise<PhaseResult> executePhase(PhaseExecutionRequest request) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                long startTime = System.currentTimeMillis();
-                Thread.sleep(50);
+        public Promise<PhaseResult> executePhase(PhaseExecutionRequest request) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                long startTime = System.currentTimeMillis(); // GH-90000
+                Thread.sleep(50); // GH-90000
 
-                Map<String, Object> artifacts = switch (request.phase()) {
-                    case "PLANNING" -> Map.of("requirements", "User stories", "architecture", "System design", "techStack", "Java, Spring Boot");
-                    case "DESIGN" -> Map.of("apiSpec", "OpenAPI spec", "dataModel", "Entity models", "sequenceDiagram", "UML diagram");
-                    case "IMPLEMENTATION" -> request.artifacts().isEmpty() ?
-                            Map.of("sourceCode", "Java/TS code", "buildConfig", "Gradle/npm") :
-                            Map.of("sourceCode", request.artifacts(), "buildConfig", "Gradle/npm");
-                    case "TESTING" -> Map.of("testResults", "All passed", "coverageReport", "85%", "testMetrics", "100 tests passed");
-                    case "DEPLOY" -> Map.of("dockerImage", "ghatana/auth:1.0.0", "k8sManifest", "k8s.yaml", "deploymentConfig", "config");
-                    default -> Map.of();
+                Map<String, Object> artifacts = switch (request.phase()) { // GH-90000
+                    case "PLANNING" -> Map.of("requirements", "User stories", "architecture", "System design", "techStack", "Java, Spring Boot"); // GH-90000
+                    case "DESIGN" -> Map.of("apiSpec", "OpenAPI spec", "dataModel", "Entity models", "sequenceDiagram", "UML diagram"); // GH-90000
+                    case "IMPLEMENTATION" -> request.artifacts().isEmpty() ? // GH-90000
+                            Map.of("sourceCode", "Java/TS code", "buildConfig", "Gradle/npm") : // GH-90000
+                            Map.of("sourceCode", request.artifacts(), "buildConfig", "Gradle/npm"); // GH-90000
+                    case "TESTING" -> Map.of("testResults", "All passed", "coverageReport", "85%", "testMetrics", "100 tests passed"); // GH-90000
+                    case "DEPLOY" -> Map.of("dockerImage", "ghatana/auth:1.0.0", "k8sManifest", "k8s.yaml", "deploymentConfig", "config"); // GH-90000
+                    default -> Map.of(); // GH-90000
                 };
 
                 // Update project
-                Project current = projects.get(request.projectId());
-                List<String> completed = new java.util.ArrayList<>(current.completedPhases());
-                completed.add(request.phase());
-                String newStatus = completed.size() >= 6 ? "COMPLETED" : "IN_PROGRESS";
-                String nextPhase = completed.size() < 6 ?
-                        List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING", "DEPLOY", "EVOLVE").get(completed.size()) :
+                Project current = projects.get(request.projectId()); // GH-90000
+                List<String> completed = new java.util.ArrayList<>(current.completedPhases()); // GH-90000
+                completed.add(request.phase()); // GH-90000
+                String newStatus = completed.size() >= 6 ? "COMPLETED" : "IN_PROGRESS"; // GH-90000
+                String nextPhase = completed.size() < 6 ? // GH-90000
+                        List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING", "DEPLOY", "EVOLVE").get(completed.size()) : // GH-90000
                         "COMPLETED";
 
-                projects.put(request.projectId(), new Project(
-                        current.id(), current.name(), current.tenantId(), newStatus, nextPhase,
-                        completed, current.techStack(), current.createdAt()
+                projects.put(request.projectId(), new Project( // GH-90000
+                        current.id(), current.name(), current.tenantId(), newStatus, nextPhase, // GH-90000
+                        completed, current.techStack(), current.createdAt() // GH-90000
                 ));
 
                 // Update metrics
-                ProjectMetrics metrics = projectMetrics.get(request.projectId());
-                projectMetrics.put(request.projectId(), new ProjectMetrics(
-                        6, completed.size(), metrics.totalExecutionTimeMs() + (System.currentTimeMillis() - startTime),
-                        metrics.agentInvocations() + 3, metrics.codeFilesGenerated() + 5, 85, metrics.totalTests() + 20
+                ProjectMetrics metrics = projectMetrics.get(request.projectId()); // GH-90000
+                projectMetrics.put(request.projectId(), new ProjectMetrics( // GH-90000
+                        6, completed.size(), metrics.totalExecutionTimeMs() + (System.currentTimeMillis() - startTime), // GH-90000
+                        metrics.agentInvocations() + 3, metrics.codeFilesGenerated() + 5, 85, metrics.totalTests() + 20 // GH-90000
                 ));
 
-                return new PhaseResult(true, request.phase(), artifacts, System.currentTimeMillis() - startTime);
+                return new PhaseResult(true, request.phase(), artifacts, System.currentTimeMillis() - startTime); // GH-90000
             });
         }
 
         @Override
-        public Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                String id = UUID.randomUUID().toString();
-                AiWorkflow workflow = new AiWorkflow(id, request.name(), "DRAFT", 0);
-                workflows.put(id, workflow);
+        public Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                String id = UUID.randomUUID().toString(); // GH-90000
+                AiWorkflow workflow = new AiWorkflow(id, request.name(), "DRAFT", 0); // GH-90000
+                workflows.put(id, workflow); // GH-90000
                 return workflow;
             });
         }
 
         @Override
-        public Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                String planId = UUID.randomUUID().toString();
-                AiPlan plan = new AiPlan(planId, "DRAFT", List.of("step-1", "step-2", "step-3"));
-                plans.put(planId, plan);
+        public Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                String planId = UUID.randomUUID().toString(); // GH-90000
+                AiPlan plan = new AiPlan(planId, "DRAFT", List.of("step-1", "step-2", "step-3")); // GH-90000
+                plans.put(planId, plan); // GH-90000
                 return plan;
             });
         }
 
         @Override
-        public Promise<AiPlan> approvePlan(String planId, String tenantId) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                AiPlan plan = plans.get(planId);
-                AiPlan updated = new AiPlan(planId, "APPROVED", plan.steps());
-                plans.put(planId, updated);
+        public Promise<AiPlan> approvePlan(String planId, String tenantId) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                AiPlan plan = plans.get(planId); // GH-90000
+                AiPlan updated = new AiPlan(planId, "APPROVED", plan.steps()); // GH-90000
+                plans.put(planId, updated); // GH-90000
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                AiWorkflow workflow = workflows.get(workflowId);
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", 1);
-                workflows.put(workflowId, updated);
+        public Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", 1); // GH-90000
+                workflows.put(workflowId, updated); // GH-90000
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                AiWorkflow workflow = workflows.get(workflowId);
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "PAUSED", workflow.completedSteps());
-                workflows.put(workflowId, updated);
+        public Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "PAUSED", workflow.completedSteps()); // GH-90000
+                workflows.put(workflowId, updated); // GH-90000
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                AiWorkflow workflow = workflows.get(workflowId);
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", workflow.completedSteps());
-                workflows.put(workflowId, updated);
+        public Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", workflow.completedSteps()); // GH-90000
+                workflows.put(workflowId, updated); // GH-90000
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                AiWorkflow workflow = workflows.get(workflowId);
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "CANCELLED", workflow.completedSteps());
-                workflows.put(workflowId, updated);
+        public Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "CANCELLED", workflow.completedSteps()); // GH-90000
+                workflows.put(workflowId, updated); // GH-90000
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId) {
-            return Promise.of(workflows.get(workflowId));
+        public Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId) { // GH-90000
+            return Promise.of(workflows.get(workflowId)); // GH-90000
         }
 
         @Override
-        public Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                Map<String, String> files = new java.util.LinkedHashMap<>();
-                files.put("AuthController.java", "public class AuthController { /* generated */ }");
-                files.put("AuthService.java", "public class AuthService { /* generated */ }");
-                return new CodeGenerationResult(true, files, request.language());
+        public Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                Map<String, String> files = new java.util.LinkedHashMap<>(); // GH-90000
+                files.put("AuthController.java", "public class AuthController { /* generated */ }"); // GH-90000
+                files.put("AuthService.java", "public class AuthService { /* generated */ }"); // GH-90000
+                return new CodeGenerationResult(true, files, request.language()); // GH-90000
             });
         }
 
         @Override
-        public Promise<CodeReviewResult> reviewCode(CodeReviewRequest request) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                return new CodeReviewResult(true, List.of("Issue 1", "Issue 2"), 85);
+        public Promise<CodeReviewResult> reviewCode(CodeReviewRequest request) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                return new CodeReviewResult(true, List.of("Issue 1", "Issue 2"), 85); // GH-90000
             });
         }
 
         @Override
-        public Promise<AepEvent> routeEvent(AepEvent event) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                String outputType = event.eventType().replace(".requested", ".completed");
-                return new AepEvent(outputType, event.tenantId(), event.correlationId(),
-                        Map.of("status", "success"));
+        public Promise<AepEvent> routeEvent(AepEvent event) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                String outputType = event.eventType().replace(".requested", ".completed"); // GH-90000
+                return new AepEvent(outputType, event.tenantId(), event.correlationId(), // GH-90000
+                        Map.of("status", "success")); // GH-90000
             });
         }
 
         @Override
-        public Promise<Project> getProject(String projectId, String tenantId) {
-            return Promise.of(projects.get(projectId));
+        public Promise<Project> getProject(String projectId, String tenantId) { // GH-90000
+            return Promise.of(projects.get(projectId)); // GH-90000
         }
 
         @Override
-        public Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId) {
-            return Promise.of(projectMetrics.get(projectId));
+        public Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId) { // GH-90000
+            return Promise.of(projectMetrics.get(projectId)); // GH-90000
         }
 
         @Override
-        public Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                return new DeploymentHealthCheck(true, 300, 256);
+        public Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                return new DeploymentHealthCheck(true, 300, 256); // GH-90000
             });
         }
 
         @Override
-        public Promise<EvolveResult> evolve(EvolveRequest request) {
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                return new EvolveResult(true, request.newFeatures(), List.of("file1.java", "file2.java"));
+        public Promise<EvolveResult> evolve(EvolveRequest request) { // GH-90000
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
+                return new EvolveResult(true, request.newFeatures(), List.of("file1.java", "file2.java")); // GH-90000
             });
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.toolruntime;
@@ -33,8 +33,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("PolicyBasedToolSandbox")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("PolicyBasedToolSandbox [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class PolicyBasedToolSandboxTest extends EventloopTestBase {
 
     @Mock private PolicyAsCodeEngine policyEngine;
@@ -43,62 +43,62 @@ class PolicyBasedToolSandboxTest extends EventloopTestBase {
     private PolicyBasedToolSandbox sandbox;
 
     @BeforeEach
-    void setUp() {
-        sandbox = new PolicyBasedToolSandbox(policyEngine, delegate);
+    void setUp() { // GH-90000
+        sandbox = new PolicyBasedToolSandbox(policyEngine, delegate); // GH-90000
         // Default: delegate succeeds
-        lenient().when(delegate.execute(any(), any(), any(), any()))
-            .thenReturn(Promise.of("ok"));
+        lenient().when(delegate.execute(any(), any(), any(), any())) // GH-90000
+            .thenReturn(Promise.of("ok [GH-90000]"));
     }
 
     @Test
-    @DisplayName("allowed policy result delegates execution to wrapped sandbox")
-    void allowedPolicyDelegates() {
-        when(policyEngine.evaluate(eq("tenant-1"), eq("tool_execution_policy"), any()))
-            .thenReturn(Promise.of(PolicyEvalResult.allow("tool_execution_policy")));
+    @DisplayName("allowed policy result delegates execution to wrapped sandbox [GH-90000]")
+    void allowedPolicyDelegates() { // GH-90000
+        when(policyEngine.evaluate(eq("tenant-1 [GH-90000]"), eq("tool_execution_policy [GH-90000]"), any()))
+            .thenReturn(Promise.of(PolicyEvalResult.allow("tool_execution_policy [GH-90000]")));
 
-        String result = runPromise(() ->
-            sandbox.execute("tenant-1", "agent-1", "my-tool", Map.of("key", "value")));
+        String result = runPromise(() -> // GH-90000
+            sandbox.execute("tenant-1", "agent-1", "my-tool", Map.of("key", "value"))); // GH-90000
 
-        assertThat(result).isEqualTo("ok");
-        verify(delegate).execute("tenant-1", "agent-1", "my-tool", Map.of("key", "value"));
+        assertThat(result).isEqualTo("ok [GH-90000]");
+        verify(delegate).execute("tenant-1", "agent-1", "my-tool", Map.of("key", "value")); // GH-90000
     }
 
     @Test
-    @DisplayName("denied policy result rejects promise without calling delegate")
-    void deniedPolicyBlocksExecution() {
-        when(policyEngine.evaluate(eq("tenant-2"), eq("tool_execution_policy"), any()))
-            .thenReturn(Promise.of(PolicyEvalResult.deny(
-                "tool_execution_policy", List.of("tool not permitted for tenant"), 90)));
+    @DisplayName("denied policy result rejects promise without calling delegate [GH-90000]")
+    void deniedPolicyBlocksExecution() { // GH-90000
+        when(policyEngine.evaluate(eq("tenant-2 [GH-90000]"), eq("tool_execution_policy [GH-90000]"), any()))
+            .thenReturn(Promise.of(PolicyEvalResult.deny( // GH-90000
+                "tool_execution_policy", List.of("tool not permitted for tenant [GH-90000]"), 90)));
 
-        Throwable thrown = assertThrows(IllegalArgumentException.class,
-            () -> runPromise(() -> sandbox.execute("tenant-2", "agent-1", "my-tool", Map.of())));
+        Throwable thrown = assertThrows(IllegalArgumentException.class, // GH-90000
+            () -> runPromise(() -> sandbox.execute("tenant-2", "agent-1", "my-tool", Map.of()))); // GH-90000
 
-        assertThat(thrown.getMessage())
-            .contains("Tool execution denied by policy")
-            .contains("tool_execution_policy");
-        verify(delegate, never()).execute(any(), any(), any(), any());
+        assertThat(thrown.getMessage()) // GH-90000
+            .contains("Tool execution denied by policy [GH-90000]")
+            .contains("tool_execution_policy [GH-90000]");
+        verify(delegate, never()).execute(any(), any(), any(), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("policy engine failure propagates as promise failure")
-    void policyEngineFailurePropagates() {
-        RuntimeException policyError = new RuntimeException("policy store unavailable");
-        when(policyEngine.evaluate(any(), any(), any()))
-            .thenReturn(Promise.ofException(policyError));
+    @DisplayName("policy engine failure propagates as promise failure [GH-90000]")
+    void policyEngineFailurePropagates() { // GH-90000
+        RuntimeException policyError = new RuntimeException("policy store unavailable [GH-90000]");
+        when(policyEngine.evaluate(any(), any(), any())) // GH-90000
+            .thenReturn(Promise.ofException(policyError)); // GH-90000
 
-        Throwable thrown = assertThrows(RuntimeException.class,
-            () -> runPromise(() -> sandbox.execute("tenant-3", "agent-1", "my-tool", Map.of())));
+        Throwable thrown = assertThrows(RuntimeException.class, // GH-90000
+            () -> runPromise(() -> sandbox.execute("tenant-3", "agent-1", "my-tool", Map.of()))); // GH-90000
 
-        assertThat(thrown.getMessage()).contains("policy store unavailable");
-        verify(delegate, never()).execute(any(), any(), any(), any());
+        assertThat(thrown.getMessage()).contains("policy store unavailable [GH-90000]");
+        verify(delegate, never()).execute(any(), any(), any(), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor requires non-null policyEngine and delegate")
-    void constructorRequiresNonNull() {
-        assertThrows(NullPointerException.class,
-            () -> new PolicyBasedToolSandbox(null, delegate));
-        assertThrows(NullPointerException.class,
-            () -> new PolicyBasedToolSandbox(policyEngine, null));
+    @DisplayName("constructor requires non-null policyEngine and delegate [GH-90000]")
+    void constructorRequiresNonNull() { // GH-90000
+        assertThrows(NullPointerException.class, // GH-90000
+            () -> new PolicyBasedToolSandbox(null, delegate)); // GH-90000
+        assertThrows(NullPointerException.class, // GH-90000
+            () -> new PolicyBasedToolSandbox(policyEngine, null)); // GH-90000
     }
 }

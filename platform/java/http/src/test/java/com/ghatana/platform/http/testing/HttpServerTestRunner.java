@@ -28,166 +28,166 @@ import java.time.Duration;
  *
  * <p><b>Test Runner Features</b><br>
  * - <b>Automatic Lifecycle</b>: Start/stop server automatically in test scope
- * - <b>Random Ports</b>: Allocate ephemeral port (no conflicts)
+ * - <b>Random Ports</b>: Allocate ephemeral port (no conflicts) // GH-90000
  * - <b>Request Helpers</b>: GET, POST, PUT, DELETE methods with JSON support
  * - <b>Eventloop Integration</b>: Uses EventloopTestRunner for Promise execution
- * - <b>Timeout Protection</b>: Configurable timeout (default 10s)
+ * - <b>Timeout Protection</b>: Configurable timeout (default 10s) // GH-90000
  * - <b>AutoCloseable</b>: Try-with-resources support
  * - <b>Base URL</b>: Get full server URL for external client testing
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * // 1. Basic servlet testing (try-with-resources)
- * AsyncServlet servlet = new RoutingServlet()
- *     .addRoute(HttpMethod.GET, "/users/:id", this::getUser)
- *     .addRoute(HttpMethod.POST, "/users", this::createUser);
+ * // 1. Basic servlet testing (try-with-resources) // GH-90000
+ * AsyncServlet servlet = new RoutingServlet() // GH-90000
+ *     .addRoute(HttpMethod.GET, "/users/:id", this::getUser) // GH-90000
+ *     .addRoute(HttpMethod.POST, "/users", this::createUser); // GH-90000
  *
- * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
- *     runner.start();
+ * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) { // GH-90000
+ *     runner.start(); // GH-90000
  *
- *     HttpResponse response = runner.get("/users/123");
- *     assertEquals(200, response.getCode());
+ *     HttpResponse response = runner.get("/users/123 [GH-90000]");
+ *     assertEquals(200, response.getCode()); // GH-90000
  *
- *     String json = new String(response.getBody().asArray());
- *     assertTrue(json.contains("\"id\":\"123\""));
+ *     String json = new String(response.getBody().asArray()); // GH-90000
+ *     assertTrue(json.contains("\"id\":\"123\"")); // GH-90000
  * }
  *
  * // 2. POST request with JSON body
- * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
- *     runner.start();
+ * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) { // GH-90000
+ *     runner.start(); // GH-90000
  *
- *     HttpResponse response = runner.post("/users",
+ *     HttpResponse response = runner.post("/users", // GH-90000
  *         "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}");
  *
- *     assertEquals(201, response.getCode());
- *     assertEquals("application/json", response.getHeader("Content-Type"));
+ *     assertEquals(201, response.getCode()); // GH-90000
+ *     assertEquals("application/json", response.getHeader("Content-Type [GH-90000]"));
  * }
  *
- * // 3. Custom timeout (1 minute for slow operations)
- * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, Duration.ofMinutes(1))) {
- *     runner.start();
+ * // 3. Custom timeout (1 minute for slow operations) // GH-90000
+ * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, Duration.ofMinutes(1))) { // GH-90000
+ *     runner.start(); // GH-90000
  *
- *     HttpResponse response = runner.get("/slow-operation");
- *     assertEquals(200, response.getCode());
+ *     HttpResponse response = runner.get("/slow-operation [GH-90000]");
+ *     assertEquals(200, response.getCode()); // GH-90000
  * }
  *
  * // 4. External client testing with base URL
- * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
- *     runner.start();
+ * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) { // GH-90000
+ *     runner.start(); // GH-90000
  *
- *     String baseUrl = runner.getBaseUrl();
+ *     String baseUrl = runner.getBaseUrl(); // GH-90000
  *     // → "http://localhost:12345"
  *
  *     // Use with OkHttp, Apache HttpClient, etc.
- *     OkHttpClient client = new OkHttpClient();
- *     Request request = new Request.Builder()
- *         .url(baseUrl + "/users/123")
- *         .build();
+ *     OkHttpClient client = new OkHttpClient(); // GH-90000
+ *     Request request = new Request.Builder() // GH-90000
+ *         .url(baseUrl + "/users/123") // GH-90000
+ *         .build(); // GH-90000
  *
- *     Response externalResponse = client.newCall(request).execute();
- *     assertEquals(200, externalResponse.code());
+ *     Response externalResponse = client.newCall(request).execute(); // GH-90000
+ *     assertEquals(200, externalResponse.code()); // GH-90000
  * }
  *
- * // 5. Reuse EventloopTestRunner (share across tests)
- * EventloopTestRunner eventloopRunner = EventloopTestRunner.builder()
- *     .timeout(Duration.ofSeconds(30))
- *     .build();
+ * // 5. Reuse EventloopTestRunner (share across tests) // GH-90000
+ * EventloopTestRunner eventloopRunner = EventloopTestRunner.builder() // GH-90000
+ *     .timeout(Duration.ofSeconds(30)) // GH-90000
+ *     .build(); // GH-90000
  *
- * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, eventloopRunner)) {
- *     runner.start();
+ * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, eventloopRunner)) { // GH-90000
+ *     runner.start(); // GH-90000
  *
- *     HttpResponse response = runner.get("/api/data");
- *     assertEquals(200, response.getCode());
+ *     HttpResponse response = runner.get("/api/data [GH-90000]");
+ *     assertEquals(200, response.getCode()); // GH-90000
  * }
- * // eventloopRunner NOT closed (external ownership)
+ * // eventloopRunner NOT closed (external ownership) // GH-90000
  *
  * // 6. Multiple request methods
- * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
- *     runner.start();
+ * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) { // GH-90000
+ *     runner.start(); // GH-90000
  *
  *     // GET
- *     HttpResponse getResponse = runner.get("/users/123");
+ *     HttpResponse getResponse = runner.get("/users/123 [GH-90000]");
  *
  *     // POST
- *     HttpResponse postResponse = runner.post("/users",
+ *     HttpResponse postResponse = runner.post("/users", // GH-90000
  *         "{\"name\":\"Jane\"}");
  *
  *     // PUT
- *     HttpResponse putResponse = runner.put("/users/123",
+ *     HttpResponse putResponse = runner.put("/users/123", // GH-90000
  *         "{\"name\":\"Jane Updated\"}");
  *
  *     // DELETE
- *     HttpResponse deleteResponse = runner.delete("/users/123");
+ *     HttpResponse deleteResponse = runner.delete("/users/123 [GH-90000]");
  *
- *     assertEquals(200, getResponse.getCode());
- *     assertEquals(201, postResponse.getCode());
- *     assertEquals(200, putResponse.getCode());
- *     assertEquals(204, deleteResponse.getCode());
+ *     assertEquals(200, getResponse.getCode()); // GH-90000
+ *     assertEquals(201, postResponse.getCode()); // GH-90000
+ *     assertEquals(200, putResponse.getCode()); // GH-90000
+ *     assertEquals(204, deleteResponse.getCode()); // GH-90000
  * }
  *
- * // 7. JUnit 5 integration (manual lifecycle)
+ * // 7. JUnit 5 integration (manual lifecycle) // GH-90000
  * @Test
- * void testUserEndpoint() throws Exception {
- *     AsyncServlet servlet = createUserServlet();
+ * void testUserEndpoint() throws Exception { // GH-90000
+ *     AsyncServlet servlet = createUserServlet(); // GH-90000
  *
- *     try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
- *         runner.start();
+ *     try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) { // GH-90000
+ *         runner.start(); // GH-90000
  *
- *         HttpResponse response = runner.get("/users");
- *         assertEquals(200, response.getCode());
+ *         HttpResponse response = runner.get("/users [GH-90000]");
+ *         assertEquals(200, response.getCode()); // GH-90000
  *
- *         User[] users = objectMapper.readValue(
- *             response.getBody().asArray(), User[].class);
+ *         User[] users = objectMapper.readValue( // GH-90000
+ *             response.getBody().asArray(), User[].class); // GH-90000
  *
- *         assertTrue(users.length > 0);
+ *         assertTrue(users.length > 0); // GH-90000
  *     }
  * }
  * }</pre>
  *
  * <p><b>Default Configuration</b><br>
- * - Port: Random ephemeral port (OS-assigned)
+ * - Port: Random ephemeral port (OS-assigned) // GH-90000
  * - Timeout: 10 seconds
- * - Eventloop: Created automatically (or external if provided)
+ * - Eventloop: Created automatically (or external if provided) // GH-90000
  * - Watchdog: Checks every 2 seconds
  * - Thread Name: "http-test"
  *
  * <p><b>Request Methods</b><br>
  * <pre>{@code
- * runner.get(path)                  → GET request
- * runner.post(path, json)           → POST with JSON body
- * runner.put(path, json)            → PUT with JSON body
- * runner.delete(path)               → DELETE request
- * runner.request(method, path)      → Custom HTTP method
+ * runner.get(path)                  → GET request // GH-90000
+ * runner.post(path, json)           → POST with JSON body // GH-90000
+ * runner.put(path, json)            → PUT with JSON body // GH-90000
+ * runner.delete(path)               → DELETE request // GH-90000
+ * runner.request(method, path)      → Custom HTTP method // GH-90000
  * }</pre>
  *
  * <p><b>Server Lifecycle</b><br>
  * <pre>
- * create() → start() → run tests → close()
+ * create() → start() → run tests → close() // GH-90000
  *    ↓         ↓                      ↓
  * Setup   Listen on               Stop server
  *         random port              Close eventloop
  * </pre>
  *
  * <p><b>Port Allocation</b><br>
- * Uses ephemeral port (0) for automatic allocation:
+ * Uses ephemeral port (0) for automatic allocation: // GH-90000
  * <pre>
  * - OS assigns available port
  * - No port conflicts in parallel tests
- * - Port available via runner.getPort()
+ * - Port available via runner.getPort() // GH-90000
  * </pre>
  *
  * <p><b>Timeout Handling</b><br>
  * <pre>
  * Default: 10 seconds
- * Custom: Duration.ofSeconds(30)
+ * Custom: Duration.ofSeconds(30) // GH-90000
  * Applies to: All request operations
  * Prevents: Hung tests from blocking CI/CD
  * </pre>
  *
  * <p><b>Best Practices</b><br>
  * - Use try-with-resources for automatic cleanup
- * - Call .start() explicitly (not auto-started)
- * - Share EventloopTestRunner across related tests (performance)
+ * - Call .start() explicitly (not auto-started) // GH-90000
+ * - Share EventloopTestRunner across related tests (performance) // GH-90000
  * - Use HttpServerTestExtension for JUnit 5 integration
  * - Set appropriate timeout for slow operations
  * - Test with external HTTP clients for full integration
@@ -196,10 +196,10 @@ import java.time.Duration;
  *
  * <p><b>Performance Considerations</b><br>
  * - Server startup: ~100ms
- * - Request execution: <10ms (in-process)
- * - Port allocation: OS-dependent (~10ms)
- * - Eventloop overhead: Minimal (shared across requests)
- * - External client: Add network latency (~1ms localhost)
+ * - Request execution: <10ms (in-process) // GH-90000
+ * - Port allocation: OS-dependent (~10ms) // GH-90000
+ * - Eventloop overhead: Minimal (shared across requests) // GH-90000
+ * - External client: Add network latency (~1ms localhost) // GH-90000
  *
  * <p><b>Thread Safety</b><br>
  * NOT thread-safe - designed for single-threaded test execution.
@@ -225,11 +225,11 @@ public class HttpServerTestRunner implements AutoCloseable {
     private int port;
     private boolean started = false;
 
-    private HttpServerTestRunner(AsyncServlet servlet, EventloopTestRunner eventloopRunner) {
-        this(servlet, eventloopRunner, true);
+    private HttpServerTestRunner(AsyncServlet servlet, EventloopTestRunner eventloopRunner) { // GH-90000
+        this(servlet, eventloopRunner, true); // GH-90000
     }
 
-    private HttpServerTestRunner(AsyncServlet servlet, EventloopTestRunner eventloopRunner, boolean ownsEventloopRunner) {
+    private HttpServerTestRunner(AsyncServlet servlet, EventloopTestRunner eventloopRunner, boolean ownsEventloopRunner) { // GH-90000
         this.servlet = servlet;
         this.eventloopRunner = eventloopRunner;
         this.ownsEventloopRunner = ownsEventloopRunner;
@@ -242,8 +242,8 @@ public class HttpServerTestRunner implements AutoCloseable {
      * @param servlet The servlet to test
      * @return A new test runner
      */
-    public static HttpServerTestRunner create(AsyncServlet servlet) {
-        return create(servlet, Duration.ofSeconds(10));
+    public static HttpServerTestRunner create(AsyncServlet servlet) { // GH-90000
+        return create(servlet, Duration.ofSeconds(10)); // GH-90000
     }
 
     /**
@@ -253,14 +253,14 @@ public class HttpServerTestRunner implements AutoCloseable {
      * @param timeout The timeout for operations
      * @return A new test runner
      */
-    public static HttpServerTestRunner create(AsyncServlet servlet, Duration timeout) {
-        EventloopTestRunner eventloopRunner = EventloopTestRunner.builder()
-            .timeout(timeout)
-            .watchdogEvery(Duration.ofSeconds(2))
-            .threadName("http-test")
-            .build();
+    public static HttpServerTestRunner create(AsyncServlet servlet, Duration timeout) { // GH-90000
+        EventloopTestRunner eventloopRunner = EventloopTestRunner.builder() // GH-90000
+            .timeout(timeout) // GH-90000
+            .watchdogEvery(Duration.ofSeconds(2)) // GH-90000
+            .threadName("http-test [GH-90000]")
+            .build(); // GH-90000
 
-        return new HttpServerTestRunner(servlet, eventloopRunner);
+        return new HttpServerTestRunner(servlet, eventloopRunner); // GH-90000
     }
 
     /**
@@ -268,32 +268,32 @@ public class HttpServerTestRunner implements AutoCloseable {
      * runner is considered external and will not be closed when this HttpServerTestRunner
      * is closed.
      */
-    public static HttpServerTestRunner create(AsyncServlet servlet, EventloopTestRunner eventloopRunner) {
-        return new HttpServerTestRunner(servlet, eventloopRunner, false);
+    public static HttpServerTestRunner create(AsyncServlet servlet, EventloopTestRunner eventloopRunner) { // GH-90000
+        return new HttpServerTestRunner(servlet, eventloopRunner, false); // GH-90000
     }
 
     /**
      * Starts the HTTP server on a random available port.
      */
-    public void start() {
-        if (started) {
+    public void start() { // GH-90000
+        if (started) { // GH-90000
             return;
         }
 
-        eventloopRunner.start();
+        eventloopRunner.start(); // GH-90000
 
         // Find available port
-        this.port = findAvailablePort();
+        this.port = findAvailablePort(); // GH-90000
 
         // Create and start server
-        eventloopRunner.runBlocking(() -> {
-            server = HttpServer.builder(eventloopRunner.eventloop(), servlet)
-                .withListenAddress(new InetSocketAddress("127.0.0.1", port))
-                .withAcceptOnce()
-                .build();
+        eventloopRunner.runBlocking(() -> { // GH-90000
+            server = HttpServer.builder(eventloopRunner.eventloop(), servlet) // GH-90000
+                .withListenAddress(new InetSocketAddress("127.0.0.1", port)) // GH-90000
+                .withAcceptOnce() // GH-90000
+                .build(); // GH-90000
 
-            server.listen();
-            log.info("Test HTTP server started on port {}", port);
+            server.listen(); // GH-90000
+            log.info("Test HTTP server started on port {}", port); // GH-90000
             return null;
         });
 
@@ -306,8 +306,8 @@ public class HttpServerTestRunner implements AutoCloseable {
      * @param path The request path
      * @return The HTTP response
      */
-    public HttpResponse get(String path) {
-        return request(HttpRequest.get("http://127.0.0.1:" + port + path).build());
+    public HttpResponse get(String path) { // GH-90000
+        return request(HttpRequest.get("http://127.0.0.1:" + port + path).build()); // GH-90000
     }
 
     /**
@@ -317,10 +317,10 @@ public class HttpServerTestRunner implements AutoCloseable {
      * @param body The request body
      * @return The HTTP response
      */
-    public HttpResponse post(String path, String body) {
-        return request(HttpRequest.post("http://127.0.0.1:" + port + path)
-            .withBody(body.getBytes())
-            .build());
+    public HttpResponse post(String path, String body) { // GH-90000
+        return request(HttpRequest.post("http://127.0.0.1:" + port + path) // GH-90000
+            .withBody(body.getBytes()) // GH-90000
+            .build()); // GH-90000
     }
 
     /**
@@ -330,10 +330,10 @@ public class HttpServerTestRunner implements AutoCloseable {
      * @param body The request body
      * @return The HTTP response
      */
-    public HttpResponse put(String path, String body) {
-        return request(HttpRequest.put("http://127.0.0.1:" + port + path)
-            .withBody(body.getBytes())
-            .build());
+    public HttpResponse put(String path, String body) { // GH-90000
+        return request(HttpRequest.put("http://127.0.0.1:" + port + path) // GH-90000
+            .withBody(body.getBytes()) // GH-90000
+            .build()); // GH-90000
     }
 
     /**
@@ -342,9 +342,9 @@ public class HttpServerTestRunner implements AutoCloseable {
      * @param path The request path
      * @return The HTTP response
      */
-    public HttpResponse delete(String path) {
-        HttpRequest.Builder builder = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://127.0.0.1:" + port + path);
-        return request(builder.build());
+    public HttpResponse delete(String path) { // GH-90000
+        HttpRequest.Builder builder = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://127.0.0.1:" + port + path); // GH-90000
+        return request(builder.build()); // GH-90000
     }
 
     /**
@@ -353,20 +353,20 @@ public class HttpServerTestRunner implements AutoCloseable {
      * @param request The HTTP request
      * @return The HTTP response
      */
-    public HttpResponse request(HttpRequest request) {
-        if (!started) {
-            start();
+    public HttpResponse request(HttpRequest request) { // GH-90000
+        if (!started) { // GH-90000
+            start(); // GH-90000
         }
 
-        return eventloopRunner.runPromise(() -> servlet.serve(request));
+        return eventloopRunner.runPromise(() -> servlet.serve(request)); // GH-90000
     }
 
     /**
      * Gets the base URL of the test server.
      *
-     * @return The base URL (e.g., http://127.0.0.1:12345)
+     * @return The base URL (e.g., http://127.0.0.1:12345) // GH-90000
      */
-    public String getBaseUrl() {
+    public String getBaseUrl() { // GH-90000
         return "http://127.0.0.1:" + port;
     }
 
@@ -375,7 +375,7 @@ public class HttpServerTestRunner implements AutoCloseable {
      *
      * @return The port number
      */
-    public int getPort() {
+    public int getPort() { // GH-90000
         return port;
     }
 
@@ -384,30 +384,30 @@ public class HttpServerTestRunner implements AutoCloseable {
      *
      * @return The eventloop runner
      */
-    public EventloopTestRunner getEventloopRunner() {
+    public EventloopTestRunner getEventloopRunner() { // GH-90000
         return eventloopRunner;
     }
 
     @Override
-    public void close() {
-        if (server != null) {
-            eventloopRunner.runBlocking(() -> {
-                server.close();
-                log.info("Test HTTP server stopped");
+    public void close() { // GH-90000
+        if (server != null) { // GH-90000
+            eventloopRunner.runBlocking(() -> { // GH-90000
+                server.close(); // GH-90000
+                log.info("Test HTTP server stopped [GH-90000]");
                 return null;
             });
         }
-        if (ownsEventloopRunner) {
-            eventloopRunner.close();
+        if (ownsEventloopRunner) { // GH-90000
+            eventloopRunner.close(); // GH-90000
         }
         started = false;
     }
 
-    private int findAvailablePort() {
-        try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
-            return socket.getLocalPort();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to find available port", e);
+    private int findAvailablePort() { // GH-90000
+        try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) { // GH-90000
+            return socket.getLocalPort(); // GH-90000
+        } catch (Exception e) { // GH-90000
+            throw new RuntimeException("Failed to find available port", e); // GH-90000
         }
     }
 }

@@ -29,126 +29,126 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * <b>Production Latency Targets</b><br>
  * All operations measured against p99 latency targets: - generateRequirements:
- * <1000ms (supports batch processing) - findSimilarRequirements: <200ms
- * (real-time search) - suggestImprovements: <800ms (async feedback) -
- * extractAcceptanceCriteria: <600ms (parsing-heavy) - classifyRequirement:
- * <400ms (ML classification) - validateQuality: <500ms (validation checks) -
- * healthCheck: <50ms (readiness probe)
+ * <1000ms (supports batch processing) - findSimilarRequirements: <200ms // GH-90000
+ * (real-time search) - suggestImprovements: <800ms (async feedback) - // GH-90000
+ * extractAcceptanceCriteria: <600ms (parsing-heavy) - classifyRequirement: // GH-90000
+ * <400ms (ML classification) - validateQuality: <500ms (validation checks) - // GH-90000
+ * healthCheck: <50ms (readiness probe) // GH-90000
  *
  * @doc.type class
  * @doc.purpose JMH performance benchmarks for latency validation
  * @doc.layer product
  * @doc.pattern Performance Testing
  */
-@Fork(1)
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@Fork(1) // GH-90000
+@BenchmarkMode(Mode.AverageTime) // GH-90000
+@OutputTimeUnit(TimeUnit.MILLISECONDS) // GH-90000
+@State(Scope.Benchmark) // GH-90000
 public class RequirementAIBenchmarks {
 
     /**
-     * Benchmark: generateRequirements() operation.
+     * Benchmark: generateRequirements() operation. // GH-90000
      *
      * <p>
      * Measures time to generate requirements from persona and context. Includes
      * LLM invocation, embedding generation, and response formatting.
      *
      * <p>
-     * Target: <1000ms p99 (handles batch scenarios) Typical: ~450ms
+     * Target: <1000ms p99 (handles batch scenarios) Typical: ~450ms // GH-90000
      */
     @Benchmark
-    public void benchGenerateRequirements() {
-        simulateLatency(450, 100); // ~450ms typical + 100ms variation
+    public void benchGenerateRequirements() { // GH-90000
+        simulateLatency(450, 100); // ~450ms typical + 100ms variation // GH-90000
     }
 
     /**
-     * Benchmark: findSimilarRequirements() operation.
+     * Benchmark: findSimilarRequirements() operation. // GH-90000
      *
      * <p>
      * Measures time for vector similarity search against requirement corpus.
      * Includes embedding lookup, vector search, and result ranking.
      *
      * <p>
-     * Target: <200ms p99 (real-time search) Typical: ~45ms
+     * Target: <200ms p99 (real-time search) Typical: ~45ms // GH-90000
      */
     @Benchmark
-    public void benchFindSimilarRequirements() {
-        simulateLatency(45, 15); // ~45ms typical + 15ms variation
+    public void benchFindSimilarRequirements() { // GH-90000
+        simulateLatency(45, 15); // ~45ms typical + 15ms variation // GH-90000
     }
 
     /**
-     * Benchmark: suggestImprovements() operation.
+     * Benchmark: suggestImprovements() operation. // GH-90000
      *
      * <p>
      * Measures time to generate improvement suggestions via LLM. Includes
      * context building, LLM invocation, and suggestion ranking.
      *
      * <p>
-     * Target: <800ms p99 (async feedback) Typical: ~290ms
+     * Target: <800ms p99 (async feedback) Typical: ~290ms // GH-90000
      */
     @Benchmark
-    public void benchSuggestImprovements() {
-        simulateLatency(290, 80); // ~290ms typical + 80ms variation
+    public void benchSuggestImprovements() { // GH-90000
+        simulateLatency(290, 80); // ~290ms typical + 80ms variation // GH-90000
     }
 
     /**
-     * Benchmark: extractAcceptanceCriteria() operation.
+     * Benchmark: extractAcceptanceCriteria() operation. // GH-90000
      *
      * <p>
      * Measures time to extract AC from requirement text. Includes parsing,
      * structuring, and validation.
      *
      * <p>
-     * Target: <600ms p99 (parsing-heavy) Typical: ~240ms
+     * Target: <600ms p99 (parsing-heavy) Typical: ~240ms // GH-90000
      */
     @Benchmark
-    public void benchExtractAcceptanceCriteria() {
-        simulateLatency(240, 70); // ~240ms typical + 70ms variation
+    public void benchExtractAcceptanceCriteria() { // GH-90000
+        simulateLatency(240, 70); // ~240ms typical + 70ms variation // GH-90000
     }
 
     /**
-     * Benchmark: classifyRequirement() operation.
+     * Benchmark: classifyRequirement() operation. // GH-90000
      *
      * <p>
      * Measures time for ML classification of requirement types. Includes
      * embedding, classification model invocation, confidence scoring.
      *
      * <p>
-     * Target: <400ms p99 (ML classification) Typical: ~140ms
+     * Target: <400ms p99 (ML classification) Typical: ~140ms // GH-90000
      */
     @Benchmark
-    public void benchClassifyRequirement() {
-        simulateLatency(140, 50); // ~140ms typical + 50ms variation
+    public void benchClassifyRequirement() { // GH-90000
+        simulateLatency(140, 50); // ~140ms typical + 50ms variation // GH-90000
     }
 
     /**
-     * Benchmark: validateQuality() operation.
+     * Benchmark: validateQuality() operation. // GH-90000
      *
      * <p>
      * Measures time for requirement quality validation. Includes syntax checks,
      * completeness validation, clarity scoring.
      *
      * <p>
-     * Target: <500ms p99 (validation checks) Typical: ~190ms
+     * Target: <500ms p99 (validation checks) Typical: ~190ms // GH-90000
      */
     @Benchmark
-    public void benchValidateQuality() {
-        simulateLatency(190, 60); // ~190ms typical + 60ms variation
+    public void benchValidateQuality() { // GH-90000
+        simulateLatency(190, 60); // ~190ms typical + 60ms variation // GH-90000
     }
 
     /**
-     * Benchmark: healthCheck() operation.
+     * Benchmark: healthCheck() operation. // GH-90000
      *
      * <p>
      * Measures time for service health check. Includes dependency checks and
      * status aggregation.
      *
      * <p>
-     * Target: <50ms (readiness probe) Typical: ~8ms
+     * Target: <50ms (readiness probe) Typical: ~8ms // GH-90000
      */
     @Benchmark
-    public void benchHealthCheck() {
-        simulateLatency(8, 2); // ~8ms typical + 2ms variation
+    public void benchHealthCheck() { // GH-90000
+        simulateLatency(8, 2); // ~8ms typical + 2ms variation // GH-90000
     }
 
     /**
@@ -159,33 +159,33 @@ public class RequirementAIBenchmarks {
      * without causing GC noise or thread scheduling artifacts.
      *
      * @param baseLatencyMs base latency in milliseconds
-     * @param variationMs variation in milliseconds (+/- range)
+     * @param variationMs variation in milliseconds (+/- range) // GH-90000
      */
-    private void simulateLatency(int baseLatencyMs, int variationMs) {
-        long startNanos = System.nanoTime();
-        long targetNanos = (long) (baseLatencyMs + Math.random() * variationMs) * 1_000_000;
+    private void simulateLatency(int baseLatencyMs, int variationMs) { // GH-90000
+        long startNanos = System.nanoTime(); // GH-90000
+        long targetNanos = (long) (baseLatencyMs + Math.random() * variationMs) * 1_000_000; // GH-90000
 
         // Busy-wait with computational work to simulate work
         long sum = 0;
-        while ((System.nanoTime() - startNanos) < targetNanos) {
-            sum += System.nanoTime() % 1000;
+        while ((System.nanoTime() - startNanos) < targetNanos) { // GH-90000
+            sum += System.nanoTime() % 1000; // GH-90000
         }
     }
 
     /**
      * Main entry point for standalone benchmark execution.
      *
-     * @param args command-line arguments (passed to JMH runner)
+     * @param args command-line arguments (passed to JMH runner) // GH-90000
      * @throws RunnerException if benchmark execution fails
      */
-    public static void main(String[] args) throws RunnerException {
-        Options opt = new OptionsBuilder()
-                .include(RequirementAIBenchmarks.class.getSimpleName())
-                .forks(1)
-                .warmupIterations(3)
-                .measurementIterations(5)
-                .build();
+    public static void main(String[] args) throws RunnerException { // GH-90000
+        Options opt = new OptionsBuilder() // GH-90000
+                .include(RequirementAIBenchmarks.class.getSimpleName()) // GH-90000
+                .forks(1) // GH-90000
+                .warmupIterations(3) // GH-90000
+                .measurementIterations(5) // GH-90000
+                .build(); // GH-90000
 
-        new Runner(opt).run();
+        new Runner(opt).run(); // GH-90000
     }
 }

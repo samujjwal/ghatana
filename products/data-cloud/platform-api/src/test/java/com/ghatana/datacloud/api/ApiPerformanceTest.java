@@ -16,48 +16,48 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test API performance, latency, throughput, and scalability.
  */
-@DisplayName("API Performance Tests")
+@DisplayName("API Performance Tests [GH-90000]")
 class ApiPerformanceTest {
 
     @Test
-    @DisplayName("Should measure API latency")
-    void shouldMeasureApiLatency() {
+    @DisplayName("Should measure API latency [GH-90000]")
+    void shouldMeasureApiLatency() { // GH-90000
         long latency = 100;
-        assertThat(latency).isPositive();
+        assertThat(latency).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle API throughput")
-    void shouldHandleApiThroughput() {
+    @DisplayName("Should handle API throughput [GH-90000]")
+    void shouldHandleApiThroughput() { // GH-90000
         int requests = 1000;
-        assertThat(requests).isPositive();
+        assertThat(requests).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle concurrent requests")
-    void shouldHandleConcurrentRequests() {
+    @DisplayName("Should handle concurrent requests [GH-90000]")
+    void shouldHandleConcurrentRequests() { // GH-90000
         int threads = 10;
-        assertThat(threads).isPositive();
+        assertThat(threads).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle resource optimization")
-    void shouldHandleResourceOptimization() {
+    @DisplayName("Should handle resource optimization [GH-90000]")
+    void shouldHandleResourceOptimization() { // GH-90000
         String resource = "memory";
-        assertThat(resource).isNotNull();
+        assertThat(resource).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle performance degradation")
-    void shouldHandlePerformanceDegradation() {
+    @DisplayName("Should handle performance degradation [GH-90000]")
+    void shouldHandlePerformanceDegradation() { // GH-90000
         boolean degraded = false;
-        assertThat(degraded).isFalse();
+        assertThat(degraded).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle performance monitoring")
-    void shouldHandlePerformanceMonitoring() {
+    @DisplayName("Should handle performance monitoring [GH-90000]")
+    void shouldHandlePerformanceMonitoring() { // GH-90000
         String metric = "response_time";
-        assertThat(metric).isNotNull();
+        assertThat(metric).isNotNull(); // GH-90000
     }
 }

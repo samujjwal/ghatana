@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Architecture ValidateArchitectureStep Tests")
+@DisplayName("Architecture ValidateArchitectureStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles validate architecture step test operations
@@ -32,47 +32,47 @@ class ValidateArchitectureStepTest extends EventloopTestBase {
   private ValidateArchitectureStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new ValidateArchitectureStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new ValidateArchitectureStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("architecture.validate");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("architecture.validate [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should validate architecture design")
-  void shouldValidateArchitecture() {
+  @DisplayName("Should validate architecture design [GH-90000]")
+  void shouldValidateArchitecture() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("architectureId", "arch-001");
-    context.put(
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("architectureId", "arch-001"); // GH-90000
+    context.put( // GH-90000
         "nfrTargets",
-        Map.of(
-            "latency", Map.of("target", 100),
-            "availability", Map.of("target", 99.9)));
-    context.put("deploymentTopology", Map.of("metadata", Map.of("multiAZ", true)));
-    context.put(
+        Map.of( // GH-90000
+            "latency", Map.of("target", 100), // GH-90000
+            "availability", Map.of("target", 99.9))); // GH-90000
+    context.put("deploymentTopology", Map.of("metadata", Map.of("multiAZ", true))); // GH-90000
+    context.put( // GH-90000
         "c4Views",
-        List.of(
-            Map.of("type", "C4_CONTAINER", "diagram", "Auth Service"),
-            Map.of("type", "C4_COMPONENT", "diagram", "User Service")));
+        List.of( // GH-90000
+            Map.of("type", "C4_CONTAINER", "diagram", "Auth Service"), // GH-90000
+            Map.of("type", "C4_COMPONENT", "diagram", "User Service"))); // GH-90000
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null));
-    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of()));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of())); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("architectureId")).isEqualTo("arch-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("architectureId [GH-90000]")).isEqualTo("arch-001 [GH-90000]");
   }
 }

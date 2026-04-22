@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for VectorSearchService.
  */
-@DisplayName("VectorSearchService Tests")
+@DisplayName("VectorSearchService Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles vector search service test operations
@@ -37,94 +37,94 @@ class VectorSearchServiceTest extends EventloopTestBase {
     private VectorSearchService vectorSearchService;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        vectorSearchService = new VectorSearchService(vectorStore, embeddingService);
+    void setUp() { // GH-90000
+        MockitoAnnotations.openMocks(this); // GH-90000
+        vectorSearchService = new VectorSearchService(vectorStore, embeddingService); // GH-90000
     }
 
     @Test
-    @DisplayName("Should search for similar documents")
-    void shouldSearchDocuments() {
+    @DisplayName("Should search for similar documents [GH-90000]")
+    void shouldSearchDocuments() { // GH-90000
         // Given
         String query = "security vulnerabilities";
         int topK = 5;
-        Map<String, Object> filters = Map.of("severity", "HIGH");
+        Map<String, Object> filters = Map.of("severity", "HIGH"); // GH-90000
 
         float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
-        List<VectorStoreResult> storeResults = List.of();
+        List<VectorStoreResult> storeResults = List.of(); // GH-90000
 
-        when(embeddingService.embed(query))
-            .thenReturn(Promise.of(embedding));
-        when(vectorStore.search(embedding, topK, filters))
-            .thenReturn(Promise.of(storeResults));
+        when(embeddingService.embed(query)) // GH-90000
+            .thenReturn(Promise.of(embedding)); // GH-90000
+        when(vectorStore.search(embedding, topK, filters)) // GH-90000
+            .thenReturn(Promise.of(storeResults)); // GH-90000
 
         // When
-        Promise<List<SearchResult>> result = vectorSearchService.search(query, topK, filters);
+        Promise<List<SearchResult>> result = vectorSearchService.search(query, topK, filters); // GH-90000
 
         // Then
-        verify(embeddingService).embed(query);
-        verify(vectorStore).search(embedding, topK, filters);
+        verify(embeddingService).embed(query); // GH-90000
+        verify(vectorStore).search(embedding, topK, filters); // GH-90000
     }
 
     @Test
-    @DisplayName("Should add document to vector store")
-    void shouldAddDocument() {
+    @DisplayName("Should add document to vector store [GH-90000]")
+    void shouldAddDocument() { // GH-90000
         // Given
         String id = "doc-123";
         String content = "Security vulnerability report";
-        Map<String, Object> metadata = Map.of("type", "report", "severity", "HIGH");
+        Map<String, Object> metadata = Map.of("type", "report", "severity", "HIGH"); // GH-90000
 
         float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
 
-        when(embeddingService.embed(content))
-            .thenReturn(Promise.of(embedding));
-        when(vectorStore.upsert(id, embedding, metadata))
-            .thenReturn(Promise.of((Void) null));
+        when(embeddingService.embed(content)) // GH-90000
+            .thenReturn(Promise.of(embedding)); // GH-90000
+        when(vectorStore.upsert(id, embedding, metadata)) // GH-90000
+            .thenReturn(Promise.of((Void) null)); // GH-90000
 
         // When
-        Promise<String> result = vectorSearchService.addDocument(id, content, metadata);
+        Promise<String> result = vectorSearchService.addDocument(id, content, metadata); // GH-90000
 
         // Then
-        verify(embeddingService).embed(content);
-        verify(vectorStore).upsert(id, embedding, metadata);
+        verify(embeddingService).embed(content); // GH-90000
+        verify(vectorStore).upsert(id, embedding, metadata); // GH-90000
     }
 
     @Test
-    @DisplayName("Should delete document from vector store")
-    void shouldDeleteDocument() {
+    @DisplayName("Should delete document from vector store [GH-90000]")
+    void shouldDeleteDocument() { // GH-90000
         // Given
         String id = "doc-123";
 
-        when(vectorStore.delete(id))
-            .thenReturn(Promise.of(true));
+        when(vectorStore.delete(id)) // GH-90000
+            .thenReturn(Promise.of(true)); // GH-90000
 
         // When
-        Promise<Boolean> result = vectorSearchService.deleteDocument(id);
+        Promise<Boolean> result = vectorSearchService.deleteDocument(id); // GH-90000
 
         // Then
-        verify(vectorStore).delete(id);
+        verify(vectorStore).delete(id); // GH-90000
     }
 
     @Test
-    @DisplayName("Should update document in vector store")
-    void shouldUpdateDocument() {
+    @DisplayName("Should update document in vector store [GH-90000]")
+    void shouldUpdateDocument() { // GH-90000
         // Given
         String id = "doc-123";
         String content = "Updated security report";
-        Map<String, Object> metadata = Map.of("type", "report", "severity", "CRITICAL");
+        Map<String, Object> metadata = Map.of("type", "report", "severity", "CRITICAL"); // GH-90000
 
         float[] embedding = new float[]{0.2f, 0.3f, 0.4f};
 
-        when(embeddingService.embed(content))
-            .thenReturn(Promise.of(embedding));
-        when(vectorStore.upsert(id, embedding, metadata))
-            .thenReturn(Promise.of((Void) null));
+        when(embeddingService.embed(content)) // GH-90000
+            .thenReturn(Promise.of(embedding)); // GH-90000
+        when(vectorStore.upsert(id, embedding, metadata)) // GH-90000
+            .thenReturn(Promise.of((Void) null)); // GH-90000
 
         // When
-        Promise<String> result = vectorSearchService.updateDocument(id, content, metadata);
+        Promise<String> result = vectorSearchService.updateDocument(id, content, metadata); // GH-90000
 
         // Then
-        verify(embeddingService).embed(content);
-        verify(vectorStore).upsert(id, embedding, metadata);
+        verify(embeddingService).embed(content); // GH-90000
+        verify(vectorStore).upsert(id, embedding, metadata); // GH-90000
     }
 }

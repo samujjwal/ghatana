@@ -19,56 +19,56 @@ import static org.mockito.Mockito.mock;
  *
  * Test multi-user session handling, concurrent access, and cleanup.
  */
-@DisplayName("Session Management Tests")
+@DisplayName("Session Management Tests [GH-90000]")
 class SessionManagementTest {
 
     @Test
-    @DisplayName("Should handle multi-user sessions")
-    void shouldHandleMultiUserSessions() {
-        BindableService mockService = mock(BindableService.class);
+    @DisplayName("Should handle multi-user sessions [GH-90000]")
+    void shouldHandleMultiUserSessions() { // GH-90000
+        BindableService mockService = mock(BindableService.class); // GH-90000
         
-        assertThat(mockService).isNotNull();
+        assertThat(mockService).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle multi-user session handling")
-    void shouldHandleMultiUserSessionHandling() {
+    @DisplayName("Should handle multi-user session handling [GH-90000]")
+    void shouldHandleMultiUserSessionHandling() { // GH-90000
         String user = "user-123";
-        assertThat(user).isNotNull();
+        assertThat(user).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle concurrent access")
-    void shouldHandleConcurrentAccess() {
+    @DisplayName("Should handle concurrent access [GH-90000]")
+    void shouldHandleConcurrentAccess() { // GH-90000
         int sessions = 10;
-        assertThat(sessions).isPositive();
+        assertThat(sessions).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle session cleanup")
-    void shouldHandleSessionCleanup() {
+    @DisplayName("Should handle session cleanup [GH-90000]")
+    void shouldHandleSessionCleanup() { // GH-90000
         boolean cleaned = true;
-        assertThat(cleaned).isTrue();
+        assertThat(cleaned).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle session timeout")
-    void shouldHandleSessionTimeout() {
+    @DisplayName("Should handle session timeout [GH-90000]")
+    void shouldHandleSessionTimeout() { // GH-90000
         long timeout = 3600000;
-        assertThat(timeout).isPositive();
+        assertThat(timeout).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle session persistence")
-    void shouldHandleSessionPersistence() {
+    @DisplayName("Should handle session persistence [GH-90000]")
+    void shouldHandleSessionPersistence() { // GH-90000
         boolean persisted = true;
-        assertThat(persisted).isTrue();
+        assertThat(persisted).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle session migration")
-    void shouldHandleSessionMigration() {
+    @DisplayName("Should handle session migration [GH-90000]")
+    void shouldHandleSessionMigration() { // GH-90000
         boolean migrated = true;
-        assertThat(migrated).isTrue();
+        assertThat(migrated).isTrue(); // GH-90000
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.event;
@@ -28,18 +28,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Tests for inner enums, exceptions, and small value types across the
  * platform-event module.
  */
-@DisplayName("Platform-event inner types")
+@DisplayName("Platform-event inner types [GH-90000]")
 class PlatformEventInnerTypesTest {
 
     // ─── ConsumerGroup.GroupState ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ConsumerGroup.GroupState")
+    @DisplayName("ConsumerGroup.GroupState [GH-90000]")
     class GroupState {
 
         @Test
-        void allValuesPresent() {
-            assertThat(ConsumerGroup.GroupState.values()).containsExactlyInAnyOrder(
+        void allValuesPresent() { // GH-90000
+            assertThat(ConsumerGroup.GroupState.values()).containsExactlyInAnyOrder( // GH-90000
                     ConsumerGroup.GroupState.EMPTY,
                     ConsumerGroup.GroupState.PREPARING_REBALANCE,
                     ConsumerGroup.GroupState.COMPLETING_REBALANCE,
@@ -49,21 +49,21 @@ class PlatformEventInnerTypesTest {
         }
 
         @Test
-        void valueOfByName() {
-            assertThat(ConsumerGroup.GroupState.valueOf("STABLE"))
-                    .isSameAs(ConsumerGroup.GroupState.STABLE);
+        void valueOfByName() { // GH-90000
+            assertThat(ConsumerGroup.GroupState.valueOf("STABLE [GH-90000]"))
+                    .isSameAs(ConsumerGroup.GroupState.STABLE); // GH-90000
         }
     }
 
     // ─── EventType inner enums ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("EventType.LifecycleStatus")
+    @DisplayName("EventType.LifecycleStatus [GH-90000]")
     class LifecycleStatus {
 
         @Test
-        void allValuesPresent() {
-            assertThat(EventType.LifecycleStatus.values()).containsExactlyInAnyOrder(
+        void allValuesPresent() { // GH-90000
+            assertThat(EventType.LifecycleStatus.values()).containsExactlyInAnyOrder( // GH-90000
                     EventType.LifecycleStatus.DRAFT,
                     EventType.LifecycleStatus.ACTIVE,
                     EventType.LifecycleStatus.DEPRECATED,
@@ -72,19 +72,19 @@ class PlatformEventInnerTypesTest {
         }
 
         @Test
-        void valueOfByName() {
-            assertThat(EventType.LifecycleStatus.valueOf("ACTIVE"))
-                    .isSameAs(EventType.LifecycleStatus.ACTIVE);
+        void valueOfByName() { // GH-90000
+            assertThat(EventType.LifecycleStatus.valueOf("ACTIVE [GH-90000]"))
+                    .isSameAs(EventType.LifecycleStatus.ACTIVE); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("EventType.CompatibilityPolicy")
+    @DisplayName("EventType.CompatibilityPolicy [GH-90000]")
     class CompatibilityPolicy {
 
         @Test
-        void allValuesPresent() {
-            assertThat(EventType.CompatibilityPolicy.values()).containsExactlyInAnyOrder(
+        void allValuesPresent() { // GH-90000
+            assertThat(EventType.CompatibilityPolicy.values()).containsExactlyInAnyOrder( // GH-90000
                     EventType.CompatibilityPolicy.NONE,
                     EventType.CompatibilityPolicy.BACKWARD,
                     EventType.CompatibilityPolicy.FORWARD,
@@ -93,169 +93,169 @@ class PlatformEventInnerTypesTest {
         }
 
         @Test
-        void valueOfByName() {
-            assertThat(EventType.CompatibilityPolicy.valueOf("BACKWARD"))
-                    .isSameAs(EventType.CompatibilityPolicy.BACKWARD);
+        void valueOfByName() { // GH-90000
+            assertThat(EventType.CompatibilityPolicy.valueOf("BACKWARD [GH-90000]"))
+                    .isSameAs(EventType.CompatibilityPolicy.BACKWARD); // GH-90000
         }
     }
 
     // ─── StoragePlugin.DuplicateEventException ────────────────────────────────
 
     @Nested
-    @DisplayName("StoragePlugin.DuplicateEventException")
+    @DisplayName("StoragePlugin.DuplicateEventException [GH-90000]")
     class DuplicateEventException {
 
         @Test
-        void constructorSetsFieldsAndMessage() {
+        void constructorSetsFieldsAndMessage() { // GH-90000
             StoragePlugin.DuplicateEventException ex =
-                    new StoragePlugin.DuplicateEventException("idem-key-1", "event-id-99");
-            assertThat(ex.getIdempotencyKey()).isEqualTo("idem-key-1");
-            assertThat(ex.getExistingEventId()).isEqualTo("event-id-99");
-            assertThat(ex.getMessage()).contains("idem-key-1");
+                    new StoragePlugin.DuplicateEventException("idem-key-1", "event-id-99"); // GH-90000
+            assertThat(ex.getIdempotencyKey()).isEqualTo("idem-key-1 [GH-90000]");
+            assertThat(ex.getExistingEventId()).isEqualTo("event-id-99 [GH-90000]");
+            assertThat(ex.getMessage()).contains("idem-key-1 [GH-90000]");
         }
     }
 
     // ─── EventDurabilityService inner records ─────────────────────────────────
 
     @Nested
-    @DisplayName("EventDurabilityService.DurabilityResult")
+    @DisplayName("EventDurabilityService.DurabilityResult [GH-90000]")
     class DurabilityResultTest {
 
         @Test
-        void isSuccessful() {
-            EventDurabilityService.DurabilityResult r = new EventDurabilityService.DurabilityResult(
+        void isSuccessful() { // GH-90000
+            EventDurabilityService.DurabilityResult r = new EventDurabilityService.DurabilityResult( // GH-90000
                     "evt-1", 3L, EventDurabilityService.DurabilityLevel.MAJORITY_ACK, 5L, 10L, true);
-            assertThat(r.isSuccessful()).isTrue();
+            assertThat(r.isSuccessful()).isTrue(); // GH-90000
         }
 
         @Test
-        void meetsLevelReturnsTrueWhenAchievedHigherOrEqual() {
-            EventDurabilityService.DurabilityResult r = new EventDurabilityService.DurabilityResult(
+        void meetsLevelReturnsTrueWhenAchievedHigherOrEqual() { // GH-90000
+            EventDurabilityService.DurabilityResult r = new EventDurabilityService.DurabilityResult( // GH-90000
                     "evt-2", 1L, EventDurabilityService.DurabilityLevel.ALL_ACK, 0L, 0L, true);
-            assertThat(r.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)).isTrue();
-            assertThat(r.meetsLevel(EventDurabilityService.DurabilityLevel.ALL_ACK)).isTrue();
+            assertThat(r.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)).isTrue(); // GH-90000
+            assertThat(r.meetsLevel(EventDurabilityService.DurabilityLevel.ALL_ACK)).isTrue(); // GH-90000
         }
 
         @Test
-        void meetsLevelReturnsFalseWhenAchievedLower() {
-            EventDurabilityService.DurabilityResult r = new EventDurabilityService.DurabilityResult(
+        void meetsLevelReturnsFalseWhenAchievedLower() { // GH-90000
+            EventDurabilityService.DurabilityResult r = new EventDurabilityService.DurabilityResult( // GH-90000
                     "evt-3", 1L, EventDurabilityService.DurabilityLevel.LEADER_ACK, 0L, 0L, false);
-            assertThat(r.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)).isFalse();
+            assertThat(r.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("EventDurabilityService.DurabilityStatus")
+    @DisplayName("EventDurabilityService.DurabilityStatus [GH-90000]")
     class DurabilityStatusTest {
 
         @Test
-        void isFullyDurableWhenFsyncedAndReplicaCountMet() {
-            EventDurabilityService.DurabilityStatus s = new EventDurabilityService.DurabilityStatus(
-                    "evt-1", EventDurabilityService.DurabilityLevel.MAJORITY_ACK, 3, 2, true, List.of());
-            assertThat(s.isFullyDurable()).isTrue();
+        void isFullyDurableWhenFsyncedAndReplicaCountMet() { // GH-90000
+            EventDurabilityService.DurabilityStatus s = new EventDurabilityService.DurabilityStatus( // GH-90000
+                    "evt-1", EventDurabilityService.DurabilityLevel.MAJORITY_ACK, 3, 2, true, List.of()); // GH-90000
+            assertThat(s.isFullyDurable()).isTrue(); // GH-90000
         }
 
         @Test
-        void notFullyDurableWhenReplicaCountNotMet() {
-            EventDurabilityService.DurabilityStatus s = new EventDurabilityService.DurabilityStatus(
-                    "evt-2", EventDurabilityService.DurabilityLevel.MAJORITY_ACK, 1, 3, true, List.of());
-            assertThat(s.isFullyDurable()).isFalse();
+        void notFullyDurableWhenReplicaCountNotMet() { // GH-90000
+            EventDurabilityService.DurabilityStatus s = new EventDurabilityService.DurabilityStatus( // GH-90000
+                    "evt-2", EventDurabilityService.DurabilityLevel.MAJORITY_ACK, 1, 3, true, List.of()); // GH-90000
+            assertThat(s.isFullyDurable()).isFalse(); // GH-90000
         }
     }
 
     // ─── EventReplayService inner records ─────────────────────────────────────
 
     @Nested
-    @DisplayName("EventReplayService.ReplayedEvent")
+    @DisplayName("EventReplayService.ReplayedEvent [GH-90000]")
     class ReplayedEventTest {
 
         @Test
-        void isFirstReplay() {
-            EventReplayService.ReplayedEvent ev = new EventReplayService.ReplayedEvent(
+        void isFirstReplay() { // GH-90000
+            EventReplayService.ReplayedEvent ev = new EventReplayService.ReplayedEvent( // GH-90000
                     "id", "type", "tenant", 1L, 0L, new byte[0], 1);
-            assertThat(ev.isFirstReplay()).isTrue();
+            assertThat(ev.isFirstReplay()).isTrue(); // GH-90000
         }
 
         @Test
-        void notFirstReplay() {
-            EventReplayService.ReplayedEvent ev = new EventReplayService.ReplayedEvent(
+        void notFirstReplay() { // GH-90000
+            EventReplayService.ReplayedEvent ev = new EventReplayService.ReplayedEvent( // GH-90000
                     "id", "type", "tenant", 1L, 0L, new byte[0], 2);
-            assertThat(ev.isFirstReplay()).isFalse();
+            assertThat(ev.isFirstReplay()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayResult")
+    @DisplayName("EventReplayService.ReplayResult [GH-90000]")
     class ReplayResultTest {
 
         @Test
-        void isSuccessful() {
-            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult(
-                    "c1", 0L, 10L, 10L, 10L, 0L, Duration.ofSeconds(1), true, List.of());
-            assertThat(result.isSuccessful()).isTrue();
+        void isSuccessful() { // GH-90000
+            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult( // GH-90000
+                    "c1", 0L, 10L, 10L, 10L, 0L, Duration.ofSeconds(1), true, List.of()); // GH-90000
+            assertThat(result.isSuccessful()).isTrue(); // GH-90000
         }
 
         @Test
-        void notSuccessfulWhenEventsFailed() {
-            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult(
-                    "c2", 0L, 10L, 10L, 9L, 1L, Duration.ofSeconds(2), true, List.of());
-            assertThat(result.isSuccessful()).isFalse();
+        void notSuccessfulWhenEventsFailed() { // GH-90000
+            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult( // GH-90000
+                    "c2", 0L, 10L, 10L, 9L, 1L, Duration.ofSeconds(2), true, List.of()); // GH-90000
+            assertThat(result.isSuccessful()).isFalse(); // GH-90000
         }
 
         @Test
-        void successRateIsOneWhenNoEvents() {
-            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult(
-                    "c3", 0L, 0L, 0L, 0L, 0L, Duration.ZERO, true, List.of());
-            assertThat(result.successRate()).isEqualTo(1.0);
+        void successRateIsOneWhenNoEvents() { // GH-90000
+            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult( // GH-90000
+                    "c3", 0L, 0L, 0L, 0L, 0L, Duration.ZERO, true, List.of()); // GH-90000
+            assertThat(result.successRate()).isEqualTo(1.0); // GH-90000
         }
 
         @Test
-        void successRateCalculated() {
-            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult(
-                    "c4", 0L, 10L, 10L, 8L, 0L, Duration.ofSeconds(1), true, List.of());
-            assertThat(result.successRate()).isEqualTo(0.8);
+        void successRateCalculated() { // GH-90000
+            EventReplayService.ReplayResult result = new EventReplayService.ReplayResult( // GH-90000
+                    "c4", 0L, 10L, 10L, 8L, 0L, Duration.ofSeconds(1), true, List.of()); // GH-90000
+            assertThat(result.successRate()).isEqualTo(0.8); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayError")
+    @DisplayName("EventReplayService.ReplayError [GH-90000]")
     class ReplayErrorTest {
 
         @Test
-        void recordConstruction() {
-            EventReplayService.ReplayError err = new EventReplayService.ReplayError(
+        void recordConstruction() { // GH-90000
+            EventReplayService.ReplayError err = new EventReplayService.ReplayError( // GH-90000
                     5L, "event-id", "NullPointerException", "NPE", true);
-            assertThat(err.offset()).isEqualTo(5L);
-            assertThat(err.retryable()).isTrue();
+            assertThat(err.offset()).isEqualTo(5L); // GH-90000
+            assertThat(err.retryable()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayStatus")
+    @DisplayName("EventReplayService.ReplayStatus [GH-90000]")
     class ReplayStatusTest {
 
         @Test
-        void calculateProgressReturnZeroForZeroTarget() {
-            EventReplayService.ReplayStatus status = new EventReplayService.ReplayStatus(
+        void calculateProgressReturnZeroForZeroTarget() { // GH-90000
+            EventReplayService.ReplayStatus status = new EventReplayService.ReplayStatus( // GH-90000
                     "c1", EventReplayService.ReplayState.IDLE, 0L, 0L, 0L, 0.0, Duration.ZERO, Duration.ZERO);
-            assertThat(status.calculateProgress()).isEqualTo(0.0);
+            assertThat(status.calculateProgress()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        void calculateProgressReturnsPercentage() {
-            EventReplayService.ReplayStatus status = new EventReplayService.ReplayStatus(
-                    "c2", EventReplayService.ReplayState.RUNNING, 50L, 100L, 50L, 50.0, Duration.ofSeconds(5), Duration.ofSeconds(5));
-            assertThat(status.calculateProgress()).isEqualTo(50.0);
+        void calculateProgressReturnsPercentage() { // GH-90000
+            EventReplayService.ReplayStatus status = new EventReplayService.ReplayStatus( // GH-90000
+                    "c2", EventReplayService.ReplayState.RUNNING, 50L, 100L, 50L, 50.0, Duration.ofSeconds(5), Duration.ofSeconds(5)); // GH-90000
+            assertThat(status.calculateProgress()).isEqualTo(50.0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayState")
+    @DisplayName("EventReplayService.ReplayState [GH-90000]")
     class ReplayStateTest {
 
         @Test
-        void allValuesPresent() {
-            assertThat(EventReplayService.ReplayState.values()).containsExactlyInAnyOrder(
+        void allValuesPresent() { // GH-90000
+            assertThat(EventReplayService.ReplayState.values()).containsExactlyInAnyOrder( // GH-90000
                     EventReplayService.ReplayState.IDLE,
                     EventReplayService.ReplayState.RUNNING,
                     EventReplayService.ReplayState.PAUSED,
@@ -269,58 +269,58 @@ class PlatformEventInnerTypesTest {
     // ─── FileSecretProvider ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("FileSecretProvider")
+    @DisplayName("FileSecretProvider [GH-90000]")
     class FileSecretProviderTest {
 
-        private final FileSecretProvider provider = new FileSecretProvider();
+        private final FileSecretProvider provider = new FileSecretProvider(); // GH-90000
 
         @Test
-        void nameIsFile() {
-            assertThat(provider.name()).isEqualTo("file");
+        void nameIsFile() { // GH-90000
+            assertThat(provider.name()).isEqualTo("file [GH-90000]");
         }
 
         @Test
-        void blankLocatorThrows() {
-            assertThatThrownBy(() -> provider.resolve("  "))
-                    .isInstanceOf(SecretResolutionException.class)
-                    .hasMessageContaining("blank");
+        void blankLocatorThrows() { // GH-90000
+            assertThatThrownBy(() -> provider.resolve("   [GH-90000]"))
+                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .hasMessageContaining("blank [GH-90000]");
         }
 
         @Test
-        void nullLocatorThrows() {
-            assertThatThrownBy(() -> provider.resolve(null))
-                    .isInstanceOf(SecretResolutionException.class);
+        void nullLocatorThrows() { // GH-90000
+            assertThatThrownBy(() -> provider.resolve(null)) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class); // GH-90000
         }
 
         @Test
-        void missingFileThrows() {
-            assertThatThrownBy(() -> provider.resolve("/tmp/does-not-exist-secret-xyzabcdef.txt"))
-                    .isInstanceOf(SecretResolutionException.class)
-                    .hasMessageContaining("does not exist");
+        void missingFileThrows() { // GH-90000
+            assertThatThrownBy(() -> provider.resolve("/tmp/does-not-exist-secret-xyzabcdef.txt [GH-90000]"))
+                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .hasMessageContaining("does not exist [GH-90000]");
         }
 
         @Test
-        void readsSecretFromFile(@TempDir Path tmpDir) throws IOException {
-            Path secretFile = tmpDir.resolve("secret.txt");
-            Files.writeString(secretFile, "my-secret-value\n");
-            SecretValue val = provider.resolve(secretFile.toString());
-            assertThat(new String(val.asCharArrayCopy())).isEqualTo("my-secret-value");
+        void readsSecretFromFile(@TempDir Path tmpDir) throws IOException { // GH-90000
+            Path secretFile = tmpDir.resolve("secret.txt [GH-90000]");
+            Files.writeString(secretFile, "my-secret-value\n"); // GH-90000
+            SecretValue val = provider.resolve(secretFile.toString()); // GH-90000
+            assertThat(new String(val.asCharArrayCopy())).isEqualTo("my-secret-value [GH-90000]");
         }
 
         @Test
-        void blankFileContentThrows(@TempDir Path tmpDir) throws IOException {
-            Path secretFile = tmpDir.resolve("blank.txt");
-            Files.writeString(secretFile, "   \n");
-            assertThatThrownBy(() -> provider.resolve(secretFile.toString()))
-                    .isInstanceOf(SecretResolutionException.class)
-                    .hasMessageContaining("blank");
+        void blankFileContentThrows(@TempDir Path tmpDir) throws IOException { // GH-90000
+            Path secretFile = tmpDir.resolve("blank.txt [GH-90000]");
+            Files.writeString(secretFile, "   \n"); // GH-90000
+            assertThatThrownBy(() -> provider.resolve(secretFile.toString())) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .hasMessageContaining("blank [GH-90000]");
         }
 
         @Test
-        void directoryInsteadOfFileThrows(@TempDir Path tmpDir) {
-            assertThatThrownBy(() -> provider.resolve(tmpDir.toString()))
-                    .isInstanceOf(SecretResolutionException.class)
-                    .hasMessageContaining("not a regular file");
+        void directoryInsteadOfFileThrows(@TempDir Path tmpDir) { // GH-90000
+            assertThatThrownBy(() -> provider.resolve(tmpDir.toString())) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .hasMessageContaining("not a regular file [GH-90000]");
         }
     }
 }

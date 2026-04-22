@@ -15,25 +15,25 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("InMemoryKgService")
+@DisplayName("InMemoryKgService [GH-90000]")
 class InMemoryKgServiceTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("wraps invalid pattern submission metadata in typed operation exception")
-    void wrapsInvalidPatternSubmissionMetadataInTypedOperationException() {
-        InMemoryKgService service = new InMemoryKgService();
+    @DisplayName("wraps invalid pattern submission metadata in typed operation exception [GH-90000]")
+    void wrapsInvalidPatternSubmissionMetadataInTypedOperationException() { // GH-90000
+        InMemoryKgService service = new InMemoryKgService(); // GH-90000
 
         RefactorerOperationException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         RefactorerOperationException.class,
-                        () -> runPromise(() ->
-                                service.submitPattern(
+                        () -> runPromise(() -> // GH-90000
+                                service.submitPattern( // GH-90000
                                         "tenant-1",
                                         "pattern-name",
-                                        "SEQ(login,logout)",
-                                        Map.of("confidence", "not-a-number"))));
+                                        "SEQ(login,logout)", // GH-90000
+                                        Map.of("confidence", "not-a-number")))); // GH-90000
 
-        assertThat(exception.getMessage()).contains("not-a-number");
-        assertThat(exception.getCause()).isInstanceOf(NumberFormatException.class);
+        assertThat(exception.getMessage()).contains("not-a-number [GH-90000]");
+        assertThat(exception.getCause()).isInstanceOf(NumberFormatException.class); // GH-90000
     }
 }

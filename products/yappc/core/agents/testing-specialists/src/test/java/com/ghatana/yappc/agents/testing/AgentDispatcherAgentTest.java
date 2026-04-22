@@ -27,145 +27,145 @@ import com.ghatana.yappc.agents.code.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AgentDispatcherAgent")
+@DisplayName("AgentDispatcherAgent [GH-90000]")
 class AgentDispatcherAgentTest extends EventloopTestBase {
 
   private MemoryStore memoryStore;
   private AgentDispatcherAgent agent;
 
   @BeforeEach
-  void setUp() {
-    memoryStore = new EventLogMemoryStore();
-    agent = new AgentDispatcherAgent(
+  void setUp() { // GH-90000
+    memoryStore = new EventLogMemoryStore(); // GH-90000
+    agent = new AgentDispatcherAgent( // GH-90000
         memoryStore,
-      new AgentDispatcherAgent.AgentDispatcherGenerator());
+      new AgentDispatcherAgent.AgentDispatcherGenerator()); // GH-90000
   }
 
   @Nested
-  @DisplayName("Validation")
+  @DisplayName("Validation [GH-90000]")
   class Validation {
 
     @Test
-    @DisplayName("should accept valid task request")
-    void validRequest() {
-      AgentDispatcherInput input = new AgentDispatcherInput(
-          "task-1", "Implement user login", List.of("implementation"), "NORMAL", Map.of());
-      assertThat(agent.validateInput(input).isValid()).isTrue();
+    @DisplayName("should accept valid task request [GH-90000]")
+    void validRequest() { // GH-90000
+      AgentDispatcherInput input = new AgentDispatcherInput( // GH-90000
+          "task-1", "Implement user login", List.of("implementation [GH-90000]"), "NORMAL", Map.of());
+      assertThat(agent.validateInput(input).isValid()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should reject empty taskDescription")
-    void emptyDescription() {
-      assertThatThrownBy(() ->
-          new AgentDispatcherInput("task-1", "", List.of(), "NORMAL", Map.of()))
-          .isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("should reject empty taskDescription [GH-90000]")
+    void emptyDescription() { // GH-90000
+      assertThatThrownBy(() -> // GH-90000
+          new AgentDispatcherInput("task-1", "", List.of(), "NORMAL", Map.of())) // GH-90000
+          .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
   }
 
   @Nested
-  @DisplayName("Capability Routing")
+  @DisplayName("Capability Routing [GH-90000]")
   class CapabilityRouting {
 
     @Test
-    @DisplayName("should route implementation capability to implement agent")
-    void routeImplementation() {
+    @DisplayName("should route implementation capability to implement agent [GH-90000]")
+    void routeImplementation() { // GH-90000
       OutputGenerator<StepRequest<AgentDispatcherInput>,
           StepResult<AgentDispatcherOutput>> generator =
-          new AgentDispatcherAgent.AgentDispatcherGenerator();
+          new AgentDispatcherAgent.AgentDispatcherGenerator(); // GH-90000
 
-      AgentDispatcherInput input = new AgentDispatcherInput(
-          "task-1", "Build feature X", List.of("implementation"), "NORMAL", Map.of());
+      AgentDispatcherInput input = new AgentDispatcherInput( // GH-90000
+          "task-1", "Build feature X", List.of("implementation [GH-90000]"), "NORMAL", Map.of());
 
-      StepResult<AgentDispatcherOutput> result = runPromise(() ->
-          generator.generate(
-              StepRequest.of("expert.agent-dispatcher", input),
-              AgentContext.empty()));
+      StepResult<AgentDispatcherOutput> result = runPromise(() -> // GH-90000
+          generator.generate( // GH-90000
+              StepRequest.of("expert.agent-dispatcher", input), // GH-90000
+              AgentContext.empty())); // GH-90000
 
-      assertThat(result.isSuccess()).isTrue();
-      assertThat(result.output().assignedAgentId())
-          .isEqualTo("implementation.implement");
-      assertThat(result.output().routingReason()).isEqualTo("capability-match");
-      assertThat(result.output().confidenceScore()).isGreaterThan(0.0);
+      assertThat(result.isSuccess()).isTrue(); // GH-90000
+      assertThat(result.output().assignedAgentId()) // GH-90000
+          .isEqualTo("implementation.implement [GH-90000]");
+      assertThat(result.output().routingReason()).isEqualTo("capability-match [GH-90000]");
+      assertThat(result.output().confidenceScore()).isGreaterThan(0.0); // GH-90000
     }
 
     @Test
-    @DisplayName("should route security capability to security-tests agent")
-    void routeSecurity() {
+    @DisplayName("should route security capability to security-tests agent [GH-90000]")
+    void routeSecurity() { // GH-90000
       OutputGenerator<StepRequest<AgentDispatcherInput>,
           StepResult<AgentDispatcherOutput>> generator =
-          new AgentDispatcherAgent.AgentDispatcherGenerator();
+          new AgentDispatcherAgent.AgentDispatcherGenerator(); // GH-90000
 
-      AgentDispatcherInput input = new AgentDispatcherInput(
-          "task-2", "Run security scan", List.of("security"), "HIGH", Map.of());
+      AgentDispatcherInput input = new AgentDispatcherInput( // GH-90000
+          "task-2", "Run security scan", List.of("security [GH-90000]"), "HIGH", Map.of());
 
-      StepResult<AgentDispatcherOutput> result = runPromise(() ->
-          generator.generate(
-              StepRequest.of("expert.agent-dispatcher", input),
-              AgentContext.empty()));
+      StepResult<AgentDispatcherOutput> result = runPromise(() -> // GH-90000
+          generator.generate( // GH-90000
+              StepRequest.of("expert.agent-dispatcher", input), // GH-90000
+              AgentContext.empty())); // GH-90000
 
-      assertThat(result.output().assignedAgentId())
-          .isEqualTo("specialist.security-tests");
+      assertThat(result.output().assignedAgentId()) // GH-90000
+          .isEqualTo("specialist.security-tests [GH-90000]");
     }
 
     @Test
-    @DisplayName("should fallback to lifecycle orchestrator for unknown capability")
-    void fallbackForUnknown() {
+    @DisplayName("should fallback to lifecycle orchestrator for unknown capability [GH-90000]")
+    void fallbackForUnknown() { // GH-90000
       OutputGenerator<StepRequest<AgentDispatcherInput>,
           StepResult<AgentDispatcherOutput>> generator =
-          new AgentDispatcherAgent.AgentDispatcherGenerator();
+          new AgentDispatcherAgent.AgentDispatcherGenerator(); // GH-90000
 
-      AgentDispatcherInput input = new AgentDispatcherInput(
-          "task-3", "Unknown task", List.of("quantum-computing"), "NORMAL", Map.of());
+      AgentDispatcherInput input = new AgentDispatcherInput( // GH-90000
+          "task-3", "Unknown task", List.of("quantum-computing [GH-90000]"), "NORMAL", Map.of());
 
-      StepResult<AgentDispatcherOutput> result = runPromise(() ->
-          generator.generate(
-              StepRequest.of("expert.agent-dispatcher", input),
-              AgentContext.empty()));
+      StepResult<AgentDispatcherOutput> result = runPromise(() -> // GH-90000
+          generator.generate( // GH-90000
+              StepRequest.of("expert.agent-dispatcher", input), // GH-90000
+              AgentContext.empty())); // GH-90000
 
-      assertThat(result.output().assignedAgentId())
-          .isEqualTo("strategic.full-lifecycle");
-      assertThat(result.output().routingReason())
-          .isEqualTo("no-capability-match-escalating");
-      assertThat(result.output().confidenceScore()).isEqualTo(0.3);
+      assertThat(result.output().assignedAgentId()) // GH-90000
+          .isEqualTo("strategic.full-lifecycle [GH-90000]");
+      assertThat(result.output().routingReason()) // GH-90000
+          .isEqualTo("no-capability-match-escalating [GH-90000]");
+      assertThat(result.output().confidenceScore()).isEqualTo(0.3); // GH-90000
     }
 
     @Test
-    @DisplayName("should track alternative agents for multi-capability request")
-    void alternativeAgents() {
+    @DisplayName("should track alternative agents for multi-capability request [GH-90000]")
+    void alternativeAgents() { // GH-90000
       OutputGenerator<StepRequest<AgentDispatcherInput>,
           StepResult<AgentDispatcherOutput>> generator =
-          new AgentDispatcherAgent.AgentDispatcherGenerator();
+          new AgentDispatcherAgent.AgentDispatcherGenerator(); // GH-90000
 
-      AgentDispatcherInput input = new AgentDispatcherInput(
-          "task-4", "Build and test", List.of("implementation", "testing"),
-          "NORMAL", Map.of());
+      AgentDispatcherInput input = new AgentDispatcherInput( // GH-90000
+          "task-4", "Build and test", List.of("implementation", "testing"), // GH-90000
+          "NORMAL", Map.of()); // GH-90000
 
-      StepResult<AgentDispatcherOutput> result = runPromise(() ->
-          generator.generate(
-              StepRequest.of("expert.agent-dispatcher", input),
-              AgentContext.empty()));
+      StepResult<AgentDispatcherOutput> result = runPromise(() -> // GH-90000
+          generator.generate( // GH-90000
+              StepRequest.of("expert.agent-dispatcher", input), // GH-90000
+              AgentContext.empty())); // GH-90000
 
-      assertThat(result.isSuccess()).isTrue();
+      assertThat(result.isSuccess()).isTrue(); // GH-90000
       // One agent should be primary, the other in alternatives
-      assertThat(result.output().assignedAgentId()).isNotEmpty();
+      assertThat(result.output().assignedAgentId()).isNotEmpty(); // GH-90000
     }
   }
 
   @Nested
-  @DisplayName("StepContract")
+  @DisplayName("StepContract [GH-90000]")
   class StepContractTests {
 
     @Test
-    @DisplayName("should have correct step name")
-    void stepName() {
-      assertThat(agent.getStepName()).isEqualTo("expert.agent-dispatcher");
+    @DisplayName("should have correct step name [GH-90000]")
+    void stepName() { // GH-90000
+      assertThat(agent.getStepName()).isEqualTo("expert.agent-dispatcher [GH-90000]");
     }
 
     @Test
-    @DisplayName("should advertise routing capabilities")
-    void capabilities() {
-      assertThat(agent.getStepContract().capabilities())
-          .contains("task-routing", "agent-selection", "load-balancing");
+    @DisplayName("should advertise routing capabilities [GH-90000]")
+    void capabilities() { // GH-90000
+      assertThat(agent.getStepContract().capabilities()) // GH-90000
+          .contains("task-routing", "agent-selection", "load-balancing"); // GH-90000
     }
   }
 }

@@ -21,216 +21,216 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Kernel registry unit tests — ALL async tests MUST extend EventloopTestBase.
  *
- * <p>CRITICAL: NEVER call {@code .getResult()} on a Promise (throws NPE).
- * Use {@code runPromise(() -> ...)} from EventloopTestBase instead.</p>
+ * <p>CRITICAL: NEVER call {@code .getResult()} on a Promise (throws NPE). // GH-90000
+ * Use {@code runPromise(() -> ...)} from EventloopTestBase instead.</p> // GH-90000
  *
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("KernelRegistry Tests")
+@DisplayName("KernelRegistry Tests [GH-90000]")
 class KernelRegistryTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
 
     @BeforeEach
-    void setUp() {
-        registry = new KernelRegistryImpl();
+    void setUp() { // GH-90000
+        registry = new KernelRegistryImpl(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and retrieve module by ID")
-    void testModuleRegistration() {
+    @DisplayName("Should register and retrieve module by ID [GH-90000]")
+    void testModuleRegistration() { // GH-90000
         // GIVEN
-        TestKernelModule module = new TestKernelModule("test-module", "1.0.0");
+        TestKernelModule module = new TestKernelModule("test-module", "1.0.0"); // GH-90000
 
         // WHEN
-        registry.registerModule(module);
+        registry.registerModule(module); // GH-90000
 
         // THEN
-        Optional<KernelModule> retrieved = registry.getModule("test-module");
-        assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualTo(module);
+        Optional<KernelModule> retrieved = registry.getModule("test-module [GH-90000]");
+        assertThat(retrieved).isPresent(); // GH-90000
+        assertThat(retrieved.get()).isEqualTo(module); // GH-90000
     }
 
     @Test
-    @DisplayName("Should throw exception when registering duplicate module")
-    void testDuplicateModuleRegistration() {
+    @DisplayName("Should throw exception when registering duplicate module [GH-90000]")
+    void testDuplicateModuleRegistration() { // GH-90000
         // GIVEN
-        TestKernelModule module = new TestKernelModule("test-module", "1.0.0");
-        registry.registerModule(module);
+        TestKernelModule module = new TestKernelModule("test-module", "1.0.0"); // GH-90000
+        registry.registerModule(module); // GH-90000
 
         // WHEN/THEN
-        assertThatThrownBy(() -> registry.registerModule(module))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Module already registered");
+        assertThatThrownBy(() -> registry.registerModule(module)) // GH-90000
+            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .hasMessageContaining("Module already registered [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should resolve dependencies in topological order")
-    void testDependencyResolution() {
+    @DisplayName("Should resolve dependencies in topological order [GH-90000]")
+    void testDependencyResolution() { // GH-90000
         // GIVEN
-        TestKernelModule moduleA = new TestKernelModule("module-a", "1.0.0", Set.of());
-        TestKernelModule moduleB = new TestKernelModule("module-b", "1.0.0",
-            Set.of(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false)));
+        TestKernelModule moduleA = new TestKernelModule("module-a", "1.0.0", Set.of()); // GH-90000
+        TestKernelModule moduleB = new TestKernelModule("module-b", "1.0.0", // GH-90000
+            Set.of(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false))); // GH-90000
 
-        registry.registerModule(moduleA);
-        registry.registerModule(moduleB);
+        registry.registerModule(moduleA); // GH-90000
+        registry.registerModule(moduleB); // GH-90000
 
         // WHEN
-        List<KernelModule> dependencies = registry.resolveDependencies(moduleB);
+        List<KernelModule> dependencies = registry.resolveDependencies(moduleB); // GH-90000
 
         // THEN
-        assertThat(dependencies).hasSize(1);
-        assertThat(dependencies.get(0)).isEqualTo(moduleA);
+        assertThat(dependencies).hasSize(1); // GH-90000
+        assertThat(dependencies.get(0)).isEqualTo(moduleA); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate module dependencies")
-    void testDependencyValidation() {
+    @DisplayName("Should validate module dependencies [GH-90000]")
+    void testDependencyValidation() { // GH-90000
         // GIVEN
-        TestKernelModule module = new TestKernelModule("test-module", "1.0.0",
-            Set.of(new KernelDependency("missing-module", "1.0.0", KernelDependency.DependencyType.MODULE, false)));
+        TestKernelModule module = new TestKernelModule("test-module", "1.0.0", // GH-90000
+            Set.of(new KernelDependency("missing-module", "1.0.0", KernelDependency.DependencyType.MODULE, false))); // GH-90000
 
         // WHEN/THEN
-        assertThatThrownBy(() -> registry.registerModule(module))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Dependency validation failed");
+        assertThatThrownBy(() -> registry.registerModule(module)) // GH-90000
+            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .hasMessageContaining("Dependency validation failed [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should start all modules in dependency order using runPromise")
-    void testModuleLifecycle_async() {
+    @DisplayName("Should start all modules in dependency order using runPromise [GH-90000]")
+    void testModuleLifecycle_async() { // GH-90000
         // GIVEN
-        TestKernelModule module = new TestKernelModule("lifecycle-test", "1.0.0");
-        registry.registerModule(module);
+        TestKernelModule module = new TestKernelModule("lifecycle-test", "1.0.0"); // GH-90000
+        registry.registerModule(module); // GH-90000
 
         // WHEN - runPromise blocks the Eventloop correctly
-        runPromise(() -> module.start());
+        runPromise(() -> module.start()); // GH-90000
 
         // THEN
-        assertThat(module.isStarted()).isTrue();
+        assertThat(module.isStarted()).isTrue(); // GH-90000
 
         // AND stop
-        runPromise(() -> module.stop());
-        assertThat(module.isStopped()).isTrue();
+        runPromise(() -> module.stop()); // GH-90000
+        assertThat(module.isStopped()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should start multiple modules in parallel using Promises.all")
-    void testMultipleModuleStart() {
+    @DisplayName("Should start multiple modules in parallel using Promises.all [GH-90000]")
+    void testMultipleModuleStart() { // GH-90000
         // GIVEN
-        TestKernelModule module1 = new TestKernelModule("module-1", "1.0.0");
-        TestKernelModule module2 = new TestKernelModule("module-2", "1.0.0");
+        TestKernelModule module1 = new TestKernelModule("module-1", "1.0.0"); // GH-90000
+        TestKernelModule module2 = new TestKernelModule("module-2", "1.0.0"); // GH-90000
 
-        registry.registerModule(module1);
-        registry.registerModule(module2);
+        registry.registerModule(module1); // GH-90000
+        registry.registerModule(module2); // GH-90000
 
         // WHEN - use runPromise for the combined promise
-        runPromise(() -> Promises.all(List.of(module1.start(), module2.start())));
+        runPromise(() -> Promises.all(List.of(module1.start(), module2.start()))); // GH-90000
 
         // THEN
-        assertThat(module1.isStarted()).isTrue();
-        assertThat(module2.isStarted()).isTrue();
+        assertThat(module1.isStarted()).isTrue(); // GH-90000
+        assertThat(module2.isStarted()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return healthy status for operational module")
-    void testHealthStatus() {
+    @DisplayName("Should return healthy status for operational module [GH-90000]")
+    void testHealthStatus() { // GH-90000
         // GIVEN
-        TestKernelModule module = new TestKernelModule("health-test", "1.0.0");
-        registry.registerModule(module);
+        TestKernelModule module = new TestKernelModule("health-test", "1.0.0"); // GH-90000
+        registry.registerModule(module); // GH-90000
 
         // WHEN
-        runPromise(() -> module.start());
-        HealthStatus status = module.getHealthStatus();
+        runPromise(() -> module.start()); // GH-90000
+        HealthStatus status = module.getHealthStatus(); // GH-90000
 
         // THEN
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY); // GH-90000
     }
 
     @Test
-    @DisplayName("Should aggregate health status from all modules")
-    void testAggregateHealthStatus() {
+    @DisplayName("Should aggregate health status from all modules [GH-90000]")
+    void testAggregateHealthStatus() { // GH-90000
         // GIVEN
-        TestKernelModule healthyModule = new TestKernelModule("healthy", "1.0.0");
-        TestKernelModule unhealthyModule = new TestKernelModule("unhealthy", "1.0.0") {
+        TestKernelModule healthyModule = new TestKernelModule("healthy", "1.0.0"); // GH-90000
+        TestKernelModule unhealthyModule = new TestKernelModule("unhealthy", "1.0.0") { // GH-90000
             @Override
-            public HealthStatus getHealthStatus() {
-                return HealthStatus.unhealthy("Test failure");
+            public HealthStatus getHealthStatus() { // GH-90000
+                return HealthStatus.unhealthy("Test failure [GH-90000]");
             }
         };
 
-        registry.registerModule(healthyModule);
-        registry.registerModule(unhealthyModule);
+        registry.registerModule(healthyModule); // GH-90000
+        registry.registerModule(unhealthyModule); // GH-90000
 
         // WHEN
-        HealthStatus aggregate = registry.getAggregateHealthStatus();
+        HealthStatus aggregate = registry.getAggregateHealthStatus(); // GH-90000
 
         // THEN
-        assertThat(aggregate.getStatus()).isEqualTo(HealthStatus.Status.DEGRADED);
+        assertThat(aggregate.getStatus()).isEqualTo(HealthStatus.Status.DEGRADED); // GH-90000
     }
 
     @Test
-    @DisplayName("Should get modules by capability")
-    void testGetModulesByCapability() {
+    @DisplayName("Should get modules by capability [GH-90000]")
+    void testGetModulesByCapability() { // GH-90000
         // GIVEN
         KernelCapability dataStorage = KernelCapability.Core.DATA_STORAGE;
-        TestKernelModule module = new TestKernelModule("data-module", "1.0.0",
-            Set.of(dataStorage), Set.of());
+        TestKernelModule module = new TestKernelModule("data-module", "1.0.0", // GH-90000
+            Set.of(dataStorage), Set.of()); // GH-90000
 
-        registry.registerModule(module);
+        registry.registerModule(module); // GH-90000
 
         // WHEN
-        List<KernelModule> modules = registry.getModulesByCapability(dataStorage);
+        List<KernelModule> modules = registry.getModulesByCapability(dataStorage); // GH-90000
 
         // THEN
-        assertThat(modules).containsExactly(module);
+        assertThat(modules).containsExactly(module); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle plugin registration")
-    void testPluginRegistration() {
+    @DisplayName("Should handle plugin registration [GH-90000]")
+    void testPluginRegistration() { // GH-90000
         // GIVEN
-        TestKernelPlugin plugin = new TestKernelPlugin("test-plugin", "1.0.0");
+        TestKernelPlugin plugin = new TestKernelPlugin("test-plugin", "1.0.0"); // GH-90000
 
         // WHEN
-        registry.registerPlugin(plugin);
+        registry.registerPlugin(plugin); // GH-90000
 
         // THEN
-        Optional<KernelPlugin> retrieved = registry.getPlugin("test-plugin");
-        assertThat(retrieved).isPresent();
-        assertThat(retrieved.get()).isEqualTo(plugin);
+        Optional<KernelPlugin> retrieved = registry.getPlugin("test-plugin [GH-90000]");
+        assertThat(retrieved).isPresent(); // GH-90000
+        assertThat(retrieved.get()).isEqualTo(plugin); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate capability dependencies")
-    void testCapabilityDependencyValidation() {
+    @DisplayName("Should validate capability dependencies [GH-90000]")
+    void testCapabilityDependencyValidation() { // GH-90000
         // GIVEN - module requiring DATA_STORAGE capability
-        TestKernelModule module = new TestKernelModule("storage-user", "1.0.0",
-            Set.of(),
-            Set.of(new KernelDependency("data.storage", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false)));
+        TestKernelModule module = new TestKernelModule("storage-user", "1.0.0", // GH-90000
+            Set.of(), // GH-90000
+            Set.of(new KernelDependency("data.storage", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false))); // GH-90000
 
         // Register a module providing DATA_STORAGE
-        TestKernelModule storageModule = new TestKernelModule("storage-provider", "1.0.0",
-            Set.of(KernelCapability.Core.DATA_STORAGE), Set.of());
-        registry.registerModule(storageModule);
+        TestKernelModule storageModule = new TestKernelModule("storage-provider", "1.0.0", // GH-90000
+            Set.of(KernelCapability.Core.DATA_STORAGE), Set.of()); // GH-90000
+        registry.registerModule(storageModule); // GH-90000
 
         // WHEN/THEN - should not throw since capability is available
-        assertThatCode(() -> registry.registerModule(module)).doesNotThrowAnyException();
+        assertThatCode(() -> registry.registerModule(module)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject module with missing capability dependency")
-    void testMissingCapabilityDependency() {
+    @DisplayName("Should reject module with missing capability dependency [GH-90000]")
+    void testMissingCapabilityDependency() { // GH-90000
         // GIVEN - module requiring non-existent capability
-        TestKernelModule module = new TestKernelModule("storage-user", "1.0.0",
-            Set.of(),
-            Set.of(new KernelDependency("nonexistent.capability", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false)));
+        TestKernelModule module = new TestKernelModule("storage-user", "1.0.0", // GH-90000
+            Set.of(), // GH-90000
+            Set.of(new KernelDependency("nonexistent.capability", "1.0.0", KernelDependency.DependencyType.CAPABILITY, false))); // GH-90000
 
         // WHEN/THEN
-        assertThatThrownBy(() -> registry.registerModule(module))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Missing required capability");
+        assertThatThrownBy(() -> registry.registerModule(module)) // GH-90000
+            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .hasMessageContaining("Missing required capability [GH-90000]");
     }
 
     // ==================== Test Helpers ====================
@@ -240,18 +240,18 @@ class KernelRegistryTest extends EventloopTestBase {
         private final String version;
         private final Set<KernelCapability> capabilities;
         private final Set<KernelDependency> dependencies;
-        private final AtomicBoolean started = new AtomicBoolean(false);
-        private final AtomicBoolean stopped = new AtomicBoolean(false);
+        private final AtomicBoolean started = new AtomicBoolean(false); // GH-90000
+        private final AtomicBoolean stopped = new AtomicBoolean(false); // GH-90000
 
-        TestKernelModule(String moduleId, String version) {
-            this(moduleId, version, Set.of(), Set.of());
+        TestKernelModule(String moduleId, String version) { // GH-90000
+            this(moduleId, version, Set.of(), Set.of()); // GH-90000
         }
 
-        TestKernelModule(String moduleId, String version, Set<KernelDependency> dependencies) {
-            this(moduleId, version, Set.of(), dependencies);
+        TestKernelModule(String moduleId, String version, Set<KernelDependency> dependencies) { // GH-90000
+            this(moduleId, version, Set.of(), dependencies); // GH-90000
         }
 
-        TestKernelModule(String moduleId, String version, Set<KernelCapability> capabilities,
+        TestKernelModule(String moduleId, String version, Set<KernelCapability> capabilities, // GH-90000
                         Set<KernelDependency> dependencies) {
             this.moduleId = moduleId;
             this.version = version;
@@ -260,96 +260,96 @@ class KernelRegistryTest extends EventloopTestBase {
         }
 
         @Override
-        public String getModuleId() { return moduleId; }
+        public String getModuleId() { return moduleId; } // GH-90000
 
         @Override
-        public String getVersion() { return version; }
+        public String getVersion() { return version; } // GH-90000
 
         @Override
-        public Set<KernelCapability> getCapabilities() { return capabilities; }
+        public Set<KernelCapability> getCapabilities() { return capabilities; } // GH-90000
 
         @Override
-        public Set<KernelDependency> getDependencies() { return dependencies; }
+        public Set<KernelDependency> getDependencies() { return dependencies; } // GH-90000
 
         @Override
-        public void initialize(com.ghatana.kernel.context.KernelContext context) {}
+        public void initialize(com.ghatana.kernel.context.KernelContext context) {} // GH-90000
 
         @Override
-        public Promise<Void> start() {
-            started.set(true);
-            return Promise.complete();
+        public Promise<Void> start() { // GH-90000
+            started.set(true); // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
         @Override
-        public Promise<Void> stop() {
-            stopped.set(true);
-            started.set(false);
-            return Promise.complete();
+        public Promise<Void> stop() { // GH-90000
+            stopped.set(true); // GH-90000
+            started.set(false); // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
         @Override
-        public HealthStatus getHealthStatus() {
-            if (!started.get()) {
-                return HealthStatus.unhealthy("Not started");
+        public HealthStatus getHealthStatus() { // GH-90000
+            if (!started.get()) { // GH-90000
+                return HealthStatus.unhealthy("Not started [GH-90000]");
             }
-            return HealthStatus.healthy();
+            return HealthStatus.healthy(); // GH-90000
         }
 
-        boolean isStarted() { return started.get(); }
-        boolean isStopped() { return stopped.get(); }
+        boolean isStarted() { return started.get(); } // GH-90000
+        boolean isStopped() { return stopped.get(); } // GH-90000
     }
 
     private static class TestKernelPlugin implements KernelPlugin {
         private final String pluginId;
         private final String version;
 
-        TestKernelPlugin(String pluginId, String version) {
+        TestKernelPlugin(String pluginId, String version) { // GH-90000
             this.pluginId = pluginId;
             this.version = version;
         }
 
         @Override
-        public com.ghatana.kernel.plugin.PluginManifest getManifest() {
-            return com.ghatana.kernel.plugin.PluginManifest.builder()
-                .pluginId(pluginId)
-                .version(version)
-                .build();
+        public com.ghatana.kernel.plugin.PluginManifest getManifest() { // GH-90000
+            return com.ghatana.kernel.plugin.PluginManifest.builder() // GH-90000
+                .pluginId(pluginId) // GH-90000
+                .version(version) // GH-90000
+                .build(); // GH-90000
         }
 
         @Override
-        public Set<String> getExportedContracts() { return Set.of(); }
+        public Set<String> getExportedContracts() { return Set.of(); } // GH-90000
 
         @Override
-        public Set<String> getRequiredContracts() { return Set.of(); }
+        public Set<String> getRequiredContracts() { return Set.of(); } // GH-90000
 
         @Override
-        public String getModuleId() { return pluginId; }
+        public String getModuleId() { return pluginId; } // GH-90000
 
         @Override
-        public String getVersion() { return version; }
+        public String getVersion() { return version; } // GH-90000
 
         @Override
-        public Set<KernelCapability> getCapabilities() { return Set.of(); }
+        public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
 
         @Override
-        public Set<KernelDependency> getDependencies() { return Set.of(); }
+        public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
 
         @Override
-        public void initialize(com.ghatana.kernel.context.KernelContext context) {}
+        public void initialize(com.ghatana.kernel.context.KernelContext context) {} // GH-90000
 
         @Override
-        public Promise<Void> install() { return Promise.complete(); }
+        public Promise<Void> install() { return Promise.complete(); } // GH-90000
 
         @Override
-        public Promise<Void> uninstall() { return Promise.complete(); }
+        public Promise<Void> uninstall() { return Promise.complete(); } // GH-90000
 
         @Override
-        public Promise<Void> start() { return Promise.complete(); }
+        public Promise<Void> start() { return Promise.complete(); } // GH-90000
 
         @Override
-        public Promise<Void> stop() { return Promise.complete(); }
+        public Promise<Void> stop() { return Promise.complete(); } // GH-90000
 
         @Override
-        public HealthStatus getHealthStatus() { return HealthStatus.healthy(); }
+        public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
     }
 }

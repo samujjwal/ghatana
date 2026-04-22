@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher;
@@ -21,157 +21,157 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Dashboard UI Contract Tests")
+@DisplayName("Dashboard UI Contract Tests [GH-90000]")
 public class DashboardUiContractTest {
 
     @Nested
-    @DisplayName("DashboardIndexPageTests")
+    @DisplayName("DashboardIndexPageTests [GH-90000]")
     class DashboardIndexPageTests {
 
         @Test
-        @DisplayName("GET /dashboard: returns 200 with dashboard meta")
-        void shouldReturnDashboardMeta() {
-            Map<String, Object> response = getDashboard();
+        @DisplayName("GET /dashboard: returns 200 with dashboard meta [GH-90000]")
+        void shouldReturnDashboardMeta() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
 
-            assertThat(response)
-                    .containsKeys("title", "description", "sections", "lastUpdated");
-            assertThat(response.get("title")).isEqualTo("Data Cloud Dashboard");
+            assertThat(response) // GH-90000
+                    .containsKeys("title", "description", "sections", "lastUpdated"); // GH-90000
+            assertThat(response.get("title [GH-90000]")).isEqualTo("Data Cloud Dashboard [GH-90000]");
         }
 
         @Test
-        @DisplayName("dashboard sections: present and typed")
-        void shouldHaveSections() {
-            Map<String, Object> response = getDashboard();
+        @DisplayName("dashboard sections: present and typed [GH-90000]")
+        void shouldHaveSections() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
 
-            List<?> sections = (List<?>) response.get("sections");
-            assertThat(sections)
-                    .isNotEmpty()
-                    .hasSizeGreaterThanOrEqualTo(4);
+            List<?> sections = (List<?>) response.get("sections [GH-90000]");
+            assertThat(sections) // GH-90000
+                    .isNotEmpty() // GH-90000
+                    .hasSizeGreaterThanOrEqualTo(4); // GH-90000
         }
 
         @Test
-        @DisplayName("dashboard meta includes statistics")
-        void shouldIncludeStatistics() {
-            Map<String, Object> response = getDashboard();
+        @DisplayName("dashboard meta includes statistics [GH-90000]")
+        void shouldIncludeStatistics() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
 
-            assertThat(response)
-                    .containsKeys("stats");
+            assertThat(response) // GH-90000
+                    .containsKeys("stats [GH-90000]");
 
-            Map<String, ?> stats = (Map<String, ?>) response.get("stats");
-            assertThat(stats).containsKeys("collectionsCount", "datasetsCount", "queriesCount");
+            Map<String, ?> stats = (Map<String, ?>) response.get("stats [GH-90000]");
+            assertThat(stats).containsKeys("collectionsCount", "datasetsCount", "queriesCount"); // GH-90000
         }
 
         @Test
-        @DisplayName("last updated timestamp: valid format")
-        void shouldHaveValidTimestamp() {
-            Map<String, Object> response = getDashboard();
+        @DisplayName("last updated timestamp: valid format [GH-90000]")
+        void shouldHaveValidTimestamp() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
 
-            String lastUpdated = response.get("lastUpdated").toString();
-            assertThat(lastUpdated).matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|\\+\\d{2}:\\d{2})?$");
+            String lastUpdated = response.get("lastUpdated [GH-90000]").toString();
+            assertThat(lastUpdated).matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|\\+\\d{2}:\\d{2})?$ [GH-90000]");
         }
 
         @Test
-        @DisplayName("dashboard authenticated: requires tenant")
-        void shouldValidateTenant() {
-            Map<String, Object> response = getDashboardForTenant("tenant-1");
+        @DisplayName("dashboard authenticated: requires tenant [GH-90000]")
+        void shouldValidateTenant() { // GH-90000
+            Map<String, Object> response = getDashboardForTenant("tenant-1 [GH-90000]");
 
-            assertThat(response.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(response.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("DashboardRecentActivityTests")
+    @DisplayName("DashboardRecentActivityTests [GH-90000]")
     class DashboardRecentActivityTests {
 
         @Test
-        @DisplayName("recent activity: list returned")
-        void shouldReturnRecentActivity() {
-            Map<String, Object> response = getDashboard();
-            List<?> activity = (List<?>) response.getOrDefault("recentActivity", List.of());
+        @DisplayName("recent activity: list returned [GH-90000]")
+        void shouldReturnRecentActivity() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
+            List<?> activity = (List<?>) response.getOrDefault("recentActivity", List.of()); // GH-90000
 
-            assertThat(activity).isNotNull();
+            assertThat(activity).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("activity items: typed with required fields")
-        void shouldHaveActivitySchema() {
-            Map<String, Object> response = getDashboard();
-            List<?> activity = (List<?>) response.getOrDefault("recentActivity", List.of());
+        @DisplayName("activity items: typed with required fields [GH-90000]")
+        void shouldHaveActivitySchema() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
+            List<?> activity = (List<?>) response.getOrDefault("recentActivity", List.of()); // GH-90000
 
-            if (!activity.isEmpty()) {
-                Map<String, ?> item = (Map<String, ?>) activity.get(0);
-                assertThat(item).containsKeys("action", "timestamp", "resource");
+            if (!activity.isEmpty()) { // GH-90000
+                Map<String, ?> item = (Map<String, ?>) activity.get(0); // GH-90000
+                assertThat(item).containsKeys("action", "timestamp", "resource"); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("activity pagination: limit and offset")
-        void shouldPaginateActivity() {
-            Map<String, Object> params = new HashMap<>();
-            params.put("limit", 10);
-            params.put("offset", 0);
+        @DisplayName("activity pagination: limit and offset [GH-90000]")
+        void shouldPaginateActivity() { // GH-90000
+            Map<String, Object> params = new HashMap<>(); // GH-90000
+            params.put("limit", 10); // GH-90000
+            params.put("offset", 0); // GH-90000
 
-            Map<String, Object> response = getDashboardWithParams(params);
+            Map<String, Object> response = getDashboardWithParams(params); // GH-90000
 
-            assertThat(response.get("limit")).isEqualTo(10);
+            assertThat(response.get("limit [GH-90000]")).isEqualTo(10);
         }
 
         @Test
-        @DisplayName("activity tenant isolation: filtered per tenant")
-        void shouldIsolateActivityByTenant() {
-            Map<String, Object> t1Response = getDashboardForTenant("tenant-1");
-            Map<String, Object> t2Response = getDashboardForTenant("tenant-2");
+        @DisplayName("activity tenant isolation: filtered per tenant [GH-90000]")
+        void shouldIsolateActivityByTenant() { // GH-90000
+            Map<String, Object> t1Response = getDashboardForTenant("tenant-1 [GH-90000]");
+            Map<String, Object> t2Response = getDashboardForTenant("tenant-2 [GH-90000]");
 
-            assertThat(t1Response.get("tenantId")).isNotEqualTo(t2Response.get("tenantId"));
+            assertThat(t1Response.get("tenantId [GH-90000]")).isNotEqualTo(t2Response.get("tenantId [GH-90000]"));
         }
 
         @Test
-        @DisplayName("activity timestamp ordering: descending")
-        void shouldOrderActivityDescending() {
-            Map<String, Object> response = getDashboard();
-            List<?> activity = (List<?>) response.getOrDefault("recentActivity", List.of());
+        @DisplayName("activity timestamp ordering: descending [GH-90000]")
+        void shouldOrderActivityDescending() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
+            List<?> activity = (List<?>) response.getOrDefault("recentActivity", List.of()); // GH-90000
 
-            // Verify ordering is consistent (assumes descending by timestamp)
-            assertThat(activity).isNotNull();
+            // Verify ordering is consistent (assumes descending by timestamp) // GH-90000
+            assertThat(activity).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("DashboardQuickStatsTests")
+    @DisplayName("DashboardQuickStatsTests [GH-90000]")
     class DashboardQuickStatsTests {
 
         @Test
-        @DisplayName("quick stats: summary counts present")
-        void shouldReturnQuickStats() {
-            Map<String, Object> response = getDashboard();
-            Map<String, ?> stats = (Map<String, ?>) response.get("stats");
+        @DisplayName("quick stats: summary counts present [GH-90000]")
+        void shouldReturnQuickStats() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
+            Map<String, ?> stats = (Map<String, ?>) response.get("stats [GH-90000]");
 
-            assertThat(stats).containsKeys("collectionsCount", "datasetsCount", "queriesCount");
+            assertThat(stats).containsKeys("collectionsCount", "datasetsCount", "queriesCount"); // GH-90000
         }
 
         @Test
-        @DisplayName("stats filters supported: by date range")
-        void shouldFilterStatsByDateRange() {
-            Map<String, Object> params = new HashMap<>();
-            params.put("startDate", "2026-01-01");
-            params.put("endDate", "2026-03-31");
+        @DisplayName("stats filters supported: by date range [GH-90000]")
+        void shouldFilterStatsByDateRange() { // GH-90000
+            Map<String, Object> params = new HashMap<>(); // GH-90000
+            params.put("startDate", "2026-01-01"); // GH-90000
+            params.put("endDate", "2026-03-31"); // GH-90000
 
-            Map<String, Object> response = getDashboardWithParams(params);
+            Map<String, Object> response = getDashboardWithParams(params); // GH-90000
 
-            assertThat(response).containsKey("stats");
+            assertThat(response).containsKey("stats [GH-90000]");
         }
 
         @Test
-        @DisplayName("stats accuracy: non-negative integers")
-        void shouldReturnValidStats() {
-            Map<String, Object> response = getDashboard();
-            Map<String, ?> stats = (Map<String, ?>) response.get("stats");
+        @DisplayName("stats accuracy: non-negative integers [GH-90000]")
+        void shouldReturnValidStats() { // GH-90000
+            Map<String, Object> response = getDashboard(); // GH-90000
+            Map<String, ?> stats = (Map<String, ?>) response.get("stats [GH-90000]");
 
-            long collectionCount = ((Number) stats.get("collectionsCount")).longValue();
-            long datasetCount = ((Number) stats.get("datasetsCount")).longValue();
+            long collectionCount = ((Number) stats.get("collectionsCount [GH-90000]")).longValue();
+            long datasetCount = ((Number) stats.get("datasetsCount [GH-90000]")).longValue();
 
-            assertThat(collectionCount).isGreaterThanOrEqualTo(0);
-            assertThat(datasetCount).isGreaterThanOrEqualTo(0);
+            assertThat(collectionCount).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(datasetCount).isGreaterThanOrEqualTo(0); // GH-90000
         }
     }
 
@@ -179,60 +179,60 @@ public class DashboardUiContractTest {
     // Helper Methods
     // ─────────────────────────────────────────────────────────────────────
 
-    private Map<String, Object> getDashboard() {
-        return getDashboardForTenant("tenant-default");
+    private Map<String, Object> getDashboard() { // GH-90000
+        return getDashboardForTenant("tenant-default [GH-90000]");
     }
 
-    private Map<String, Object> getDashboardForTenant(String tenantId) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("title", "Data Cloud Dashboard");
-        response.put("description", "Overview of all data cloud resources");
-        response.put("tenantId", tenantId);
-        response.put("lastUpdated", "2026-04-04T12:00:00Z");
+    private Map<String, Object> getDashboardForTenant(String tenantId) { // GH-90000
+        Map<String, Object> response = new HashMap<>(); // GH-90000
+        response.put("title", "Data Cloud Dashboard"); // GH-90000
+        response.put("description", "Overview of all data cloud resources"); // GH-90000
+        response.put("tenantId", tenantId); // GH-90000
+        response.put("lastUpdated", "2026-04-04T12:00:00Z"); // GH-90000
 
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("collectionsCount", 15);
-        stats.put("datasetsCount", 42);
-        stats.put("queriesCount", 128);
-        response.put("stats", stats);
+        Map<String, Object> stats = new HashMap<>(); // GH-90000
+        stats.put("collectionsCount", 15); // GH-90000
+        stats.put("datasetsCount", 42); // GH-90000
+        stats.put("queriesCount", 128); // GH-90000
+        response.put("stats", stats); // GH-90000
 
-        List<Map<String, Object>> sections = List.of(
-                createSection("collections", "Collections", 5),
-                createSection("datasets", "Datasets", 8),
-                createSection("queries", "Queries", 3),
-                createSection("reports", "Reports", 4)
+        List<Map<String, Object>> sections = List.of( // GH-90000
+                createSection("collections", "Collections", 5), // GH-90000
+                createSection("datasets", "Datasets", 8), // GH-90000
+                createSection("queries", "Queries", 3), // GH-90000
+                createSection("reports", "Reports", 4) // GH-90000
         );
-        response.put("sections", sections);
+        response.put("sections", sections); // GH-90000
 
-        response.put("recentActivity", List.of(
-                createActivity("create_collection", "Created collection: Sales Data"),
-                createActivity("upload_dataset", "Uploaded dataset: Q1 2026")
+        response.put("recentActivity", List.of( // GH-90000
+                createActivity("create_collection", "Created collection: Sales Data"), // GH-90000
+                createActivity("upload_dataset", "Uploaded dataset: Q1 2026") // GH-90000
         ));
 
         return response;
     }
 
-    private Map<String, Object> getDashboardWithParams(Map<String, Object> params) {
-        Map<String, Object> dashboard = getDashboard();
-        dashboard.putAll(params);
+    private Map<String, Object> getDashboardWithParams(Map<String, Object> params) { // GH-90000
+        Map<String, Object> dashboard = getDashboard(); // GH-90000
+        dashboard.putAll(params); // GH-90000
         return dashboard;
     }
 
-    private Map<String, Object> createSection(String id, String title, int itemCount) {
-        Map<String, Object> section = new HashMap<>();
-        section.put("id", id);
-        section.put("title", title);
-        section.put("itemCount", itemCount);
+    private Map<String, Object> createSection(String id, String title, int itemCount) { // GH-90000
+        Map<String, Object> section = new HashMap<>(); // GH-90000
+        section.put("id", id); // GH-90000
+        section.put("title", title); // GH-90000
+        section.put("itemCount", itemCount); // GH-90000
         return section;
     }
 
-    private Map<String, Object> createActivity(String action, String description) {
-        Map<String, Object> activity = new HashMap<>();
-        activity.put("id", UUID.randomUUID().toString());
-        activity.put("action", action);
-        activity.put("description", description);
-        activity.put("timestamp", "2026-04-04T11:45:00Z");
-        activity.put("resource", "collection");
+    private Map<String, Object> createActivity(String action, String description) { // GH-90000
+        Map<String, Object> activity = new HashMap<>(); // GH-90000
+        activity.put("id", UUID.randomUUID().toString()); // GH-90000
+        activity.put("action", action); // GH-90000
+        activity.put("description", description); // GH-90000
+        activity.put("timestamp", "2026-04-04T11:45:00Z"); // GH-90000
+        activity.put("resource", "collection"); // GH-90000
         return activity;
     }
 }

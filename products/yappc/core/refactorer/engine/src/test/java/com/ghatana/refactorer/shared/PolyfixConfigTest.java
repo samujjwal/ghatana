@@ -35,54 +35,54 @@ class PolyfixConfigTest {
     private static final String SEMGREP = "semgrep";
 
     @Test
-    void testBudgetsRecord() {
-        PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 10);
-        assertEquals(5, budgets.maxPasses());
-        assertEquals(10, budgets.maxEditsPerFile());
+    void testBudgetsRecord() { // GH-90000
+        PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 10); // GH-90000
+        assertEquals(5, budgets.maxPasses()); // GH-90000
+        assertEquals(10, budgets.maxEditsPerFile()); // GH-90000
 
-        // Test toString()
-        assertNotNull(budgets.toString());
-        assertTrue(budgets.toString().contains("maxPasses=5"));
-        assertTrue(budgets.toString().contains("maxEditsPerFile=10"));
+        // Test toString() // GH-90000
+        assertNotNull(budgets.toString()); // GH-90000
+        assertTrue(budgets.toString().contains("maxPasses=5 [GH-90000]"));
+        assertTrue(budgets.toString().contains("maxEditsPerFile=10 [GH-90000]"));
 
-        // Test equals() and hashCode()
-        PolyfixConfig.Budgets sameBudgets = new PolyfixConfig.Budgets(5, 10);
-        PolyfixConfig.Budgets differentBudgets = new PolyfixConfig.Budgets(1, 2);
+        // Test equals() and hashCode() // GH-90000
+        PolyfixConfig.Budgets sameBudgets = new PolyfixConfig.Budgets(5, 10); // GH-90000
+        PolyfixConfig.Budgets differentBudgets = new PolyfixConfig.Budgets(1, 2); // GH-90000
 
-        assertEquals(budgets, sameBudgets);
-        assertNotEquals(budgets, differentBudgets);
-        assertEquals(budgets.hashCode(), sameBudgets.hashCode());
-        assertNotEquals(budgets.hashCode(), differentBudgets.hashCode());
+        assertEquals(budgets, sameBudgets); // GH-90000
+        assertNotEquals(budgets, differentBudgets); // GH-90000
+        assertEquals(budgets.hashCode(), sameBudgets.hashCode()); // GH-90000
+        assertNotEquals(budgets.hashCode(), differentBudgets.hashCode()); // GH-90000
     }
 
     @Test
-    void testPoliciesRecord() {
-        PolyfixConfig.Policies policies = new PolyfixConfig.Policies(true, false, true, false);
-        assertTrue(policies.tsAllowTemporaryAny());
-        assertFalse(policies.pythonAddMissingImports());
-        assertTrue(policies.bashEnforceStrictMode());
-        assertFalse(policies.jsonAutofillRequiredDefaults());
+    void testPoliciesRecord() { // GH-90000
+        PolyfixConfig.Policies policies = new PolyfixConfig.Policies(true, false, true, false); // GH-90000
+        assertTrue(policies.tsAllowTemporaryAny()); // GH-90000
+        assertFalse(policies.pythonAddMissingImports()); // GH-90000
+        assertTrue(policies.bashEnforceStrictMode()); // GH-90000
+        assertFalse(policies.jsonAutofillRequiredDefaults()); // GH-90000
 
-        // Test toString()
-        assertNotNull(policies.toString());
-        assertTrue(policies.toString().contains("tsAllowTemporaryAny=true"));
-        assertTrue(policies.toString().contains("pythonAddMissingImports=false"));
+        // Test toString() // GH-90000
+        assertNotNull(policies.toString()); // GH-90000
+        assertTrue(policies.toString().contains("tsAllowTemporaryAny=true [GH-90000]"));
+        assertTrue(policies.toString().contains("pythonAddMissingImports=false [GH-90000]"));
 
-        // Test equals() and hashCode()
-        PolyfixConfig.Policies samePolicies = new PolyfixConfig.Policies(true, false, true, false);
+        // Test equals() and hashCode() // GH-90000
+        PolyfixConfig.Policies samePolicies = new PolyfixConfig.Policies(true, false, true, false); // GH-90000
         PolyfixConfig.Policies differentPolicies =
-                new PolyfixConfig.Policies(false, true, false, true);
+                new PolyfixConfig.Policies(false, true, false, true); // GH-90000
 
-        assertEquals(policies, samePolicies);
-        assertNotEquals(policies, differentPolicies);
-        assertEquals(policies.hashCode(), samePolicies.hashCode());
-        assertNotEquals(policies.hashCode(), differentPolicies.hashCode());
+        assertEquals(policies, samePolicies); // GH-90000
+        assertNotEquals(policies, differentPolicies); // GH-90000
+        assertEquals(policies.hashCode(), samePolicies.hashCode()); // GH-90000
+        assertNotEquals(policies.hashCode(), differentPolicies.hashCode()); // GH-90000
     }
 
     @Test
-    void testToolsRecord() {
+    void testToolsRecord() { // GH-90000
         PolyfixConfig.Tools tools =
-                new PolyfixConfig.Tools(
+                new PolyfixConfig.Tools( // GH-90000
                         NODE,
                         ESLINT,
                         TSC,
@@ -96,18 +96,18 @@ class PolyfixConfigTest {
                         RUSTFMT,
                         SEMGREP);
 
-        assertEquals(NODE, tools.node());
-        assertEquals(ESLINT, tools.eslint());
-        assertEquals(TSC, tools.tsc());
+        assertEquals(NODE, tools.node()); // GH-90000
+        assertEquals(ESLINT, tools.eslint()); // GH-90000
+        assertEquals(TSC, tools.tsc()); // GH-90000
 
-        // Test toString()
-        assertNotNull(tools.toString());
-        assertTrue(tools.toString().contains("node=node"));
-        assertTrue(tools.toString().contains("eslint=eslint"));
+        // Test toString() // GH-90000
+        assertNotNull(tools.toString()); // GH-90000
+        assertTrue(tools.toString().contains("node=node [GH-90000]"));
+        assertTrue(tools.toString().contains("eslint=eslint [GH-90000]"));
 
-        // Test equals() and hashCode()
+        // Test equals() and hashCode() // GH-90000
         PolyfixConfig.Tools sameTools =
-                new PolyfixConfig.Tools(
+                new PolyfixConfig.Tools( // GH-90000
                         NODE,
                         ESLINT,
                         TSC,
@@ -122,7 +122,7 @@ class PolyfixConfigTest {
                         SEMGREP);
 
         PolyfixConfig.Tools differentTools =
-                new PolyfixConfig.Tools(
+                new PolyfixConfig.Tools( // GH-90000
                         "node2",
                         "eslint2",
                         "tsc2",
@@ -136,20 +136,20 @@ class PolyfixConfigTest {
                         "rustfmt2",
                         "semgrep2");
 
-        assertEquals(tools, sameTools);
-        assertNotEquals(tools, differentTools);
-        assertEquals(tools.hashCode(), sameTools.hashCode());
-        assertNotEquals(tools.hashCode(), differentTools.hashCode());
+        assertEquals(tools, sameTools); // GH-90000
+        assertNotEquals(tools, differentTools); // GH-90000
+        assertEquals(tools.hashCode(), sameTools.hashCode()); // GH-90000
+        assertNotEquals(tools.hashCode(), differentTools.hashCode()); // GH-90000
     }
 
     @Test
-    void testMainRecord() {
-        List<String> languages = List.of("java", "typescript");
-        List<String> schemaPaths = List.of("schemas");
-        PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 10);
-        PolyfixConfig.Policies policies = new PolyfixConfig.Policies(true, true, true, false);
+    void testMainRecord() { // GH-90000
+        List<String> languages = List.of("java", "typescript"); // GH-90000
+        List<String> schemaPaths = List.of("schemas [GH-90000]");
+        PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 10); // GH-90000
+        PolyfixConfig.Policies policies = new PolyfixConfig.Policies(true, true, true, false); // GH-90000
         PolyfixConfig.Tools tools =
-                new PolyfixConfig.Tools(
+                new PolyfixConfig.Tools( // GH-90000
                         NODE,
                         ESLINT,
                         TSC,
@@ -163,27 +163,27 @@ class PolyfixConfigTest {
                         RUSTFMT,
                         SEMGREP);
 
-        PolyfixConfig config = new PolyfixConfig(languages, schemaPaths, budgets, policies, tools);
+        PolyfixConfig config = new PolyfixConfig(languages, schemaPaths, budgets, policies, tools); // GH-90000
 
-        assertEquals(languages, config.languages());
-        assertEquals(schemaPaths, config.schemaPaths());
-        assertEquals(budgets, config.budgets());
-        assertEquals(policies, config.policies());
-        assertEquals(tools, config.tools());
+        assertEquals(languages, config.languages()); // GH-90000
+        assertEquals(schemaPaths, config.schemaPaths()); // GH-90000
+        assertEquals(budgets, config.budgets()); // GH-90000
+        assertEquals(policies, config.policies()); // GH-90000
+        assertEquals(tools, config.tools()); // GH-90000
 
-        // Test toString()
-        assertNotNull(config.toString());
-        assertTrue(config.toString().contains("languages=[java, typescript]"));
-        assertTrue(config.toString().contains("schemaPaths=[schemas]"));
+        // Test toString() // GH-90000
+        assertNotNull(config.toString()); // GH-90000
+        assertTrue(config.toString().contains("languages=[java, typescript] [GH-90000]"));
+        assertTrue(config.toString().contains("schemaPaths=[schemas] [GH-90000]"));
 
-        // Test equals() and hashCode()
+        // Test equals() and hashCode() // GH-90000
         PolyfixConfig sameConfig =
-                new PolyfixConfig(
-                        List.of("java", "typescript"),
-                        List.of("schemas"),
-                        new PolyfixConfig.Budgets(5, 10),
-                        new PolyfixConfig.Policies(true, true, true, false),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of("java", "typescript"), // GH-90000
+                        List.of("schemas [GH-90000]"),
+                        new PolyfixConfig.Budgets(5, 10), // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 NODE,
                                 ESLINT,
                                 TSC,
@@ -198,12 +198,12 @@ class PolyfixConfigTest {
                                 SEMGREP));
 
         PolyfixConfig differentConfig =
-                new PolyfixConfig(
-                        List.of("python"),
-                        List.of("schemas"),
-                        new PolyfixConfig.Budgets(1, 1),
-                        new PolyfixConfig.Policies(false, false, false, true),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of("python [GH-90000]"),
+                        List.of("schemas [GH-90000]"),
+                        new PolyfixConfig.Budgets(1, 1), // GH-90000
+                        new PolyfixConfig.Policies(false, false, false, true), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 "node2",
                                 "eslint2",
                                 "tsc2",
@@ -217,9 +217,9 @@ class PolyfixConfigTest {
                                 "rustfmt2",
                                 "semgrep2"));
 
-        assertEquals(config, sameConfig);
-        assertNotEquals(config, differentConfig);
-        assertEquals(config.hashCode(), sameConfig.hashCode());
-        assertNotEquals(config.hashCode(), differentConfig.hashCode());
+        assertEquals(config, sameConfig); // GH-90000
+        assertNotEquals(config, differentConfig); // GH-90000
+        assertEquals(config.hashCode(), sameConfig.hashCode()); // GH-90000
+        assertNotEquals(config.hashCode(), differentConfig.hashCode()); // GH-90000
     }
 }

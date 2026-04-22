@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -23,15 +23,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Provides reusable infrastructure for testing REST endpoints:
  * <ul>
- *   <li>HTTP server lifecycle (start/stop)</li>
+ *   <li>HTTP server lifecycle (start/stop)</li> // GH-90000
  *   <li>HTTP client with default headers</li>
- *   <li>Helper methods for common HTTP operations (GET, POST, PUT, DELETE)</li>
+ *   <li>Helper methods for common HTTP operations (GET, POST, PUT, DELETE)</li> // GH-90000
  *   <li>Response parsing and assertion helpers</li>
  *   <li>Tenant context management</li>
  *   <li>Test data builders</li>
  * </ul>
  *
- * <p><strong>Usage:</strong> Extend this class and override {@link #startServer()} to configure
+ * <p><strong>Usage:</strong> Extend this class and override {@link #startServer()} to configure // GH-90000
  * your specific service under test.
  *
  * <p><strong>No Duplication Rule:</strong> All HTTP tests inherit from this base.
@@ -42,24 +42,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code
  * class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
  *   @BeforeEach
- *   void setUp() throws Exception {
- *     mockPipelineService = mock(PipelineService.class);
- *     port = findFreePort();
+ *   void setUp() throws Exception { // GH-90000
+ *     mockPipelineService = mock(PipelineService.class); // GH-90000
+ *     port = findFreePort(); // GH-90000
  *   }
  *
  *   @Test
- *   void createPipeline_validPayload_returns200() throws Exception {
- *     startServer();
- *     HttpResponse<String> resp = postJson("/api/v1/pipelines",
- *         Map.of("name", "MyPipeline"));
- *     assertThat(resp.statusCode()).isEqualTo(200);
+ *   void createPipeline_validPayload_returns200() throws Exception { // GH-90000
+ *     startServer(); // GH-90000
+ *     HttpResponse<String> resp = postJson("/api/v1/pipelines", // GH-90000
+ *         Map.of("name", "MyPipeline")); // GH-90000
+ *     assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
  *   }
  * }
  * }
  * </pre>
  *
  * @doc.type class
- * @doc.purpose Base class for HTTP server integration tests (REUSABLE, NO DUPLICATION)
+ * @doc.purpose Base class for HTTP server integration tests (REUSABLE, NO DUPLICATION) // GH-90000
  * @doc.layer product
  * @doc.pattern TestBase
  */
@@ -69,113 +69,113 @@ public abstract class DataCloudHttpServerTestBase {
 
     protected int port;
     protected DataCloudHttpServer server;
-    protected final HttpClient httpClient = HttpClient.newBuilder().build();
-    protected final ObjectMapper mapper = new ObjectMapper();
+    protected final HttpClient httpClient = HttpClient.newBuilder().build(); // GH-90000
+    protected final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     /**
-     * Constructor. Subclasses MUST call super() in @BeforeEach and set {@code port}
-     * via {@link #findFreePort()}.
+     * Constructor. Subclasses MUST call super() in @BeforeEach and set {@code port} // GH-90000
+     * via {@link #findFreePort()}. // GH-90000
      */
-    protected DataCloudHttpServerTestBase() {}
+    protected DataCloudHttpServerTestBase() {} // GH-90000
 
     /**
-     * Lifecycle: called after this base class setUp() and before test method.
+     * Lifecycle: called after this base class setUp() and before test method. // GH-90000
      * Subclasses override to start server with their specific configuration.
      *
      * <p>Called after {@code port} has been set by subclass.
      */
-    protected abstract void startServer() throws Exception;
+    protected abstract void startServer() throws Exception; // GH-90000
 
     /**
      * Lifecycle: clean up server.
-     * Subclasses may override but MUST call super.tearDown().
+     * Subclasses may override but MUST call super.tearDown(). // GH-90000
      */
     @AfterEach
-    void tearDown() {
-        if (server != null) {
+    void tearDown() { // GH-90000
+        if (server != null) { // GH-90000
             try {
-                server.stop();
-            } catch (Exception e) {
+                server.stop(); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Log and continue; cleanup failures don't fail tests
             }
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // HTTP Helper Methods (reusable across all test suites)
+    // HTTP Helper Methods (reusable across all test suites) // GH-90000
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * POST JSON request to the server.
      *
-     * @param path API endpoint path (e.g., "/api/v1/entities/products")
-     * @param body request body (will be JSON-encoded)
+     * @param path API endpoint path (e.g., "/api/v1/entities/products") // GH-90000
+     * @param body request body (will be JSON-encoded) // GH-90000
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> postJson(String path, Map<String, ?> body)
+    protected java.net.http.HttpResponse<String> postJson(String path, Map<String, ?> body) // GH-90000
             throws Exception {
-        return postJson(path, body, Map.of());
+        return postJson(path, body, Map.of()); // GH-90000
     }
 
     /**
      * POST JSON request with custom headers.
      *
      * @param path API endpoint path
-     * @param body request body (will be JSON-encoded)
+     * @param body request body (will be JSON-encoded) // GH-90000
      * @param headers custom headers
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> postJson(String path, Map<String, ?> body,
+    protected java.net.http.HttpResponse<String> postJson(String path, Map<String, ?> body, // GH-90000
                                                              Map<String, String> headers)
             throws Exception {
-        String json = body != null ? mapper.writeValueAsString(body) : "{}";
-        return postRaw(path, json, headers);
+        String json = body != null ? mapper.writeValueAsString(body) : "{}"; // GH-90000
+        return postRaw(path, json, headers); // GH-90000
     }
 
     /**
-     * POST raw request (string body).
+     * POST raw request (string body). // GH-90000
      *
      * @param path API endpoint path
-     * @param body request body (literal string)
+     * @param body request body (literal string) // GH-90000
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> postRaw(String path, String body)
+    protected java.net.http.HttpResponse<String> postRaw(String path, String body) // GH-90000
             throws Exception {
-        return postRaw(path, body, Map.of());
+        return postRaw(path, body, Map.of()); // GH-90000
     }
 
     /**
      * POST raw request with custom headers.
      *
      * @param path API endpoint path
-     * @param body request body (literal string)
+     * @param body request body (literal string) // GH-90000
      * @param headers custom headers
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> postRaw(String path, String body,
+    protected java.net.http.HttpResponse<String> postRaw(String path, String body, // GH-90000
                                                             Map<String, String> headers)
             throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .uri(URI.create("http://127.0.0.1:" + port + path))
-                .header("Content-Type", "application/json");
-        mergeTenantHeaders(headers).forEach(builder::header);
-        return httpClient.send(builder.build(), BodyHandlers.ofString());
+        HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
+                .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+                .header("Content-Type", "application/json"); // GH-90000
+        mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
+        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> postJsonWithoutTenant(String path, Map<String, ?> body)
+    protected java.net.http.HttpResponse<String> postJsonWithoutTenant(String path, Map<String, ?> body) // GH-90000
             throws Exception {
-        String json = body != null ? mapper.writeValueAsString(body) : "{}";
-        return postRawWithoutTenant(path, json);
+        String json = body != null ? mapper.writeValueAsString(body) : "{}"; // GH-90000
+        return postRawWithoutTenant(path, json); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> postRawWithoutTenant(String path, String body)
+    protected java.net.http.HttpResponse<String> postRawWithoutTenant(String path, String body) // GH-90000
             throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .uri(URI.create("http://127.0.0.1:" + port + path))
-                .header("Content-Type", "application/json");
-        return httpClient.send(builder.build(), BodyHandlers.ofString());
+        HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
+                .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+                .header("Content-Type", "application/json"); // GH-90000
+        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
     }
 
     /**
@@ -185,13 +185,13 @@ public abstract class DataCloudHttpServerTestBase {
      * @param headers custom headers
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> get(String path, Map<String, String> headers)
+    protected java.net.http.HttpResponse<String> get(String path, Map<String, String> headers) // GH-90000
             throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .GET()
-                .uri(URI.create("http://127.0.0.1:" + port + path));
-        mergeTenantHeaders(headers).forEach(builder::header);
-        return httpClient.send(builder.build(), BodyHandlers.ofString());
+        HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
+                .GET() // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)); // GH-90000
+        mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
+        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
     }
 
     /**
@@ -202,9 +202,9 @@ public abstract class DataCloudHttpServerTestBase {
      * @param headerValue header value
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> getWithHeader(String path, String headerName, String headerValue)
+    protected java.net.http.HttpResponse<String> getWithHeader(String path, String headerName, String headerValue) // GH-90000
             throws Exception {
-        return get(path, Map.of(headerName, headerValue));
+        return get(path, Map.of(headerName, headerValue)); // GH-90000
     }
 
     /**
@@ -213,66 +213,66 @@ public abstract class DataCloudHttpServerTestBase {
      * @param path API endpoint path
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> get(String path) throws Exception {
-        return get(path, Map.of());
+    protected java.net.http.HttpResponse<String> get(String path) throws Exception { // GH-90000
+        return get(path, Map.of()); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> getWithoutTenant(String path) throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .GET()
-                .uri(URI.create("http://127.0.0.1:" + port + path));
-        return httpClient.send(builder.build(), BodyHandlers.ofString());
+    protected java.net.http.HttpResponse<String> getWithoutTenant(String path) throws Exception { // GH-90000
+        HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
+                .GET() // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)); // GH-90000
+        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
     }
 
     /**
      * PUT JSON request.
      *
      * @param path API endpoint path
-     * @param body request body (will be JSON-encoded)
+     * @param body request body (will be JSON-encoded) // GH-90000
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> putJson(String path, Map<String, ?> body)
+    protected java.net.http.HttpResponse<String> putJson(String path, Map<String, ?> body) // GH-90000
             throws Exception {
-        String json = body != null ? mapper.writeValueAsString(body) : "{}";
-        return putRaw(path, json);
+        String json = body != null ? mapper.writeValueAsString(body) : "{}"; // GH-90000
+        return putRaw(path, json); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> putJsonWithoutTenant(String path, Map<String, ?> body)
+    protected java.net.http.HttpResponse<String> putJsonWithoutTenant(String path, Map<String, ?> body) // GH-90000
             throws Exception {
-        String json = body != null ? mapper.writeValueAsString(body) : "{}";
-        return putRawWithoutTenant(path, json);
+        String json = body != null ? mapper.writeValueAsString(body) : "{}"; // GH-90000
+        return putRawWithoutTenant(path, json); // GH-90000
     }
 
     /**
      * PUT raw request.
      *
      * @param path API endpoint path
-     * @param body request body (literal string)
+     * @param body request body (literal string) // GH-90000
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> putRaw(String path, String body)
+    protected java.net.http.HttpResponse<String> putRaw(String path, String body) // GH-90000
             throws Exception {
-        return putRaw(path, body, Map.of());
+        return putRaw(path, body, Map.of()); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> putRaw(String path, String body, Map<String, String> headers)
+    protected java.net.http.HttpResponse<String> putRaw(String path, String body, Map<String, String> headers) // GH-90000
             throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .PUT(HttpRequest.BodyPublishers.ofString(body))
-                .uri(URI.create("http://127.0.0.1:" + port + path))
-                .header("Content-Type", "application/json");
-        mergeTenantHeaders(headers).forEach(builder::header);
-        return httpClient.send(builder.build(), BodyHandlers.ofString());
+        HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
+                .PUT(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+                .header("Content-Type", "application/json"); // GH-90000
+        mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
+        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> putRawWithoutTenant(String path, String body)
+    protected java.net.http.HttpResponse<String> putRawWithoutTenant(String path, String body) // GH-90000
             throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .PUT(HttpRequest.BodyPublishers.ofString(body))
-                .uri(URI.create("http://127.0.0.1:" + port + path))
-                .header("Content-Type", "application/json")
-                .build();
-        return httpClient.send(req, BodyHandlers.ofString());
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+                .PUT(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+                .header("Content-Type", "application/json") // GH-90000
+                .build(); // GH-90000
+        return httpClient.send(req, BodyHandlers.ofString()); // GH-90000
     }
 
     /**
@@ -281,24 +281,24 @@ public abstract class DataCloudHttpServerTestBase {
      * @param path API endpoint path
      * @return HTTP response
      */
-    protected java.net.http.HttpResponse<String> delete(String path) throws Exception {
-        return delete(path, Map.of());
+    protected java.net.http.HttpResponse<String> delete(String path) throws Exception { // GH-90000
+        return delete(path, Map.of()); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> delete(String path, Map<String, String> headers) throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .DELETE()
-                .uri(URI.create("http://127.0.0.1:" + port + path));
-        mergeTenantHeaders(headers).forEach(builder::header);
-        return httpClient.send(builder.build(), BodyHandlers.ofString());
+    protected java.net.http.HttpResponse<String> delete(String path, Map<String, String> headers) throws Exception { // GH-90000
+        HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
+                .DELETE() // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)); // GH-90000
+        mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
+        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
     }
 
-    protected java.net.http.HttpResponse<String> deleteWithoutTenant(String path) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .DELETE()
-                .uri(URI.create("http://127.0.0.1:" + port + path))
-                .build();
-        return httpClient.send(req, BodyHandlers.ofString());
+    protected java.net.http.HttpResponse<String> deleteWithoutTenant(String path) throws Exception { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+                .DELETE() // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+                .build(); // GH-90000
+        return httpClient.send(req, BodyHandlers.ofString()); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -311,10 +311,10 @@ public abstract class DataCloudHttpServerTestBase {
      * @param response HTTP response
      * @return parsed Map
      */
-    @SuppressWarnings("unchecked")
-    protected Map<String, Object> parseJsonResponse(java.net.http.HttpResponse<String> response)
+    @SuppressWarnings("unchecked [GH-90000]")
+    protected Map<String, Object> parseJsonResponse(java.net.http.HttpResponse<String> response) // GH-90000
             throws IOException {
-        return mapper.readValue(response.body(), Map.class);
+        return mapper.readValue(response.body(), Map.class); // GH-90000
     }
 
     /**
@@ -323,8 +323,8 @@ public abstract class DataCloudHttpServerTestBase {
      * @param response HTTP response
      * @param expectedStatus expected HTTP status
      */
-    protected void assertStatusCode(java.net.http.HttpResponse<String> response, int expectedStatus) {
-        assertThat(response.statusCode()).isEqualTo(expectedStatus);
+    protected void assertStatusCode(java.net.http.HttpResponse<String> response, int expectedStatus) { // GH-90000
+        assertThat(response.statusCode()).isEqualTo(expectedStatus); // GH-90000
     }
 
     /**
@@ -333,10 +333,10 @@ public abstract class DataCloudHttpServerTestBase {
      * @param response HTTP response
      * @param expectedStatus expected HTTP status
      */
-    protected void assertStatusAndBody(java.net.http.HttpResponse<String> response,
+    protected void assertStatusAndBody(java.net.http.HttpResponse<String> response, // GH-90000
                                         int expectedStatus) {
-        assertStatusCode(response, expectedStatus);
-        assertThat(response.body()).isNotEmpty();
+        assertStatusCode(response, expectedStatus); // GH-90000
+        assertThat(response.body()).isNotEmpty(); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -349,8 +349,8 @@ public abstract class DataCloudHttpServerTestBase {
      * @param tenantId tenant identifier
      * @return headers map with X-Tenant-ID
      */
-    protected Map<String, String> withTenant(String tenantId) {
-        return Map.of("X-Tenant-ID", tenantId);
+    protected Map<String, String> withTenant(String tenantId) { // GH-90000
+        return Map.of("X-Tenant-ID", tenantId); // GH-90000
     }
 
     /**
@@ -360,24 +360,24 @@ public abstract class DataCloudHttpServerTestBase {
      * @param tenantId tenant identifier
      * @return headers map with Authorization and X-Tenant-ID
      */
-    protected Map<String, String> withAuthAndTenant(String token, String tenantId) {
-        return Map.of(
+    protected Map<String, String> withAuthAndTenant(String token, String tenantId) { // GH-90000
+        return Map.of( // GH-90000
                 "Authorization", "Bearer " + token,
                 "X-Tenant-ID", tenantId
         );
     }
 
-    private Map<String, String> mergeTenantHeaders(Map<String, String> headers) {
-        LinkedHashMap<String, String> merged = new LinkedHashMap<>();
-        merged.put("X-Tenant-ID", DEFAULT_TEST_TENANT);
-        headers.forEach(merged::put);
-        for (String headerName : headers.keySet()) {
-            if ("X-Tenant-ID".equalsIgnoreCase(headerName) || "X-Tenant-Id".equalsIgnoreCase(headerName)) {
-                merged.remove("X-Tenant-ID");
+    private Map<String, String> mergeTenantHeaders(Map<String, String> headers) { // GH-90000
+        LinkedHashMap<String, String> merged = new LinkedHashMap<>(); // GH-90000
+        merged.put("X-Tenant-ID", DEFAULT_TEST_TENANT); // GH-90000
+        headers.forEach(merged::put); // GH-90000
+        for (String headerName : headers.keySet()) { // GH-90000
+            if ("X-Tenant-ID".equalsIgnoreCase(headerName) || "X-Tenant-Id".equalsIgnoreCase(headerName)) { // GH-90000
+                merged.remove("X-Tenant-ID [GH-90000]");
                 break;
             }
         }
-        headers.forEach(merged::put);
+        headers.forEach(merged::put); // GH-90000
         return merged;
     }
 
@@ -387,38 +387,38 @@ public abstract class DataCloudHttpServerTestBase {
 
     /**
      * Find a free port for test server to listen on.
-     * Called by subclass in @BeforeEach: {@code port = findFreePort();}
+     * Called by subclass in @BeforeEach: {@code port = findFreePort();} // GH-90000
      *
      * @return available port number
      */
-    protected static int findFreePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
+    protected static int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
+            return socket.getLocalPort(); // GH-90000
         }
     }
 
     /**
-     * Wait for server to be ready (blocking poll).
+     * Wait for server to be ready (blocking poll). // GH-90000
      *
      * @param maxWaitMs maximum milliseconds to wait
      */
-    protected void waitForServerReady(long maxWaitMs) throws Exception {
-        long deadline = System.currentTimeMillis() + maxWaitMs;
-        while (System.currentTimeMillis() < deadline) {
+    protected void waitForServerReady(long maxWaitMs) throws Exception { // GH-90000
+        long deadline = System.currentTimeMillis() + maxWaitMs; // GH-90000
+        while (System.currentTimeMillis() < deadline) { // GH-90000
             try {
-                java.net.http.HttpResponse<String> resp = get("/health");
-                if (resp.statusCode() == 200) {
+                java.net.http.HttpResponse<String> resp = get("/health [GH-90000]");
+                if (resp.statusCode() == 200) { // GH-90000
                     return;
                 }
-            } catch (Exception e) {
+            } catch (Exception e) { // GH-90000
                 // Server not ready yet, try again
             }
-            Thread.sleep(50);
+            Thread.sleep(50); // GH-90000
         }
-        throw new TimeoutException("Server did not become ready within " + maxWaitMs + "ms");
+        throw new TimeoutException("Server did not become ready within " + maxWaitMs + "ms"); // GH-90000
     }
 
     private static class TimeoutException extends Exception {
-        TimeoutException(String msg) { super(msg); }
+        TimeoutException(String msg) { super(msg); } // GH-90000
     }
 }

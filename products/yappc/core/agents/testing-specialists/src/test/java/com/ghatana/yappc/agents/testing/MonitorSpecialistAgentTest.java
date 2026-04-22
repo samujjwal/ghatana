@@ -28,159 +28,159 @@ import com.ghatana.yappc.agents.code.MonitorOutput;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("MonitorSpecialistAgent Tests")
+@DisplayName("MonitorSpecialistAgent Tests [GH-90000]")
 class MonitorSpecialistAgentTest extends EventloopTestBase {
 
   private MemoryStore memoryStore;
   private MonitorSpecialistAgent agent;
 
   @BeforeEach
-  void setUp() {
-    memoryStore = new EventLogMemoryStore();
-    agent = new MonitorSpecialistAgent(
-        memoryStore, new MonitorSpecialistAgent.MonitorGenerator());
-    YAPPCAgentBase.setGlobalAepEventPublisher(
-        (eventType, tenantId, payload) -> Promise.complete());
+  void setUp() { // GH-90000
+    memoryStore = new EventLogMemoryStore(); // GH-90000
+    agent = new MonitorSpecialistAgent( // GH-90000
+        memoryStore, new MonitorSpecialistAgent.MonitorGenerator()); // GH-90000
+    YAPPCAgentBase.setGlobalAepEventPublisher( // GH-90000
+        (eventType, tenantId, payload) -> Promise.complete()); // GH-90000
   }
 
   @Nested
-  @DisplayName("Input Validation")
+  @DisplayName("Input Validation [GH-90000]")
   class InputValidation {
 
     @Test
-    @DisplayName("Should accept valid monitor input")
-    void shouldAcceptValidInput() {
-      MonitorInput input = new MonitorInput("deploy-123", 30);
-      ValidationResult result = agent.validateInput(input);
-      assertThat(result.ok()).isTrue();
+    @DisplayName("Should accept valid monitor input [GH-90000]")
+    void shouldAcceptValidInput() { // GH-90000
+      MonitorInput input = new MonitorInput("deploy-123", 30); // GH-90000
+      ValidationResult result = agent.validateInput(input); // GH-90000
+      assertThat(result.ok()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject empty deployment ID")
-    void shouldRejectEmptyDeploymentId() {
-      assertThatThrownBy(() -> new MonitorInput("", 30))
-          .isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("Should reject empty deployment ID [GH-90000]")
+    void shouldRejectEmptyDeploymentId() { // GH-90000
+      assertThatThrownBy(() -> new MonitorInput("", 30)) // GH-90000
+          .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject zero duration")
-    void shouldRejectZeroDuration() {
-      assertThatThrownBy(() -> new MonitorInput("deploy-123", 0))
-          .isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("Should reject zero duration [GH-90000]")
+    void shouldRejectZeroDuration() { // GH-90000
+      assertThatThrownBy(() -> new MonitorInput("deploy-123", 0)) // GH-90000
+          .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
   }
 
   @Nested
-  @DisplayName("Generator")
+  @DisplayName("Generator [GH-90000]")
   class GeneratorTests {
 
     @Test
-    @DisplayName("Should generate healthy monitoring output")
-    void shouldGenerateHealthyOutput() {
-      MonitorInput monInput = new MonitorInput("deploy-456", 15);
-      StepContext ctx = createStepContext();
-      StepRequest<MonitorInput> request = new StepRequest<>(monInput, ctx);
-      AgentContext agentCtx = AgentContext.builder()
-          .agentId("MonitorSpecialistAgent")
-          .turnId("turn-1")
-          .tenantId("tenant-1")
-          .userId("system")
-          .sessionId("ops")
-          .memoryStore(memoryStore)
-          .config(Map.of())
-          .remainingBudget(10.0)
-          .build();
+    @DisplayName("Should generate healthy monitoring output [GH-90000]")
+    void shouldGenerateHealthyOutput() { // GH-90000
+      MonitorInput monInput = new MonitorInput("deploy-456", 15); // GH-90000
+      StepContext ctx = createStepContext(); // GH-90000
+      StepRequest<MonitorInput> request = new StepRequest<>(monInput, ctx); // GH-90000
+      AgentContext agentCtx = AgentContext.builder() // GH-90000
+          .agentId("MonitorSpecialistAgent [GH-90000]")
+          .turnId("turn-1 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .userId("system [GH-90000]")
+          .sessionId("ops [GH-90000]")
+          .memoryStore(memoryStore) // GH-90000
+          .config(Map.of()) // GH-90000
+          .remainingBudget(10.0) // GH-90000
+          .build(); // GH-90000
 
       MonitorSpecialistAgent.MonitorGenerator gen =
-          new MonitorSpecialistAgent.MonitorGenerator();
+          new MonitorSpecialistAgent.MonitorGenerator(); // GH-90000
       StepResult<MonitorOutput> result =
-          runPromise(() -> gen.generate(request, agentCtx));
+          runPromise(() -> gen.generate(request, agentCtx)); // GH-90000
 
-      assertThat(result.success()).isTrue();
-      assertThat(result.output().health()).isEqualTo("healthy");
-      assertThat(result.output().alerts()).isEmpty();
-      assertThat(result.output().metrics()).containsKeys("uptime", "errorRate", "cpuUsage");
-      assertThat(result.output().monitoringId()).startsWith("monitoring-");
+      assertThat(result.success()).isTrue(); // GH-90000
+      assertThat(result.output().health()).isEqualTo("healthy [GH-90000]");
+      assertThat(result.output().alerts()).isEmpty(); // GH-90000
+      assertThat(result.output().metrics()).containsKeys("uptime", "errorRate", "cpuUsage"); // GH-90000
+      assertThat(result.output().monitoringId()).startsWith("monitoring- [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should estimate zero cost for rule-based generator")
-    void shouldEstimateZeroCost() {
-      MonitorInput monInput = new MonitorInput("deploy-789", 10);
-      StepContext ctx = createStepContext();
-      StepRequest<MonitorInput> request = new StepRequest<>(monInput, ctx);
-      AgentContext agentCtx = AgentContext.builder()
-          .agentId("MonitorSpecialistAgent")
-          .turnId("turn-2")
-          .tenantId("tenant-1")
-          .userId("system")
-          .sessionId("ops")
-          .memoryStore(memoryStore)
-          .config(Map.of())
-          .remainingBudget(10.0)
-          .build();
+    @DisplayName("Should estimate zero cost for rule-based generator [GH-90000]")
+    void shouldEstimateZeroCost() { // GH-90000
+      MonitorInput monInput = new MonitorInput("deploy-789", 10); // GH-90000
+      StepContext ctx = createStepContext(); // GH-90000
+      StepRequest<MonitorInput> request = new StepRequest<>(monInput, ctx); // GH-90000
+      AgentContext agentCtx = AgentContext.builder() // GH-90000
+          .agentId("MonitorSpecialistAgent [GH-90000]")
+          .turnId("turn-2 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .userId("system [GH-90000]")
+          .sessionId("ops [GH-90000]")
+          .memoryStore(memoryStore) // GH-90000
+          .config(Map.of()) // GH-90000
+          .remainingBudget(10.0) // GH-90000
+          .build(); // GH-90000
 
       MonitorSpecialistAgent.MonitorGenerator gen =
-          new MonitorSpecialistAgent.MonitorGenerator();
-      double cost = runPromise(() -> gen.estimateCost(request, agentCtx));
+          new MonitorSpecialistAgent.MonitorGenerator(); // GH-90000
+      double cost = runPromise(() -> gen.estimateCost(request, agentCtx)); // GH-90000
 
-      assertThat(cost).isZero();
+      assertThat(cost).isZero(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return correct generator metadata")
-    void shouldReturnMetadata() {
+    @DisplayName("Should return correct generator metadata [GH-90000]")
+    void shouldReturnMetadata() { // GH-90000
       MonitorSpecialistAgent.MonitorGenerator gen =
-          new MonitorSpecialistAgent.MonitorGenerator();
-      var metadata = gen.getMetadata();
+          new MonitorSpecialistAgent.MonitorGenerator(); // GH-90000
+      var metadata = gen.getMetadata(); // GH-90000
 
-      assertThat(metadata.getName()).isEqualTo("MonitorGenerator");
-      assertThat(metadata.getType()).isEqualTo("rule-based");
+      assertThat(metadata.getName()).isEqualTo("MonitorGenerator [GH-90000]");
+      assertThat(metadata.getType()).isEqualTo("rule-based [GH-90000]");
     }
   }
 
   @Nested
-  @DisplayName("Full Execution")
+  @DisplayName("Full Execution [GH-90000]")
   class FullExecution {
 
     @Test
-    @DisplayName("Should execute monitoring step end-to-end")
-    void shouldExecuteEndToEnd() {
-      MonitorInput input = new MonitorInput("deploy-e2e", 5);
-      StepContext ctx = createStepContext();
+    @DisplayName("Should execute monitoring step end-to-end [GH-90000]")
+    void shouldExecuteEndToEnd() { // GH-90000
+      MonitorInput input = new MonitorInput("deploy-e2e", 5); // GH-90000
+      StepContext ctx = createStepContext(); // GH-90000
 
-      StepResult<MonitorOutput> result = runPromise(() -> agent.execute(input, ctx));
+      StepResult<MonitorOutput> result = runPromise(() -> agent.execute(input, ctx)); // GH-90000
 
-      assertThat(result).isNotNull();
-      assertThat(result.success()).isTrue();
-      assertThat(result.output().health()).isEqualTo("healthy");
-      assertThat(result.durationMs()).isGreaterThanOrEqualTo(0);
+      assertThat(result).isNotNull(); // GH-90000
+      assertThat(result.success()).isTrue(); // GH-90000
+      assertThat(result.output().health()).isEqualTo("healthy [GH-90000]");
+      assertThat(result.durationMs()).isGreaterThanOrEqualTo(0); // GH-90000
     }
   }
 
   @Nested
-  @DisplayName("Contract")
+  @DisplayName("Contract [GH-90000]")
   class ContractTests {
 
     @Test
-    @DisplayName("Should expose correct step name")
-    void shouldExposeStepName() {
-      assertThat(agent.stepName()).isEqualTo("ops.monitor");
+    @DisplayName("Should expose correct step name [GH-90000]")
+    void shouldExposeStepName() { // GH-90000
+      assertThat(agent.stepName()).isEqualTo("ops.monitor [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should expose contract with monitoring capabilities")
-    void shouldExposeContract() {
-      StepContract contract = agent.contract();
-      assertThat(contract.name()).isEqualTo("ops.monitor");
-      assertThat(contract.requiredCapabilities())
-          .containsExactlyInAnyOrder("ops", "monitoring", "observability");
+    @DisplayName("Should expose contract with monitoring capabilities [GH-90000]")
+    void shouldExposeContract() { // GH-90000
+      StepContract contract = agent.contract(); // GH-90000
+      assertThat(contract.name()).isEqualTo("ops.monitor [GH-90000]");
+      assertThat(contract.requiredCapabilities()) // GH-90000
+          .containsExactlyInAnyOrder("ops", "monitoring", "observability"); // GH-90000
     }
   }
 
-  private StepContext createStepContext() {
-    return new StepContext(
+  private StepContext createStepContext() { // GH-90000
+    return new StepContext( // GH-90000
         "run-monitor-1", "tenant-1", "ops-phase", "config-1",
-        new StepBudget(10.0, 60_000));
+        new StepBudget(10.0, 60_000)); // GH-90000
   }
 }

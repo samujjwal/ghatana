@@ -12,7 +12,7 @@
  *   defaultSize="50%"
  * />
  *
- * @package @ghatana/ui
+ * @package @ghatana/design-system
  */
 
 import React, { CSSProperties, ReactNode, useRef, useState } from 'react';

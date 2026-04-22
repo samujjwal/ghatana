@@ -73,7 +73,7 @@ import { CapabilityTruthPanel } from '../components/capabilities/CapabilityTruth
 // TYPES
 // =============================================================================
 
-type TabType = 'overview' | 'brain' | 'analytics' | 'cost';
+type TabType = 'overview' | 'diagnostics' | 'analytics' | 'cost';
 
 interface CollectionSummary {
   id: string;
@@ -89,6 +89,12 @@ interface OverviewActivity {
 
 function toSpotlightItems(suggestions: AnalyticsAiSuggestion[]): AnalyticsAiSuggestion[] {
   return suggestions.slice(0, 3);
+}
+
+/** Type guard for analytics suggestion entry with typed sort comparators. */
+interface SuggestionEntry {
+  requestCount: number;
+  fallbackRate: number;
 }
 
 function getDatasetBreakdown(costBreakdown?: Partial<CostBreakdown>): CostBreakdown['byDataset'] {
@@ -243,7 +249,7 @@ function AiTruthPanel({
 }) {
   const topTypes = qualitySummary?.types
     .slice()
-    .sort((left, right) => {
+    .sort((left: SuggestionEntry, right: SuggestionEntry) => {
       if (right.requestCount !== left.requestCount) {
         return right.requestCount - left.requestCount;
       }
@@ -292,7 +298,7 @@ function AiTruthPanel({
           </div>
 
           <div className="space-y-3">
-            {topTypes.map((entry) => (
+            {topTypes.map((entry: SuggestionEntry & { type: string; label: string; route: string; provenanceMode: string; reviewGuidance: string; meanConfidence: number; fallbackCount: number }) => (
               <article key={entry.type} className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3" data-testid={`insights-ai-type-${entry.type}`}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -334,12 +340,16 @@ interface TabButtonProps {
   icon: React.ReactNode;
   active: boolean;
   onClick: () => void;
+  ariaControls?: string;
 }
 
-function TabButton({ label, icon, active, onClick }: TabButtonProps) {
+function TabButton({ label, icon, active, onClick, ariaControls }: TabButtonProps) {
   return (
     <button
       onClick={onClick}
+      role="tab"
+      aria-selected={active}
+      aria-controls={ariaControls}
       className={cn(
         'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
         active
@@ -537,10 +547,10 @@ function OverviewTab({
 }
 
 // =============================================================================
-// BRAIN TAB
+// DIAGNOSTICS TAB — Operator-facing system diagnostics
 // =============================================================================
 
-function BrainTab() {
+function DiagnosticsTab() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Left Column: Spotlight Ring */}
@@ -1124,9 +1134,9 @@ function CostBar({
 function AiSuggestionIcon({ type }: { type: AnalyticsAiSuggestion['type'] }) {
   switch (type) {
     case 'optimization': return <TrendingUp className="h-4 w-4 text-green-600" />;
-    case 'anomaly':    return <AlertTriangle className="h-4 w-4 text-amber-600" />;
-    case 'warning':    return <AlertTriangle className="h-4 w-4 text-red-500" />;
-    default:           return <Sparkles className="h-4 w-4 text-purple-600" />;
+    case 'anomaly': return <AlertTriangle className="h-4 w-4 text-amber-600" />;
+    case 'warning': return <AlertTriangle className="h-4 w-4 text-red-500" />;
+    default: return <Sparkles className="h-4 w-4 text-purple-600" />;
   }
 }
 
@@ -1200,7 +1210,7 @@ export function InsightsPage() {
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Activity className="h-4 w-4" /> },
-    { id: 'brain', label: 'AI Brain', icon: <Brain className="h-4 w-4" /> },
+    { id: 'diagnostics', label: 'Diagnostics', icon: <Brain className="h-4 w-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="h-4 w-4" /> },
     { id: 'cost', label: 'Cost', icon: <DollarSign className="h-4 w-4" /> },
   ];
@@ -1255,12 +1265,11 @@ export function InsightsPage() {
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <main className="flex flex-col h-full" aria-label="Insights">
       <PageHeader
         title="Insights"
-        subtitle="AI-assisted operational analytics, system intelligence, and cost optimization"
+        subtitle="Operational analytics, system intelligence, and cost optimization"
         icon={<BarChart3 className="h-6 w-6 text-primary-600" />}
-        aiPowered
         actions={
           <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
             <RefreshCw className="h-4 w-4" />
@@ -1270,7 +1279,7 @@ export function InsightsPage() {
       />
 
       {/* Tabs */}
-      <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" role="tablist" aria-label="Insights sections">
         <div className="flex items-center gap-2">
           {tabs.map((tab) => (
             <TabButton
@@ -1280,49 +1289,52 @@ export function InsightsPage() {
               icon={tab.icon}
               active={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
+              ariaControls={`insights-panel-${tab.id}`}
             />
           ))}
         </div>
       </div>
 
       <PageContent aiSidebar={aiSidebarContent}>
-        {activeTab === 'overview' && (
-          <OverviewTab
-            brainStats={brainStats}
-            activePipelines={workflowsPage?.total}
-            monthlyCost={costData?.total}
-            costBreakdown={costData}
-            aiSuggestions={aiSuggestions ?? []}
-            capabilities={capabilityRegistry?.capabilities ?? []}
-            insightTimestamp={insightTimestamp}
-            sessionSnapshot={sessionSnapshot}
-            aiQualitySummary={aiQualitySummary}
-            capabilityRegistry={capabilityRegistry ? {
-              requestId: capabilityRegistry.requestId,
-              generatedAt: capabilityRegistry.generatedAt,
-              capabilities: capabilityRegistry.capabilities,
-            } : undefined}
-          />
-        )}
-        {activeTab === 'brain' && <BrainTab />}
-        {activeTab === 'analytics' && (
-          capabilitiesLoading && !capabilityRegistry ? (
-            <CapabilityLoadingState
-              title="Loading runtime capabilities"
-              message="Confirming analytics and federated query dependencies before enabling live analytics views."
+        <div role="tabpanel" id={`insights-panel-${activeTab}`} aria-label={tabs.find((t) => t.id === activeTab)?.label ?? activeTab}>
+          {activeTab === 'overview' && (
+            <OverviewTab
+              brainStats={brainStats}
+              activePipelines={workflowsPage?.total}
+              monthlyCost={costData?.total}
+              costBreakdown={costData}
+              aiSuggestions={aiSuggestions ?? []}
+              capabilities={capabilityRegistry?.capabilities ?? []}
+              insightTimestamp={insightTimestamp}
+              sessionSnapshot={sessionSnapshot}
+              aiQualitySummary={aiQualitySummary}
+              capabilityRegistry={capabilityRegistry ? {
+                requestId: capabilityRegistry.requestId,
+                generatedAt: capabilityRegistry.generatedAt,
+                capabilities: capabilityRegistry.capabilities,
+              } : undefined}
             />
-          ) : analyticsUnavailable ? (
-            <CapabilityUnavailableState
-              title="Analytics unavailable"
-              message={analyticsCapability?.detail ?? 'Configure analytics connectors such as Trino or ClickHouse to enable live analytics queries.'}
-            />
-          ) : (
-            <AnalyticsTab collections={collectionNames} />
-          )
-        )}
-        {activeTab === 'cost' && <CostTab costBreakdown={costData} aiSuggestions={aiSuggestions ?? []} />}
+          )}
+          {activeTab === 'diagnostics' && <DiagnosticsTab />}
+          {activeTab === 'analytics' && (
+            capabilitiesLoading && !capabilityRegistry ? (
+              <CapabilityLoadingState
+                title="Loading runtime capabilities"
+                message="Confirming analytics and federated query dependencies before enabling live analytics views."
+              />
+            ) : analyticsUnavailable ? (
+              <CapabilityUnavailableState
+                title="Analytics unavailable"
+                message={analyticsCapability?.detail ?? 'Configure analytics connectors such as Trino or ClickHouse to enable live analytics queries.'}
+              />
+            ) : (
+              <AnalyticsTab collections={collectionNames} />
+            )
+          )}
+          {activeTab === 'cost' && <CostTab costBreakdown={costData} aiSuggestions={aiSuggestions ?? []} />}
+        </div>
       </PageContent>
-    </div>
+    </main>
   );
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.services.userprofile;
@@ -29,156 +29,156 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@Tag("integration")
+@Tag("integration [GH-90000]")
 @Testcontainers
-@DisplayName("PostgresUserProfileStore — integration tests with PostgreSQL")
+@DisplayName("PostgresUserProfileStore — integration tests with PostgreSQL [GH-90000]")
 class PostgresUserProfileStoreIT extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine")
-                    .withDatabaseName("profiles_test")
-                    .withUsername("profiles")
-                    .withPassword("profiles");
+            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
+                    .withDatabaseName("profiles_test [GH-90000]")
+                    .withUsername("profiles [GH-90000]")
+                    .withPassword("profiles [GH-90000]");
 
     private HikariDataSource dataSource;
     private PostgresUserProfileStore store;
 
     @BeforeEach
-    void setUp() {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(POSTGRES.getJdbcUrl());
-        config.setUsername(POSTGRES.getUsername());
-        config.setPassword(POSTGRES.getPassword());
-        config.setMaximumPoolSize(5);
-        dataSource = new HikariDataSource(config);
+    void setUp() { // GH-90000
+        HikariConfig config = new HikariConfig(); // GH-90000
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
+        config.setUsername(POSTGRES.getUsername()); // GH-90000
+        config.setPassword(POSTGRES.getPassword()); // GH-90000
+        config.setMaximumPoolSize(5); // GH-90000
+        dataSource = new HikariDataSource(config); // GH-90000
 
-        // Constructor calls initSchema() automatically — table is ready after this
-        store = new PostgresUserProfileStore(dataSource);
+        // Constructor calls initSchema() automatically — table is ready after this // GH-90000
+        store = new PostgresUserProfileStore(dataSource); // GH-90000
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        try (var conn = dataSource.getConnection();
-             var stmt = conn.createStatement()) {
-            stmt.execute("TRUNCATE TABLE user_profiles");
+    void tearDown() throws Exception { // GH-90000
+        try (var conn = dataSource.getConnection(); // GH-90000
+             var stmt = conn.createStatement()) { // GH-90000
+            stmt.execute("TRUNCATE TABLE user_profiles [GH-90000]");
         }
-        dataSource.close();
+        dataSource.close(); // GH-90000
     }
 
-    private static UserProfile sampleProfile(String userId, String tenantId) {
-        return UserProfile.builder()
-                .userId(userId)
-                .tenantId(tenantId)
-                .email(userId + "@example.com")
-                .displayName("User " + userId)
-                .preferredLanguage("en-US")
-                .timezone("UTC")
-                .theme("system")
-                .notificationsEnabled(true)
-                .createdAt(Instant.parse("2026-01-01T00:00:00Z"))
-                .updatedAt(Instant.parse("2026-01-01T00:00:00Z"))
-                .build();
+    private static UserProfile sampleProfile(String userId, String tenantId) { // GH-90000
+        return UserProfile.builder() // GH-90000
+                .userId(userId) // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .email(userId + "@example.com") // GH-90000
+                .displayName("User " + userId) // GH-90000
+                .preferredLanguage("en-US [GH-90000]")
+                .timezone("UTC [GH-90000]")
+                .theme("system [GH-90000]")
+                .notificationsEnabled(true) // GH-90000
+                .createdAt(Instant.parse("2026-01-01T00:00:00Z [GH-90000]"))
+                .updatedAt(Instant.parse("2026-01-01T00:00:00Z [GH-90000]"))
+                .build(); // GH-90000
     }
 
     @Test
-    @DisplayName("findByTenantAndUser returns empty for non-existent profile")
-    void findByTenantAndUser_nonExistent_returnsEmpty() {
+    @DisplayName("findByTenantAndUser returns empty for non-existent profile [GH-90000]")
+    void findByTenantAndUser_nonExistent_returnsEmpty() { // GH-90000
         Optional<UserProfile> result =
-                runPromise(() -> store.findByTenantAndUser("tenant-1", "ghost"));
-        assertThat(result).isEmpty();
+                runPromise(() -> store.findByTenantAndUser("tenant-1", "ghost")); // GH-90000
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("upsert creates a new profile and findByTenantAndUser retrieves it")
-    void upsert_newProfile_canBeFound() {
-        UserProfile profile = sampleProfile("user-1", "tenant-1");
+    @DisplayName("upsert creates a new profile and findByTenantAndUser retrieves it [GH-90000]")
+    void upsert_newProfile_canBeFound() { // GH-90000
+        UserProfile profile = sampleProfile("user-1", "tenant-1"); // GH-90000
 
-        UserProfile saved = runPromise(() -> store.upsert(profile));
+        UserProfile saved = runPromise(() -> store.upsert(profile)); // GH-90000
 
-        assertThat(saved.userId()).isEqualTo("user-1");
-        assertThat(saved.tenantId()).isEqualTo("tenant-1");
-        assertThat(saved.email()).isEqualTo("user-1@example.com");
+        assertThat(saved.userId()).isEqualTo("user-1 [GH-90000]");
+        assertThat(saved.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+        assertThat(saved.email()).isEqualTo("user-1@example.com [GH-90000]");
 
         Optional<UserProfile> found =
-                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-1"));
-        assertThat(found).isPresent();
-        assertThat(found.get().displayName()).isEqualTo("User user-1");
+                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-1")); // GH-90000
+        assertThat(found).isPresent(); // GH-90000
+        assertThat(found.get().displayName()).isEqualTo("User user-1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("upsert updates existing profile on conflict")
-    void upsert_existingProfile_updatesFields() {
-        UserProfile original = sampleProfile("user-2", "tenant-1");
-        runPromise(() -> store.upsert(original));
+    @DisplayName("upsert updates existing profile on conflict [GH-90000]")
+    void upsert_existingProfile_updatesFields() { // GH-90000
+        UserProfile original = sampleProfile("user-2", "tenant-1"); // GH-90000
+        runPromise(() -> store.upsert(original)); // GH-90000
 
-        UserProfile updated = original.toBuilder()
-                .displayName("Updated Name")
-                .theme("dark")
-                .build();
-        UserProfile saved = runPromise(() -> store.upsert(updated));
+        UserProfile updated = original.toBuilder() // GH-90000
+                .displayName("Updated Name [GH-90000]")
+                .theme("dark [GH-90000]")
+                .build(); // GH-90000
+        UserProfile saved = runPromise(() -> store.upsert(updated)); // GH-90000
 
-        assertThat(saved.displayName()).isEqualTo("Updated Name");
-        assertThat(saved.theme()).isEqualTo("dark");
+        assertThat(saved.displayName()).isEqualTo("Updated Name [GH-90000]");
+        assertThat(saved.theme()).isEqualTo("dark [GH-90000]");
 
         Optional<UserProfile> found =
-                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-2"));
-        assertThat(found).isPresent();
-        assertThat(found.get().displayName()).isEqualTo("Updated Name");
+                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-2")); // GH-90000
+        assertThat(found).isPresent(); // GH-90000
+        assertThat(found.get().displayName()).isEqualTo("Updated Name [GH-90000]");
     }
 
     @Test
-    @DisplayName("delete removes an existing profile")
-    void delete_existingProfile_isNoLongerFound() {
-        UserProfile profile = sampleProfile("user-3", "tenant-1");
-        runPromise(() -> store.upsert(profile));
+    @DisplayName("delete removes an existing profile [GH-90000]")
+    void delete_existingProfile_isNoLongerFound() { // GH-90000
+        UserProfile profile = sampleProfile("user-3", "tenant-1"); // GH-90000
+        runPromise(() -> store.upsert(profile)); // GH-90000
 
-        runPromise(() -> store.delete("tenant-1", "user-3"));
+        runPromise(() -> store.delete("tenant-1", "user-3")); // GH-90000
 
         Optional<UserProfile> found =
-                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-3"));
-        assertThat(found).isEmpty();
+                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-3")); // GH-90000
+        assertThat(found).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("delete on non-existent profile does not throw")
-    void delete_nonExistent_noException() {
-        runPromise(() -> store.delete("tenant-1", "nobody"));
+    @DisplayName("delete on non-existent profile does not throw [GH-90000]")
+    void delete_nonExistent_noException() { // GH-90000
+        runPromise(() -> store.delete("tenant-1", "nobody")); // GH-90000
         // No assertion needed — must not throw
     }
 
     @Test
-    @DisplayName("profiles are isolated per tenant — same userId in different tenants is independent")
-    void upsert_samUserDifferentTenants_isolatedCorrectly() {
-        UserProfile t1 = sampleProfile("user-shared", "tenant-A");
-        UserProfile t2 = sampleProfile("user-shared", "tenant-B")
-                .toBuilder().displayName("Tenant B User").build();
+    @DisplayName("profiles are isolated per tenant — same userId in different tenants is independent [GH-90000]")
+    void upsert_samUserDifferentTenants_isolatedCorrectly() { // GH-90000
+        UserProfile t1 = sampleProfile("user-shared", "tenant-A"); // GH-90000
+        UserProfile t2 = sampleProfile("user-shared", "tenant-B") // GH-90000
+                .toBuilder().displayName("Tenant B User [GH-90000]").build();
 
-        runPromise(() -> store.upsert(t1));
-        runPromise(() -> store.upsert(t2));
+        runPromise(() -> store.upsert(t1)); // GH-90000
+        runPromise(() -> store.upsert(t2)); // GH-90000
 
         Optional<UserProfile> foundInA =
-                runPromise(() -> store.findByTenantAndUser("tenant-A", "user-shared"));
+                runPromise(() -> store.findByTenantAndUser("tenant-A", "user-shared")); // GH-90000
         Optional<UserProfile> foundInB =
-                runPromise(() -> store.findByTenantAndUser("tenant-B", "user-shared"));
+                runPromise(() -> store.findByTenantAndUser("tenant-B", "user-shared")); // GH-90000
 
-        assertThat(foundInA).isPresent();
-        assertThat(foundInA.get().displayName()).isEqualTo("User user-shared");
-        assertThat(foundInB).isPresent();
-        assertThat(foundInB.get().displayName()).isEqualTo("Tenant B User");
+        assertThat(foundInA).isPresent(); // GH-90000
+        assertThat(foundInA.get().displayName()).isEqualTo("User user-shared [GH-90000]");
+        assertThat(foundInB).isPresent(); // GH-90000
+        assertThat(foundInB.get().displayName()).isEqualTo("Tenant B User [GH-90000]");
     }
 
     @Test
-    @DisplayName("upsert preserves optional fields like avatarUrl")
-    void upsert_withAvatarUrl_fieldPreserved() {
-        UserProfile profile = sampleProfile("user-4", "tenant-1")
-                .toBuilder().avatarUrl("https://cdn.example.com/avatar.png").build();
+    @DisplayName("upsert preserves optional fields like avatarUrl [GH-90000]")
+    void upsert_withAvatarUrl_fieldPreserved() { // GH-90000
+        UserProfile profile = sampleProfile("user-4", "tenant-1") // GH-90000
+                .toBuilder().avatarUrl("https://cdn.example.com/avatar.png [GH-90000]").build();
 
-        runPromise(() -> store.upsert(profile));
+        runPromise(() -> store.upsert(profile)); // GH-90000
 
         Optional<UserProfile> found =
-                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-4"));
-        assertThat(found).isPresent();
-        assertThat(found.get().avatarUrl()).isEqualTo("https://cdn.example.com/avatar.png");
+                runPromise(() -> store.findByTenantAndUser("tenant-1", "user-4")); // GH-90000
+        assertThat(found).isPresent(); // GH-90000
+        assertThat(found.get().avatarUrl()).isEqualTo("https://cdn.example.com/avatar.png [GH-90000]");
     }
 }

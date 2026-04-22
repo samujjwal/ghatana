@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Performance testing
  */
-@DisplayName("PiiRedactor Performance Benchmarks")
+@DisplayName("PiiRedactor Performance Benchmarks [GH-90000]")
 class PiiRedactorBenchmark {
 
     private static final int WARMUP_ITERATIONS = 5;
@@ -30,183 +30,183 @@ class PiiRedactorBenchmark {
      * Benchmark email redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: Email redaction performance")
-    void benchmarkEmailRedaction() {
+    @DisplayName("Benchmark: Email redaction performance [GH-90000]")
+    void benchmarkEmailRedaction() { // GH-90000
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            PiiRedactor.redact("Contact user@example.com for support");
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
+            PiiRedactor.redact("Contact user@example.com for support [GH-90000]");
         }
 
         // Benchmark
-        long startTime = System.nanoTime();
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            String result = PiiRedactor.redact("Contact user@example.com for support");
-            assertThat(result).contains("***@***.***");
+        long startTime = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
+            String result = PiiRedactor.redact("Contact user@example.com for support [GH-90000]");
+            assertThat(result).contains("***@***.*** [GH-90000]");
         }
-        long endTime = System.nanoTime();
+        long endTime = System.nanoTime(); // GH-90000
 
-        long durationMs = (endTime - startTime) / 1_000_000;
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS;
+        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
 
-        System.out.printf("Email redaction: %d iterations in %d ms (avg %.3f ms/operation)%n",
+        System.out.printf("Email redaction: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
         // Performance assertion: should complete in reasonable time
-        assertThat(durationMs).isLessThan(1000); // < 1 second for 100 iterations
+        assertThat(durationMs).isLessThan(1000); // < 1 second for 100 iterations // GH-90000
     }
 
     /**
      * Benchmark phone number redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: Phone number redaction performance")
-    void benchmarkPhoneRedaction() {
+    @DisplayName("Benchmark: Phone number redaction performance [GH-90000]")
+    void benchmarkPhoneRedaction() { // GH-90000
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            PiiRedactor.redact("Call me at (555) 123-4567");
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
+            PiiRedactor.redact("Call me at (555) 123-4567 [GH-90000]");
         }
 
         // Benchmark
-        long startTime = System.nanoTime();
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            String result = PiiRedactor.redact("Call me at (555) 123-4567");
-            assertThat(result).contains("***");
+        long startTime = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
+            String result = PiiRedactor.redact("Call me at (555) 123-4567 [GH-90000]");
+            assertThat(result).contains("*** [GH-90000]");
         }
-        long endTime = System.nanoTime();
+        long endTime = System.nanoTime(); // GH-90000
 
-        long durationMs = (endTime - startTime) / 1_000_000;
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS;
+        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
 
-        System.out.printf("Phone redaction: %d iterations in %d ms (avg %.3f ms/operation)%n",
+        System.out.printf("Phone redaction: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
-        assertThat(durationMs).isLessThan(1000);
+        assertThat(durationMs).isLessThan(1000); // GH-90000
     }
 
     /**
      * Benchmark credit card redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: Credit card redaction performance")
-    void benchmarkCreditCardRedaction() {
+    @DisplayName("Benchmark: Credit card redaction performance [GH-90000]")
+    void benchmarkCreditCardRedaction() { // GH-90000
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            PiiRedactor.redact("Card: 4111-1111-1111-1111");
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
+            PiiRedactor.redact("Card: 4111-1111-1111-1111 [GH-90000]");
         }
 
         // Benchmark
-        long startTime = System.nanoTime();
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            String result = PiiRedactor.redact("Card: 4111-1111-1111-1111");
-            assertThat(result).contains("****-1111");
+        long startTime = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
+            String result = PiiRedactor.redact("Card: 4111-1111-1111-1111 [GH-90000]");
+            assertThat(result).contains("****-1111 [GH-90000]");
         }
-        long endTime = System.nanoTime();
+        long endTime = System.nanoTime(); // GH-90000
 
-        long durationMs = (endTime - startTime) / 1_000_000;
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS;
+        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
 
-        System.out.printf("Credit card redaction: %d iterations in %d ms (avg %.3f ms/operation)%n",
+        System.out.printf("Credit card redaction: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
-        assertThat(durationMs).isLessThan(1000);
+        assertThat(durationMs).isLessThan(1000); // GH-90000
     }
 
     /**
      * Benchmark SSN redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: SSN redaction performance")
-    void benchmarkSsnRedaction() {
+    @DisplayName("Benchmark: SSN redaction performance [GH-90000]")
+    void benchmarkSsnRedaction() { // GH-90000
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            PiiRedactor.redact("SSN: 123-45-6789");
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
+            PiiRedactor.redact("SSN: 123-45-6789 [GH-90000]");
         }
 
         // Benchmark
-        long startTime = System.nanoTime();
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            String result = PiiRedactor.redact("SSN: 123-45-6789");
-            assertThat(result).contains("****");
+        long startTime = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
+            String result = PiiRedactor.redact("SSN: 123-45-6789 [GH-90000]");
+            assertThat(result).contains("**** [GH-90000]");
         }
-        long endTime = System.nanoTime();
+        long endTime = System.nanoTime(); // GH-90000
 
-        long durationMs = (endTime - startTime) / 1_000_000;
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS;
+        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
 
-        System.out.printf("SSN redaction: %d iterations in %d ms (avg %.3f ms/operation)%n",
+        System.out.printf("SSN redaction: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
-        assertThat(durationMs).isLessThan(1000);
+        assertThat(durationMs).isLessThan(1000); // GH-90000
     }
 
     /**
      * Benchmark redaction with large input text.
      */
     @Test
-    @DisplayName("Benchmark: Redaction performance with large input")
-    void benchmarkLargeInputRedaction() {
+    @DisplayName("Benchmark: Redaction performance with large input [GH-90000]")
+    void benchmarkLargeInputRedaction() { // GH-90000
         // Create large input with multiple PII types
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 100; i++) {
-            sb.append("Contact user")
-              .append(i)
-              .append("@example.com for support. ")
-              .append("Call (555) 123-4567. ")
-              .append("Card: 4111-1111-1111-1111. ")
-              .append("SSN: 123-45-6789. ");
+        StringBuilder sb = new StringBuilder(); // GH-90000
+        for (int i = 0; i < 100; i++) { // GH-90000
+            sb.append("Contact user [GH-90000]")
+              .append(i) // GH-90000
+              .append("@example.com for support.  [GH-90000]")
+              .append("Call (555) 123-4567.  [GH-90000]")
+              .append("Card: 4111-1111-1111-1111.  [GH-90000]")
+              .append("SSN: 123-45-6789.  [GH-90000]");
         }
-        String largeInput = sb.toString();
+        String largeInput = sb.toString(); // GH-90000
 
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            PiiRedactor.redact(largeInput);
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
+            PiiRedactor.redact(largeInput); // GH-90000
         }
 
         // Benchmark
-        long startTime = System.nanoTime();
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            String result = PiiRedactor.redact(largeInput);
-            assertThat(result).contains("***");
+        long startTime = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
+            String result = PiiRedactor.redact(largeInput); // GH-90000
+            assertThat(result).contains("*** [GH-90000]");
         }
-        long endTime = System.nanoTime();
+        long endTime = System.nanoTime(); // GH-90000
 
-        long durationMs = (endTime - startTime) / 1_000_000;
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS;
+        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
 
-        System.out.printf("Large input redaction (%d chars): %d iterations in %d ms (avg %.3f ms/operation)%n",
-                largeInput.length(), BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
+        System.out.printf("Large input redaction (%d chars): %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
+                largeInput.length(), BENCHMARK_ITERATIONS, durationMs, avgPerOpMs); // GH-90000
 
         // Performance assertion: should handle large inputs efficiently
-        assertThat(durationMs).isLessThan(5000); // < 5 seconds for 100 iterations with large input
+        assertThat(durationMs).isLessThan(5000); // < 5 seconds for 100 iterations with large input // GH-90000
     }
 
     /**
      * Benchmark containsPii detection performance.
      */
     @Test
-    @DisplayName("Benchmark: PII detection performance")
-    void benchmarkContainsPii() {
+    @DisplayName("Benchmark: PII detection performance [GH-90000]")
+    void benchmarkContainsPii() { // GH-90000
         String input = "Contact user@example.com for support";
 
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            PiiRedactor.containsPii(input);
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
+            PiiRedactor.containsPii(input); // GH-90000
         }
 
         // Benchmark
-        long startTime = System.nanoTime();
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            boolean result = PiiRedactor.containsPii(input);
-            assertThat(result).isTrue();
+        long startTime = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
+            boolean result = PiiRedactor.containsPii(input); // GH-90000
+            assertThat(result).isTrue(); // GH-90000
         }
-        long endTime = System.nanoTime();
+        long endTime = System.nanoTime(); // GH-90000
 
-        long durationMs = (endTime - startTime) / 1_000_000;
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS;
+        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
 
-        System.out.printf("PII detection: %d iterations in %d ms (avg %.3f ms/operation)%n",
+        System.out.printf("PII detection: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
-        assertThat(durationMs).isLessThan(1000);
+        assertThat(durationMs).isLessThan(1000); // GH-90000
     }
 }

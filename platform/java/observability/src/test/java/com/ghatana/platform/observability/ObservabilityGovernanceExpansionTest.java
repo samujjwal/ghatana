@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.observability;
@@ -23,47 +23,47 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Observability - Phase 4 Governance Policy")
+@DisplayName("Observability - Phase 4 Governance Policy [GH-90000]")
 class ObservabilityGovernanceExpansionTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("Metrics Collection Policy")
+    @DisplayName("Metrics Collection Policy [GH-90000]")
     class MetricsGovernanceTests {
 
         @Test
-        @DisplayName("Metric collection authorization")
-        void metricCollectionPolicy() {
-            Map<String, Object> metricsPolicy = new HashMap<>();
-            metricsPolicy.put("metricType", "application-performance");
-            metricsPolicy.put("samplingRate", 0.1);
-            metricsPolicy.put("requireTenantContext", true);
+        @DisplayName("Metric collection authorization [GH-90000]")
+        void metricCollectionPolicy() { // GH-90000
+            Map<String, Object> metricsPolicy = new HashMap<>(); // GH-90000
+            metricsPolicy.put("metricType", "application-performance"); // GH-90000
+            metricsPolicy.put("samplingRate", 0.1); // GH-90000
+            metricsPolicy.put("requireTenantContext", true); // GH-90000
 
-            assertThat(metricsPolicy.get("requireTenantContext")).isEqualTo(true);
+            assertThat(metricsPolicy.get("requireTenantContext [GH-90000]")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("High-cardinality metric policy enforcement")
-        void cardinalityPolicy() {
-            Map<String, Integer> policies = new HashMap<>();
-            policies.put("maxUniqueLabels", 10000);
-            policies.put("maxMetricsPerTenant", 50000);
-            policies.put("scrapeIntervalSeconds", 60);
+        @DisplayName("High-cardinality metric policy enforcement [GH-90000]")
+        void cardinalityPolicy() { // GH-90000
+            Map<String, Integer> policies = new HashMap<>(); // GH-90000
+            policies.put("maxUniqueLabels", 10000); // GH-90000
+            policies.put("maxMetricsPerTenant", 50000); // GH-90000
+            policies.put("scrapeIntervalSeconds", 60); // GH-90000
 
-            assertThat(policies.get("maxUniqueLabels")).isEqualTo(10000);
+            assertThat(policies.get("maxUniqueLabels [GH-90000]")).isEqualTo(10000);
         }
 
         @Test
-        @DisplayName("Metric retention policy")
-        void retentionPolicy() {
-            runPromise(() -> {
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
+        @DisplayName("Metric retention policy [GH-90000]")
+        void retentionPolicy() { // GH-90000
+            runPromise(() -> { // GH-90000
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
 
                 // 20 different metric retention policies
-                for (int i = 0; i < 20; i++) {
+                for (int i = 0; i < 20; i++) { // GH-90000
                     final int idx = i;
-                    Map<String, Object> retention = new HashMap<>();
-                    retention.put("metricName", "metric-" + idx);
-                    retention.put("retentionDays", 30 + (idx * 5));
+                    Map<String, Object> retention = new HashMap<>(); // GH-90000
+                    retention.put("metricName", "metric-" + idx); // GH-90000
+                    retention.put("retentionDays", 30 + (idx * 5)); // GH-90000
                 }
 
                 return result;
@@ -72,76 +72,76 @@ class ObservabilityGovernanceExpansionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Log Governance Policies")
+    @DisplayName("Log Governance Policies [GH-90000]")
     class LogGovernanceTests {
 
         @Test
-        @DisplayName("Log level enforcement by tenant")
-        void logLevelEnforcement() {
-            Map<String, String> tenantLogLevels = new HashMap<>();
-            tenantLogLevels.put("t1", "INFO");
-            tenantLogLevels.put("t2", "WARN");
-            tenantLogLevels.put("t3", "ERROR");
-            tenantLogLevels.put("t4", "DEBUG");
+        @DisplayName("Log level enforcement by tenant [GH-90000]")
+        void logLevelEnforcement() { // GH-90000
+            Map<String, String> tenantLogLevels = new HashMap<>(); // GH-90000
+            tenantLogLevels.put("t1", "INFO"); // GH-90000
+            tenantLogLevels.put("t2", "WARN"); // GH-90000
+            tenantLogLevels.put("t3", "ERROR"); // GH-90000
+            tenantLogLevels.put("t4", "DEBUG"); // GH-90000
 
-            assertThat(tenantLogLevels.values())
-                .contains("INFO", "WARN", "ERROR", "DEBUG");
+            assertThat(tenantLogLevels.values()) // GH-90000
+                .contains("INFO", "WARN", "ERROR", "DEBUG"); // GH-90000
         }
 
         @Test
-        @DisplayName("Log data masking policy")
-        void logMaskingPolicy() {
-            Map<String, Boolean> maskingRules = new HashMap<>();
-            maskingRules.put("maskPII", true);
-            maskingRules.put("maskAPIKeys", true);
-            maskingRules.put("maskPasswords", true);
-            maskingRules.put("maskEncryptionKeys", true);
+        @DisplayName("Log data masking policy [GH-90000]")
+        void logMaskingPolicy() { // GH-90000
+            Map<String, Boolean> maskingRules = new HashMap<>(); // GH-90000
+            maskingRules.put("maskPII", true); // GH-90000
+            maskingRules.put("maskAPIKeys", true); // GH-90000
+            maskingRules.put("maskPasswords", true); // GH-90000
+            maskingRules.put("maskEncryptionKeys", true); // GH-90000
 
-            long maskedCount = maskingRules.values().stream().filter(v -> v).count();
-            assertThat(maskedCount).isEqualTo(4);
+            long maskedCount = maskingRules.values().stream().filter(v -> v).count(); // GH-90000
+            assertThat(maskedCount).isEqualTo(4); // GH-90000
         }
 
         @Test
-        @DisplayName("Log export and archive policy")
-        void logArchivePolicy() {
-            Map<String, Object> archivePolicy = new HashMap<>();
-            archivePolicy.put("exportFormat", "gzip");
-            archivePolicy.put("archiveStorageType", "s3");
-            archivePolicy.put("retentionDays", 365);
-            archivePolicy.put("encryptionRequired", true);
+        @DisplayName("Log export and archive policy [GH-90000]")
+        void logArchivePolicy() { // GH-90000
+            Map<String, Object> archivePolicy = new HashMap<>(); // GH-90000
+            archivePolicy.put("exportFormat", "gzip"); // GH-90000
+            archivePolicy.put("archiveStorageType", "s3"); // GH-90000
+            archivePolicy.put("retentionDays", 365); // GH-90000
+            archivePolicy.put("encryptionRequired", true); // GH-90000
 
-            assertThat(archivePolicy.get("encryptionRequired")).isEqualTo(true);
+            assertThat(archivePolicy.get("encryptionRequired [GH-90000]")).isEqualTo(true);
         }
     }
 
     @Nested
-    @DisplayName("Trace Governance")
+    @DisplayName("Trace Governance [GH-90000]")
     class TraceGovernanceTests {
 
         @Test
-        @DisplayName("Distributed trace sampling policy")
-        void traceSamplingPolicy() {
-            Map<String, Object> samplingPolicy = new HashMap<>();
-            samplingPolicy.put("defaultSamplingRate", 0.01);
-            samplingPolicy.put("errorTraceSamplingRate", 1.0);
-            samplingPolicy.put("slowTraceSamplingRate", 0.1);
+        @DisplayName("Distributed trace sampling policy [GH-90000]")
+        void traceSamplingPolicy() { // GH-90000
+            Map<String, Object> samplingPolicy = new HashMap<>(); // GH-90000
+            samplingPolicy.put("defaultSamplingRate", 0.01); // GH-90000
+            samplingPolicy.put("errorTraceSamplingRate", 1.0); // GH-90000
+            samplingPolicy.put("slowTraceSamplingRate", 0.1); // GH-90000
 
-            assertThat(samplingPolicy.get("errorTraceSamplingRate")).isEqualTo(1.0);
+            assertThat(samplingPolicy.get("errorTraceSamplingRate [GH-90000]")).isEqualTo(1.0);
         }
 
         @Test
-        @DisplayName("Trace context propagation across tenants")
-        void traceContextIsolation() {
-            runPromise(() -> {
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
+        @DisplayName("Trace context propagation across tenants [GH-90000]")
+        void traceContextIsolation() { // GH-90000
+            runPromise(() -> { // GH-90000
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
 
                 // 15 requests with tenant isolation
-                for (int i = 0; i < 15; i++) {
+                for (int i = 0; i < 15; i++) { // GH-90000
                     final int idx = i;
-                    Map<String, Object> traceContext = new HashMap<>();
-                    traceContext.put("traceId", "trace-" + idx);
-                    traceContext.put("tenantId", "t" + (idx / 5));
-                    traceContext.put("spanCount", 5 + (idx % 10));
+                    Map<String, Object> traceContext = new HashMap<>(); // GH-90000
+                    traceContext.put("traceId", "trace-" + idx); // GH-90000
+                    traceContext.put("tenantId", "t" + (idx / 5)); // GH-90000
+                    traceContext.put("spanCount", 5 + (idx % 10)); // GH-90000
                 }
 
                 return result;
@@ -149,54 +149,54 @@ class ObservabilityGovernanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Trace data retention and compliance")
-        void traceCompliance() {
-            Map<String, Object> compliancePolicy = new HashMap<>();
-            compliancePolicy.put("retentionDays", 90);
-            compliancePolicy.put("piiRedaction", true);
-            compliancePolicy.put("complianceCheckpoint", "before-export");
+        @DisplayName("Trace data retention and compliance [GH-90000]")
+        void traceCompliance() { // GH-90000
+            Map<String, Object> compliancePolicy = new HashMap<>(); // GH-90000
+            compliancePolicy.put("retentionDays", 90); // GH-90000
+            compliancePolicy.put("piiRedaction", true); // GH-90000
+            compliancePolicy.put("complianceCheckpoint", "before-export"); // GH-90000
 
-            assertThat(compliancePolicy.get("piiRedaction")).isEqualTo(true);
+            assertThat(compliancePolicy.get("piiRedaction [GH-90000]")).isEqualTo(true);
         }
     }
 
     @Nested
-    @DisplayName("Alerting Governance")
+    @DisplayName("Alerting Governance [GH-90000]")
     class AlertGovernanceTests {
 
         @Test
-        @DisplayName("Alert routing policy")
-        void alertRoutingPolicy() {
-            Map<String, String> routingRules = new HashMap<>();
-            routingRules.put("critical", "ops-team");
-            routingRules.put("high", "on-call-engineer");
-            routingRules.put("medium", "team-slack");
-            routingRules.put("low", "logging-system");
+        @DisplayName("Alert routing policy [GH-90000]")
+        void alertRoutingPolicy() { // GH-90000
+            Map<String, String> routingRules = new HashMap<>(); // GH-90000
+            routingRules.put("critical", "ops-team"); // GH-90000
+            routingRules.put("high", "on-call-engineer"); // GH-90000
+            routingRules.put("medium", "team-slack"); // GH-90000
+            routingRules.put("low", "logging-system"); // GH-90000
 
-            assertThat(routingRules).hasSize(4);
+            assertThat(routingRules).hasSize(4); // GH-90000
         }
 
         @Test
-        @DisplayName("Alert deduplication policy")
-        void deduplicationPolicy() {
-            Map<String, Object> dedupPolicy = new HashMap<>();
-            dedupPolicy.put("windowMinutes", 15);
-            dedupPolicy.put("groupByLabels", "['severity', 'alertname', 'tenant']");
-            dedupPolicy.put("suppressDuplicates", true);
+        @DisplayName("Alert deduplication policy [GH-90000]")
+        void deduplicationPolicy() { // GH-90000
+            Map<String, Object> dedupPolicy = new HashMap<>(); // GH-90000
+            dedupPolicy.put("windowMinutes", 15); // GH-90000
+            dedupPolicy.put("groupByLabels", "['severity', 'alertname', 'tenant']"); // GH-90000
+            dedupPolicy.put("suppressDuplicates", true); // GH-90000
 
-            assertThat(dedupPolicy.get("suppressDuplicates")).isEqualTo(true);
+            assertThat(dedupPolicy.get("suppressDuplicates [GH-90000]")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("SLA-based alert escalation")
-        void escalationPolicy() {
-            Map<String, Integer> escalationTimes = new HashMap<>();
-            escalationTimes.put("level-1-minutes", 5);
-            escalationTimes.put("level-2-minutes", 15);
-            escalationTimes.put("level-3-minutes", 30);
+        @DisplayName("SLA-based alert escalation [GH-90000]")
+        void escalationPolicy() { // GH-90000
+            Map<String, Integer> escalationTimes = new HashMap<>(); // GH-90000
+            escalationTimes.put("level-1-minutes", 5); // GH-90000
+            escalationTimes.put("level-2-minutes", 15); // GH-90000
+            escalationTimes.put("level-3-minutes", 30); // GH-90000
 
-            assertThat(escalationTimes.get("level-3-minutes"))
-                .isGreaterThan(escalationTimes.get("level-1-minutes"));
+            assertThat(escalationTimes.get("level-3-minutes [GH-90000]"))
+                .isGreaterThan(escalationTimes.get("level-1-minutes [GH-90000]"));
         }
     }
 }

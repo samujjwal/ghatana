@@ -29,263 +29,263 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Connector Configuration Tests")
+@DisplayName("Connector Configuration Tests [GH-90000]")
 class ConnectorsSmokeTest {
 
     // ── QueueMessage ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("QueueMessage can be constructed and fields accessed")
-    void queueMessageFields() {
-        var msg = new QueueMessage("msg-1", "payload body", Map.of("header1", "value1"));
-        assertThat(msg.getId()).isEqualTo("msg-1");
-        assertThat(msg.getBody()).isEqualTo("payload body");
-        assertThat(msg.getHeaders().get("header1")).isEqualTo("value1");
-        assertThat(msg.getTimestamp()).isPositive();
+    @DisplayName("QueueMessage can be constructed and fields accessed [GH-90000]")
+    void queueMessageFields() { // GH-90000
+        var msg = new QueueMessage("msg-1", "payload body", Map.of("header1", "value1")); // GH-90000
+        assertThat(msg.getId()).isEqualTo("msg-1 [GH-90000]");
+        assertThat(msg.getBody()).isEqualTo("payload body [GH-90000]");
+        assertThat(msg.getHeaders().get("header1 [GH-90000]")).isEqualTo("value1 [GH-90000]");
+        assertThat(msg.getTimestamp()).isPositive(); // GH-90000
     }
 
     // ── TlsConfig ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("TlsConfig")
+    @DisplayName("TlsConfig [GH-90000]")
     class TlsConfigTests {
         @Test
-        @DisplayName("DISABLED constant has TLS off")
-        void disabledConstant() {
-            assertThat(TlsConfig.DISABLED.enabled()).isFalse();
+        @DisplayName("DISABLED constant has TLS off [GH-90000]")
+        void disabledConstant() { // GH-90000
+            assertThat(TlsConfig.DISABLED.enabled()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("DEFAULT_ENABLED constant has TLS on")
-        void defaultEnabledConstant() {
-            assertThat(TlsConfig.DEFAULT_ENABLED.enabled()).isTrue();
+        @DisplayName("DEFAULT_ENABLED constant has TLS on [GH-90000]")
+        void defaultEnabledConstant() { // GH-90000
+            assertThat(TlsConfig.DEFAULT_ENABLED.enabled()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("Builder produces correct TlsConfig")
-        void builder() {
-            TlsConfig config = TlsConfig.builder()
-                .enabled(true)
-                .truststorePath("/certs/truststore.jks")
-                .build();
-            assertThat(config.enabled()).isTrue();
-            assertThat(config.truststorePath()).isEqualTo("/certs/truststore.jks");
+        @DisplayName("Builder produces correct TlsConfig [GH-90000]")
+        void builder() { // GH-90000
+            TlsConfig config = TlsConfig.builder() // GH-90000
+                .enabled(true) // GH-90000
+                .truststorePath("/certs/truststore.jks [GH-90000]")
+                .build(); // GH-90000
+            assertThat(config.enabled()).isTrue(); // GH-90000
+            assertThat(config.truststorePath()).isEqualTo("/certs/truststore.jks [GH-90000]");
         }
     }
 
     // ── RetryConfig ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("RetryConfig")
+    @DisplayName("RetryConfig [GH-90000]")
     class RetryConfigTests {
         @Test
-        @DisplayName("NO_RETRY constant has maxAttempts=1")
-        void noRetryConstant() {
-            assertThat(RetryConfig.NO_RETRY.maxAttempts()).isEqualTo(1);
+        @DisplayName("NO_RETRY constant has maxAttempts=1 [GH-90000]")
+        void noRetryConstant() { // GH-90000
+            assertThat(RetryConfig.NO_RETRY.maxAttempts()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("DEFAULT constant has maxAttempts=3")
-        void defaultConstant() {
-            assertThat(RetryConfig.DEFAULT.maxAttempts()).isEqualTo(3);
+        @DisplayName("DEFAULT constant has maxAttempts=3 [GH-90000]")
+        void defaultConstant() { // GH-90000
+            assertThat(RetryConfig.DEFAULT.maxAttempts()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("Builder produces correct RetryConfig")
-        void builder() {
-            RetryConfig config = RetryConfig.builder()
-                .maxAttempts(5)
-                .initialDelay(Duration.ofMillis(200))
-                .backoffMultiplier(3.0)
-                .maxDelay(Duration.ofSeconds(60))
-                .build();
-            assertThat(config.maxAttempts()).isEqualTo(5);
-            assertThat(config.initialDelay()).isEqualTo(Duration.ofMillis(200));
-            assertThat(config.backoffMultiplier()).isEqualTo(3.0);
+        @DisplayName("Builder produces correct RetryConfig [GH-90000]")
+        void builder() { // GH-90000
+            RetryConfig config = RetryConfig.builder() // GH-90000
+                .maxAttempts(5) // GH-90000
+                .initialDelay(Duration.ofMillis(200)) // GH-90000
+                .backoffMultiplier(3.0) // GH-90000
+                .maxDelay(Duration.ofSeconds(60)) // GH-90000
+                .build(); // GH-90000
+            assertThat(config.maxAttempts()).isEqualTo(5); // GH-90000
+            assertThat(config.initialDelay()).isEqualTo(Duration.ofMillis(200)); // GH-90000
+            assertThat(config.backoffMultiplier()).isEqualTo(3.0); // GH-90000
         }
 
         @Test
-        @DisplayName("Validation rejects maxAttempts < 1")
-        void rejectsZeroAttempts() {
-            assertThatThrownBy(() -> RetryConfig.builder().maxAttempts(0).build())
-                .isInstanceOf(IllegalArgumentException.class);
+        @DisplayName("Validation rejects maxAttempts < 1 [GH-90000]")
+        void rejectsZeroAttempts() { // GH-90000
+            assertThatThrownBy(() -> RetryConfig.builder().maxAttempts(0).build()) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
     }
 
     // ── KafkaConsumerConfig ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("KafkaConsumerConfig")
+    @DisplayName("KafkaConsumerConfig [GH-90000]")
     class KafkaConsumerConfigTests {
         @Test
-        @DisplayName("Builder builds config with correct fields")
-        void buildsCorrectly() {
-            KafkaConsumerConfig config = KafkaConsumerConfig.builder()
-                .bootstrapServers("localhost:9092")
-                .topic("events")
-                .groupId("test-group")
-                .build();
+        @DisplayName("Builder builds config with correct fields [GH-90000]")
+        void buildsCorrectly() { // GH-90000
+            KafkaConsumerConfig config = KafkaConsumerConfig.builder() // GH-90000
+                .bootstrapServers("localhost:9092 [GH-90000]")
+                .topic("events [GH-90000]")
+                .groupId("test-group [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(config.bootstrapServers()).isEqualTo("localhost:9092");
-            assertThat(config.topic()).isEqualTo("events");
-            assertThat(config.groupId()).isEqualTo("test-group");
-            assertThat(config.pollTimeoutMs()).isEqualTo(1000);
+            assertThat(config.bootstrapServers()).isEqualTo("localhost:9092 [GH-90000]");
+            assertThat(config.topic()).isEqualTo("events [GH-90000]");
+            assertThat(config.groupId()).isEqualTo("test-group [GH-90000]");
+            assertThat(config.pollTimeoutMs()).isEqualTo(1000); // GH-90000
         }
 
         @Test
-        @DisplayName("Inherits TLS and retry from ConnectorConfig base")
-        void inheritsBaseConfig() {
-            KafkaConsumerConfig config = KafkaConsumerConfig.builder()
-                .bootstrapServers("kafka:9094")
-                .topic("secure-events")
-                .groupId("secure-group")
-                .tlsConfig(TlsConfig.DEFAULT_ENABLED)
-                .retryConfig(RetryConfig.builder().maxAttempts(5).build())
-                .build();
+        @DisplayName("Inherits TLS and retry from ConnectorConfig base [GH-90000]")
+        void inheritsBaseConfig() { // GH-90000
+            KafkaConsumerConfig config = KafkaConsumerConfig.builder() // GH-90000
+                .bootstrapServers("kafka:9094 [GH-90000]")
+                .topic("secure-events [GH-90000]")
+                .groupId("secure-group [GH-90000]")
+                .tlsConfig(TlsConfig.DEFAULT_ENABLED) // GH-90000
+                .retryConfig(RetryConfig.builder().maxAttempts(5).build()) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(config).isInstanceOf(ConnectorConfig.class);
-            assertThat(config.isTlsEnabled()).isTrue();
-            assertThat(config.retryConfig().maxAttempts()).isEqualTo(5);
+            assertThat(config).isInstanceOf(ConnectorConfig.class); // GH-90000
+            assertThat(config.isTlsEnabled()).isTrue(); // GH-90000
+            assertThat(config.retryConfig().maxAttempts()).isEqualTo(5); // GH-90000
         }
 
         @Test
-        @DisplayName("Requires non-null bootstrapServers")
-        void requiresBootstrapServers() {
-            assertThatThrownBy(() -> KafkaConsumerConfig.builder()
-                .topic("events").groupId("g").build())
-                .isInstanceOf(NullPointerException.class);
+        @DisplayName("Requires non-null bootstrapServers [GH-90000]")
+        void requiresBootstrapServers() { // GH-90000
+            assertThatThrownBy(() -> KafkaConsumerConfig.builder() // GH-90000
+                .topic("events [GH-90000]").groupId("g [GH-90000]").build())
+                .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 
     // ── KafkaProducerConfig ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("KafkaProducerConfig")
+    @DisplayName("KafkaProducerConfig [GH-90000]")
     class KafkaProducerConfigTests {
         @Test
-        @DisplayName("Builder builds config with defaults")
-        void buildsWithDefaults() {
-            KafkaProducerConfig config = KafkaProducerConfig.builder()
-                .bootstrapServers("localhost:9092")
-                .topic("output")
-                .build();
+        @DisplayName("Builder builds config with defaults [GH-90000]")
+        void buildsWithDefaults() { // GH-90000
+            KafkaProducerConfig config = KafkaProducerConfig.builder() // GH-90000
+                .bootstrapServers("localhost:9092 [GH-90000]")
+                .topic("output [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(config.bootstrapServers()).isEqualTo("localhost:9092");
-            assertThat(config.batchSize()).isEqualTo(16384);
-            assertThat(config.isTlsEnabled()).isFalse();
+            assertThat(config.bootstrapServers()).isEqualTo("localhost:9092 [GH-90000]");
+            assertThat(config.batchSize()).isEqualTo(16384); // GH-90000
+            assertThat(config.isTlsEnabled()).isFalse(); // GH-90000
         }
     }
 
     // ── RabbitMQConfig ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("RabbitMQConfig")
+    @DisplayName("RabbitMQConfig [GH-90000]")
     class RabbitMQConfigTests {
         @Test
-        @DisplayName("Builder sets defaults and fields correctly")
-        void buildsCorrectly() {
-            RabbitMQConfig config = RabbitMQConfig.builder()
-                .host("rabbitmq.internal")
-                .username("user")
-                .password("pass")
-                .queueName("events")
-                .build();
+        @DisplayName("Builder sets defaults and fields correctly [GH-90000]")
+        void buildsCorrectly() { // GH-90000
+            RabbitMQConfig config = RabbitMQConfig.builder() // GH-90000
+                .host("rabbitmq.internal [GH-90000]")
+                .username("user [GH-90000]")
+                .password("pass [GH-90000]")
+                .queueName("events [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(config.rabbitHost()).isEqualTo("rabbitmq.internal");
-            assertThat(config.rabbitPort()).isEqualTo(5672);
-            assertThat(config.virtualHost()).isEqualTo("/");
-            assertThat(config.queueName()).isEqualTo("events");
-            assertThat(config.maxDeliveryAttempts()).isEqualTo(Integer.MAX_VALUE);
-            assertThat(config.isTlsEnabled()).isFalse();
+            assertThat(config.rabbitHost()).isEqualTo("rabbitmq.internal [GH-90000]");
+            assertThat(config.rabbitPort()).isEqualTo(5672); // GH-90000
+            assertThat(config.virtualHost()).isEqualTo("/ [GH-90000]");
+            assertThat(config.queueName()).isEqualTo("events [GH-90000]");
+            assertThat(config.maxDeliveryAttempts()).isEqualTo(Integer.MAX_VALUE); // GH-90000
+            assertThat(config.isTlsEnabled()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("Builder allows configuring max delivery attempts")
-        void buildsWithConfiguredMaxDeliveryAttempts() {
-            RabbitMQConfig config = RabbitMQConfig.builder()
-                .host("rabbitmq.internal")
-                .username("user")
-                .password("pass")
-                .queueName("events")
-                .maxDeliveryAttempts(2)
-                .build();
+        @DisplayName("Builder allows configuring max delivery attempts [GH-90000]")
+        void buildsWithConfiguredMaxDeliveryAttempts() { // GH-90000
+            RabbitMQConfig config = RabbitMQConfig.builder() // GH-90000
+                .host("rabbitmq.internal [GH-90000]")
+                .username("user [GH-90000]")
+                .password("pass [GH-90000]")
+                .queueName("events [GH-90000]")
+                .maxDeliveryAttempts(2) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(config.maxDeliveryAttempts()).isEqualTo(2);
+            assertThat(config.maxDeliveryAttempts()).isEqualTo(2); // GH-90000
         }
     }
 
     // ── SqsConfig ────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("SqsConfig")
+    @DisplayName("SqsConfig [GH-90000]")
     class SqsConfigTests {
         @Test
-        @DisplayName("Builder sets fields and defaults correctly")
-        void buildsCorrectly() {
-            SqsConfig config = SqsConfig.builder()
-                .queueUrl("https://sqs.us-east-1.amazonaws.com/123/queue")
-                .region("us-east-1")
-                .build();
+        @DisplayName("Builder sets fields and defaults correctly [GH-90000]")
+        void buildsCorrectly() { // GH-90000
+            SqsConfig config = SqsConfig.builder() // GH-90000
+                .queueUrl("https://sqs.us-east-1.amazonaws.com/123/queue [GH-90000]")
+                .region("us-east-1 [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(config.queueUrl()).isNotNull();
-            assertThat(config.region()).isEqualTo("us-east-1");
-            assertThat(config.maxMessages()).isEqualTo(10);
-            assertThat(config.waitTimeSeconds()).isEqualTo(20);
+            assertThat(config.queueUrl()).isNotNull(); // GH-90000
+            assertThat(config.region()).isEqualTo("us-east-1 [GH-90000]");
+            assertThat(config.maxMessages()).isEqualTo(10); // GH-90000
+            assertThat(config.waitTimeSeconds()).isEqualTo(20); // GH-90000
         }
     }
 
     // ── S3Config ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("S3Config")
+    @DisplayName("S3Config [GH-90000]")
     class S3ConfigTests {
         @Test
-        @DisplayName("Builder sets fields and defaults correctly")
-        void buildsCorrectly() {
-            S3Config config = S3Config.builder()
-                .bucketName("my-bucket")
-                .region("us-west-2")
-                .build();
+        @DisplayName("Builder sets fields and defaults correctly [GH-90000]")
+        void buildsCorrectly() { // GH-90000
+            S3Config config = S3Config.builder() // GH-90000
+                .bucketName("my-bucket [GH-90000]")
+                .region("us-west-2 [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(config.bucketName()).isEqualTo("my-bucket");
-            assertThat(config.region()).isEqualTo("us-west-2");
-            assertThat(config.prefix()).isEmpty();
-            assertThat(config.isTlsEnabled()).isFalse();
+            assertThat(config.bucketName()).isEqualTo("my-bucket [GH-90000]");
+            assertThat(config.region()).isEqualTo("us-west-2 [GH-90000]");
+            assertThat(config.prefix()).isEmpty(); // GH-90000
+            assertThat(config.isTlsEnabled()).isFalse(); // GH-90000
         }
     }
 
     // ── HttpIngressConfig ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("HttpIngressConfig")
+    @DisplayName("HttpIngressConfig [GH-90000]")
     class HttpIngressConfigTests {
         @Test
-        @DisplayName("Builder sets fields and defaults correctly")
-        void buildsCorrectly() {
-            HttpIngressConfig config = HttpIngressConfig.builder()
-                .endpoint("https://api.example.com")
-                .httpPort(8443)
-                .path("/events")
-                .tlsConfig(TlsConfig.DEFAULT_ENABLED)
-                .build();
+        @DisplayName("Builder sets fields and defaults correctly [GH-90000]")
+        void buildsCorrectly() { // GH-90000
+            HttpIngressConfig config = HttpIngressConfig.builder() // GH-90000
+                .endpoint("https://api.example.com [GH-90000]")
+                .httpPort(8443) // GH-90000
+                .path("/events [GH-90000]")
+                .tlsConfig(TlsConfig.DEFAULT_ENABLED) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(config.endpoint()).isEqualTo("https://api.example.com");
-            assertThat(config.httpPort()).isEqualTo(8443);
-            assertThat(config.path()).isEqualTo("/events");
-            assertThat(config.method()).isEqualTo("POST");
-            assertThat(config.isTlsEnabled()).isTrue();
+            assertThat(config.endpoint()).isEqualTo("https://api.example.com [GH-90000]");
+            assertThat(config.httpPort()).isEqualTo(8443); // GH-90000
+            assertThat(config.path()).isEqualTo("/events [GH-90000]");
+            assertThat(config.method()).isEqualTo("POST [GH-90000]");
+            assertThat(config.isTlsEnabled()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("timeoutMs convenience method sets readTimeout")
-        void timeoutMsConvenienceMethod() {
-            HttpIngressConfig config = HttpIngressConfig.builder()
-                .endpoint("http://example.com")
-                .path("/events")
-                .timeoutMs(5000)
-                .build();
+        @DisplayName("timeoutMs convenience method sets readTimeout [GH-90000]")
+        void timeoutMsConvenienceMethod() { // GH-90000
+            HttpIngressConfig config = HttpIngressConfig.builder() // GH-90000
+                .endpoint("http://example.com [GH-90000]")
+                .path("/events [GH-90000]")
+                .timeoutMs(5000) // GH-90000
+                .build(); // GH-90000
 
-            assertThat(config.readTimeout()).isEqualTo(Duration.ofMillis(5000));
+            assertThat(config.readTimeout()).isEqualTo(Duration.ofMillis(5000)); // GH-90000
         }
     }
 }

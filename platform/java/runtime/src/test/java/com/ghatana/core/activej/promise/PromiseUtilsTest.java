@@ -17,319 +17,319 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Comprehensive tests for PromiseUtils.
  */
-@ExtendWith(EventloopTestExtension.class)
+@ExtendWith(EventloopTestExtension.class) // GH-90000
 class PromiseUtilsTest {
 
     @Test
-    void testWithTimeout_completesBeforeTimeout(EventloopTestRunner runner) {
-        Promise<String> promise = Promise.of("success");
+    void testWithTimeout_completesBeforeTimeout(EventloopTestRunner runner) { // GH-90000
+        Promise<String> promise = Promise.of("success [GH-90000]");
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.withTimeout(promise, Duration.ofSeconds(1))
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.withTimeout(promise, Duration.ofSeconds(1)) // GH-90000
         );
 
-        assertThat(result).isEqualTo("success");
+        assertThat(result).isEqualTo("success [GH-90000]");
     }
 
     @Test
-    void testWithTimeout_failsOnTimeout(EventloopTestRunner runner) {
-        Promise<String> slowPromise = Promise.ofCallback(cb -> {
+    void testWithTimeout_failsOnTimeout(EventloopTestRunner runner) { // GH-90000
+        Promise<String> slowPromise = Promise.ofCallback(cb -> { // GH-90000
             // Never completes
         });
 
-        assertThatThrownBy(() -> runner.runPromise(() ->
-            PromiseUtils.withTimeout(slowPromise, Duration.ofMillis(100))
-        )).hasCauseInstanceOf(TimeoutException.class);
+        assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
+            PromiseUtils.withTimeout(slowPromise, Duration.ofMillis(100)) // GH-90000
+        )).hasCauseInstanceOf(TimeoutException.class); // GH-90000
     }
 
     @Test
-    void testWithRetry_succeedsOnFirstAttempt(EventloopTestRunner runner) {
-        AtomicInteger attempts = new AtomicInteger(0);
+    void testWithRetry_succeedsOnFirstAttempt(EventloopTestRunner runner) { // GH-90000
+        AtomicInteger attempts = new AtomicInteger(0); // GH-90000
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.withRetry(
-                () -> {
-                    attempts.incrementAndGet();
-                    return Promise.of("success");
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.withRetry( // GH-90000
+                () -> { // GH-90000
+                    attempts.incrementAndGet(); // GH-90000
+                    return Promise.of("success [GH-90000]");
                 },
                 3,
-                Duration.ofMillis(10)
+                Duration.ofMillis(10) // GH-90000
             )
         );
 
-        assertThat(result).isEqualTo("success");
-        assertThat(attempts.get()).isEqualTo(1);
+        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(attempts.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    void testWithRetry_retriesOnFailure(EventloopTestRunner runner) {
-        AtomicInteger attempts = new AtomicInteger(0);
+    void testWithRetry_retriesOnFailure(EventloopTestRunner runner) { // GH-90000
+        AtomicInteger attempts = new AtomicInteger(0); // GH-90000
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.withRetry(
-                () -> {
-                    int attempt = attempts.incrementAndGet();
-                    if (attempt < 3) {
-                        return Promise.ofException(new RuntimeException("Attempt " + attempt));
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.withRetry( // GH-90000
+                () -> { // GH-90000
+                    int attempt = attempts.incrementAndGet(); // GH-90000
+                    if (attempt < 3) { // GH-90000
+                        return Promise.ofException(new RuntimeException("Attempt " + attempt)); // GH-90000
                     }
-                    return Promise.of("success");
+                    return Promise.of("success [GH-90000]");
                 },
                 3,
-                Duration.ofMillis(10)
+                Duration.ofMillis(10) // GH-90000
             )
         );
 
-        assertThat(result).isEqualTo("success");
-        assertThat(attempts.get()).isEqualTo(3);
+        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(attempts.get()).isEqualTo(3); // GH-90000
     }
 
     @Test
-    void testWithRetry_failsAfterMaxAttempts(EventloopTestRunner runner) {
-        AtomicInteger attempts = new AtomicInteger(0);
+    void testWithRetry_failsAfterMaxAttempts(EventloopTestRunner runner) { // GH-90000
+        AtomicInteger attempts = new AtomicInteger(0); // GH-90000
 
-        assertThatThrownBy(() -> runner.runPromise(() ->
-            PromiseUtils.withRetry(
-                () -> {
-                    attempts.incrementAndGet();
-                    return Promise.ofException(new RuntimeException("Always fails"));
+        assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
+            PromiseUtils.withRetry( // GH-90000
+                () -> { // GH-90000
+                    attempts.incrementAndGet(); // GH-90000
+                    return Promise.ofException(new RuntimeException("Always fails [GH-90000]"));
                 },
                 3,
-                Duration.ofMillis(10)
+                Duration.ofMillis(10) // GH-90000
             )
-        )).hasMessageContaining("Always fails");
+        )).hasMessageContaining("Always fails [GH-90000]");
 
-        assertThat(attempts.get()).isEqualTo(3);
+        assertThat(attempts.get()).isEqualTo(3); // GH-90000
     }
 
     @Test
-    void testWithRetry_requiresPositiveAttempts(EventloopTestRunner runner) {
-        assertThatThrownBy(() -> runner.runPromise(() ->
-            PromiseUtils.withRetry(
-                () -> Promise.of("test"),
+    void testWithRetry_requiresPositiveAttempts(EventloopTestRunner runner) { // GH-90000
+        assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
+            PromiseUtils.withRetry( // GH-90000
+                () -> Promise.of("test [GH-90000]"),
                 0,
-                Duration.ofMillis(10)
+                Duration.ofMillis(10) // GH-90000
             )
-        )).isInstanceOf(IllegalArgumentException.class);
+        )).isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    void testToCompletableFuture_success(EventloopTestRunner runner) {
-        Promise<String> promise = Promise.of("test");
+    void testToCompletableFuture_success(EventloopTestRunner runner) { // GH-90000
+        Promise<String> promise = Promise.of("test [GH-90000]");
 
-        CompletableFuture<String> future = runner.runBlocking(() ->
-            PromiseUtils.toCompletableFuture(promise)
+        CompletableFuture<String> future = runner.runBlocking(() -> // GH-90000
+            PromiseUtils.toCompletableFuture(promise) // GH-90000
         );
 
-        assertThat(future).isCompletedWithValue("test");
+        assertThat(future).isCompletedWithValue("test [GH-90000]");
     }
 
     @Test
-    void testToCompletableFuture_failure(EventloopTestRunner runner) {
-        Promise<String> promise = Promise.ofException(new RuntimeException("error"));
+    void testToCompletableFuture_failure(EventloopTestRunner runner) { // GH-90000
+        Promise<String> promise = Promise.ofException(new RuntimeException("error [GH-90000]"));
 
-        CompletableFuture<String> future = runner.runBlocking(() ->
-            PromiseUtils.toCompletableFuture(promise)
+        CompletableFuture<String> future = runner.runBlocking(() -> // GH-90000
+            PromiseUtils.toCompletableFuture(promise) // GH-90000
         );
 
-        assertThat(future).isCompletedExceptionally();
+        assertThat(future).isCompletedExceptionally(); // GH-90000
     }
 
     @Test
-    void testFromCompletableFuture_success(EventloopTestRunner runner) {
-        CompletableFuture<String> future = CompletableFuture.completedFuture("test");
+    void testFromCompletableFuture_success(EventloopTestRunner runner) { // GH-90000
+        CompletableFuture<String> future = CompletableFuture.completedFuture("test [GH-90000]");
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.fromCompletableFuture(future)
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.fromCompletableFuture(future) // GH-90000
         );
 
-        assertThat(result).isEqualTo("test");
+        assertThat(result).isEqualTo("test [GH-90000]");
     }
 
     @Test
-    void testFromCompletableFuture_failure(EventloopTestRunner runner) {
-        CompletableFuture<String> future = new CompletableFuture<>();
-        future.completeExceptionally(new RuntimeException("error"));
+    void testFromCompletableFuture_failure(EventloopTestRunner runner) { // GH-90000
+        CompletableFuture<String> future = new CompletableFuture<>(); // GH-90000
+        future.completeExceptionally(new RuntimeException("error [GH-90000]"));
 
-        assertThatThrownBy(() -> runner.runPromise(() ->
-            PromiseUtils.fromCompletableFuture(future)
-        )).hasMessageContaining("error");
+        assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
+            PromiseUtils.fromCompletableFuture(future) // GH-90000
+        )).hasMessageContaining("error [GH-90000]");
     }
 
     @Test
-    void testAll_combinesSuccessfully(EventloopTestRunner runner) {
-        List<Promise<Integer>> promises = List.of(
-            Promise.of(1),
-            Promise.of(2),
-            Promise.of(3)
+    void testAll_combinesSuccessfully(EventloopTestRunner runner) { // GH-90000
+        List<Promise<Integer>> promises = List.of( // GH-90000
+            Promise.of(1), // GH-90000
+            Promise.of(2), // GH-90000
+            Promise.of(3) // GH-90000
         );
 
-        List<Integer> results = runner.runPromise(() ->
-            PromiseUtils.all(promises)
+        List<Integer> results = runner.runPromise(() -> // GH-90000
+            PromiseUtils.all(promises) // GH-90000
         );
 
-        assertThat(results).containsExactly(1, 2, 3);
+        assertThat(results).containsExactly(1, 2, 3); // GH-90000
     }
 
     @Test
-    void testAll_failsIfAnyFails(EventloopTestRunner runner) {
-        List<Promise<Integer>> promises = List.of(
-            Promise.of(1),
-            Promise.ofException(new RuntimeException("error")),
-            Promise.of(3)
+    void testAll_failsIfAnyFails(EventloopTestRunner runner) { // GH-90000
+        List<Promise<Integer>> promises = List.of( // GH-90000
+            Promise.of(1), // GH-90000
+            Promise.ofException(new RuntimeException("error [GH-90000]")),
+            Promise.of(3) // GH-90000
         );
 
-        assertThatThrownBy(() -> runner.runPromise(() ->
-            PromiseUtils.all(promises)
-        )).hasMessageContaining("error");
+        assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
+            PromiseUtils.all(promises) // GH-90000
+        )).hasMessageContaining("error [GH-90000]");
     }
 
     @Test
-    void testAny_returnsFirstSuccess(EventloopTestRunner runner) {
-        List<Promise<String>> promises = List.of(
-            Promise.ofException(new RuntimeException("error1")),
-            Promise.of("success"),
-            Promise.ofException(new RuntimeException("error2"))
+    void testAny_returnsFirstSuccess(EventloopTestRunner runner) { // GH-90000
+        List<Promise<String>> promises = List.of( // GH-90000
+            Promise.ofException(new RuntimeException("error1 [GH-90000]")),
+            Promise.of("success [GH-90000]"),
+            Promise.ofException(new RuntimeException("error2 [GH-90000]"))
         );
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.any(promises)
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.any(promises) // GH-90000
         );
 
-        assertThat(result).isEqualTo("success");
+        assertThat(result).isEqualTo("success [GH-90000]");
     }
 
     @Test
-    void testMap_transformsValue(EventloopTestRunner runner) {
-        Promise<Integer> promise = Promise.of(10);
+    void testMap_transformsValue(EventloopTestRunner runner) { // GH-90000
+        Promise<Integer> promise = Promise.of(10); // GH-90000
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.map(promise, n -> "Number: " + n)
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.map(promise, n -> "Number: " + n) // GH-90000
         );
 
-        assertThat(result).isEqualTo("Number: 10");
+        assertThat(result).isEqualTo("Number: 10 [GH-90000]");
     }
 
     @Test
-    void testFlatMap_chainsPromises(EventloopTestRunner runner) {
-        Promise<Integer> promise = Promise.of(10);
+    void testFlatMap_chainsPromises(EventloopTestRunner runner) { // GH-90000
+        Promise<Integer> promise = Promise.of(10); // GH-90000
 
-        Integer result = runner.runPromise(() ->
-            PromiseUtils.flatMap(promise, n -> Promise.of(n * 2))
+        Integer result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.flatMap(promise, n -> Promise.of(n * 2)) // GH-90000
         );
 
-        assertThat(result).isEqualTo(20);
+        assertThat(result).isEqualTo(20); // GH-90000
     }
 
     @Test
-    void testWithFallback_usesFallbackOnError(EventloopTestRunner runner) {
-        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error"));
+    void testWithFallback_usesFallbackOnError(EventloopTestRunner runner) { // GH-90000
+        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error [GH-90000]"));
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.withFallback(failingPromise, "fallback")
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.withFallback(failingPromise, "fallback") // GH-90000
         );
 
-        assertThat(result).isEqualTo("fallback");
+        assertThat(result).isEqualTo("fallback [GH-90000]");
     }
 
     @Test
-    void testWithFallback_usesOriginalOnSuccess(EventloopTestRunner runner) {
-        Promise<String> promise = Promise.of("original");
+    void testWithFallback_usesOriginalOnSuccess(EventloopTestRunner runner) { // GH-90000
+        Promise<String> promise = Promise.of("original [GH-90000]");
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.withFallback(promise, "fallback")
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.withFallback(promise, "fallback") // GH-90000
         );
 
-        assertThat(result).isEqualTo("original");
+        assertThat(result).isEqualTo("original [GH-90000]");
     }
 
     @Test
-    void testWithFallbackPromise_usesFallbackOnError(EventloopTestRunner runner) {
-        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error"));
+    void testWithFallbackPromise_usesFallbackOnError(EventloopTestRunner runner) { // GH-90000
+        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error [GH-90000]"));
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.withFallbackPromise(
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.withFallbackPromise( // GH-90000
                 failingPromise,
-                () -> Promise.of("fallback")
+                () -> Promise.of("fallback [GH-90000]")
             )
         );
 
-        assertThat(result).isEqualTo("fallback");
+        assertThat(result).isEqualTo("fallback [GH-90000]");
     }
 
     @Test
-    void testSequence_executesInOrder(EventloopTestRunner runner) {
-        AtomicInteger counter = new AtomicInteger(0);
+    void testSequence_executesInOrder(EventloopTestRunner runner) { // GH-90000
+        AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
-        List<Integer> results = runner.runPromise(() ->
-            PromiseUtils.sequence(List.of(
-                () -> Promise.of(counter.incrementAndGet()),
-                () -> Promise.of(counter.incrementAndGet()),
-                () -> Promise.of(counter.incrementAndGet())
+        List<Integer> results = runner.runPromise(() -> // GH-90000
+            PromiseUtils.sequence(List.of( // GH-90000
+                () -> Promise.of(counter.incrementAndGet()), // GH-90000
+                () -> Promise.of(counter.incrementAndGet()), // GH-90000
+                () -> Promise.of(counter.incrementAndGet()) // GH-90000
             ))
         );
 
-        assertThat(results).containsExactly(1, 2, 3);
+        assertThat(results).containsExactly(1, 2, 3); // GH-90000
     }
 
     @Test
-    void testDelay_delaysExecution(EventloopTestRunner runner) {
-        long start = System.currentTimeMillis();
+    void testDelay_delaysExecution(EventloopTestRunner runner) { // GH-90000
+        long start = System.currentTimeMillis(); // GH-90000
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.delay(
-                Duration.ofMillis(100),
-                () -> Promise.of("delayed")
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.delay( // GH-90000
+                Duration.ofMillis(100), // GH-90000
+                () -> Promise.of("delayed [GH-90000]")
             )
         );
 
-        long elapsed = System.currentTimeMillis() - start;
+        long elapsed = System.currentTimeMillis() - start; // GH-90000
 
-        assertThat(result).isEqualTo("delayed");
-        assertThat(elapsed).isGreaterThanOrEqualTo(100);
+        assertThat(result).isEqualTo("delayed [GH-90000]");
+        assertThat(elapsed).isGreaterThanOrEqualTo(100); // GH-90000
     }
 
     @Test
-    void testOf_createsCompletedPromise(EventloopTestRunner runner) {
-        String result = runner.runPromise(() ->
-            PromiseUtils.of("test")
+    void testOf_createsCompletedPromise(EventloopTestRunner runner) { // GH-90000
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.of("test [GH-90000]")
         );
 
-        assertThat(result).isEqualTo("test");
+        assertThat(result).isEqualTo("test [GH-90000]");
     }
 
     @Test
-    void testOfException_createsFailedPromise(EventloopTestRunner runner) {
-        assertThatThrownBy(() -> runner.runPromise(() ->
-            PromiseUtils.ofException(new RuntimeException("error"))
-        )).hasMessageContaining("error");
+    void testOfException_createsFailedPromise(EventloopTestRunner runner) { // GH-90000
+        assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
+            PromiseUtils.ofException(new RuntimeException("error [GH-90000]"))
+        )).hasMessageContaining("error [GH-90000]");
     }
 
     @Test
-    void testDoFinally_executesOnSuccess(EventloopTestRunner runner) {
-        AtomicInteger finallyCount = new AtomicInteger(0);
+    void testDoFinally_executesOnSuccess(EventloopTestRunner runner) { // GH-90000
+        AtomicInteger finallyCount = new AtomicInteger(0); // GH-90000
 
-        String result = runner.runPromise(() ->
-            PromiseUtils.doFinally(
-                Promise.of("success"),
+        String result = runner.runPromise(() -> // GH-90000
+            PromiseUtils.doFinally( // GH-90000
+                Promise.of("success [GH-90000]"),
                 finallyCount::incrementAndGet
             )
         );
 
-        assertThat(result).isEqualTo("success");
-        assertThat(finallyCount.get()).isEqualTo(1);
+        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(finallyCount.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    void testDoFinally_executesOnFailure(EventloopTestRunner runner) {
-        AtomicInteger finallyCount = new AtomicInteger(0);
+    void testDoFinally_executesOnFailure(EventloopTestRunner runner) { // GH-90000
+        AtomicInteger finallyCount = new AtomicInteger(0); // GH-90000
 
-        assertThatThrownBy(() -> runner.runPromise(() ->
-            PromiseUtils.doFinally(
-                Promise.ofException(new RuntimeException("error")),
+        assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
+            PromiseUtils.doFinally( // GH-90000
+                Promise.ofException(new RuntimeException("error [GH-90000]")),
                 finallyCount::incrementAndGet
             )
-        )).hasMessageContaining("error");
+        )).hasMessageContaining("error [GH-90000]");
 
-        assertThat(finallyCount.get()).isEqualTo(1);
+        assertThat(finallyCount.get()).isEqualTo(1); // GH-90000
     }
 }

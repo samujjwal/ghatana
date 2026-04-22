@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Requirements ValidateStep Tests")
+@DisplayName("Requirements ValidateStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles validate step test operations
@@ -32,28 +32,28 @@ class ValidateStepTest extends EventloopTestBase {
   private ValidateStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new ValidateStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new ValidateStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("requirements.validate");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("requirements.validate [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should validate normalized requirements")
-  void shouldValidateRequirements() {
+  @DisplayName("Should validate normalized requirements [GH-90000]")
+  void shouldValidateRequirements() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("requirementId", "req-001");
-    context.put(
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("requirementId", "req-001"); // GH-90000
+    context.put( // GH-90000
         "normalizedRequirements",
-        List.of(
-            Map.of(
+        List.of( // GH-90000
+            Map.of( // GH-90000
                 "id",
                 "r1",
                 "text",
@@ -62,7 +62,7 @@ class ValidateStepTest extends EventloopTestBase {
                 "functional",
                 "priority",
                 "high"),
-            Map.of(
+            Map.of( // GH-90000
                 "id",
                 "r2",
                 "text",
@@ -72,28 +72,28 @@ class ValidateStepTest extends EventloopTestBase {
                 "priority",
                 "high")));
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("requirementId")).isEqualTo("req-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("requirementId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should fail when normalized requirements are missing")
-  void shouldFailWhenNormalizedRequirementsMissing() {
+  @DisplayName("Should fail when normalized requirements are missing [GH-90000]")
+  void shouldFailWhenNormalizedRequirementsMissing() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Input data is required");
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("Input data is required [GH-90000]");
   }
 }

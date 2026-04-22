@@ -1,7 +1,7 @@
 /**
  * @fileoverview Core TypeScript types and interfaces for accessibility audit system
- * @module @ghatana/accessibility-audit/types
- * 
+ * @module @ghatana/accessibility/types
+ *
  * Based on WCAG 2.1, Lighthouse, and axe-core industry standards
  * See: SCORING_GUIDE.md and ENHANCEMENT_PLAN.md for detailed specifications
  */

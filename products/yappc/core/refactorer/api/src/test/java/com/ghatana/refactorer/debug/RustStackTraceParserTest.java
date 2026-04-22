@@ -35,22 +35,22 @@ class RustStackTraceParserTest extends BaseParserTest<RustStackTraceParser> {
                 + "             at ./src/main.rs:10:5";
 
     @Override
-    protected RustStackTraceParser createParser() {
-        return new RustStackTraceParser();
+    protected RustStackTraceParser createParser() { // GH-90000
+        return new RustStackTraceParser(); // GH-90000
     }
 
     @Override
-    protected String getExpectedFileName() {
+    protected String getExpectedFileName() { // GH-90000
         return "./src/main.rs";
     }
 
     @Override
-    protected int getExpectedLineNumber() {
+    protected int getExpectedLineNumber() { // GH-90000
         return 10;
     }
 
     @Override
-    protected String getSampleStackTrace() {
+    protected String getSampleStackTrace() { // GH-90000
         return SAMPLE_TRACE;
     }
 

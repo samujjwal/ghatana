@@ -1,10 +1,10 @@
 /**
  * Integration Test Suite for YAPPC Platform
- * 
+ *
  * Comprehensive integration testing covering API endpoints,
  * database operations, external service integrations,
  * and system component interactions.
- * 
+ *
  * @doc.type test
  * @doc.purpose Integration testing for production readiness
  * @doc.layer test
@@ -49,7 +49,9 @@ test.describe('Database Integration', () => {
   test('should connect to database', async () => {
     try {
       await prisma.$connect();
-      expect(true).toBe(true); // Connection successful
+      const result = await prisma.$queryRaw`SELECT 1 as ok`;
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
     } catch (error) {
       throw new Error(`Database connection failed: ${error}`);
     }
@@ -424,7 +426,7 @@ test.describe('Performance', () => {
 
     // All requests should succeed
     expect(responses.every(r => r.status() === 200)).toBe(true);
-    
+
     // Should complete within reasonable time
     expect(endTime - startTime).toBeLessThan(5000);
   });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.security;
@@ -33,105 +33,105 @@ import static org.mockito.Mockito.verify;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("SessionFilter")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("SessionFilter [GH-90000]")
 class SessionFilterTest extends EventloopTestBase {
 
     @Mock
     private AsyncServlet next;
 
     @BeforeEach
-    void setUp() throws Exception {
-        lenient().when(next.serve(any())).thenReturn(Promise.of(HttpResponse.ok200().build()));
+    void setUp() throws Exception { // GH-90000
+        lenient().when(next.serve(any())).thenReturn(Promise.of(HttpResponse.ok200().build())); // GH-90000
     }
 
-    private HttpResponse serve(SessionFilter filter, HttpRequest request) {
-        return runPromise(() -> filter.serve(request));
-    }
-
-    @Test
-    @DisplayName("POST /api/v1/session issues a token and returns it in body and header")
-    void postToSessionPath_issuesToken() {
-        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1));
-
-        HttpRequest request = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build();
-        HttpResponse response = serve(filter, request);
-
-        assertThat(response.getCode()).isEqualTo(200);
-        String header = response.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER));
-        assertThat(header).isNotNull().isNotBlank();
-
-        String body = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(body).contains("\"session\"").contains("\"expiresInSeconds\"");
-        assertThat(body).contains(header); // token in body matches header
+    private HttpResponse serve(SessionFilter filter, HttpRequest request) { // GH-90000
+        return runPromise(() -> filter.serve(request)); // GH-90000
     }
 
     @Test
-    @DisplayName("valid session token in X-AEP-Session header delegates to downstream")
-    void validSessionToken_delegatesToNext() throws Exception {
-        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1));
+    @DisplayName("POST /api/v1/session issues a token and returns it in body and header [GH-90000]")
+    void postToSessionPath_issuesToken() { // GH-90000
+        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
+
+        HttpRequest request = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build(); // GH-90000
+        HttpResponse response = serve(filter, request); // GH-90000
+
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        String header = response.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER)); // GH-90000
+        assertThat(header).isNotNull().isNotBlank(); // GH-90000
+
+        String body = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+        assertThat(body).contains("\"session\"").contains("\"expiresInSeconds\""); // GH-90000
+        assertThat(body).contains(header); // token in body matches header // GH-90000
+    }
+
+    @Test
+    @DisplayName("valid session token in X-AEP-Session header delegates to downstream [GH-90000]")
+    void validSessionToken_delegatesToNext() throws Exception { // GH-90000
+        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
         // First: issue a session
-        HttpRequest issueRequest = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build();
-        HttpResponse issueResponse = serve(filter, issueRequest);
-        String token = issueResponse.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER));
-        assertThat(token).isNotNull();
+        HttpRequest issueRequest = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build(); // GH-90000
+        HttpResponse issueResponse = serve(filter, issueRequest); // GH-90000
+        String token = issueResponse.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER)); // GH-90000
+        assertThat(token).isNotNull(); // GH-90000
 
         // Then: use that session on a regular request
-        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents")
-                .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), token)
-                .build();
-        HttpResponse apiResponse = serve(filter, apiRequest);
+        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]")
+                .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), token) // GH-90000
+                .build(); // GH-90000
+        HttpResponse apiResponse = serve(filter, apiRequest); // GH-90000
 
-        assertThat(apiResponse.getCode()).isEqualTo(200);
-        verify(next).serve(any());
+        assertThat(apiResponse.getCode()).isEqualTo(200); // GH-90000
+        verify(next).serve(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("request without session header still delegates to downstream (session is optional)")
-    void noSessionHeader_stillDelegates() throws Exception {
-        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1));
+    @DisplayName("request without session header still delegates to downstream (session is optional) [GH-90000]")
+    void noSessionHeader_stillDelegates() throws Exception { // GH-90000
+        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
-        HttpResponse response = serve(filter, request);
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+        HttpResponse response = serve(filter, request); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        verify(next).serve(any());
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        verify(next).serve(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("expired session token still delegates (session is optional, not a hard gate)")
-    void expiredSessionToken_stillDelegates() throws Exception {
+    @DisplayName("expired session token still delegates (session is optional, not a hard gate) [GH-90000]")
+    void expiredSessionToken_stillDelegates() throws Exception { // GH-90000
         // Use a negative TTL so the issued token is immediately expired
-        SessionFilter filter = new SessionFilter(next, Duration.ofSeconds(-100));
+        SessionFilter filter = new SessionFilter(next, Duration.ofSeconds(-100)); // GH-90000
 
-        // Issue a session with a negative TTL (will be expired on arrival)
-        HttpRequest issueRequest = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build();
-        HttpResponse issueResponse = serve(filter, issueRequest);
-        String expiredToken = issueResponse.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER));
-        assertThat(expiredToken).isNotNull();
+        // Issue a session with a negative TTL (will be expired on arrival) // GH-90000
+        HttpRequest issueRequest = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build(); // GH-90000
+        HttpResponse issueResponse = serve(filter, issueRequest); // GH-90000
+        String expiredToken = issueResponse.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER)); // GH-90000
+        assertThat(expiredToken).isNotNull(); // GH-90000
 
         // Use the expired token — filter should not hard-reject, just delegate without session context
-        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents")
-                .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), expiredToken)
-                .build();
-        HttpResponse apiResponse = serve(filter, apiRequest);
+        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]")
+                .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), expiredToken) // GH-90000
+                .build(); // GH-90000
+        HttpResponse apiResponse = serve(filter, apiRequest); // GH-90000
 
-        assertThat(apiResponse.getCode()).isEqualTo(200);
-        verify(next).serve(any());
+        assertThat(apiResponse.getCode()).isEqualTo(200); // GH-90000
+        verify(next).serve(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("unknown session token is treated as no-session and delegates")
-    void unknownSessionToken_treatedAsNoSession() throws Exception {
-        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1));
+    @DisplayName("unknown session token is treated as no-session and delegates [GH-90000]")
+    void unknownSessionToken_treatedAsNoSession() throws Exception { // GH-90000
+        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents")
-                .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), "not-a-real-token")
-                .build();
-        HttpResponse response = serve(filter, request);
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]")
+                .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), "not-a-real-token") // GH-90000
+                .build(); // GH-90000
+        HttpResponse response = serve(filter, request); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        verify(next).serve(any());
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        verify(next).serve(any()); // GH-90000
     }
 }

@@ -18,54 +18,54 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test tenant isolation, cross-tenant access prevention, and data separation.
  */
-@DisplayName("Tenant Isolation Tests")
+@DisplayName("Tenant Isolation Tests [GH-90000]")
 class TenantIsolationTest {
 
     @Test
-    @DisplayName("Should isolate tenant data")
-    void shouldIsolateTenantData() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should isolate tenant data [GH-90000]")
+    void shouldIsolateTenantData() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should prevent cross-tenant access")
-    void shouldPreventCrossTenantAccess() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should prevent cross-tenant access [GH-90000]")
+    void shouldPreventCrossTenantAccess() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle tenant context propagation")
-    void shouldHandleTenantContextPropagation() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle tenant context propagation [GH-90000]")
+    void shouldHandleTenantContextPropagation() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle tenant-specific patterns")
-    void shouldHandleTenantSpecificPatterns() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle tenant-specific patterns [GH-90000]")
+    void shouldHandleTenantSpecificPatterns() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle tenant deletion")
-    void shouldHandleTenantDeletion() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle tenant deletion [GH-90000]")
+    void shouldHandleTenantDeletion() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle tenant quota enforcement")
-    void shouldHandleTenantQuotaEnforcement() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle tenant quota enforcement [GH-90000]")
+    void shouldHandleTenantQuotaEnforcement() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 }

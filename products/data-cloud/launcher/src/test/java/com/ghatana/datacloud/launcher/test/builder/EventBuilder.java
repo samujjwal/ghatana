@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.test.builder;
@@ -18,13 +18,13 @@ import java.util.UUID;
  * <p><strong>Example:</strong>
  * <pre>
  * {@code
- * Map<String, Object> event = EventBuilder.create("entity.created")
- *     .withEntityId("prod-001")
- *     .withCollection("products")
- *     .withPayload(Map.of("name", "Widget", "price", 19.99))
- *     .withTenant("tenant-alpha")
- *     .withOffset(42)
- *     .build();
+ * Map<String, Object> event = EventBuilder.create("entity.created [GH-90000]")
+ *     .withEntityId("prod-001 [GH-90000]")
+ *     .withCollection("products [GH-90000]")
+ *     .withPayload(Map.of("name", "Widget", "price", 19.99)) // GH-90000
+ *     .withTenant("tenant-alpha [GH-90000]")
+ *     .withOffset(42) // GH-90000
+ *     .build(); // GH-90000
  * }
  * </pre>
  *
@@ -39,27 +39,27 @@ public final class EventBuilder {
     private final String type;
     private String entityId;
     private String collection;
-    private final Map<String, Object> payload = new HashMap<>();
+    private final Map<String, Object> payload = new HashMap<>(); // GH-90000
     private String tenantId = "tenant-default";
     private long offset = -1;
     private Instant timestamp;
     private String correlationId;
 
-    private EventBuilder(String type) {
+    private EventBuilder(String type) { // GH-90000
         this.type = type;
-        this.id = UUID.randomUUID().toString();
-        this.timestamp = Instant.parse("2026-01-01T00:00:00Z");
-        this.correlationId = "corr-" + UUID.randomUUID().toString().substring(0, 8);
+        this.id = UUID.randomUUID().toString(); // GH-90000
+        this.timestamp = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+        this.correlationId = "corr-" + UUID.randomUUID().toString().substring(0, 8); // GH-90000
     }
 
     /**
      * Start building an event of the specified type.
      *
-     * @param type event type (e.g., "entity.created", "entity.updated")
+     * @param type event type (e.g., "entity.created", "entity.updated") // GH-90000
      * @return new builder instance
      */
-    public static EventBuilder create(String type) {
-        return new EventBuilder(type);
+    public static EventBuilder create(String type) { // GH-90000
+        return new EventBuilder(type); // GH-90000
     }
 
     /**
@@ -68,7 +68,7 @@ public final class EventBuilder {
      * @param id event ID
      * @return this builder
      */
-    public EventBuilder withId(String id) {
+    public EventBuilder withId(String id) { // GH-90000
         this.id = id;
         return this;
     }
@@ -79,7 +79,7 @@ public final class EventBuilder {
      * @param entityId entity ID
      * @return this builder
      */
-    public EventBuilder withEntityId(String entityId) {
+    public EventBuilder withEntityId(String entityId) { // GH-90000
         this.entityId = entityId;
         return this;
     }
@@ -90,7 +90,7 @@ public final class EventBuilder {
      * @param collection collection name
      * @return this builder
      */
-    public EventBuilder withCollection(String collection) {
+    public EventBuilder withCollection(String collection) { // GH-90000
         this.collection = collection;
         return this;
     }
@@ -102,8 +102,8 @@ public final class EventBuilder {
      * @param value payload value
      * @return this builder
      */
-    public EventBuilder withPayload(String key, Object value) {
-        this.payload.put(key, value);
+    public EventBuilder withPayload(String key, Object value) { // GH-90000
+        this.payload.put(key, value); // GH-90000
         return this;
     }
 
@@ -113,9 +113,9 @@ public final class EventBuilder {
      * @param payload payload map
      * @return this builder
      */
-    public EventBuilder withPayload(Map<String, Object> payload) {
-        this.payload.clear();
-        this.payload.putAll(payload);
+    public EventBuilder withPayload(Map<String, Object> payload) { // GH-90000
+        this.payload.clear(); // GH-90000
+        this.payload.putAll(payload); // GH-90000
         return this;
     }
 
@@ -125,7 +125,7 @@ public final class EventBuilder {
      * @param tenantId tenant identifier
      * @return this builder
      */
-    public EventBuilder withTenant(String tenantId) {
+    public EventBuilder withTenant(String tenantId) { // GH-90000
         this.tenantId = tenantId;
         return this;
     }
@@ -136,7 +136,7 @@ public final class EventBuilder {
      * @param offset stream offset
      * @return this builder
      */
-    public EventBuilder withOffset(long offset) {
+    public EventBuilder withOffset(long offset) { // GH-90000
         this.offset = offset;
         return this;
     }
@@ -147,7 +147,7 @@ public final class EventBuilder {
      * @param timestamp event instant
      * @return this builder
      */
-    public EventBuilder withTimestamp(Instant timestamp) {
+    public EventBuilder withTimestamp(Instant timestamp) { // GH-90000
         this.timestamp = timestamp;
         return this;
     }
@@ -158,7 +158,7 @@ public final class EventBuilder {
      * @param correlationId correlation ID
      * @return this builder
      */
-    public EventBuilder withCorrelationId(String correlationId) {
+    public EventBuilder withCorrelationId(String correlationId) { // GH-90000
         this.correlationId = correlationId;
         return this;
     }
@@ -168,17 +168,17 @@ public final class EventBuilder {
      *
      * @return event as Map<String, Object>
      */
-    public Map<String, Object> build() {
-        Map<String, Object> event = new HashMap<>();
-        event.put("id", id);
-        event.put("type", type);
-        event.put("entityId", entityId);
-        event.put("collection", collection);
-        event.put("tenantId", tenantId);
-        event.put("timestamp", timestamp.toString());
-        event.put("offset", offset >= 0 ? offset : 0);
-        event.put("correlationId", correlationId);
-        event.put("payload", new HashMap<>(payload));
+    public Map<String, Object> build() { // GH-90000
+        Map<String, Object> event = new HashMap<>(); // GH-90000
+        event.put("id", id); // GH-90000
+        event.put("type", type); // GH-90000
+        event.put("entityId", entityId); // GH-90000
+        event.put("collection", collection); // GH-90000
+        event.put("tenantId", tenantId); // GH-90000
+        event.put("timestamp", timestamp.toString()); // GH-90000
+        event.put("offset", offset >= 0 ? offset : 0); // GH-90000
+        event.put("correlationId", correlationId); // GH-90000
+        event.put("payload", new HashMap<>(payload)); // GH-90000
         return event;
     }
 
@@ -191,11 +191,11 @@ public final class EventBuilder {
      * @param entityId entity ID
      * @return event builder
      */
-    public static EventBuilder entityCreated(String collection, String entityId) {
-        return EventBuilder.create("entity.created")
-            .withCollection(collection)
-            .withEntityId(entityId)
-            .withPayload("action", "create");
+    public static EventBuilder entityCreated(String collection, String entityId) { // GH-90000
+        return EventBuilder.create("entity.created [GH-90000]")
+            .withCollection(collection) // GH-90000
+            .withEntityId(entityId) // GH-90000
+            .withPayload("action", "create"); // GH-90000
     }
 
     /**
@@ -205,11 +205,11 @@ public final class EventBuilder {
      * @param entityId entity ID
      * @return event builder
      */
-    public static EventBuilder entityUpdated(String collection, String entityId) {
-        return EventBuilder.create("entity.updated")
-            .withCollection(collection)
-            .withEntityId(entityId)
-            .withPayload("action", "update");
+    public static EventBuilder entityUpdated(String collection, String entityId) { // GH-90000
+        return EventBuilder.create("entity.updated [GH-90000]")
+            .withCollection(collection) // GH-90000
+            .withEntityId(entityId) // GH-90000
+            .withPayload("action", "update"); // GH-90000
     }
 
     /**
@@ -219,11 +219,11 @@ public final class EventBuilder {
      * @param entityId entity ID
      * @return event builder
      */
-    public static EventBuilder entityDeleted(String collection, String entityId) {
-        return EventBuilder.create("entity.deleted")
-            .withCollection(collection)
-            .withEntityId(entityId)
-            .withPayload("action", "delete");
+    public static EventBuilder entityDeleted(String collection, String entityId) { // GH-90000
+        return EventBuilder.create("entity.deleted [GH-90000]")
+            .withCollection(collection) // GH-90000
+            .withEntityId(entityId) // GH-90000
+            .withPayload("action", "delete"); // GH-90000
     }
 
     /**
@@ -232,11 +232,11 @@ public final class EventBuilder {
      * @param pipelineId pipeline ID
      * @return event builder
      */
-    public static EventBuilder pipelineCompleted(String pipelineId) {
-        return EventBuilder.create("pipeline.completed")
-            .withEntityId(pipelineId)
-            .withPayload("pipelineId", pipelineId)
-            .withPayload("status", "completed");
+    public static EventBuilder pipelineCompleted(String pipelineId) { // GH-90000
+        return EventBuilder.create("pipeline.completed [GH-90000]")
+            .withEntityId(pipelineId) // GH-90000
+            .withPayload("pipelineId", pipelineId) // GH-90000
+            .withPayload("status", "completed"); // GH-90000
     }
 
     /**
@@ -245,22 +245,22 @@ public final class EventBuilder {
      * @param featureId feature ID
      * @return event builder
      */
-    public static EventBuilder featureIngested(String featureId) {
-        return EventBuilder.create("feature.ingested")
-            .withEntityId(featureId)
-            .withPayload("featureId", featureId)
-            .withPayload("ingestedAt", Instant.now().toString());
+    public static EventBuilder featureIngested(String featureId) { // GH-90000
+        return EventBuilder.create("feature.ingested [GH-90000]")
+            .withEntityId(featureId) // GH-90000
+            .withPayload("featureId", featureId) // GH-90000
+            .withPayload("ingestedAt", Instant.now().toString()); // GH-90000
     }
 
-    public String getId() {
+    public String getId() { // GH-90000
         return id;
     }
 
-    public String getType() {
+    public String getType() { // GH-90000
         return type;
     }
 
-    public String getEntityId() {
+    public String getEntityId() { // GH-90000
         return entityId;
     }
 }

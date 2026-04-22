@@ -40,24 +40,24 @@ class RustCodemodsTest {
     private ExecutorService executorService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() { // GH-90000
         // Configure logging
-        Configurator.setRootLevel(Level.DEBUG);
+        Configurator.setRootLevel(Level.DEBUG); // GH-90000
 
         // Initialize executor service
-        executorService = Executors.newSingleThreadExecutor();
+        executorService = Executors.newSingleThreadExecutor(); // GH-90000
 
         // Create a test configuration with required parameters
-        PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 100);
+        PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 100); // GH-90000
         PolyfixConfig.Policies policies =
-                new PolyfixConfig.Policies(
+                new PolyfixConfig.Policies( // GH-90000
                         true, // tsAllowTemporaryAny
                         true, // pythonAddMissingImports
                         true, // bashEnforceStrictMode
                         true // jsonAutofillRequiredDefaults
                         );
         PolyfixConfig.Tools tools =
-                new PolyfixConfig.Tools(
+                new PolyfixConfig.Tools( // GH-90000
                         "node",
                         "eslint",
                         "tsc",
@@ -72,129 +72,129 @@ class RustCodemodsTest {
                         "semgrep");
 
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of("rust"), // languages
-                        List.of("schema"), // schemaPaths
+                new PolyfixConfig( // GH-90000
+                        List.of("rust [GH-90000]"), // languages
+                        List.of("schema [GH-90000]"), // schemaPaths
                         budgets,
                         policies,
                         tools);
 
         // Create project context with required parameters
         PolyfixProjectContext context =
-                new PolyfixProjectContext(
+                new PolyfixProjectContext( // GH-90000
                         tempDir,
                         config,
-                        Collections.emptyList(), // No language services for this test
+                        Collections.emptyList(), // No language services for this test // GH-90000
                         executorService,
-                        LogManager.getLogger(RustCodemodsTest.class));
+                        LogManager.getLogger(RustCodemodsTest.class)); // GH-90000
 
-        rustCodemods = new RustCodemods(context);
-        testFile = tempDir.resolve("test.rs");
+        rustCodemods = new RustCodemods(context); // GH-90000
+        testFile = tempDir.resolve("test.rs [GH-90000]");
 
-        Logger logger = LogManager.getLogger(RustCodemodsTest.class);
-        logger.info("Test logging initialized with Log4j2");
+        Logger logger = LogManager.getLogger(RustCodemodsTest.class); // GH-90000
+        logger.info("Test logging initialized with Log4j2 [GH-90000]");
     }
 
     @AfterEach
-    void tearDown() {
-        if (executorService != null) {
-            executorService.shutdown();
+    void tearDown() { // GH-90000
+        if (executorService != null) { // GH-90000
+            executorService.shutdown(); // GH-90000
         }
     }
 
     @Test
-    void testFixRedundantClosure() {
-        String content = "let x = vec![1, 2, 3].iter().map(|x| x).collect::<Vec<_>>();";
-        String expected = "let x = vec![1, 2, 3].iter().collect::<Vec<_>>();";
+    void testFixRedundantClosure() { // GH-90000
+        String content = "let x = vec![1, 2, 3].iter().map(|x| x).collect::<Vec<_>>();"; // GH-90000
+        String expected = "let x = vec![1, 2, 3].iter().collect::<Vec<_>>();"; // GH-90000
 
         UnifiedDiagnostic diagnostic =
-                createMockDiagnostic("clippy::redundant_closure", 1, 25, 1, 35);
-        String result = rustCodemods.getFix("clippy::redundant_closure", content, diagnostic);
+                createMockDiagnostic("clippy::redundant_closure", 1, 25, 1, 35); // GH-90000
+        String result = rustCodemods.getFix("clippy::redundant_closure", content, diagnostic); // GH-90000
 
-        assertEquals(expected, result);
+        assertEquals(expected, result); // GH-90000
     }
 
     @Test
-    void testFixNeedlessReturn() {
-        String content = "fn add(a: i32, b: i32) -> i32 {\n    return a + b;\n}";
-        String expected = "fn add(a: i32, b: i32) -> i32 {\n    a + b;\n}";
+    void testFixNeedlessReturn() { // GH-90000
+        String content = "fn add(a: i32, b: i32) -> i32 {\n    return a + b;\n}"; // GH-90000
+        String expected = "fn add(a: i32, b: i32) -> i32 {\n    a + b;\n}"; // GH-90000
 
-        UnifiedDiagnostic diagnostic = createMockDiagnostic("clippy::needless_return", 2, 5, 2, 16);
-        String result = rustCodemods.getFix("clippy::needless_return", content, diagnostic);
+        UnifiedDiagnostic diagnostic = createMockDiagnostic("clippy::needless_return", 2, 5, 2, 16); // GH-90000
+        String result = rustCodemods.getFix("clippy::needless_return", content, diagnostic); // GH-90000
 
-        assertEquals(expected, result);
+        assertEquals(expected, result); // GH-90000
     }
 
     @Test
-    @Disabled(
+    @Disabled( // GH-90000
             "Note: clippy::single_match fix not yet implemented - test disabled"
-                    + " complete. See RustCodemods.fixSingleMatch() for details.")
-    void testFixSingleMatch() {
-        Logger logger = LogManager.getLogger(RustCodemodsTest.class);
+                    + " complete. See RustCodemods.fixSingleMatch() for details.") // GH-90000
+    void testFixSingleMatch() { // GH-90000
+        Logger logger = LogManager.getLogger(RustCodemodsTest.class); // GH-90000
 
-        String content = "match x {\n    Some(val) => { println!(\"{}\", val); }\n}";
-        String expected = "if let Some(val) = x { println!(\"{}\", val); }";
+        String content = "match x {\n    Some(val) => { println!(\"{}\", val); }\n}"; // GH-90000
+        String expected = "if let Some(val) = x { println!(\"{}\", val); }"; // GH-90000
 
-        logger.info("=== Test Input ===");
-        logger.info("\n{}", content);
-        logger.info("=== Expected Output ===");
-        logger.info("\n{}", expected);
+        logger.info("=== Test Input === [GH-90000]");
+        logger.info("\n{}", content); // GH-90000
+        logger.info("=== Expected Output === [GH-90000]");
+        logger.info("\n{}", expected); // GH-90000
 
-        UnifiedDiagnostic diagnostic = createMockDiagnostic("clippy::single_match", 1, 1, 3, 2);
-        String result = rustCodemods.getFix("clippy::single_match", content, diagnostic);
+        UnifiedDiagnostic diagnostic = createMockDiagnostic("clippy::single_match", 1, 1, 3, 2); // GH-90000
+        String result = rustCodemods.getFix("clippy::single_match", content, diagnostic); // GH-90000
 
-        logger.info("=== Actual Output ===");
-        logger.info("\n{}", result);
+        logger.info("=== Actual Output === [GH-90000]");
+        logger.info("\n{}", result); // GH-90000
 
-        assertEquals(expected, result);
+        assertEquals(expected, result); // GH-90000
     }
 
     @Test
-    void testFixSingleCharPattern() {
-        String content = "let s = \"hello\".chars().filter(|c| c == 'l').collect::<String>();";
+    void testFixSingleCharPattern() { // GH-90000
+        String content = "let s = \"hello\".chars().filter(|c| c == 'l').collect::<String>();"; // GH-90000
         String expected = content;
 
         UnifiedDiagnostic diagnostic =
-                createMockDiagnostic("clippy::single_char_pattern", 1, 1, 1, 60);
-        String result = rustCodemods.getFix("clippy::single_char_pattern", content, diagnostic);
+                createMockDiagnostic("clippy::single_char_pattern", 1, 1, 1, 60); // GH-90000
+        String result = rustCodemods.getFix("clippy::single_char_pattern", content, diagnostic); // GH-90000
 
-        assertEquals(expected, result);
+        assertEquals(expected, result); // GH-90000
     }
 
     @Test
-    void testFixNeedlessBorrow() {
-        String content = "fn get_len(s: &String) -> usize {\n    s.len()\n}";
+    void testFixNeedlessBorrow() { // GH-90000
+        String content = "fn get_len(s: &String) -> usize {\n    s.len()\n}"; // GH-90000
         // The method should remove the unnecessary borrow
-        String expected = "fn get_len(s: String) -> usize {\n    s.len()\n}";
+        String expected = "fn get_len(s: String) -> usize {\n    s.len()\n}"; // GH-90000
 
         // The diagnostic points to the & before String
         UnifiedDiagnostic diagnostic =
-                createMockDiagnostic("clippy::needless_borrow", 1, 15, 1, 16);
-        String result = rustCodemods.getFix("clippy::needless_borrow", content, diagnostic);
+                createMockDiagnostic("clippy::needless_borrow", 1, 15, 1, 16); // GH-90000
+        String result = rustCodemods.getFix("clippy::needless_borrow", content, diagnostic); // GH-90000
 
-        assertEquals(expected, result);
+        assertEquals(expected, result); // GH-90000
     }
 
     @Test
-    void testGetFix_UnknownRule_ReturnsOriginalContent() {
+    void testGetFix_UnknownRule_ReturnsOriginalContent() { // GH-90000
         String content = "let x = 42;";
-        UnifiedDiagnostic diagnostic = createMockDiagnostic("unknown::rule", 1, 1, 1, 10);
+        UnifiedDiagnostic diagnostic = createMockDiagnostic("unknown::rule", 1, 1, 1, 10); // GH-90000
 
-        String result = rustCodemods.getFix("unknown::rule", content, diagnostic);
+        String result = rustCodemods.getFix("unknown::rule", content, diagnostic); // GH-90000
 
-        assertEquals(content, result);
+        assertEquals(content, result); // GH-90000
     }
 
-    private UnifiedDiagnostic createMockDiagnostic(
+    private UnifiedDiagnostic createMockDiagnostic( // GH-90000
             String ruleId, int startLine, int startCol, int endLine, int endCol) {
-        return UnifiedDiagnostic.builder()
-                .file(testFile)
-                .code(ruleId)
-                .message("Test diagnostic")
-                .startLine(startLine)
-                .startColumn(startCol)
-                .endLine(endLine)
-                .endColumn(endCol)
-                .build();
+        return UnifiedDiagnostic.builder() // GH-90000
+                .file(testFile) // GH-90000
+                .code(ruleId) // GH-90000
+                .message("Test diagnostic [GH-90000]")
+                .startLine(startLine) // GH-90000
+                .startColumn(startCol) // GH-90000
+                .endLine(endLine) // GH-90000
+                .endColumn(endCol) // GH-90000
+                .build(); // GH-90000
     }
 }

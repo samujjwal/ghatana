@@ -11,27 +11,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class TracingTest {
 
     @Test
-    void testTracerReturnsNoOpWhenNotInitialized() {
-        Tracer tracer = Tracing.tracer();
+    void testTracerReturnsNoOpWhenNotInitialized() { // GH-90000
+        Tracer tracer = Tracing.tracer(); // GH-90000
 
-        assertNotNull(tracer);
+        assertNotNull(tracer); // GH-90000
     }
 
     @Test
-    void testInitDisabled() {
+    void testInitDisabled() { // GH-90000
         // Should not throw
-        Tracing.init(false, null, null);
+        Tracing.init(false, null, null); // GH-90000
 
-        Tracer tracer = Tracing.tracer();
-        assertNotNull(tracer);
+        Tracer tracer = Tracing.tracer(); // GH-90000
+        assertNotNull(tracer); // GH-90000
     }
 
     @Test
-    void testInitWithDefaults() {
+    void testInitWithDefaults() { // GH-90000
         // Should not throw with null values
-        Tracing.init(true, null, null);
+        Tracing.init(true, null, null); // GH-90000
 
-        Tracer tracer = Tracing.tracer();
-        assertNotNull(tracer);
+        Tracer tracer = Tracing.tracer(); // GH-90000
+        assertNotNull(tracer); // GH-90000
     }
 }

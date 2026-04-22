@@ -23,9 +23,9 @@ import static org.mockito.Mockito.*;
  * Unit tests for GraphQLMutations.
  *
  * Tests validate:
- * - Input validation (null checks, empty strings, UUID parsing)
- * - Entity CRUD operations (create, update, delete)
- * - Collection CRUD operations (create, update, delete)
+ * - Input validation (null checks, empty strings, UUID parsing) // GH-90000
+ * - Entity CRUD operations (create, update, delete) // GH-90000
+ * - Collection CRUD operations (create, update, delete) // GH-90000
  * - Proper delegation to services
  * - Error handling for invalid inputs
  * - Map conversion for GraphQL responses
@@ -39,8 +39,8 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("GraphQLMutations Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("GraphQLMutations Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class GraphQLMutationsTest extends EventloopTestBase {
 
     @Mock
@@ -57,363 +57,363 @@ class GraphQLMutationsTest extends EventloopTestBase {
     private static final String TENANT_ID = "tenant-123";
     private static final String USER_ID = "user-456";
     private static final String COLLECTION_NAME = "orders";
-    private static final UUID ENTITY_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
-    private static final UUID COLLECTION_ID = UUID.fromString("661f9511-f40c-52e5-b827-557766551111");
+    private static final UUID ENTITY_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000 [GH-90000]");
+    private static final UUID COLLECTION_ID = UUID.fromString("661f9511-f40c-52e5-b827-557766551111 [GH-90000]");
 
     @BeforeEach
-    void setup() {
-        mutations = new GraphQLMutations(entityService, collectionService, collectionRepository);
+    void setup() { // GH-90000
+        mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
     }
 
     // ==================== Entity CRUD Tests ====================
 
     @Nested
-    @DisplayName("createEntity Tests")
+    @DisplayName("createEntity Tests [GH-90000]")
     class CreateEntityTests {
 
         @Test
-        @DisplayName("should create entity with valid inputs")
-        void shouldCreateEntity() {
+        @DisplayName("should create entity with valid inputs [GH-90000]")
+        void shouldCreateEntity() { // GH-90000
             // GIVEN
-            Map<String, Object> inputData = Map.of(
+            Map<String, Object> inputData = Map.of( // GH-90000
                 "orderId", "ORD-001",
                 "amount", 99.99,
                 "status", "pending"
             );
 
-            Entity mockEntity = Entity.builder()
-                .id(ENTITY_ID)
-                .tenantId(TENANT_ID)
-                .collectionName(COLLECTION_NAME)
-                .data(inputData)
-                .metadata(Collections.emptyMap())
-                .createdAt(Instant.now())
-                .version(1)
-                .build();
+            Entity mockEntity = Entity.builder() // GH-90000
+                .id(ENTITY_ID) // GH-90000
+                .tenantId(TENANT_ID) // GH-90000
+                .collectionName(COLLECTION_NAME) // GH-90000
+                .data(inputData) // GH-90000
+                .metadata(Collections.emptyMap()) // GH-90000
+                .createdAt(Instant.now()) // GH-90000
+                .version(1) // GH-90000
+                .build(); // GH-90000
 
-            when(entityService.createEntity(TENANT_ID, COLLECTION_NAME, inputData, USER_ID))
-                .thenReturn(Promise.of(mockEntity));
+            when(entityService.createEntity(TENANT_ID, COLLECTION_NAME, inputData, USER_ID)) // GH-90000
+                .thenReturn(Promise.of(mockEntity)); // GH-90000
 
             // WHEN
-            Map<String, Object> result = runPromise(() ->
-                mutations.createEntity(TENANT_ID, COLLECTION_NAME, inputData, USER_ID));
+            Map<String, Object> result = runPromise(() -> // GH-90000
+                mutations.createEntity(TENANT_ID, COLLECTION_NAME, inputData, USER_ID)); // GH-90000
 
             // THEN
-            assertThat(result).containsEntry("id", ENTITY_ID.toString());
-            assertThat(result).containsEntry("tenantId", TENANT_ID);
-            assertThat(result).containsEntry("collectionName", COLLECTION_NAME);
-            assertThat(result).containsEntry("data", inputData);
-            assertThat(result).containsEntry("version", 1);
+            assertThat(result).containsEntry("id", ENTITY_ID.toString()); // GH-90000
+            assertThat(result).containsEntry("tenantId", TENANT_ID); // GH-90000
+            assertThat(result).containsEntry("collectionName", COLLECTION_NAME); // GH-90000
+            assertThat(result).containsEntry("data", inputData); // GH-90000
+            assertThat(result).containsEntry("version", 1); // GH-90000
 
-            verify(entityService).createEntity(TENANT_ID, COLLECTION_NAME, inputData, USER_ID);
+            verify(entityService).createEntity(TENANT_ID, COLLECTION_NAME, inputData, USER_ID); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject null tenantId")
-        void shouldRejectNullTenantId() {
+        @DisplayName("should reject null tenantId [GH-90000]")
+        void shouldRejectNullTenantId() { // GH-90000
             // GIVEN
-            Map<String, Object> data = Map.of("key", "value");
+            Map<String, Object> data = Map.of("key", "value"); // GH-90000
 
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.createEntity(null, COLLECTION_NAME, data, USER_ID))
-            ).isInstanceOf(NullPointerException.class)
-             .hasMessageContaining("tenantId is required");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.createEntity(null, COLLECTION_NAME, data, USER_ID)) // GH-90000
+            ).isInstanceOf(NullPointerException.class) // GH-90000
+             .hasMessageContaining("tenantId is required [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject empty tenantId")
-        void shouldRejectEmptyTenantId() {
+        @DisplayName("should reject empty tenantId [GH-90000]")
+        void shouldRejectEmptyTenantId() { // GH-90000
             // GIVEN
-            Map<String, Object> data = Map.of("key", "value");
+            Map<String, Object> data = Map.of("key", "value"); // GH-90000
 
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.createEntity("  ", COLLECTION_NAME, data, USER_ID))
-            ).hasMessageContaining("tenantId cannot be empty");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.createEntity("  ", COLLECTION_NAME, data, USER_ID)) // GH-90000
+            ).hasMessageContaining("tenantId cannot be empty [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null collectionName")
-        void shouldRejectNullCollectionName() {
+        @DisplayName("should reject null collectionName [GH-90000]")
+        void shouldRejectNullCollectionName() { // GH-90000
             // GIVEN
-            Map<String, Object> data = Map.of("key", "value");
+            Map<String, Object> data = Map.of("key", "value"); // GH-90000
 
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.createEntity(TENANT_ID, null, data, USER_ID))
-            ).isInstanceOf(NullPointerException.class)
-             .hasMessageContaining("collectionName is required");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.createEntity(TENANT_ID, null, data, USER_ID)) // GH-90000
+            ).isInstanceOf(NullPointerException.class) // GH-90000
+             .hasMessageContaining("collectionName is required [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject empty data")
-        void shouldRejectEmptyData() {
+        @DisplayName("should reject empty data [GH-90000]")
+        void shouldRejectEmptyData() { // GH-90000
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, Collections.emptyMap(), USER_ID))
-            ).hasMessageContaining("data cannot be empty");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, Collections.emptyMap(), USER_ID)) // GH-90000
+            ).hasMessageContaining("data cannot be empty [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null userId")
-        void shouldRejectNullUserId() {
+        @DisplayName("should reject null userId [GH-90000]")
+        void shouldRejectNullUserId() { // GH-90000
             // GIVEN
-            Map<String, Object> data = Map.of("key", "value");
+            Map<String, Object> data = Map.of("key", "value"); // GH-90000
 
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, data, null))
-            ).isInstanceOf(NullPointerException.class)
-             .hasMessageContaining("userId is required");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, data, null)) // GH-90000
+            ).isInstanceOf(NullPointerException.class) // GH-90000
+             .hasMessageContaining("userId is required [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("updateEntity Tests")
+    @DisplayName("updateEntity Tests [GH-90000]")
     class UpdateEntityTests {
 
         @Test
-        @DisplayName("should update entity with valid inputs")
-        void shouldUpdateEntity() {
+        @DisplayName("should update entity with valid inputs [GH-90000]")
+        void shouldUpdateEntity() { // GH-90000
             // GIVEN
-            Map<String, Object> updateData = Map.of("status", "completed", "completedAt", Instant.now().toString());
+            Map<String, Object> updateData = Map.of("status", "completed", "completedAt", Instant.now().toString()); // GH-90000
 
-            Entity updatedEntity = Entity.builder()
-                .id(ENTITY_ID)
-                .tenantId(TENANT_ID)
-                .collectionName(COLLECTION_NAME)
-                .data(updateData)
-                .metadata(Collections.emptyMap())
-                .createdAt(Instant.now().minusSeconds(3600))
-                .updatedAt(Instant.now())
-                .version(2)
-                .build();
+            Entity updatedEntity = Entity.builder() // GH-90000
+                .id(ENTITY_ID) // GH-90000
+                .tenantId(TENANT_ID) // GH-90000
+                .collectionName(COLLECTION_NAME) // GH-90000
+                .data(updateData) // GH-90000
+                .metadata(Collections.emptyMap()) // GH-90000
+                .createdAt(Instant.now().minusSeconds(3600)) // GH-90000
+                .updatedAt(Instant.now()) // GH-90000
+                .version(2) // GH-90000
+                .build(); // GH-90000
 
-            when(entityService.updateEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, updateData, USER_ID))
-                .thenReturn(Promise.of(updatedEntity));
+            when(entityService.updateEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, updateData, USER_ID)) // GH-90000
+                .thenReturn(Promise.of(updatedEntity)); // GH-90000
 
             // WHEN
-            Map<String, Object> result = runPromise(() ->
-                mutations.updateEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID.toString(), updateData, USER_ID));
+            Map<String, Object> result = runPromise(() -> // GH-90000
+                mutations.updateEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID.toString(), updateData, USER_ID)); // GH-90000
 
             // THEN
-            assertThat(result).containsEntry("id", ENTITY_ID.toString());
-            assertThat(result).containsEntry("version", 2);
+            assertThat(result).containsEntry("id", ENTITY_ID.toString()); // GH-90000
+            assertThat(result).containsEntry("version", 2); // GH-90000
 
-            verify(entityService).updateEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, updateData, USER_ID);
+            verify(entityService).updateEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, updateData, USER_ID); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject invalid UUID format")
-        void shouldRejectInvalidUuid() {
+        @DisplayName("should reject invalid UUID format [GH-90000]")
+        void shouldRejectInvalidUuid() { // GH-90000
             // GIVEN
-            Map<String, Object> data = Map.of("key", "value");
+            Map<String, Object> data = Map.of("key", "value"); // GH-90000
 
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.updateEntity(TENANT_ID, COLLECTION_NAME, "invalid-uuid", data, USER_ID))
-            ).hasMessageContaining("Invalid entity ID format");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.updateEntity(TENANT_ID, COLLECTION_NAME, "invalid-uuid", data, USER_ID)) // GH-90000
+            ).hasMessageContaining("Invalid entity ID format [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("deleteEntity Tests")
+    @DisplayName("deleteEntity Tests [GH-90000]")
     class DeleteEntityTests {
 
         @Test
-        @DisplayName("should delete entity with valid UUID")
-        void shouldDeleteEntity() {
+        @DisplayName("should delete entity with valid UUID [GH-90000]")
+        void shouldDeleteEntity() { // GH-90000
             // GIVEN
-            when(entityService.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, USER_ID))
-                .thenReturn(Promise.of(null));
+            when(entityService.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, USER_ID)) // GH-90000
+                .thenReturn(Promise.of(null)); // GH-90000
 
             // WHEN
-            Boolean result = runPromise(() ->
-                mutations.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID.toString(), USER_ID));
+            Boolean result = runPromise(() -> // GH-90000
+                mutations.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID.toString(), USER_ID)); // GH-90000
 
             // THEN
-            assertThat(result).isTrue();
-            verify(entityService).deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, USER_ID);
+            assertThat(result).isTrue(); // GH-90000
+            verify(entityService).deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, USER_ID); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject invalid UUID")
-        void shouldRejectInvalidUuid() {
+        @DisplayName("should reject invalid UUID [GH-90000]")
+        void shouldRejectInvalidUuid() { // GH-90000
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.deleteEntity(TENANT_ID, COLLECTION_NAME, "bad-uuid", USER_ID))
-            ).hasMessageContaining("Invalid entity ID format");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.deleteEntity(TENANT_ID, COLLECTION_NAME, "bad-uuid", USER_ID)) // GH-90000
+            ).hasMessageContaining("Invalid entity ID format [GH-90000]");
         }
     }
 
     // ==================== Collection CRUD Tests ====================
 
     @Nested
-    @DisplayName("createCollection Tests")
+    @DisplayName("createCollection Tests [GH-90000]")
     class CreateCollectionTests {
 
         @Test
-        @DisplayName("should create collection with valid inputs")
-        void shouldCreateCollection() {
+        @DisplayName("should create collection with valid inputs [GH-90000]")
+        void shouldCreateCollection() { // GH-90000
             // GIVEN
             String name = "products";
             String description = "Product catalog";
 
-            MetaCollection created = MetaCollection.builder()
-                .id(COLLECTION_ID)
-                .tenantId(TENANT_ID)
-                .name(name)
-                .label(name)
-                .description(description)
-                .fields(Collections.emptyList())
-                .permission(Collections.emptyMap())
-                .build();
-            created.setCreatedAt(Instant.now());
+            MetaCollection created = MetaCollection.builder() // GH-90000
+                .id(COLLECTION_ID) // GH-90000
+                .tenantId(TENANT_ID) // GH-90000
+                .name(name) // GH-90000
+                .label(name) // GH-90000
+                .description(description) // GH-90000
+                .fields(Collections.emptyList()) // GH-90000
+                .permission(Collections.emptyMap()) // GH-90000
+                .build(); // GH-90000
+            created.setCreatedAt(Instant.now()); // GH-90000
 
-            when(collectionService.createCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID)))
-                .thenReturn(Promise.of(created));
+            when(collectionService.createCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID))) // GH-90000
+                .thenReturn(Promise.of(created)); // GH-90000
 
             // WHEN
-            Map<String, Object> result = runPromise(() ->
-                mutations.createCollection(TENANT_ID, name, description, USER_ID));
+            Map<String, Object> result = runPromise(() -> // GH-90000
+                mutations.createCollection(TENANT_ID, name, description, USER_ID)); // GH-90000
 
             // THEN
-            assertThat(result).containsEntry("id", COLLECTION_ID.toString());
-            assertThat(result).containsEntry("name", name);
-            assertThat(result).containsEntry("description", description);
-            assertThat(result).containsEntry("tenantId", TENANT_ID);
+            assertThat(result).containsEntry("id", COLLECTION_ID.toString()); // GH-90000
+            assertThat(result).containsEntry("name", name); // GH-90000
+            assertThat(result).containsEntry("description", description); // GH-90000
+            assertThat(result).containsEntry("tenantId", TENANT_ID); // GH-90000
 
-            verify(collectionService).createCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID));
+            verify(collectionService).createCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID)); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject null name")
-        void shouldRejectNullName() {
+        @DisplayName("should reject null name [GH-90000]")
+        void shouldRejectNullName() { // GH-90000
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.createCollection(TENANT_ID, null, "desc", USER_ID))
-            ).isInstanceOf(NullPointerException.class)
-             .hasMessageContaining("name is required");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.createCollection(TENANT_ID, null, "desc", USER_ID)) // GH-90000
+            ).isInstanceOf(NullPointerException.class) // GH-90000
+             .hasMessageContaining("name is required [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject empty name")
-        void shouldRejectEmptyName() {
+        @DisplayName("should reject empty name [GH-90000]")
+        void shouldRejectEmptyName() { // GH-90000
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.createCollection(TENANT_ID, "  ", "desc", USER_ID))
-            ).hasMessageContaining("name cannot be empty");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.createCollection(TENANT_ID, "  ", "desc", USER_ID)) // GH-90000
+            ).hasMessageContaining("name cannot be empty [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("updateCollection Tests")
+    @DisplayName("updateCollection Tests [GH-90000]")
     class UpdateCollectionTests {
 
         @Test
-        @DisplayName("should update collection description")
-        void shouldUpdateCollection() {
+        @DisplayName("should update collection description [GH-90000]")
+        void shouldUpdateCollection() { // GH-90000
             // GIVEN
             String name = "products";
             String newDescription = "Updated product catalog";
 
-            MetaCollection existing = MetaCollection.builder()
-                .id(COLLECTION_ID)
-                .tenantId(TENANT_ID)
-                .name(name)
-                .description("Old description")
-                .fields(Collections.emptyList())
-                .build();
+            MetaCollection existing = MetaCollection.builder() // GH-90000
+                .id(COLLECTION_ID) // GH-90000
+                .tenantId(TENANT_ID) // GH-90000
+                .name(name) // GH-90000
+                .description("Old description [GH-90000]")
+                .fields(Collections.emptyList()) // GH-90000
+                .build(); // GH-90000
 
-            MetaCollection updated = MetaCollection.builder()
-                .id(COLLECTION_ID)
-                .tenantId(TENANT_ID)
-                .name(name)
-                .description(newDescription)
-                .fields(Collections.emptyList())
-                .build();
-            updated.setUpdatedAt(Instant.now());
+            MetaCollection updated = MetaCollection.builder() // GH-90000
+                .id(COLLECTION_ID) // GH-90000
+                .tenantId(TENANT_ID) // GH-90000
+                .name(name) // GH-90000
+                .description(newDescription) // GH-90000
+                .fields(Collections.emptyList()) // GH-90000
+                .build(); // GH-90000
+            updated.setUpdatedAt(Instant.now()); // GH-90000
 
-            when(collectionRepository.findByName(TENANT_ID, name))
-                .thenReturn(Promise.of(Optional.of(existing)));
-            when(collectionService.updateCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID)))
-                .thenReturn(Promise.of(updated));
+            when(collectionRepository.findByName(TENANT_ID, name)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(existing))); // GH-90000
+            when(collectionService.updateCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID))) // GH-90000
+                .thenReturn(Promise.of(updated)); // GH-90000
 
             // WHEN
-            Map<String, Object> result = runPromise(() ->
-                mutations.updateCollection(TENANT_ID, name, newDescription, USER_ID));
+            Map<String, Object> result = runPromise(() -> // GH-90000
+                mutations.updateCollection(TENANT_ID, name, newDescription, USER_ID)); // GH-90000
 
             // THEN
-            assertThat(result).containsEntry("description", newDescription);
-            assertThat(result).containsEntry("name", name);
+            assertThat(result).containsEntry("description", newDescription); // GH-90000
+            assertThat(result).containsEntry("name", name); // GH-90000
 
-            verify(collectionRepository).findByName(TENANT_ID, name);
-            verify(collectionService).updateCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID));
+            verify(collectionRepository).findByName(TENANT_ID, name); // GH-90000
+            verify(collectionService).updateCollection(eq(TENANT_ID), any(MetaCollection.class), eq(USER_ID)); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject update for non-existent collection")
-        void shouldRejectNonExistentCollection() {
+        @DisplayName("should reject update for non-existent collection [GH-90000]")
+        void shouldRejectNonExistentCollection() { // GH-90000
             // GIVEN
-            when(collectionRepository.findByName(TENANT_ID, "nonexistent"))
-                .thenReturn(Promise.of(Optional.empty()));
+            when(collectionRepository.findByName(TENANT_ID, "nonexistent")) // GH-90000
+                .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.updateCollection(TENANT_ID, "nonexistent", "desc", USER_ID))
-            ).isInstanceOf(IllegalStateException.class)
-             .hasMessageContaining("Collection not found");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.updateCollection(TENANT_ID, "nonexistent", "desc", USER_ID)) // GH-90000
+            ).isInstanceOf(IllegalStateException.class) // GH-90000
+             .hasMessageContaining("Collection not found [GH-90000]");
 
-            clearFatalError();
+            clearFatalError(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("deleteCollection Tests")
+    @DisplayName("deleteCollection Tests [GH-90000]")
     class DeleteCollectionTests {
 
         @Test
-        @DisplayName("should delete collection by name")
-        void shouldDeleteCollection() {
+        @DisplayName("should delete collection by name [GH-90000]")
+        void shouldDeleteCollection() { // GH-90000
             // GIVEN
             String name = "old-collection";
 
-            MetaCollection existing = MetaCollection.builder()
-                .id(COLLECTION_ID)
-                .tenantId(TENANT_ID)
-                .name(name)
-                .build();
+            MetaCollection existing = MetaCollection.builder() // GH-90000
+                .id(COLLECTION_ID) // GH-90000
+                .tenantId(TENANT_ID) // GH-90000
+                .name(name) // GH-90000
+                .build(); // GH-90000
 
-            when(collectionRepository.findByName(TENANT_ID, name))
-                .thenReturn(Promise.of(Optional.of(existing)));
-            when(collectionService.deleteCollection(TENANT_ID, COLLECTION_ID, USER_ID))
-                .thenReturn(Promise.of(null));
+            when(collectionRepository.findByName(TENANT_ID, name)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(existing))); // GH-90000
+            when(collectionService.deleteCollection(TENANT_ID, COLLECTION_ID, USER_ID)) // GH-90000
+                .thenReturn(Promise.of(null)); // GH-90000
 
             // WHEN
-            Boolean result = runPromise(() ->
-                mutations.deleteCollection(TENANT_ID, name, USER_ID));
+            Boolean result = runPromise(() -> // GH-90000
+                mutations.deleteCollection(TENANT_ID, name, USER_ID)); // GH-90000
 
             // THEN
-            assertThat(result).isTrue();
-            verify(collectionRepository).findByName(TENANT_ID, name);
-            verify(collectionService).deleteCollection(TENANT_ID, COLLECTION_ID, USER_ID);
+            assertThat(result).isTrue(); // GH-90000
+            verify(collectionRepository).findByName(TENANT_ID, name); // GH-90000
+            verify(collectionService).deleteCollection(TENANT_ID, COLLECTION_ID, USER_ID); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject delete for non-existent collection")
-        void shouldRejectNonExistentCollection() {
+        @DisplayName("should reject delete for non-existent collection [GH-90000]")
+        void shouldRejectNonExistentCollection() { // GH-90000
             // GIVEN
-            when(collectionRepository.findByName(TENANT_ID, "nonexistent"))
-                .thenReturn(Promise.of(Optional.empty()));
+            when(collectionRepository.findByName(TENANT_ID, "nonexistent")) // GH-90000
+                .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             // WHEN/THEN
-            assertThatThrownBy(() ->
-                runPromise(() -> mutations.deleteCollection(TENANT_ID, "nonexistent", USER_ID))
-            ).isInstanceOf(IllegalStateException.class)
-             .hasMessageContaining("Collection not found");
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> mutations.deleteCollection(TENANT_ID, "nonexistent", USER_ID)) // GH-90000
+            ).isInstanceOf(IllegalStateException.class) // GH-90000
+             .hasMessageContaining("Collection not found [GH-90000]");
 
-            clearFatalError();
+            clearFatalError(); // GH-90000
         }
     }
 }

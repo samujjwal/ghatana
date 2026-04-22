@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("OpenAIService Schema Validation Integration Tests")
+@DisplayName("OpenAIService Schema Validation Integration Tests [GH-90000]")
 class OpenAIServiceIntegrationTest {
 
     /**
@@ -29,9 +29,9 @@ class OpenAIServiceIntegrationTest {
         public int value;
         public boolean active;
 
-        public TestSchema() {}
+        public TestSchema() {} // GH-90000
 
-        public TestSchema(String name, int value, boolean active) {
+        public TestSchema(String name, int value, boolean active) { // GH-90000
             this.name = name;
             this.value = value;
             this.active = active;
@@ -39,35 +39,35 @@ class OpenAIServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration test: Should parse valid structured output from LLM")
-    void shouldParseValidStructuredOutput() {
-        String apiKey = System.getenv("OPENAI_API_KEY");
-        Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(), "OPENAI_API_KEY not set");
+    @DisplayName("Integration test: Should parse valid structured output from LLM [GH-90000]")
+    void shouldParseValidStructuredOutput() { // GH-90000
+        String apiKey = System.getenv("OPENAI_API_KEY [GH-90000]");
+        Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(), "OPENAI_API_KEY not set"); // GH-90000
 
-        LLMService service = new OpenAIService(apiKey);
+        LLMService service = new OpenAIService(apiKey); // GH-90000
         String prompt = "Generate a JSON object with name='test', value=42, active=true";
 
-        TestSchema result = service.generateStructured(prompt, TestSchema.class).getResult();
-        assertNotNull(result);
-        assertEquals("test", result.name);
-        assertEquals(42, result.value);
-        assertTrue(result.active);
+        TestSchema result = service.generateStructured(prompt, TestSchema.class).getResult(); // GH-90000
+        assertNotNull(result); // GH-90000
+        assertEquals("test", result.name); // GH-90000
+        assertEquals(42, result.value); // GH-90000
+        assertTrue(result.active); // GH-90000
     }
 
     @Test
-    @DisplayName("Integration test: Should throw exception for invalid structured output")
-    void shouldThrowExceptionForInvalidStructuredOutput() {
-        String apiKey = System.getenv("OPENAI_API_KEY");
-        Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(), "OPENAI_API_KEY not set");
+    @DisplayName("Integration test: Should throw exception for invalid structured output [GH-90000]")
+    void shouldThrowExceptionForInvalidStructuredOutput() { // GH-90000
+        String apiKey = System.getenv("OPENAI_API_KEY [GH-90000]");
+        Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(), "OPENAI_API_KEY not set"); // GH-90000
 
-        LLMService service = new OpenAIService(apiKey);
+        LLMService service = new OpenAIService(apiKey); // GH-90000
         String prompt = "Generate plain text, not JSON";
 
         try {
-            service.generateStructured(prompt, TestSchema.class).getResult();
-            throw new AssertionError("Should throw exception for invalid structured output");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Failed to parse") || e.getCause() != null);
+            service.generateStructured(prompt, TestSchema.class).getResult(); // GH-90000
+            throw new AssertionError("Should throw exception for invalid structured output [GH-90000]");
+        } catch (Exception e) { // GH-90000
+            assertTrue(e.getMessage().contains("Failed to parse [GH-90000]") || e.getCause() != null);
         }
     }
 }

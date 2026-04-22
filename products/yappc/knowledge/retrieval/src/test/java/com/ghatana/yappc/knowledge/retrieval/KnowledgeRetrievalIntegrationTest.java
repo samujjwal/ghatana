@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * YAPPC Knowledge Retrieval Integration Tests
  */
 package com.ghatana.yappc.knowledge.retrieval;
@@ -40,120 +40,120 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer knowledge
  * @doc.pattern Test
  */
-@DisplayName("Knowledge Retrieval Integration Tests")
+@DisplayName("Knowledge Retrieval Integration Tests [GH-90000]")
 public class KnowledgeRetrievalIntegrationTest {
 
     @ClassRule
-    public static EventloopRule eventloopRule = new EventloopRule();
+    public static EventloopRule eventloopRule = new EventloopRule(); // GH-90000
 
     private Executor executor;
 
     @Before
-    public void setUp() {
-        executor = Executors.newCachedThreadPool();
+    public void setUp() { // GH-90000
+        executor = Executors.newCachedThreadPool(); // GH-90000
     }
 
     @Test
-    @DisplayName("BM25Retriever#retrieve - returns structured RetrievalResult")
-    public void testBM25RetrievalReturnsStructuredResult() {
+    @DisplayName("BM25Retriever#retrieve - returns structured RetrievalResult [GH-90000]")
+    public void testBM25RetrievalReturnsStructuredResult() { // GH-90000
         // GIVEN
-        YappcBM25Retriever retriever = new YappcBM25Retriever(
-            null, // DataSource (would need embedded postgres in real test)
+        YappcBM25Retriever retriever = new YappcBM25Retriever( // GH-90000
+            null, // DataSource (would need embedded postgres in real test) // GH-90000
             executor
         );
 
-        RetrievalRequest request = new RetrievalRequest.Builder()
-            .query("How do I configure the agent lifecycle?")
-            .tenantId("tenant-1")
-            .limit(10)
-            .build();
+        RetrievalRequest request = new RetrievalRequest.Builder() // GH-90000
+            .query("How do I configure the agent lifecycle? [GH-90000]")
+            .tenantId("tenant-1 [GH-90000]")
+            .limit(10) // GH-90000
+            .build(); // GH-90000
 
-        // WHEN / THEN - Framework test (real queries require JDBC backing)
-        assertThat(retriever).isNotNull();
-        assertThat(retriever).isInstanceOf(RetrievalPipeline.class);
+        // WHEN / THEN - Framework test (real queries require JDBC backing) // GH-90000
+        assertThat(retriever).isNotNull(); // GH-90000
+        assertThat(retriever).isInstanceOf(RetrievalPipeline.class); // GH-90000
     }
 
     @Test
-    @DisplayName("DenseVectorRetriever#retrieve - framework initialized correctly")
-    public void testDenseVectorReviewerFrameworkInit() {
+    @DisplayName("DenseVectorRetriever#retrieve - framework initialized correctly [GH-90000]")
+    public void testDenseVectorReviewerFrameworkInit() { // GH-90000
         // GIVEN
-        YappcDenseVectorRetriever retriever = new YappcDenseVectorRetriever(
-            null, // EntityRepository (DataCloud backing)
+        YappcDenseVectorRetriever retriever = new YappcDenseVectorRetriever( // GH-90000
+            null, // EntityRepository (DataCloud backing) // GH-90000
             executor
         );
 
         // WHEN / THEN
-        assertThat(retriever).isNotNull();
-        assertThat(retriever).isInstanceOf(RetrievalPipeline.class);
+        assertThat(retriever).isNotNull(); // GH-90000
+        assertThat(retriever).isInstanceOf(RetrievalPipeline.class); // GH-90000
     }
 
     @Test
-    @DisplayName("KnowledgeModule - DI configuration provides both retrievers")
-    public void testKnowledgeModuleDiConfiguration() {
+    @DisplayName("KnowledgeModule - DI configuration provides both retrievers [GH-90000]")
+    public void testKnowledgeModuleDiConfiguration() { // GH-90000
         // GIVEN
-        KnowledgeModule module = new KnowledgeModule();
+        KnowledgeModule module = new KnowledgeModule(); // GH-90000
 
         // Create minimal injector with module
         try {
-            Injector injector = Injector.create(
-                new com.ghatana.yappc.knowledge.di.KnowledgeModule()
+            Injector injector = Injector.create( // GH-90000
+                new com.ghatana.yappc.knowledge.di.KnowledgeModule() // GH-90000
             );
 
-            // THEN - Module configures without error (DI bindings are valid)
-            assertThat(injector).isNotNull();
-        } catch (Exception e) {
+            // THEN - Module configures without error (DI bindings are valid) // GH-90000
+            assertThat(injector).isNotNull(); // GH-90000
+        } catch (Exception e) { // GH-90000
             // If DI fails due to missing dependencies, that's OK for unit test
             // The important thing is the module structure is correct
-            assertThat(e.getMessage())
-                .doesNotContain("KnowledgeModule")
-                .doesNotContain("@Provides"); // Not a configuration error
+            assertThat(e.getMessage()) // GH-90000
+                .doesNotContain("KnowledgeModule [GH-90000]")
+                .doesNotContain("@Provides [GH-90000]"); // Not a configuration error
         }
     }
 
     @Test
-    @DisplayName("BM25Retriever#retrieve - handles empty query correctly")
-    public void testBM25HandlesEmptyQuery() {
+    @DisplayName("BM25Retriever#retrieve - handles empty query correctly [GH-90000]")
+    public void testBM25HandlesEmptyQuery() { // GH-90000
         // GIVEN
-        YappcBM25Retriever retriever = new YappcBM25Retriever(null, executor);
+        YappcBM25Retriever retriever = new YappcBM25Retriever(null, executor); // GH-90000
 
-        RetrievalRequest emptyRequest = new RetrievalRequest.Builder()
-            .query("")
-            .tenantId("tenant-1")
-            .limit(10)
-            .build();
+        RetrievalRequest emptyRequest = new RetrievalRequest.Builder() // GH-90000
+            .query(" [GH-90000]")
+            .tenantId("tenant-1 [GH-90000]")
+            .limit(10) // GH-90000
+            .build(); // GH-90000
 
         // WHEN / THEN - Should have robust null/empty handling
-        assertThat(emptyRequest.getQuery()).isEmpty();
-        assertThat(retriever).isNotNull();
+        assertThat(emptyRequest.getQuery()).isEmpty(); // GH-90000
+        assertThat(retriever).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("DenseVectorRetriever#retrieve - handles missing embedding gracefully")
-    public void testDenseVectorHandlesMissingEmbedding() {
+    @DisplayName("DenseVectorRetriever#retrieve - handles missing embedding gracefully [GH-90000]")
+    public void testDenseVectorHandlesMissingEmbedding() { // GH-90000
         // GIVEN
-        YappcDenseVectorRetriever retriever = new YappcDenseVectorRetriever(null, executor);
+        YappcDenseVectorRetriever retriever = new YappcDenseVectorRetriever(null, executor); // GH-90000
 
-        RetrievalRequest request = new RetrievalRequest.Builder()
-            .query("What is the best practice for agent authorization?")
-            .tenantId("tenant-1")
-            .limit(5)
-            .build();
+        RetrievalRequest request = new RetrievalRequest.Builder() // GH-90000
+            .query("What is the best practice for agent authorization? [GH-90000]")
+            .tenantId("tenant-1 [GH-90000]")
+            .limit(5) // GH-90000
+            .build(); // GH-90000
 
-        // WHEN / THEN - Framework handles gracefully (no embedding service yet)
-        assertThat(retriever).isNotNull();
+        // WHEN / THEN - Framework handles gracefully (no embedding service yet) // GH-90000
+        assertThat(retriever).isNotNull(); // GH-90000
         // In production, this would query DataCloud with embedded vector
     }
 
     @Test
-    @DisplayName("Hybrid Retrieval - both BM25 and Dense can be composed")
-    public void testHybridRetrievalCompositionPattern() {
+    @DisplayName("Hybrid Retrieval - both BM25 and Dense can be composed [GH-90000]")
+    public void testHybridRetrievalCompositionPattern() { // GH-90000
         // GIVEN
-        RetrievalPipeline bm25 = new YappcBM25Retriever(null, executor);
-        RetrievalPipeline dense = new YappcDenseVectorRetriever(null, executor);
+        RetrievalPipeline bm25 = new YappcBM25Retriever(null, executor); // GH-90000
+        RetrievalPipeline dense = new YappcDenseVectorRetriever(null, executor); // GH-90000
 
         // WHEN / THEN - Both implement required interface for composition
-        assertThat(bm25).isInstanceOf(RetrievalPipeline.class);
-        assertThat(dense).isInstanceOf(RetrievalPipeline.class);
+        assertThat(bm25).isInstanceOf(RetrievalPipeline.class); // GH-90000
+        assertThat(dense).isInstanceOf(RetrievalPipeline.class); // GH-90000
         // In production, these would be passed to HybridRetriever for composition
     }
 }

@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <p>These tests verify:
  * <ul>
  *   <li>Helpful error messages when the native library is missing</li>
- *   <li>JSON AST deserialization from the JNI bridge (when library is present)</li>
+ *   <li>JSON AST deserialization from the JNI bridge (when library is present)</li> // GH-90000
  * </ul>
  */
-@DisplayName("TreeSitterParser JNI Bridge Tests")
-@Tag("native")
+@DisplayName("TreeSitterParser JNI Bridge Tests [GH-90000]")
+@Tag("native [GH-90000]")
 class TreeSitterParserTest {
 
     private static final boolean NATIVE_AVAILABLE;
@@ -30,9 +30,9 @@ class TreeSitterParserTest {
     static {
         boolean available = false;
         try {
-            System.loadLibrary("tree_sitter_jni");
+            System.loadLibrary("tree_sitter_jni [GH-90000]");
             available = true;
-        } catch (UnsatisfiedLinkError ignored) {
+        } catch (UnsatisfiedLinkError ignored) { // GH-90000
             available = false;
         }
         NATIVE_AVAILABLE = available;
@@ -48,29 +48,29 @@ class TreeSitterParserTest {
      * subsequent native-present tests.
      */
     @Test
-    @DisplayName("Should throw helpful error when native library is missing")
-    void shouldThrowHelpfulErrorWhenNativeLibraryMissing() throws Exception {
-        if (NATIVE_AVAILABLE) {
+    @DisplayName("Should throw helpful error when native library is missing [GH-90000]")
+    void shouldThrowHelpfulErrorWhenNativeLibraryMissing() throws Exception { // GH-90000
+        if (NATIVE_AVAILABLE) { // GH-90000
             return; // Nothing to assert when library is present
         }
 
-        Class<?> isolated = loadClassInIsolatedLoader(TreeSitterParser.class);
+        Class<?> isolated = loadClassInIsolatedLoader(TreeSitterParser.class); // GH-90000
 
-        assertThatThrownBy(() -> {
-            isolated.getDeclaredConstructor(String.class).newInstance("java");
+        assertThatThrownBy(() -> { // GH-90000
+            isolated.getDeclaredConstructor(String.class).newInstance("java [GH-90000]");
         })
-                .isInstanceOf(InvocationTargetException.class)
-                .hasCauseInstanceOf(ExceptionInInitializerError.class)
-                .satisfies(ex -> {
-                    Throwable root = ex.getCause();
-                    while (root.getCause() != null) {
-                        root = root.getCause();
+                .isInstanceOf(InvocationTargetException.class) // GH-90000
+                .hasCauseInstanceOf(ExceptionInInitializerError.class) // GH-90000
+                .satisfies(ex -> { // GH-90000
+                    Throwable root = ex.getCause(); // GH-90000
+                    while (root.getCause() != null) { // GH-90000
+                        root = root.getCause(); // GH-90000
                     }
-                    assertThat(root)
-                            .isInstanceOf(UnsatisfiedLinkError.class)
-                            .hasMessageContaining("tree_sitter_jni")
-                            .hasMessageContaining("build_native.sh")
-                            .hasMessageContaining("java.library.path");
+                    assertThat(root) // GH-90000
+                            .isInstanceOf(UnsatisfiedLinkError.class) // GH-90000
+                            .hasMessageContaining("tree_sitter_jni [GH-90000]")
+                            .hasMessageContaining("build_native.sh [GH-90000]")
+                            .hasMessageContaining("java.library.path [GH-90000]");
                 });
     }
 
@@ -79,58 +79,58 @@ class TreeSitterParserTest {
      * Skipped automatically when the library has not been built.
      */
     @Test
-    @DisplayName("Should parse Java source and return AST map when native library is present")
-    void shouldParseJavaSourceWhenNativeLibraryPresent() {
-        org.junit.jupiter.api.Assumptions.assumeTrue(NATIVE_AVAILABLE,
+    @DisplayName("Should parse Java source and return AST map when native library is present [GH-90000]")
+    void shouldParseJavaSourceWhenNativeLibraryPresent() { // GH-90000
+        org.junit.jupiter.api.Assumptions.assumeTrue(NATIVE_AVAILABLE, // GH-90000
                 "Native library 'tree_sitter_jni' not available — run './build_native.sh' in src/main/native");
 
-        String source = "public class Hello { public static void main(String[] args) { } }";
+        String source = "public class Hello { public static void main(String[] args) { } }"; // GH-90000
 
-        try (TreeSitterParser parser = new TreeSitterParser("java")) {
-            java.util.Map<String, Object> ast = parser.parse(source);
+        try (TreeSitterParser parser = new TreeSitterParser("java [GH-90000]")) {
+            java.util.Map<String, Object> ast = parser.parse(source); // GH-90000
 
-            assertThat(ast).isNotNull();
-            assertThat(ast).containsKey("root");
-            assertThat(ast).containsKey("_language");
+            assertThat(ast).isNotNull(); // GH-90000
+            assertThat(ast).containsKey("root [GH-90000]");
+            assertThat(ast).containsKey("_language [GH-90000]");
 
-            @SuppressWarnings("unchecked")
-            java.util.Map<String, Object> root = (java.util.Map<String, Object>) ast.get("root");
-            assertThat(root).containsKey("type");
-            assertThat(root).containsKey("children");
-            assertThat(root.get("type")).isEqualTo("program");
+            @SuppressWarnings("unchecked [GH-90000]")
+            java.util.Map<String, Object> root = (java.util.Map<String, Object>) ast.get("root [GH-90000]");
+            assertThat(root).containsKey("type [GH-90000]");
+            assertThat(root).containsKey("children [GH-90000]");
+            assertThat(root.get("type [GH-90000]")).isEqualTo("program [GH-90000]");
         }
     }
 
-    /** Loads the given class in a fresh child ClassLoader (no shared state). */
-    private Class<?> loadClassInIsolatedLoader(Class<?> clazz) throws IOException, ClassNotFoundException {
-        String resourceName = clazz.getName().replace('.', '/') + ".class";
+    /** Loads the given class in a fresh child ClassLoader (no shared state). */ // GH-90000
+    private Class<?> loadClassInIsolatedLoader(Class<?> clazz) throws IOException, ClassNotFoundException { // GH-90000
+        String resourceName = clazz.getName().replace('.', '/') + ".class"; // GH-90000
         byte[] bytes;
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName)) {
-            assertThat(is).as("Class file %s must be on test classpath", resourceName).isNotNull();
-            bytes = readAllBytes(is);
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName)) { // GH-90000
+            assertThat(is).as("Class file %s must be on test classpath", resourceName).isNotNull(); // GH-90000
+            bytes = readAllBytes(is); // GH-90000
         }
 
-        ClassLoader parent = getClass().getClassLoader();
-        ClassLoader isolated = new ClassLoader(parent) {
+        ClassLoader parent = getClass().getClassLoader(); // GH-90000
+        ClassLoader isolated = new ClassLoader(parent) { // GH-90000
             @Override
-            public Class<?> loadClass(String name) throws ClassNotFoundException {
-                if (name.equals(clazz.getName())) {
-                    return defineClass(name, bytes, 0, bytes.length);
+            public Class<?> loadClass(String name) throws ClassNotFoundException { // GH-90000
+                if (name.equals(clazz.getName())) { // GH-90000
+                    return defineClass(name, bytes, 0, bytes.length); // GH-90000
                 }
-                return super.loadClass(name);
+                return super.loadClass(name); // GH-90000
             }
         };
 
-        return isolated.loadClass(clazz.getName());
+        return isolated.loadClass(clazz.getName()); // GH-90000
     }
 
-    private byte[] readAllBytes(InputStream is) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    private byte[] readAllBytes(InputStream is) throws IOException { // GH-90000
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream(); // GH-90000
         byte[] tmp = new byte[4096];
         int n;
-        while ((n = is.read(tmp)) != -1) {
-            buffer.write(tmp, 0, n);
+        while ((n = is.read(tmp)) != -1) { // GH-90000
+            buffer.write(tmp, 0, n); // GH-90000
         }
-        return buffer.toByteArray();
+        return buffer.toByteArray(); // GH-90000
     }
 }

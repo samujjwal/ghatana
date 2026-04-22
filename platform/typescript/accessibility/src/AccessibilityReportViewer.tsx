@@ -1,7 +1,7 @@
 /**
  * @fileoverview Accessibility Report Viewer Component
- * @module @ghatana/accessibility-audit
- * 
+ * @module @ghatana/accessibility
+ *
  * A React component for displaying accessibility audit results in a user-friendly format
  */
 

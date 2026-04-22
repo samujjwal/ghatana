@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana
+ * Copyright (c) 2026 Ghatana // GH-90000
  */
 package com.ghatana.yappc.services.intent;
 
@@ -19,74 +19,74 @@ class IntentServiceTest extends EventloopTestBase {
     private IntentService intentService;
 
     @BeforeEach
-    void setUp() {
-        intentService = new MockIntentService();
+    void setUp() { // GH-90000
+        intentService = new MockIntentService(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should capture intent from user input")
-    void testCaptureIntent() throws Exception {
-        IntentInput input = new IntentInput("Create a REST API for user management");
+    @DisplayName("Should capture intent from user input [GH-90000]")
+    void testCaptureIntent() throws Exception { // GH-90000
+        IntentInput input = new IntentInput("Create a REST API for user management [GH-90000]");
 
-        Promise<IntentSpec> promise = intentService.capture(input);
-        IntentSpec spec = runPromise(() -> promise);
+        Promise<IntentSpec> promise = intentService.capture(input); // GH-90000
+        IntentSpec spec = runPromise(() -> promise); // GH-90000
 
-        assertThat(spec).isNotNull();
-        assertThat(spec.description()).isEqualTo("Create a REST API for user management");
-        assertThat(spec.intentType()).isEqualTo("API_CREATION");
+        assertThat(spec).isNotNull(); // GH-90000
+        assertThat(spec.description()).isEqualTo("Create a REST API for user management [GH-90000]");
+        assertThat(spec.intentType()).isEqualTo("API_CREATION [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should analyze captured intent")
-    void testAnalyzeIntent() throws Exception {
-        IntentSpec spec = new IntentSpec(
+    @DisplayName("Should analyze captured intent [GH-90000]")
+    void testAnalyzeIntent() throws Exception { // GH-90000
+        IntentSpec spec = new IntentSpec( // GH-90000
             "Create a REST API for user management",
             "API_CREATION",
-            java.util.Map.of("domain", "user-management")
+            java.util.Map.of("domain", "user-management") // GH-90000
         );
 
-        Promise<IntentAnalysis> promise = intentService.analyze(spec);
-        IntentAnalysis analysis = runPromise(() -> promise);
+        Promise<IntentAnalysis> promise = intentService.analyze(spec); // GH-90000
+        IntentAnalysis analysis = runPromise(() -> promise); // GH-90000
 
-        assertThat(analysis).isNotNull();
-        assertThat(analysis.feasible()).isTrue();
-        assertThat(analysis.estimatedComplexity()).isEqualTo("MEDIUM");
+        assertThat(analysis).isNotNull(); // GH-90000
+        assertThat(analysis.feasible()).isTrue(); // GH-90000
+        assertThat(analysis.estimatedComplexity()).isEqualTo("MEDIUM [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should count intents")
-    void testCountIntents() throws Exception {
-        Promise<Long> promise = intentService.count();
-        Long count = runPromise(() -> promise);
+    @DisplayName("Should count intents [GH-90000]")
+    void testCountIntents() throws Exception { // GH-90000
+        Promise<Long> promise = intentService.count(); // GH-90000
+        Long count = runPromise(() -> promise); // GH-90000
 
-        assertThat(count).isGreaterThanOrEqualTo(0L);
+        assertThat(count).isGreaterThanOrEqualTo(0L); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle complex intent with multiple requirements")
-    void testComplexIntent() throws Exception {
-        IntentInput input = new IntentInput(
+    @DisplayName("Should handle complex intent with multiple requirements [GH-90000]")
+    void testComplexIntent() throws Exception { // GH-90000
+        IntentInput input = new IntentInput( // GH-90000
             "Build a microservices architecture with authentication, database, and API gateway"
         );
 
-        IntentSpec spec = runPromise(() -> intentService.capture(input));
-        IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec));
+        IntentSpec spec = runPromise(() -> intentService.capture(input)); // GH-90000
+        IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec)); // GH-90000
 
-        assertThat(spec.intentType()).isEqualTo("ARCHITECTURE_DESIGN");
-        assertThat(analysis.estimatedComplexity()).isEqualTo("HIGH");
-        assertThat(analysis.requiredPhases()).contains("PLANNING", "DESIGN", "IMPLEMENTATION");
+        assertThat(spec.intentType()).isEqualTo("ARCHITECTURE_DESIGN [GH-90000]");
+        assertThat(analysis.estimatedComplexity()).isEqualTo("HIGH [GH-90000]");
+        assertThat(analysis.requiredPhases()).contains("PLANNING", "DESIGN", "IMPLEMENTATION"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle simple intent")
-    void testSimpleIntent() throws Exception {
-        IntentInput input = new IntentInput("Add a new field to User model");
+    @DisplayName("Should handle simple intent [GH-90000]")
+    void testSimpleIntent() throws Exception { // GH-90000
+        IntentInput input = new IntentInput("Add a new field to User model [GH-90000]");
 
-        IntentSpec spec = runPromise(() -> intentService.capture(input));
-        IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec));
+        IntentSpec spec = runPromise(() -> intentService.capture(input)); // GH-90000
+        IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec)); // GH-90000
 
-        assertThat(spec.intentType()).isEqualTo("MODEL_MODIFICATION");
-        assertThat(analysis.estimatedComplexity()).isEqualTo("LOW");
+        assertThat(spec.intentType()).isEqualTo("MODEL_MODIFICATION [GH-90000]");
+        assertThat(analysis.estimatedComplexity()).isEqualTo("LOW [GH-90000]");
     }
 
     // Mock implementations for testing
@@ -94,61 +94,61 @@ class IntentServiceTest extends EventloopTestBase {
     static class MockIntentService implements IntentService {
 
         @Override
-        public Promise<IntentSpec> capture(IntentInput input) {
-            String intentType = determineIntentType(input.description());
-            return Promise.of(new IntentSpec(
-                input.description(),
+        public Promise<IntentSpec> capture(IntentInput input) { // GH-90000
+            String intentType = determineIntentType(input.description()); // GH-90000
+            return Promise.of(new IntentSpec( // GH-90000
+                input.description(), // GH-90000
                 intentType,
-                java.util.Map.of("source", "user-input")
+                java.util.Map.of("source", "user-input") // GH-90000
             ));
         }
 
         @Override
-        public Promise<IntentAnalysis> analyze(IntentSpec spec) {
-            String complexity = estimateComplexity(spec.description());
-            java.util.List<String> phases = determinePhases(spec.intentType());
+        public Promise<IntentAnalysis> analyze(IntentSpec spec) { // GH-90000
+            String complexity = estimateComplexity(spec.description()); // GH-90000
+            java.util.List<String> phases = determinePhases(spec.intentType()); // GH-90000
 
-            return Promise.of(new IntentAnalysis(
+            return Promise.of(new IntentAnalysis( // GH-90000
                 true,
                 complexity,
                 phases,
-                java.util.Map.of("recommendation", "Proceed with implementation")
+                java.util.Map.of("recommendation", "Proceed with implementation") // GH-90000
             ));
         }
 
         @Override
-        public Promise<Long> count() {
-            return Promise.of(42L);
+        public Promise<Long> count() { // GH-90000
+            return Promise.of(42L); // GH-90000
         }
 
-        private String determineIntentType(String description) {
-            String lower = description.toLowerCase();
-            if (lower.contains("microservices") || lower.contains("architecture")) {
+        private String determineIntentType(String description) { // GH-90000
+            String lower = description.toLowerCase(); // GH-90000
+            if (lower.contains("microservices [GH-90000]") || lower.contains("architecture [GH-90000]")) {
                 return "ARCHITECTURE_DESIGN";
-            } else if (lower.contains("rest api") || lower.contains("api")) {
+            } else if (lower.contains("rest api [GH-90000]") || lower.contains("api [GH-90000]")) {
                 return "API_CREATION";
-            } else if (lower.contains("field") || lower.contains("model")) {
+            } else if (lower.contains("field [GH-90000]") || lower.contains("model [GH-90000]")) {
                 return "MODEL_MODIFICATION";
             }
             return "GENERAL";
         }
 
-        private String estimateComplexity(String description) {
-            String lower = description.toLowerCase();
-            if (lower.contains("microservices") || lower.contains("architecture")) {
+        private String estimateComplexity(String description) { // GH-90000
+            String lower = description.toLowerCase(); // GH-90000
+            if (lower.contains("microservices [GH-90000]") || lower.contains("architecture [GH-90000]")) {
                 return "HIGH";
-            } else if (lower.contains("rest api") || lower.contains("service")) {
+            } else if (lower.contains("rest api [GH-90000]") || lower.contains("service [GH-90000]")) {
                 return "MEDIUM";
             }
             return "LOW";
         }
 
-        private java.util.List<String> determinePhases(String intentType) {
-            return switch (intentType) {
-                case "ARCHITECTURE_DESIGN" -> java.util.List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING");
-                case "API_CREATION" -> java.util.List.of("DESIGN", "IMPLEMENTATION", "TESTING");
-                case "MODEL_MODIFICATION" -> java.util.List.of("IMPLEMENTATION", "TESTING");
-                default -> java.util.List.of("IMPLEMENTATION");
+        private java.util.List<String> determinePhases(String intentType) { // GH-90000
+            return switch (intentType) { // GH-90000
+                case "ARCHITECTURE_DESIGN" -> java.util.List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING"); // GH-90000
+                case "API_CREATION" -> java.util.List.of("DESIGN", "IMPLEMENTATION", "TESTING"); // GH-90000
+                case "MODEL_MODIFICATION" -> java.util.List.of("IMPLEMENTATION", "TESTING"); // GH-90000
+                default -> java.util.List.of("IMPLEMENTATION [GH-90000]");
             };
         }
     }

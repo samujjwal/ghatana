@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kernel Event Bus Integration Tests")
+@DisplayName("Kernel Event Bus Integration Tests [GH-90000]")
 class KernelEventBusIntegrationTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -33,201 +33,201 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     private TestEventBus eventBus;
 
     @BeforeEach
-    void setUp() {
-        registry = new KernelRegistryImpl();
-        context = TestKernelContextFactory.create(registry);
-        eventBus = new TestEventBus();
+    void setUp() { // GH-90000
+        registry = new KernelRegistryImpl(); // GH-90000
+        context = TestKernelContextFactory.create(registry); // GH-90000
+        eventBus = new TestEventBus(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should publish and subscribe to events across modules")
-    void testCrossModuleEventPublishing() {
+    @DisplayName("Should publish and subscribe to events across modules [GH-90000]")
+    void testCrossModuleEventPublishing() { // GH-90000
         // GIVEN: Two modules with event subscription
-        List<TestEvent> module1Events = new CopyOnWriteArrayList<>();
-        List<TestEvent> module2Events = new CopyOnWriteArrayList<>();
+        List<TestEvent> module1Events = new CopyOnWriteArrayList<>(); // GH-90000
+        List<TestEvent> module2Events = new CopyOnWriteArrayList<>(); // GH-90000
 
-        eventBus.subscribe("test.event", event -> {
-            module1Events.add(event);
-            return Promise.complete();
+        eventBus.subscribe("test.event", event -> { // GH-90000
+            module1Events.add(event); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
-        eventBus.subscribe("test.event", event -> {
-            module2Events.add(event);
-            return Promise.complete();
+        eventBus.subscribe("test.event", event -> { // GH-90000
+            module2Events.add(event); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
         // WHEN: Publish event
-        TestEvent event = new TestEvent("test-data");
-        runPromise(() -> eventBus.publish("test.event", event));
+        TestEvent event = new TestEvent("test-data [GH-90000]");
+        runPromise(() -> eventBus.publish("test.event", event)); // GH-90000
 
         // THEN: Both modules receive the event
-        assertThat(module1Events).hasSize(1);
-        assertThat(module2Events).hasSize(1);
-        assertThat(module1Events.get(0).getData()).isEqualTo("test-data");
-        assertThat(module2Events.get(0).getData()).isEqualTo("test-data");
+        assertThat(module1Events).hasSize(1); // GH-90000
+        assertThat(module2Events).hasSize(1); // GH-90000
+        assertThat(module1Events.get(0).getData()).isEqualTo("test-data [GH-90000]");
+        assertThat(module2Events.get(0).getData()).isEqualTo("test-data [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle event ordering guarantees")
-    void testEventOrdering() {
+    @DisplayName("Should handle event ordering guarantees [GH-90000]")
+    void testEventOrdering() { // GH-90000
         // GIVEN: Subscriber tracking event order
-        List<Integer> receivedOrder = new CopyOnWriteArrayList<>();
+        List<Integer> receivedOrder = new CopyOnWriteArrayList<>(); // GH-90000
 
-        eventBus.subscribe("ordered.event", event -> {
-            receivedOrder.add(((OrderedEvent) event).getSequence());
-            return Promise.complete();
+        eventBus.subscribe("ordered.event", event -> { // GH-90000
+            receivedOrder.add(((OrderedEvent) event).getSequence()); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
         // WHEN: Publish events in sequence
-        for (int i = 1; i <= 10; i++) {
-            OrderedEvent event = new OrderedEvent(i);
-            runPromise(() -> eventBus.publish("ordered.event", event));
+        for (int i = 1; i <= 10; i++) { // GH-90000
+            OrderedEvent event = new OrderedEvent(i); // GH-90000
+            runPromise(() -> eventBus.publish("ordered.event", event)); // GH-90000
         }
 
         // THEN: Events received in order
-        assertThat(receivedOrder).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        assertThat(receivedOrder).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10); // GH-90000
     }
 
     @Test
-    @DisplayName("Should propagate correlation ID across events")
-    void testCorrelationIdPropagation() {
+    @DisplayName("Should propagate correlation ID across events [GH-90000]")
+    void testCorrelationIdPropagation() { // GH-90000
         // GIVEN: Subscriber that checks correlation ID
-        List<String> correlationIds = new CopyOnWriteArrayList<>();
+        List<String> correlationIds = new CopyOnWriteArrayList<>(); // GH-90000
 
-        eventBus.subscribe("correlated.event", event -> {
-            correlationIds.add(((CorrelatedEvent) event).getCorrelationId());
-            return Promise.complete();
+        eventBus.subscribe("correlated.event", event -> { // GH-90000
+            correlationIds.add(((CorrelatedEvent) event).getCorrelationId()); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
         // WHEN: Publish events with correlation ID
         String correlationId = "correlation-123";
-        CorrelatedEvent event = new CorrelatedEvent("data", correlationId);
-        runPromise(() -> eventBus.publish("correlated.event", event));
+        CorrelatedEvent event = new CorrelatedEvent("data", correlationId); // GH-90000
+        runPromise(() -> eventBus.publish("correlated.event", event)); // GH-90000
 
         // THEN: Correlation ID is preserved
-        assertThat(correlationIds).containsExactly(correlationId);
+        assertThat(correlationIds).containsExactly(correlationId); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle subscriber errors without affecting other subscribers")
-    void testSubscriberErrorIsolation() {
+    @DisplayName("Should handle subscriber errors without affecting other subscribers [GH-90000]")
+    void testSubscriberErrorIsolation() { // GH-90000
         // GIVEN: Multiple subscribers, one fails
-        List<TestEvent> successfulSubscriber = new CopyOnWriteArrayList<>();
-        AtomicInteger failingSubscriberCalls = new AtomicInteger(0);
+        List<TestEvent> successfulSubscriber = new CopyOnWriteArrayList<>(); // GH-90000
+        AtomicInteger failingSubscriberCalls = new AtomicInteger(0); // GH-90000
 
-        eventBus.subscribe("test.event", event -> {
-            successfulSubscriber.add(event);
-            return Promise.complete();
+        eventBus.subscribe("test.event", event -> { // GH-90000
+            successfulSubscriber.add(event); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
-        eventBus.subscribe("test.event", event -> {
-            failingSubscriberCalls.incrementAndGet();
-            return Promise.ofException(new RuntimeException("Subscriber failed"));
+        eventBus.subscribe("test.event", event -> { // GH-90000
+            failingSubscriberCalls.incrementAndGet(); // GH-90000
+            return Promise.ofException(new RuntimeException("Subscriber failed [GH-90000]"));
         });
 
         // WHEN: Publish event
-        TestEvent event = new TestEvent("test-data");
-        runPromise(() -> eventBus.publish("test.event", event));
+        TestEvent event = new TestEvent("test-data [GH-90000]");
+        runPromise(() -> eventBus.publish("test.event", event)); // GH-90000
 
         // THEN: Successful subscriber still receives event
-        assertThat(successfulSubscriber).hasSize(1);
-        assertThat(failingSubscriberCalls.get()).isEqualTo(1);
+        assertThat(successfulSubscriber).hasSize(1); // GH-90000
+        assertThat(failingSubscriberCalls.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should support event filtering by type")
-    void testEventFiltering() {
+    @DisplayName("Should support event filtering by type [GH-90000]")
+    void testEventFiltering() { // GH-90000
         // GIVEN: Subscribers for different event types
-        List<TestEvent> typeAEvents = new CopyOnWriteArrayList<>();
-        List<TestEvent> typeBEvents = new CopyOnWriteArrayList<>();
+        List<TestEvent> typeAEvents = new CopyOnWriteArrayList<>(); // GH-90000
+        List<TestEvent> typeBEvents = new CopyOnWriteArrayList<>(); // GH-90000
 
-        eventBus.subscribe("event.typeA", event -> {
-            typeAEvents.add(event);
-            return Promise.complete();
+        eventBus.subscribe("event.typeA", event -> { // GH-90000
+            typeAEvents.add(event); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
-        eventBus.subscribe("event.typeB", event -> {
-            typeBEvents.add(event);
-            return Promise.complete();
+        eventBus.subscribe("event.typeB", event -> { // GH-90000
+            typeBEvents.add(event); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
         // WHEN: Publish different event types
-        runPromise(() -> eventBus.publish("event.typeA", new TestEvent("dataA")));
-        runPromise(() -> eventBus.publish("event.typeB", new TestEvent("dataB")));
+        runPromise(() -> eventBus.publish("event.typeA", new TestEvent("dataA [GH-90000]")));
+        runPromise(() -> eventBus.publish("event.typeB", new TestEvent("dataB [GH-90000]")));
 
         // THEN: Each subscriber receives only its event type
-        assertThat(typeAEvents).hasSize(1);
-        assertThat(typeBEvents).hasSize(1);
-        assertThat(typeAEvents.get(0).getData()).isEqualTo("dataA");
-        assertThat(typeBEvents.get(0).getData()).isEqualTo("dataB");
+        assertThat(typeAEvents).hasSize(1); // GH-90000
+        assertThat(typeBEvents).hasSize(1); // GH-90000
+        assertThat(typeAEvents.get(0).getData()).isEqualTo("dataA [GH-90000]");
+        assertThat(typeBEvents.get(0).getData()).isEqualTo("dataB [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle high-volume event publishing")
-    void testHighVolumeEventPublishing() {
+    @DisplayName("Should handle high-volume event publishing [GH-90000]")
+    void testHighVolumeEventPublishing() { // GH-90000
         // GIVEN: Subscriber counting events
-        AtomicInteger eventCount = new AtomicInteger(0);
+        AtomicInteger eventCount = new AtomicInteger(0); // GH-90000
 
-        eventBus.subscribe("high.volume", event -> {
-            eventCount.incrementAndGet();
-            return Promise.complete();
+        eventBus.subscribe("high.volume", event -> { // GH-90000
+            eventCount.incrementAndGet(); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
         // WHEN: Publish 1000 events
         int totalEvents = 1000;
-        for (int i = 0; i < totalEvents; i++) {
-            TestEvent event = new TestEvent("data-" + i);
-            runPromise(() -> eventBus.publish("high.volume", event));
+        for (int i = 0; i < totalEvents; i++) { // GH-90000
+            TestEvent event = new TestEvent("data-" + i); // GH-90000
+            runPromise(() -> eventBus.publish("high.volume", event)); // GH-90000
         }
 
         // THEN: All events received
-        assertThat(eventCount.get()).isEqualTo(totalEvents);
+        assertThat(eventCount.get()).isEqualTo(totalEvents); // GH-90000
     }
 
     @Test
-    @DisplayName("Should support unsubscribe functionality")
-    void testUnsubscribe() {
+    @DisplayName("Should support unsubscribe functionality [GH-90000]")
+    void testUnsubscribe() { // GH-90000
         // GIVEN: Subscriber that can be unsubscribed
-        List<TestEvent> events = new CopyOnWriteArrayList<>();
+        List<TestEvent> events = new CopyOnWriteArrayList<>(); // GH-90000
 
-        String subscriptionId = eventBus.subscribe("test.event", event -> {
-            events.add(event);
-            return Promise.complete();
+        String subscriptionId = eventBus.subscribe("test.event", event -> { // GH-90000
+            events.add(event); // GH-90000
+            return Promise.complete(); // GH-90000
         });
 
         // WHEN: Publish event, unsubscribe, publish again
-        runPromise(() -> eventBus.publish("test.event", new TestEvent("data1")));
+        runPromise(() -> eventBus.publish("test.event", new TestEvent("data1 [GH-90000]")));
 
-        eventBus.unsubscribe(subscriptionId);
+        eventBus.unsubscribe(subscriptionId); // GH-90000
 
-        runPromise(() -> eventBus.publish("test.event", new TestEvent("data2")));
+        runPromise(() -> eventBus.publish("test.event", new TestEvent("data2 [GH-90000]")));
 
         // THEN: Only first event received
-        assertThat(events).hasSize(1);
-        assertThat(events.get(0).getData()).isEqualTo("data1");
+        assertThat(events).hasSize(1); // GH-90000
+        assertThat(events.get(0).getData()).isEqualTo("data1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle async event processing")
-    void testAsyncEventProcessing() {
+    @DisplayName("Should handle async event processing [GH-90000]")
+    void testAsyncEventProcessing() { // GH-90000
         // GIVEN: Subscriber with async processing
-        List<TestEvent> processedEvents = new CopyOnWriteArrayList<>();
+        List<TestEvent> processedEvents = new CopyOnWriteArrayList<>(); // GH-90000
 
-        eventBus.subscribe("async.event", event -> {
-            return Promise.ofCallback(cb -> {
+        eventBus.subscribe("async.event", event -> { // GH-90000
+            return Promise.ofCallback(cb -> { // GH-90000
                 // Simulate async processing
-                processedEvents.add(event);
-                cb.set(null);
+                processedEvents.add(event); // GH-90000
+                cb.set(null); // GH-90000
             });
         });
 
         // WHEN: Publish event
-        TestEvent event = new TestEvent("async-data");
-        runPromise(() -> eventBus.publish("async.event", event));
+        TestEvent event = new TestEvent("async-data [GH-90000]");
+        runPromise(() -> eventBus.publish("async.event", event)); // GH-90000
 
         // THEN: Event processed asynchronously
-        assertThat(processedEvents).hasSize(1);
-        assertThat(processedEvents.get(0).getData()).isEqualTo("async-data");
+        assertThat(processedEvents).hasSize(1); // GH-90000
+        assertThat(processedEvents.get(0).getData()).isEqualTo("async-data [GH-90000]");
     }
 
     // Test event implementations
@@ -235,11 +235,11 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     private static class TestEvent {
         private final String data;
 
-        TestEvent(String data) {
+        TestEvent(String data) { // GH-90000
             this.data = data;
         }
 
-        String getData() {
+        String getData() { // GH-90000
             return data;
         }
     }
@@ -247,12 +247,12 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     private static class OrderedEvent extends TestEvent {
         private final int sequence;
 
-        OrderedEvent(int sequence) {
-            super("data-" + sequence);
+        OrderedEvent(int sequence) { // GH-90000
+            super("data-" + sequence); // GH-90000
             this.sequence = sequence;
         }
 
-        int getSequence() {
+        int getSequence() { // GH-90000
             return sequence;
         }
     }
@@ -260,65 +260,65 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     private static class CorrelatedEvent extends TestEvent {
         private final String correlationId;
 
-        CorrelatedEvent(String data, String correlationId) {
-            super(data);
+        CorrelatedEvent(String data, String correlationId) { // GH-90000
+            super(data); // GH-90000
             this.correlationId = correlationId;
         }
 
-        String getCorrelationId() {
+        String getCorrelationId() { // GH-90000
             return correlationId;
         }
     }
 
     private interface EventHandler {
-        Promise<Void> handle(TestEvent event);
+        Promise<Void> handle(TestEvent event); // GH-90000
     }
 
     private static class TestEventBus {
-        private final java.util.Map<String, List<SubscriptionEntry>> subscriptions = new java.util.HashMap<>();
-        private final AtomicInteger subscriptionIdCounter = new AtomicInteger(0);
+        private final java.util.Map<String, List<SubscriptionEntry>> subscriptions = new java.util.HashMap<>(); // GH-90000
+        private final AtomicInteger subscriptionIdCounter = new AtomicInteger(0); // GH-90000
 
-        String subscribe(String eventType, EventHandler handler) {
-            String subscriptionId = "sub-" + subscriptionIdCounter.incrementAndGet();
-            subscriptions.computeIfAbsent(eventType, k -> new ArrayList<>())
-                .add(new SubscriptionEntry(subscriptionId, handler));
+        String subscribe(String eventType, EventHandler handler) { // GH-90000
+            String subscriptionId = "sub-" + subscriptionIdCounter.incrementAndGet(); // GH-90000
+            subscriptions.computeIfAbsent(eventType, k -> new ArrayList<>()) // GH-90000
+                .add(new SubscriptionEntry(subscriptionId, handler)); // GH-90000
             return subscriptionId;
         }
 
-        void unsubscribe(String subscriptionId) {
-            subscriptions.values().forEach(list ->
-                list.removeIf(entry -> entry.subscriptionId.equals(subscriptionId))
+        void unsubscribe(String subscriptionId) { // GH-90000
+            subscriptions.values().forEach(list -> // GH-90000
+                list.removeIf(entry -> entry.subscriptionId.equals(subscriptionId)) // GH-90000
             );
         }
 
-        Promise<Void> publish(String eventType, TestEvent event) {
-            List<SubscriptionEntry> handlers = subscriptions.get(eventType);
-            if (handlers == null || handlers.isEmpty()) {
-                return Promise.complete();
+        Promise<Void> publish(String eventType, TestEvent event) { // GH-90000
+            List<SubscriptionEntry> handlers = subscriptions.get(eventType); // GH-90000
+            if (handlers == null || handlers.isEmpty()) { // GH-90000
+                return Promise.complete(); // GH-90000
             }
 
-            List<Promise<Void>> handlerPromises = new ArrayList<>();
-            for (SubscriptionEntry entry : handlers) {
-                Promise<Void> handlerPromise = entry.handler.handle(event)
-                    .then(
-                        result -> Promise.complete(),
+            List<Promise<Void>> handlerPromises = new ArrayList<>(); // GH-90000
+            for (SubscriptionEntry entry : handlers) { // GH-90000
+                Promise<Void> handlerPromise = entry.handler.handle(event) // GH-90000
+                    .then( // GH-90000
+                        result -> Promise.complete(), // GH-90000
                         error -> {
                             // Log error but don't fail other handlers
-                            System.err.println("Handler error: " + error.getMessage());
-                            return Promise.complete();
+                            System.err.println("Handler error: " + error.getMessage()); // GH-90000
+                            return Promise.complete(); // GH-90000
                         }
                     );
-                handlerPromises.add(handlerPromise);
+                handlerPromises.add(handlerPromise); // GH-90000
             }
 
-            return io.activej.promise.Promises.all(handlerPromises);
+            return io.activej.promise.Promises.all(handlerPromises); // GH-90000
         }
 
         private static class SubscriptionEntry {
             final String subscriptionId;
             final EventHandler handler;
 
-            SubscriptionEntry(String subscriptionId, EventHandler handler) {
+            SubscriptionEntry(String subscriptionId, EventHandler handler) { // GH-90000
                 this.subscriptionId = subscriptionId;
                 this.handler = handler;
             }

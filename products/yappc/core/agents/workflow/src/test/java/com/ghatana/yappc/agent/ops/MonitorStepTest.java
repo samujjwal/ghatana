@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Ops MonitorStep Tests")
+@DisplayName("Ops MonitorStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles monitor step test operations
@@ -32,43 +32,43 @@ class MonitorStepTest extends EventloopTestBase {
   private MonitorStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new MonitorStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new MonitorStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("ops.monitor");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("ops.monitor [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should monitor production deployment")
-  void shouldMonitorDeployment() {
+  @DisplayName("Should monitor production deployment [GH-90000]")
+  void shouldMonitorDeployment() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("tenantId", "tenant-abc");
-    context.put("deploymentId", "deploy-001");
-    context.put("canaryId", "canary-001");
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // GH-90000
+    context.put("deploymentId", "deploy-001"); // GH-90000
+    context.put("canaryId", "canary-001"); // GH-90000
 
     Map<String, Object> mockCanary =
-        Map.of(
+        Map.of( // GH-90000
             "canaryId", "canary-001",
             "deploymentId", "deploy-001",
             "environment", "PRODUCTION",
             "status", "SUCCESS");
 
-    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of(mockCanary)));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of(mockCanary))); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
+    assertThat(result).isNotNull(); // GH-90000
   }
 }

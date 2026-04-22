@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.workflow.runtime;
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DurableWorkflowRuntime - Phase 3 Expansion")
+@DisplayName("DurableWorkflowRuntime - Phase 3 Expansion [GH-90000]")
 class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
 
     private InMemoryWorkflowDefinitionRegistry definitionRegistry;
@@ -40,243 +40,243 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
     private DurableWorkflowRuntime runtime;
 
     @Override
-    protected Duration eventloopTimeout() {
-        return Duration.ofSeconds(30);
+    protected Duration eventloopTimeout() { // GH-90000
+        return Duration.ofSeconds(30); // GH-90000
     }
 
     @Override
-    protected boolean breakOnFatalError() {
+    protected boolean breakOnFatalError() { // GH-90000
         return false;
     }
 
     @BeforeEach
-    void setUp() {
-        definitionRegistry = new InMemoryWorkflowDefinitionRegistry();
-        stateStore = new InMemoryWorkflowStateStore();
-        operatorRegistry = new DefaultStepOperatorRegistry();
-        capturedEvents = new CopyOnWriteArrayList<>();
+    void setUp() { // GH-90000
+        definitionRegistry = new InMemoryWorkflowDefinitionRegistry(); // GH-90000
+        stateStore = new InMemoryWorkflowStateStore(); // GH-90000
+        operatorRegistry = new DefaultStepOperatorRegistry(); // GH-90000
+        capturedEvents = new CopyOnWriteArrayList<>(); // GH-90000
 
-        runtime = DurableWorkflowRuntime.builder()
-                .definitionRegistry(definitionRegistry)
-                .stateStore(stateStore)
-                .operatorRegistry(operatorRegistry)
-                .addListener(capturedEvents::add)
-                .defaultMaxRetries(0)
-                .build();
+        runtime = DurableWorkflowRuntime.builder() // GH-90000
+                .definitionRegistry(definitionRegistry) // GH-90000
+                .stateStore(stateStore) // GH-90000
+                .operatorRegistry(operatorRegistry) // GH-90000
+                .addListener(capturedEvents::add) // GH-90000
+                .defaultMaxRetries(0) // GH-90000
+                .build(); // GH-90000
     }
 
     // ============================================
-    // DEFINITION REGISTRY SCALABILITY (2 tests)
+    // DEFINITION REGISTRY SCALABILITY (2 tests) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Definition Registry Scalability")
+    @DisplayName("Definition Registry Scalability [GH-90000]")
     class RegistryScalabilityTests {
 
         @Test
-        @DisplayName("Registers and executes 50 workflow definitions")
-        void manyWorkflowDefinitions() {
+        @DisplayName("Registers and executes 50 workflow definitions [GH-90000]")
+        void manyWorkflowDefinitions() { // GH-90000
             // Register 50 workflow definitions
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 50; i++) { // GH-90000
                 final int index = i;
-                operatorRegistry.register("op-" + i, (ctx, cfg) -> {
-                    ctx.put("result-" + index, "value-" + index);
-                    return Promise.of(ctx);
+                operatorRegistry.register("op-" + i, (ctx, cfg) -> { // GH-90000
+                    ctx.put("result-" + index, "value-" + index); // GH-90000
+                    return Promise.of(ctx); // GH-90000
                 });
 
-                WorkflowDefinition def = WorkflowDefinition.builder("workflow-" + i, "WF-" + i)
-                        .addStep(WorkflowStepDefinition.action("s1", "Step 1", "op-" + i)
-                                .withNextStep(null))
-                        .build();
+                WorkflowDefinition def = WorkflowDefinition.builder("workflow-" + i, "WF-" + i) // GH-90000
+                        .addStep(WorkflowStepDefinition.action("s1", "Step 1", "op-" + i) // GH-90000
+                                .withNextStep(null)) // GH-90000
+                        .build(); // GH-90000
 
-                runPromise(() -> definitionRegistry.register(def));
+                runPromise(() -> definitionRegistry.register(def)); // GH-90000
             }
 
             // Verify a sample are registered
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 10; i++) { // GH-90000
                 final int index = i;
-                Optional<WorkflowDefinition> def = runPromise(() -> definitionRegistry.findLatest("workflow-" + index));
-                assertThat(def).isPresent();
+                Optional<WorkflowDefinition> def = runPromise(() -> definitionRegistry.findLatest("workflow-" + index)); // GH-90000
+                assertThat(def).isPresent(); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("Executes workflows with different registered operators")
-        void multipleOperatorDefinitions() {
-            AtomicInteger op1Runs = new AtomicInteger(0);
-            AtomicInteger op2Runs = new AtomicInteger(0);
-            AtomicInteger op3Runs = new AtomicInteger(0);
+        @DisplayName("Executes workflows with different registered operators [GH-90000]")
+        void multipleOperatorDefinitions() { // GH-90000
+            AtomicInteger op1Runs = new AtomicInteger(0); // GH-90000
+            AtomicInteger op2Runs = new AtomicInteger(0); // GH-90000
+            AtomicInteger op3Runs = new AtomicInteger(0); // GH-90000
 
             // Register multiple operators
-            operatorRegistry.register("validate-op", (ctx, cfg) -> {
-                op1Runs.incrementAndGet();
-                ctx.put("validated", "yes");
-                return Promise.of(ctx);
+            operatorRegistry.register("validate-op", (ctx, cfg) -> { // GH-90000
+                op1Runs.incrementAndGet(); // GH-90000
+                ctx.put("validated", "yes"); // GH-90000
+                return Promise.of(ctx); // GH-90000
             });
 
-            operatorRegistry.register("transform-op", (ctx, cfg) -> {
-                op2Runs.incrementAndGet();
-                ctx.put("transformed", "yes");
-                return Promise.of(ctx);
+            operatorRegistry.register("transform-op", (ctx, cfg) -> { // GH-90000
+                op2Runs.incrementAndGet(); // GH-90000
+                ctx.put("transformed", "yes"); // GH-90000
+                return Promise.of(ctx); // GH-90000
             });
 
-            operatorRegistry.register("save-op", (ctx, cfg) -> {
-                op3Runs.incrementAndGet();
-                ctx.put("saved", "yes");
-                return Promise.of(ctx);
+            operatorRegistry.register("save-op", (ctx, cfg) -> { // GH-90000
+                op3Runs.incrementAndGet(); // GH-90000
+                ctx.put("saved", "yes"); // GH-90000
+                return Promise.of(ctx); // GH-90000
             });
 
-            WorkflowDefinition def = WorkflowDefinition.builder("multi-op-wf", "Multi Op")
-                    .addStep(WorkflowStepDefinition.action("validate", "Validate", "validate-op")
-                            .withNextStep("transform"))
-                    .addStep(WorkflowStepDefinition.action("transform", "Transform", "transform-op")
-                            .withNextStep("save"))
-                    .addStep(WorkflowStepDefinition.action("save", "Save", "save-op")
-                            .withNextStep(null))
-                    .build();
+            WorkflowDefinition def = WorkflowDefinition.builder("multi-op-wf", "Multi Op") // GH-90000
+                    .addStep(WorkflowStepDefinition.action("validate", "Validate", "validate-op") // GH-90000
+                            .withNextStep("transform [GH-90000]"))
+                    .addStep(WorkflowStepDefinition.action("transform", "Transform", "transform-op") // GH-90000
+                            .withNextStep("save [GH-90000]"))
+                    .addStep(WorkflowStepDefinition.action("save", "Save", "save-op") // GH-90000
+                            .withNextStep(null)) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> definitionRegistry.register(def));
+            runPromise(() -> definitionRegistry.register(def)); // GH-90000
 
-            WorkflowRun result = runPromise(() -> runtime.start("multi-op-wf", "tenant-1", "corr-1",
-                    new HashMap<>()));
+            WorkflowRun result = runPromise(() -> runtime.start("multi-op-wf", "tenant-1", "corr-1", // GH-90000
+                    new HashMap<>())); // GH-90000
 
-            assertThat(result).isNotNull();
-            assertThat(op1Runs.get()).isGreaterThanOrEqualTo(0);
-            assertThat(op2Runs.get()).isGreaterThanOrEqualTo(0);
-            assertThat(op3Runs.get()).isGreaterThanOrEqualTo(0);
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(op1Runs.get()).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(op2Runs.get()).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(op3Runs.get()).isGreaterThanOrEqualTo(0); // GH-90000
         }
     }
 
     // ============================================
-    // OPERATOR CHAINING (2 tests)
+    // OPERATOR CHAINING (2 tests) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Operator Chaining")
+    @DisplayName("Operator Chaining [GH-90000]")
     class OperatorChainingTests {
 
         @Test
-        @DisplayName("Chains operators with context propagation")
-        void operatorChaining() {
-            operatorRegistry.register("op-a", (ctx, cfg) -> {
-                ctx.put("op-a-output", "data-from-a");
-                return Promise.of(ctx);
+        @DisplayName("Chains operators with context propagation [GH-90000]")
+        void operatorChaining() { // GH-90000
+            operatorRegistry.register("op-a", (ctx, cfg) -> { // GH-90000
+                ctx.put("op-a-output", "data-from-a"); // GH-90000
+                return Promise.of(ctx); // GH-90000
             });
 
-            operatorRegistry.register("op-b", (ctx, cfg) -> {
-                ctx.put("op-b-output", "data-from-b");
-                return Promise.of(ctx);
+            operatorRegistry.register("op-b", (ctx, cfg) -> { // GH-90000
+                ctx.put("op-b-output", "data-from-b"); // GH-90000
+                return Promise.of(ctx); // GH-90000
             });
 
-            operatorRegistry.register("op-c", (ctx, cfg) -> {
-                ctx.put("op-c-output", "data-from-c");
-                return Promise.of(ctx);
+            operatorRegistry.register("op-c", (ctx, cfg) -> { // GH-90000
+                ctx.put("op-c-output", "data-from-c"); // GH-90000
+                return Promise.of(ctx); // GH-90000
             });
 
-            WorkflowDefinition def = WorkflowDefinition.builder("chain-wf", "Chain")
-                    .addStep(WorkflowStepDefinition.action("a", "A", "op-a").withNextStep("b"))
-                    .addStep(WorkflowStepDefinition.action("b", "B", "op-b").withNextStep("c"))
-                    .addStep(WorkflowStepDefinition.action("c", "C", "op-c").withNextStep(null))
-                    .build();
+            WorkflowDefinition def = WorkflowDefinition.builder("chain-wf", "Chain") // GH-90000
+                    .addStep(WorkflowStepDefinition.action("a", "A", "op-a").withNextStep("b [GH-90000]"))
+                    .addStep(WorkflowStepDefinition.action("b", "B", "op-b").withNextStep("c [GH-90000]"))
+                    .addStep(WorkflowStepDefinition.action("c", "C", "op-c").withNextStep(null)) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> definitionRegistry.register(def));
+            runPromise(() -> definitionRegistry.register(def)); // GH-90000
 
-            WorkflowRun result = runPromise(() -> runtime.start("chain-wf", "tenant-1", "corr-1",
-                    new HashMap<>()));
+            WorkflowRun result = runPromise(() -> runtime.start("chain-wf", "tenant-1", "corr-1", // GH-90000
+                    new HashMap<>())); // GH-90000
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Long operator chains maintain correct execution order")
-        void longOperatorChain() {
-            List<Integer> executionOrder = new CopyOnWriteArrayList<>();
+        @DisplayName("Long operator chains maintain correct execution order [GH-90000]")
+        void longOperatorChain() { // GH-90000
+            List<Integer> executionOrder = new CopyOnWriteArrayList<>(); // GH-90000
 
             // Register 10 operators
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 10; i++) { // GH-90000
                 final int index = i;
-                operatorRegistry.register("op-" + i, (ctx, cfg) -> {
-                    executionOrder.add(index);
-                    return Promise.of(ctx);
+                operatorRegistry.register("op-" + i, (ctx, cfg) -> { // GH-90000
+                    executionOrder.add(index); // GH-90000
+                    return Promise.of(ctx); // GH-90000
                 });
             }
 
-            WorkflowDefinition.Builder builder = WorkflowDefinition.builder("long-chain-wf", "Long Chain");
+            WorkflowDefinition.Builder builder = WorkflowDefinition.builder("long-chain-wf", "Long Chain"); // GH-90000
             String prevStep = null;
 
-            for (int i = 0; i < 10; i++) {
-                String nextStep = (i < 9) ? "step-" + (i + 1) : null;
-                builder.addStep(WorkflowStepDefinition.action("step-" + i, "Step " + i, "op-" + i)
-                        .withNextStep(nextStep));
+            for (int i = 0; i < 10; i++) { // GH-90000
+                String nextStep = (i < 9) ? "step-" + (i + 1) : null; // GH-90000
+                builder.addStep(WorkflowStepDefinition.action("step-" + i, "Step " + i, "op-" + i) // GH-90000
+                        .withNextStep(nextStep)); // GH-90000
             }
 
-            WorkflowDefinition def = builder.build();
-            runPromise(() -> definitionRegistry.register(def));
+            WorkflowDefinition def = builder.build(); // GH-90000
+            runPromise(() -> definitionRegistry.register(def)); // GH-90000
 
-            WorkflowRun result = runPromise(() -> runtime.start("long-chain-wf", "tenant-1", "corr-1",
-                    new HashMap<>()));
+            WorkflowRun result = runPromise(() -> runtime.start("long-chain-wf", "tenant-1", "corr-1", // GH-90000
+                    new HashMap<>())); // GH-90000
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
     }
 
     // ============================================
-    // CONTEXT MANAGEMENT (1 test)
+    // CONTEXT MANAGEMENT (1 test) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Context Management")
+    @DisplayName("Context Management [GH-90000]")
     class ContextManagementTests {
 
         @Test
-        @DisplayName("Maintains context isolation between workflow runs")
-        void contextIsolation() {
-            operatorRegistry.register("context-op", (ctx, cfg) -> {
-                ctx.put("tenant-data", "sensitive-info");
-                return Promise.of(ctx);
+        @DisplayName("Maintains context isolation between workflow runs [GH-90000]")
+        void contextIsolation() { // GH-90000
+            operatorRegistry.register("context-op", (ctx, cfg) -> { // GH-90000
+                ctx.put("tenant-data", "sensitive-info"); // GH-90000
+                return Promise.of(ctx); // GH-90000
             });
 
-            WorkflowDefinition def = WorkflowDefinition.builder("context-wf", "Context")
-                    .addStep(WorkflowStepDefinition.action("ctx", "Context", "context-op")
-                            .withNextStep(null))
-                    .build();
+            WorkflowDefinition def = WorkflowDefinition.builder("context-wf", "Context") // GH-90000
+                    .addStep(WorkflowStepDefinition.action("ctx", "Context", "context-op") // GH-90000
+                            .withNextStep(null)) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> definitionRegistry.register(def));
+            runPromise(() -> definitionRegistry.register(def)); // GH-90000
 
             // Run multiple times - each should have isolated context
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) { // GH-90000
                 final int tenantNum = i;
-                WorkflowRun result = runPromise(() -> runtime.start("context-wf", "tenant-" + tenantNum,
-                        "corr-" + tenantNum, new HashMap<>()));
-                assertThat(result).isNotNull();
+                WorkflowRun result = runPromise(() -> runtime.start("context-wf", "tenant-" + tenantNum, // GH-90000
+                        "corr-" + tenantNum, new HashMap<>())); // GH-90000
+                assertThat(result).isNotNull(); // GH-90000
             }
         }
     }
 
     // ============================================
-    // LIFECYCLE EVENTS (1 test)
+    // LIFECYCLE EVENTS (1 test) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Lifecycle Events")
+    @DisplayName("Lifecycle Events [GH-90000]")
     class LifecycleEventTests {
 
         @Test
-        @DisplayName("Captures and orders lifecycle events for workflow execution")
-        void lifecycleEventCapture() {
-            operatorRegistry.register("simple-op", (ctx, cfg) -> Promise.of(ctx));
+        @DisplayName("Captures and orders lifecycle events for workflow execution [GH-90000]")
+        void lifecycleEventCapture() { // GH-90000
+            operatorRegistry.register("simple-op", (ctx, cfg) -> Promise.of(ctx)); // GH-90000
 
-            WorkflowDefinition def = WorkflowDefinition.builder("event-wf", "Events")
-                    .addStep(WorkflowStepDefinition.action("s1", "Step", "simple-op").withNextStep(null))
-                    .build();
+            WorkflowDefinition def = WorkflowDefinition.builder("event-wf", "Events") // GH-90000
+                    .addStep(WorkflowStepDefinition.action("s1", "Step", "simple-op").withNextStep(null)) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> definitionRegistry.register(def));
+            runPromise(() -> definitionRegistry.register(def)); // GH-90000
 
-            WorkflowRun result = runPromise(() -> runtime.start("event-wf", "tenant-1", "corr-1",
-                    new HashMap<>()));
+            WorkflowRun result = runPromise(() -> runtime.start("event-wf", "tenant-1", "corr-1", // GH-90000
+                    new HashMap<>())); // GH-90000
 
             // Events should have been captured
-            assertThat(capturedEvents).isNotEmpty();
+            assertThat(capturedEvents).isNotEmpty(); // GH-90000
         }
     }
 }

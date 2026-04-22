@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PluginInstallHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("PluginInstallHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class PluginInstallHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -49,45 +49,45 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     private PluginInstallHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new PluginInstallHandler(http, pluginRegistry, runtimePluginManager, metrics);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new PluginInstallHandler(http, pluginRegistry, runtimePluginManager, metrics); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("list rejects missing tenant before plugin registry access")
-    void listRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("list rejects missing tenant before plugin registry access [GH-90000]")
+    void listRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleListPlugins(request));
+        HttpResponse response = runPromise(() -> handler.handleListPlugins(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(pluginRegistry, never()).getAllPlugins();
-        verify(runtimePluginManager, never()).getAllPlugins();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(pluginRegistry, never()).getAllPlugins(); // GH-90000
+        verify(runtimePluginManager, never()).getAllPlugins(); // GH-90000
     }
 
     @Test
-    @DisplayName("get rejects missing tenant before plugin lookup")
-    void getRejectsMissingTenant() {
-        when(request.getPathParameter("id")).thenReturn("plugin-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("get rejects missing tenant before plugin lookup [GH-90000]")
+    void getRejectsMissingTenant() { // GH-90000
+        when(request.getPathParameter("id [GH-90000]")).thenReturn("plugin-1 [GH-90000]");
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleGetPlugin(request));
+        HttpResponse response = runPromise(() -> handler.handleGetPlugin(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(pluginRegistry, never()).getPlugin("plugin-1");
-        verify(runtimePluginManager, never()).getPlugin("plugin-1");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(pluginRegistry, never()).getPlugin("plugin-1 [GH-90000]");
+        verify(runtimePluginManager, never()).getPlugin("plugin-1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("upgrade rejects missing tenant before reading body")
-    void upgradeRejectsMissingTenant() {
-        when(request.getPathParameter("id")).thenReturn("plugin-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("upgrade rejects missing tenant before reading body [GH-90000]")
+    void upgradeRejectsMissingTenant() { // GH-90000
+        when(request.getPathParameter("id [GH-90000]")).thenReturn("plugin-1 [GH-90000]");
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleUpgradePlugin(request));
+        HttpResponse response = runPromise(() -> handler.handleUpgradePlugin(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 }

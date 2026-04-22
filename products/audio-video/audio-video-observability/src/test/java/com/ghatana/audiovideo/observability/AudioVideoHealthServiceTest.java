@@ -23,12 +23,12 @@ import static org.mockito.Mockito.verify;
 
 /**
  * @doc.type class
- * @doc.purpose Unit tests for AudioVideoHealthService gRPC health checking (AV-P1-06)
+ * @doc.purpose Unit tests for AudioVideoHealthService gRPC health checking (AV-P1-06) // GH-90000
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AudioVideoHealthService Tests (AV-P1-06)")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("AudioVideoHealthService Tests (AV-P1-06) [GH-90000]")
 class AudioVideoHealthServiceTest {
 
     @Mock
@@ -37,118 +37,118 @@ class AudioVideoHealthServiceTest {
     private AudioVideoHealthService healthService;
 
     @BeforeEach
-    void setUp() {
-        healthService = new AudioVideoHealthService("stt-service", metricsCollector);
-        lenient().doNothing().when(metricsCollector).incrementCounter(anyString(), any(String[].class));
+    void setUp() { // GH-90000
+        healthService = new AudioVideoHealthService("stt-service", metricsCollector); // GH-90000
+        lenient().doNothing().when(metricsCollector).incrementCounter(anyString(), any(String[].class)); // GH-90000
     }
 
     @Test
-    @DisplayName("Returns SERVING when no checks registered")
-    void shouldReturnServingWithNoChecks() {
-        CapturingObserver observer = new CapturingObserver();
+    @DisplayName("Returns SERVING when no checks registered [GH-90000]")
+    void shouldReturnServingWithNoChecks() { // GH-90000
+        CapturingObserver observer = new CapturingObserver(); // GH-90000
 
-        healthService.check(HealthCheckRequest.newBuilder().build(), observer);
+        healthService.check(HealthCheckRequest.newBuilder().build(), observer); // GH-90000
 
-        assertThat(observer.responses).hasSize(1);
-        assertThat(observer.responses.get(0).getStatus())
-                .isEqualTo(HealthCheckResponse.ServingStatus.SERVING);
+        assertThat(observer.responses).hasSize(1); // GH-90000
+        assertThat(observer.responses.get(0).getStatus()) // GH-90000
+                .isEqualTo(HealthCheckResponse.ServingStatus.SERVING); // GH-90000
     }
 
     @Test
-    @DisplayName("Returns SERVING when all checks pass")
-    void shouldReturnServingWhenAllChecksPass() {
-        healthService.registerCheck("channel", () -> true);
-        healthService.registerCheck("model-loaded", () -> true);
+    @DisplayName("Returns SERVING when all checks pass [GH-90000]")
+    void shouldReturnServingWhenAllChecksPass() { // GH-90000
+        healthService.registerCheck("channel", () -> true); // GH-90000
+        healthService.registerCheck("model-loaded", () -> true); // GH-90000
 
-        CapturingObserver observer = new CapturingObserver();
-        healthService.check(HealthCheckRequest.newBuilder().build(), observer);
+        CapturingObserver observer = new CapturingObserver(); // GH-90000
+        healthService.check(HealthCheckRequest.newBuilder().build(), observer); // GH-90000
 
-        assertThat(observer.responses.get(0).getStatus())
-                .isEqualTo(HealthCheckResponse.ServingStatus.SERVING);
+        assertThat(observer.responses.get(0).getStatus()) // GH-90000
+                .isEqualTo(HealthCheckResponse.ServingStatus.SERVING); // GH-90000
     }
 
     @Test
-    @DisplayName("Returns NOT_SERVING when any check fails")
-    void shouldReturnNotServingWhenAnyCheckFails() {
-        healthService.registerCheck("channel", () -> true);
-        healthService.registerCheck("model-loaded", () -> false); // failing
+    @DisplayName("Returns NOT_SERVING when any check fails [GH-90000]")
+    void shouldReturnNotServingWhenAnyCheckFails() { // GH-90000
+        healthService.registerCheck("channel", () -> true); // GH-90000
+        healthService.registerCheck("model-loaded", () -> false); // failing // GH-90000
 
-        CapturingObserver observer = new CapturingObserver();
-        healthService.check(HealthCheckRequest.newBuilder().build(), observer);
+        CapturingObserver observer = new CapturingObserver(); // GH-90000
+        healthService.check(HealthCheckRequest.newBuilder().build(), observer); // GH-90000
 
-        assertThat(observer.responses.get(0).getStatus())
-                .isEqualTo(HealthCheckResponse.ServingStatus.NOT_SERVING);
+        assertThat(observer.responses.get(0).getStatus()) // GH-90000
+                .isEqualTo(HealthCheckResponse.ServingStatus.NOT_SERVING); // GH-90000
     }
 
     @Test
-    @DisplayName("Returns NOT_SERVING when check throws exception")
-    void shouldReturnNotServingWhenCheckThrows() {
-        healthService.registerCheck("crashing-check", () -> {
-            throw new RuntimeException("dependency unavailable");
+    @DisplayName("Returns NOT_SERVING when check throws exception [GH-90000]")
+    void shouldReturnNotServingWhenCheckThrows() { // GH-90000
+        healthService.registerCheck("crashing-check", () -> { // GH-90000
+            throw new RuntimeException("dependency unavailable [GH-90000]");
         });
 
-        CapturingObserver observer = new CapturingObserver();
-        healthService.check(HealthCheckRequest.newBuilder().build(), observer);
+        CapturingObserver observer = new CapturingObserver(); // GH-90000
+        healthService.check(HealthCheckRequest.newBuilder().build(), observer); // GH-90000
 
-        assertThat(observer.responses.get(0).getStatus())
-                .isEqualTo(HealthCheckResponse.ServingStatus.NOT_SERVING);
+        assertThat(observer.responses.get(0).getStatus()) // GH-90000
+                .isEqualTo(HealthCheckResponse.ServingStatus.NOT_SERVING); // GH-90000
     }
 
     @Test
-    @DisplayName("Returns NOT_SERVING after setNotServing() is called")
-    void shouldReturnNotServingAfterShutdown() {
-        healthService.registerCheck("all-good", () -> true);
+    @DisplayName("Returns NOT_SERVING after setNotServing() is called [GH-90000]")
+    void shouldReturnNotServingAfterShutdown() { // GH-90000
+        healthService.registerCheck("all-good", () -> true); // GH-90000
 
-        healthService.setNotServing();
+        healthService.setNotServing(); // GH-90000
 
-        CapturingObserver observer = new CapturingObserver();
-        healthService.check(HealthCheckRequest.newBuilder().build(), observer);
+        CapturingObserver observer = new CapturingObserver(); // GH-90000
+        healthService.check(HealthCheckRequest.newBuilder().build(), observer); // GH-90000
 
-        assertThat(observer.responses.get(0).getStatus())
-                .isEqualTo(HealthCheckResponse.ServingStatus.NOT_SERVING);
+        assertThat(observer.responses.get(0).getStatus()) // GH-90000
+                .isEqualTo(HealthCheckResponse.ServingStatus.NOT_SERVING); // GH-90000
     }
 
     @Test
-    @DisplayName("Emits metric counter on every Check call")
-    void shouldEmitMetricOnEveryCheck() {
-        CapturingObserver observer = new CapturingObserver();
-        healthService.check(HealthCheckRequest.newBuilder().build(), observer);
+    @DisplayName("Emits metric counter on every Check call [GH-90000]")
+    void shouldEmitMetricOnEveryCheck() { // GH-90000
+        CapturingObserver observer = new CapturingObserver(); // GH-90000
+        healthService.check(HealthCheckRequest.newBuilder().build(), observer); // GH-90000
 
-        verify(metricsCollector).incrementCounter(
+        verify(metricsCollector).incrementCounter( // GH-90000
                 "av.health.check", "service", "stt-service", "status", "serving");
     }
 
     @Test
-    @DisplayName("getCheckResults returns correct status map")
-    void shouldReturnCorrectCheckResults() {
-        healthService.registerCheck("ok-check", () -> true);
-        healthService.registerCheck("fail-check", () -> false);
+    @DisplayName("getCheckResults returns correct status map [GH-90000]")
+    void shouldReturnCorrectCheckResults() { // GH-90000
+        healthService.registerCheck("ok-check", () -> true); // GH-90000
+        healthService.registerCheck("fail-check", () -> false); // GH-90000
 
-        Map<String, Boolean> results = healthService.getCheckResults();
+        Map<String, Boolean> results = healthService.getCheckResults(); // GH-90000
 
-        assertThat(results).containsEntry("ok-check", true);
-        assertThat(results).containsEntry("fail-check", false);
+        assertThat(results).containsEntry("ok-check", true); // GH-90000
+        assertThat(results).containsEntry("fail-check", false); // GH-90000
     }
 
     // ── helpers ────────────────────────────────────────────────────────────
 
     private static class CapturingObserver implements StreamObserver<HealthCheckResponse> {
-        final List<HealthCheckResponse> responses = new ArrayList<>();
+        final List<HealthCheckResponse> responses = new ArrayList<>(); // GH-90000
         Throwable error;
         boolean completed;
 
         @Override
-        public void onNext(HealthCheckResponse value) {
-            responses.add(value);
+        public void onNext(HealthCheckResponse value) { // GH-90000
+            responses.add(value); // GH-90000
         }
 
         @Override
-        public void onError(Throwable t) {
+        public void onError(Throwable t) { // GH-90000
             error = t;
         }
 
         @Override
-        public void onCompleted() {
+        public void onCompleted() { // GH-90000
             completed = true;
         }
     }

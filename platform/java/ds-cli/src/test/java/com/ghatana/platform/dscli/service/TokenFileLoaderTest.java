@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors
+ * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -35,15 +35,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Token File Loader Tests")
+@DisplayName("Token File Loader Tests [GH-90000]")
 class TokenFileLoaderTest {
 
-    private final TokenFileLoader loader = new TokenFileLoader();
+    private final TokenFileLoader loader = new TokenFileLoader(); // GH-90000
 
     @Test
-    @DisplayName("should load JSON token file")
-    void shouldLoadJsonTokenFile(@TempDir Path tempDir) throws IOException {
-        Path jsonFile = tempDir.resolve("tokens.json");
+    @DisplayName("should load JSON token file [GH-90000]")
+    void shouldLoadJsonTokenFile(@TempDir Path tempDir) throws IOException { // GH-90000
+        Path jsonFile = tempDir.resolve("tokens.json [GH-90000]");
         String content = """
             {
               "$schema": "https://example.com/schema.json",
@@ -55,19 +55,19 @@ class TokenFileLoaderTest {
               }
             }
             """;
-        Files.writeString(jsonFile, content);
+        Files.writeString(jsonFile, content); // GH-90000
 
-        TokenFile tokenFile = loader.load(jsonFile);
+        TokenFile tokenFile = loader.load(jsonFile); // GH-90000
 
-        assertThat(tokenFile.getSchema()).isEqualTo("https://example.com/schema.json");
-        assertThat(tokenFile.getVersion()).isEqualTo("1.0.0");
-        assertThat(tokenFile.getTokens()).containsKey("color");
+        assertThat(tokenFile.getSchema()).isEqualTo("https://example.com/schema.json [GH-90000]");
+        assertThat(tokenFile.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(tokenFile.getTokens()).containsKey("color [GH-90000]");
     }
 
     @Test
-    @DisplayName("should load YAML token file")
-    void shouldLoadYamlTokenFile(@TempDir Path tempDir) throws IOException {
-        Path yamlFile = tempDir.resolve("tokens.yaml");
+    @DisplayName("should load YAML token file [GH-90000]")
+    void shouldLoadYamlTokenFile(@TempDir Path tempDir) throws IOException { // GH-90000
+        Path yamlFile = tempDir.resolve("tokens.yaml [GH-90000]");
         String content = """
             $schema: https://example.com/schema.yaml
             $version: "1.0.0"
@@ -75,34 +75,34 @@ class TokenFileLoaderTest {
               primary:
                 $value: "#000000"
             """;
-        Files.writeString(yamlFile, content);
+        Files.writeString(yamlFile, content); // GH-90000
 
-        TokenFile tokenFile = loader.load(yamlFile);
+        TokenFile tokenFile = loader.load(yamlFile); // GH-90000
 
-        assertThat(tokenFile.getSchema()).isEqualTo("https://example.com/schema.yaml");
-        assertThat(tokenFile.getVersion()).isEqualTo("1.0.0");
-        assertThat(tokenFile.getTokens()).containsKey("color");
+        assertThat(tokenFile.getSchema()).isEqualTo("https://example.com/schema.yaml [GH-90000]");
+        assertThat(tokenFile.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(tokenFile.getTokens()).containsKey("color [GH-90000]");
     }
 
     @Test
-    @DisplayName("should load directory with multiple token files")
-    void shouldLoadDirectoryWithMultipleFiles(@TempDir Path tempDir) throws IOException {
-        Path jsonFile = tempDir.resolve("tokens.json");
-        Path yamlFile = tempDir.resolve("colors.yaml");
+    @DisplayName("should load directory with multiple token files [GH-90000]")
+    void shouldLoadDirectoryWithMultipleFiles(@TempDir Path tempDir) throws IOException { // GH-90000
+        Path jsonFile = tempDir.resolve("tokens.json [GH-90000]");
+        Path yamlFile = tempDir.resolve("colors.yaml [GH-90000]");
         
-        Files.writeString(jsonFile, "{\"color\": {\"primary\": {\"$value\": \"#000000\"}}}");
-        Files.writeString(yamlFile, "color:\n  secondary:\n    $value: \"#ffffff\"");
+        Files.writeString(jsonFile, "{\"color\": {\"primary\": {\"$value\": \"#000000\"}}}"); // GH-90000
+        Files.writeString(yamlFile, "color:\n  secondary:\n    $value: \"#ffffff\""); // GH-90000
 
-        List<TokenFileLoader.LoadedTokenFile> files = loader.loadDirectory(tempDir);
+        List<TokenFileLoader.LoadedTokenFile> files = loader.loadDirectory(tempDir); // GH-90000
 
-        assertThat(files).hasSize(2);
+        assertThat(files).hasSize(2); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle empty directory")
-    void shouldHandleEmptyDirectory(@TempDir Path tempDir) throws IOException {
-        List<TokenFileLoader.LoadedTokenFile> files = loader.loadDirectory(tempDir);
+    @DisplayName("should handle empty directory [GH-90000]")
+    void shouldHandleEmptyDirectory(@TempDir Path tempDir) throws IOException { // GH-90000
+        List<TokenFileLoader.LoadedTokenFile> files = loader.loadDirectory(tempDir); // GH-90000
 
-        assertThat(files).isEmpty();
+        assertThat(files).isEmpty(); // GH-90000
     }
 }

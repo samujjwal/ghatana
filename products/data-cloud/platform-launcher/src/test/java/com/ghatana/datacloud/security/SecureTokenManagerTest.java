@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  *
  * Phase 1 — Security Hardening: Comprehensive token lifecycle tests for SecureTokenManager.
  * Covers token generation, validation, rotation, revocation, session management, and metrics.
@@ -26,19 +26,19 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer security
  * @doc.pattern UnitTest
  */
-@DisplayName("SecureTokenManager")
+@DisplayName("SecureTokenManager [GH-90000]")
 class SecureTokenManagerTest {
 
     private SecureTokenManager manager;
 
     @BeforeEach
-    void setUp() {
-        manager = new SecureTokenManager();
+    void setUp() { // GH-90000
+        manager = new SecureTokenManager(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        manager.shutdown();
+    void tearDown() { // GH-90000
+        manager.shutdown(); // GH-90000
     }
 
     // =========================================================================
@@ -46,114 +46,114 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Token Generation")
+    @DisplayName("Token Generation [GH-90000]")
     class TokenGeneration {
 
         @Test
-        @DisplayName("generates a non-null token with well-formed result")
-        void generatesNonNullToken() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("generates a non-null token with well-formed result [GH-90000]")
+        void generatesNonNullToken() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(result).isNotNull();
-            assertThat(result.getToken()).isNotNull().isNotBlank();
-            assertThat(result.getTokenId()).isNotNull().isNotBlank();
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.getToken()).isNotNull().isNotBlank(); // GH-90000
+            assertThat(result.getTokenId()).isNotNull().isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("generated token contains two base64url parts separated by a dot")
-        void tokenHasCorrectStructure() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("generated token contains two base64url parts separated by a dot [GH-90000]")
+        void tokenHasCorrectStructure() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            String[] parts = result.getToken().split("\\.");
-            assertThat(parts).hasSizeGreaterThanOrEqualTo(2);
+            String[] parts = result.getToken().split("\\. [GH-90000]");
+            assertThat(parts).hasSizeGreaterThanOrEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("each call generates a unique tokenId")
-        void eachCallProducesUniqueTokenId() {
-            SecureTokenManager.TokenResult first = manager.generateToken("user-1", "tenant-1", Map.of());
-            SecureTokenManager.TokenResult second = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("each call generates a unique tokenId [GH-90000]")
+        void eachCallProducesUniqueTokenId() { // GH-90000
+            SecureTokenManager.TokenResult first = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            SecureTokenManager.TokenResult second = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(first.getTokenId()).isNotEqualTo(second.getTokenId());
+            assertThat(first.getTokenId()).isNotEqualTo(second.getTokenId()); // GH-90000
         }
 
         @Test
-        @DisplayName("expiration is approximately one hour from now")
-        void expirationIsOneHourFromNow() {
-            Instant before = Instant.now();
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
-            Instant after = Instant.now();
+        @DisplayName("expiration is approximately one hour from now [GH-90000]")
+        void expirationIsOneHourFromNow() { // GH-90000
+            Instant before = Instant.now(); // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            Instant after = Instant.now(); // GH-90000
 
-            assertThat(result.getExpiration())
-                .isAfterOrEqualTo(before.plus(Duration.ofHours(1)).minusSeconds(1))
-                .isBeforeOrEqualTo(after.plus(Duration.ofHours(1)).plusSeconds(1));
+            assertThat(result.getExpiration()) // GH-90000
+                .isAfterOrEqualTo(before.plus(Duration.ofHours(1)).minusSeconds(1)) // GH-90000
+                .isBeforeOrEqualTo(after.plus(Duration.ofHours(1)).plusSeconds(1)); // GH-90000
         }
 
         @Test
-        @DisplayName("lifetime reported as one hour")
-        void lifetimeIsOneHour() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("lifetime reported as one hour [GH-90000]")
+        void lifetimeIsOneHour() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(result.getLifetime()).isEqualTo(Duration.ofHours(1));
+            assertThat(result.getLifetime()).isEqualTo(Duration.ofHours(1)); // GH-90000
         }
 
         @Test
-        @DisplayName("session binding is exposed in the result")
-        void sessionBindingIsExposed() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("session binding is exposed in the result [GH-90000]")
+        void sessionBindingIsExposed() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(result.getSessionBinding()).isNotNull().isNotBlank();
+            assertThat(result.getSessionBinding()).isNotNull().isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("session binding is unique per generated token")
-        void sessionBindingIsUniquePerToken() {
-            SecureTokenManager.TokenResult r1 = manager.generateToken("user-1", "tenant-1", Map.of());
-            SecureTokenManager.TokenResult r2 = manager.generateToken("user-2", "tenant-1", Map.of());
+        @DisplayName("session binding is unique per generated token [GH-90000]")
+        void sessionBindingIsUniquePerToken() { // GH-90000
+            SecureTokenManager.TokenResult r1 = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            SecureTokenManager.TokenResult r2 = manager.generateToken("user-2", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(r1.getSessionBinding()).isNotEqualTo(r2.getSessionBinding());
+            assertThat(r1.getSessionBinding()).isNotEqualTo(r2.getSessionBinding()); // GH-90000
         }
 
         @Test
-        @DisplayName("tokensIssued metric increments on each successful generation")
-        void tokensIssuedIncrements() {
-            manager.generateToken("user-1", "tenant-1", Map.of());
-            manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("tokensIssued metric increments on each successful generation [GH-90000]")
+        void tokensIssuedIncrements() { // GH-90000
+            manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getTokensIssued()).isEqualTo(2);
+            assertThat(manager.getSecurityMetrics().getTokensIssued()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("activeTokens metric reflects live token count")
-        void activeTokensReflectsCount() {
-            manager.generateToken("user-1", "tenant-1", Map.of());
-            manager.generateToken("user-2", "tenant-1", Map.of());
+        @DisplayName("activeTokens metric reflects live token count [GH-90000]")
+        void activeTokensReflectsCount() { // GH-90000
+            manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            manager.generateToken("user-2", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(2);
+            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("throws SecurityException when session limit of 5 is exceeded")
-        void throwsOnExceededSessionLimit() {
-            for (int i = 0; i < 5; i++) {
-                manager.generateToken("user-limited", "tenant-1", Map.of());
+        @DisplayName("throws SecurityException when session limit of 5 is exceeded [GH-90000]")
+        void throwsOnExceededSessionLimit() { // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
+                manager.generateToken("user-limited", "tenant-1", Map.of()); // GH-90000
             }
 
-            assertThatThrownBy(() -> manager.generateToken("user-limited", "tenant-1", Map.of()))
-                .isInstanceOf(SecurityException.class)
-                .hasMessageContaining("concurrent sessions");
+            assertThatThrownBy(() -> manager.generateToken("user-limited", "tenant-1", Map.of())) // GH-90000
+                .isInstanceOf(SecurityException.class) // GH-90000
+                .hasMessageContaining("concurrent sessions [GH-90000]");
         }
 
         @Test
-        @DisplayName("different users are tracked independently for session limits")
-        void differentUsersHaveIndependentSessionLimits() {
-            for (int i = 0; i < 5; i++) {
-                manager.generateToken("user-a", "tenant-1", Map.of());
+        @DisplayName("different users are tracked independently for session limits [GH-90000]")
+        void differentUsersHaveIndependentSessionLimits() { // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
+                manager.generateToken("user-a", "tenant-1", Map.of()); // GH-90000
             }
 
             // user-b is unaffected by user-a's session count
-            assertThatCode(() -> manager.generateToken("user-b", "tenant-1", Map.of()))
-                .doesNotThrowAnyException();
+            assertThatCode(() -> manager.generateToken("user-b", "tenant-1", Map.of())) // GH-90000
+                .doesNotThrowAnyException(); // GH-90000
         }
     }
 
@@ -162,65 +162,65 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Token Validation")
+    @DisplayName("Token Validation [GH-90000]")
     class TokenValidation {
 
         @Test
-        @DisplayName("valid token with correct session binding validates successfully")
-        void validTokenValidatesSuccessfully() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("valid token with correct session binding validates successfully [GH-90000]")
+        void validTokenValidatesSuccessfully() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
             Optional<SecureTokenManager.TokenMetadata> opt =
-                manager.validateToken(result.getToken(), result.getSessionBinding());
+                manager.validateToken(result.getToken(), result.getSessionBinding()); // GH-90000
 
-            assertThat(opt).isPresent();
+            assertThat(opt).isPresent(); // GH-90000
         }
 
         @Test
-        @DisplayName("validated metadata reflects the original user and tenant")
-        void validatedMetadataReflectsUserAndTenant() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-42", "tenant-99", Map.of("role", "admin"));
+        @DisplayName("validated metadata reflects the original user and tenant [GH-90000]")
+        void validatedMetadataReflectsUserAndTenant() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-42", "tenant-99", Map.of("role", "admin")); // GH-90000
 
             SecureTokenManager.TokenMetadata meta =
-                manager.validateToken(result.getToken(), result.getSessionBinding()).orElseThrow();
+                manager.validateToken(result.getToken(), result.getSessionBinding()).orElseThrow(); // GH-90000
 
-            assertThat(meta.getUserId()).isEqualTo("user-42");
-            assertThat(meta.getTenantId()).isEqualTo("tenant-99");
+            assertThat(meta.getUserId()).isEqualTo("user-42 [GH-90000]");
+            assertThat(meta.getTenantId()).isEqualTo("tenant-99 [GH-90000]");
         }
 
         @Test
-        @DisplayName("wrong session binding returns empty")
-        void wrongSessionBindingReturnsEmpty() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("wrong session binding returns empty [GH-90000]")
+        void wrongSessionBindingReturnsEmpty() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
             Optional<SecureTokenManager.TokenMetadata> opt =
-                manager.validateToken(result.getToken(), "wrong-binding");
+                manager.validateToken(result.getToken(), "wrong-binding"); // GH-90000
 
-            assertThat(opt).isEmpty();
+            assertThat(opt).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("malformed token string returns empty")
-        void malformedTokenReturnsEmpty() {
-            assertThat(manager.validateToken("not-a-valid-token", "any")).isEmpty();
+        @DisplayName("malformed token string returns empty [GH-90000]")
+        void malformedTokenReturnsEmpty() { // GH-90000
+            assertThat(manager.validateToken("not-a-valid-token", "any")).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("empty token string returns empty")
-        void emptyTokenReturnsEmpty() {
-            assertThat(manager.validateToken("", "any")).isEmpty();
+        @DisplayName("empty token string returns empty [GH-90000]")
+        void emptyTokenReturnsEmpty() { // GH-90000
+            assertThat(manager.validateToken("", "any")).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("revoked token returns empty even with correct session binding")
-        void revokedTokenReturnsEmpty() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
-            manager.revokeToken(result.getTokenId(), "test revocation");
+        @DisplayName("revoked token returns empty even with correct session binding [GH-90000]")
+        void revokedTokenReturnsEmpty() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            manager.revokeToken(result.getTokenId(), "test revocation"); // GH-90000
 
             Optional<SecureTokenManager.TokenMetadata> opt =
-                manager.validateToken(result.getToken(), result.getSessionBinding());
+                manager.validateToken(result.getToken(), result.getSessionBinding()); // GH-90000
 
-            assertThat(opt).isEmpty();
+            assertThat(opt).isEmpty(); // GH-90000
         }
     }
 
@@ -229,62 +229,62 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Token Rotation")
+    @DisplayName("Token Rotation [GH-90000]")
     class TokenRotation {
 
         @Test
-        @DisplayName("successful rotation returns a new token")
-        void rotationReturnsNewToken() {
-            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("successful rotation returns a new token [GH-90000]")
+        void rotationReturnsNewToken() { // GH-90000
+            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
             SecureTokenManager.TokenResult rotated =
-                manager.rotateToken(original.getToken(), original.getSessionBinding());
+                manager.rotateToken(original.getToken(), original.getSessionBinding()); // GH-90000
 
-            assertThat(rotated).isNotNull();
-            assertThat(rotated.getTokenId()).isNotEqualTo(original.getTokenId());
+            assertThat(rotated).isNotNull(); // GH-90000
+            assertThat(rotated.getTokenId()).isNotEqualTo(original.getTokenId()); // GH-90000
         }
 
         @Test
-        @DisplayName("rotation increments tokensRotated metric")
-        void rotationIncrementsMetric() {
-            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of());
-            manager.rotateToken(original.getToken(), original.getSessionBinding());
+        @DisplayName("rotation increments tokensRotated metric [GH-90000]")
+        void rotationIncrementsMetric() { // GH-90000
+            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            manager.rotateToken(original.getToken(), original.getSessionBinding()); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getTokensRotated()).isEqualTo(1);
+            assertThat(manager.getSecurityMetrics().getTokensRotated()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("rotation issues a new token with fresh expiration")
-        void rotationIssuesFreshExpiration() {
-            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of());
-            Instant beforeRotation = Instant.now();
+        @DisplayName("rotation issues a new token with fresh expiration [GH-90000]")
+        void rotationIssuesFreshExpiration() { // GH-90000
+            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            Instant beforeRotation = Instant.now(); // GH-90000
 
             SecureTokenManager.TokenResult rotated =
-                manager.rotateToken(original.getToken(), original.getSessionBinding());
+                manager.rotateToken(original.getToken(), original.getSessionBinding()); // GH-90000
 
-            assertThat(rotated.getExpiration()).isAfter(beforeRotation.plus(Duration.ofMinutes(59)));
+            assertThat(rotated.getExpiration()).isAfter(beforeRotation.plus(Duration.ofMinutes(59))); // GH-90000
         }
 
         @Test
-        @DisplayName("rotation of invalid token throws SecurityException and increments failure metric")
-        void rotationOfInvalidTokenThrowsAndIncrementFailures() {
-            assertThatThrownBy(() -> manager.rotateToken("invalid.token", "any-binding"))
-                .isInstanceOf(SecurityException.class);
+        @DisplayName("rotation of invalid token throws SecurityException and increments failure metric [GH-90000]")
+        void rotationOfInvalidTokenThrowsAndIncrementFailures() { // GH-90000
+            assertThatThrownBy(() -> manager.rotateToken("invalid.token", "any-binding")) // GH-90000
+                .isInstanceOf(SecurityException.class); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getRotationFailures()).isEqualTo(1);
+            assertThat(manager.getSecurityMetrics().getRotationFailures()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("rotated token is validated by new session binding")
-        void rotatedTokenValidatedByNewBinding() {
-            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("rotated token is validated by new session binding [GH-90000]")
+        void rotatedTokenValidatedByNewBinding() { // GH-90000
+            SecureTokenManager.TokenResult original = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
             SecureTokenManager.TokenResult rotated =
-                manager.rotateToken(original.getToken(), original.getSessionBinding());
+                manager.rotateToken(original.getToken(), original.getSessionBinding()); // GH-90000
 
             Optional<SecureTokenManager.TokenMetadata> opt =
-                manager.validateToken(rotated.getToken(), rotated.getSessionBinding());
+                manager.validateToken(rotated.getToken(), rotated.getSessionBinding()); // GH-90000
 
-            assertThat(opt).isPresent();
+            assertThat(opt).isPresent(); // GH-90000
         }
     }
 
@@ -293,95 +293,95 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Token Revocation")
+    @DisplayName("Token Revocation [GH-90000]")
     class TokenRevocation {
 
         @Test
-        @DisplayName("revokeToken removes token from active set")
-        void revokeRemovesFromActive() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
-            long activeBefore = manager.getSecurityMetrics().getActiveTokens();
+        @DisplayName("revokeToken removes token from active set [GH-90000]")
+        void revokeRemovesFromActive() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            long activeBefore = manager.getSecurityMetrics().getActiveTokens(); // GH-90000
 
-            manager.revokeToken(result.getTokenId(), "test");
+            manager.revokeToken(result.getTokenId(), "test"); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(activeBefore - 1);
+            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(activeBefore - 1); // GH-90000
         }
 
         @Test
-        @DisplayName("revokeToken increments tokensRevoked metric")
-        void revokeIncrementsMetric() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
-            manager.revokeToken(result.getTokenId(), "test");
+        @DisplayName("revokeToken increments tokensRevoked metric [GH-90000]")
+        void revokeIncrementsMetric() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            manager.revokeToken(result.getTokenId(), "test"); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getTokensRevoked()).isEqualTo(1);
+            assertThat(manager.getSecurityMetrics().getTokensRevoked()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("revokeToken removes the user session")
-        void revokeRemovesUserSession() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
-            manager.revokeToken(result.getTokenId(), "test");
+        @DisplayName("revokeToken removes the user session [GH-90000]")
+        void revokeRemovesUserSession() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            manager.revokeToken(result.getTokenId(), "test"); // GH-90000
 
-            assertThat(manager.getUserActiveSessions("user-1")).doesNotContain(result.getTokenId());
+            assertThat(manager.getUserActiveSessions("user-1 [GH-90000]")).doesNotContain(result.getTokenId());
         }
 
         @Test
-        @DisplayName("revoking non-existent tokenId is safe (no exception)")
-        void revokeNonExistentIsSafe() {
-            assertThatCode(() -> manager.revokeToken("non-existent-id", "test"))
-                .doesNotThrowAnyException();
+        @DisplayName("revoking non-existent tokenId is safe (no exception) [GH-90000]")
+        void revokeNonExistentIsSafe() { // GH-90000
+            assertThatCode(() -> manager.revokeToken("non-existent-id", "test")) // GH-90000
+                .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("revokeAllUserTokens revokes all tokens for that user")
-        void revokeAllUserTokensRevokesAll() {
-            manager.generateToken("user-bulk", "tenant-1", Map.of());
-            manager.generateToken("user-bulk", "tenant-1", Map.of());
+        @DisplayName("revokeAllUserTokens revokes all tokens for that user [GH-90000]")
+        void revokeAllUserTokensRevokesAll() { // GH-90000
+            manager.generateToken("user-bulk", "tenant-1", Map.of()); // GH-90000
+            manager.generateToken("user-bulk", "tenant-1", Map.of()); // GH-90000
 
-            manager.revokeAllUserTokens("user-bulk", "bulk revocation");
+            manager.revokeAllUserTokens("user-bulk", "bulk revocation"); // GH-90000
 
-            assertThat(manager.getUserActiveSessions("user-bulk")).isEmpty();
+            assertThat(manager.getUserActiveSessions("user-bulk [GH-90000]")).isEmpty();
         }
 
         @Test
-        @DisplayName("revokeAllUserTokens does not affect other users' tokens")
-        void revokeAllUserTokensDoesNotAffectOthers() {
-            manager.generateToken("user-keep", "tenant-1", Map.of());
-            manager.generateToken("user-remove", "tenant-1", Map.of());
+        @DisplayName("revokeAllUserTokens does not affect other users' tokens [GH-90000]")
+        void revokeAllUserTokensDoesNotAffectOthers() { // GH-90000
+            manager.generateToken("user-keep", "tenant-1", Map.of()); // GH-90000
+            manager.generateToken("user-remove", "tenant-1", Map.of()); // GH-90000
 
-            manager.revokeAllUserTokens("user-remove", "test");
+            manager.revokeAllUserTokens("user-remove", "test"); // GH-90000
 
-            assertThat(manager.getUserActiveSessions("user-keep")).isNotEmpty();
+            assertThat(manager.getUserActiveSessions("user-keep [GH-90000]")).isNotEmpty();
         }
 
         @Test
-        @DisplayName("revokeAllTenantTokens revokes all tokens for that tenant")
-        void revokeAllTenantTokensRevokesAll() {
-            manager.generateToken("user-a", "tenant-bulk", Map.of());
-            manager.generateToken("user-b", "tenant-bulk", Map.of());
+        @DisplayName("revokeAllTenantTokens revokes all tokens for that tenant [GH-90000]")
+        void revokeAllTenantTokensRevokesAll() { // GH-90000
+            manager.generateToken("user-a", "tenant-bulk", Map.of()); // GH-90000
+            manager.generateToken("user-b", "tenant-bulk", Map.of()); // GH-90000
 
-            manager.revokeAllTenantTokens("tenant-bulk", "tenant shutdown");
+            manager.revokeAllTenantTokens("tenant-bulk", "tenant shutdown"); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(0);
+            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("revokeAllTenantTokens does not affect other tenants' tokens")
-        void revokeAllTenantTokensDoesNotAffectOtherTenants() {
-            manager.generateToken("user-a", "tenant-keep", Map.of());
-            manager.generateToken("user-b", "tenant-remove", Map.of());
+        @DisplayName("revokeAllTenantTokens does not affect other tenants' tokens [GH-90000]")
+        void revokeAllTenantTokensDoesNotAffectOtherTenants() { // GH-90000
+            manager.generateToken("user-a", "tenant-keep", Map.of()); // GH-90000
+            manager.generateToken("user-b", "tenant-remove", Map.of()); // GH-90000
             long keepable = 1;
 
-            manager.revokeAllTenantTokens("tenant-remove", "test");
+            manager.revokeAllTenantTokens("tenant-remove", "test"); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(keepable);
+            assertThat(manager.getSecurityMetrics().getActiveTokens()).isEqualTo(keepable); // GH-90000
         }
 
         @Test
-        @DisplayName("revokeAllUserTokens on unknown user is safe (no exception)")
-        void revokeAllForUnknownUserIsSafe() {
-            assertThatCode(() -> manager.revokeAllUserTokens("no-such-user", "test"))
-                .doesNotThrowAnyException();
+        @DisplayName("revokeAllUserTokens on unknown user is safe (no exception) [GH-90000]")
+        void revokeAllForUnknownUserIsSafe() { // GH-90000
+            assertThatCode(() -> manager.revokeAllUserTokens("no-such-user", "test")) // GH-90000
+                .doesNotThrowAnyException(); // GH-90000
         }
     }
 
@@ -390,46 +390,46 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Session Management")
+    @DisplayName("Session Management [GH-90000]")
     class SessionManagement {
 
         @Test
-        @DisplayName("getUserActiveSessions returns empty set for unknown user")
-        void emptySetForUnknownUser() {
-            assertThat(manager.getUserActiveSessions("nobody")).isEmpty();
+        @DisplayName("getUserActiveSessions returns empty set for unknown user [GH-90000]")
+        void emptySetForUnknownUser() { // GH-90000
+            assertThat(manager.getUserActiveSessions("nobody [GH-90000]")).isEmpty();
         }
 
         @Test
-        @DisplayName("getUserActiveSessions contains the tokenId after generation")
-        void containsTokenIdAfterGeneration() {
-            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("getUserActiveSessions contains the tokenId after generation [GH-90000]")
+        void containsTokenIdAfterGeneration() { // GH-90000
+            SecureTokenManager.TokenResult result = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            assertThat(manager.getUserActiveSessions("user-1")).contains(result.getTokenId());
+            assertThat(manager.getUserActiveSessions("user-1 [GH-90000]")).contains(result.getTokenId());
         }
 
         @Test
-        @DisplayName("getUserActiveSessions shrinks after revocation")
-        void shrinksAfterRevocation() {
-            SecureTokenManager.TokenResult first = manager.generateToken("user-1", "tenant-1", Map.of());
-            SecureTokenManager.TokenResult second = manager.generateToken("user-1", "tenant-1", Map.of());
+        @DisplayName("getUserActiveSessions shrinks after revocation [GH-90000]")
+        void shrinksAfterRevocation() { // GH-90000
+            SecureTokenManager.TokenResult first = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
+            SecureTokenManager.TokenResult second = manager.generateToken("user-1", "tenant-1", Map.of()); // GH-90000
 
-            manager.revokeToken(first.getTokenId(), "test");
+            manager.revokeToken(first.getTokenId(), "test"); // GH-90000
 
-            Set<String> sessions = manager.getUserActiveSessions("user-1");
-            assertThat(sessions).doesNotContain(first.getTokenId());
-            assertThat(sessions).contains(second.getTokenId());
+            Set<String> sessions = manager.getUserActiveSessions("user-1 [GH-90000]");
+            assertThat(sessions).doesNotContain(first.getTokenId()); // GH-90000
+            assertThat(sessions).contains(second.getTokenId()); // GH-90000
         }
 
         @Test
-        @DisplayName("session count decrements after revokeAllUserTokens")
-        void sessionCountDecrementsAfterRevokeAll() {
-            manager.generateToken("user-multi", "tenant-1", Map.of());
-            manager.generateToken("user-multi", "tenant-1", Map.of());
-            manager.generateToken("user-multi", "tenant-1", Map.of());
+        @DisplayName("session count decrements after revokeAllUserTokens [GH-90000]")
+        void sessionCountDecrementsAfterRevokeAll() { // GH-90000
+            manager.generateToken("user-multi", "tenant-1", Map.of()); // GH-90000
+            manager.generateToken("user-multi", "tenant-1", Map.of()); // GH-90000
+            manager.generateToken("user-multi", "tenant-1", Map.of()); // GH-90000
 
-            manager.revokeAllUserTokens("user-multi", "test");
+            manager.revokeAllUserTokens("user-multi", "test"); // GH-90000
 
-            assertThat(manager.getUserActiveSessions("user-multi")).isEmpty();
+            assertThat(manager.getUserActiveSessions("user-multi [GH-90000]")).isEmpty();
         }
     }
 
@@ -438,46 +438,46 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("shouldRotateToken")
+    @DisplayName("shouldRotateToken [GH-90000]")
     class ShouldRotateToken {
 
         @Test
-        @DisplayName("returns false when token has more than 15 minutes remaining")
-        void falseWhenPlentyOfTimeLeft() {
-            Instant issuedAt = Instant.now();
-            Instant expiration = issuedAt.plus(Duration.ofHours(1));
+        @DisplayName("returns false when token has more than 15 minutes remaining [GH-90000]")
+        void falseWhenPlentyOfTimeLeft() { // GH-90000
+            Instant issuedAt = Instant.now(); // GH-90000
+            Instant expiration = issuedAt.plus(Duration.ofHours(1)); // GH-90000
 
-            SecureTokenManager.TokenMetadata meta = new SecureTokenManager.TokenMetadata(
-                "tid", "uid", "tnid", "raw.token", issuedAt, expiration, Map.of(), "sb"
+            SecureTokenManager.TokenMetadata meta = new SecureTokenManager.TokenMetadata( // GH-90000
+                "tid", "uid", "tnid", "raw.token", issuedAt, expiration, Map.of(), "sb" // GH-90000
             );
 
-            assertThat(manager.shouldRotateToken(meta)).isFalse();
+            assertThat(manager.shouldRotateToken(meta)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns true when token expires within 15 minutes")
-        void trueWhenWithinRotationWindow() {
-            Instant issuedAt = Instant.now().minus(Duration.ofMinutes(50));
-            Instant expiration = Instant.now().plus(Duration.ofMinutes(10));
+        @DisplayName("returns true when token expires within 15 minutes [GH-90000]")
+        void trueWhenWithinRotationWindow() { // GH-90000
+            Instant issuedAt = Instant.now().minus(Duration.ofMinutes(50)); // GH-90000
+            Instant expiration = Instant.now().plus(Duration.ofMinutes(10)); // GH-90000
 
-            SecureTokenManager.TokenMetadata meta = new SecureTokenManager.TokenMetadata(
-                "tid", "uid", "tnid", "raw.token", issuedAt, expiration, Map.of(), "sb"
+            SecureTokenManager.TokenMetadata meta = new SecureTokenManager.TokenMetadata( // GH-90000
+                "tid", "uid", "tnid", "raw.token", issuedAt, expiration, Map.of(), "sb" // GH-90000
             );
 
-            assertThat(manager.shouldRotateToken(meta)).isTrue();
+            assertThat(manager.shouldRotateToken(meta)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns true when token expires in exactly 15 minutes (boundary)")
-        void trueAtRotationWindowBoundary() {
-            Instant expiration = Instant.now().plus(Duration.ofMinutes(15));
+        @DisplayName("returns true when token expires in exactly 15 minutes (boundary) [GH-90000]")
+        void trueAtRotationWindowBoundary() { // GH-90000
+            Instant expiration = Instant.now().plus(Duration.ofMinutes(15)); // GH-90000
 
-            SecureTokenManager.TokenMetadata meta = new SecureTokenManager.TokenMetadata(
-                "tid", "uid", "tnid", "raw.token", Instant.now().minus(Duration.ofMinutes(45)),
-                expiration, Map.of(), "sb"
+            SecureTokenManager.TokenMetadata meta = new SecureTokenManager.TokenMetadata( // GH-90000
+                "tid", "uid", "tnid", "raw.token", Instant.now().minus(Duration.ofMinutes(45)), // GH-90000
+                expiration, Map.of(), "sb" // GH-90000
             );
 
-            assertThat(manager.shouldRotateToken(meta)).isTrue();
+            assertThat(manager.shouldRotateToken(meta)).isTrue(); // GH-90000
         }
     }
 
@@ -486,67 +486,67 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Security Metrics")
+    @DisplayName("Security Metrics [GH-90000]")
     class SecurityMetricsTests {
 
         @Test
-        @DisplayName("initial metrics are all zero")
-        void initialMetricsAreZero() {
-            SecureTokenManager.SecurityMetrics metrics = manager.getSecurityMetrics();
+        @DisplayName("initial metrics are all zero [GH-90000]")
+        void initialMetricsAreZero() { // GH-90000
+            SecureTokenManager.SecurityMetrics metrics = manager.getSecurityMetrics(); // GH-90000
 
-            assertThat(metrics.getTokensIssued()).isZero();
-            assertThat(metrics.getTokensRevoked()).isZero();
-            assertThat(metrics.getTokensRotated()).isZero();
-            assertThat(metrics.getRotationFailures()).isZero();
-            assertThat(metrics.getActiveTokens()).isZero();
+            assertThat(metrics.getTokensIssued()).isZero(); // GH-90000
+            assertThat(metrics.getTokensRevoked()).isZero(); // GH-90000
+            assertThat(metrics.getTokensRotated()).isZero(); // GH-90000
+            assertThat(metrics.getRotationFailures()).isZero(); // GH-90000
+            assertThat(metrics.getActiveTokens()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("metrics accurately reflect a sequence of operations")
-        void metricsAccurateAfterSequence() {
-            SecureTokenManager.TokenResult r1 = manager.generateToken("user-1", "t1", Map.of());
-            SecureTokenManager.TokenResult r2 = manager.generateToken("user-2", "t1", Map.of());
-            manager.revokeToken(r1.getTokenId(), "test");
-            manager.rotateToken(r2.getToken(), r2.getSessionBinding());
+        @DisplayName("metrics accurately reflect a sequence of operations [GH-90000]")
+        void metricsAccurateAfterSequence() { // GH-90000
+            SecureTokenManager.TokenResult r1 = manager.generateToken("user-1", "t1", Map.of()); // GH-90000
+            SecureTokenManager.TokenResult r2 = manager.generateToken("user-2", "t1", Map.of()); // GH-90000
+            manager.revokeToken(r1.getTokenId(), "test"); // GH-90000
+            manager.rotateToken(r2.getToken(), r2.getSessionBinding()); // GH-90000
 
-            SecureTokenManager.SecurityMetrics metrics = manager.getSecurityMetrics();
+            SecureTokenManager.SecurityMetrics metrics = manager.getSecurityMetrics(); // GH-90000
 
-            assertThat(metrics.getTokensIssued()).isGreaterThanOrEqualTo(3); // 2 original + 1 rotated
-            assertThat(metrics.getTokensRevoked()).isGreaterThanOrEqualTo(1);
-            assertThat(metrics.getTokensRotated()).isEqualTo(1);
+            assertThat(metrics.getTokensIssued()).isGreaterThanOrEqualTo(3); // 2 original + 1 rotated // GH-90000
+            assertThat(metrics.getTokensRevoked()).isGreaterThanOrEqualTo(1); // GH-90000
+            assertThat(metrics.getTokensRotated()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("getRotationSuccessRate returns 100% when all rotations succeed")
-        void rotationSuccessRateIs100WhenAllSucceed() {
-            SecureTokenManager.TokenResult r = manager.generateToken("user-1", "t1", Map.of());
-            manager.rotateToken(r.getToken(), r.getSessionBinding());
+        @DisplayName("getRotationSuccessRate returns 100% when all rotations succeed [GH-90000]")
+        void rotationSuccessRateIs100WhenAllSucceed() { // GH-90000
+            SecureTokenManager.TokenResult r = manager.generateToken("user-1", "t1", Map.of()); // GH-90000
+            manager.rotateToken(r.getToken(), r.getSessionBinding()); // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getRotationSuccessRate()).isEqualTo(100.0);
+            assertThat(manager.getSecurityMetrics().getRotationSuccessRate()).isEqualTo(100.0); // GH-90000
         }
 
         @Test
-        @DisplayName("getRotationSuccessRate is 0% when there are only failures")
-        void rotationSuccessRateIs0WhenAllFail() {
-            try { manager.rotateToken("invalid.token.here", "bad"); } catch (SecurityException ignored) {}
+        @DisplayName("getRotationSuccessRate is 0% when there are only failures [GH-90000]")
+        void rotationSuccessRateIs0WhenAllFail() { // GH-90000
+            try { manager.rotateToken("invalid.token.here", "bad"); } catch (SecurityException ignored) {} // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getRotationSuccessRate()).isEqualTo(0.0);
+            assertThat(manager.getSecurityMetrics().getRotationSuccessRate()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("getRotationSuccessRate returns 0 when no rotations attempted")
-        void rotationSuccessRateIsZeroWhenNoneAttempted() {
-            assertThat(manager.getSecurityMetrics().getRotationSuccessRate()).isEqualTo(0.0);
+        @DisplayName("getRotationSuccessRate returns 0 when no rotations attempted [GH-90000]")
+        void rotationSuccessRateIsZeroWhenNoneAttempted() { // GH-90000
+            assertThat(manager.getSecurityMetrics().getRotationSuccessRate()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("activeUsers metric counts users with at least one active token")
-        void activeUsersCountsDistinctUsers() {
-            manager.generateToken("user-x", "t1", Map.of());
-            manager.generateToken("user-y", "t1", Map.of());
-            manager.generateToken("user-x", "t1", Map.of()); // second token for same user
+        @DisplayName("activeUsers metric counts users with at least one active token [GH-90000]")
+        void activeUsersCountsDistinctUsers() { // GH-90000
+            manager.generateToken("user-x", "t1", Map.of()); // GH-90000
+            manager.generateToken("user-y", "t1", Map.of()); // GH-90000
+            manager.generateToken("user-x", "t1", Map.of()); // second token for same user // GH-90000
 
-            assertThat(manager.getSecurityMetrics().getActiveUsers()).isEqualTo(2);
+            assertThat(manager.getSecurityMetrics().getActiveUsers()).isEqualTo(2); // GH-90000
         }
     }
 
@@ -555,22 +555,22 @@ class SecureTokenManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Shutdown")
+    @DisplayName("Shutdown [GH-90000]")
     class Shutdown {
 
         @Test
-        @DisplayName("shutdown completes without exception")
-        void shutdownDoesNotThrow() {
-            assertThatCode(() -> manager.shutdown()).doesNotThrowAnyException();
+        @DisplayName("shutdown completes without exception [GH-90000]")
+        void shutdownDoesNotThrow() { // GH-90000
+            assertThatCode(() -> manager.shutdown()).doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("multiple shutdown calls are idempotent")
-        void multipleShutdownCallsAreSafe() {
-            assertThatCode(() -> {
-                manager.shutdown();
-                manager.shutdown();
-            }).doesNotThrowAnyException();
+        @DisplayName("multiple shutdown calls are idempotent [GH-90000]")
+        void multipleShutdownCallsAreSafe() { // GH-90000
+            assertThatCode(() -> { // GH-90000
+                manager.shutdown(); // GH-90000
+                manager.shutdown(); // GH-90000
+            }).doesNotThrowAnyException(); // GH-90000
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.ai;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("AIAssistServiceImpl Tests")
+@DisplayName("AIAssistServiceImpl Tests [GH-90000]")
 class AIAssistServiceImplTest extends EventloopTestBase {
 
     @Mock
@@ -42,248 +42,248 @@ class AIAssistServiceImplTest extends EventloopTestBase {
     private AIAssistServiceImpl service;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        service = new AIAssistServiceImpl(llmProvider, metrics);
+    void setUp() { // GH-90000
+        MockitoAnnotations.openMocks(this); // GH-90000
+        service = new AIAssistServiceImpl(llmProvider, metrics); // GH-90000
 
-        when(llmProvider.getName()).thenReturn("OpenAI");
+        when(llmProvider.getName()).thenReturn("OpenAI [GH-90000]");
     }
 
     @Nested
-    @DisplayName("Process Query")
+    @DisplayName("Process Query [GH-90000]")
     class ProcessQueryTests {
 
         @Test
-        @DisplayName("[TEST-017]: processQuery_successfully_processes_query")
-        void processQuerySuccess() {
+        @DisplayName("[TEST-017]: processQuery_successfully_processes_query [GH-90000]")
+        void processQuerySuccess() { // GH-90000
             // Given
             String query = "Show me sales data";
-            AIAssistService.QueryContext context = new AIAssistService.QueryContext(
+            AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
                 "tenant-alpha", "user-1", null, "sales",
-                List.of("orders", "customers"), Map.of(), null
+                List.of("orders", "customers"), Map.of(), null // GH-90000
             );
 
-            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
+            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse( // GH-90000
                 "resp-1", "SELECT * FROM orders", 10, 5, 5, "stop", 25L, "gpt-4"
             )));
 
             // When
-            AIAssistService.QueryResult result = runPromise(() -> service.processQuery(query, context));
+            AIAssistService.QueryResult result = runPromise(() -> service.processQuery(query, context)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.originalQuery()).isEqualTo(query);
-            assertThat(result.confidenceScore()).isEqualTo(0.95);
-            assertThat(result.processingTimeMs()).isGreaterThanOrEqualTo(0);
-            verify(metrics).incrementCounter("ai.query.success", "tenant", "tenant-alpha");
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.originalQuery()).isEqualTo(query); // GH-90000
+            assertThat(result.confidenceScore()).isEqualTo(0.95); // GH-90000
+            assertThat(result.processingTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
+            verify(metrics).incrementCounter("ai.query.success", "tenant", "tenant-alpha"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Generate SQL")
+    @DisplayName("Generate SQL [GH-90000]")
     class GenerateSQLTests {
 
         @Test
-        @DisplayName("[TEST-018]: generateSQL_returns_generated_sql")
-        void generateSQLSuccess() {
+        @DisplayName("[TEST-018]: generateSQL_returns_generated_sql [GH-90000]")
+        void generateSQLSuccess() { // GH-90000
             // Given
             String description = "Get all customers from last month";
-            AIAssistService.DatabaseSchema schema = new AIAssistService.DatabaseSchema(
-                "sales", List.of()
+            AIAssistService.DatabaseSchema schema = new AIAssistService.DatabaseSchema( // GH-90000
+                "sales", List.of() // GH-90000
             );
 
-            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
+            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse( // GH-90000
                 "resp-2", "SELECT * FROM customers", 10, 5, 5, "stop", 25L, "gpt-4"
             )));
 
             // When
-            AIAssistService.GeneratedSQL result = runPromise(() -> service.generateSQL(description, schema));
+            AIAssistService.GeneratedSQL result = runPromise(() -> service.generateSQL(description, schema)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.sql()).contains("SELECT");
-            assertThat(result.isReadOnly()).isTrue();
-            assertThat(result.isSafe()).isTrue();
-            verify(metrics).incrementCounter("ai.sql.generate.success");
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.sql()).contains("SELECT [GH-90000]");
+            assertThat(result.isReadOnly()).isTrue(); // GH-90000
+            assertThat(result.isSafe()).isTrue(); // GH-90000
+            verify(metrics).incrementCounter("ai.sql.generate.success [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Explain Results")
+    @DisplayName("Explain Results [GH-90000]")
     class ExplainResultsTests {
 
         @Test
-        @DisplayName("[TEST-019]: explainResults_provides_explanation")
-        void explainResults() {
+        @DisplayName("[TEST-019]: explainResults_provides_explanation [GH-90000]")
+        void explainResults() { // GH-90000
             // Given
             String query = "SELECT * FROM orders";
-            List<Map<String, Object>> results = List.of(
-                Map.of("id", 1, "amount", 100),
-                Map.of("id", 2, "amount", 200)
+            List<Map<String, Object>> results = List.of( // GH-90000
+                Map.of("id", 1, "amount", 100), // GH-90000
+                Map.of("id", 2, "amount", 200) // GH-90000
             );
-            AIAssistService.QueryContext context = new AIAssistService.QueryContext(
-                "tenant-alpha", "user-1", null, null, null, Map.of(), null
+            AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
+                "tenant-alpha", "user-1", null, null, null, Map.of(), null // GH-90000
             );
 
             // When
-            AIAssistService.Explanation result = runPromise(() -> service.explainResults(query, results, context));
+            AIAssistService.Explanation result = runPromise(() -> service.explainResults(query, results, context)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.keyPoints()).contains("Query returned 2 rows");
-            assertThat(result.keyPoints()).contains("Query type: SELECT");
-            verify(metrics).incrementCounter("ai.explain.success");
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.keyPoints()).contains("Query returned 2 rows [GH-90000]");
+            assertThat(result.keyPoints()).contains("Query type: SELECT [GH-90000]");
+            verify(metrics).incrementCounter("ai.explain.success [GH-90000]");
         }
 
         @Test
-        @DisplayName("[TEST-019]: explainResults_warns_about_large_result_sets")
-        void explainResultsLargeSet() {
+        @DisplayName("[TEST-019]: explainResults_warns_about_large_result_sets [GH-90000]")
+        void explainResultsLargeSet() { // GH-90000
             // Given - create large result set
-            List<Map<String, Object>> largeResults = new java.util.ArrayList<>();
-            for (int i = 0; i < 1500; i++) {
-                largeResults.add(Map.of("id", i));
+            List<Map<String, Object>> largeResults = new java.util.ArrayList<>(); // GH-90000
+            for (int i = 0; i < 1500; i++) { // GH-90000
+                largeResults.add(Map.of("id", i)); // GH-90000
             }
-            AIAssistService.QueryContext context = new AIAssistService.QueryContext(
-                "tenant-alpha", "user-1", null, null, null, Map.of(), null
+            AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
+                "tenant-alpha", "user-1", null, null, null, Map.of(), null // GH-90000
             );
 
             // When
-            AIAssistService.Explanation result = runPromise(() ->
-                service.explainResults("SELECT *", largeResults, context));
+            AIAssistService.Explanation result = runPromise(() -> // GH-90000
+                service.explainResults("SELECT *", largeResults, context)); // GH-90000
 
             // Then
-            assertThat(result.recommendations()).anyMatch(r -> r.contains("LIMIT"));
+            assertThat(result.recommendations()).anyMatch(r -> r.contains("LIMIT [GH-90000]"));
         }
     }
 
     @Nested
-    @DisplayName("Query Suggestions")
+    @DisplayName("Query Suggestions [GH-90000]")
     class SuggestQueriesTests {
 
         @Test
-        @DisplayName("[TEST-020]: suggestQueries_returns_relevant_suggestions")
-        void suggestQueries() {
+        @DisplayName("[TEST-020]: suggestQueries_returns_relevant_suggestions [GH-90000]")
+        void suggestQueries() { // GH-90000
             // Given
-            AIAssistService.QueryContext context = new AIAssistService.QueryContext(
+            AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
                 "tenant-alpha", "user-1", null, null,
-                List.of("customers", "orders"), Map.of(), null
+                List.of("customers", "orders"), Map.of(), null // GH-90000
             );
 
             // When
-            List<AIAssistService.QuerySuggestion> results = runPromise(() -> service.suggestQueries(context, 5));
+            List<AIAssistService.QuerySuggestion> results = runPromise(() -> service.suggestQueries(context, 5)); // GH-90000
 
             // Then
-            assertThat(results).hasSize(4); // 2 suggestions per table
-            assertThat(results.get(0).category()).isEqualTo("preview");
-            assertThat(results.get(1).category()).isEqualTo("aggregation");
-            verify(metrics).incrementCounter("ai.suggest.success", "count", "4");
+            assertThat(results).hasSize(4); // 2 suggestions per table // GH-90000
+            assertThat(results.get(0).category()).isEqualTo("preview [GH-90000]");
+            assertThat(results.get(1).category()).isEqualTo("aggregation [GH-90000]");
+            verify(metrics).incrementCounter("ai.suggest.success", "count", "4"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Conversation Management")
+    @DisplayName("Conversation Management [GH-90000]")
     class ConversationTests {
 
         @Test
-        @DisplayName("[TEST-021]: createConversation_creates_new_conversation")
-        void createConversation() {
+        @DisplayName("[TEST-021]: createConversation_creates_new_conversation [GH-90000]")
+        void createConversation() { // GH-90000
             // When
-            AIAssistService.Conversation result = runPromise(() ->
-                service.createConversation("tenant-alpha", "user-1"));
+            AIAssistService.Conversation result = runPromise(() -> // GH-90000
+                service.createConversation("tenant-alpha", "user-1")); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.id()).isNotNull();
-            assertThat(result.tenantId()).isEqualTo("tenant-alpha");
-            assertThat(result.userId()).isEqualTo("user-1");
-            assertThat(result.messageCount()).isEqualTo(0);
-            verify(metrics).incrementCounter("ai.conversation.create", "tenant", "tenant-alpha");
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.id()).isNotNull(); // GH-90000
+            assertThat(result.tenantId()).isEqualTo("tenant-alpha [GH-90000]");
+            assertThat(result.userId()).isEqualTo("user-1 [GH-90000]");
+            assertThat(result.messageCount()).isEqualTo(0); // GH-90000
+            verify(metrics).incrementCounter("ai.conversation.create", "tenant", "tenant-alpha"); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-022]: addMessage_adds_message_to_conversation")
-        void addMessage() {
+        @DisplayName("[TEST-022]: addMessage_adds_message_to_conversation [GH-90000]")
+        void addMessage() { // GH-90000
             // Given
-            AIAssistService.Conversation conv = runPromise(() ->
-                service.createConversation("tenant-alpha", "user-1"));
+            AIAssistService.Conversation conv = runPromise(() -> // GH-90000
+                service.createConversation("tenant-alpha", "user-1")); // GH-90000
 
-            AIAssistService.Message message = new AIAssistService.Message(
-                "msg-1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of()
+            AIAssistService.Message message = new AIAssistService.Message( // GH-90000
+                "msg-1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of() // GH-90000
             );
 
             // When
-            AIAssistService.Conversation result = runPromise(() -> service.addMessage(conv.id(), message));
+            AIAssistService.Conversation result = runPromise(() -> service.addMessage(conv.id(), message)); // GH-90000
 
             // Then
-            assertThat(result.messageCount()).isEqualTo(1);
-            assertThat(result.messages()).hasSize(1);
-            verify(metrics).incrementCounter("ai.conversation.message.add", "conversation", conv.id());
+            assertThat(result.messageCount()).isEqualTo(1); // GH-90000
+            assertThat(result.messages()).hasSize(1); // GH-90000
+            verify(metrics).incrementCounter("ai.conversation.message.add", "conversation", conv.id()); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-023]: getConversation_retrieves_conversation")
-        void getConversation() {
+        @DisplayName("[TEST-023]: getConversation_retrieves_conversation [GH-90000]")
+        void getConversation() { // GH-90000
             // Given
-            AIAssistService.Conversation conv = runPromise(() ->
-                service.createConversation("tenant-alpha", "user-1"));
+            AIAssistService.Conversation conv = runPromise(() -> // GH-90000
+                service.createConversation("tenant-alpha", "user-1")); // GH-90000
 
             // When
-            AIAssistService.Conversation result = runPromise(() -> service.getConversation(conv.id()));
+            AIAssistService.Conversation result = runPromise(() -> service.getConversation(conv.id())); // GH-90000
 
             // Then
-            assertThat(result.id()).isEqualTo(conv.id());
+            assertThat(result.id()).isEqualTo(conv.id()); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-023]: clearConversation_removes_all_messages")
-        void clearConversation() {
+        @DisplayName("[TEST-023]: clearConversation_removes_all_messages [GH-90000]")
+        void clearConversation() { // GH-90000
             // Given
-            AIAssistService.Conversation conv = runPromise(() ->
-                service.createConversation("tenant-alpha", "user-1"));
+            AIAssistService.Conversation conv = runPromise(() -> // GH-90000
+                service.createConversation("tenant-alpha", "user-1")); // GH-90000
 
-            AIAssistService.Message message = new AIAssistService.Message(
-                "msg-1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of()
+            AIAssistService.Message message = new AIAssistService.Message( // GH-90000
+                "msg-1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of() // GH-90000
             );
-            runPromise(() -> service.addMessage(conv.id(), message));
+            runPromise(() -> service.addMessage(conv.id(), message)); // GH-90000
 
             // When
-            runPromise(() -> service.clearConversation(conv.id()));
-            AIAssistService.Conversation result = runPromise(() -> service.getConversation(conv.id()));
+            runPromise(() -> service.clearConversation(conv.id())); // GH-90000
+            AIAssistService.Conversation result = runPromise(() -> service.getConversation(conv.id())); // GH-90000
 
             // Then
-            assertThat(result.messageCount()).isEqualTo(0);
-            assertThat(result.messages()).isEmpty();
+            assertThat(result.messageCount()).isEqualTo(0); // GH-90000
+            assertThat(result.messages()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Service Status")
+    @DisplayName("Service Status [GH-90000]")
     class StatusTests {
 
         @Test
-        @DisplayName("[TEST-024]: getStatus_returns_service_status")
-        void getStatus() {
+        @DisplayName("[TEST-024]: getStatus_returns_service_status [GH-90000]")
+        void getStatus() { // GH-90000
             // Given - process some queries to generate stats
-            AIAssistService.QueryContext context = new AIAssistService.QueryContext(
-                "tenant-alpha", "user-1", null, null, null, Map.of(), null
+            AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
+                "tenant-alpha", "user-1", null, null, null, Map.of(), null // GH-90000
             );
-            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
+            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse( // GH-90000
                 "resp-3", "SQL", 10, 5, 5, "stop", 25L, "gpt-4"
             )));
 
-            runPromise(() -> service.processQuery("query 1", context));
-            runPromise(() -> service.processQuery("query 2", context));
+            runPromise(() -> service.processQuery("query 1", context)); // GH-90000
+            runPromise(() -> service.processQuery("query 2", context)); // GH-90000
 
             // When
-            AIAssistService.ServiceStatus status = runPromise(() -> service.getStatus());
+            AIAssistService.ServiceStatus status = runPromise(() -> service.getStatus()); // GH-90000
 
             // Then
-            assertThat(status.available()).isTrue();
-            assertThat(status.provider()).isEqualTo("OpenAI");
-            assertThat(status.model()).isEqualTo("unknown");
-            assertThat(status.requestsProcessed()).isEqualTo(2);
-            assertThat(status.averageLatencyMs()).isGreaterThanOrEqualTo(0);
-            assertThat(status.lastHealthCheck()).isNotNull();
+            assertThat(status.available()).isTrue(); // GH-90000
+            assertThat(status.provider()).isEqualTo("OpenAI [GH-90000]");
+            assertThat(status.model()).isEqualTo("unknown [GH-90000]");
+            assertThat(status.requestsProcessed()).isEqualTo(2); // GH-90000
+            assertThat(status.averageLatencyMs()).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(status.lastHealthCheck()).isNotNull(); // GH-90000
         }
     }
 }

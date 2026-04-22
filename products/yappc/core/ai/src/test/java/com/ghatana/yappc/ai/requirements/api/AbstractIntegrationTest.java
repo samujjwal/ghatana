@@ -36,10 +36,10 @@ import java.util.concurrent.ExecutionException;
  * @Testcontainers
  * class MyIntegrationTest extends AbstractIntegrationTest {
  *     @Test
- *     void shouldCreateWorkspace() throws Exception {
- *         HttpResponse response = performPost("/api/v1/workspaces",
+ *     void shouldCreateWorkspace() throws Exception { // GH-90000
+ *         HttpResponse response = performPost("/api/v1/workspaces", // GH-90000
  *             "{\"name\": \"Test Workspace\"}");
- *         assertThat(response.getCode()).isEqualTo(201);
+ *         assertThat(response.getCode()).isEqualTo(201); // GH-90000
  *     }
  * }
  * }</pre>
@@ -60,11 +60,11 @@ import java.util.concurrent.ExecutionException;
  * @doc.layer product
  * @doc.pattern Test Fixture
  */
-@Testcontainers(disabledWithoutDocker = true)
-@Tag("integration")
+@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Tag("integration [GH-90000]")
 public abstract class AbstractIntegrationTest extends EventloopTestBase {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class); // GH-90000
 
     /** Test database username. Never null. */
     protected static final String TEST_DB_USER = "test";
@@ -80,28 +80,28 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
 
     /** PostgreSQL test container. Managed by Testcontainers. */
     @Container
-    protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
-        .withUsername(TEST_DB_USER)
-        .withPassword(TEST_DB_PASSWORD)
-        .withDatabaseName(TEST_DB_NAME)
-        .waitingFor(Wait.forListeningPort());
+    protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
+        .withUsername(TEST_DB_USER) // GH-90000
+        .withPassword(TEST_DB_PASSWORD) // GH-90000
+        .withDatabaseName(TEST_DB_NAME) // GH-90000
+        .waitingFor(Wait.forListeningPort()); // GH-90000
 
     /** Redis test container. Managed by Testcontainers. */
     @Container
-    protected static final GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine")
-        .withExposedPorts(6379)
-        .waitingFor(Wait.forListeningPort());
+    protected static final GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine [GH-90000]")
+        .withExposedPorts(6379) // GH-90000
+        .waitingFor(Wait.forListeningPort()); // GH-90000
 
-    /** HTTP client for making requests to the server. Initialized in setUp(). */
+    /** HTTP client for making requests to the server. Initialized in setUp(). */ // GH-90000
     protected HttpClient httpClient;
 
-    /** HTTP server instance under test. Initialized in setUpAll(). */
+    /** HTTP server instance under test. Initialized in setUpAll(). */ // GH-90000
     protected static RequirementsHttpServer httpServer;
 
-    /** Configuration for the HTTP server. Initialized in setUpAll(). */
+    /** Configuration for the HTTP server. Initialized in setUpAll(). */ // GH-90000
     protected static RequirementsConfig config;
 
-    /** Actual HTTP server instance. Initialized in setUpAll(). */
+    /** Actual HTTP server instance. Initialized in setUpAll(). */ // GH-90000
     protected static io.activej.http.HttpServer server;
 
     private static boolean dockerAvailable = true;
@@ -119,31 +119,31 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      * @throws InterruptedException if setup is interrupted
      */
     @BeforeAll
-    public static void setUpAll() throws ExecutionException, InterruptedException {
+    public static void setUpAll() throws ExecutionException, InterruptedException { // GH-90000
         boolean available;
         try {
-            available = DockerClientFactory.instance().isDockerAvailable();
-        } catch (Throwable ex) {
+            available = DockerClientFactory.instance().isDockerAvailable(); // GH-90000
+        } catch (Throwable ex) { // GH-90000
             available = false;
         }
         dockerAvailable = available;
-        Assumptions.assumeTrue(dockerAvailable, "Skipping API integration tests because Docker is unavailable");
+        Assumptions.assumeTrue(dockerAvailable, "Skipping API integration tests because Docker is unavailable"); // GH-90000
 
         // Set environment variables for test containers
-        System.setProperty("requirements.DB_URL", "jdbc:postgresql://" + postgres.getHost() + ":"
-            + postgres.getFirstMappedPort() + "/" + TEST_DB_NAME);
-        System.setProperty("requirements.DB_USER", TEST_DB_USER);
-        System.setProperty("requirements.DB_PASSWORD", TEST_DB_PASSWORD);
+        System.setProperty("requirements.DB_URL", "jdbc:postgresql://" + postgres.getHost() + ":" // GH-90000
+            + postgres.getFirstMappedPort() + "/" + TEST_DB_NAME); // GH-90000
+        System.setProperty("requirements.DB_USER", TEST_DB_USER); // GH-90000
+        System.setProperty("requirements.DB_PASSWORD", TEST_DB_PASSWORD); // GH-90000
 
         // Initialize configuration with test container settings
-        config = new RequirementsConfig();
+        config = new RequirementsConfig(); // GH-90000
 
         // Skip HTTP server startup for now - tests will fail until properly configured
         // Note: HTTP server setup with proper dependency injection not yet implemented
-        logger.info("HTTP server startup skipped - tests will be implemented with proper mocks");
+        logger.info("HTTP server startup skipped - tests will be implemented with proper mocks [GH-90000]");
 
         // Run database migrations
-        runDatabaseMigrations();
+        runDatabaseMigrations(); // GH-90000
     }
 
     /**
@@ -152,8 +152,8 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      * <p>Stops the HTTP server to free up the port.
      */
     @AfterAll
-    public static void tearDownAll() throws Exception {
-        logger.info("Test cleanup completed - HTTP server was not started");
+    public static void tearDownAll() throws Exception { // GH-90000
+        logger.info("Test cleanup completed - HTTP server was not started [GH-90000]");
     }
 
     /**
@@ -162,14 +162,14 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      * @throws Exception if setup fails
      */
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() throws Exception { // GH-90000
         // Initialize HTTP client in the test thread context
-        httpClient = HttpClient.builder(io.activej.reactor.Reactor.getCurrentReactor(),
-            io.activej.dns.DnsClient.builder(io.activej.reactor.Reactor.getCurrentReactor(),
-                java.net.InetAddress.getLoopbackAddress()).build()).build();
+        httpClient = HttpClient.builder(io.activej.reactor.Reactor.getCurrentReactor(), // GH-90000
+            io.activej.dns.DnsClient.builder(io.activej.reactor.Reactor.getCurrentReactor(), // GH-90000
+                java.net.InetAddress.getLoopbackAddress()).build()).build(); // GH-90000
 
         // Clear test data before each test
-        cleanupTestData();
+        cleanupTestData(); // GH-90000
     }
 
     /**
@@ -180,18 +180,18 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      *
      * @throws RuntimeException if migration fails
      */
-    protected static void runDatabaseMigrations() {
+    protected static void runDatabaseMigrations() { // GH-90000
         // This would typically call a migration framework like Flyway or Liquibase
         // For now, we'll just create the basic schema
-        try (var connection = postgres.createConnection("")) {
-            var statement = connection.createStatement();
+        try (var connection = postgres.createConnection(" [GH-90000]")) {
+            var statement = connection.createStatement(); // GH-90000
             // Execute DDL statements to create test tables
-            statement.execute("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, email VARCHAR(255) NOT NULL)");
-            statement.execute("CREATE TABLE IF NOT EXISTS workspaces (id UUID PRIMARY KEY, name VARCHAR(255) NOT NULL)");
-            statement.execute("CREATE TABLE IF NOT EXISTS projects (id UUID PRIMARY KEY, workspace_id UUID NOT NULL, name VARCHAR(255) NOT NULL)");
-            statement.execute("CREATE TABLE IF NOT EXISTS requirements (id UUID PRIMARY KEY, project_id UUID NOT NULL, title VARCHAR(255) NOT NULL)");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to run migrations", e);
+            statement.execute("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, email VARCHAR(255) NOT NULL) [GH-90000]");
+            statement.execute("CREATE TABLE IF NOT EXISTS workspaces (id UUID PRIMARY KEY, name VARCHAR(255) NOT NULL) [GH-90000]");
+            statement.execute("CREATE TABLE IF NOT EXISTS projects (id UUID PRIMARY KEY, workspace_id UUID NOT NULL, name VARCHAR(255) NOT NULL) [GH-90000]");
+            statement.execute("CREATE TABLE IF NOT EXISTS requirements (id UUID PRIMARY KEY, project_id UUID NOT NULL, title VARCHAR(255) NOT NULL) [GH-90000]");
+        } catch (Exception e) { // GH-90000
+            throw new RuntimeException("Failed to run migrations", e); // GH-90000
         }
     }
 
@@ -203,70 +203,70 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      *
      * @throws Exception if cleanup fails
      */
-    protected void cleanupTestData() throws Exception {
-        if (!dockerAvailable) {
+    protected void cleanupTestData() throws Exception { // GH-90000
+        if (!dockerAvailable) { // GH-90000
             return;
         }
-        try (var connection = postgres.createConnection("")) {
-            var statement = connection.createStatement();
-            statement.execute("TRUNCATE TABLE requirements CASCADE");
-            statement.execute("TRUNCATE TABLE projects CASCADE");
-            statement.execute("TRUNCATE TABLE workspaces CASCADE");
-            statement.execute("TRUNCATE TABLE users CASCADE");
+        try (var connection = postgres.createConnection(" [GH-90000]")) {
+            var statement = connection.createStatement(); // GH-90000
+            statement.execute("TRUNCATE TABLE requirements CASCADE [GH-90000]");
+            statement.execute("TRUNCATE TABLE projects CASCADE [GH-90000]");
+            statement.execute("TRUNCATE TABLE workspaces CASCADE [GH-90000]");
+            statement.execute("TRUNCATE TABLE users CASCADE [GH-90000]");
         }
     }
 
     /**
      * Perform HTTP GET request to the test server.
      *
-     * @param path the request path (e.g., "/api/v1/workspaces")
+     * @param path the request path (e.g., "/api/v1/workspaces") // GH-90000
      * @return the HTTP response
      * @throws ExecutionException if request execution fails
      * @throws InterruptedException if request is interrupted
      */
-    protected HttpResponse performGet(String path) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.get("http://localhost:8082" + path).build()));
+    protected HttpResponse performGet(String path) throws ExecutionException, InterruptedException { // GH-90000
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.get("http://localhost:8082" + path).build())); // GH-90000
     }
 
     /**
      * Perform HTTP POST request to the test server.
      *
-     * @param path the request path (e.g., "/api/v1/workspaces")
+     * @param path the request path (e.g., "/api/v1/workspaces") // GH-90000
      * @param body the request body as JSON string
      * @return the HTTP response
      * @throws ExecutionException if request execution fails
      * @throws InterruptedException if request is interrupted
      */
-    protected HttpResponse performPost(String path, String body) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.post("http://localhost:8082" + path)
-            .withBody(body)
-            .build()));
+    protected HttpResponse performPost(String path, String body) throws ExecutionException, InterruptedException { // GH-90000
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.post("http://localhost:8082" + path) // GH-90000
+            .withBody(body) // GH-90000
+            .build())); // GH-90000
     }
 
     /**
      * Perform HTTP PUT request to the test server.
      *
-     * @param path the request path (e.g., "/api/v1/workspaces/123")
+     * @param path the request path (e.g., "/api/v1/workspaces/123") // GH-90000
      * @param body the request body as JSON string
      * @return the HTTP response
      * @throws ExecutionException if request execution fails
      * @throws InterruptedException if request is interrupted
      */
-    protected HttpResponse performPut(String path, String body) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.put("http://localhost:8082" + path)
-            .withBody(body)
-            .build()));
+    protected HttpResponse performPut(String path, String body) throws ExecutionException, InterruptedException { // GH-90000
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.put("http://localhost:8082" + path) // GH-90000
+            .withBody(body) // GH-90000
+            .build())); // GH-90000
     }
 
     /**
      * Perform HTTP DELETE request to the test server.
      *
-     * @param path the request path (e.g., "/api/v1/workspaces/123")
+     * @param path the request path (e.g., "/api/v1/workspaces/123") // GH-90000
      * @return the HTTP response
      * @throws ExecutionException if request execution fails
      * @throws InterruptedException if request is interrupted
      */
-    protected HttpResponse performDelete(String path) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://localhost:8082" + path).build()));
+    protected HttpResponse performDelete(String path) throws ExecutionException, InterruptedException { // GH-90000
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://localhost:8082" + path).build())); // GH-90000
     }
 }

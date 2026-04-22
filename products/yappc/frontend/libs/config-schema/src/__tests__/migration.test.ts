@@ -47,22 +47,19 @@ describe('Migration Utilities', () => {
 
   describe('registerPageConfigMigration', () => {
     it('should register a PageConfig migration', () => {
-      registerPageConfigMigration(mockMigration1);
-      expect(true).toBe(true); // If no error, registration succeeded
+      expect(() => registerPageConfigMigration(mockMigration1)).not.toThrow();
     });
   });
 
   describe('registerIntentConfigMigration', () => {
     it('should register an IntentConfig migration', () => {
-      registerIntentConfigMigration(mockMigration1);
-      expect(true).toBe(true);
+      expect(() => registerIntentConfigMigration(mockMigration1)).not.toThrow();
     });
   });
 
   describe('registerRequirementConfigMigration', () => {
     it('should register a RequirementConfig migration', () => {
-      registerRequirementConfigMigration(mockMigration1);
-      expect(true).toBe(true);
+      expect(() => registerRequirementConfigMigration(mockMigration1)).not.toThrow();
     });
   });
 

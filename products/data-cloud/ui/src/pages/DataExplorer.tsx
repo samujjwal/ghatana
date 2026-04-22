@@ -51,11 +51,11 @@ function normalizeViewMode(view: string | null): ViewMode {
  */
 function SchemaTypeBadge({ schemaType }: { schemaType: Collection['schemaType'] }) {
     const colors: Record<Collection['schemaType'], string> = {
-        entity:     'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-        event:      'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+        entity: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+        event: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
         timeseries: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-        graph:      'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-        document:   'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+        graph: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+        document: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     };
     return (
         <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', colors[schemaType])}>
@@ -69,15 +69,15 @@ function SchemaTypeBadge({ schemaType }: { schemaType: Collection['schemaType'] 
  */
 function StatusBadge({ status }: { status: Collection['status'] }) {
     const colors: Record<Collection['status'], string> = {
-        active:     'text-green-600',
-        draft:      'text-gray-500',
-        archived:   'text-amber-600',
+        active: 'text-green-600',
+        draft: 'text-gray-500',
+        archived: 'text-amber-600',
         processing: 'text-blue-600',
     };
     const dot: Record<Collection['status'], string> = {
-        active:     'bg-green-500',
-        draft:      'bg-gray-400',
-        archived:   'bg-amber-500',
+        active: 'bg-green-500',
+        draft: 'bg-gray-400',
+        archived: 'bg-amber-500',
         processing: 'bg-blue-500',
     };
     return (
@@ -251,22 +251,24 @@ export function DataExplorer() {
     };
 
     return (
-        <div className="p-6" data-testid="data-explorer-page">
+        <main className="p-6" data-testid="data-explorer-page" aria-label="Data Explorer">
             {/* Header */}
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                     Data Explorer
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                    Explore and manage your data collections with quality insights and a preview of lineage context
+                    Explore and manage your data collections with quality insights and lineage context
                 </p>
             </div>
 
             {/* Search and Actions */}
             <div className="flex items-center gap-4 mb-6">
                 <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <label htmlFor="collection-search" className="sr-only">Search collections</label>
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" aria-hidden="true" />
                     <input
+                        id="collection-search"
                         data-testid="collection-search-input"
                         type="text"
                         placeholder="Search collections..."
@@ -438,7 +440,7 @@ export function DataExplorer() {
                     </p>
                 </div>
             )}
-        </div>
+        </main>
     );
 }
 

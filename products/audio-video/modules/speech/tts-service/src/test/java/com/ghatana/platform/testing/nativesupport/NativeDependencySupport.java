@@ -11,16 +11,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Local stub — tts-service Java 17 can't depend on platform:java:testing (Java 21).
+ * Local stub — tts-service Java 17 can't depend on platform:java:testing (Java 21). // GH-90000
  */
 public class NativeDependencySupport {
 
-    @Target({ElementType.TYPE, ElementType.METHOD})
-    @Retention(RetentionPolicy.RUNTIME)
-    @ExtendWith(NativeDependencyCondition.class)
+    @Target({ElementType.TYPE, ElementType.METHOD}) // GH-90000
+    @Retention(RetentionPolicy.RUNTIME) // GH-90000
+    @ExtendWith(NativeDependencyCondition.class) // GH-90000
     public @interface RequireNative {
-        NativeType value() default NativeType.ANY;
-        String message() default "Native dependencies not available";
+        NativeType value() default NativeType.ANY; // GH-90000
+        String message() default "Native dependencies not available"; // GH-90000
     }
 
     public enum NativeType {
@@ -29,8 +29,8 @@ public class NativeDependencySupport {
 
     static class NativeDependencyCondition implements ExecutionCondition {
         @Override
-        public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
-            return ConditionEvaluationResult.disabled("Native dependencies not available in test environment");
+        public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) { // GH-90000
+            return ConditionEvaluationResult.disabled("Native dependencies not available in test environment [GH-90000]");
         }
     }
 }

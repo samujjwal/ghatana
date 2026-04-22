@@ -18,45 +18,45 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class DefaultAuditTrailServiceTest {
 
     @Test
-    void ignoresDuplicateEventIds() {
-        RecordingPersistence persistence = new RecordingPersistence();
-        DefaultAuditTrailService service = new DefaultAuditTrailService(
-            new ObjectMapper().findAndRegisterModules(),
+    void ignoresDuplicateEventIds() { // GH-90000
+        RecordingPersistence persistence = new RecordingPersistence(); // GH-90000
+        DefaultAuditTrailService service = new DefaultAuditTrailService( // GH-90000
+            new ObjectMapper().findAndRegisterModules(), // GH-90000
             persistence
         );
 
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
-            .eventId("audit-duplicate-1")
-            .eventType("patient.read")
-            .entityId("patient-1")
-            .userId("provider-1")
-            .tenantId("tenant-1")
-            .action("read")
-            .data(Map.of("source", "test"))
-            .build();
+        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() // GH-90000
+            .eventId("audit-duplicate-1 [GH-90000]")
+            .eventType("patient.read [GH-90000]")
+            .entityId("patient-1 [GH-90000]")
+            .userId("provider-1 [GH-90000]")
+            .tenantId("tenant-1 [GH-90000]")
+            .action("read [GH-90000]")
+            .data(Map.of("source", "test")) // GH-90000
+            .build(); // GH-90000
 
-        service.recordAuditEvent(event);
-        service.recordAuditEvent(event);
+        service.recordAuditEvent(event); // GH-90000
+        service.recordAuditEvent(event); // GH-90000
 
-        List<AuditTrailService.AuditEvent> events = service.queryAuditEvents(
-            AuditTrailService.AuditQuery.builder().entityId("patient-1").limit(10).build()
+        List<AuditTrailService.AuditEvent> events = service.queryAuditEvents( // GH-90000
+            AuditTrailService.AuditQuery.builder().entityId("patient-1 [GH-90000]").limit(10).build()
         );
 
-        assertEquals(1, events.size());
-        assertEquals(1, persistence.loadAll().size());
+        assertEquals(1, events.size()); // GH-90000
+        assertEquals(1, persistence.loadAll().size()); // GH-90000
     }
 
     private static final class RecordingPersistence implements AuditTrailPersistence {
-        private final List<DefaultAuditTrailService.StoredAuditEvent> events = new ArrayList<>();
+        private final List<DefaultAuditTrailService.StoredAuditEvent> events = new ArrayList<>(); // GH-90000
 
         @Override
-        public void persist(DefaultAuditTrailService.StoredAuditEvent event) {
-            events.add(event);
+        public void persist(DefaultAuditTrailService.StoredAuditEvent event) { // GH-90000
+            events.add(event); // GH-90000
         }
 
         @Override
-        public List<DefaultAuditTrailService.StoredAuditEvent> loadAll() {
-            return List.copyOf(events);
+        public List<DefaultAuditTrailService.StoredAuditEvent> loadAll() { // GH-90000
+            return List.copyOf(events); // GH-90000
         }
     }
 }

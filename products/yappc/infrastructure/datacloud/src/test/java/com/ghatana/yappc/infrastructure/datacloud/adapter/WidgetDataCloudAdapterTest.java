@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for WidgetDataCloudAdapter.
  */
-@DisplayName("WidgetDataCloudAdapter Tests")
+@DisplayName("WidgetDataCloudAdapter Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles widget data cloud adapter test operations
@@ -40,40 +40,40 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
     private WidgetDataCloudAdapter widgetAdapter;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    void setUp() { // GH-90000
+        MockitoAnnotations.openMocks(this); // GH-90000
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        mapper = new YappcEntityMapper(objectMapper);
+        ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
+        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
+        mapper = new YappcEntityMapper(objectMapper); // GH-90000
 
-        widgetAdapter = new WidgetDataCloudAdapter(client, mapper);
+        widgetAdapter = new WidgetDataCloudAdapter(client, mapper); // GH-90000
     }
 
     @Test
-    @DisplayName("Should find widgets by dashboard ID")
-    void shouldFindByDashboardId() {
-        UUID dashboardId = UUID.randomUUID();
+    @DisplayName("Should find widgets by dashboard ID [GH-90000]")
+    void shouldFindByDashboardId() { // GH-90000
+        UUID dashboardId = UUID.randomUUID(); // GH-90000
 
-        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
+            .thenReturn(Promise.of(List.of())); // GH-90000
 
-        List<Widget> result = runPromise(() -> widgetAdapter.findByDashboardId(dashboardId));
+        List<Widget> result = runPromise(() -> widgetAdapter.findByDashboardId(dashboardId)); // GH-90000
 
-        assertThat(result).isNotNull();
-        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class));
+        assertThat(result).isNotNull(); // GH-90000
+        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("Should find widgets by workspace ID")
-    void shouldFindByWorkspaceId() {
-        UUID workspaceId = UUID.randomUUID();
+    @DisplayName("Should find widgets by workspace ID [GH-90000]")
+    void shouldFindByWorkspaceId() { // GH-90000
+        UUID workspaceId = UUID.randomUUID(); // GH-90000
 
-        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
-            .thenReturn(Promise.of(List.of()));
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
+            .thenReturn(Promise.of(List.of())); // GH-90000
 
-        List<Widget> result = runPromise(() -> widgetAdapter.findByWorkspaceId(workspaceId));
+        List<Widget> result = runPromise(() -> widgetAdapter.findByWorkspaceId(workspaceId)); // GH-90000
 
-        assertThat(result).isNotNull();
+        assertThat(result).isNotNull(); // GH-90000
     }
 }

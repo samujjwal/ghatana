@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TraceLinkBuilder Tests")
+@DisplayName("TraceLinkBuilder Tests [GH-90000]")
 class TraceLinkBuilderTest extends EventloopTestBase {
 
   @Mock
@@ -41,61 +41,61 @@ class TraceLinkBuilderTest extends EventloopTestBase {
   private TraceLinkBuilder builder;
 
   @BeforeEach
-  void setUp() {
-    MockitoAnnotations.openMocks(this);
-    builder = new TraceLinkBuilder(graphPort);
-    when(graphPort.upsertRequirementNode(anyStringRequirement(), anyString())).thenReturn(Promise.of((Void) null));
-    when(graphPort.createRelationship(anyString(), anyString(), anyString(), anyString(), anyMap()))
-        .thenReturn(Promise.of((Void) null));
+  void setUp() { // GH-90000
+    MockitoAnnotations.openMocks(this); // GH-90000
+    builder = new TraceLinkBuilder(graphPort); // GH-90000
+    when(graphPort.upsertRequirementNode(anyStringRequirement(), anyString())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(graphPort.createRelationship(anyString(), anyString(), anyString(), anyString(), anyMap())) // GH-90000
+        .thenReturn(Promise.of((Void) null)); // GH-90000
   }
 
   @Test
-  @DisplayName("linkRequirement creates IMPLEMENTS and TESTS links from semantic candidates")
-  void linkRequirementCreatesExpectedLinks() {
-    Requirement requirement = requirement();
-    when(graphPort.semanticSearch(anyString(), eq("tenant-1"), anyInt(), anyDouble()))
-        .thenReturn(Promise.of(List.of(
-            new RequirementTraceabilityGraphPort.TraceabilityCandidate(
-                "svc-1", "SERVICE", "BillingService", 0.93, Map.of()),
-            new RequirementTraceabilityGraphPort.TraceabilityCandidate(
-                "test-1", "TEST", "BillingServiceTest", 0.88, Map.of()))));
+  @DisplayName("linkRequirement creates IMPLEMENTS and TESTS links from semantic candidates [GH-90000]")
+  void linkRequirementCreatesExpectedLinks() { // GH-90000
+    Requirement requirement = requirement(); // GH-90000
+    when(graphPort.semanticSearch(anyString(), eq("tenant-1 [GH-90000]"), anyInt(), anyDouble()))
+        .thenReturn(Promise.of(List.of( // GH-90000
+            new RequirementTraceabilityGraphPort.TraceabilityCandidate( // GH-90000
+                "svc-1", "SERVICE", "BillingService", 0.93, Map.of()), // GH-90000
+            new RequirementTraceabilityGraphPort.TraceabilityCandidate( // GH-90000
+                "test-1", "TEST", "BillingServiceTest", 0.88, Map.of())))); // GH-90000
 
-    TraceLinkBuilder.TraceLinkSummary result = runPromise(() -> builder.linkRequirement(requirement, "tenant-1"));
+    TraceLinkBuilder.TraceLinkSummary result = runPromise(() -> builder.linkRequirement(requirement, "tenant-1")); // GH-90000
 
-    assertThat(result.implementationNodeIds()).containsExactly("svc-1");
-    assertThat(result.testNodeIds()).containsExactly("test-1");
+    assertThat(result.implementationNodeIds()).containsExactly("svc-1 [GH-90000]");
+    assertThat(result.testNodeIds()).containsExactly("test-1 [GH-90000]");
 
-    verify(graphPort).upsertRequirementNode(requirement, "tenant-1");
-    verify(graphPort).createRelationship(
-        requirement.getRequirementId(), "svc-1", "IMPLEMENTS", "tenant-1", Map.of(
+    verify(graphPort).upsertRequirementNode(requirement, "tenant-1"); // GH-90000
+    verify(graphPort).createRelationship( // GH-90000
+        requirement.getRequirementId(), "svc-1", "IMPLEMENTS", "tenant-1", Map.of( // GH-90000
             "linkedBy", "TraceLinkBuilder",
             "similarity", 0.93,
             "candidateType", "SERVICE"));
-    verify(graphPort).createRelationship(
-        requirement.getRequirementId(), "test-1", "TESTS", "tenant-1", Map.of(
+    verify(graphPort).createRelationship( // GH-90000
+        requirement.getRequirementId(), "test-1", "TESTS", "tenant-1", Map.of( // GH-90000
             "linkedBy", "TraceLinkBuilder",
             "similarity", 0.88,
             "candidateType", "TEST"));
-    verify(graphPort, times(2)).createRelationship(anyString(), anyString(), anyString(), anyString(), anyMap());
+    verify(graphPort, times(2)).createRelationship(anyString(), anyString(), anyString(), anyString(), anyMap()); // GH-90000
   }
 
-  private Requirement requirement() {
-    return Requirement.builder()
-        .requirementId("req-1")
-        .projectId("proj-1")
-        .title("Secure billing access")
-        .description("Users must authenticate with MFA before opening billing settings.")
-        .type(RequirementType.FUNCTIONAL)
-        .priority(RequirementPriority.MUST_HAVE)
-        .status(RequirementStatus.DRAFT)
-        .createdBy("tester")
-        .metadata(RequirementMetadata.empty())
-        .createdAt(Instant.parse("2026-04-06T00:00:00Z"))
-        .updatedAt(Instant.parse("2026-04-06T00:00:00Z"))
-        .build();
+  private Requirement requirement() { // GH-90000
+    return Requirement.builder() // GH-90000
+        .requirementId("req-1 [GH-90000]")
+        .projectId("proj-1 [GH-90000]")
+        .title("Secure billing access [GH-90000]")
+        .description("Users must authenticate with MFA before opening billing settings. [GH-90000]")
+        .type(RequirementType.FUNCTIONAL) // GH-90000
+        .priority(RequirementPriority.MUST_HAVE) // GH-90000
+        .status(RequirementStatus.DRAFT) // GH-90000
+        .createdBy("tester [GH-90000]")
+        .metadata(RequirementMetadata.empty()) // GH-90000
+        .createdAt(Instant.parse("2026-04-06T00:00:00Z [GH-90000]"))
+        .updatedAt(Instant.parse("2026-04-06T00:00:00Z [GH-90000]"))
+        .build(); // GH-90000
   }
 
-  private Requirement anyStringRequirement() {
-    return org.mockito.ArgumentMatchers.any();
+  private Requirement anyStringRequirement() { // GH-90000
+    return org.mockito.ArgumentMatchers.any(); // GH-90000
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana Technologies
+ * Copyright (c) 2025 Ghatana Technologies // GH-90000
  * YAPPC Lifecycle Service
  */
 package com.ghatana.yappc.services.lifecycle;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link AepEventBridge} (YAPPC-Ph5).
+ * Unit tests for {@link AepEventBridge} (YAPPC-Ph5). // GH-90000
  *
  * <p>All async tests use {@link EventloopTestBase#runPromise} to execute
  * ActiveJ Promises on the managed event loop without blocking.
@@ -37,8 +37,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AepEventBridge (YAPPC-Ph5)")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("AepEventBridge (YAPPC-Ph5) [GH-90000]")
 class AepEventBridgeTest extends EventloopTestBase {
 
     @Mock
@@ -47,8 +47,8 @@ class AepEventBridgeTest extends EventloopTestBase {
     private AepEventBridge bridge;
 
     @BeforeEach
-    void setUp() {
-        bridge = new AepEventBridge(publisher);
+    void setUp() { // GH-90000
+        bridge = new AepEventBridge(publisher); // GH-90000
     }
 
     // =========================================================================
@@ -56,57 +56,57 @@ class AepEventBridgeTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("publishRawEvent")
+    @DisplayName("publishRawEvent [GH-90000]")
     class PublishRawEventTests {
 
         @Test
-        @DisplayName("should publish event and return null on success")
-        void shouldPublishEventOnSuccess() {
+        @DisplayName("should publish event and return null on success [GH-90000]")
+        void shouldPublishEventOnSuccess() { // GH-90000
             // GIVEN
-            when(publisher.publish(anyString(), anyString(), any()))
-                    .thenReturn(Promise.complete());
-            Map<String, Object> payload = Map.of("key", "value");
+            when(publisher.publish(anyString(), anyString(), any())) // GH-90000
+                    .thenReturn(Promise.complete()); // GH-90000
+            Map<String, Object> payload = Map.of("key", "value"); // GH-90000
 
             // WHEN
-            Void result = runPromise(() -> bridge.publishRawEvent("test.event", "tenant-1", payload));
+            Void result = runPromise(() -> bridge.publishRawEvent("test.event", "tenant-1", payload)); // GH-90000
 
             // THEN
-            assertThat(result).isNull();
-            verify(publisher).publish("test.event", "tenant-1", payload);
+            assertThat(result).isNull(); // GH-90000
+            verify(publisher).publish("test.event", "tenant-1", payload); // GH-90000
         }
 
         @Test
-        @DisplayName("should swallow publisher failure and still return null")
-        void shouldSwallowPublisherFailure() {
+        @DisplayName("should swallow publisher failure and still return null [GH-90000]")
+        void shouldSwallowPublisherFailure() { // GH-90000
             // GIVEN
-            when(publisher.publish(anyString(), anyString(), any()))
-                    .thenReturn(Promise.ofException(new RuntimeException("Downstream AEP error")));
-            Map<String, Object> payload = Map.of("key", "val");
+            when(publisher.publish(anyString(), anyString(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("Downstream AEP error [GH-90000]")));
+            Map<String, Object> payload = Map.of("key", "val"); // GH-90000
 
             // WHEN — must not throw
-            Void result = runPromise(() -> bridge.publishRawEvent("test.event", "tenant-x", payload));
+            Void result = runPromise(() -> bridge.publishRawEvent("test.event", "tenant-x", payload)); // GH-90000
 
             // THEN — failure swallowed, null returned
-            assertThat(result).isNull();
+            assertThat(result).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should pass all payload fields through to publisher unchanged")
-        void shouldPassPayloadThroughToPublisher() {
+        @DisplayName("should pass all payload fields through to publisher unchanged [GH-90000]")
+        void shouldPassPayloadThroughToPublisher() { // GH-90000
             // GIVEN
-            @SuppressWarnings("unchecked")
+            @SuppressWarnings("unchecked [GH-90000]")
             ArgumentCaptor<Map<String, Object>> payloadCaptor =
-                    ArgumentCaptor.forClass(Map.class);
-            when(publisher.publish(anyString(), anyString(), any()))
-                    .thenReturn(Promise.complete());
-            Map<String, Object> payload = Map.of("projectId", "proj-1", "stage", "context");
+                    ArgumentCaptor.forClass(Map.class); // GH-90000
+            when(publisher.publish(anyString(), anyString(), any())) // GH-90000
+                    .thenReturn(Promise.complete()); // GH-90000
+            Map<String, Object> payload = Map.of("projectId", "proj-1", "stage", "context"); // GH-90000
 
             // WHEN
-            runPromise(() -> bridge.publishRawEvent("lifecycle.phase.advanced", "t1", payload));
+            runPromise(() -> bridge.publishRawEvent("lifecycle.phase.advanced", "t1", payload)); // GH-90000
 
             // THEN
-            verify(publisher).publish(eq("lifecycle.phase.advanced"), eq("t1"), payloadCaptor.capture());
-            assertThat(payloadCaptor.getValue()).containsEntry("projectId", "proj-1");
+            verify(publisher).publish(eq("lifecycle.phase.advanced [GH-90000]"), eq("t1 [GH-90000]"), payloadCaptor.capture());
+            assertThat(payloadCaptor.getValue()).containsEntry("projectId", "proj-1"); // GH-90000
         }
     }
 
@@ -115,36 +115,36 @@ class AepEventBridgeTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("publishTransitionEvent — success")
+    @DisplayName("publishTransitionEvent — success [GH-90000]")
     class PublishTransitionEventSuccessTests {
 
         @Test
-        @DisplayName("should publish lifecycle.phase.advanced on successful transition")
-        void shouldPublishPhaseAdvancedOnSuccess() {
+        @DisplayName("should publish lifecycle.phase.advanced on successful transition [GH-90000]")
+        void shouldPublishPhaseAdvancedOnSuccess() { // GH-90000
             // GIVEN
-            when(publisher.publish(anyString(), anyString(), any()))
-                    .thenReturn(Promise.complete());
-            TransitionRequest request = new TransitionRequest(
+            when(publisher.publish(anyString(), anyString(), any())) // GH-90000
+                    .thenReturn(Promise.complete()); // GH-90000
+            TransitionRequest request = new TransitionRequest( // GH-90000
                     "proj-1", "intent", "context", "tenant-1", "user@example.com");
-            TransitionResult result = TransitionResult.success("context");
+            TransitionResult result = TransitionResult.success("context [GH-90000]");
 
             // WHEN
-            Void out = runPromise(() -> bridge.publishTransitionEvent(request, result));
+            Void out = runPromise(() -> bridge.publishTransitionEvent(request, result)); // GH-90000
 
             // THEN
-            assertThat(out).isNull();
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-            verify(publisher).publish(
-                    eq(AepEventBridge.EVENT_PHASE_ADVANCED),
-                    eq("tenant-1"),
-                    payloadCaptor.capture());
-            Map<String, Object> payload = payloadCaptor.getValue();
-            assertThat(payload).containsEntry("projectId", "proj-1");
-            assertThat(payload).containsEntry("fromPhase", "intent");
-            assertThat(payload).containsEntry("toPhase", "context");
-            assertThat(payload).containsEntry("requestedBy", "user@example.com");
-            assertThat(payload).containsKey("advancedAt");
+            assertThat(out).isNull(); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
+            verify(publisher).publish( // GH-90000
+                    eq(AepEventBridge.EVENT_PHASE_ADVANCED), // GH-90000
+                    eq("tenant-1 [GH-90000]"),
+                    payloadCaptor.capture()); // GH-90000
+            Map<String, Object> payload = payloadCaptor.getValue(); // GH-90000
+            assertThat(payload).containsEntry("projectId", "proj-1"); // GH-90000
+            assertThat(payload).containsEntry("fromPhase", "intent"); // GH-90000
+            assertThat(payload).containsEntry("toPhase", "context"); // GH-90000
+            assertThat(payload).containsEntry("requestedBy", "user@example.com"); // GH-90000
+            assertThat(payload).containsKey("advancedAt [GH-90000]");
         }
     }
 
@@ -153,82 +153,82 @@ class AepEventBridgeTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("publishTransitionEvent — blocked")
+    @DisplayName("publishTransitionEvent — blocked [GH-90000]")
     class PublishTransitionEventBlockedTests {
 
         @Test
-        @DisplayName("should publish lifecycle.phase.blocked on blocked transition")
-        void shouldPublishPhaseBlockedOnBlockedResult() {
+        @DisplayName("should publish lifecycle.phase.blocked on blocked transition [GH-90000]")
+        void shouldPublishPhaseBlockedOnBlockedResult() { // GH-90000
             // GIVEN
-            when(publisher.publish(anyString(), anyString(), any()))
-                    .thenReturn(Promise.complete());
-            TransitionRequest request = new TransitionRequest(
+            when(publisher.publish(anyString(), anyString(), any())) // GH-90000
+                    .thenReturn(Promise.complete()); // GH-90000
+            TransitionRequest request = new TransitionRequest( // GH-90000
                     "proj-2", "context", "shape", "tenant-2", "agent-X");
-            TransitionResult result = TransitionResult.blocked(
+            TransitionResult result = TransitionResult.blocked( // GH-90000
                     "MISSING_ARTIFACT", "Required PRD document not found");
 
             // WHEN
-            Void out = runPromise(() -> bridge.publishTransitionEvent(request, result));
+            Void out = runPromise(() -> bridge.publishTransitionEvent(request, result)); // GH-90000
 
             // THEN
-            assertThat(out).isNull();
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-            verify(publisher).publish(
-                    eq(AepEventBridge.EVENT_PHASE_BLOCKED),
-                    eq("tenant-2"),
-                    payloadCaptor.capture());
-            Map<String, Object> payload = payloadCaptor.getValue();
-            assertThat(payload).containsEntry("projectId", "proj-2");
-            assertThat(payload).containsEntry("intendedToPhase", "shape");
-            assertThat(payload).containsEntry("blockCode", "MISSING_ARTIFACT");
-            assertThat(payload).containsEntry("blockReason", "Required PRD document not found");
-            assertThat(payload).containsKey("blockedAt");
+            assertThat(out).isNull(); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
+            verify(publisher).publish( // GH-90000
+                    eq(AepEventBridge.EVENT_PHASE_BLOCKED), // GH-90000
+                    eq("tenant-2 [GH-90000]"),
+                    payloadCaptor.capture()); // GH-90000
+            Map<String, Object> payload = payloadCaptor.getValue(); // GH-90000
+            assertThat(payload).containsEntry("projectId", "proj-2"); // GH-90000
+            assertThat(payload).containsEntry("intendedToPhase", "shape"); // GH-90000
+            assertThat(payload).containsEntry("blockCode", "MISSING_ARTIFACT"); // GH-90000
+            assertThat(payload).containsEntry("blockReason", "Required PRD document not found"); // GH-90000
+            assertThat(payload).containsKey("blockedAt [GH-90000]");
         }
 
         @Test
-        @DisplayName("should publish lifecycle.phase.blocked on missing-artifact transition")
-        void shouldPublishPhaseBlockedOnMissingArtifacts() {
+        @DisplayName("should publish lifecycle.phase.blocked on missing-artifact transition [GH-90000]")
+        void shouldPublishPhaseBlockedOnMissingArtifacts() { // GH-90000
             // GIVEN
-            when(publisher.publish(anyString(), anyString(), any()))
-                    .thenReturn(Promise.complete());
-            TransitionRequest request = new TransitionRequest(
+            when(publisher.publish(anyString(), anyString(), any())) // GH-90000
+                    .thenReturn(Promise.complete()); // GH-90000
+            TransitionRequest request = new TransitionRequest( // GH-90000
                     "proj-3", "shape", "generate", "tenant-1", "user");
-            TransitionResult result = TransitionResult.missingArtifacts(
-                    List.of("architecture-doc", "api-spec"));
+            TransitionResult result = TransitionResult.missingArtifacts( // GH-90000
+                    List.of("architecture-doc", "api-spec")); // GH-90000
 
             // WHEN
-            runPromise(() -> bridge.publishTransitionEvent(request, result));
+            runPromise(() -> bridge.publishTransitionEvent(request, result)); // GH-90000
 
             // THEN
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-            verify(publisher).publish(
-                    eq(AepEventBridge.EVENT_PHASE_BLOCKED),
-                    eq("tenant-1"),
-                    payloadCaptor.capture());
-            Map<String, Object> payload = payloadCaptor.getValue();
-            assertThat(payload).containsEntry("blockCode", "MISSING_ARTIFACT");
-            @SuppressWarnings("unchecked")
-            List<String> artifacts = (List<String>) payload.get("missingArtifacts");
-            assertThat(artifacts).containsExactly("architecture-doc", "api-spec");
+            @SuppressWarnings("unchecked [GH-90000]")
+            ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
+            verify(publisher).publish( // GH-90000
+                    eq(AepEventBridge.EVENT_PHASE_BLOCKED), // GH-90000
+                    eq("tenant-1 [GH-90000]"),
+                    payloadCaptor.capture()); // GH-90000
+            Map<String, Object> payload = payloadCaptor.getValue(); // GH-90000
+            assertThat(payload).containsEntry("blockCode", "MISSING_ARTIFACT"); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            List<String> artifacts = (List<String>) payload.get("missingArtifacts [GH-90000]");
+            assertThat(artifacts).containsExactly("architecture-doc", "api-spec"); // GH-90000
         }
 
         @Test
-        @DisplayName("should swallow publisher failure even on blocked events")
-        void shouldSwallowPublisherFailureOnBlockedEvent() {
+        @DisplayName("should swallow publisher failure even on blocked events [GH-90000]")
+        void shouldSwallowPublisherFailureOnBlockedEvent() { // GH-90000
             // GIVEN
-            when(publisher.publish(anyString(), anyString(), any()))
-                    .thenReturn(Promise.ofException(new RuntimeException("AEP down")));
-            TransitionRequest request = new TransitionRequest(
+            when(publisher.publish(anyString(), anyString(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("AEP down [GH-90000]")));
+            TransitionRequest request = new TransitionRequest( // GH-90000
                     "proj-4", "intent", "context", "tenant-3", "user");
-            TransitionResult result = TransitionResult.blocked("POLICY_DENIED", "Policy rejected");
+            TransitionResult result = TransitionResult.blocked("POLICY_DENIED", "Policy rejected"); // GH-90000
 
             // WHEN — must not throw
-            Void out = runPromise(() -> bridge.publishTransitionEvent(request, result));
+            Void out = runPromise(() -> bridge.publishTransitionEvent(request, result)); // GH-90000
 
             // THEN — failure swallowed
-            assertThat(out).isNull();
+            assertThat(out).isNull(); // GH-90000
         }
     }
 }

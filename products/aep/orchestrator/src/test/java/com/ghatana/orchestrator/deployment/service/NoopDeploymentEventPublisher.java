@@ -14,8 +14,8 @@ import org.slf4j.MDC;
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * DeploymentEventPublisher publisher = new NoopDeploymentEventPublisher();
- * orchestrator = new DeploymentOrchestrator(publisher, metrics);
+ * DeploymentEventPublisher publisher = new NoopDeploymentEventPublisher(); // GH-90000
+ * orchestrator = new DeploymentOrchestrator(publisher, metrics); // GH-90000
  * }</pre>
  *
  * @doc.type class
@@ -33,25 +33,25 @@ public class NoopDeploymentEventPublisher implements DeploymentEventPublisher {
      * @param request deployment request
      * @return Promise<Void> for async completion
      */
-    public Promise<Void> publishDeploymentEvent(String eventType, String deploymentId, DeploymentRequest request) {
-        String tenantId = request.getTenantId();
-        String pipelineId = request.getPipelineId();
+    public Promise<Void> publishDeploymentEvent(String eventType, String deploymentId, DeploymentRequest request) { // GH-90000
+        String tenantId = request.getTenantId(); // GH-90000
+        String pipelineId = request.getPipelineId(); // GH-90000
 
-        MDC.put("eventType", eventType);
-        MDC.put("deploymentId", deploymentId);
+        MDC.put("eventType", eventType); // GH-90000
+        MDC.put("deploymentId", deploymentId); // GH-90000
 
         try {
-            log.info(
-                    "Deployment event published: {} (deploymentId={}, pipelineId={}, tenantId={})",
+            log.info( // GH-90000
+                    "Deployment event published: {} (deploymentId={}, pipelineId={}, tenantId={})", // GH-90000
                     eventType,
                     deploymentId,
                     pipelineId,
                     tenantId);
         } finally {
-            MDC.remove("eventType");
-            MDC.remove("deploymentId");
+            MDC.remove("eventType [GH-90000]");
+            MDC.remove("deploymentId [GH-90000]");
         }
 
-        return Promise.of(null);
+        return Promise.of(null); // GH-90000
     }
 }

@@ -30,10 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>This shared service is validated against its published contract here rather than through a
  * Spring Boot harness that is not part of the module's current build graph.</p>
  */
-@DisplayName("User Profile Service Contract Tests")
+@DisplayName("User Profile Service Contract Tests [GH-90000]")
 public class UserProfileServiceContractTest {
 
-    private static final Path SPEC_PATH = Path.of(
+    private static final Path SPEC_PATH = Path.of( // GH-90000
             "..",
             "..",
             "platform",
@@ -42,70 +42,70 @@ public class UserProfileServiceContractTest {
             "user-profile-service.yaml"
     );
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
 
     private static final String API_VERSION = "1.0.0";
 
     @Test
-    @DisplayName("OpenAPI contract file exists and is readable")
-    void openApiContractFileExists() {
-        assertThat(SPEC_PATH)
-                .as("User Profile OpenAPI contract should exist at %s", SPEC_PATH)
-                .exists()
-                .isReadable();
+    @DisplayName("OpenAPI contract file exists and is readable [GH-90000]")
+    void openApiContractFileExists() { // GH-90000
+        assertThat(SPEC_PATH) // GH-90000
+                .as("User Profile OpenAPI contract should exist at %s", SPEC_PATH) // GH-90000
+                .exists() // GH-90000
+                .isReadable(); // GH-90000
     }
 
     @Test
-    @DisplayName("OpenAPI metadata matches expected user profile service contract")
-    void openApiMetadataIsConsistent() throws Exception {
-        JsonNode root = readSpec();
+    @DisplayName("OpenAPI metadata matches expected user profile service contract [GH-90000]")
+    void openApiMetadataIsConsistent() throws Exception { // GH-90000
+        JsonNode root = readSpec(); // GH-90000
 
-        assertThat(root.path("openapi").asText()).isEqualTo("3.1.0");
-        assertThat(root.path("info").path("title").asText())
-                .isEqualTo("Ghatana User Profile Service API");
-        assertThat(root.path("info").path("version").asText()).isEqualTo(API_VERSION);
-        assertThat(root.path("servers")).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(root.path("openapi [GH-90000]").asText()).isEqualTo("3.1.0 [GH-90000]");
+        assertThat(root.path("info [GH-90000]").path("title [GH-90000]").asText())
+                .isEqualTo("Ghatana User Profile Service API [GH-90000]");
+        assertThat(root.path("info [GH-90000]").path("version [GH-90000]").asText()).isEqualTo(API_VERSION);
+        assertThat(root.path("servers [GH-90000]")).hasSizeGreaterThanOrEqualTo(2);
     }
 
     @Test
-    @DisplayName("OpenAPI exposes the expected user profile and observability paths")
-    void openApiContainsExpectedPaths() throws Exception {
-        JsonNode paths = readSpec().path("paths");
+    @DisplayName("OpenAPI exposes the expected user profile and observability paths [GH-90000]")
+    void openApiContainsExpectedPaths() throws Exception { // GH-90000
+        JsonNode paths = readSpec().path("paths [GH-90000]");
 
-        assertThat(paths.has("/health")).isTrue();
-        assertThat(paths.has("/metrics")).isTrue();
-        assertThat(paths.has("/profiles/{userId}")).isTrue();
+        assertThat(paths.has("/health [GH-90000]")).isTrue();
+        assertThat(paths.has("/metrics [GH-90000]")).isTrue();
+        assertThat(paths.has("/profiles/{userId} [GH-90000]")).isTrue();
     }
 
     @Test
-    @DisplayName("OpenAPI defines expected user profile schemas and error responses")
-    void openApiContainsExpectedSchemas() throws Exception {
-        JsonNode schemas = readSpec().path("components").path("schemas");
+    @DisplayName("OpenAPI defines expected user profile schemas and error responses [GH-90000]")
+    void openApiContainsExpectedSchemas() throws Exception { // GH-90000
+        JsonNode schemas = readSpec().path("components [GH-90000]").path("schemas [GH-90000]");
 
-        assertThat(schemas.has("HealthResponse")).isTrue();
-        assertThat(schemas.has("UserProfile")).isTrue();
-        assertThat(schemas.has("UpsertProfileRequest")).isTrue();
-        assertThat(schemas.has("ErrorResponse")).isTrue();
+        assertThat(schemas.has("HealthResponse [GH-90000]")).isTrue();
+        assertThat(schemas.has("UserProfile [GH-90000]")).isTrue();
+        assertThat(schemas.has("UpsertProfileRequest [GH-90000]")).isTrue();
+        assertThat(schemas.has("ErrorResponse [GH-90000]")).isTrue();
     }
 
     @Test
-    @DisplayName("OpenAPI declares required tenant and auth security boundaries")
-    void openApiDefinesTenantAndSecurityRequirements() throws Exception {
-        JsonNode root = readSpec();
-        JsonNode components = root.path("components");
-        JsonNode profilePath = root.path("paths").path("/profiles/{userId}");
+    @DisplayName("OpenAPI declares required tenant and auth security boundaries [GH-90000]")
+    void openApiDefinesTenantAndSecurityRequirements() throws Exception { // GH-90000
+        JsonNode root = readSpec(); // GH-90000
+        JsonNode components = root.path("components [GH-90000]");
+        JsonNode profilePath = root.path("paths [GH-90000]").path("/profiles/{userId} [GH-90000]");
 
-        assertThat(components.path("parameters").has("TenantId")).isTrue();
-        assertThat(components.path("securitySchemes").has("bearerAuth")).isTrue();
-        assertThat(components.path("securitySchemes").has("internalKey")).isTrue();
-        assertThat(profilePath.path("get").path("security")).isNotEmpty();
-        assertThat(profilePath.path("put").path("security")).isNotEmpty();
-        assertThat(profilePath.path("delete").path("security")).isNotEmpty();
+        assertThat(components.path("parameters [GH-90000]").has("TenantId [GH-90000]")).isTrue();
+        assertThat(components.path("securitySchemes [GH-90000]").has("bearerAuth [GH-90000]")).isTrue();
+        assertThat(components.path("securitySchemes [GH-90000]").has("internalKey [GH-90000]")).isTrue();
+        assertThat(profilePath.path("get [GH-90000]").path("security [GH-90000]")).isNotEmpty();
+        assertThat(profilePath.path("put [GH-90000]").path("security [GH-90000]")).isNotEmpty();
+        assertThat(profilePath.path("delete [GH-90000]").path("security [GH-90000]")).isNotEmpty();
     }
 
-    private JsonNode readSpec() throws IOException {
-        try (var inputStream = Files.newInputStream(SPEC_PATH)) {
-            return objectMapper.readTree(inputStream);
+    private JsonNode readSpec() throws IOException { // GH-90000
+        try (var inputStream = Files.newInputStream(SPEC_PATH)) { // GH-90000
+            return objectMapper.readTree(inputStream); // GH-90000
         }
     }
 }

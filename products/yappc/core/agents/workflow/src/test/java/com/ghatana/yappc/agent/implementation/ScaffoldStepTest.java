@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation ScaffoldStep Tests")
+@DisplayName("Implementation ScaffoldStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles scaffold step test operations
@@ -31,29 +31,29 @@ class ScaffoldStepTest extends EventloopTestBase {
   private ScaffoldStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new ScaffoldStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new ScaffoldStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("implementation.scaffold");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("implementation.scaffold [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should scaffold codebase from implementation plan")
-  void shouldScaffoldCodebase() {
+  @DisplayName("Should scaffold codebase from implementation plan [GH-90000]")
+  void shouldScaffoldCodebase() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("implementationPlanId", "plan-001");
-    context.put("tenantId", "tenant-abc");
-    context.put(
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("implementationPlanId", "plan-001"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // GH-90000
+    context.put( // GH-90000
         "units",
-        List.of(
-            Map.of(
+        List.of( // GH-90000
+            Map.of( // GH-90000
                 "unitId",
                 "u1",
                 "type",
@@ -64,7 +64,7 @@ class ScaffoldStepTest extends EventloopTestBase {
                 "products/api-gateway",
                 "repo",
                 "ghatana"),
-            Map.of(
+            Map.of( // GH-90000
                 "unitId",
                 "u2",
                 "type",
@@ -76,16 +76,16 @@ class ScaffoldStepTest extends EventloopTestBase {
                 "repo",
                 "ghatana")));
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("implementationPlanId")).isEqualTo("plan-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("implementationPlanId [GH-90000]")).isEqualTo("plan-001 [GH-90000]");
   }
 }

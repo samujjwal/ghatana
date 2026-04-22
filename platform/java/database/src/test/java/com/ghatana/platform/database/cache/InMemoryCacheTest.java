@@ -18,166 +18,166 @@ class InMemoryCacheTest {
     private InMemoryCache<String, String> cache;
 
     @BeforeEach
-    void setUp() {
-        cache = InMemoryCache.create("test-cache", Duration.ofSeconds(60));
+    void setUp() { // GH-90000
+        cache = InMemoryCache.create("test-cache", Duration.ofSeconds(60)); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (cache != null) {
-            cache.close();
+    void tearDown() { // GH-90000
+        if (cache != null) { // GH-90000
+            cache.close(); // GH-90000
         }
     }
 
     @Test
-    void testPutAndGet() {
-        cache.put("key1", "value1");
+    void testPutAndGet() { // GH-90000
+        cache.put("key1", "value1"); // GH-90000
 
-        Optional<String> result = cache.get("key1");
+        Optional<String> result = cache.get("key1 [GH-90000]");
 
-        assertTrue(result.isPresent());
-        assertEquals("value1", result.get());
+        assertTrue(result.isPresent()); // GH-90000
+        assertEquals("value1", result.get()); // GH-90000
     }
 
     @Test
-    void testGetNonExistent() {
-        Optional<String> result = cache.get("nonexistent");
+    void testGetNonExistent() { // GH-90000
+        Optional<String> result = cache.get("nonexistent [GH-90000]");
 
-        assertFalse(result.isPresent());
+        assertFalse(result.isPresent()); // GH-90000
     }
 
     @Test
-    void testRemove() {
-        cache.put("key1", "value1");
-        cache.remove("key1");
+    void testRemove() { // GH-90000
+        cache.put("key1", "value1"); // GH-90000
+        cache.remove("key1 [GH-90000]");
 
-        Optional<String> result = cache.get("key1");
+        Optional<String> result = cache.get("key1 [GH-90000]");
 
-        assertFalse(result.isPresent());
+        assertFalse(result.isPresent()); // GH-90000
     }
 
     @Test
-    void testContains() {
-        cache.put("key1", "value1");
+    void testContains() { // GH-90000
+        cache.put("key1", "value1"); // GH-90000
 
-        assertTrue(cache.contains("key1"));
-        assertFalse(cache.contains("nonexistent"));
+        assertTrue(cache.contains("key1 [GH-90000]"));
+        assertFalse(cache.contains("nonexistent [GH-90000]"));
     }
 
     @Test
-    void testClear() {
-        cache.put("key1", "value1");
-        cache.put("key2", "value2");
-        cache.put("key3", "value3");
+    void testClear() { // GH-90000
+        cache.put("key1", "value1"); // GH-90000
+        cache.put("key2", "value2"); // GH-90000
+        cache.put("key3", "value3"); // GH-90000
 
-        cache.clear();
+        cache.clear(); // GH-90000
 
-        assertFalse(cache.contains("key1"));
-        assertFalse(cache.contains("key2"));
-        assertFalse(cache.contains("key3"));
-        assertEquals(0, cache.size());
+        assertFalse(cache.contains("key1 [GH-90000]"));
+        assertFalse(cache.contains("key2 [GH-90000]"));
+        assertFalse(cache.contains("key3 [GH-90000]"));
+        assertEquals(0, cache.size()); // GH-90000
     }
 
     @Test
-    void testSize() {
-        assertEquals(0, cache.size());
+    void testSize() { // GH-90000
+        assertEquals(0, cache.size()); // GH-90000
 
-        cache.put("key1", "value1");
-        assertEquals(1, cache.size());
+        cache.put("key1", "value1"); // GH-90000
+        assertEquals(1, cache.size()); // GH-90000
 
-        cache.put("key2", "value2");
-        assertEquals(2, cache.size());
+        cache.put("key2", "value2"); // GH-90000
+        assertEquals(2, cache.size()); // GH-90000
 
-        cache.remove("key1");
-        assertEquals(1, cache.size());
+        cache.remove("key1 [GH-90000]");
+        assertEquals(1, cache.size()); // GH-90000
     }
 
     @Test
-    void testOverwrite() {
-        cache.put("key1", "value1");
-        cache.put("key1", "value2");
+    void testOverwrite() { // GH-90000
+        cache.put("key1", "value1"); // GH-90000
+        cache.put("key1", "value2"); // GH-90000
 
-        Optional<String> result = cache.get("key1");
+        Optional<String> result = cache.get("key1 [GH-90000]");
 
-        assertTrue(result.isPresent());
-        assertEquals("value2", result.get());
-        assertEquals(1, cache.size());
+        assertTrue(result.isPresent()); // GH-90000
+        assertEquals("value2", result.get()); // GH-90000
+        assertEquals(1, cache.size()); // GH-90000
     }
 
     @Test
-    void testExpiration() throws InterruptedException {
+    void testExpiration() throws InterruptedException { // GH-90000
         // Use a 500ms TTL with a 1000ms sleep to provide robust margins against JVM/GC pauses
-        InMemoryCache<String, String> shortTtlCache = InMemoryCache.create("short-ttl-cache", Duration.ofMillis(500));
+        InMemoryCache<String, String> shortTtlCache = InMemoryCache.create("short-ttl-cache", Duration.ofMillis(500)); // GH-90000
         try {
-            shortTtlCache.put("key1", "value1");
-            assertTrue(shortTtlCache.get("key1").isPresent());
+            shortTtlCache.put("key1", "value1"); // GH-90000
+            assertTrue(shortTtlCache.get("key1 [GH-90000]").isPresent());
 
-            // Wait for expiration (sleep > 2x TTL to handle slow/loaded machines)
-            TimeUnit.MILLISECONDS.sleep(1000);
+            // Wait for expiration (sleep > 2x TTL to handle slow/loaded machines) // GH-90000
+            TimeUnit.MILLISECONDS.sleep(1000); // GH-90000
 
-            assertFalse(shortTtlCache.get("key1").isPresent());
+            assertFalse(shortTtlCache.get("key1 [GH-90000]").isPresent());
         } finally {
-            shortTtlCache.close();
+            shortTtlCache.close(); // GH-90000
         }
     }
 
     @Test
-    void testMultipleKeys() {
-        cache.put("key1", "value1");
-        cache.put("key2", "value2");
-        cache.put("key3", "value3");
+    void testMultipleKeys() { // GH-90000
+        cache.put("key1", "value1"); // GH-90000
+        cache.put("key2", "value2"); // GH-90000
+        cache.put("key3", "value3"); // GH-90000
 
-        assertEquals("value1", cache.get("key1").orElse(null));
-        assertEquals("value2", cache.get("key2").orElse(null));
-        assertEquals("value3", cache.get("key3").orElse(null));
+        assertEquals("value1", cache.get("key1 [GH-90000]").orElse(null));
+        assertEquals("value2", cache.get("key2 [GH-90000]").orElse(null));
+        assertEquals("value3", cache.get("key3 [GH-90000]").orElse(null));
     }
 
     @Test
-    void testNullKey() {
-        assertThrows(NullPointerException.class, () -> cache.put(null, "value"));
-        assertThrows(NullPointerException.class, () -> cache.get(null));
-        assertThrows(NullPointerException.class, () -> cache.remove(null));
-        assertThrows(NullPointerException.class, () -> cache.contains(null));
+    void testNullKey() { // GH-90000
+        assertThrows(NullPointerException.class, () -> cache.put(null, "value")); // GH-90000
+        assertThrows(NullPointerException.class, () -> cache.get(null)); // GH-90000
+        assertThrows(NullPointerException.class, () -> cache.remove(null)); // GH-90000
+        assertThrows(NullPointerException.class, () -> cache.contains(null)); // GH-90000
     }
 
     @Test
-    void testNullValue() {
-        assertThrows(NullPointerException.class, () -> cache.put("key", null));
+    void testNullValue() { // GH-90000
+        assertThrows(NullPointerException.class, () -> cache.put("key", null)); // GH-90000
     }
 
     @Test
-    void testRemoveNonExistent() {
+    void testRemoveNonExistent() { // GH-90000
         // Should not throw
-        cache.remove("nonexistent");
-        assertEquals(0, cache.size());
+        cache.remove("nonexistent [GH-90000]");
+        assertEquals(0, cache.size()); // GH-90000
     }
 
     @Test
-    void testConcurrentAccess() throws InterruptedException {
+    void testConcurrentAccess() throws InterruptedException { // GH-90000
         int threadCount = 10;
         int operationsPerThread = 100;
         Thread[] threads = new Thread[threadCount];
 
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 0; i < threadCount; i++) { // GH-90000
             final int threadId = i;
-            threads[i] = new Thread(() -> {
-                for (int j = 0; j < operationsPerThread; j++) {
+            threads[i] = new Thread(() -> { // GH-90000
+                for (int j = 0; j < operationsPerThread; j++) { // GH-90000
                     String key = "key-" + threadId + "-" + j;
-                    cache.put(key, "value-" + j);
-                    cache.get(key);
+                    cache.put(key, "value-" + j); // GH-90000
+                    cache.get(key); // GH-90000
                 }
             });
         }
 
-        for (Thread thread : threads) {
-            thread.start();
+        for (Thread thread : threads) { // GH-90000
+            thread.start(); // GH-90000
         }
 
-        for (Thread thread : threads) {
-            thread.join();
+        for (Thread thread : threads) { // GH-90000
+            thread.join(); // GH-90000
         }
 
         // Should have entries from all threads
-        assertTrue(cache.size() > 0);
+        assertTrue(cache.size() > 0); // GH-90000
     }
 }

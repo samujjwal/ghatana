@@ -27,58 +27,58 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration")
-@Testcontainers(disabledWithoutDocker = true)
-@DisplayName("RunLedgerBackedHistoryIntegrationTest")
+@Tag("integration [GH-90000]")
+@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@DisplayName("RunLedgerBackedHistoryIntegrationTest [GH-90000]")
 class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-        new PostgreSQLContainer<>("postgres:15-alpine")
-            .withDatabaseName("aep_orchestrator")
-            .withUsername("aep")
-            .withPassword("aep");
+        new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
+            .withDatabaseName("aep_orchestrator [GH-90000]")
+            .withUsername("aep [GH-90000]")
+            .withPassword("aep [GH-90000]");
 
     @Test
-    @DisplayName("append persists an execution record that getHistory can read back")
-    void appendPersistsExecutionHistory() throws Exception {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(POSTGRES.getJdbcUrl());
-        config.setUsername(POSTGRES.getUsername());
-        config.setPassword(POSTGRES.getPassword());
+    @DisplayName("append persists an execution record that getHistory can read back [GH-90000]")
+    void appendPersistsExecutionHistory() throws Exception { // GH-90000
+        HikariConfig config = new HikariConfig(); // GH-90000
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
+        config.setUsername(POSTGRES.getUsername()); // GH-90000
+        config.setPassword(POSTGRES.getPassword()); // GH-90000
 
-        try (HikariDataSource dataSource = new HikariDataSource(config);
-             Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            statement.execute("""
-                CREATE TABLE IF NOT EXISTS agent_execution_history (
+        try (HikariDataSource dataSource = new HikariDataSource(config); // GH-90000
+             Connection connection = dataSource.getConnection(); // GH-90000
+             Statement statement = connection.createStatement()) { // GH-90000
+            statement.execute(""" // GH-90000
+                CREATE TABLE IF NOT EXISTS agent_execution_history ( // GH-90000
                     execution_id TEXT PRIMARY KEY,
                     agent_id TEXT NOT NULL,
                     status TEXT NOT NULL,
                     input_payload JSONB,
                     output_payload JSONB,
                     duration_ms BIGINT NOT NULL,
-                    executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW() // GH-90000
                 )
                 """);
 
             Executor executor = Runnable::run;
-            RunLedgerBackedHistory history = new RunLedgerBackedHistory(dataSource, executor);
-            AgentExecutionService.ExecutionRecord record = new AgentExecutionService.ExecutionRecord(
+            RunLedgerBackedHistory history = new RunLedgerBackedHistory(dataSource, executor); // GH-90000
+            AgentExecutionService.ExecutionRecord record = new AgentExecutionService.ExecutionRecord( // GH-90000
                 "exec-1",
                 "success",
-                Map.of("message", "hello"),
-                Map.of("result", "ok"),
+                Map.of("message", "hello"), // GH-90000
+                Map.of("result", "ok"), // GH-90000
                 15L,
-                Instant.parse("2026-04-15T12:00:00Z").toString());
+                Instant.parse("2026-04-15T12:00:00Z [GH-90000]").toString());
 
-            runPromise(() -> history.append("agent-1", record));
-            List<AgentExecutionService.ExecutionRecord> stored = runPromise(() -> history.getHistory("agent-1", 10));
+            runPromise(() -> history.append("agent-1", record)); // GH-90000
+            List<AgentExecutionService.ExecutionRecord> stored = runPromise(() -> history.getHistory("agent-1", 10)); // GH-90000
 
-            assertThat(stored).hasSize(1);
-            assertThat(stored.get(0).executionId()).isEqualTo("exec-1");
-            assertThat(stored.get(0).input()).isEqualTo(Map.of("message", "hello"));
-            assertThat(stored.get(0).output()).isEqualTo(Map.of("result", "ok"));
+            assertThat(stored).hasSize(1); // GH-90000
+            assertThat(stored.get(0).executionId()).isEqualTo("exec-1 [GH-90000]");
+            assertThat(stored.get(0).input()).isEqualTo(Map.of("message", "hello")); // GH-90000
+            assertThat(stored.get(0).output()).isEqualTo(Map.of("result", "ok")); // GH-90000
         }
     }
 }

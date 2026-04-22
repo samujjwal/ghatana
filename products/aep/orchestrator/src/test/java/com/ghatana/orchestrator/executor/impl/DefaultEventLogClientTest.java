@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Ghatana Inc.
+ * Copyright (c) 2024 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.orchestrator.executor.impl;
@@ -34,15 +34,15 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Uses an {@link InMemoryEventCloud} for verifiable event storage.
  * Promise-returning methods are executed within the managed ActiveJ Eventloop
- * provided by {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)}
- * since {@code Promise.ofBlocking()} requires a reactor in the current thread.
+ * provided by {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)} // GH-90000
+ * since {@code Promise.ofBlocking()} requires a reactor in the current thread. // GH-90000
  *
  * @doc.type class
  * @doc.purpose Comprehensive unit tests for DefaultEventLogClient
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DefaultEventLogClient")
+@DisplayName("DefaultEventLogClient [GH-90000]")
 class DefaultEventLogClientTest extends EventloopTestBase {
 
     private InMemoryEventCloud eventCloud;
@@ -51,352 +51,352 @@ class DefaultEventLogClientTest extends EventloopTestBase {
     private DefaultEventLogClient client;
 
     @BeforeEach
-    void setUp() {
-        eventCloud = new InMemoryEventCloud();
-        objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        executor = Executors.newSingleThreadExecutor();
-        client = new DefaultEventLogClient(eventCloud, objectMapper, executor);
+    void setUp() { // GH-90000
+        eventCloud = new InMemoryEventCloud(); // GH-90000
+        objectMapper = new ObjectMapper() // GH-90000
+                .registerModule(new JavaTimeModule()) // GH-90000
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // GH-90000
+        executor = Executors.newSingleThreadExecutor(); // GH-90000
+        client = new DefaultEventLogClient(eventCloud, objectMapper, executor); // GH-90000
     }
 
     // ==================== Construction ====================
 
     @Nested
-    @DisplayName("Construction")
+    @DisplayName("Construction [GH-90000]")
     class ConstructionTests {
 
         @Test
-        @DisplayName("single-arg constructor creates client with defaults")
-        void singleArgConstructor() {
-            DefaultEventLogClient c = new DefaultEventLogClient(eventCloud);
-            assertThat(c).isNotNull();
-            assertThat(c.getPublishedCount()).isZero();
-            assertThat(c.getFailedCount()).isZero();
+        @DisplayName("single-arg constructor creates client with defaults [GH-90000]")
+        void singleArgConstructor() { // GH-90000
+            DefaultEventLogClient c = new DefaultEventLogClient(eventCloud); // GH-90000
+            assertThat(c).isNotNull(); // GH-90000
+            assertThat(c.getPublishedCount()).isZero(); // GH-90000
+            assertThat(c.getFailedCount()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("two-arg constructor creates client with custom ObjectMapper")
-        void twoArgConstructor() {
-            ObjectMapper om = new ObjectMapper();
-            DefaultEventLogClient c = new DefaultEventLogClient(eventCloud, om);
-            assertThat(c).isNotNull();
+        @DisplayName("two-arg constructor creates client with custom ObjectMapper [GH-90000]")
+        void twoArgConstructor() { // GH-90000
+            ObjectMapper om = new ObjectMapper(); // GH-90000
+            DefaultEventLogClient c = new DefaultEventLogClient(eventCloud, om); // GH-90000
+            assertThat(c).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("constructor rejects null eventCloud")
-        void rejectsNullEventCloud() {
-            assertThatThrownBy(() -> new DefaultEventLogClient(null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("eventCloud");
+        @DisplayName("constructor rejects null eventCloud [GH-90000]")
+        void rejectsNullEventCloud() { // GH-90000
+            assertThatThrownBy(() -> new DefaultEventLogClient(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("eventCloud [GH-90000]");
         }
 
         @Test
-        @DisplayName("constructor rejects null objectMapper")
-        void rejectsNullObjectMapper() {
-            assertThatThrownBy(() -> new DefaultEventLogClient(eventCloud, null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("objectMapper");
+        @DisplayName("constructor rejects null objectMapper [GH-90000]")
+        void rejectsNullObjectMapper() { // GH-90000
+            assertThatThrownBy(() -> new DefaultEventLogClient(eventCloud, null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("objectMapper [GH-90000]");
         }
 
         @Test
-        @DisplayName("constructor rejects null executor")
-        void rejectsNullExecutor() {
-            assertThatThrownBy(() -> new DefaultEventLogClient(eventCloud, objectMapper, null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("executor");
+        @DisplayName("constructor rejects null executor [GH-90000]")
+        void rejectsNullExecutor() { // GH-90000
+            assertThatThrownBy(() -> new DefaultEventLogClient(eventCloud, objectMapper, null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("executor [GH-90000]");
         }
     }
 
     // ==================== publishEvent ====================
 
     @Nested
-    @DisplayName("publishEvent")
+    @DisplayName("publishEvent [GH-90000]")
     class PublishEventTests {
 
         @Test
-        @DisplayName("publishes Map event to EventCloud")
-        void publishesMapEvent() throws Exception {
-            Map<String, Object> event = Map.of(
+        @DisplayName("publishes Map event to EventCloud [GH-90000]")
+        void publishesMapEvent() throws Exception { // GH-90000
+            Map<String, Object> event = Map.of( // GH-90000
                     "stepId", "step-1",
                     "agentId", "agent-1",
                     "status", "SUCCESS",
                     "durationMs", 42L);
 
-            publishAndAwait(client, "tenant-1", event);
+            publishAndAwait(client, "tenant-1", event); // GH-90000
 
-            List<InMemoryEventCloud.StoredEvent> stored = eventCloud.getEvents("tenant-1");
-            assertThat(stored).hasSize(1);
-            assertThat(stored.get(0).eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+            List<InMemoryEventCloud.StoredEvent> stored = eventCloud.getEvents("tenant-1 [GH-90000]");
+            assertThat(stored).hasSize(1); // GH-90000
+            assertThat(stored.get(0).eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
 
-            String json = new String(stored.get(0).payload(), StandardCharsets.UTF_8);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> parsed = objectMapper.readValue(json, Map.class);
-            assertThat(parsed).containsEntry("stepId", "step-1");
-            assertThat(parsed).containsEntry("agentId", "agent-1");
-            assertThat(parsed).containsEntry("status", "SUCCESS");
-            assertThat(parsed).containsKey("_publishedAt");
-            assertThat(parsed).containsEntry("_schemaVersion", "1.0");
+            String json = new String(stored.get(0).payload(), StandardCharsets.UTF_8); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> parsed = objectMapper.readValue(json, Map.class); // GH-90000
+            assertThat(parsed).containsEntry("stepId", "step-1"); // GH-90000
+            assertThat(parsed).containsEntry("agentId", "agent-1"); // GH-90000
+            assertThat(parsed).containsEntry("status", "SUCCESS"); // GH-90000
+            assertThat(parsed).containsKey("_publishedAt [GH-90000]");
+            assertThat(parsed).containsEntry("_schemaVersion", "1.0"); // GH-90000
         }
 
         @Test
-        @DisplayName("routes FAILED events to error event type")
-        void routesFailedToErrorType() throws Exception {
-            publishAndAwait(client, "t1", Map.of("status", "FAILED", "errorMessage", "broke"));
+        @DisplayName("routes FAILED events to error event type [GH-90000]")
+        void routesFailedToErrorType() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("status", "FAILED", "errorMessage", "broke")); // GH-90000
 
-            assertThat(eventCloud.getEvents("t1").get(0).eventType())
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR);
+            assertThat(eventCloud.getEvents("t1 [GH-90000]").get(0).eventType())
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR); // GH-90000
         }
 
         @Test
-        @DisplayName("routes TIMEOUT events to error event type")
-        void routesTimeoutToErrorType() throws Exception {
-            publishAndAwait(client, "t1", Map.of("status", "TIMEOUT"));
+        @DisplayName("routes TIMEOUT events to error event type [GH-90000]")
+        void routesTimeoutToErrorType() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("status", "TIMEOUT")); // GH-90000
 
-            assertThat(eventCloud.getEvents("t1").get(0).eventType())
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR);
+            assertThat(eventCloud.getEvents("t1 [GH-90000]").get(0).eventType())
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR); // GH-90000
         }
 
         @Test
-        @DisplayName("routes SUCCESS events to step execution type")
-        void routesSuccessToStepType() throws Exception {
-            publishAndAwait(client, "t1", Map.of("status", "SUCCESS"));
+        @DisplayName("routes SUCCESS events to step execution type [GH-90000]")
+        void routesSuccessToStepType() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("status", "SUCCESS")); // GH-90000
 
-            assertThat(eventCloud.getEvents("t1").get(0).eventType())
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+            assertThat(eventCloud.getEvents("t1 [GH-90000]").get(0).eventType())
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("routes RETRY events to step execution type")
-        void routesRetryToStepType() throws Exception {
-            publishAndAwait(client, "t1", Map.of("status", "RETRY"));
+        @DisplayName("routes RETRY events to step execution type [GH-90000]")
+        void routesRetryToStepType() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("status", "RETRY")); // GH-90000
 
-            assertThat(eventCloud.getEvents("t1").get(0).eventType())
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+            assertThat(eventCloud.getEvents("t1 [GH-90000]").get(0).eventType())
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("routes CANCELLED events to step execution type")
-        void routesCancelledToStepType() throws Exception {
-            publishAndAwait(client, "t1", Map.of("status", "CANCELLED"));
+        @DisplayName("routes CANCELLED events to step execution type [GH-90000]")
+        void routesCancelledToStepType() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("status", "CANCELLED")); // GH-90000
 
-            assertThat(eventCloud.getEvents("t1").get(0).eventType())
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+            assertThat(eventCloud.getEvents("t1 [GH-90000]").get(0).eventType())
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("routes event without status field to step execution type")
-        void routesNoStatusToStepType() throws Exception {
-            publishAndAwait(client, "t1", Map.of("key", "value"));
+        @DisplayName("routes event without status field to step execution type [GH-90000]")
+        void routesNoStatusToStepType() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("key", "value")); // GH-90000
 
-            assertThat(eventCloud.getEvents("t1").get(0).eventType())
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+            assertThat(eventCloud.getEvents("t1 [GH-90000]").get(0).eventType())
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("publishes byte[] payload as-is without serialization")
-        void publishesByteArrayAsIs() throws Exception {
-            byte[] rawPayload = "{\"raw\":true}".getBytes(StandardCharsets.UTF_8);
+        @DisplayName("publishes byte[] payload as-is without serialization [GH-90000]")
+        void publishesByteArrayAsIs() throws Exception { // GH-90000
+            byte[] rawPayload = "{\"raw\":true}".getBytes(StandardCharsets.UTF_8); // GH-90000
 
-            publishAndAwait(client, "t1", rawPayload);
+            publishAndAwait(client, "t1", rawPayload); // GH-90000
 
-            InMemoryEventCloud.StoredEvent stored = eventCloud.getEvents("t1").get(0);
-            assertThat(stored.payload()).isEqualTo(rawPayload);
-            assertThat(stored.eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+            InMemoryEventCloud.StoredEvent stored = eventCloud.getEvents("t1 [GH-90000]").get(0);
+            assertThat(stored.payload()).isEqualTo(rawPayload); // GH-90000
+            assertThat(stored.eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("publishes to correct tenant isolation")
-        void respectsTenantIsolation() throws Exception {
-            publishAndAwait(client, "tenant-A", Map.of("data", "a"));
-            publishAndAwait(client, "tenant-B", Map.of("data", "b"));
+        @DisplayName("publishes to correct tenant isolation [GH-90000]")
+        void respectsTenantIsolation() throws Exception { // GH-90000
+            publishAndAwait(client, "tenant-A", Map.of("data", "a")); // GH-90000
+            publishAndAwait(client, "tenant-B", Map.of("data", "b")); // GH-90000
 
-            assertThat(eventCloud.getEvents("tenant-A")).hasSize(1);
-            assertThat(eventCloud.getEvents("tenant-B")).hasSize(1);
-            assertThat(eventCloud.getEvents("tenant-C")).isEmpty();
+            assertThat(eventCloud.getEvents("tenant-A [GH-90000]")).hasSize(1);
+            assertThat(eventCloud.getEvents("tenant-B [GH-90000]")).hasSize(1);
+            assertThat(eventCloud.getEvents("tenant-C [GH-90000]")).isEmpty();
         }
 
         @Test
-        @DisplayName("rejects null tenantId")
-        void rejectsNullTenantId() {
-            assertThatThrownBy(() -> client.publishEvent(null, Map.of("k", "v")))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("tenantId");
+        @DisplayName("rejects null tenantId [GH-90000]")
+        void rejectsNullTenantId() { // GH-90000
+            assertThatThrownBy(() -> client.publishEvent(null, Map.of("k", "v"))) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("tenantId [GH-90000]");
         }
 
         @Test
-        @DisplayName("rejects null event")
-        void rejectsNullEvent() {
-            assertThatThrownBy(() -> client.publishEvent("t1", null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("event");
+        @DisplayName("rejects null event [GH-90000]")
+        void rejectsNullEvent() { // GH-90000
+            assertThatThrownBy(() -> client.publishEvent("t1", null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("event [GH-90000]");
         }
     }
 
     // ==================== Serialization ====================
 
     @Nested
-    @DisplayName("serializeEvent")
+    @DisplayName("serializeEvent [GH-90000]")
     class SerializationTests {
 
         @Test
-        @DisplayName("enriches Map events with metadata fields")
-        void enrichesMapWithMetadata() throws Exception {
-            Map<String, Object> event = new HashMap<>();
-            event.put("stepId", "s1");
-            event.put("status", "SUCCESS");
+        @DisplayName("enriches Map events with metadata fields [GH-90000]")
+        void enrichesMapWithMetadata() throws Exception { // GH-90000
+            Map<String, Object> event = new HashMap<>(); // GH-90000
+            event.put("stepId", "s1"); // GH-90000
+            event.put("status", "SUCCESS"); // GH-90000
 
-            byte[] bytes = client.serializeEvent(event);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class);
+            byte[] bytes = client.serializeEvent(event); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class); // GH-90000
 
-            assertThat(parsed).containsKeys("_publishedAt", "_schemaVersion", "stepId", "status");
-            assertThat(parsed.get("_schemaVersion")).isEqualTo("1.0");
-            assertThat(Instant.parse((String) parsed.get("_publishedAt"))).isBeforeOrEqualTo(Instant.now());
+            assertThat(parsed).containsKeys("_publishedAt", "_schemaVersion", "stepId", "status"); // GH-90000
+            assertThat(parsed.get("_schemaVersion [GH-90000]")).isEqualTo("1.0 [GH-90000]");
+            assertThat(Instant.parse((String) parsed.get("_publishedAt [GH-90000]"))).isBeforeOrEqualTo(Instant.now());
         }
 
         @Test
-        @DisplayName("preserves all original Map entries in serialization")
-        void preservesAllMapEntries() throws Exception {
-            Map<String, Object> event = new HashMap<>();
-            event.put("stepId", "s1");
-            event.put("agentId", "a1");
-            event.put("status", "SUCCESS");
-            event.put("durationMs", 100L);
-            event.put("attemptNumber", 2);
-            event.put("totalAttempts", 3);
-            event.put("resultData", Map.of("output", "done"));
+        @DisplayName("preserves all original Map entries in serialization [GH-90000]")
+        void preservesAllMapEntries() throws Exception { // GH-90000
+            Map<String, Object> event = new HashMap<>(); // GH-90000
+            event.put("stepId", "s1"); // GH-90000
+            event.put("agentId", "a1"); // GH-90000
+            event.put("status", "SUCCESS"); // GH-90000
+            event.put("durationMs", 100L); // GH-90000
+            event.put("attemptNumber", 2); // GH-90000
+            event.put("totalAttempts", 3); // GH-90000
+            event.put("resultData", Map.of("output", "done")); // GH-90000
 
-            byte[] bytes = client.serializeEvent(event);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class);
+            byte[] bytes = client.serializeEvent(event); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class); // GH-90000
 
-            assertThat(parsed).containsEntry("stepId", "s1");
-            assertThat(parsed).containsEntry("agentId", "a1");
-            assertThat(parsed).containsEntry("status", "SUCCESS");
-            assertThat(parsed).containsEntry("attemptNumber", 2);
-            assertThat(parsed).containsEntry("totalAttempts", 3);
+            assertThat(parsed).containsEntry("stepId", "s1"); // GH-90000
+            assertThat(parsed).containsEntry("agentId", "a1"); // GH-90000
+            assertThat(parsed).containsEntry("status", "SUCCESS"); // GH-90000
+            assertThat(parsed).containsEntry("attemptNumber", 2); // GH-90000
+            assertThat(parsed).containsEntry("totalAttempts", 3); // GH-90000
         }
 
         @Test
-        @DisplayName("returns byte[] as-is without modification")
-        void byteArrayPassthrough() throws Exception {
-            byte[] original = "raw-bytes".getBytes(StandardCharsets.UTF_8);
-            byte[] result = client.serializeEvent(original);
-            assertThat(result).isSameAs(original);
+        @DisplayName("returns byte[] as-is without modification [GH-90000]")
+        void byteArrayPassthrough() throws Exception { // GH-90000
+            byte[] original = "raw-bytes".getBytes(StandardCharsets.UTF_8); // GH-90000
+            byte[] result = client.serializeEvent(original); // GH-90000
+            assertThat(result).isSameAs(original); // GH-90000
         }
 
         @Test
-        @DisplayName("serializes non-Map objects via Jackson")
-        void serializesArbitraryObjects() throws Exception {
-            record SimpleEvent(String id, int value) {}
-            byte[] bytes = client.serializeEvent(new SimpleEvent("e1", 42));
-            @SuppressWarnings("unchecked")
-            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class);
-            assertThat(parsed).containsEntry("id", "e1");
-            assertThat(parsed).containsEntry("value", 42);
+        @DisplayName("serializes non-Map objects via Jackson [GH-90000]")
+        void serializesArbitraryObjects() throws Exception { // GH-90000
+            record SimpleEvent(String id, int value) {} // GH-90000
+            byte[] bytes = client.serializeEvent(new SimpleEvent("e1", 42)); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class); // GH-90000
+            assertThat(parsed).containsEntry("id", "e1"); // GH-90000
+            assertThat(parsed).containsEntry("value", 42); // GH-90000
         }
 
         @Test
-        @DisplayName("handles empty Map")
-        void emptyMap() throws Exception {
-            byte[] bytes = client.serializeEvent(Map.of());
-            @SuppressWarnings("unchecked")
-            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class);
-            assertThat(parsed).containsKeys("_publishedAt", "_schemaVersion");
-            assertThat(parsed).hasSize(2);
+        @DisplayName("handles empty Map [GH-90000]")
+        void emptyMap() throws Exception { // GH-90000
+            byte[] bytes = client.serializeEvent(Map.of()); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class); // GH-90000
+            assertThat(parsed).containsKeys("_publishedAt", "_schemaVersion"); // GH-90000
+            assertThat(parsed).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("handles Map with null values")
-        void mapWithNullValues() throws Exception {
-            Map<String, Object> event = new HashMap<>();
-            event.put("stepId", "s1");
-            event.put("errorMessage", null);
+        @DisplayName("handles Map with null values [GH-90000]")
+        void mapWithNullValues() throws Exception { // GH-90000
+            Map<String, Object> event = new HashMap<>(); // GH-90000
+            event.put("stepId", "s1"); // GH-90000
+            event.put("errorMessage", null); // GH-90000
 
-            byte[] bytes = client.serializeEvent(event);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class);
-            assertThat(parsed).containsEntry("stepId", "s1");
-            assertThat(parsed).containsKey("errorMessage");
-            assertThat(parsed.get("errorMessage")).isNull();
+            byte[] bytes = client.serializeEvent(event); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> parsed = objectMapper.readValue(bytes, Map.class); // GH-90000
+            assertThat(parsed).containsEntry("stepId", "s1"); // GH-90000
+            assertThat(parsed).containsKey("errorMessage [GH-90000]");
+            assertThat(parsed.get("errorMessage [GH-90000]")).isNull();
         }
     }
 
     // ==================== Event Type Resolution ====================
 
     @Nested
-    @DisplayName("resolveEventType")
+    @DisplayName("resolveEventType [GH-90000]")
     class EventTypeResolutionTests {
 
         @Test
-        @DisplayName("FAILED → agent.step.error")
-        void failedMapsToError() {
-            assertThat(client.resolveEventType(Map.of("status", "FAILED")))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR);
+        @DisplayName("FAILED → agent.step.error [GH-90000]")
+        void failedMapsToError() { // GH-90000
+            assertThat(client.resolveEventType(Map.of("status", "FAILED"))) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR); // GH-90000
         }
 
         @Test
-        @DisplayName("TIMEOUT → agent.step.error")
-        void timeoutMapsToError() {
-            assertThat(client.resolveEventType(Map.of("status", "TIMEOUT")))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR);
+        @DisplayName("TIMEOUT → agent.step.error [GH-90000]")
+        void timeoutMapsToError() { // GH-90000
+            assertThat(client.resolveEventType(Map.of("status", "TIMEOUT"))) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR); // GH-90000
         }
 
         @Test
-        @DisplayName("SUCCESS → agent.step.execution")
-        void successMapsToStep() {
-            assertThat(client.resolveEventType(Map.of("status", "SUCCESS")))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+        @DisplayName("SUCCESS → agent.step.execution [GH-90000]")
+        void successMapsToStep() { // GH-90000
+            assertThat(client.resolveEventType(Map.of("status", "SUCCESS"))) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("RETRY → agent.step.execution")
-        void retryMapsToStep() {
-            assertThat(client.resolveEventType(Map.of("status", "RETRY")))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+        @DisplayName("RETRY → agent.step.execution [GH-90000]")
+        void retryMapsToStep() { // GH-90000
+            assertThat(client.resolveEventType(Map.of("status", "RETRY"))) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("CANCELLED → agent.step.execution")
-        void cancelledMapsToStep() {
-            assertThat(client.resolveEventType(Map.of("status", "CANCELLED")))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+        @DisplayName("CANCELLED → agent.step.execution [GH-90000]")
+        void cancelledMapsToStep() { // GH-90000
+            assertThat(client.resolveEventType(Map.of("status", "CANCELLED"))) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("no status key → agent.step.execution")
-        void noStatusDefaultsToStep() {
-            assertThat(client.resolveEventType(Map.of("key", "value")))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+        @DisplayName("no status key → agent.step.execution [GH-90000]")
+        void noStatusDefaultsToStep() { // GH-90000
+            assertThat(client.resolveEventType(Map.of("key", "value"))) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("null status value → agent.step.execution")
-        void nullStatusDefaultsToStep() {
-            Map<String, Object> event = new HashMap<>();
-            event.put("status", null);
-            assertThat(client.resolveEventType(event)).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+        @DisplayName("null status value → agent.step.execution [GH-90000]")
+        void nullStatusDefaultsToStep() { // GH-90000
+            Map<String, Object> event = new HashMap<>(); // GH-90000
+            event.put("status", null); // GH-90000
+            assertThat(client.resolveEventType(event)).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("non-Map event → agent.step.execution")
-        void nonMapDefaultsToStep() {
-            assertThat(client.resolveEventType("string-event")).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+        @DisplayName("non-Map event → agent.step.execution [GH-90000]")
+        void nonMapDefaultsToStep() { // GH-90000
+            assertThat(client.resolveEventType("string-event [GH-90000]")).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
         }
 
         @Test
-        @DisplayName("byte[] event → agent.step.execution")
-        void byteArrayDefaultsToStep() {
-            assertThat(client.resolveEventType(new byte[] {1, 2, 3}))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+        @DisplayName("byte[] event → agent.step.execution [GH-90000]")
+        void byteArrayDefaultsToStep() { // GH-90000
+            assertThat(client.resolveEventType(new byte[] {1, 2, 3})) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
         }
 
         @Test
-        @DisplayName("status as enum object uses toString()")
-        void statusEnumUsesToString() {
-            assertThat(client.resolveEventType(Map.of("status", TestStatus.FAILED)))
-                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR);
+        @DisplayName("status as enum object uses toString() [GH-90000]")
+        void statusEnumUsesToString() { // GH-90000
+            assertThat(client.resolveEventType(Map.of("status", TestStatus.FAILED))) // GH-90000
+                    .isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR); // GH-90000
         }
 
         private enum TestStatus {
@@ -408,106 +408,106 @@ class DefaultEventLogClientTest extends EventloopTestBase {
     // ==================== Metrics ====================
 
     @Nested
-    @DisplayName("Metrics")
+    @DisplayName("Metrics [GH-90000]")
     class MetricsTests {
 
         @Test
-        @DisplayName("initial metrics are all zero")
-        void initialMetricsZero() {
-            assertThat(client.getPublishedCount()).isZero();
-            assertThat(client.getFailedCount()).isZero();
-            assertThat(client.getAverageLatencyMs()).isEqualTo(0.0);
+        @DisplayName("initial metrics are all zero [GH-90000]")
+        void initialMetricsZero() { // GH-90000
+            assertThat(client.getPublishedCount()).isZero(); // GH-90000
+            assertThat(client.getFailedCount()).isZero(); // GH-90000
+            assertThat(client.getAverageLatencyMs()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("publishedCount increments on success")
-        void publishedCountIncrements() throws Exception {
-            publishAndAwait(client, "t1", Map.of("k", "v"));
-            assertThat(client.getPublishedCount()).isEqualTo(1);
+        @DisplayName("publishedCount increments on success [GH-90000]")
+        void publishedCountIncrements() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("k", "v")); // GH-90000
+            assertThat(client.getPublishedCount()).isEqualTo(1); // GH-90000
 
-            publishAndAwait(client, "t1", Map.of("k", "v2"));
-            assertThat(client.getPublishedCount()).isEqualTo(2);
+            publishAndAwait(client, "t1", Map.of("k", "v2")); // GH-90000
+            assertThat(client.getPublishedCount()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("failedCount increments on EventCloud failure")
-        void failedCountIncrements() throws Exception {
+        @DisplayName("failedCount increments on EventCloud failure [GH-90000]")
+        void failedCountIncrements() throws Exception { // GH-90000
             DefaultEventLogClient failClient =
-                    new DefaultEventLogClient(new FailingEventCloud(), objectMapper, executor);
+                    new DefaultEventLogClient(new FailingEventCloud(), objectMapper, executor); // GH-90000
 
             try {
-                publishAndAwait(failClient, "t1", Map.of("k", "v"));
-            } catch (Exception ignored) {
+                publishAndAwait(failClient, "t1", Map.of("k", "v")); // GH-90000
+            } catch (Exception ignored) { // GH-90000
                 // expected
             }
-            assertThat(failClient.getFailedCount()).isEqualTo(1);
-            assertThat(failClient.getPublishedCount()).isZero();
+            assertThat(failClient.getFailedCount()).isEqualTo(1); // GH-90000
+            assertThat(failClient.getPublishedCount()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("averageLatencyMs is positive after successful publishes")
-        void averageLatencyPositive() throws Exception {
-            publishAndAwait(client, "t1", Map.of("a", "b"));
-            assertThat(client.getAverageLatencyMs()).isGreaterThan(0.0);
+        @DisplayName("averageLatencyMs is positive after successful publishes [GH-90000]")
+        void averageLatencyPositive() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("a", "b")); // GH-90000
+            assertThat(client.getAverageLatencyMs()).isGreaterThan(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("resetMetrics clears all counters")
-        void resetMetrics() throws Exception {
-            publishAndAwait(client, "t1", Map.of("k", "v"));
-            assertThat(client.getPublishedCount()).isEqualTo(1);
+        @DisplayName("resetMetrics clears all counters [GH-90000]")
+        void resetMetrics() throws Exception { // GH-90000
+            publishAndAwait(client, "t1", Map.of("k", "v")); // GH-90000
+            assertThat(client.getPublishedCount()).isEqualTo(1); // GH-90000
 
-            client.resetMetrics();
-            assertThat(client.getPublishedCount()).isZero();
-            assertThat(client.getFailedCount()).isZero();
-            assertThat(client.getAverageLatencyMs()).isEqualTo(0.0);
+            client.resetMetrics(); // GH-90000
+            assertThat(client.getPublishedCount()).isZero(); // GH-90000
+            assertThat(client.getFailedCount()).isZero(); // GH-90000
+            assertThat(client.getAverageLatencyMs()).isEqualTo(0.0); // GH-90000
         }
     }
 
     // ==================== Error Handling ====================
 
     @Nested
-    @DisplayName("Error Handling")
+    @DisplayName("Error Handling [GH-90000]")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("wraps EventCloud exceptions in EventPublishException")
-        void wrapsEventCloudExceptions() {
+        @DisplayName("wraps EventCloud exceptions in EventPublishException [GH-90000]")
+        void wrapsEventCloudExceptions() { // GH-90000
             DefaultEventLogClient failClient =
-                    new DefaultEventLogClient(new FailingEventCloud(), objectMapper, executor);
+                    new DefaultEventLogClient(new FailingEventCloud(), objectMapper, executor); // GH-90000
 
             try {
-                publishAndAwait(failClient, "t1", Map.of("k", "v"));
-                assertThat(false).as("Should have thrown").isTrue();
-            } catch (Exception e) {
-                assertThat(e).isInstanceOf(DefaultEventLogClient.EventPublishException.class);
-                assertThat(e.getCause()).isInstanceOf(RuntimeException.class);
-                assertThat(e.getMessage()).contains("tenant");
+                publishAndAwait(failClient, "t1", Map.of("k", "v")); // GH-90000
+                assertThat(false).as("Should have thrown [GH-90000]").isTrue();
+            } catch (Exception e) { // GH-90000
+                assertThat(e).isInstanceOf(DefaultEventLogClient.EventPublishException.class); // GH-90000
+                assertThat(e.getCause()).isInstanceOf(RuntimeException.class); // GH-90000
+                assertThat(e.getMessage()).contains("tenant [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("wraps serialization failures in EventPublishException")
-        void wrapsSerializationFailures() {
-            ObjectMapper brokenMapper = new ObjectMapper() {
+        @DisplayName("wraps serialization failures in EventPublishException [GH-90000]")
+        void wrapsSerializationFailures() { // GH-90000
+            ObjectMapper brokenMapper = new ObjectMapper() { // GH-90000
                 @Override
-                public byte[] writeValueAsBytes(Object value) throws JsonProcessingException {
-                    throw new com.fasterxml.jackson.core.JsonGenerationException(
-                            "forced failure", (com.fasterxml.jackson.core.JsonGenerator) null);
+                public byte[] writeValueAsBytes(Object value) throws JsonProcessingException { // GH-90000
+                    throw new com.fasterxml.jackson.core.JsonGenerationException( // GH-90000
+                            "forced failure", (com.fasterxml.jackson.core.JsonGenerator) null); // GH-90000
                 }
             };
-            DefaultEventLogClient failClient = new DefaultEventLogClient(eventCloud, brokenMapper, executor);
+            DefaultEventLogClient failClient = new DefaultEventLogClient(eventCloud, brokenMapper, executor); // GH-90000
 
             try {
-                publishAndAwait(failClient, "t1", new Object() {
-                    @SuppressWarnings("unused")
-                    public String getField() {
-                        throw new RuntimeException("boom");
+                publishAndAwait(failClient, "t1", new Object() { // GH-90000
+                    @SuppressWarnings("unused [GH-90000]")
+                    public String getField() { // GH-90000
+                        throw new RuntimeException("boom [GH-90000]");
                     }
                 });
-                assertThat(false).as("Should have thrown").isTrue();
-            } catch (Exception e) {
-                assertThat(e).isInstanceOf(DefaultEventLogClient.EventPublishException.class);
+                assertThat(false).as("Should have thrown [GH-90000]").isTrue();
+            } catch (Exception e) { // GH-90000
+                assertThat(e).isInstanceOf(DefaultEventLogClient.EventPublishException.class); // GH-90000
             }
         }
     }
@@ -515,144 +515,144 @@ class DefaultEventLogClientTest extends EventloopTestBase {
     // ==================== Concurrency ====================
 
     @Nested
-    @DisplayName("Concurrency")
+    @DisplayName("Concurrency [GH-90000]")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("concurrent publishes all succeed and metrics are accurate")
-        void concurrentPublishes() throws Exception {
+        @DisplayName("concurrent publishes all succeed and metrics are accurate [GH-90000]")
+        void concurrentPublishes() throws Exception { // GH-90000
             int threadCount = 10;
-            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
-            DefaultEventLogClient concurrentClient = new DefaultEventLogClient(eventCloud, objectMapper, pool);
+            ExecutorService pool = Executors.newFixedThreadPool(threadCount); // GH-90000
+            DefaultEventLogClient concurrentClient = new DefaultEventLogClient(eventCloud, objectMapper, pool); // GH-90000
 
-            CountDownLatch latch = new CountDownLatch(threadCount);
-            AtomicInteger failures = new AtomicInteger();
+            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
+            AtomicInteger failures = new AtomicInteger(); // GH-90000
 
-            for (int i = 0; i < threadCount; i++) {
+            for (int i = 0; i < threadCount; i++) { // GH-90000
                 final int idx = i;
-                pool.submit(() -> {
+                pool.submit(() -> { // GH-90000
                     try {
-                        publishAndAwait(
-                                concurrentClient, "concurrent-tenant", Map.of("thread", idx, "status", "SUCCESS"));
-                    } catch (Exception e) {
-                        failures.incrementAndGet();
+                        publishAndAwait( // GH-90000
+                                concurrentClient, "concurrent-tenant", Map.of("thread", idx, "status", "SUCCESS")); // GH-90000
+                    } catch (Exception e) { // GH-90000
+                        failures.incrementAndGet(); // GH-90000
                     } finally {
-                        latch.countDown();
+                        latch.countDown(); // GH-90000
                     }
                 });
             }
 
-            latch.await(10, TimeUnit.SECONDS);
-            assertThat(failures.get()).isZero();
-            assertThat(concurrentClient.getPublishedCount()).isEqualTo(threadCount);
-            assertThat(eventCloud.getEvents("concurrent-tenant")).hasSize(threadCount);
+            latch.await(10, TimeUnit.SECONDS); // GH-90000
+            assertThat(failures.get()).isZero(); // GH-90000
+            assertThat(concurrentClient.getPublishedCount()).isEqualTo(threadCount); // GH-90000
+            assertThat(eventCloud.getEvents("concurrent-tenant [GH-90000]")).hasSize(threadCount);
 
-            pool.shutdown();
+            pool.shutdown(); // GH-90000
         }
     }
 
     // ==================== Round-Trip Verification ====================
 
     @Nested
-    @DisplayName("Round-trip verification")
+    @DisplayName("Round-trip verification [GH-90000]")
     class RoundTripTests {
 
         @Test
-        @DisplayName("published event can be deserialized back with all fields intact")
-        void roundTrip() throws Exception {
-            Instant now = Instant.now();
-            Map<String, Object> original = new HashMap<>();
-            original.put("stepId", "step-42");
-            original.put("agentId", "agent-7");
-            original.put("status", "SUCCESS");
-            original.put("attemptNumber", 1);
-            original.put("totalAttempts", 3);
-            original.put("durationMs", 250L);
-            original.put("eventType", "agent.step.result");
-            original.put("timestamp", now.toEpochMilli());
+        @DisplayName("published event can be deserialized back with all fields intact [GH-90000]")
+        void roundTrip() throws Exception { // GH-90000
+            Instant now = Instant.now(); // GH-90000
+            Map<String, Object> original = new HashMap<>(); // GH-90000
+            original.put("stepId", "step-42"); // GH-90000
+            original.put("agentId", "agent-7"); // GH-90000
+            original.put("status", "SUCCESS"); // GH-90000
+            original.put("attemptNumber", 1); // GH-90000
+            original.put("totalAttempts", 3); // GH-90000
+            original.put("durationMs", 250L); // GH-90000
+            original.put("eventType", "agent.step.result"); // GH-90000
+            original.put("timestamp", now.toEpochMilli()); // GH-90000
 
-            publishAndAwait(client, "tenant-rt", original);
+            publishAndAwait(client, "tenant-rt", original); // GH-90000
 
-            byte[] storedBytes = eventCloud.getEvents("tenant-rt").get(0).payload();
-            @SuppressWarnings("unchecked")
-            Map<String, Object> deserialized = objectMapper.readValue(storedBytes, Map.class);
+            byte[] storedBytes = eventCloud.getEvents("tenant-rt [GH-90000]").get(0).payload();
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> deserialized = objectMapper.readValue(storedBytes, Map.class); // GH-90000
 
-            assertThat(deserialized).containsEntry("stepId", "step-42");
-            assertThat(deserialized).containsEntry("agentId", "agent-7");
-            assertThat(deserialized).containsEntry("status", "SUCCESS");
-            assertThat(deserialized).containsEntry("attemptNumber", 1);
-            assertThat(deserialized).containsEntry("totalAttempts", 3);
-            assertThat(deserialized).containsEntry("eventType", "agent.step.result");
-            assertThat(deserialized).containsKey("_publishedAt");
-            assertThat(deserialized).containsEntry("_schemaVersion", "1.0");
+            assertThat(deserialized).containsEntry("stepId", "step-42"); // GH-90000
+            assertThat(deserialized).containsEntry("agentId", "agent-7"); // GH-90000
+            assertThat(deserialized).containsEntry("status", "SUCCESS"); // GH-90000
+            assertThat(deserialized).containsEntry("attemptNumber", 1); // GH-90000
+            assertThat(deserialized).containsEntry("totalAttempts", 3); // GH-90000
+            assertThat(deserialized).containsEntry("eventType", "agent.step.result"); // GH-90000
+            assertThat(deserialized).containsKey("_publishedAt [GH-90000]");
+            assertThat(deserialized).containsEntry("_schemaVersion", "1.0"); // GH-90000
         }
 
         @Test
-        @DisplayName("byte[] round-trip preserves exact bytes")
-        void byteArrayRoundTrip() throws Exception {
+        @DisplayName("byte[] round-trip preserves exact bytes [GH-90000]")
+        void byteArrayRoundTrip() throws Exception { // GH-90000
             String jsonStr = "{\"custom\":\"payload\",\"value\":123}";
-            byte[] rawBytes = jsonStr.getBytes(StandardCharsets.UTF_8);
+            byte[] rawBytes = jsonStr.getBytes(StandardCharsets.UTF_8); // GH-90000
 
-            publishAndAwait(client, "tenant-bytes", rawBytes);
+            publishAndAwait(client, "tenant-bytes", rawBytes); // GH-90000
 
-            byte[] storedBytes = eventCloud.getEvents("tenant-bytes").get(0).payload();
-            assertThat(new String(storedBytes, StandardCharsets.UTF_8)).isEqualTo(jsonStr);
+            byte[] storedBytes = eventCloud.getEvents("tenant-bytes [GH-90000]").get(0).payload();
+            assertThat(new String(storedBytes, StandardCharsets.UTF_8)).isEqualTo(jsonStr); // GH-90000
         }
     }
 
     // ==================== AgentEventEmitter Integration ====================
 
     @Nested
-    @DisplayName("AgentEventEmitter integration")
+    @DisplayName("AgentEventEmitter integration [GH-90000]")
     class AgentEventEmitterIntegrationTests {
 
         @Test
-        @DisplayName("handles event in the format produced by AgentEventEmitter.buildAgentEvent()")
-        void handlesAgentEventEmitterFormat() throws Exception {
-            Map<String, Object> agentEvent = new HashMap<>();
-            agentEvent.put("stepId", "step-abc");
-            agentEvent.put("agentId", "agent-xyz");
-            agentEvent.put("status", "SUCCESS");
-            agentEvent.put("attemptNumber", 1);
-            agentEvent.put("totalAttempts", 1);
-            agentEvent.put("eventId", "agent-step-agent-xyz-step-abc-1-1234567890");
-            agentEvent.put("eventType", "agent.step.result");
-            agentEvent.put("timestamp", Instant.now().toEpochMilli());
-            agentEvent.put("durationMs", 100L);
-            agentEvent.put("resultData", Map.of("output", "computed-value"));
-            agentEvent.put("errorMessage", null);
+        @DisplayName("handles event in the format produced by AgentEventEmitter.buildAgentEvent() [GH-90000]")
+        void handlesAgentEventEmitterFormat() throws Exception { // GH-90000
+            Map<String, Object> agentEvent = new HashMap<>(); // GH-90000
+            agentEvent.put("stepId", "step-abc"); // GH-90000
+            agentEvent.put("agentId", "agent-xyz"); // GH-90000
+            agentEvent.put("status", "SUCCESS"); // GH-90000
+            agentEvent.put("attemptNumber", 1); // GH-90000
+            agentEvent.put("totalAttempts", 1); // GH-90000
+            agentEvent.put("eventId", "agent-step-agent-xyz-step-abc-1-1234567890"); // GH-90000
+            agentEvent.put("eventType", "agent.step.result"); // GH-90000
+            agentEvent.put("timestamp", Instant.now().toEpochMilli()); // GH-90000
+            agentEvent.put("durationMs", 100L); // GH-90000
+            agentEvent.put("resultData", Map.of("output", "computed-value")); // GH-90000
+            agentEvent.put("errorMessage", null); // GH-90000
 
-            publishAndAwait(client, "production-tenant", agentEvent);
+            publishAndAwait(client, "production-tenant", agentEvent); // GH-90000
 
-            List<InMemoryEventCloud.StoredEvent> events = eventCloud.getEvents("production-tenant");
-            assertThat(events).hasSize(1);
+            List<InMemoryEventCloud.StoredEvent> events = eventCloud.getEvents("production-tenant [GH-90000]");
+            assertThat(events).hasSize(1); // GH-90000
 
-            InMemoryEventCloud.StoredEvent stored = events.get(0);
-            assertThat(stored.eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP);
+            InMemoryEventCloud.StoredEvent stored = events.get(0); // GH-90000
+            assertThat(stored.eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_STEP); // GH-90000
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> parsed = objectMapper.readValue(stored.payload(), Map.class);
-            assertThat(parsed).containsEntry("stepId", "step-abc");
-            assertThat(parsed).containsEntry("agentId", "agent-xyz");
-            assertThat(parsed).containsEntry("eventType", "agent.step.result");
-            assertThat(parsed.get("resultData")).isInstanceOf(Map.class);
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> parsed = objectMapper.readValue(stored.payload(), Map.class); // GH-90000
+            assertThat(parsed).containsEntry("stepId", "step-abc"); // GH-90000
+            assertThat(parsed).containsEntry("agentId", "agent-xyz"); // GH-90000
+            assertThat(parsed).containsEntry("eventType", "agent.step.result"); // GH-90000
+            assertThat(parsed.get("resultData [GH-90000]")).isInstanceOf(Map.class);
         }
 
         @Test
-        @DisplayName("handles failed event from AgentEventEmitter format")
-        void handlesFailedAgentEvent() throws Exception {
-            Map<String, Object> failedEvent = new HashMap<>();
-            failedEvent.put("stepId", "step-fail");
-            failedEvent.put("agentId", "agent-crash");
-            failedEvent.put("status", "FAILED");
-            failedEvent.put("errorMessage", "OutOfMemoryError");
-            failedEvent.put("durationMs", 5000L);
+        @DisplayName("handles failed event from AgentEventEmitter format [GH-90000]")
+        void handlesFailedAgentEvent() throws Exception { // GH-90000
+            Map<String, Object> failedEvent = new HashMap<>(); // GH-90000
+            failedEvent.put("stepId", "step-fail"); // GH-90000
+            failedEvent.put("agentId", "agent-crash"); // GH-90000
+            failedEvent.put("status", "FAILED"); // GH-90000
+            failedEvent.put("errorMessage", "OutOfMemoryError"); // GH-90000
+            failedEvent.put("durationMs", 5000L); // GH-90000
 
-            publishAndAwait(client, "tenant-err", failedEvent);
+            publishAndAwait(client, "tenant-err", failedEvent); // GH-90000
 
             InMemoryEventCloud.StoredEvent stored =
-                    eventCloud.getEvents("tenant-err").get(0);
-            assertThat(stored.eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR);
+                    eventCloud.getEvents("tenant-err [GH-90000]").get(0);
+            assertThat(stored.eventType()).isEqualTo(DefaultEventLogClient.EVENT_TYPE_AGENT_ERROR); // GH-90000
         }
     }
 
@@ -662,14 +662,14 @@ class DefaultEventLogClientTest extends EventloopTestBase {
      * Publish an event via the given client using the managed Eventloop from
      * {@link EventloopTestBase}. Propagates any exception thrown by the Promise.
      */
-    private void publishAndAwait(DefaultEventLogClient clientToUse, String tenantId, Object event) throws Exception {
+    private void publishAndAwait(DefaultEventLogClient clientToUse, String tenantId, Object event) throws Exception { // GH-90000
         try {
-            runPromise(() -> clientToUse.publishEvent(tenantId, event));
-        } catch (DefaultEventLogClient.EventPublishException e) {
+            runPromise(() -> clientToUse.publishEvent(tenantId, event)); // GH-90000
+        } catch (DefaultEventLogClient.EventPublishException e) { // GH-90000
             throw e; // already the right type — don't unwrap
-        } catch (RuntimeException e) {
+        } catch (RuntimeException e) { // GH-90000
             // Unwrap checked exceptions rethrown as RuntimeException by runPromise
-            if (e.getCause() instanceof Exception checked) {
+            if (e.getCause() instanceof Exception checked) { // GH-90000
                 throw checked;
             }
             throw e;
@@ -679,13 +679,13 @@ class DefaultEventLogClientTest extends EventloopTestBase {
     /** EventCloud that always throws on append — for error-path testing. */
     private static class FailingEventCloud implements EventCloud {
         @Override
-        public String append(String tenantId, String eventType, byte[] payload) {
-            throw new RuntimeException("Simulated EventCloud failure");
+        public String append(String tenantId, String eventType, byte[] payload) { // GH-90000
+            throw new RuntimeException("Simulated EventCloud failure [GH-90000]");
         }
 
         @Override
-        public Subscription subscribe(String tenantId, String eventType, EventHandler handler) {
-            throw new UnsupportedOperationException();
+        public Subscription subscribe(String tenantId, String eventType, EventHandler handler) { // GH-90000
+            throw new UnsupportedOperationException(); // GH-90000
         }
     }
 }

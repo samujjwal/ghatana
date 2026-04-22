@@ -15,42 +15,42 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("PhaseOperatorCatalog")
+@DisplayName("PhaseOperatorCatalog [GH-90000]")
 class PhaseOperatorCatalogTest {
 
     @Test
-    @DisplayName("builds catalog with all lifecycle phase operators")
-    void buildsCatalogForAllPhases() {
-        PhaseOperatorCatalog catalog = PhaseOperatorCatalog.fromServices(
-                mock(IntentService.class),
-                mock(ShapeService.class),
-                mock(ValidationService.class),
-                mock(GenerationService.class),
-                mock(RunService.class),
-                mock(ObserveService.class),
-                mock(LearningService.class),
-                mock(EvolutionService.class));
+    @DisplayName("builds catalog with all lifecycle phase operators [GH-90000]")
+    void buildsCatalogForAllPhases() { // GH-90000
+        PhaseOperatorCatalog catalog = PhaseOperatorCatalog.fromServices( // GH-90000
+                mock(IntentService.class), // GH-90000
+                mock(ShapeService.class), // GH-90000
+                mock(ValidationService.class), // GH-90000
+                mock(GenerationService.class), // GH-90000
+                mock(RunService.class), // GH-90000
+                mock(ObserveService.class), // GH-90000
+                mock(LearningService.class), // GH-90000
+                mock(EvolutionService.class)); // GH-90000
 
-        assertThat(catalog.list()).hasSize(PhaseType.values().length);
-        assertThat(catalog.supports("yappc.phase.intent")).isTrue();
-        assertThat(catalog.supports("yappc.phase.evolve")).isTrue();
+        assertThat(catalog.list()).hasSize(PhaseType.values().length); // GH-90000
+        assertThat(catalog.supports("yappc.phase.intent [GH-90000]")).isTrue();
+        assertThat(catalog.supports("yappc.phase.evolve [GH-90000]")).isTrue();
     }
 
     @Test
-    @DisplayName("discovers operator by phase")
-    void discoversByPhase() {
-        PhaseOperatorCatalog catalog = PhaseOperatorCatalog.fromServices(
-                mock(IntentService.class),
-                mock(ShapeService.class),
-                mock(ValidationService.class),
-                mock(GenerationService.class),
-                mock(RunService.class),
-                mock(ObserveService.class),
-                mock(LearningService.class),
-                mock(EvolutionService.class));
+    @DisplayName("discovers operator by phase [GH-90000]")
+    void discoversByPhase() { // GH-90000
+        PhaseOperatorCatalog catalog = PhaseOperatorCatalog.fromServices( // GH-90000
+                mock(IntentService.class), // GH-90000
+                mock(ShapeService.class), // GH-90000
+                mock(ValidationService.class), // GH-90000
+                mock(GenerationService.class), // GH-90000
+                mock(RunService.class), // GH-90000
+                mock(ObserveService.class), // GH-90000
+                mock(LearningService.class), // GH-90000
+                mock(EvolutionService.class)); // GH-90000
 
-        assertThat(catalog.getByPhase(PhaseType.VALIDATE)).isPresent();
-        assertThat(catalog.getByPhase(PhaseType.VALIDATE).orElseThrow().getOperatorId())
-                .isEqualTo("yappc.phase.validate");
+        assertThat(catalog.getByPhase(PhaseType.VALIDATE)).isPresent(); // GH-90000
+        assertThat(catalog.getByPhase(PhaseType.VALIDATE).orElseThrow().getOperatorId()) // GH-90000
+                .isEqualTo("yappc.phase.validate [GH-90000]");
     }
 }

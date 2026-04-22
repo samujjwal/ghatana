@@ -25,7 +25,7 @@ export default defineConfig({
     alias: {
       '@ghatana/platform-events': resolve(__dirname, '../platform-events/src/index.ts'),
       '@ghatana/primitives': resolve(__dirname, '../primitives/src/index.ts'),
-      '@ghatana/ui': resolve(__dirname, '../ui/src/index.ts'),
+      '@ghatana/design-system': resolve(__dirname, '../design-system/src/index.ts'),
       '@ghatana/tokens': resolve(__dirname, '../tokens/src/index.ts'),
       clsx: resolve(__dirname, '../primitives/node_modules/clsx'),
       'tailwind-merge': resolve(__dirname, '../primitives/node_modules/tailwind-merge'),

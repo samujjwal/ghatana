@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * YAPPC AI Module — AI Suggestion Service Tests
  */
 package com.ghatana.yappc.ai.suggestion;
@@ -34,74 +34,74 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AISuggestionService")
+@DisplayName("AISuggestionService [GH-90000]")
 class AISuggestionServiceTest extends EventloopTestBase {
 
     private AIModelRouter        router;
     private AISuggestionService  service;
 
     @BeforeEach
-    void setUp() {
-        router  = mock(AIModelRouter.class);
-        service = new AISuggestionService(router);
+    void setUp() { // GH-90000
+        router  = mock(AIModelRouter.class); // GH-90000
+        service = new AISuggestionService(router); // GH-90000
     }
 
     // ── Constructor validation ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor rejects null router")
-    void constructorRejectsNull() {
-        assertThrows(NullPointerException.class, () -> new AISuggestionService(null));
+    @DisplayName("constructor rejects null router [GH-90000]")
+    void constructorRejectsNull() { // GH-90000
+        assertThrows(NullPointerException.class, () -> new AISuggestionService(null)); // GH-90000
     }
 
-    // ── suggest() ─────────────────────────────────────────────────────────────
+    // ── suggest() ───────────────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("suggest()")
+    @DisplayName("suggest() [GH-90000]")
     class SuggestMethod {
 
         @Test
-        @DisplayName("routes request through AIModelRouter")
-        void routesRequestThroughRouter() {
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
+        @DisplayName("routes request through AIModelRouter [GH-90000]")
+        void routesRequestThroughRouter() { // GH-90000
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); // GH-90000
 
-            runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of()));
+            runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); // GH-90000
 
-            verify(router).route(any(AIRequest.class));
+            verify(router).route(any(AIRequest.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("parses [ACTION] suggestion from well-formed response")
-        void parsesActionSuggestion() {
-            AIResponse response = responseWithContent("[ACTION] Define acceptance criteria for the new feature.");
-            when(router.route(any())).thenReturn(Promise.of(response));
+        @DisplayName("parses [ACTION] suggestion from well-formed response [GH-90000]")
+        void parsesActionSuggestion() { // GH-90000
+            AIResponse response = responseWithContent("[ACTION] Define acceptance criteria for the new feature. [GH-90000]");
+            when(router.route(any())).thenReturn(Promise.of(response)); // GH-90000
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of()));
+                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); // GH-90000
 
-            assertThat(suggestions).hasSize(1);
-            assertThat(suggestions.get(0).type()).isEqualTo(AISuggestionService.SuggestionType.ACTION);
-            assertThat(suggestions.get(0).text()).contains("acceptance criteria");
+            assertThat(suggestions).hasSize(1); // GH-90000
+            assertThat(suggestions.get(0).type()).isEqualTo(AISuggestionService.SuggestionType.ACTION); // GH-90000
+            assertThat(suggestions.get(0).text()).contains("acceptance criteria [GH-90000]");
         }
 
         @Test
-        @DisplayName("parses all five suggestion types from multi-line response")
-        void parsesAllSuggestionTypes() {
-            String content = String.join("\n",
+        @DisplayName("parses all five suggestion types from multi-line response [GH-90000]")
+        void parsesAllSuggestionTypes() { // GH-90000
+            String content = String.join("\n", // GH-90000
                     "[REQUIREMENT] Clarify non-functional requirements for latency.",
                     "[DESIGN] Extract authentication into a platform module.",
                     "[TEST] Add negative test cases for edge inputs.",
                     "[RISK] Dependency on external API may introduce production delays.",
                     "[ACTION] Schedule design review with architecture team."
             );
-            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content)));
+            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content))); // GH-90000
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "VALIDATE", Map.of()));
+                    runPromise(() -> service.suggest("proj-1", "VALIDATE", Map.of())); // GH-90000
 
-            assertThat(suggestions).hasSize(5);
-            assertThat(suggestions.stream().map(AISuggestionService.Suggestion::type))
-                    .containsExactly(
+            assertThat(suggestions).hasSize(5); // GH-90000
+            assertThat(suggestions.stream().map(AISuggestionService.Suggestion::type)) // GH-90000
+                    .containsExactly( // GH-90000
                             AISuggestionService.SuggestionType.REQUIREMENT,
                             AISuggestionService.SuggestionType.DESIGN,
                             AISuggestionService.SuggestionType.TEST,
@@ -111,59 +111,59 @@ class AISuggestionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty list for empty model response")
-        void returnsEmptyListForEmptyResponse() {
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
+        @DisplayName("returns empty list for empty model response [GH-90000]")
+        void returnsEmptyListForEmptyResponse() { // GH-90000
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); // GH-90000
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "INTENT", Map.of()));
+                    runPromise(() -> service.suggest("proj-1", "INTENT", Map.of())); // GH-90000
 
-            assertThat(suggestions).isEmpty();
+            assertThat(suggestions).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty list for blank-whitespace-only response content")
-        void returnsEmptyListForBlankContent() {
-            when(router.route(any())).thenReturn(Promise.of(responseWithContent("   \n  ")));
+        @DisplayName("returns empty list for blank-whitespace-only response content [GH-90000]")
+        void returnsEmptyListForBlankContent() { // GH-90000
+            when(router.route(any())).thenReturn(Promise.of(responseWithContent("   \n   [GH-90000]")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "INTENT", Map.of()));
+                    runPromise(() -> service.suggest("proj-1", "INTENT", Map.of())); // GH-90000
 
-            assertThat(suggestions).isEmpty();
+            assertThat(suggestions).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("each suggestion carries the project ID and phase")
-        void suggestionsCarryProjectAndPhase() {
-            when(router.route(any())).thenReturn(
-                    Promise.of(responseWithContent("[ACTION] Review tech stack choices.")));
+        @DisplayName("each suggestion carries the project ID and phase [GH-90000]")
+        void suggestionsCarryProjectAndPhase() { // GH-90000
+            when(router.route(any())).thenReturn( // GH-90000
+                    Promise.of(responseWithContent("[ACTION] Review tech stack choices. [GH-90000]")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("project-42", "GENERATE", Map.of()));
+                    runPromise(() -> service.suggest("project-42", "GENERATE", Map.of())); // GH-90000
 
-            assertThat(suggestions).hasSize(1);
-            assertThat(suggestions.get(0).projectId()).isEqualTo("project-42");
-            assertThat(suggestions.get(0).phase()).isEqualTo("GENERATE");
+            assertThat(suggestions).hasSize(1); // GH-90000
+            assertThat(suggestions.get(0).projectId()).isEqualTo("project-42 [GH-90000]");
+            assertThat(suggestions.get(0).phase()).isEqualTo("GENERATE [GH-90000]");
         }
 
         @Test
-        @DisplayName("each suggestion has a non-null unique ID and generatedAt timestamp")
-        void suggestionsHaveIdAndTimestamp() {
-            when(router.route(any())).thenReturn(
-                    Promise.of(responseWithContent("[RISK] Risk of scope creep is high.")));
+        @DisplayName("each suggestion has a non-null unique ID and generatedAt timestamp [GH-90000]")
+        void suggestionsHaveIdAndTimestamp() { // GH-90000
+            when(router.route(any())).thenReturn( // GH-90000
+                    Promise.of(responseWithContent("[RISK] Risk of scope creep is high. [GH-90000]")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of()));
+                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); // GH-90000
 
-            assertThat(suggestions).hasSize(1);
-            assertThat(suggestions.get(0).id()).isNotBlank();
-            assertThat(suggestions.get(0).generatedAt()).isNotNull();
+            assertThat(suggestions).hasSize(1); // GH-90000
+            assertThat(suggestions.get(0).id()).isNotBlank(); // GH-90000
+            assertThat(suggestions.get(0).generatedAt()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("caps suggestions at 5 regardless of model output length")
-        void capsAtFiveSuggestions() {
-            String content = String.join("\n",
+        @DisplayName("caps suggestions at 5 regardless of model output length [GH-90000]")
+        void capsAtFiveSuggestions() { // GH-90000
+            String content = String.join("\n", // GH-90000
                     "[ACTION] Step one.",
                     "[ACTION] Step two.",
                     "[ACTION] Step three.",
@@ -172,97 +172,97 @@ class AISuggestionServiceTest extends EventloopTestBase {
                     "[ACTION] Step six — should be ignored.",
                     "[ACTION] Step seven — also ignored."
             );
-            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content)));
+            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content))); // GH-90000
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "RUN", Map.of()));
+                    runPromise(() -> service.suggest("proj-1", "RUN", Map.of())); // GH-90000
 
-            assertThat(suggestions).hasSize(5);
+            assertThat(suggestions).hasSize(5); // GH-90000
         }
 
         @Test
-        @DisplayName("null context is treated as empty context (no NPE)")
-        void nullContextIsToleratedGracefully() {
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
+        @DisplayName("null context is treated as empty context (no NPE) [GH-90000]")
+        void nullContextIsToleratedGracefully() { // GH-90000
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); // GH-90000
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "OBSERVE", null));
+                    runPromise(() -> service.suggest("proj-1", "OBSERVE", null)); // GH-90000
 
-            assertThat(suggestions).isNotNull();
+            assertThat(suggestions).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("returned list is unmodifiable")
-        void returnedListIsUnmodifiable() {
-            when(router.route(any())).thenReturn(
-                    Promise.of(responseWithContent("[ACTION] Review architecture.")));
+        @DisplayName("returned list is unmodifiable [GH-90000]")
+        void returnedListIsUnmodifiable() { // GH-90000
+            when(router.route(any())).thenReturn( // GH-90000
+                    Promise.of(responseWithContent("[ACTION] Review architecture. [GH-90000]")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of()));
+                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); // GH-90000
 
-            assertThrows(UnsupportedOperationException.class, () ->
-                    suggestions.add(null));
+            assertThrows(UnsupportedOperationException.class, () -> // GH-90000
+                    suggestions.add(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("router failure is propagated as a promise exception")
-        void routerFailurePropagatesAsException() {
-            when(router.route(any()))
-                    .thenReturn(Promise.ofException(new RuntimeException("LLM unavailable")));
+        @DisplayName("router failure is propagated as a promise exception [GH-90000]")
+        void routerFailurePropagatesAsException() { // GH-90000
+            when(router.route(any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("LLM unavailable [GH-90000]")));
 
             try {
-                runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of()));
-                assertThat(false).as("expected exception").isTrue();
-            } catch (Exception e) {
-                assertThat(e).hasMessageContaining("LLM unavailable");
+                runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); // GH-90000
+                assertThat(false).as("expected exception [GH-90000]").isTrue();
+            } catch (Exception e) { // GH-90000
+                assertThat(e).hasMessageContaining("LLM unavailable [GH-90000]");
             }
         }
     }
 
-    // ── suggestRequirementImprovements() ──────────────────────────────────────
+    // ── suggestRequirementImprovements() ────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("suggestRequirementImprovements()")
+    @DisplayName("suggestRequirementImprovements() [GH-90000]")
     class SuggestRequirementImprovements {
 
         @Test
-        @DisplayName("delegates to suggest() with SHAPE phase + requirements context")
-        void delegatesToSuggestWithRequirementContext() {
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
+        @DisplayName("delegates to suggest() with SHAPE phase + requirements context [GH-90000]")
+        void delegatesToSuggestWithRequirementContext() { // GH-90000
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); // GH-90000
 
-            runPromise(() ->
-                    service.suggestRequirementImprovements("proj-1", "As a user I want to login."));
+            runPromise(() -> // GH-90000
+                    service.suggestRequirementImprovements("proj-1", "As a user I want to login.")); // GH-90000
 
-            verify(router).route(any(AIRequest.class));
+            verify(router).route(any(AIRequest.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("rejects null projectId")
-        void rejectsNullProjectId() {
-            assertThrows(NullPointerException.class, () ->
-                    runPromise(() -> service.suggestRequirementImprovements(null, "some req")));
+        @DisplayName("rejects null projectId [GH-90000]")
+        void rejectsNullProjectId() { // GH-90000
+            assertThrows(NullPointerException.class, () -> // GH-90000
+                    runPromise(() -> service.suggestRequirementImprovements(null, "some req"))); // GH-90000
         }
     }
 
     // ── SuggestionType coverage ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("SuggestionType has exactly 5 values")
-    void suggestionTypeHasFiveValues() {
-        assertThat(AISuggestionService.SuggestionType.values()).hasSize(5);
+    @DisplayName("SuggestionType has exactly 5 values [GH-90000]")
+    void suggestionTypeHasFiveValues() { // GH-90000
+        assertThat(AISuggestionService.SuggestionType.values()).hasSize(5); // GH-90000
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static AIResponse emptyResponse() {
-        return responseWithContent("");
+    private static AIResponse emptyResponse() { // GH-90000
+        return responseWithContent(" [GH-90000]");
     }
 
-    private static AIResponse responseWithContent(String content) {
-        return AIResponse.builder()
-                .requestId("test-req-id")
-                .modelId("stub-model")
-                .content(content)
-                .build();
+    private static AIResponse responseWithContent(String content) { // GH-90000
+        return AIResponse.builder() // GH-90000
+                .requestId("test-req-id [GH-90000]")
+                .modelId("stub-model [GH-90000]")
+                .content(content) // GH-90000
+                .build(); // GH-90000
     }
 }

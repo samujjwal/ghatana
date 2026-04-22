@@ -18,353 +18,353 @@ class RedisTlsConfigTest {
     private static final String TEST_TRUSTSTORE = "certs/test-truststore.jks";
     private static final String TEST_PASSWORD = "changeit";
 
-    private Path getResourcePath(String resource) {
+    private Path getResourcePath(String resource) { // GH-90000
         try {
-            return Paths.get(getClass().getClassLoader().getResource(resource).toURI());
-        } catch (Exception e) {
-            throw new RuntimeException("Resource not found: " + resource, e);
+            return Paths.get(getClass().getClassLoader().getResource(resource).toURI()); // GH-90000
+        } catch (Exception e) { // GH-90000
+            throw new RuntimeException("Resource not found: " + resource, e); // GH-90000
         }
     }
 
     @Test
-    void shouldCreateConfigWithTrustStoreOnly() {
+    void shouldCreateConfigWithTrustStoreOnly() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
         // Then
-        assertThat(config).isNotNull();
-        assertThatCode(config::validate).doesNotThrowAnyException();
+        assertThat(config).isNotNull(); // GH-90000
+        assertThatCode(config::validate).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    void shouldCreateConfigWithKeyStoreAndTrustStore() {
+    void shouldCreateConfigWithKeyStoreAndTrustStore() { // GH-90000
         // Given
-        Path keyStore = getResourcePath(TEST_KEYSTORE);
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path keyStore = getResourcePath(TEST_KEYSTORE); // GH-90000
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .keyStorePath(keyStore.toString())
-                .keyStorePassword(TEST_PASSWORD)
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .keyStorePath(keyStore.toString()) // GH-90000
+                .keyStorePassword(TEST_PASSWORD) // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
         // Then
-        assertThat(config).isNotNull();
-        assertThatCode(config::validate).doesNotThrowAnyException();
+        assertThat(config).isNotNull(); // GH-90000
+        assertThatCode(config::validate).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    void shouldEnableStrongCiphersByDefault() {
+    void shouldEnableStrongCiphersByDefault() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
-        SSLParameters sslParameters = config.createSslParameters();
+        SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getProtocols()).containsExactly("TLSv1.3");
-        assertThat(sslParameters.getCipherSuites())
-                .contains("TLS_AES_256_GCM_SHA384")
-                .contains("TLS_AES_128_GCM_SHA256")
-                .contains("TLS_CHACHA20_POLY1305_SHA256");
+        assertThat(sslParameters.getProtocols()).containsExactly("TLSv1.3 [GH-90000]");
+        assertThat(sslParameters.getCipherSuites()) // GH-90000
+                .contains("TLS_AES_256_GCM_SHA384 [GH-90000]")
+                .contains("TLS_AES_128_GCM_SHA256 [GH-90000]")
+                .contains("TLS_CHACHA20_POLY1305_SHA256 [GH-90000]");
     }
 
     @Test
-    void shouldAllowDisablingStrongCiphers() {
+    void shouldAllowDisablingStrongCiphers() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .enforceStrongCiphers(false)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .enforceStrongCiphers(false) // GH-90000
+                .build(); // GH-90000
 
-        SSLParameters sslParameters = config.createSslParameters();
+        SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
         // When strong ciphers are disabled, protocols and ciphers are not set
         // SSLParameters will use JVM defaults
-        assertThat(sslParameters).isNotNull();
+        assertThat(sslParameters).isNotNull(); // GH-90000
     }
 
     @Test
-    void shouldEnablePeerVerificationByDefault() {
+    void shouldEnablePeerVerificationByDefault() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
-        SSLParameters sslParameters = config.createSslParameters();
+        SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getEndpointIdentificationAlgorithm()).isEqualTo("HTTPS");
+        assertThat(sslParameters.getEndpointIdentificationAlgorithm()).isEqualTo("HTTPS [GH-90000]");
     }
 
     @Test
-    void shouldAllowDisablingPeerVerification() {
+    void shouldAllowDisablingPeerVerification() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .verifyPeer(false)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .verifyPeer(false) // GH-90000
+                .build(); // GH-90000
 
-        SSLParameters sslParameters = config.createSslParameters();
+        SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getEndpointIdentificationAlgorithm()).isNull();
+        assertThat(sslParameters.getEndpointIdentificationAlgorithm()).isNull(); // GH-90000
     }
 
     @Test
-    void shouldCreateSslSocketFactory() {
+    void shouldCreateSslSocketFactory() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
         // When
-        SSLSocketFactory sslSocketFactory = config.createSslSocketFactory();
+        SSLSocketFactory sslSocketFactory = config.createSslSocketFactory(); // GH-90000
 
         // Then
-        assertThat(sslSocketFactory).isNotNull();
-        assertThat(sslSocketFactory.getDefaultCipherSuites()).isNotEmpty();
+        assertThat(sslSocketFactory).isNotNull(); // GH-90000
+        assertThat(sslSocketFactory.getDefaultCipherSuites()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    void shouldCreateSslSocketFactoryWithClientCertificate() {
+    void shouldCreateSslSocketFactoryWithClientCertificate() { // GH-90000
         // Given
-        Path keyStore = getResourcePath(TEST_KEYSTORE);
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path keyStore = getResourcePath(TEST_KEYSTORE); // GH-90000
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .keyStorePath(keyStore.toString())
-                .keyStorePassword(TEST_PASSWORD)
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .keyStorePath(keyStore.toString()) // GH-90000
+                .keyStorePassword(TEST_PASSWORD) // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
         // When
-        SSLSocketFactory sslSocketFactory = config.createSslSocketFactory();
+        SSLSocketFactory sslSocketFactory = config.createSslSocketFactory(); // GH-90000
 
         // Then
-        assertThat(sslSocketFactory).isNotNull();
+        assertThat(sslSocketFactory).isNotNull(); // GH-90000
     }
 
     @Test
-    void shouldRejectConfigWithoutTrustStore() {
+    void shouldRejectConfigWithoutTrustStore() { // GH-90000
         // When/Then
-        assertThatThrownBy(() ->
-                RedisTlsConfig.builder()
-                        .keyStorePath("/path/to/keystore.jks")
-                        .keyStorePassword(TEST_PASSWORD)
-                        .build()
+        assertThatThrownBy(() -> // GH-90000
+                RedisTlsConfig.builder() // GH-90000
+                        .keyStorePath("/path/to/keystore.jks [GH-90000]")
+                        .keyStorePassword(TEST_PASSWORD) // GH-90000
+                        .build() // GH-90000
         )
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Trust store path must be provided");
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Trust store path must be provided [GH-90000]");
     }
 
     @Test
-    void shouldRejectConfigWithoutTrustStorePassword() {
+    void shouldRejectConfigWithoutTrustStorePassword() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When/Then
-        assertThatThrownBy(() ->
-                RedisTlsConfig.builder()
-                        .trustStorePath(trustStore.toString())
-                        .build()
+        assertThatThrownBy(() -> // GH-90000
+                RedisTlsConfig.builder() // GH-90000
+                        .trustStorePath(trustStore.toString()) // GH-90000
+                        .build() // GH-90000
         )
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Trust store password must be provided");
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Trust store password must be provided [GH-90000]");
     }
 
     @Test
-    void shouldRejectNonExistentTrustStore() {
+    void shouldRejectNonExistentTrustStore() { // GH-90000
         // When/Then
-        assertThatThrownBy(() ->
-                RedisTlsConfig.builder()
-                        .trustStorePath("/nonexistent/truststore.jks")
-                        .trustStorePassword(TEST_PASSWORD)
-                        .build()
+        assertThatThrownBy(() -> // GH-90000
+                RedisTlsConfig.builder() // GH-90000
+                        .trustStorePath("/nonexistent/truststore.jks [GH-90000]")
+                        .trustStorePassword(TEST_PASSWORD) // GH-90000
+                        .build() // GH-90000
         )
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Trust store file not found");
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Trust store file not found [GH-90000]");
     }
 
     @Test
-    void shouldRejectNonExistentKeyStore() {
+    void shouldRejectNonExistentKeyStore() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
-
-        // When/Then
-        assertThatThrownBy(() ->
-                RedisTlsConfig.builder()
-                        .keyStorePath("/nonexistent/keystore.jks")
-                        .keyStorePassword(TEST_PASSWORD)
-                        .trustStorePath(trustStore.toString())
-                        .trustStorePassword(TEST_PASSWORD)
-                        .build()
-        )
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Key store file not found");
-    }
-
-    @Test
-    void shouldRejectKeyStoreWithoutPassword() {
-        // Given
-        Path keyStore = getResourcePath(TEST_KEYSTORE);
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When/Then
-        assertThatThrownBy(() ->
-                RedisTlsConfig.builder()
-                        .keyStorePath(keyStore.toString())
-                        .trustStorePath(trustStore.toString())
-                        .trustStorePassword(TEST_PASSWORD)
-                        .build()
+        assertThatThrownBy(() -> // GH-90000
+                RedisTlsConfig.builder() // GH-90000
+                        .keyStorePath("/nonexistent/keystore.jks [GH-90000]")
+                        .keyStorePassword(TEST_PASSWORD) // GH-90000
+                        .trustStorePath(trustStore.toString()) // GH-90000
+                        .trustStorePassword(TEST_PASSWORD) // GH-90000
+                        .build() // GH-90000
         )
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Key store password must be provided");
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Key store file not found [GH-90000]");
     }
 
     @Test
-    void shouldSupportPKCS12KeyStore() {
+    void shouldRejectKeyStoreWithoutPassword() { // GH-90000
         // Given
-        Path keyStore = getResourcePath(TEST_KEYSTORE);
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path keyStore = getResourcePath(TEST_KEYSTORE); // GH-90000
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
+
+        // When/Then
+        assertThatThrownBy(() -> // GH-90000
+                RedisTlsConfig.builder() // GH-90000
+                        .keyStorePath(keyStore.toString()) // GH-90000
+                        .trustStorePath(trustStore.toString()) // GH-90000
+                        .trustStorePassword(TEST_PASSWORD) // GH-90000
+                        .build() // GH-90000
+        )
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("Key store password must be provided [GH-90000]");
+    }
+
+    @Test
+    void shouldSupportPKCS12KeyStore() { // GH-90000
+        // Given
+        Path keyStore = getResourcePath(TEST_KEYSTORE); // GH-90000
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .keyStorePath(keyStore.toString())
-                .keyStorePassword(TEST_PASSWORD)
-                .keyStoreType("JKS") // Using JKS for test
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .keyStorePath(keyStore.toString()) // GH-90000
+                .keyStorePassword(TEST_PASSWORD) // GH-90000
+                .keyStoreType("JKS [GH-90000]") // Using JKS for test
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
         // Then
-        assertThat(config).isNotNull();
-        assertThatCode(() -> config.createSslSocketFactory()).doesNotThrowAnyException();
+        assertThat(config).isNotNull(); // GH-90000
+        assertThatCode(() -> config.createSslSocketFactory()).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    void shouldSupportCustomProtocols() {
+    void shouldSupportCustomProtocols() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .enabledProtocols("TLSv1.2", "TLSv1.3")
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .enabledProtocols("TLSv1.2", "TLSv1.3") // GH-90000
+                .build(); // GH-90000
 
-        SSLParameters sslParameters = config.createSslParameters();
+        SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getProtocols()).containsExactly("TLSv1.2", "TLSv1.3");
+        assertThat(sslParameters.getProtocols()).containsExactly("TLSv1.2", "TLSv1.3"); // GH-90000
     }
 
     @Test
-    void shouldSupportCustomCipherSuites() {
+    void shouldSupportCustomCipherSuites() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .enabledCipherSuites("TLS_AES_256_GCM_SHA384")
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .enabledCipherSuites("TLS_AES_256_GCM_SHA384 [GH-90000]")
+                .build(); // GH-90000
 
-        SSLParameters sslParameters = config.createSslParameters();
+        SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getCipherSuites()).containsExactly("TLS_AES_256_GCM_SHA384");
+        assertThat(sslParameters.getCipherSuites()).containsExactly("TLS_AES_256_GCM_SHA384 [GH-90000]");
     }
 
     @Test
-    void shouldSupportMethodChaining() {
+    void shouldSupportMethodChaining() { // GH-90000
         // Given
-        Path keyStore = getResourcePath(TEST_KEYSTORE);
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path keyStore = getResourcePath(TEST_KEYSTORE); // GH-90000
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
         // When
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .keyStorePath(keyStore.toString())
-                .keyStorePassword(TEST_PASSWORD)
-                .keyStoreType("JKS")
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .trustStoreType("JKS")
-                .verifyPeer(true)
-                .enforceStrongCiphers(true)
-                .enabledProtocols("TLSv1.3")
-                .enabledCipherSuites("TLS_AES_256_GCM_SHA384")
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .keyStorePath(keyStore.toString()) // GH-90000
+                .keyStorePassword(TEST_PASSWORD) // GH-90000
+                .keyStoreType("JKS [GH-90000]")
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .trustStoreType("JKS [GH-90000]")
+                .verifyPeer(true) // GH-90000
+                .enforceStrongCiphers(true) // GH-90000
+                .enabledProtocols("TLSv1.3 [GH-90000]")
+                .enabledCipherSuites("TLS_AES_256_GCM_SHA384 [GH-90000]")
+                .build(); // GH-90000
 
         // Then
-        assertThat(config).isNotNull();
-        assertThatCode(config::validate).doesNotThrowAnyException();
+        assertThat(config).isNotNull(); // GH-90000
+        assertThatCode(config::validate).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    void shouldHandleInvalidKeyStorePassword() {
+    void shouldHandleInvalidKeyStorePassword() { // GH-90000
         // Given
-        Path keyStore = getResourcePath(TEST_KEYSTORE);
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path keyStore = getResourcePath(TEST_KEYSTORE); // GH-90000
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .keyStorePath(keyStore.toString())
-                .keyStorePassword("wrongpassword")
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword(TEST_PASSWORD)
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .keyStorePath(keyStore.toString()) // GH-90000
+                .keyStorePassword("wrongpassword [GH-90000]")
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword(TEST_PASSWORD) // GH-90000
+                .build(); // GH-90000
 
         // When/Then
-        assertThatThrownBy(config::createSslSocketFactory)
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Failed to create");
+        assertThatThrownBy(config::createSslSocketFactory) // GH-90000
+                .isInstanceOf(RuntimeException.class) // GH-90000
+                .hasMessageContaining("Failed to create [GH-90000]");
     }
 
     @Test
-    void shouldHandleInvalidTrustStorePassword() {
+    void shouldHandleInvalidTrustStorePassword() { // GH-90000
         // Given
-        Path trustStore = getResourcePath(TEST_TRUSTSTORE);
+        Path trustStore = getResourcePath(TEST_TRUSTSTORE); // GH-90000
 
-        RedisTlsConfig config = RedisTlsConfig.builder()
-                .trustStorePath(trustStore.toString())
-                .trustStorePassword("wrongpassword")
-                .build();
+        RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
+                .trustStorePath(trustStore.toString()) // GH-90000
+                .trustStorePassword("wrongpassword [GH-90000]")
+                .build(); // GH-90000
 
         // When/Then
-        assertThatThrownBy(config::createSslSocketFactory)
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Failed to create");
+        assertThatThrownBy(config::createSslSocketFactory) // GH-90000
+                .isInstanceOf(RuntimeException.class) // GH-90000
+                .hasMessageContaining("Failed to create [GH-90000]");
     }
 }

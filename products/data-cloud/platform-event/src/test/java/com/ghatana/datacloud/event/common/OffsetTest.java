@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.event.common;
@@ -14,217 +14,217 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link Offset}.
  */
-@DisplayName("Offset")
+@DisplayName("Offset [GH-90000]")
 class OffsetTest {
 
     @Nested
-    @DisplayName("factory method of()")
+    @DisplayName("factory method of() [GH-90000]")
     class FactoryOf {
 
         @Test
-        void returnsFirstForZero() {
-            assertThat(Offset.of(0)).isSameAs(Offset.FIRST);
+        void returnsFirstForZero() { // GH-90000
+            assertThat(Offset.of(0)).isSameAs(Offset.FIRST); // GH-90000
         }
 
         @Test
-        void returnsLatestForMinusOne() {
-            assertThat(Offset.of(-1)).isSameAs(Offset.LATEST);
+        void returnsLatestForMinusOne() { // GH-90000
+            assertThat(Offset.of(-1)).isSameAs(Offset.LATEST); // GH-90000
         }
 
         @Test
-        void returnsEarliestForMinusTwo() {
-            assertThat(Offset.of(-2)).isSameAs(Offset.EARLIEST);
+        void returnsEarliestForMinusTwo() { // GH-90000
+            assertThat(Offset.of(-2)).isSameAs(Offset.EARLIEST); // GH-90000
         }
 
         @Test
-        void createsNewOffsetForPositiveValue() {
-            Offset o = Offset.of(42);
-            assertThat(o.value()).isEqualTo(42L);
+        void createsNewOffsetForPositiveValue() { // GH-90000
+            Offset o = Offset.of(42); // GH-90000
+            assertThat(o.value()).isEqualTo(42L); // GH-90000
         }
 
         @Test
-        void rejectsValueBelowMinusTwoViaConstructor() {
-            assertThatThrownBy(() -> new Offset(-3))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("-3");
+        void rejectsValueBelowMinusTwoViaConstructor() { // GH-90000
+            assertThatThrownBy(() -> new Offset(-3)) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("-3 [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("constants")
+    @DisplayName("constants [GH-90000]")
     class Constants {
 
         @Test
-        void firstHasValueZero() {
-            assertThat(Offset.FIRST.value()).isEqualTo(0L);
+        void firstHasValueZero() { // GH-90000
+            assertThat(Offset.FIRST.value()).isEqualTo(0L); // GH-90000
         }
 
         @Test
-        void latestHasValueMinusOne() {
-            assertThat(Offset.LATEST.value()).isEqualTo(-1L);
+        void latestHasValueMinusOne() { // GH-90000
+            assertThat(Offset.LATEST.value()).isEqualTo(-1L); // GH-90000
         }
 
         @Test
-        void earliestHasValueMinusTwo() {
-            assertThat(Offset.EARLIEST.value()).isEqualTo(-2L);
+        void earliestHasValueMinusTwo() { // GH-90000
+            assertThat(Offset.EARLIEST.value()).isEqualTo(-2L); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("next()")
+    @DisplayName("next() [GH-90000]")
     class Next {
 
         @Test
-        void incrementsRegularOffset() {
-            Offset o = Offset.of(5);
-            assertThat(o.next().value()).isEqualTo(6L);
+        void incrementsRegularOffset() { // GH-90000
+            Offset o = Offset.of(5); // GH-90000
+            assertThat(o.next().value()).isEqualTo(6L); // GH-90000
         }
 
         @Test
-        void incrementsFirstOffset() {
-            assertThat(Offset.FIRST.next().value()).isEqualTo(1L);
+        void incrementsFirstOffset() { // GH-90000
+            assertThat(Offset.FIRST.next().value()).isEqualTo(1L); // GH-90000
         }
 
         @Test
-        void throwsOnLatest() {
-            assertThatThrownBy(Offset.LATEST::next)
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("special");
+        void throwsOnLatest() { // GH-90000
+            assertThatThrownBy(Offset.LATEST::next) // GH-90000
+                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .hasMessageContaining("special [GH-90000]");
         }
 
         @Test
-        void throwsOnEarliest() {
-            assertThatThrownBy(Offset.EARLIEST::next)
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("special");
+        void throwsOnEarliest() { // GH-90000
+            assertThatThrownBy(Offset.EARLIEST::next) // GH-90000
+                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .hasMessageContaining("special [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("isFirst()")
+    @DisplayName("isFirst() [GH-90000]")
     class IsFirst {
 
         @Test
-        void trueForZero() {
-            assertThat(Offset.FIRST.isFirst()).isTrue();
+        void trueForZero() { // GH-90000
+            assertThat(Offset.FIRST.isFirst()).isTrue(); // GH-90000
         }
 
         @Test
-        void falseForPositive() {
-            assertThat(Offset.of(1).isFirst()).isFalse();
+        void falseForPositive() { // GH-90000
+            assertThat(Offset.of(1).isFirst()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("isSpecial()")
+    @DisplayName("isSpecial() [GH-90000]")
     class IsSpecial {
 
         @Test
-        void trueForLatest() {
-            assertThat(Offset.LATEST.isSpecial()).isTrue();
+        void trueForLatest() { // GH-90000
+            assertThat(Offset.LATEST.isSpecial()).isTrue(); // GH-90000
         }
 
         @Test
-        void trueForEarliest() {
-            assertThat(Offset.EARLIEST.isSpecial()).isTrue();
+        void trueForEarliest() { // GH-90000
+            assertThat(Offset.EARLIEST.isSpecial()).isTrue(); // GH-90000
         }
 
         @Test
-        void falseForNormalOffset() {
-            assertThat(Offset.of(10).isSpecial()).isFalse();
+        void falseForNormalOffset() { // GH-90000
+            assertThat(Offset.of(10).isSpecial()).isFalse(); // GH-90000
         }
 
         @Test
-        void falseForFirst() {
-            assertThat(Offset.FIRST.isSpecial()).isFalse();
+        void falseForFirst() { // GH-90000
+            assertThat(Offset.FIRST.isSpecial()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("isBefore() / isAfter()")
+    @DisplayName("isBefore() / isAfter() [GH-90000]")
     class Comparison {
 
         @Test
-        void isBeforeWhenLower() {
-            assertThat(Offset.of(3).isBefore(Offset.of(7))).isTrue();
+        void isBeforeWhenLower() { // GH-90000
+            assertThat(Offset.of(3).isBefore(Offset.of(7))).isTrue(); // GH-90000
         }
 
         @Test
-        void isNotBeforeWhenHigher() {
-            assertThat(Offset.of(7).isBefore(Offset.of(3))).isFalse();
+        void isNotBeforeWhenHigher() { // GH-90000
+            assertThat(Offset.of(7).isBefore(Offset.of(3))).isFalse(); // GH-90000
         }
 
         @Test
-        void isAfterWhenHigher() {
-            assertThat(Offset.of(7).isAfter(Offset.of(3))).isTrue();
+        void isAfterWhenHigher() { // GH-90000
+            assertThat(Offset.of(7).isAfter(Offset.of(3))).isTrue(); // GH-90000
         }
 
         @Test
-        void isNotAfterWhenLower() {
-            assertThat(Offset.of(3).isAfter(Offset.of(7))).isFalse();
+        void isNotAfterWhenLower() { // GH-90000
+            assertThat(Offset.of(3).isAfter(Offset.of(7))).isFalse(); // GH-90000
         }
 
         @Test
-        void isBeforeThrowsOnSpecialThis() {
-            assertThatThrownBy(() -> Offset.LATEST.isBefore(Offset.of(1)))
-                    .isInstanceOf(IllegalStateException.class);
+        void isBeforeThrowsOnSpecialThis() { // GH-90000
+            assertThatThrownBy(() -> Offset.LATEST.isBefore(Offset.of(1))) // GH-90000
+                    .isInstanceOf(IllegalStateException.class); // GH-90000
         }
 
         @Test
-        void isBeforeThrowsOnSpecialOther() {
-            assertThatThrownBy(() -> Offset.of(1).isBefore(Offset.LATEST))
-                    .isInstanceOf(IllegalStateException.class);
+        void isBeforeThrowsOnSpecialOther() { // GH-90000
+            assertThatThrownBy(() -> Offset.of(1).isBefore(Offset.LATEST)) // GH-90000
+                    .isInstanceOf(IllegalStateException.class); // GH-90000
         }
 
         @Test
-        void isBeforeThrowsOnNullOther() {
-            assertThatThrownBy(() -> Offset.of(1).isBefore(null))
-                    .isInstanceOf(NullPointerException.class);
+        void isBeforeThrowsOnNullOther() { // GH-90000
+            assertThatThrownBy(() -> Offset.of(1).isBefore(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void isAfterThrowsOnNullOther() {
-            assertThatThrownBy(() -> Offset.of(1).isAfter(null))
-                    .isInstanceOf(NullPointerException.class);
+        void isAfterThrowsOnNullOther() { // GH-90000
+            assertThatThrownBy(() -> Offset.of(1).isAfter(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void compareToOrdering() {
-            assertThat(Offset.of(1).compareTo(Offset.of(2))).isNegative();
-            assertThat(Offset.of(2).compareTo(Offset.of(1))).isPositive();
-            assertThat(Offset.of(5).compareTo(Offset.of(5))).isZero();
+        void compareToOrdering() { // GH-90000
+            assertThat(Offset.of(1).compareTo(Offset.of(2))).isNegative(); // GH-90000
+            assertThat(Offset.of(2).compareTo(Offset.of(1))).isPositive(); // GH-90000
+            assertThat(Offset.of(5).compareTo(Offset.of(5))).isZero(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("toString()")
+    @DisplayName("toString() [GH-90000]")
     class ToStringTest {
 
         @Test
-        void latestRepresentation() {
-            assertThat(Offset.LATEST.toString()).isEqualTo("Offset[LATEST]");
+        void latestRepresentation() { // GH-90000
+            assertThat(Offset.LATEST.toString()).isEqualTo("Offset[LATEST] [GH-90000]");
         }
 
         @Test
-        void earliestRepresentation() {
-            assertThat(Offset.EARLIEST.toString()).isEqualTo("Offset[EARLIEST]");
+        void earliestRepresentation() { // GH-90000
+            assertThat(Offset.EARLIEST.toString()).isEqualTo("Offset[EARLIEST] [GH-90000]");
         }
 
         @Test
-        void normalOffsetRepresentation() {
-            assertThat(Offset.of(99).toString()).isEqualTo("Offset[99]");
+        void normalOffsetRepresentation() { // GH-90000
+            assertThat(Offset.of(99).toString()).isEqualTo("Offset[99] [GH-90000]");
         }
 
         @Test
-        void firstRepresentation() {
-            assertThat(Offset.FIRST.toString()).isEqualTo("Offset[0]");
+        void firstRepresentation() { // GH-90000
+            assertThat(Offset.FIRST.toString()).isEqualTo("Offset[0] [GH-90000]");
         }
     }
 
     @Test
-    @DisplayName("record equality")
-    void recordEquality() {
-        assertThat(Offset.of(5)).isEqualTo(new Offset(5));
-        assertThat(Offset.of(5)).isNotEqualTo(Offset.of(6));
+    @DisplayName("record equality [GH-90000]")
+    void recordEquality() { // GH-90000
+        assertThat(Offset.of(5)).isEqualTo(new Offset(5)); // GH-90000
+        assertThat(Offset.of(5)).isNotEqualTo(Offset.of(6)); // GH-90000
     }
 }

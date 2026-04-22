@@ -15,53 +15,53 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("OperatorResult")
+@DisplayName("OperatorResult [GH-90000]")
 class OperatorResultTest {
 
     @Nested
-    @DisplayName("factory methods")
+    @DisplayName("factory methods [GH-90000]")
     class FactoryMethods {
 
         @Test
-        @DisplayName("empty() should create successful result with no events")
-        void shouldCreateEmptyResult() {
-            OperatorResult result = OperatorResult.empty();
+        @DisplayName("empty() should create successful result with no events [GH-90000]")
+        void shouldCreateEmptyResult() { // GH-90000
+            OperatorResult result = OperatorResult.empty(); // GH-90000
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("failed() should create failed result with error message")
-        void shouldCreateFailedResult() {
-            OperatorResult result = OperatorResult.failed("Something went wrong");
+        @DisplayName("failed() should create failed result with error message [GH-90000]")
+        void shouldCreateFailedResult() { // GH-90000
+            OperatorResult result = OperatorResult.failed("Something went wrong [GH-90000]");
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("builder")
+    @DisplayName("builder [GH-90000]")
     class Builder {
 
         @Test
-        @DisplayName("should build a successful result")
-        void shouldBuildSuccessResult() {
-            OperatorResult result = OperatorResult.builder()
-                    .success()
-                    .processingTime(150L)
-                    .build();
+        @DisplayName("should build a successful result [GH-90000]")
+        void shouldBuildSuccessResult() { // GH-90000
+            OperatorResult result = OperatorResult.builder() // GH-90000
+                    .success() // GH-90000
+                    .processingTime(150L) // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should build a failed result with message")
-        void shouldBuildFailedResult() {
-            OperatorResult result = OperatorResult.builder()
-                    .failed("Validation error")
-                    .build();
+        @DisplayName("should build a failed result with message [GH-90000]")
+        void shouldBuildFailedResult() { // GH-90000
+            OperatorResult result = OperatorResult.builder() // GH-90000
+                    .failed("Validation error [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
     }
 }

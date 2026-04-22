@@ -25,8 +25,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataProductHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("DataProductHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class DataProductHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -47,43 +47,43 @@ class DataProductHandlerTest extends EventloopTestBase {
     private DataProductHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new DataProductHandler(client, http, new ObjectMapper(), lineagePlugin);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new DataProductHandler(client, http, new ObjectMapper(), lineagePlugin); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("publish rejects missing tenant before reading body")
-    void publishRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("publish rejects missing tenant before reading body [GH-90000]")
+    void publishRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handlePublishDataProduct(request));
+        HttpResponse response = runPromise(() -> handler.handlePublishDataProduct(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
-        verify(client, never()).query(any(), any(), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
+        verify(client, never()).query(any(), any(), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("list rejects missing tenant before querying products")
-    void listRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("list rejects missing tenant before querying products [GH-90000]")
+    void listRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleListDataProducts(request));
+        HttpResponse response = runPromise(() -> handler.handleListDataProducts(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).query(any(), any(), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).query(any(), any(), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("subscribe rejects missing tenant before reading body")
-    void subscribeRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("subscribe rejects missing tenant before reading body [GH-90000]")
+    void subscribeRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleSubscribe(request));
+        HttpResponse response = runPromise(() -> handler.handleSubscribe(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
-        verify(client, never()).findById(any(), any(), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
+        verify(client, never()).findById(any(), any(), any()); // GH-90000
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.http.server.servlet;
@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AsyncServletDecorator — middleware delegation contract")
+@DisplayName("AsyncServletDecorator — middleware delegation contract [GH-90000]")
 class AsyncServletDecoratorTest extends EventloopTestBase {
 
     // ── Concrete implementations for testing ─────────────────────────────────
@@ -30,131 +30,131 @@ class AsyncServletDecoratorTest extends EventloopTestBase {
     /**
      * A decorator that sets a flag when the middleware is invoked before delegating to next.
      */
-    private static AsyncServletDecorator loggingDecorator(AtomicBoolean beforeFlag,
+    private static AsyncServletDecorator loggingDecorator(AtomicBoolean beforeFlag, // GH-90000
                                                            AtomicBoolean afterFlag) {
         return next -> request -> {
-            beforeFlag.set(true);
-            return next.serve(request).whenResult(resp -> afterFlag.set(true));
+            beforeFlag.set(true); // GH-90000
+            return next.serve(request).whenResult(resp -> afterFlag.set(true)); // GH-90000
         };
     }
 
     /**
      * A decorator that short-circuits and returns 403 without calling next.
      */
-    private static AsyncServletDecorator blockingDecorator() {
-        return next -> request -> Promise.of(HttpResponse.ofCode(403).build());
+    private static AsyncServletDecorator blockingDecorator() { // GH-90000
+        return next -> request -> Promise.of(HttpResponse.ofCode(403).build()); // GH-90000
     }
 
     /**
      * A no-op decorator that simply delegates to the next servlet.
      */
-    private static AsyncServletDecorator passthroughDecorator() {
+    private static AsyncServletDecorator passthroughDecorator() { // GH-90000
         return next -> next;
     }
 
-    private static final AsyncServlet OK_SERVLET = req -> Promise.of(HttpResponse.ok200().build());
+    private static final AsyncServlet OK_SERVLET = req -> Promise.of(HttpResponse.ok200().build()); // GH-90000
 
-    private static HttpRequest getRequest(String path) {
-        return HttpRequest.get("http://localhost" + path).build();
+    private static HttpRequest getRequest(String path) { // GH-90000
+        return HttpRequest.get("http://localhost" + path).build(); // GH-90000
     }
 
     // ── Tests ─────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("decorator is a functional interface with a single serve() method")
-    void isFunctionalInterface() {
-        AsyncServletDecorator decorator = passthroughDecorator();
-        assertThat(decorator).isNotNull();
+    @DisplayName("decorator is a functional interface with a single serve() method [GH-90000]")
+    void isFunctionalInterface() { // GH-90000
+        AsyncServletDecorator decorator = passthroughDecorator(); // GH-90000
+        assertThat(decorator).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("passthrough decorator delegates to next servlet transparently")
-    void passthroughDelegatesToNext() throws Exception {
-        AsyncServletDecorator decorator = passthroughDecorator();
-        AsyncServlet wrapped = decorator.serve(OK_SERVLET);
+    @DisplayName("passthrough decorator delegates to next servlet transparently [GH-90000]")
+    void passthroughDelegatesToNext() throws Exception { // GH-90000
+        AsyncServletDecorator decorator = passthroughDecorator(); // GH-90000
+        AsyncServlet wrapped = decorator.serve(OK_SERVLET); // GH-90000
 
-        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/test")));
+        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/test [GH-90000]")));
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("blocking decorator short-circuits and does not invoke next servlet")
-    void blockingDecoratorShortCircuits() throws Exception {
-        AtomicBoolean nextCalled = new AtomicBoolean(false);
+    @DisplayName("blocking decorator short-circuits and does not invoke next servlet [GH-90000]")
+    void blockingDecoratorShortCircuits() throws Exception { // GH-90000
+        AtomicBoolean nextCalled = new AtomicBoolean(false); // GH-90000
         AsyncServlet trackingServlet = req -> {
-            nextCalled.set(true);
-            return Promise.of(HttpResponse.ok200().build());
+            nextCalled.set(true); // GH-90000
+            return Promise.of(HttpResponse.ok200().build()); // GH-90000
         };
 
-        AsyncServletDecorator decorator = blockingDecorator();
-        AsyncServlet wrapped = decorator.serve(trackingServlet);
+        AsyncServletDecorator decorator = blockingDecorator(); // GH-90000
+        AsyncServlet wrapped = decorator.serve(trackingServlet); // GH-90000
 
-        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/blocked")));
+        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/blocked [GH-90000]")));
 
-        assertThat(response.getCode()).isEqualTo(403);
-        assertThat(nextCalled).isFalse();
+        assertThat(response.getCode()).isEqualTo(403); // GH-90000
+        assertThat(nextCalled).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("logging decorator executes before-logic then delegates to next")
-    void loggingDecoratorExecutesBeforeAndAfter() throws Exception {
-        AtomicBoolean before = new AtomicBoolean(false);
-        AtomicBoolean after = new AtomicBoolean(false);
+    @DisplayName("logging decorator executes before-logic then delegates to next [GH-90000]")
+    void loggingDecoratorExecutesBeforeAndAfter() throws Exception { // GH-90000
+        AtomicBoolean before = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean after = new AtomicBoolean(false); // GH-90000
 
-        AsyncServletDecorator decorator = loggingDecorator(before, after);
-        AsyncServlet wrapped = decorator.serve(OK_SERVLET);
+        AsyncServletDecorator decorator = loggingDecorator(before, after); // GH-90000
+        AsyncServlet wrapped = decorator.serve(OK_SERVLET); // GH-90000
 
-        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/data")));
+        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/data [GH-90000]")));
 
-        assertThat(response.getCode()).isEqualTo(200);
-        assertThat(before).isTrue();
-        assertThat(after).isTrue();
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(before).isTrue(); // GH-90000
+        assertThat(after).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("decorators can be chained — outer wraps inner")
-    void decoratorsCanBeChained() throws Exception {
-        AtomicBoolean outerBefore = new AtomicBoolean(false);
-        AtomicBoolean innerBefore = new AtomicBoolean(false);
-        AtomicBoolean outerAfter = new AtomicBoolean(false);
-        AtomicBoolean innerAfter = new AtomicBoolean(false);
+    @DisplayName("decorators can be chained — outer wraps inner [GH-90000]")
+    void decoratorsCanBeChained() throws Exception { // GH-90000
+        AtomicBoolean outerBefore = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean innerBefore = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean outerAfter = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean innerAfter = new AtomicBoolean(false); // GH-90000
 
-        AsyncServletDecorator outer = loggingDecorator(outerBefore, outerAfter);
-        AsyncServletDecorator inner = loggingDecorator(innerBefore, innerAfter);
+        AsyncServletDecorator outer = loggingDecorator(outerBefore, outerAfter); // GH-90000
+        AsyncServletDecorator inner = loggingDecorator(innerBefore, innerAfter); // GH-90000
 
         // Chain: outer → inner → OK_SERVLET
-        AsyncServlet wrapped = outer.serve(inner.serve(OK_SERVLET));
+        AsyncServlet wrapped = outer.serve(inner.serve(OK_SERVLET)); // GH-90000
 
-        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/chained")));
+        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/chained [GH-90000]")));
 
-        assertThat(response.getCode()).isEqualTo(200);
-        assertThat(outerBefore).isTrue();
-        assertThat(innerBefore).isTrue();
-        assertThat(outerAfter).isTrue();
-        assertThat(innerAfter).isTrue();
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(outerBefore).isTrue(); // GH-90000
+        assertThat(innerBefore).isTrue(); // GH-90000
+        assertThat(outerAfter).isTrue(); // GH-90000
+        assertThat(innerAfter).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("decorator returns an AsyncServlet wrapping next")
-    void decoratorReturnedServletIsNotNull() {
-        AsyncServletDecorator decorator = passthroughDecorator();
-        AsyncServlet wrapped = decorator.serve(OK_SERVLET);
-        assertThat(wrapped).isNotNull();
+    @DisplayName("decorator returns an AsyncServlet wrapping next [GH-90000]")
+    void decoratorReturnedServletIsNotNull() { // GH-90000
+        AsyncServletDecorator decorator = passthroughDecorator(); // GH-90000
+        AsyncServlet wrapped = decorator.serve(OK_SERVLET); // GH-90000
+        assertThat(wrapped).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("decorator can transform the response returned by next")
-    void decoratorCanTransformResponse() throws Exception {
+    @DisplayName("decorator can transform the response returned by next [GH-90000]")
+    void decoratorCanTransformResponse() throws Exception { // GH-90000
         // Decorator adds a custom header to whatever next returns
         AsyncServletDecorator headerAdder = next -> request ->
-                next.serve(request).map(resp ->
-                        HttpResponse.ofCode(resp.getCode()).build());
+                next.serve(request).map(resp -> // GH-90000
+                        HttpResponse.ofCode(resp.getCode()).build()); // GH-90000
 
-        AsyncServlet wrapped = headerAdder.serve(OK_SERVLET);
+        AsyncServlet wrapped = headerAdder.serve(OK_SERVLET); // GH-90000
 
-        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/transform")));
+        HttpResponse response = runPromise(() -> wrapped.serve(getRequest("/api/transform [GH-90000]")));
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 }

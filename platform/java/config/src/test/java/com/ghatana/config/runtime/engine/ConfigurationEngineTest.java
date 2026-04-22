@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  */
 
 package com.ghatana.config.runtime.engine;
@@ -23,14 +23,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * Covers:
  * - Loading single configs and directories
  * - Config type inference from directory structure
- * - Schema validation (when schema exists)
+ * - Schema validation (when schema exists) // GH-90000
  * - Variable interpolation
- * - Config versioning (snapshot, list versions, getCurrentVersion)
+ * - Config versioning (snapshot, list versions, getCurrentVersion) // GH-90000
  * - Config rollback
  * - Change listener notification
- * - Lifecycle (stop)
+ * - Lifecycle (stop) // GH-90000
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
 class ConfigurationEngineTest {
 
     @TempDir
@@ -39,18 +39,18 @@ class ConfigurationEngineTest {
     private ConfigurationEngine engine;
 
     @BeforeEach
-    void setUp() {
-        engine = ConfigurationEngine.builder(tempDir)
-                .variable("ENV", "test")
-                .variable("APP_NAME", "ghatana")
-                .build();
+    void setUp() { // GH-90000
+        engine = ConfigurationEngine.builder(tempDir) // GH-90000
+                .variable("ENV", "test") // GH-90000
+                .variable("APP_NAME", "ghatana") // GH-90000
+                .build(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (engine != null) {
+    void tearDown() { // GH-90000
+        if (engine != null) { // GH-90000
             // synchronous cleanup
-            engine.stop();
+            engine.stop(); // GH-90000
         }
     }
 
@@ -59,86 +59,86 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(1)
-    @DisplayName("loadConfig — loads a YAML file and registers it")
-    void loadConfig_registersConfig() throws Exception {
-        Path yaml = writeYaml(tempDir, "my-config.yaml",
+    @Order(1) // GH-90000
+    @DisplayName("loadConfig — loads a YAML file and registers it [GH-90000]")
+    void loadConfig_registersConfig() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "my-config.yaml", // GH-90000
                 "name: test-config\nlevel: INFO\n");
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("my-config", yaml, ConfigType.SYSTEM)
-                        .whenResult(source -> {
-                            assertNotNull(source);
-                            assertEquals("test-config", source.getString("name").orElse(null));
-                            assertEquals("INFO", source.getString("level").orElse(null));
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("my-config", yaml, ConfigType.SYSTEM) // GH-90000
+                        .whenResult(source -> { // GH-90000
+                            assertNotNull(source); // GH-90000
+                            assertEquals("test-config", source.getString("name [GH-90000]").orElse(null));
+                            assertEquals("INFO", source.getString("level [GH-90000]").orElse(null));
                         })
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
 
-        assertTrue(engine.hasConfig("my-config"));
-        assertEquals(1, engine.size());
+        assertTrue(engine.hasConfig("my-config [GH-90000]"));
+        assertEquals(1, engine.size()); // GH-90000
     }
 
     @Test
-    @Order(2)
-    @DisplayName("loadConfig — creates a version snapshot")
-    void loadConfig_createsVersionSnapshot() throws Exception {
-        Path yaml = writeYaml(tempDir, "versioned.yaml",
+    @Order(2) // GH-90000
+    @DisplayName("loadConfig — creates a version snapshot [GH-90000]")
+    void loadConfig_createsVersionSnapshot() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "versioned.yaml", // GH-90000
                 "version: 1\nkey: value\n");
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("versioned", yaml, ConfigType.SYSTEM)
-                        .whenResult(source -> {
-                            assertEquals("v1", engine.getCurrentVersion("versioned"));
-                            assertEquals(List.of("v1"), engine.listVersions("versioned"));
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("versioned", yaml, ConfigType.SYSTEM) // GH-90000
+                        .whenResult(source -> { // GH-90000
+                            assertEquals("v1", engine.getCurrentVersion("versioned [GH-90000]"));
+                            assertEquals(List.of("v1 [GH-90000]"), engine.listVersions("versioned [GH-90000]"));
                         })
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     @Test
-    @Order(3)
-    @DisplayName("loadConfig — reloading with changed content bumps version")
-    void loadConfig_reloadBumpsVersion() throws Exception {
-        Path yaml = writeYaml(tempDir, "bumping.yaml", "version: 1\n");
+    @Order(3) // GH-90000
+    @DisplayName("loadConfig — reloading with changed content bumps version [GH-90000]")
+    void loadConfig_reloadBumpsVersion() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "bumping.yaml", "version: 1\n"); // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("bumping", yaml, ConfigType.SYSTEM)
-                        .then($ -> {
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("bumping", yaml, ConfigType.SYSTEM) // GH-90000
+                        .then($ -> { // GH-90000
                             try {
-                                Files.writeString(yaml, "version: 2\n");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+                                Files.writeString(yaml, "version: 2\n"); // GH-90000
+                            } catch (IOException e) { // GH-90000
+                                throw new RuntimeException(e); // GH-90000
                             }
-                            return engine.loadConfig("bumping", yaml, ConfigType.SYSTEM);
+                            return engine.loadConfig("bumping", yaml, ConfigType.SYSTEM); // GH-90000
                         })
-                        .whenResult(source -> {
-                            assertEquals("v2", engine.getCurrentVersion("bumping"));
-                            assertEquals(List.of("v2", "v1"), engine.listVersions("bumping"));
+                        .whenResult(source -> { // GH-90000
+                            assertEquals("v2", engine.getCurrentVersion("bumping [GH-90000]"));
+                            assertEquals(List.of("v2", "v1"), engine.listVersions("bumping [GH-90000]"));
                         })
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     @Test
-    @Order(4)
-    @DisplayName("loadConfig — unchanged content does not bump version")
-    void loadConfig_unchangedContentNoBump() throws Exception {
-        Path yaml = writeYaml(tempDir, "stable.yaml", "stable: true\n");
+    @Order(4) // GH-90000
+    @DisplayName("loadConfig — unchanged content does not bump version [GH-90000]")
+    void loadConfig_unchangedContentNoBump() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "stable.yaml", "stable: true\n"); // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("stable", yaml, ConfigType.SYSTEM)
-                        .then($ -> engine.loadConfig("stable", yaml, ConfigType.SYSTEM))
-                        .whenResult(source -> {
-                            assertEquals("v1", engine.getCurrentVersion("stable"));
-                            assertEquals(1, engine.listVersions("stable").size());
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("stable", yaml, ConfigType.SYSTEM) // GH-90000
+                        .then($ -> engine.loadConfig("stable", yaml, ConfigType.SYSTEM)) // GH-90000
+                        .whenResult(source -> { // GH-90000
+                            assertEquals("v1", engine.getCurrentVersion("stable [GH-90000]"));
+                            assertEquals(1, engine.listVersions("stable [GH-90000]").size());
                         })
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -146,54 +146,54 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(10)
-    @DisplayName("loadDirectory — loads all YAML files recursively")
-    void loadDirectory_loadsAll() throws Exception {
+    @Order(10) // GH-90000
+    @DisplayName("loadDirectory — loads all YAML files recursively [GH-90000]")
+    void loadDirectory_loadsAll() throws Exception { // GH-90000
         // Create structure:
         // agents/
         //   fraud-detector.yaml
         // pipelines/
         //   ingestion.yml
         // system.yaml
-        Path agentsDir = tempDir.resolve("agents");
-        Files.createDirectories(agentsDir);
-        writeYaml(agentsDir, "fraud-detector.yaml",
+        Path agentsDir = tempDir.resolve("agents [GH-90000]");
+        Files.createDirectories(agentsDir); // GH-90000
+        writeYaml(agentsDir, "fraud-detector.yaml", // GH-90000
                 "type: deterministic\nname: fraud-detector\n");
 
-        Path pipelinesDir = tempDir.resolve("pipelines");
-        Files.createDirectories(pipelinesDir);
-        writeYaml(pipelinesDir, "ingestion.yml",
+        Path pipelinesDir = tempDir.resolve("pipelines [GH-90000]");
+        Files.createDirectories(pipelinesDir); // GH-90000
+        writeYaml(pipelinesDir, "ingestion.yml", // GH-90000
                 "stages:\n  - name: ingest\n");
 
-        writeYaml(tempDir, "system.yaml",
+        writeYaml(tempDir, "system.yaml", // GH-90000
                 "logging:\n  level: DEBUG\n");
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadDirectory(tempDir)
-                        .whenResult($ -> {
-                            assertEquals(3, engine.size());
-                            assertTrue(engine.hasConfig("agents.fraud-detector"));
-                            assertTrue(engine.hasConfig("pipelines.ingestion"));
-                            assertTrue(engine.hasConfig("system"));
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadDirectory(tempDir) // GH-90000
+                        .whenResult($ -> { // GH-90000
+                            assertEquals(3, engine.size()); // GH-90000
+                            assertTrue(engine.hasConfig("agents.fraud-detector [GH-90000]"));
+                            assertTrue(engine.hasConfig("pipelines.ingestion [GH-90000]"));
+                            assertTrue(engine.hasConfig("system [GH-90000]"));
                         })
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     @Test
-    @Order(11)
-    @DisplayName("loadDirectory — fails for non-directory path")
-    void loadDirectory_failsNonDir() throws Exception {
-        Path file = writeYaml(tempDir, "not-a-dir.yaml", "x: 1\n");
+    @Order(11) // GH-90000
+    @DisplayName("loadDirectory — fails for non-directory path [GH-90000]")
+    void loadDirectory_failsNonDir() throws Exception { // GH-90000
+        Path file = writeYaml(tempDir, "not-a-dir.yaml", "x: 1\n"); // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadDirectory(file)
-                        .whenResult($ -> fail("Should fail"))
-                        .whenException(e ->
-                                assertInstanceOf(ConfigurationException.class, e)));
-        eventloop.run();
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadDirectory(file) // GH-90000
+                        .whenResult($ -> fail("Should fail [GH-90000]"))
+                        .whenException(e -> // GH-90000
+                                assertInstanceOf(ConfigurationException.class, e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -201,19 +201,19 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(20)
-    @DisplayName("interpolate — resolves registered variables")
-    void interpolate_resolvesVariables() {
-        assertEquals("test", engine.interpolate("${ENV}"));
-        assertEquals("ghatana", engine.interpolate("${APP_NAME}"));
-        assertEquals("running in test", engine.interpolate("running in ${ENV}"));
+    @Order(20) // GH-90000
+    @DisplayName("interpolate — resolves registered variables [GH-90000]")
+    void interpolate_resolvesVariables() { // GH-90000
+        assertEquals("test", engine.interpolate("${ENV} [GH-90000]"));
+        assertEquals("ghatana", engine.interpolate("${APP_NAME} [GH-90000]"));
+        assertEquals("running in test", engine.interpolate("running in ${ENV} [GH-90000]"));
     }
 
     @Test
-    @Order(21)
-    @DisplayName("interpolate — uses defaults for missing variables")
-    void interpolate_usesDefaults() {
-        assertEquals("fallback", engine.interpolate("${MISSING:fallback}"));
+    @Order(21) // GH-90000
+    @DisplayName("interpolate — uses defaults for missing variables [GH-90000]")
+    void interpolate_usesDefaults() { // GH-90000
+        assertEquals("fallback", engine.interpolate("${MISSING:fallback} [GH-90000]"));
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -221,17 +221,17 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(30)
-    @DisplayName("getCurrentVersion — returns v0 for unknown config")
-    void getCurrentVersion_unknown() {
-        assertEquals("v0", engine.getCurrentVersion("nonexistent"));
+    @Order(30) // GH-90000
+    @DisplayName("getCurrentVersion — returns v0 for unknown config [GH-90000]")
+    void getCurrentVersion_unknown() { // GH-90000
+        assertEquals("v0", engine.getCurrentVersion("nonexistent [GH-90000]"));
     }
 
     @Test
-    @Order(31)
-    @DisplayName("listVersions — returns empty for unknown config")
-    void listVersions_unknown() {
-        assertTrue(engine.listVersions("nonexistent").isEmpty());
+    @Order(31) // GH-90000
+    @DisplayName("listVersions — returns empty for unknown config [GH-90000]")
+    void listVersions_unknown() { // GH-90000
+        assertTrue(engine.listVersions("nonexistent [GH-90000]").isEmpty());
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -239,47 +239,47 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(40)
-    @DisplayName("rollback — restores to previous version")
-    void rollback_restoresVersion() throws Exception {
-        Path yaml = writeYaml(tempDir, "rollback-test.yaml", "key: v1\n");
+    @Order(40) // GH-90000
+    @DisplayName("rollback — restores to previous version [GH-90000]")
+    void rollback_restoresVersion() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "rollback-test.yaml", "key: v1\n"); // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("rollback-test", yaml, ConfigType.SYSTEM)
-                        .then($ -> {
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("rollback-test", yaml, ConfigType.SYSTEM) // GH-90000
+                        .then($ -> { // GH-90000
                             try {
-                                Files.writeString(yaml, "key: v2\n");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+                                Files.writeString(yaml, "key: v2\n"); // GH-90000
+                            } catch (IOException e) { // GH-90000
+                                throw new RuntimeException(e); // GH-90000
                             }
-                            return engine.loadConfig("rollback-test", yaml, ConfigType.SYSTEM);
+                            return engine.loadConfig("rollback-test", yaml, ConfigType.SYSTEM); // GH-90000
                         })
-                        .then($ -> {
-                            assertEquals("v2", engine.getCurrentVersion("rollback-test"));
-                            return engine.rollback("rollback-test", "v1");
+                        .then($ -> { // GH-90000
+                            assertEquals("v2", engine.getCurrentVersion("rollback-test [GH-90000]"));
+                            return engine.rollback("rollback-test", "v1"); // GH-90000
                         })
-                        .whenResult($ ->
-                                // After rollback, current version is v3 (rollback creates new snapshot)
-                                assertEquals("v3", engine.getCurrentVersion("rollback-test")))
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+                        .whenResult($ -> // GH-90000
+                                // After rollback, current version is v3 (rollback creates new snapshot) // GH-90000
+                                assertEquals("v3", engine.getCurrentVersion("rollback-test [GH-90000]")))
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     @Test
-    @Order(41)
-    @DisplayName("rollback — fails for unknown version")
-    void rollback_failsUnknownVersion() throws Exception {
-        Path yaml = writeYaml(tempDir, "rollback-fail.yaml", "k: v\n");
+    @Order(41) // GH-90000
+    @DisplayName("rollback — fails for unknown version [GH-90000]")
+    void rollback_failsUnknownVersion() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "rollback-fail.yaml", "k: v\n"); // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("rollback-fail", yaml, ConfigType.SYSTEM)
-                        .then($ -> engine.rollback("rollback-fail", "v99"))
-                        .whenResult($ -> fail("Should fail"))
-                        .whenException(e ->
-                                assertInstanceOf(ConfigurationException.class, e)));
-        eventloop.run();
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("rollback-fail", yaml, ConfigType.SYSTEM) // GH-90000
+                        .then($ -> engine.rollback("rollback-fail", "v99")) // GH-90000
+                        .whenResult($ -> fail("Should fail [GH-90000]"))
+                        .whenException(e -> // GH-90000
+                                assertInstanceOf(ConfigurationException.class, e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -287,33 +287,33 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(50)
-    @DisplayName("onConfigChange — listener receives rollback events")
-    void onConfigChange_rollbackEvent() throws Exception {
-        Path yaml = writeYaml(tempDir, "listener-test.yaml", "state: original\n");
+    @Order(50) // GH-90000
+    @DisplayName("onConfigChange — listener receives rollback events [GH-90000]")
+    void onConfigChange_rollbackEvent() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "listener-test.yaml", "state: original\n"); // GH-90000
 
-        AtomicReference<ConfigChange> received = new AtomicReference<>();
-        engine.onConfigChange(received::set);
+        AtomicReference<ConfigChange> received = new AtomicReference<>(); // GH-90000
+        engine.onConfigChange(received::set); // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("listener-test", yaml, ConfigType.SYSTEM)
-                        .then($ -> {
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("listener-test", yaml, ConfigType.SYSTEM) // GH-90000
+                        .then($ -> { // GH-90000
                             try {
-                                Files.writeString(yaml, "state: modified\n");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+                                Files.writeString(yaml, "state: modified\n"); // GH-90000
+                            } catch (IOException e) { // GH-90000
+                                throw new RuntimeException(e); // GH-90000
                             }
-                            return engine.loadConfig("listener-test", yaml, ConfigType.SYSTEM);
+                            return engine.loadConfig("listener-test", yaml, ConfigType.SYSTEM); // GH-90000
                         })
-                        .then($ -> engine.rollback("listener-test", "v1"))
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+                        .then($ -> engine.rollback("listener-test", "v1")) // GH-90000
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
 
-        ConfigChange change = received.get();
-        assertNotNull(change);
-        assertEquals("listener-test", change.configName());
-        assertEquals(ConfigChange.ChangeType.ROLLED_BACK, change.changeType());
+        ConfigChange change = received.get(); // GH-90000
+        assertNotNull(change); // GH-90000
+        assertEquals("listener-test", change.configName()); // GH-90000
+        assertEquals(ConfigChange.ChangeType.ROLLED_BACK, change.changeType()); // GH-90000
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -321,15 +321,15 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(60)
-    @DisplayName("ConfigType — fromDirectoryName resolves correctly")
-    void configType_fromDirectoryName() {
-        assertEquals(ConfigType.AGENT, ConfigType.fromDirectoryName("agents"));
-        assertEquals(ConfigType.PIPELINE, ConfigType.fromDirectoryName("pipelines"));
-        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName("system"));
-        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName("unknown"));
-        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName(null));
-        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName(""));
+    @Order(60) // GH-90000
+    @DisplayName("ConfigType — fromDirectoryName resolves correctly [GH-90000]")
+    void configType_fromDirectoryName() { // GH-90000
+        assertEquals(ConfigType.AGENT, ConfigType.fromDirectoryName("agents [GH-90000]"));
+        assertEquals(ConfigType.PIPELINE, ConfigType.fromDirectoryName("pipelines [GH-90000]"));
+        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName("system [GH-90000]"));
+        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName("unknown [GH-90000]"));
+        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName(null)); // GH-90000
+        assertEquals(ConfigType.SYSTEM, ConfigType.fromDirectoryName(" [GH-90000]"));
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -337,18 +337,18 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(70)
-    @DisplayName("stop — clears registry")
-    void stop_clearsAll() throws Exception {
-        Path yaml = writeYaml(tempDir, "stop-test.yaml", "x: 1\n");
+    @Order(70) // GH-90000
+    @DisplayName("stop — clears registry [GH-90000]")
+    void stop_clearsAll() throws Exception { // GH-90000
+        Path yaml = writeYaml(tempDir, "stop-test.yaml", "x: 1\n"); // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().build();
-        eventloop.submit(() ->
-                engine.loadConfig("stop-test", yaml, ConfigType.SYSTEM)
-                        .then($ -> engine.stop())
-                        .whenResult($ -> assertEquals(0, engine.size()))
-                        .whenException(e -> fail("Should not fail: " + e)));
-        eventloop.run();
+        Eventloop eventloop = Eventloop.builder().build(); // GH-90000
+        eventloop.submit(() -> // GH-90000
+                engine.loadConfig("stop-test", yaml, ConfigType.SYSTEM) // GH-90000
+                        .then($ -> engine.stop()) // GH-90000
+                        .whenResult($ -> assertEquals(0, engine.size())) // GH-90000
+                        .whenException(e -> fail("Should not fail: " + e))); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -356,24 +356,24 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(80)
-    @DisplayName("getConfig — returns empty for missing config")
-    void getConfig_empty() {
-        assertTrue(engine.getConfig("missing").isEmpty());
+    @Order(80) // GH-90000
+    @DisplayName("getConfig — returns empty for missing config [GH-90000]")
+    void getConfig_empty() { // GH-90000
+        assertTrue(engine.getConfig("missing [GH-90000]").isEmpty());
     }
 
     @Test
-    @Order(81)
-    @DisplayName("listConfigNames — initially empty")
-    void listConfigNames_empty() {
-        assertTrue(engine.listConfigNames().isEmpty());
+    @Order(81) // GH-90000
+    @DisplayName("listConfigNames — initially empty [GH-90000]")
+    void listConfigNames_empty() { // GH-90000
+        assertTrue(engine.listConfigNames().isEmpty()); // GH-90000
     }
 
     @Test
-    @Order(82)
-    @DisplayName("hasConfig — false for unloaded")
-    void hasConfig_false() {
-        assertFalse(engine.hasConfig("ghost"));
+    @Order(82) // GH-90000
+    @DisplayName("hasConfig — false for unloaded [GH-90000]")
+    void hasConfig_false() { // GH-90000
+        assertFalse(engine.hasConfig("ghost [GH-90000]"));
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -381,60 +381,60 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(90)
-    @DisplayName("ConfigVersionStore — snapshot and retrieve content")
-    void versionStore_snapshotAndRetrieve() throws Exception {
-        Path versionDir = tempDir.resolve("versions");
-        ConfigVersionStore store = new ConfigVersionStore(versionDir);
+    @Order(90) // GH-90000
+    @DisplayName("ConfigVersionStore — snapshot and retrieve content [GH-90000]")
+    void versionStore_snapshotAndRetrieve() throws Exception { // GH-90000
+        Path versionDir = tempDir.resolve("versions [GH-90000]");
+        ConfigVersionStore store = new ConfigVersionStore(versionDir); // GH-90000
 
-        Path yaml = writeYaml(tempDir, "store-test.yaml", "content: original\n");
-        String v1 = store.snapshot("test-cfg", yaml);
-        assertEquals("v1", v1);
+        Path yaml = writeYaml(tempDir, "store-test.yaml", "content: original\n"); // GH-90000
+        String v1 = store.snapshot("test-cfg", yaml); // GH-90000
+        assertEquals("v1", v1); // GH-90000
 
         // Change content
-        Files.writeString(yaml, "content: updated\n");
-        String v2 = store.snapshot("test-cfg", yaml);
-        assertEquals("v2", v2);
+        Files.writeString(yaml, "content: updated\n"); // GH-90000
+        String v2 = store.snapshot("test-cfg", yaml); // GH-90000
+        assertEquals("v2", v2); // GH-90000
 
-        assertEquals("v2", store.getCurrentVersion("test-cfg"));
-        assertEquals(List.of("v2", "v1"), store.listVersions("test-cfg"));
-        assertEquals(2, store.totalSnapshots());
+        assertEquals("v2", store.getCurrentVersion("test-cfg [GH-90000]"));
+        assertEquals(List.of("v2", "v1"), store.listVersions("test-cfg [GH-90000]"));
+        assertEquals(2, store.totalSnapshots()); // GH-90000
 
         // Read version content
-        assertTrue(store.getVersionContent("test-cfg", "v1").isPresent());
-        assertTrue(store.getVersionContent("test-cfg", "v1").get().contains("original"));
-        assertTrue(store.getVersionContent("test-cfg", "v2").get().contains("updated"));
+        assertTrue(store.getVersionContent("test-cfg", "v1").isPresent()); // GH-90000
+        assertTrue(store.getVersionContent("test-cfg", "v1").get().contains("original [GH-90000]"));
+        assertTrue(store.getVersionContent("test-cfg", "v2").get().contains("updated [GH-90000]"));
     }
 
     @Test
-    @Order(91)
-    @DisplayName("ConfigVersionStore — rollback returns correct path")
-    void versionStore_rollback() throws Exception {
-        Path versionDir = tempDir.resolve("versions2");
-        ConfigVersionStore store = new ConfigVersionStore(versionDir);
+    @Order(91) // GH-90000
+    @DisplayName("ConfigVersionStore — rollback returns correct path [GH-90000]")
+    void versionStore_rollback() throws Exception { // GH-90000
+        Path versionDir = tempDir.resolve("versions2 [GH-90000]");
+        ConfigVersionStore store = new ConfigVersionStore(versionDir); // GH-90000
 
-        Path yaml = writeYaml(tempDir, "rb-test.yaml", "v: 1\n");
-        store.snapshot("rb", yaml);
-        Files.writeString(yaml, "v: 2\n");
-        store.snapshot("rb", yaml);
+        Path yaml = writeYaml(tempDir, "rb-test.yaml", "v: 1\n"); // GH-90000
+        store.snapshot("rb", yaml); // GH-90000
+        Files.writeString(yaml, "v: 2\n"); // GH-90000
+        store.snapshot("rb", yaml); // GH-90000
 
-        var restored = store.rollback("rb", "v1");
-        assertTrue(restored.isPresent());
-        assertEquals("v3", store.getCurrentVersion("rb"));
+        var restored = store.rollback("rb", "v1"); // GH-90000
+        assertTrue(restored.isPresent()); // GH-90000
+        assertEquals("v3", store.getCurrentVersion("rb [GH-90000]"));
     }
 
     @Test
-    @Order(92)
-    @DisplayName("ConfigVersionStore — skips snapshot for unchanged content")
-    void versionStore_skipUnchanged() throws Exception {
-        Path versionDir = tempDir.resolve("versions3");
-        ConfigVersionStore store = new ConfigVersionStore(versionDir);
+    @Order(92) // GH-90000
+    @DisplayName("ConfigVersionStore — skips snapshot for unchanged content [GH-90000]")
+    void versionStore_skipUnchanged() throws Exception { // GH-90000
+        Path versionDir = tempDir.resolve("versions3 [GH-90000]");
+        ConfigVersionStore store = new ConfigVersionStore(versionDir); // GH-90000
 
-        Path yaml = writeYaml(tempDir, "dup-test.yaml", "same: content\n");
-        store.snapshot("dup", yaml);
-        String v = store.snapshot("dup", yaml); // same content
-        assertEquals("v1", v); // no bump
-        assertEquals(1, store.totalSnapshots());
+        Path yaml = writeYaml(tempDir, "dup-test.yaml", "same: content\n"); // GH-90000
+        store.snapshot("dup", yaml); // GH-90000
+        String v = store.snapshot("dup", yaml); // same content // GH-90000
+        assertEquals("v1", v); // no bump // GH-90000
+        assertEquals(1, store.totalSnapshots()); // GH-90000
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -442,24 +442,24 @@ class ConfigurationEngineTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    @Order(100)
-    @DisplayName("ConfigChange — record accessors work")
-    void configChange_recordAccessors() {
-        ConfigChange change = new ConfigChange("test", ConfigChange.ChangeType.MODIFIED, "v2");
-        assertEquals("test", change.configName());
-        assertEquals(ConfigChange.ChangeType.MODIFIED, change.changeType());
-        assertEquals("v2", change.version());
-        assertNotNull(change.timestamp());
+    @Order(100) // GH-90000
+    @DisplayName("ConfigChange — record accessors work [GH-90000]")
+    void configChange_recordAccessors() { // GH-90000
+        ConfigChange change = new ConfigChange("test", ConfigChange.ChangeType.MODIFIED, "v2"); // GH-90000
+        assertEquals("test", change.configName()); // GH-90000
+        assertEquals(ConfigChange.ChangeType.MODIFIED, change.changeType()); // GH-90000
+        assertEquals("v2", change.version()); // GH-90000
+        assertNotNull(change.timestamp()); // GH-90000
     }
 
     // ═════════════════════════════════════════════════════════════════════════
     // Helpers
     // ═════════════════════════════════════════════════════════════════════════
 
-    private static Path writeYaml(Path dir, String filename, String content)
+    private static Path writeYaml(Path dir, String filename, String content) // GH-90000
             throws IOException {
-        Path file = dir.resolve(filename);
-        Files.writeString(file, content);
+        Path file = dir.resolve(filename); // GH-90000
+        Files.writeString(file, content); // GH-90000
         return file;
     }
 }

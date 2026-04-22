@@ -274,10 +274,10 @@ export const routes: RouteObject[] = [
         element: withSuspense(InsightsPage),
       },
 
-      // Alerts - redirected to Insights (P2-1: consolidate operator surfaces)
+      // Alerts - operator-facing alert triage console (restored as canonical route)
       {
         path: 'alerts',
-        element: <Navigate to="/insights?tab=alerts" replace />,
+        element: withSuspense(AlertsPage),
       },
 
       // Operations Console - Operator-facing diagnostics and tools
@@ -287,35 +287,35 @@ export const routes: RouteObject[] = [
       },
 
       // AEP Integration Pages
-      // Event Explorer — redirected to Insights (P2-1: consolidate operator surfaces)
+      // Event Explorer — real-time AEP event stream explorer (restored as canonical route)
       {
         path: 'events',
-        element: <Navigate to="/insights?tab=events" replace />,
+        element: withSuspense(EventExplorerPage),
       },
-      // Memory Plane Viewer — redirected to Data (P2-1: consolidate operator surfaces)
+      // Memory Plane Viewer — restored as canonical route
       {
         path: 'memory',
-        element: <Navigate to="/data?view=memory" replace />,
+        element: withSuspense(MemoryPlaneViewerPage),
       },
-      // Entity Browser — redirected to Data (P2-1: consolidate operator surfaces)
+      // Entity Browser — restored as canonical route
       {
         path: 'entities',
-        element: <Navigate to="/data?view=entities" replace />,
+        element: withSuspense(EntityBrowserPage),
       },
-      // Context Explorer — redirected to Trust (P2-1: consolidate operator surfaces)
+      // Context Explorer — restored as canonical route
       {
         path: 'context',
-        element: <Navigate to="/trust?tab=context" replace />,
+        element: withSuspense(ContextExplorerPage),
       },
-      // Data Fabric — redirected to Operations Console (P3-3: eliminate boundary dead ends)
+      // Data Fabric — restored as canonical operator-facing route
       {
         path: 'fabric',
-        element: <Navigate to="/operations" replace />,
+        element: withSuspense(DataFabricPage),
       },
-      // Agent Catalog — redirected to Operations Console (P2-1: consolidate operator surfaces)
+      // Agent Catalog — restored as canonical operator-facing route
       {
         path: 'agents',
-        element: <Navigate to="/operations" replace />,
+        element: withSuspense(AgentPluginManagerPage),
       },
 
       // Settings

@@ -21,7 +21,10 @@ dependencies {
     
     // Logging
     implementation(libs.slf4j.api)
-    
+
+    // Async cache port contract
+    api(libs.activej.promise)
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

@@ -14,10 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * In-memory implementation of {@link HumanApprovalPlugin} for development and testing.
  *
  * <p>Uses a {@link ConcurrentHashMap} — all state is lost on restart. Use
- * {@link DurableHumanApprovalPlugin} for production workloads that require durability.</p>
+ * the durable JDBC implementation for production workloads that require durability.</p>
  *
  * <p>Idempotency guarantee: calling {@link #requestApproval(ApprovalRequest)} twice with
  * the same {@code requestId} returns the existing record unchanged.</p>
@@ -53,6 +53,10 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
 
     /** requestId → latest record (includes both pending and decided). */
     private final Map<String, ApprovalRecord> records = new ConcurrentHashMap<>();
+    /** requestId → required approvals (quorum); default 1. */
+    private final Map<String, Integer> quorumByRequest = new ConcurrentHashMap<>();
+    /** requestId → reviewers who have approved so far. */
+    private final Map<String, Set<String>> approvalVotes = new ConcurrentHashMap<>();
 
     private PluginState state = PluginState.UNLOADED;
 
@@ -94,6 +98,8 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
     @Override
     public Promise<Void> shutdown() {
         records.clear();
+        quorumByRequest.clear();
+        approvalVotes.clear();
         this.state = PluginState.UNLOADED;
         LOG.info("HumanApprovalPlugin shutdown");
         return Promise.complete();
@@ -105,15 +111,20 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
 
     @Override
     public Promise<ApprovalRecord> requestApproval(ApprovalRequest request) {
+        if (request == null) {
+            return Promise.ofException(new NullPointerException("request must not be null"));
+        }
+
         ApprovalRecord existing = records.get(request.requestId());
         if (existing != null) {
             LOG.debug("Idempotent requestApproval — request {} already exists with status {}",
                     request.requestId(), existing.status());
-            return Promise.of(existing);
+            return Promise.of(applyTimeoutEscalation(existing));
         }
 
         ApprovalRecord record = ApprovalRecord.pending(request);
         records.put(request.requestId(), record);
+        quorumByRequest.put(request.requestId(), requiredApprovals(request.context()));
 
         LOG.info("Created approval request {} for subject {} action={}",
                 request.requestId(), request.subjectId(), request.action());
@@ -125,7 +136,11 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
         if (requestId == null || requestId.isBlank()) {
             return Promise.ofException(new IllegalArgumentException("requestId must not be blank"));
         }
-        return Promise.of(Optional.ofNullable(records.get(requestId)));
+        ApprovalRecord record = records.get(requestId);
+        if (record == null) {
+            return Promise.of(Optional.empty());
+        }
+        return Promise.of(Optional.of(applyTimeoutEscalation(record)));
     }
 
     @Override
@@ -137,14 +152,33 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
                     "Approval request not found: " + requestId));
         }
 
+        existing = applyTimeoutEscalation(existing);
+
         if (existing.status() != ApprovalStatus.PENDING) {
             LOG.debug("completeApproval no-op — request {} already in status {}",
                     requestId, existing.status());
             return Promise.of(existing);
         }
 
+        if (decision == ApprovalDecision.APPROVED) {
+            int requiredApprovals = quorumByRequest.getOrDefault(requestId, 1);
+            if (requiredApprovals > 1) {
+                Set<String> reviewers = approvalVotes.computeIfAbsent(requestId, key -> ConcurrentHashMap.newKeySet());
+                boolean newVote = reviewers.add(reviewerId);
+                if (!newVote) {
+                    LOG.debug("Ignoring duplicate approval vote — request {} reviewer {}", requestId, reviewerId);
+                }
+                if (reviewers.size() < requiredApprovals) {
+                    LOG.info("Approval {} awaiting quorum {}/{}", requestId, reviewers.size(), requiredApprovals);
+                    return Promise.of(existing);
+                }
+            }
+        }
+
         ApprovalRecord decided = existing.withDecision(decision, reviewerId, notes, Instant.now());
         records.put(requestId, decided);
+        approvalVotes.remove(requestId);
+        quorumByRequest.remove(requestId);
 
         LOG.info("Approval {} decided {} by {}", requestId, decision, reviewerId);
         return Promise.of(decided);
@@ -153,6 +187,7 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
     @Override
     public Promise<List<ApprovalRecord>> listPendingForSubject(String subjectId) {
         List<ApprovalRecord> pending = records.values().stream()
+                .map(this::applyTimeoutEscalation)
                 .filter(r -> r.subjectId().equals(subjectId))
                 .filter(r -> r.status() == ApprovalStatus.PENDING)
                 .collect(Collectors.toUnmodifiableList());
@@ -167,6 +202,8 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
                     "Approval request not found: " + requestId));
         }
 
+        existing = applyTimeoutEscalation(existing);
+
         if (existing.status() != ApprovalStatus.PENDING) {
             LOG.debug("cancelApproval no-op — request {} already in status {}",
                     requestId, existing.status());
@@ -175,6 +212,8 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
 
         ApprovalRecord cancelled = existing.cancelled(reason, Instant.now());
         records.put(requestId, cancelled);
+        approvalVotes.remove(requestId);
+        quorumByRequest.remove(requestId);
 
         LOG.info("Approval {} cancelled — reason: {}", requestId, reason);
         return Promise.complete();
@@ -187,5 +226,47 @@ public class StandardHumanApprovalPlugin implements HumanApprovalPlugin {
                 .count();
         return "StandardHumanApprovalPlugin{total=" + records.size()
                 + ", pending=" + pendingCount + "}";
+    }
+
+    private ApprovalRecord applyTimeoutEscalation(ApprovalRecord record) {
+        if (record.status() != ApprovalStatus.PENDING || record.expiresAt() == null) {
+            return record;
+        }
+        if (record.expiresAt().isAfter(Instant.now())) {
+            return record;
+        }
+
+        ApprovalRecord expired = new ApprovalRecord(
+            record.requestId(),
+            record.subjectId(),
+            record.requestedBy(),
+            record.action(),
+            ApprovalStatus.EXPIRED,
+            record.requestedAt(),
+            record.expiresAt(),
+            Instant.now(),
+            null,
+            "Approval request expired before decision"
+        );
+        records.put(record.requestId(), expired);
+        approvalVotes.remove(record.requestId());
+        quorumByRequest.remove(record.requestId());
+        LOG.info("Approval {} expired at {}", record.requestId(), record.expiresAt());
+        return expired;
+    }
+
+    private static int requiredApprovals(Map<String, Object> context) {
+        Object raw = context.get("quorum.requiredApprovals");
+        if (raw instanceof Number number) {
+            return Math.max(1, number.intValue());
+        }
+        if (raw instanceof String text) {
+            try {
+                return Math.max(1, Integer.parseInt(text));
+            } catch (NumberFormatException ignored) {
+                return 1;
+            }
+        }
+        return 1;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  */
 
 package com.ghatana.agent.behavioral;
@@ -32,8 +32,8 @@ import static org.mockito.Mockito.*;
  * Focus: Fast-path vs fallback routing, result composition, confidence-based escalation,
  * and intelligent agent coordination.
  */
-@DisplayName("HybridAgent Behavioral Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("HybridAgent Behavioral Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class HybridAgentBehavioralTest {
 
     @Mock
@@ -49,17 +49,17 @@ class HybridAgentBehavioralTest {
     private HybridAgent agent;
 
     @BeforeEach
-    void setUp() {
-        agentContext = AgentContext.builder()
-                .turnId("turn-1")
-                .agentId("hybrid-agent")
-                .tenantId("tenant-1")
-                .memoryStore(memoryStore)
-                .build();
+    void setUp() { // GH-90000
+        agentContext = AgentContext.builder() // GH-90000
+                .turnId("turn-1 [GH-90000]")
+                .agentId("hybrid-agent [GH-90000]")
+                .tenantId("tenant-1 [GH-90000]")
+                .memoryStore(memoryStore) // GH-90000
+                .build(); // GH-90000
 
-        agent = new HybridAgent("hybrid-agent");
-        agent.setDeterministicAgent(deterministicAgent);
-        agent.setProbabilisticAgent(probabilisticAgent);
+        agent = new HybridAgent("hybrid-agent [GH-90000]");
+        agent.setDeterministicAgent(deterministicAgent); // GH-90000
+        agent.setProbabilisticAgent(probabilisticAgent); // GH-90000
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -67,141 +67,141 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Routing Strategies")
+    @DisplayName("Routing Strategies [GH-90000]")
     class RoutingTests {
 
         @Test
-        @DisplayName("DETERMINISTIC_FIRST routes to deterministic agent first")
-        void deterministicFirstStrategy() {
-            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("decision", "matched"))
-                    .confidence(1.0)
-                    .status(AgentResultStatus.SUCCESS)
-                    .explanation("Rule matched")
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+        @DisplayName("DETERMINISTIC_FIRST routes to deterministic agent first [GH-90000]")
+        void deterministicFirstStrategy() { // GH-90000
+            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("decision", "matched")) // GH-90000
+                    .confidence(1.0) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .explanation("Rule matched [GH-90000]")
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
-            verify(deterministicAgent, times(1)).process(any(), any());
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            verify(deterministicAgent, times(1)).process(any(), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("DETERMINISTIC_FIRST escalates to probabilistic on no match")
-        void deterministicFirstEscalation() {
+        @DisplayName("DETERMINISTIC_FIRST escalates to probabilistic on no match [GH-90000]")
+        void deterministicFirstEscalation() { // GH-90000
             // Deterministic agent returns no match
-            AgentResult<Map<String, Object>> detNoMatch = AgentResult.<Map<String, Object>>builder()
-                    .status(AgentResultStatus.SKIPPED)
-                    .explanation("No rules matched")
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+            AgentResult<Map<String, Object>> detNoMatch = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .status(AgentResultStatus.SKIPPED) // GH-90000
+                    .explanation("No rules matched [GH-90000]")
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
             // Probabilistic agent provides fallback
-            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("prediction", "class-A"))
-                    .confidence(0.82)
-                    .status(AgentResultStatus.SUCCESS)
-                    .explanation("Model inference")
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(50))
-                    .build();
+            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("prediction", "class-A")) // GH-90000
+                    .confidence(0.82) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .explanation("Model inference [GH-90000]")
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(50)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detNoMatch));
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(probResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detNoMatch)); // GH-90000
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(probResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
-            verify(deterministicAgent, times(1)).process(any(), any());
-            verify(probabilisticAgent, times(1)).process(any(), any());
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            verify(deterministicAgent, times(1)).process(any(), any()); // GH-90000
+            verify(probabilisticAgent, times(1)).process(any(), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("PROBABILISTIC_FIRST routes to probabilistic agent first")
-        void probabilisticFirstStrategy() {
-            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("prediction", "positive"))
-                    .confidence(0.88)
-                    .status(AgentResultStatus.SUCCESS)
-                    .explanation("Model prediction")
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(30))
-                    .build();
+        @DisplayName("PROBABILISTIC_FIRST routes to probabilistic agent first [GH-90000]")
+        void probabilisticFirstStrategy() { // GH-90000
+            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("prediction", "positive")) // GH-90000
+                    .confidence(0.88) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .explanation("Model prediction [GH-90000]")
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(30)) // GH-90000
+                    .build(); // GH-90000
 
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(probResult));
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(probResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.PROBABILISTIC_FIRST)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.PROBABILISTIC_FIRST) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("text", "great");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("text", "great"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
-            verify(probabilisticAgent, times(1)).process(any(), any());
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            verify(probabilisticAgent, times(1)).process(any(), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("PARALLEL runs both deterministic and probabilistic agents")
-        void parallelStrategy() {
-            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("det", "value"))
-                    .confidence(1.0)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+        @DisplayName("PARALLEL runs both deterministic and probabilistic agents [GH-90000]")
+        void parallelStrategy() { // GH-90000
+            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("det", "value")) // GH-90000
+                    .confidence(1.0) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("prob", "value"))
-                    .confidence(0.85)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(30))
-                    .build();
+            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("prob", "value")) // GH-90000
+                    .confidence(0.85) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(30)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detResult));
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(probResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detResult)); // GH-90000
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(probResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
-            verify(deterministicAgent, times(1)).process(any(), any());
-            verify(probabilisticAgent, times(1)).process(any(), any());
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            verify(deterministicAgent, times(1)).process(any(), any()); // GH-90000
+            verify(probabilisticAgent, times(1)).process(any(), any()); // GH-90000
         }
     }
 
@@ -210,73 +210,73 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence-Based Escalation")
+    @DisplayName("Confidence-Based Escalation [GH-90000]")
     class ConfidenceEscalationTests {
 
         @Test
-        @DisplayName("High-confidence deterministic result bypasses probabilistic")
-        void highConfidenceDeterministic() {
-            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("action", "approved"))
-                    .confidence(1.0)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+        @DisplayName("High-confidence deterministic result bypasses probabilistic [GH-90000]")
+        void highConfidenceDeterministic() { // GH-90000
+            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("action", "approved")) // GH-90000
+                    .confidence(1.0) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST)
-                    .confidenceThreshold(0.9)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
+                    .confidenceThreshold(0.9) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("transaction", 500);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("transaction", 500); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.getConfidence()).isEqualTo(1.0);
-            verify(deterministicAgent, times(1)).process(any(), any());
-            verify(probabilisticAgent, never()).process(any(), any());
+            assertThat(result.getConfidence()).isEqualTo(1.0); // GH-90000
+            verify(deterministicAgent, times(1)).process(any(), any()); // GH-90000
+            verify(probabilisticAgent, never()).process(any(), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("Low-confidence result escalates to other agent")
-        void lowConfidenceEscalation() {
-            AgentResult<Map<String, Object>> lowConfResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("uncertain", "value"))
-                    .confidence(0.45)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(40))
-                    .build();
+        @DisplayName("Low-confidence result escalates to other agent [GH-90000]")
+        void lowConfidenceEscalation() { // GH-90000
+            AgentResult<Map<String, Object>> lowConfResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("uncertain", "value")) // GH-90000
+                    .confidence(0.45) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(40)) // GH-90000
+                    .build(); // GH-90000
 
-            AgentResult<Map<String, Object>> betterResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("refined", "value"))
-                    .confidence(0.92)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(2))
-                    .build();
+            AgentResult<Map<String, Object>> betterResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("refined", "value")) // GH-90000
+                    .confidence(0.92) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(2)) // GH-90000
+                    .build(); // GH-90000
 
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(lowConfResult));
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(betterResult));
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(lowConfResult)); // GH-90000
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(betterResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.PROBABILISTIC_FIRST)
-                    .confidenceThreshold(0.7)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.PROBABILISTIC_FIRST) // GH-90000
+                    .confidenceThreshold(0.7) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("ambiguous", "case");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("ambiguous", "case"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
         }
     }
 
@@ -285,84 +285,84 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Result Composition")
+    @DisplayName("Result Composition [GH-90000]")
     class ResultCompositionTests {
 
         @Test
-        @DisplayName("Parallel results are merged intelligently")
-        void parallelResultsMerge() {
-            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("status", "verified", "action", "proceed"))
-                    .confidence(1.0)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+        @DisplayName("Parallel results are merged intelligently [GH-90000]")
+        void parallelResultsMerge() { // GH-90000
+            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("status", "verified", "action", "proceed")) // GH-90000
+                    .confidence(1.0) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("likelihood", 0.88, "category", "prime"))
-                    .confidence(0.88)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(35))
-                    .build();
+            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("likelihood", 0.88, "category", "prime")) // GH-90000
+                    .confidence(0.88) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(35)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detResult));
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(probResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detResult)); // GH-90000
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(probResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("customer", "VIP");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("customer", "VIP"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutput()).isNotNull();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutput()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Deterministic takes precedence when both succeed in PARALLEL")
-        void deterministicPrecedenceInParallel() {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> sharedOutput = Map.of("decision", "det");
+        @DisplayName("Deterministic takes precedence when both succeed in PARALLEL [GH-90000]")
+        void deterministicPrecedenceInParallel() { // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> sharedOutput = Map.of("decision", "det"); // GH-90000
 
-            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder()
-                    .output(sharedOutput)
-                    .confidence(1.0)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(sharedOutput) // GH-90000
+                    .confidence(1.0) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("decision", "prob"))
-                    .confidence(0.80)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(40))
-                    .build();
+            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("decision", "prob")) // GH-90000
+                    .confidence(0.80) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(40)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detResult));
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(probResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detResult)); // GH-90000
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(probResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("test", true);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("test", true); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
             // Result should prefer deterministic output
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
         }
     }
 
@@ -371,86 +371,86 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Error Handling")
+    @DisplayName("Error Handling [GH-90000]")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("Deterministic failure falls back to probabilistic")
-        void deterministicFailureFallback() {
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.ofException(new RuntimeException("Det error")));
+        @DisplayName("Deterministic failure falls back to probabilistic [GH-90000]")
+        void deterministicFailureFallback() { // GH-90000
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("Det error [GH-90000]")));
 
-            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("result", "from_fallback"))
-                    .confidence(0.75)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(40))
-                    .build();
+            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("result", "from_fallback")) // GH-90000
+                    .confidence(0.75) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(40)) // GH-90000
+                    .build(); // GH-90000
 
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(probResult));
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(probResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
             // Should still produce result via fallback
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Both agents fail produces error result")
-        void bothAgentsFail() {
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.ofException(new RuntimeException("Det error")));
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.ofException(new RuntimeException("Prob error")));
+        @DisplayName("Both agents fail produces error result [GH-90000]")
+        void bothAgentsFail() { // GH-90000
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("Det error [GH-90000]")));
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("Prob error [GH-90000]")));
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Timeout is handled gracefully")
-        void timeoutHandling() {
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.ofException(new TimeoutException("Timeout")));
+        @DisplayName("Timeout is handled gracefully [GH-90000]")
+        void timeoutHandling() { // GH-90000
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new TimeoutException("Timeout [GH-90000]")));
 
-            AgentResult<Map<String, Object>> fallbackResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("result", "timeout_fallback"))
-                    .confidence(0.60)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(30))
-                    .build();
+            AgentResult<Map<String, Object>> fallbackResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("result", "timeout_fallback")) // GH-90000
+                    .confidence(0.60) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(30)) // GH-90000
+                    .build(); // GH-90000
 
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(fallbackResult));
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(fallbackResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
     }
 
@@ -459,48 +459,48 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Composition")
+    @DisplayName("Explanation Composition [GH-90000]")
     class ExplanationCompositionTests {
 
         @Test
-        @DisplayName("Hybrid explanation mentions both agent contributions")
-        void hybridExplanationComposes() {
-            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("det", "value"))
-                    .confidence(1.0)
-                    .status(AgentResultStatus.SUCCESS)
-                    .explanation("Deterministic rule matched")
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+        @DisplayName("Hybrid explanation mentions both agent contributions [GH-90000]")
+        void hybridExplanationComposes() { // GH-90000
+            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("det", "value")) // GH-90000
+                    .confidence(1.0) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .explanation("Deterministic rule matched [GH-90000]")
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("prob", "value"))
-                    .confidence(0.85)
-                    .status(AgentResultStatus.SUCCESS)
-                    .explanation("Model inference: 85% confidence")
-                    .agentId("prob-agent")
-                    .processingTime(Duration.ofMillis(35))
-                    .build();
+            AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("prob", "value")) // GH-90000
+                    .confidence(0.85) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .explanation("Model inference: 85% confidence [GH-90000]")
+                    .agentId("prob-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(35)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detResult));
-            when(probabilisticAgent.process(any(), any()))
-                    .thenReturn(Promise.of(probResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detResult)); // GH-90000
+            when(probabilisticAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(probResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.PARALLEL) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            String explanation = result.getExplanation();
-            assertThat(explanation)
-                    .isNotNull()
-                    .isNotBlank();
+            String explanation = result.getExplanation(); // GH-90000
+            assertThat(explanation) // GH-90000
+                    .isNotNull() // GH-90000
+                    .isNotBlank(); // GH-90000
         }
     }
 
@@ -509,38 +509,38 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Performance")
+    @DisplayName("Performance [GH-90000]")
     class PerformanceTests {
 
         @Test
-        @DisplayName("Deterministic-first is faster than probabilistic fallback")
-        void deterministicFastPath() {
-            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder()
-                    .output(Map.of("action", "approved"))
-                    .confidence(1.0)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId("det-agent")
-                    .processingTime(Duration.ofMillis(1))
-                    .build();
+        @DisplayName("Deterministic-first is faster than probabilistic fallback [GH-90000]")
+        void deterministicFastPath() { // GH-90000
+            AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(Map.of("action", "approved")) // GH-90000
+                    .confidence(1.0) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId("det-agent [GH-90000]")
+                    .processingTime(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            when(deterministicAgent.process(any(), any()))
-                    .thenReturn(Promise.of(detResult));
+            when(deterministicAgent.process(any(), any())) // GH-90000
+                    .thenReturn(Promise.of(detResult)); // GH-90000
 
-            HybridAgentConfig config = HybridAgentConfig.builder()
-                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST)
-                    .build();
+            HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
+                    .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            Instant start = Instant.now();
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
-            Instant end = Instant.now();
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            Instant start = Instant.now(); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Instant end = Instant.now(); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
             // Increased threshold to avoid flaky failures due to system load
-            assertThat(Duration.between(start, end))
-                    .isLessThan(Duration.ofMillis(200));
+            assertThat(Duration.between(start, end)) // GH-90000
+                    .isLessThan(Duration.ofMillis(200)); // GH-90000
         }
     }
 
@@ -548,19 +548,19 @@ class HybridAgentBehavioralTest {
     // Helper Methods
     // ═══════════════════════════════════════════════════════════════════════════
 
-    private <T> T runPromise(java.util.function.Supplier<Promise<T>> supplier) {
-        var result = new Object() { T value; };
-        var error = new Object() { Exception ex; };
+    private <T> T runPromise(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
+        var result = new Object() { T value; }; // GH-90000
+        var error = new Object() { Exception ex; }; // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
-        eventloop.post(() -> supplier.get()
-                .whenResult(v -> result.value = v)
-                .whenException(e -> error.ex = (Exception) e));
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
+        eventloop.post(() -> supplier.get() // GH-90000
+                .whenResult(v -> result.value = v) // GH-90000
+                .whenException(e -> error.ex = (Exception) e)); // GH-90000
 
-        eventloop.run();
+        eventloop.run(); // GH-90000
 
-        if (error.ex != null) {
-            throw new RuntimeException(error.ex);
+        if (error.ex != null) { // GH-90000
+            throw new RuntimeException(error.ex); // GH-90000
         }
 
         return result.value;

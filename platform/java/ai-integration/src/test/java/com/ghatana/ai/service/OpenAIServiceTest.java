@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("OpenAIService Schema Validation Tests")
+@DisplayName("OpenAIService Schema Validation Tests [GH-90000]")
 class OpenAIServiceTest {
 
     /**
@@ -24,9 +24,9 @@ class OpenAIServiceTest {
         public int value;
         public boolean active;
 
-        public TestSchema() {}
+        public TestSchema() {} // GH-90000
 
-        public TestSchema(String name, int value, boolean active) {
+        public TestSchema(String name, int value, boolean active) { // GH-90000
             this.name = name;
             this.value = value;
             this.active = active;
@@ -34,32 +34,32 @@ class OpenAIServiceTest {
     }
 
     @Test
-    @DisplayName("Should parse valid JSON response matching schema")
-    void shouldParseValidJsonResponse() {
-        assertDoesNotThrow(() -> {
+    @DisplayName("Should parse valid JSON response matching schema [GH-90000]")
+    void shouldParseValidJsonResponse() { // GH-90000
+        assertDoesNotThrow(() -> { // GH-90000
             // Placeholder until HTTP client mocking is added for structured output parsing.
         });
     }
 
     @Test
-    @DisplayName("Should throw exception for invalid JSON")
-    void shouldThrowExceptionForInvalidJson() {
+    @DisplayName("Should throw exception for invalid JSON [GH-90000]")
+    void shouldThrowExceptionForInvalidJson() { // GH-90000
         // Test that invalid JSON throws RuntimeException
         // The implementation catches Jackson exceptions and wraps them
         // This would be tested with a mock HTTP client returning invalid JSON
     }
 
     @Test
-    @DisplayName("Should throw exception for JSON missing required fields")
-    void shouldThrowExceptionForMissingRequiredFields() {
+    @DisplayName("Should throw exception for JSON missing required fields [GH-90000]")
+    void shouldThrowExceptionForMissingRequiredFields() { // GH-90000
         // Test that JSON missing required schema fields throws RuntimeException
         // For example, if schema requires "name" and "value" but JSON only has "name"
         // Jackson will throw an exception which is wrapped
     }
 
     @Test
-    @DisplayName("Should throw exception for JSON with wrong field types")
-    void shouldThrowExceptionForWrongFieldTypes() {
+    @DisplayName("Should throw exception for JSON with wrong field types [GH-90000]")
+    void shouldThrowExceptionForWrongFieldTypes() { // GH-90000
         // Test that JSON with wrong field types throws RuntimeException
         // For example, if schema expects "value" as int but JSON provides a string
         // Jackson will throw an exception which is wrapped

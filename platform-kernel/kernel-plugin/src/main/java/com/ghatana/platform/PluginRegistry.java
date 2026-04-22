@@ -57,6 +57,7 @@ public class PluginRegistry {
         Objects.requireNonNull(metadata, "Plugin metadata must not be null");
         String id = metadata.id();
         Objects.requireNonNull(id, "Plugin id must not be null");
+        validateCompatibility(metadata);
 
         Plugin existing = plugins.putIfAbsent(id, plugin);
         if (existing != null) {
@@ -281,7 +282,20 @@ public class PluginRegistry {
     public int discoverPlugins() {
         ServiceLoader<PluginProvider> loader = ServiceLoader.load(PluginProvider.class);
         List<PluginProvider> providers = new ArrayList<>();
-        for (PluginProvider provider : loader) {
+        loader.forEach(providers::add);
+        return discoverPlugins(providers);
+    }
+
+    /**
+     * Discovers and registers plugins from a provider collection.
+     * Intended for deterministic tests and controlled bootstrap sequences.
+     *
+     * @param providerCandidates providers to evaluate
+     * @return number of newly-registered plugins
+     */
+    public int discoverPlugins(@NotNull Iterable<PluginProvider> providerCandidates) {
+        List<PluginProvider> providers = new ArrayList<>();
+        for (PluginProvider provider : providerCandidates) {
             if (provider.isEnabled()) {
                 providers.add(provider);
             }
@@ -292,6 +306,11 @@ public class PluginRegistry {
         for (PluginProvider provider : providers) {
             try {
                 Plugin plugin = provider.createPlugin();
+                String pluginId = plugin.metadata().id();
+                if (isRegistered(pluginId)) {
+                    // Idempotent discovery: skip providers for already-registered plugins.
+                    continue;
+                }
                 register(plugin);
                 count++;
             } catch (Exception e) {
@@ -301,5 +320,18 @@ public class PluginRegistry {
             }
         }
         return count;
+    }
+
+    private static void validateCompatibility(@NotNull PluginMetadata metadata) {
+        PluginCompatibility compatibility = metadata.compatibility();
+        if (compatibility == null) {
+            return;
+        }
+        String platformVersion = System.getProperty("ghatana.platform.version", "1.0.0");
+        if (!compatibility.isCompatibleWith(platformVersion)) {
+            throw new IllegalArgumentException(
+                "Plugin " + metadata.id() + " is incompatible with platform version " + platformVersion
+            );
+        }
     }
 }

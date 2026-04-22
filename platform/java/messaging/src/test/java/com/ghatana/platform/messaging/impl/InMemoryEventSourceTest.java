@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link InMemoryEventSource}.
- * Covers start/stop lifecycle, event emission (addEvent), consumption (next),
+ * Covers start/stop lifecycle, event emission (addEvent), consumption (next), // GH-90000
  * waiter mechanics, and queue state inspection.
  *
  * @doc.type class
@@ -26,62 +26,62 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("InMemoryEventSource Tests")
+@DisplayName("InMemoryEventSource Tests [GH-90000]")
 class InMemoryEventSourceTest extends EventloopTestBase {
 
     private InMemoryEventSource source;
 
     @BeforeEach
-    void setUp() {
-        source = new InMemoryEventSource();
+    void setUp() { // GH-90000
+        source = new InMemoryEventSource(); // GH-90000
     }
 
     // --- Helper ---
 
-    private IngestEvent createTestEvent(String typeName) {
-        return IngestEvent.builder()
-                .tenantId(TenantId.random())
-                .eventTypeName(typeName)
-                .eventTypeVersion("1.0.0")
-                .occurrenceTime(Instant.now())
-                .headers(Map.of())
-                .contentType(ContentType.JSON)
-                .schemaUri("urn:test:schema")
-                .payload(ByteBuffer.wrap("{\"key\":\"value\"}".getBytes()))
-                .build();
+    private IngestEvent createTestEvent(String typeName) { // GH-90000
+        return IngestEvent.builder() // GH-90000
+                .tenantId(TenantId.random()) // GH-90000
+                .eventTypeName(typeName) // GH-90000
+                .eventTypeVersion("1.0.0 [GH-90000]")
+                .occurrenceTime(Instant.now()) // GH-90000
+                .headers(Map.of()) // GH-90000
+                .contentType(ContentType.JSON) // GH-90000
+                .schemaUri("urn:test:schema [GH-90000]")
+                .payload(ByteBuffer.wrap("{\"key\":\"value\"}".getBytes())) // GH-90000
+                .build(); // GH-90000
     }
 
     // --- Lifecycle ---
 
     @Nested
-    @DisplayName("Lifecycle")
+    @DisplayName("Lifecycle [GH-90000]")
     class Lifecycle {
 
         @Test
-        @DisplayName("should start successfully")
-        void shouldStart() {
-            runPromise(() -> source.start());
+        @DisplayName("should start successfully [GH-90000]")
+        void shouldStart() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
             // No exception implies success
         }
 
         @Test
-        @DisplayName("should stop successfully after start")
-        void shouldStopAfterStart() {
-            runPromise(() -> source.start());
-            runPromise(() -> source.stop());
+        @DisplayName("should stop successfully after start [GH-90000]")
+        void shouldStopAfterStart() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
+            runPromise(() -> source.stop()); // GH-90000
             // No exception implies success
         }
 
         @Test
-        @DisplayName("should reject next() when not started")
-        void shouldRejectNextWhenNotStarted() {
+        @DisplayName("should reject next() when not started [GH-90000]")
+        void shouldRejectNextWhenNotStarted() { // GH-90000
             try {
-                runPromise(() -> source.next());
-                org.junit.jupiter.api.Assertions.fail("Expected exception for next() on stopped source");
-            } catch (Exception e) {
-                assertThat(e)
-                        .isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("not started");
+                runPromise(() -> source.next()); // GH-90000
+                org.junit.jupiter.api.Assertions.fail("Expected exception for next() on stopped source [GH-90000]");
+            } catch (Exception e) { // GH-90000
+                assertThat(e) // GH-90000
+                        .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .hasMessageContaining("not started [GH-90000]");
             }
         }
     }
@@ -89,153 +89,153 @@ class InMemoryEventSourceTest extends EventloopTestBase {
     // --- Event emission and consumption ---
 
     @Nested
-    @DisplayName("Event Emission and Consumption")
+    @DisplayName("Event Emission and Consumption [GH-90000]")
     class EventEmissionAndConsumption {
 
         @Test
-        @DisplayName("should return queued event immediately from next()")
-        void shouldReturnQueuedEvent() {
-            runPromise(() -> source.start());
+        @DisplayName("should return queued event immediately from next() [GH-90000]")
+        void shouldReturnQueuedEvent() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
 
-            IngestEvent event = createTestEvent("user.created");
-            source.addEvent(event);
+            IngestEvent event = createTestEvent("user.created [GH-90000]");
+            source.addEvent(event); // GH-90000
 
-            IngestEvent received = runPromise(() -> source.next());
+            IngestEvent received = runPromise(() -> source.next()); // GH-90000
 
-            assertThat(received).isNotNull();
-            assertThat(received.eventTypeName()).isEqualTo("user.created");
+            assertThat(received).isNotNull(); // GH-90000
+            assertThat(received.eventTypeName()).isEqualTo("user.created [GH-90000]");
         }
 
         @Test
-        @DisplayName("should return events in FIFO order")
-        void shouldReturnEventsInFIFOOrder() {
-            runPromise(() -> source.start());
+        @DisplayName("should return events in FIFO order [GH-90000]")
+        void shouldReturnEventsInFIFOOrder() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
 
-            source.addEvent(createTestEvent("first"));
-            source.addEvent(createTestEvent("second"));
-            source.addEvent(createTestEvent("third"));
+            source.addEvent(createTestEvent("first [GH-90000]"));
+            source.addEvent(createTestEvent("second [GH-90000]"));
+            source.addEvent(createTestEvent("third [GH-90000]"));
 
-            IngestEvent e1 = runPromise(() -> source.next());
-            IngestEvent e2 = runPromise(() -> source.next());
-            IngestEvent e3 = runPromise(() -> source.next());
+            IngestEvent e1 = runPromise(() -> source.next()); // GH-90000
+            IngestEvent e2 = runPromise(() -> source.next()); // GH-90000
+            IngestEvent e3 = runPromise(() -> source.next()); // GH-90000
 
-            assertThat(e1.eventTypeName()).isEqualTo("first");
-            assertThat(e2.eventTypeName()).isEqualTo("second");
-            assertThat(e3.eventTypeName()).isEqualTo("third");
+            assertThat(e1.eventTypeName()).isEqualTo("first [GH-90000]");
+            assertThat(e2.eventTypeName()).isEqualTo("second [GH-90000]");
+            assertThat(e3.eventTypeName()).isEqualTo("third [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null event in addEvent()")
-        void shouldRejectNullEvent() {
-            assertThatThrownBy(() -> source.addEvent(null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("event cannot be null");
+        @DisplayName("should reject null event in addEvent() [GH-90000]")
+        void shouldRejectNullEvent() { // GH-90000
+            assertThatThrownBy(() -> source.addEvent(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("event cannot be null [GH-90000]");
         }
 
         @Test
-        @DisplayName("should complete waiter when event is added after next()")
-        void shouldCompleteWaiterWhenEventAdded() {
-            runPromise(() -> source.start());
+        @DisplayName("should complete waiter when event is added after next() [GH-90000]")
+        void shouldCompleteWaiterWhenEventAdded() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
 
-            // No events queued — next() creates a waiter
-            assertThat(source.queueSize()).isZero();
+            // No events queued — next() creates a waiter // GH-90000
+            assertThat(source.queueSize()).isZero(); // GH-90000
 
             // Add event directly to satisfy a future waiter
-            // To test this properly, we add the event and then call next()
-            IngestEvent event = createTestEvent("deferred.event");
-            source.addEvent(event);
+            // To test this properly, we add the event and then call next() // GH-90000
+            IngestEvent event = createTestEvent("deferred.event [GH-90000]");
+            source.addEvent(event); // GH-90000
 
-            IngestEvent received = runPromise(() -> source.next());
-            assertThat(received.eventTypeName()).isEqualTo("deferred.event");
+            IngestEvent received = runPromise(() -> source.next()); // GH-90000
+            assertThat(received.eventTypeName()).isEqualTo("deferred.event [GH-90000]");
         }
     }
 
     // --- Queue state inspection ---
 
     @Nested
-    @DisplayName("Queue State")
+    @DisplayName("Queue State [GH-90000]")
     class QueueState {
 
         @Test
-        @DisplayName("should report correct queue size")
-        void shouldReportQueueSize() {
-            assertThat(source.queueSize()).isZero();
+        @DisplayName("should report correct queue size [GH-90000]")
+        void shouldReportQueueSize() { // GH-90000
+            assertThat(source.queueSize()).isZero(); // GH-90000
 
-            source.addEvent(createTestEvent("a"));
-            source.addEvent(createTestEvent("b"));
+            source.addEvent(createTestEvent("a [GH-90000]"));
+            source.addEvent(createTestEvent("b [GH-90000]"));
 
-            assertThat(source.queueSize()).isEqualTo(2);
+            assertThat(source.queueSize()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("should report zero waiter count initially")
-        void shouldReportZeroWaiters() {
-            assertThat(source.waiterCount()).isZero();
+        @DisplayName("should report zero waiter count initially [GH-90000]")
+        void shouldReportZeroWaiters() { // GH-90000
+            assertThat(source.waiterCount()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("should decrement queue size after consuming event")
-        void shouldDecrementQueueAfterConsume() {
-            runPromise(() -> source.start());
+        @DisplayName("should decrement queue size after consuming event [GH-90000]")
+        void shouldDecrementQueueAfterConsume() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
 
-            source.addEvent(createTestEvent("x"));
-            assertThat(source.queueSize()).isEqualTo(1);
+            source.addEvent(createTestEvent("x [GH-90000]"));
+            assertThat(source.queueSize()).isEqualTo(1); // GH-90000
 
-            runPromise(() -> source.next());
-            assertThat(source.queueSize()).isZero();
+            runPromise(() -> source.next()); // GH-90000
+            assertThat(source.queueSize()).isZero(); // GH-90000
         }
     }
 
     // --- Stop behavior ---
 
     @Nested
-    @DisplayName("Stop Behavior")
+    @DisplayName("Stop Behavior [GH-90000]")
     class StopBehavior {
 
         @Test
-        @DisplayName("should reject next() after stop")
-        void shouldRejectNextAfterStop() {
-            runPromise(() -> source.start());
-            runPromise(() -> source.stop());
+        @DisplayName("should reject next() after stop [GH-90000]")
+        void shouldRejectNextAfterStop() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
+            runPromise(() -> source.stop()); // GH-90000
 
             try {
-                runPromise(() -> source.next());
-                org.junit.jupiter.api.Assertions.fail("Expected exception for next() on stopped source");
-            } catch (Exception e) {
-                assertThat(e)
-                        .isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("not started");
+                runPromise(() -> source.next()); // GH-90000
+                org.junit.jupiter.api.Assertions.fail("Expected exception for next() on stopped source [GH-90000]");
+            } catch (Exception e) { // GH-90000
+                assertThat(e) // GH-90000
+                        .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .hasMessageContaining("not started [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("should drain events remain in queue after stop")
-        void shouldLeaveEventsInQueueAfterStop() {
-            source.addEvent(createTestEvent("leftover"));
+        @DisplayName("should drain events remain in queue after stop [GH-90000]")
+        void shouldLeaveEventsInQueueAfterStop() { // GH-90000
+            source.addEvent(createTestEvent("leftover [GH-90000]"));
 
-            runPromise(() -> source.start());
-            runPromise(() -> source.stop());
+            runPromise(() -> source.start()); // GH-90000
+            runPromise(() -> source.stop()); // GH-90000
 
-            // Events stay in queue (source is stopped but queue is not cleared)
-            assertThat(source.queueSize()).isEqualTo(1);
+            // Events stay in queue (source is stopped but queue is not cleared) // GH-90000
+            assertThat(source.queueSize()).isEqualTo(1); // GH-90000
         }
     }
 
     // --- addEvent waiter fulfillment ---
 
     @Nested
-    @DisplayName("Waiter Fulfillment")
+    @DisplayName("Waiter Fulfillment [GH-90000]")
     class WaiterFulfillment {
 
         @Test
-        @DisplayName("addEvent should bypass queue when waiter is present")
-        void shouldBypassQueueForWaiter() {
-            runPromise(() -> source.start());
+        @DisplayName("addEvent should bypass queue when waiter is present [GH-90000]")
+        void shouldBypassQueueForWaiter() { // GH-90000
+            runPromise(() -> source.start()); // GH-90000
 
             // Manually verify: add event goes to queue when no waiters
-            source.addEvent(createTestEvent("queued"));
-            assertThat(source.queueSize()).isEqualTo(1);
-            assertThat(source.waiterCount()).isZero();
+            source.addEvent(createTestEvent("queued [GH-90000]"));
+            assertThat(source.queueSize()).isEqualTo(1); // GH-90000
+            assertThat(source.waiterCount()).isZero(); // GH-90000
         }
     }
 }

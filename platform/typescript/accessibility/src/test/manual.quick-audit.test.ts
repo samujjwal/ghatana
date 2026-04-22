@@ -5,7 +5,7 @@
  * the example `examples/demo.html` page in a jsdom environment.
  *
  * Run with:
- * pnpm --filter @ghatana/accessibility-audit run test -- -t "manual quick audit"
+ * pnpm --filter @ghatana/accessibility run test -- -t "manual quick audit"
  */
 
 import fs from "fs";

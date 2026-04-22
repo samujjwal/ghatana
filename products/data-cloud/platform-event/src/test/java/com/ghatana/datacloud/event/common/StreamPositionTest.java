@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.event.common;
@@ -14,137 +14,137 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link StreamPosition}.
  */
-@DisplayName("StreamPosition")
+@DisplayName("StreamPosition [GH-90000]")
 class StreamPositionTest {
 
     @Nested
-    @DisplayName("factory methods")
+    @DisplayName("factory methods [GH-90000]")
     class FactoryMethods {
 
         @Test
-        void ofPartitionAndOffset() {
-            StreamPosition pos = StreamPosition.of(PartitionId.of(2), Offset.of(10));
-            assertThat(pos.partitionId()).isEqualTo(PartitionId.of(2));
-            assertThat(pos.offset()).isEqualTo(Offset.of(10));
+        void ofPartitionAndOffset() { // GH-90000
+            StreamPosition pos = StreamPosition.of(PartitionId.of(2), Offset.of(10)); // GH-90000
+            assertThat(pos.partitionId()).isEqualTo(PartitionId.of(2)); // GH-90000
+            assertThat(pos.offset()).isEqualTo(Offset.of(10)); // GH-90000
         }
 
         @Test
-        void ofRawInts() {
-            StreamPosition pos = StreamPosition.of(3, 42L);
-            assertThat(pos.partitionId().value()).isEqualTo(3);
-            assertThat(pos.offset().value()).isEqualTo(42L);
+        void ofRawInts() { // GH-90000
+            StreamPosition pos = StreamPosition.of(3, 42L); // GH-90000
+            assertThat(pos.partitionId().value()).isEqualTo(3); // GH-90000
+            assertThat(pos.offset().value()).isEqualTo(42L); // GH-90000
         }
 
         @Test
-        void startOf() {
-            StreamPosition start = StreamPosition.startOf(PartitionId.of(1));
-            assertThat(start.partitionId()).isEqualTo(PartitionId.of(1));
-            assertThat(start.offset()).isSameAs(Offset.FIRST);
+        void startOf() { // GH-90000
+            StreamPosition start = StreamPosition.startOf(PartitionId.of(1)); // GH-90000
+            assertThat(start.partitionId()).isEqualTo(PartitionId.of(1)); // GH-90000
+            assertThat(start.offset()).isSameAs(Offset.FIRST); // GH-90000
         }
 
         @Test
-        void latestOf() {
-            StreamPosition latest = StreamPosition.latestOf(PartitionId.of(0));
-            assertThat(latest.partitionId()).isEqualTo(PartitionId.FIRST);
-            assertThat(latest.offset()).isSameAs(Offset.LATEST);
+        void latestOf() { // GH-90000
+            StreamPosition latest = StreamPosition.latestOf(PartitionId.of(0)); // GH-90000
+            assertThat(latest.partitionId()).isEqualTo(PartitionId.FIRST); // GH-90000
+            assertThat(latest.offset()).isSameAs(Offset.LATEST); // GH-90000
         }
 
         @Test
-        void constructorRejectsNullPartition() {
-            assertThatThrownBy(() -> StreamPosition.of(null, Offset.FIRST))
-                    .isInstanceOf(NullPointerException.class);
+        void constructorRejectsNullPartition() { // GH-90000
+            assertThatThrownBy(() -> StreamPosition.of(null, Offset.FIRST)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void constructorRejectsNullOffset() {
-            assertThatThrownBy(() -> StreamPosition.of(PartitionId.FIRST, null))
-                    .isInstanceOf(NullPointerException.class);
+        void constructorRejectsNullOffset() { // GH-90000
+            assertThatThrownBy(() -> StreamPosition.of(PartitionId.FIRST, null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("nextOffset()")
+    @DisplayName("nextOffset() [GH-90000]")
     class NextOffset {
 
         @Test
-        void incrementsOffsetInSamePartition() {
-            StreamPosition pos = StreamPosition.of(2, 5L);
-            StreamPosition next = pos.nextOffset();
-            assertThat(next.partitionId()).isEqualTo(PartitionId.of(2));
-            assertThat(next.offset().value()).isEqualTo(6L);
+        void incrementsOffsetInSamePartition() { // GH-90000
+            StreamPosition pos = StreamPosition.of(2, 5L); // GH-90000
+            StreamPosition next = pos.nextOffset(); // GH-90000
+            assertThat(next.partitionId()).isEqualTo(PartitionId.of(2)); // GH-90000
+            assertThat(next.offset().value()).isEqualTo(6L); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("isBefore() / isAfter()")
+    @DisplayName("isBefore() / isAfter() [GH-90000]")
     class InPartitionComparison {
 
         @Test
-        void isBeforeInSamePartition() {
-            StreamPosition a = StreamPosition.of(0, 3L);
-            StreamPosition b = StreamPosition.of(0, 7L);
-            assertThat(a.isBefore(b)).isTrue();
-            assertThat(b.isBefore(a)).isFalse();
+        void isBeforeInSamePartition() { // GH-90000
+            StreamPosition a = StreamPosition.of(0, 3L); // GH-90000
+            StreamPosition b = StreamPosition.of(0, 7L); // GH-90000
+            assertThat(a.isBefore(b)).isTrue(); // GH-90000
+            assertThat(b.isBefore(a)).isFalse(); // GH-90000
         }
 
         @Test
-        void isAfterInSamePartition() {
-            StreamPosition a = StreamPosition.of(0, 7L);
-            StreamPosition b = StreamPosition.of(0, 3L);
-            assertThat(a.isAfter(b)).isTrue();
-            assertThat(b.isAfter(a)).isFalse();
+        void isAfterInSamePartition() { // GH-90000
+            StreamPosition a = StreamPosition.of(0, 7L); // GH-90000
+            StreamPosition b = StreamPosition.of(0, 3L); // GH-90000
+            assertThat(a.isAfter(b)).isTrue(); // GH-90000
+            assertThat(b.isAfter(a)).isFalse(); // GH-90000
         }
 
         @Test
-        void isBeforeThrowsOnDifferentPartitions() {
-            StreamPosition a = StreamPosition.of(0, 1L);
-            StreamPosition b = StreamPosition.of(1, 1L);
-            assertThatThrownBy(() -> a.isBefore(b))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("different partitions");
+        void isBeforeThrowsOnDifferentPartitions() { // GH-90000
+            StreamPosition a = StreamPosition.of(0, 1L); // GH-90000
+            StreamPosition b = StreamPosition.of(1, 1L); // GH-90000
+            assertThatThrownBy(() -> a.isBefore(b)) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("different partitions [GH-90000]");
         }
 
         @Test
-        void isAfterThrowsOnDifferentPartitions() {
-            StreamPosition a = StreamPosition.of(0, 1L);
-            StreamPosition b = StreamPosition.of(1, 1L);
-            assertThatThrownBy(() -> a.isAfter(b))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("different partitions");
+        void isAfterThrowsOnDifferentPartitions() { // GH-90000
+            StreamPosition a = StreamPosition.of(0, 1L); // GH-90000
+            StreamPosition b = StreamPosition.of(1, 1L); // GH-90000
+            assertThatThrownBy(() -> a.isAfter(b)) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("different partitions [GH-90000]");
         }
 
         @Test
-        void isBeforeThrowsOnNull() {
-            assertThatThrownBy(() -> StreamPosition.of(0, 0L).isBefore(null))
-                    .isInstanceOf(NullPointerException.class);
+        void isBeforeThrowsOnNull() { // GH-90000
+            assertThatThrownBy(() -> StreamPosition.of(0, 0L).isBefore(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void isAfterThrowsOnNull() {
-            assertThatThrownBy(() -> StreamPosition.of(0, 0L).isAfter(null))
-                    .isInstanceOf(NullPointerException.class);
+        void isAfterThrowsOnNull() { // GH-90000
+            assertThatThrownBy(() -> StreamPosition.of(0, 0L).isAfter(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("compareTo() orders by partition then offset")
-    void compareToOrdering() {
-        StreamPosition p0o1 = StreamPosition.of(0, 1L);
-        StreamPosition p0o9 = StreamPosition.of(0, 9L);
-        StreamPosition p1o0 = StreamPosition.of(1, 0L);
+    @DisplayName("compareTo() orders by partition then offset [GH-90000]")
+    void compareToOrdering() { // GH-90000
+        StreamPosition p0o1 = StreamPosition.of(0, 1L); // GH-90000
+        StreamPosition p0o9 = StreamPosition.of(0, 9L); // GH-90000
+        StreamPosition p1o0 = StreamPosition.of(1, 0L); // GH-90000
 
-        assertThat(p0o1.compareTo(p0o9)).isNegative();
-        assertThat(p0o9.compareTo(p0o1)).isPositive();
-        assertThat(p0o1.compareTo(p1o0)).isNegative(); // partition 0 < partition 1
-        assertThat(p0o1.compareTo(p0o1)).isZero();
+        assertThat(p0o1.compareTo(p0o9)).isNegative(); // GH-90000
+        assertThat(p0o9.compareTo(p0o1)).isPositive(); // GH-90000
+        assertThat(p0o1.compareTo(p1o0)).isNegative(); // partition 0 < partition 1 // GH-90000
+        assertThat(p0o1.compareTo(p0o1)).isZero(); // GH-90000
     }
 
     @Test
-    @DisplayName("record equality")
-    void recordEquality() {
-        StreamPosition a = StreamPosition.of(2, 5L);
-        StreamPosition b = StreamPosition.of(2, 5L);
-        assertThat(a).isEqualTo(b);
-        assertThat(a).isNotEqualTo(StreamPosition.of(2, 6L));
+    @DisplayName("record equality [GH-90000]")
+    void recordEquality() { // GH-90000
+        StreamPosition a = StreamPosition.of(2, 5L); // GH-90000
+        StreamPosition b = StreamPosition.of(2, 5L); // GH-90000
+        assertThat(a).isEqualTo(b); // GH-90000
+        assertThat(a).isNotEqualTo(StreamPosition.of(2, 6L)); // GH-90000
     }
 }

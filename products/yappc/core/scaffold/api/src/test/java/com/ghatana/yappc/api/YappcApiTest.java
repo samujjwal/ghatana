@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors
+ * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for YappcApi.
  */
-@DisplayName("YappcApi Tests")
+@DisplayName("YappcApi Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles yappc api test operations
@@ -48,97 +48,97 @@ class YappcApiTest {
     private YappcApi api;
 
     @BeforeEach
-    void setUp() {
-        YappcConfig config = YappcConfig.builder()
-                .packsPath(tempDir.resolve("packs"))
-                .workspacePath(tempDir)
-                .enableCache(false)
-                .build();
-        api = YappcApi.create(config);
+    void setUp() { // GH-90000
+        YappcConfig config = YappcConfig.builder() // GH-90000
+                .packsPath(tempDir.resolve("packs [GH-90000]"))
+                .workspacePath(tempDir) // GH-90000
+                .enableCache(false) // GH-90000
+                .build(); // GH-90000
+        api = YappcApi.create(config); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (api != null) {
-            api.shutdown();
+    void tearDown() { // GH-90000
+        if (api != null) { // GH-90000
+            api.shutdown(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should create API with default configuration")
-    void shouldCreateApiWithDefaults() {
-        YappcApi defaultApi = YappcApi.create();
+    @DisplayName("Should create API with default configuration [GH-90000]")
+    void shouldCreateApiWithDefaults() { // GH-90000
+        YappcApi defaultApi = YappcApi.create(); // GH-90000
 
-        assertThat(defaultApi).isNotNull();
-        assertThat(defaultApi.isReady()).isTrue();
-        assertThat(defaultApi.getVersion()).isEqualTo("1.0.0");
+        assertThat(defaultApi).isNotNull(); // GH-90000
+        assertThat(defaultApi.isReady()).isTrue(); // GH-90000
+        assertThat(defaultApi.getVersion()).isEqualTo("1.0.0 [GH-90000]");
 
-        defaultApi.shutdown();
+        defaultApi.shutdown(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create API with builder")
-    void shouldCreateApiWithBuilder() {
-        YappcApi builtApi = YappcApi.builder()
-                .packsPath(tempDir.resolve("custom-packs"))
-                .workspacePath(tempDir)
-                .enableCache(true)
-                .build();
+    @DisplayName("Should create API with builder [GH-90000]")
+    void shouldCreateApiWithBuilder() { // GH-90000
+        YappcApi builtApi = YappcApi.builder() // GH-90000
+                .packsPath(tempDir.resolve("custom-packs [GH-90000]"))
+                .workspacePath(tempDir) // GH-90000
+                .enableCache(true) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(builtApi).isNotNull();
-        assertThat(builtApi.isReady()).isTrue();
+        assertThat(builtApi).isNotNull(); // GH-90000
+        assertThat(builtApi.isReady()).isTrue(); // GH-90000
 
-        builtApi.shutdown();
+        builtApi.shutdown(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should provide pack service")
-    void shouldProvidePackService() {
-        PackService packService = api.packs();
+    @DisplayName("Should provide pack service [GH-90000]")
+    void shouldProvidePackService() { // GH-90000
+        PackService packService = api.packs(); // GH-90000
 
-        assertThat(packService).isNotNull();
-        assertThat(packService.list()).isNotNull();
+        assertThat(packService).isNotNull(); // GH-90000
+        assertThat(packService.list()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should provide project service")
-    void shouldProvideProjectService() {
-        ProjectService projectService = api.projects();
+    @DisplayName("Should provide project service [GH-90000]")
+    void shouldProvideProjectService() { // GH-90000
+        ProjectService projectService = api.projects(); // GH-90000
 
-        assertThat(projectService).isNotNull();
+        assertThat(projectService).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should provide template service")
-    void shouldProvideTemplateService() {
-        TemplateService templateService = api.templates();
+    @DisplayName("Should provide template service [GH-90000]")
+    void shouldProvideTemplateService() { // GH-90000
+        TemplateService templateService = api.templates(); // GH-90000
 
-        assertThat(templateService).isNotNull();
-        assertThat(templateService.getAvailableHelpers()).contains(
+        assertThat(templateService).isNotNull(); // GH-90000
+        assertThat(templateService.getAvailableHelpers()).contains( // GH-90000
                 "lowercase", "uppercase", "capitalize",
                 "camelCase", "pascalCase", "snakeCase", "kebabCase"
         );
     }
 
     @Test
-    @DisplayName("Should provide dependency service")
-    void shouldProvideDependencyService() {
-        DependencyService dependencyService = api.dependencies();
+    @DisplayName("Should provide dependency service [GH-90000]")
+    void shouldProvideDependencyService() { // GH-90000
+        DependencyService dependencyService = api.dependencies(); // GH-90000
 
-        assertThat(dependencyService).isNotNull();
+        assertThat(dependencyService).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should report not ready after shutdown")
-    void shouldReportNotReadyAfterShutdown() {
-        api.shutdown();
+    @DisplayName("Should report not ready after shutdown [GH-90000]")
+    void shouldReportNotReadyAfterShutdown() { // GH-90000
+        api.shutdown(); // GH-90000
 
-        assertThat(api.isReady()).isFalse();
+        assertThat(api.isReady()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return version")
-    void shouldReturnVersion() {
-        assertThat(api.getVersion()).isEqualTo("1.0.0");
+    @DisplayName("Should return version [GH-90000]")
+    void shouldReturnVersion() { // GH-90000
+        assertThat(api.getVersion()).isEqualTo("1.0.0 [GH-90000]");
     }
 }

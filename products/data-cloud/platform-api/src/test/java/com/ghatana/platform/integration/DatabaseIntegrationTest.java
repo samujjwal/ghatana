@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.integration;
@@ -26,218 +26,218 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   platform
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Platform Database Integration Tests")
-@Tag("integration")
-@Timeout(value = 30, unit = TimeUnit.SECONDS)
+@DisplayName("Platform Database Integration Tests [GH-90000]")
+@Tag("integration [GH-90000]")
+@Timeout(value = 30, unit = TimeUnit.SECONDS) // GH-90000
 class DatabaseIntegrationTest extends EventloopTestBase {
 
     private InMemoryDatabase db;
 
     @BeforeEach
-    void setUp() {
-        db = new InMemoryDatabase(5);
+    void setUp() { // GH-90000
+        db = new InMemoryDatabase(5); // GH-90000
     }
 
     // ── Connection management ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("acquire returns a valid connection when pool has idle connections")
-    void acquireReturnsValidConnectionWhenPoolHasIdleConnections() {
-        InMemoryDatabase.Connection conn = db.acquire();
-        assertThat(conn).isNotNull();
-        assertThat(conn.isOpen()).isTrue();
-        conn.release();
+    @DisplayName("acquire returns a valid connection when pool has idle connections [GH-90000]")
+    void acquireReturnsValidConnectionWhenPoolHasIdleConnections() { // GH-90000
+        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
+        assertThat(conn).isNotNull(); // GH-90000
+        assertThat(conn.isOpen()).isTrue(); // GH-90000
+        conn.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("acquiring all pool connections then one more blocks until one is released")
-    void acquiringBeyondPoolLimitBlocksUntilRelease() throws Exception {
-        List<InMemoryDatabase.Connection> conns = new ArrayList<>();
-        for (int i = 0; i < 5; i++) conns.add(db.acquire());
+    @DisplayName("acquiring all pool connections then one more blocks until one is released [GH-90000]")
+    void acquiringBeyondPoolLimitBlocksUntilRelease() throws Exception { // GH-90000
+        List<InMemoryDatabase.Connection> conns = new ArrayList<>(); // GH-90000
+        for (int i = 0; i < 5; i++) conns.add(db.acquire()); // GH-90000
 
-        AtomicInteger acquired = new AtomicInteger(0);
-        Thread waiter = Thread.ofVirtual().start(() -> {
-            InMemoryDatabase.Connection c = db.acquire();
-            acquired.incrementAndGet();
-            c.release();
+        AtomicInteger acquired = new AtomicInteger(0); // GH-90000
+        Thread waiter = Thread.ofVirtual().start(() -> { // GH-90000
+            InMemoryDatabase.Connection c = db.acquire(); // GH-90000
+            acquired.incrementAndGet(); // GH-90000
+            c.release(); // GH-90000
         });
 
         // Before releasing, waiter should still be waiting
-        Thread.sleep(50);
-        assertThat(acquired.get()).isZero();
+        Thread.sleep(50); // GH-90000
+        assertThat(acquired.get()).isZero(); // GH-90000
 
         // Release one — now waiter should proceed
-        conns.get(0).release();
-        waiter.join(1000);
-        assertThat(acquired.get()).isEqualTo(1);
+        conns.get(0).release(); // GH-90000
+        waiter.join(1000); // GH-90000
+        assertThat(acquired.get()).isEqualTo(1); // GH-90000
 
-        conns.subList(1, 5).forEach(InMemoryDatabase.Connection::release);
+        conns.subList(1, 5).forEach(InMemoryDatabase.Connection::release); // GH-90000
     }
 
     @Test
-    @DisplayName("released connections free capacity for another acquire")
-    void releasedConnectionsFreeCapacityForAnotherAcquire() {
-        InMemoryDatabase.Connection c1 = db.acquire();
-        c1.release();
+    @DisplayName("released connections free capacity for another acquire [GH-90000]")
+    void releasedConnectionsFreeCapacityForAnotherAcquire() { // GH-90000
+        InMemoryDatabase.Connection c1 = db.acquire(); // GH-90000
+        c1.release(); // GH-90000
 
-        InMemoryDatabase.Connection c2 = db.acquire();
-        assertThat(c2.isOpen()).isTrue();
-        c2.release();
+        InMemoryDatabase.Connection c2 = db.acquire(); // GH-90000
+        assertThat(c2.isOpen()).isTrue(); // GH-90000
+        c2.release(); // GH-90000
     }
 
     // ── CRUD correctness ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("insert and select-all round-trip returns the stored row")
-    void insertAndSelectAllRoundTrip() {
-        InMemoryDatabase.Connection conn = db.acquire();
-        conn.execute("INSERT", "users", Map.of("id", "u1", "name", "Alice"));
+    @DisplayName("insert and select-all round-trip returns the stored row [GH-90000]")
+    void insertAndSelectAllRoundTrip() { // GH-90000
+        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
+        conn.execute("INSERT", "users", Map.of("id", "u1", "name", "Alice")); // GH-90000
 
-        List<Map<String, Object>> rows = conn.query("SELECT", "users");
-        assertThat(rows).hasSize(1);
-        assertThat(rows.get(0).get("name")).isEqualTo("Alice");
-        conn.release();
+        List<Map<String, Object>> rows = conn.query("SELECT", "users"); // GH-90000
+        assertThat(rows).hasSize(1); // GH-90000
+        assertThat(rows.get(0).get("name [GH-90000]")).isEqualTo("Alice [GH-90000]");
+        conn.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("update modifies only the targeted row")
-    void updateModifiesOnlyTargetedRow() {
-        InMemoryDatabase.Connection conn = db.acquire();
-        conn.execute("INSERT", "users", Map.of("id", "u-upd", "name", "Bob"));
-        conn.execute("UPDATE", "users", Map.of("id", "u-upd", "name", "Robert"));
+    @DisplayName("update modifies only the targeted row [GH-90000]")
+    void updateModifiesOnlyTargetedRow() { // GH-90000
+        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
+        conn.execute("INSERT", "users", Map.of("id", "u-upd", "name", "Bob")); // GH-90000
+        conn.execute("UPDATE", "users", Map.of("id", "u-upd", "name", "Robert")); // GH-90000
 
-        List<Map<String, Object>> rows = conn.query("SELECT", "users");
-        assertThat(rows).hasSize(1);
-        assertThat(rows.get(0).get("name")).isEqualTo("Robert");
-        conn.release();
+        List<Map<String, Object>> rows = conn.query("SELECT", "users"); // GH-90000
+        assertThat(rows).hasSize(1); // GH-90000
+        assertThat(rows.get(0).get("name [GH-90000]")).isEqualTo("Robert [GH-90000]");
+        conn.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("delete removes the targeted row and count becomes zero")
-    void deleteRemovesTargetedRowAndCountBecomesZero() {
-        InMemoryDatabase.Connection conn = db.acquire();
-        conn.execute("INSERT", "items", Map.of("id", "item-1", "value", "x"));
-        conn.execute("DELETE", "items", Map.of("id", "item-1"));
+    @DisplayName("delete removes the targeted row and count becomes zero [GH-90000]")
+    void deleteRemovesTargetedRowAndCountBecomesZero() { // GH-90000
+        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
+        conn.execute("INSERT", "items", Map.of("id", "item-1", "value", "x")); // GH-90000
+        conn.execute("DELETE", "items", Map.of("id", "item-1")); // GH-90000
 
-        List<Map<String, Object>> rows = conn.query("SELECT", "items");
-        assertThat(rows).isEmpty();
-        conn.release();
+        List<Map<String, Object>> rows = conn.query("SELECT", "items"); // GH-90000
+        assertThat(rows).isEmpty(); // GH-90000
+        conn.release(); // GH-90000
     }
 
     // ── Transaction isolation ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("uncommitted transaction changes are not visible outside the transaction")
-    void uncommittedChangesAreNotVisibleOutsideTransaction() {
-        InMemoryDatabase.Connection conn = db.acquire();
-        InMemoryDatabase.Transaction tx = conn.beginTransaction();
-        tx.execute("INSERT", "accounts", Map.of("id", "acc-1", "balance", 100));
+    @DisplayName("uncommitted transaction changes are not visible outside the transaction [GH-90000]")
+    void uncommittedChangesAreNotVisibleOutsideTransaction() { // GH-90000
+        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
+        InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
+        tx.execute("INSERT", "accounts", Map.of("id", "acc-1", "balance", 100)); // GH-90000
 
         // Another connection should not see uncommitted data
-        InMemoryDatabase.Connection conn2 = db.acquire();
-        List<Map<String, Object>> rows = conn2.query("SELECT", "accounts");
-        assertThat(rows).isEmpty();
+        InMemoryDatabase.Connection conn2 = db.acquire(); // GH-90000
+        List<Map<String, Object>> rows = conn2.query("SELECT", "accounts"); // GH-90000
+        assertThat(rows).isEmpty(); // GH-90000
 
-        tx.rollback();
-        conn.release();
-        conn2.release();
+        tx.rollback(); // GH-90000
+        conn.release(); // GH-90000
+        conn2.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("committed transaction changes are visible from other connections")
-    void committedChangesAreVisibleFromOtherConnections() {
-        InMemoryDatabase.Connection conn = db.acquire();
-        InMemoryDatabase.Transaction tx = conn.beginTransaction();
-        tx.execute("INSERT", "accounts", Map.of("id", "acc-2", "balance", 200));
-        tx.commit();
-        conn.release();
+    @DisplayName("committed transaction changes are visible from other connections [GH-90000]")
+    void committedChangesAreVisibleFromOtherConnections() { // GH-90000
+        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
+        InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
+        tx.execute("INSERT", "accounts", Map.of("id", "acc-2", "balance", 200)); // GH-90000
+        tx.commit(); // GH-90000
+        conn.release(); // GH-90000
 
-        InMemoryDatabase.Connection conn2 = db.acquire();
-        List<Map<String, Object>> rows = conn2.query("SELECT", "accounts");
-        assertThat(rows).anyMatch(r -> "acc-2".equals(r.get("id")));
-        conn2.release();
+        InMemoryDatabase.Connection conn2 = db.acquire(); // GH-90000
+        List<Map<String, Object>> rows = conn2.query("SELECT", "accounts"); // GH-90000
+        assertThat(rows).anyMatch(r -> "acc-2".equals(r.get("id [GH-90000]")));
+        conn2.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("rolled-back transaction leaves the table unchanged")
-    void rolledBackTransactionLeavesTableUnchanged() {
-        InMemoryDatabase.Connection conn = db.acquire();
-        InMemoryDatabase.Transaction tx = conn.beginTransaction();
-        tx.execute("INSERT", "rollback_test", Map.of("id", "rb-1"));
-        tx.rollback();
+    @DisplayName("rolled-back transaction leaves the table unchanged [GH-90000]")
+    void rolledBackTransactionLeavesTableUnchanged() { // GH-90000
+        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
+        InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
+        tx.execute("INSERT", "rollback_test", Map.of("id", "rb-1")); // GH-90000
+        tx.rollback(); // GH-90000
 
-        List<Map<String, Object>> rows = conn.query("SELECT", "rollback_test");
-        assertThat(rows).isEmpty();
-        conn.release();
+        List<Map<String, Object>> rows = conn.query("SELECT", "rollback_test"); // GH-90000
+        assertThat(rows).isEmpty(); // GH-90000
+        conn.release(); // GH-90000
     }
 
     // ── Concurrent writes ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent inserts from multiple connections are all persisted")
-    void concurrentInsertsAreAllPersisted() throws Exception {
+    @DisplayName("concurrent inserts from multiple connections are all persisted [GH-90000]")
+    void concurrentInsertsAreAllPersisted() throws Exception { // GH-90000
         int writers = 20;
-        CyclicBarrier barrier = new CyclicBarrier(writers);
+        CyclicBarrier barrier = new CyclicBarrier(writers); // GH-90000
         Thread[] threads = new Thread[writers];
-        Queue<Throwable> failures = new ConcurrentLinkedQueue<>();
+        Queue<Throwable> failures = new ConcurrentLinkedQueue<>(); // GH-90000
 
-        for (int i = 0; i < writers; i++) {
+        for (int i = 0; i < writers; i++) { // GH-90000
             final int idx = i;
-            threads[i] = Thread.ofVirtual().start(() -> {
+            threads[i] = Thread.ofVirtual().start(() -> { // GH-90000
                 try {
-                    barrier.await();
-                    InMemoryDatabase.Connection c = db.acquire();
-                    c.execute("INSERT", "concurrent_table",
-                            Map.of("id", "row-" + idx, "value", idx));
-                    c.release();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    failures.add(e);
-                } catch (BrokenBarrierException | RuntimeException e) {
-                    failures.add(e);
+                    barrier.await(); // GH-90000
+                    InMemoryDatabase.Connection c = db.acquire(); // GH-90000
+                    c.execute("INSERT", "concurrent_table", // GH-90000
+                            Map.of("id", "row-" + idx, "value", idx)); // GH-90000
+                    c.release(); // GH-90000
+                } catch (InterruptedException e) { // GH-90000
+                    Thread.currentThread().interrupt(); // GH-90000
+                    failures.add(e); // GH-90000
+                } catch (BrokenBarrierException | RuntimeException e) { // GH-90000
+                    failures.add(e); // GH-90000
                 }
             });
         }
-        for (Thread t : threads) {
-            t.join(2000);
-            assertThat(t.isAlive()).isFalse();
+        for (Thread t : threads) { // GH-90000
+            t.join(2000); // GH-90000
+            assertThat(t.isAlive()).isFalse(); // GH-90000
         }
-        assertThat(failures).isEmpty();
+        assertThat(failures).isEmpty(); // GH-90000
 
-        InMemoryDatabase.Connection readConn = db.acquire();
-        assertThat(readConn.query("SELECT", "concurrent_table")).hasSize(writers);
-        readConn.release();
+        InMemoryDatabase.Connection readConn = db.acquire(); // GH-90000
+        assertThat(readConn.query("SELECT", "concurrent_table")).hasSize(writers); // GH-90000
+        readConn.release(); // GH-90000
     }
 
-    // ── In-memory database simulation (for tests) ─────────────────────────────
+    // ── In-memory database simulation (for tests) ───────────────────────────── // GH-90000
 
     static class InMemoryDatabase {
         private final int maxConnections;
         private final Semaphore semaphore;
-        private final AtomicInteger idCounter = new AtomicInteger(0);
+        private final AtomicInteger idCounter = new AtomicInteger(0); // GH-90000
         private final ConcurrentHashMap<String, CopyOnWriteArrayList<Map<String, Object>>> tables
-                = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<String, AtomicInteger> connectionCount = new ConcurrentHashMap<>();
+                = new ConcurrentHashMap<>(); // GH-90000
+        private final ConcurrentHashMap<String, AtomicInteger> connectionCount = new ConcurrentHashMap<>(); // GH-90000
 
-        InMemoryDatabase(int maxConnections) {
+        InMemoryDatabase(int maxConnections) { // GH-90000
             this.maxConnections = maxConnections;
-            this.semaphore = new Semaphore(maxConnections);
+            this.semaphore = new Semaphore(maxConnections); // GH-90000
         }
 
-        Connection acquire() {
+        Connection acquire() { // GH-90000
             try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
+                semaphore.acquire(); // GH-90000
+            } catch (InterruptedException e) { // GH-90000
+                Thread.currentThread().interrupt(); // GH-90000
+                throw new RuntimeException(e); // GH-90000
             }
-            return new Connection(idCounter.incrementAndGet(), this);
+            return new Connection(idCounter.incrementAndGet(), this); // GH-90000
         }
 
-        void release() { semaphore.release(); }
+        void release() { semaphore.release(); } // GH-90000
 
-        CopyOnWriteArrayList<Map<String, Object>> table(String name) {
-            return tables.computeIfAbsent(name, k -> new CopyOnWriteArrayList<>());
+        CopyOnWriteArrayList<Map<String, Object>> table(String name) { // GH-90000
+            return tables.computeIfAbsent(name, k -> new CopyOnWriteArrayList<>()); // GH-90000
         }
 
         static class Connection {
@@ -245,54 +245,54 @@ class DatabaseIntegrationTest extends EventloopTestBase {
             private final InMemoryDatabase db;
             private boolean open = true;
 
-            Connection(int connId, InMemoryDatabase db) { this.connId = connId; this.db = db; }
-            int connectionId() { return connId; }
-            boolean isOpen() { return open; }
+            Connection(int connId, InMemoryDatabase db) { this.connId = connId; this.db = db; } // GH-90000
+            int connectionId() { return connId; } // GH-90000
+            boolean isOpen() { return open; } // GH-90000
 
-            void execute(String op, String table, Map<String, Object> row) {
-                switch (op) {
-                    case "INSERT" -> db.table(table).add(new HashMap<>(row));
+            void execute(String op, String table, Map<String, Object> row) { // GH-90000
+                switch (op) { // GH-90000
+                    case "INSERT" -> db.table(table).add(new HashMap<>(row)); // GH-90000
                     case "UPDATE" -> {
-                        Object id = row.get("id");
-                        db.table(table).replaceAll(r -> id.equals(r.get("id")) ? new HashMap<>(row) : r);
+                        Object id = row.get("id [GH-90000]");
+                        db.table(table).replaceAll(r -> id.equals(r.get("id [GH-90000]")) ? new HashMap<>(row) : r);
                     }
                     case "DELETE" -> {
-                        Object id = row.get("id");
-                        db.table(table).removeIf(r -> id.equals(r.get("id")));
+                        Object id = row.get("id [GH-90000]");
+                        db.table(table).removeIf(r -> id.equals(r.get("id [GH-90000]")));
                     }
-                    default -> throw new IllegalArgumentException("Unsupported operation: " + op);
+                    default -> throw new IllegalArgumentException("Unsupported operation: " + op); // GH-90000
                 }
             }
 
-            List<Map<String, Object>> query(String op, String table) {
-                return List.copyOf(db.table(table));
+            List<Map<String, Object>> query(String op, String table) { // GH-90000
+                return List.copyOf(db.table(table)); // GH-90000
             }
 
-            Transaction beginTransaction() { return new Transaction(db); }
+            Transaction beginTransaction() { return new Transaction(db); } // GH-90000
 
-            void release() {
+            void release() { // GH-90000
                 open = false;
-                db.release();
+                db.release(); // GH-90000
             }
         }
 
         static class Transaction {
             private final InMemoryDatabase db;
-            private final Map<String, List<Map<String, Object>>> pendingOps = new LinkedHashMap<>();
+            private final Map<String, List<Map<String, Object>>> pendingOps = new LinkedHashMap<>(); // GH-90000
 
-            Transaction(InMemoryDatabase db) { this.db = db; }
+            Transaction(InMemoryDatabase db) { this.db = db; } // GH-90000
 
-            void execute(String op, String table, Map<String, Object> row) {
-                pendingOps.computeIfAbsent(table, k -> new ArrayList<>()).add(new HashMap<>(row));
+            void execute(String op, String table, Map<String, Object> row) { // GH-90000
+                pendingOps.computeIfAbsent(table, k -> new ArrayList<>()).add(new HashMap<>(row)); // GH-90000
             }
 
-            void commit() {
-                pendingOps.forEach((table, rows) ->
-                        rows.forEach(r -> db.table(table).add(new HashMap<>(r))));
-                pendingOps.clear();
+            void commit() { // GH-90000
+                pendingOps.forEach((table, rows) -> // GH-90000
+                        rows.forEach(r -> db.table(table).add(new HashMap<>(r)))); // GH-90000
+                pendingOps.clear(); // GH-90000
             }
 
-            void rollback() { pendingOps.clear(); }
+            void rollback() { pendingOps.clear(); } // GH-90000
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.services.userprofile;
@@ -27,8 +27,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer shared-service
  * @doc.pattern Test
  */
-@Tag("integration")
-@DisplayName("UserProfileService — HTTP endpoint tests")
+@Tag("integration [GH-90000]")
+@DisplayName("UserProfileService — HTTP endpoint tests [GH-90000]")
 class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
 
     private static final String TEST_JWT_SECRET = "test-user-profile-jwt-secret-key-32chars";
@@ -39,106 +39,106 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     private String validToken;
 
     @BeforeEach
-    void setUp() {
-        jwtProvider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 15 * 60 * 1000L);
-        validToken = jwtProvider.createToken(
+    void setUp() { // GH-90000
+        jwtProvider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 15 * 60 * 1000L); // GH-90000
+        validToken = jwtProvider.createToken( // GH-90000
             "test-user",
-            java.util.List.of("USER"),
-            java.util.Map.of("tenantId", TEST_TENANT_ID)
+            java.util.List.of("USER [GH-90000]"),
+            java.util.Map.of("tenantId", TEST_TENANT_ID) // GH-90000
         );
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() { // GH-90000
         // Cleanup handled by eventloop
     }
 
     @Test
-    @DisplayName("GET /health returns 200 with UP status")
-    void healthEndpoint_returns200WithUpStatus() {
+    @DisplayName("GET /health returns 200 with UP status [GH-90000]")
+    void healthEndpoint_returns200WithUpStatus() { // GH-90000
         // Note: This test would require starting the full service
         // For now, we'll document the expected behavior
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("GET /metrics returns 200 with metrics text")
-    void metricsEndpoint_returns200WithMetrics() {
+    @DisplayName("GET /metrics returns 200 with metrics text [GH-90000]")
+    void metricsEndpoint_returns200WithMetrics() { // GH-90000
         // Note: This test would require starting the full service
         // For now, we'll document the expected behavior
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("GET /profiles/:userId with valid JWT returns 200")
-    void getProfile_withValidJwt_returns200() {
+    @DisplayName("GET /profiles/:userId with valid JWT returns 200 [GH-90000]")
+    void getProfile_withValidJwt_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: GET /profiles/user-123 with Authorization: Bearer <token> and X-Tenant-Id header
         // Should return 200 with profile JSON
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("GET /profiles/:userId without X-Tenant-Id returns 400")
-    void getProfile_withoutTenantId_returns400() {
+    @DisplayName("GET /profiles/:userId without X-Tenant-Id returns 400 [GH-90000]")
+    void getProfile_withoutTenantId_returns400() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing X-Tenant-Id header returns 400
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("GET /profiles/:userId with internal key returns 200")
-    void getProfile_withInternalKey_returns200() {
+    @DisplayName("GET /profiles/:userId with internal key returns 200 [GH-90000]")
+    void getProfile_withInternalKey_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: GET /profiles/user-123 with X-Internal-Key header returns 200
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("PUT /profiles/:userId with valid JWT returns 200")
-    void upsertProfile_withValidJwt_returns200() {
+    @DisplayName("PUT /profiles/:userId with valid JWT returns 200 [GH-90000]")
+    void upsertProfile_withValidJwt_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: PUT /profiles/user-123 with valid JWT and profile JSON returns 200
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("PUT /profiles/:userId without JWT returns 401")
-    void upsertProfile_withoutJwt_returns401() {
+    @DisplayName("PUT /profiles/:userId without JWT returns 401 [GH-90000]")
+    void upsertProfile_withoutJwt_returns401() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing Authorization header returns 401
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("DELETE /profiles/:userId with valid JWT returns 200")
-    void deleteProfile_withValidJwt_returns200() {
+    @DisplayName("DELETE /profiles/:userId with valid JWT returns 200 [GH-90000]")
+    void deleteProfile_withValidJwt_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: DELETE /profiles/user-123 with valid JWT returns 200
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("DELETE /profiles/:userId without JWT returns 401")
-    void deleteProfile_withoutJwt_returns401() {
+    @DisplayName("DELETE /profiles/:userId without JWT returns 401 [GH-90000]")
+    void deleteProfile_withoutJwt_returns401() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing Authorization header returns 401
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("Invalid JSON in request body returns 400")
-    void invalidJson_returns400() {
+    @DisplayName("Invalid JSON in request body returns 400 [GH-90000]")
+    void invalidJson_returns400() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Malformed JSON returns 400
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 
     @Test
-    @DisplayName("Missing required fields in profile returns 400")
-    void missingRequiredFields_returns400() {
+    @DisplayName("Missing required fields in profile returns 400 [GH-90000]")
+    void missingRequiredFields_returns400() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing userId, tenantId, or email returns 400
-        assertThat(true).isTrue(); // Placeholder
+        assertThat(true).isTrue(); // Placeholder // GH-90000
     }
 }

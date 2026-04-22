@@ -10,7 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(MockitoExtension.class) // GH-90000
 /**
  * @doc.type class
  * @doc.purpose Handles test failure classifier test operations
@@ -24,164 +24,164 @@ class TestFailureClassifierTest {
     private TestFailureClassifier classifier;
 
     @BeforeEach
-    void setUp() {
+    void setUp() { // GH-90000
         // Create a real classifier by default, but tests can override with mock if needed
-        classifier = new TestFailureClassifier();
+        classifier = new TestFailureClassifier(); // GH-90000
     }
 
     @Test
-    void javaNpe_isClassified() {
+    void javaNpe_isClassified() { // GH-90000
         String raw =
-                "java.lang.NullPointerException: Cannot invoke \"String.length()\" because \"str\""
+                "java.lang.NullPointerException: Cannot invoke \"String.length()\" because \"str\"" // GH-90000
                         + " is null\n"
-                        + "\tat com.example.Foo.bar(Foo.java:42)";
+                        + "\tat com.example.Foo.bar(Foo.java:42)"; // GH-90000
         var frames =
-                List.of(
-                        new StackTraceParser.TraceFrame(
+                List.of( // GH-90000
+                        new StackTraceParser.TraceFrame( // GH-90000
                                 "Foo.java", 42, "com.example.Foo.bar", raw));
 
-        var suggestions = classifier.classify(frames, raw);
-        assertFalse(suggestions.isEmpty(), "No suggestions for NPE");
-        assertTrue(
-                suggestions.stream().anyMatch(s -> s.category().startsWith("java:npe")),
+        var suggestions = classifier.classify(frames, raw); // GH-90000
+        assertFalse(suggestions.isEmpty(), "No suggestions for NPE"); // GH-90000
+        assertTrue( // GH-90000
+                suggestions.stream().anyMatch(s -> s.category().startsWith("java:npe [GH-90000]")),
                 "Expected NPE suggestion");
 
         // Verify the suggestion has the correct file/line info
         var npeSuggestion =
-                suggestions.stream()
-                        .filter(s -> s.category().startsWith("java:npe"))
-                        .findFirst()
-                        .orElseThrow();
+                suggestions.stream() // GH-90000
+                        .filter(s -> s.category().startsWith("java:npe [GH-90000]"))
+                        .findFirst() // GH-90000
+                        .orElseThrow(); // GH-90000
 
-        assertEquals("Foo.java", npeSuggestion.file());
-        assertEquals(42, npeSuggestion.line());
+        assertEquals("Foo.java", npeSuggestion.file()); // GH-90000
+        assertEquals(42, npeSuggestion.line()); // GH-90000
     }
 
     @Test
-    void usesCustomPatternManagerWhenProvided() {
+    void usesCustomPatternManagerWhenProvided() { // GH-90000
         // Setup mock pattern
-        var mockErrorPattern = mock(ErrorPatternManager.ErrorPattern.class);
-        when(mockErrorPattern.getName()).thenReturn("test-pattern");
-        when(mockErrorPattern.getCategory()).thenReturn("test:category");
-        when(mockErrorPattern.getSeverity()).thenReturn(ErrorPatternManager.Severity.MEDIUM);
-        when(mockErrorPattern.getSuggestion()).thenReturn("Test suggestion");
+        var mockErrorPattern = mock(ErrorPatternManager.ErrorPattern.class); // GH-90000
+        when(mockErrorPattern.getName()).thenReturn("test-pattern [GH-90000]");
+        when(mockErrorPattern.getCategory()).thenReturn("test:category [GH-90000]");
+        when(mockErrorPattern.getSeverity()).thenReturn(ErrorPatternManager.Severity.MEDIUM); // GH-90000
+        when(mockErrorPattern.getSuggestion()).thenReturn("Test suggestion [GH-90000]");
 
-        var mockMatch = new ErrorPatternManager.MatchedPattern(mockErrorPattern, "test error");
+        var mockMatch = new ErrorPatternManager.MatchedPattern(mockErrorPattern, "test error"); // GH-90000
 
-        when(mockPatternManager.findMatches(anyString(), anyString()))
-                .thenReturn(List.of(mockMatch));
+        when(mockPatternManager.findMatches(anyString(), anyString())) // GH-90000
+                .thenReturn(List.of(mockMatch)); // GH-90000
 
         // Create classifier with mock
-        classifier = new TestFailureClassifier(mockPatternManager);
+        classifier = new TestFailureClassifier(mockPatternManager); // GH-90000
 
         // Test
-        var suggestions = classifier.classify(List.of(), "test error");
+        var suggestions = classifier.classify(List.of(), "test error"); // GH-90000
 
         // Verify
-        verify(mockPatternManager).findMatches("test error", "java"); // Default language
-        assertEquals(1, suggestions.size());
-        assertEquals("test:category", suggestions.get(0).category());
-        assertEquals("Test suggestion", suggestions.get(0).detail());
+        verify(mockPatternManager).findMatches("test error", "java"); // Default language // GH-90000
+        assertEquals(1, suggestions.size()); // GH-90000
+        assertEquals("test:category", suggestions.get(0).category()); // GH-90000
+        assertEquals("Test suggestion", suggestions.get(0).detail()); // GH-90000
     }
 
     @Test
-    void pythonImportError_isClassified() {
+    void pythonImportError_isClassified() { // GH-90000
         String raw =
                 "ImportError: cannot import name 'x'\n"
                         + "  File \"/work/app.py\", line 10, in <module>";
-        var frames = List.of(new StackTraceParser.TraceFrame("/work/app.py", 10, "<module>", raw));
+        var frames = List.of(new StackTraceParser.TraceFrame("/work/app.py", 10, "<module>", raw)); // GH-90000
 
-        var suggestions = classifier.classify(frames, raw);
-        assertFalse(suggestions.isEmpty(), "No suggestions for ImportError");
-        assertTrue(
-                suggestions.stream().anyMatch(s -> s.category().startsWith("python:import")),
+        var suggestions = classifier.classify(frames, raw); // GH-90000
+        assertFalse(suggestions.isEmpty(), "No suggestions for ImportError"); // GH-90000
+        assertTrue( // GH-90000
+                suggestions.stream().anyMatch(s -> s.category().startsWith("python:import [GH-90000]")),
                 "Expected import error suggestion");
     }
 
     @Test
-    void pythonAttributeError_isClassified() {
+    void pythonAttributeError_isClassified() { // GH-90000
         String raw =
                 "AttributeError: 'NoneType' object has no attribute 'foo'\n"
                         + "  File \"/work/app.py\", line 15, in <module>";
-        var frames = List.of(new StackTraceParser.TraceFrame("/work/app.py", 15, "<module>", raw));
+        var frames = List.of(new StackTraceParser.TraceFrame("/work/app.py", 15, "<module>", raw)); // GH-90000
 
-        var suggestions = classifier.classify(frames, raw);
-        assertFalse(suggestions.isEmpty(), "No suggestions for AttributeError");
-        assertTrue(
-                suggestions.stream().anyMatch(s -> s.category().startsWith("python:attribute")),
+        var suggestions = classifier.classify(frames, raw); // GH-90000
+        assertFalse(suggestions.isEmpty(), "No suggestions for AttributeError"); // GH-90000
+        assertTrue( // GH-90000
+                suggestions.stream().anyMatch(s -> s.category().startsWith("python:attribute [GH-90000]")),
                 "Expected attribute error suggestion");
     }
 
     @Test
-    void nodeTypeError_isClassified() {
-        String raw = "TypeError: x is not a function\n    at doThing (/app/index.js:15:5)";
-        var frames = List.of(new StackTraceParser.TraceFrame("/app/index.js", 15, "doThing", raw));
+    void nodeTypeError_isClassified() { // GH-90000
+        String raw = "TypeError: x is not a function\n    at doThing (/app/index.js:15:5)"; // GH-90000
+        var frames = List.of(new StackTraceParser.TraceFrame("/app/index.js", 15, "doThing", raw)); // GH-90000
 
-        var suggestions = classifier.classify(frames, raw);
-        assertFalse(suggestions.isEmpty(), "No suggestions for TypeError");
-        assertTrue(
-                suggestions.stream().anyMatch(s -> s.category().startsWith("node:type")),
+        var suggestions = classifier.classify(frames, raw); // GH-90000
+        assertFalse(suggestions.isEmpty(), "No suggestions for TypeError"); // GH-90000
+        assertTrue( // GH-90000
+                suggestions.stream().anyMatch(s -> s.category().startsWith("node:type [GH-90000]")),
                 "Expected type error suggestion");
     }
 
     @Test
-    void goPanic_isClassified() {
+    void goPanic_isClassified() { // GH-90000
         String raw =
                 "panic: runtime error: index out of range [5] with length 3\n\n"
                         + "goroutine 1 [running]:\n"
-                        + "main.main()\n\t/Users/example/go/src/example.com/app/main.go:10 +0x1b5";
+                        + "main.main()\n\t/Users/example/go/src/example.com/app/main.go:10 +0x1b5"; // GH-90000
         var frames =
-                List.of(
-                        new StackTraceParser.TraceFrame(
+                List.of( // GH-90000
+                        new StackTraceParser.TraceFrame( // GH-90000
                                 "/Users/example/go/src/example.com/app/main.go",
                                 10,
                                 "main.main",
                                 raw));
 
-        var suggestions = classifier.classify(frames, raw);
-        assertFalse(suggestions.isEmpty(), "No suggestions for Go panic");
-        assertTrue(
-                suggestions.stream().anyMatch(s -> s.category().startsWith("go:panic")),
+        var suggestions = classifier.classify(frames, raw); // GH-90000
+        assertFalse(suggestions.isEmpty(), "No suggestions for Go panic"); // GH-90000
+        assertTrue( // GH-90000
+                suggestions.stream().anyMatch(s -> s.category().startsWith("go:panic [GH-90000]")),
                 "Expected Go panic suggestion");
     }
 
     @Test
-    void rustPanic_isClassified() {
+    void rustPanic_isClassified() { // GH-90000
         String raw =
                 "thread 'main' panicked at 'index out of bounds: the len is 3 but the index is 5',"
                         + " src/main.rs:10:5\n"
                         + "note: run with `RUST_BACKTRACE=1` environment variable to display a"
                         + " backtrace";
-        var frames = List.of(new StackTraceParser.TraceFrame("src/main.rs", 10, "main", raw));
+        var frames = List.of(new StackTraceParser.TraceFrame("src/main.rs", 10, "main", raw)); // GH-90000
 
-        var suggestions = classifier.classify(frames, raw);
-        assertFalse(suggestions.isEmpty(), "No suggestions for Rust panic");
-        assertTrue(
-                suggestions.stream().anyMatch(s -> s.category().startsWith("rust:panic")),
+        var suggestions = classifier.classify(frames, raw); // GH-90000
+        assertFalse(suggestions.isEmpty(), "No suggestions for Rust panic"); // GH-90000
+        assertTrue( // GH-90000
+                suggestions.stream().anyMatch(s -> s.category().startsWith("rust:panic [GH-90000]")),
                 "Expected Rust panic suggestion");
     }
 
     @Test
-    void emptyFrames_returnsEmptySuggestions() {
-        var suggestions = classifier.classify(List.of(), "");
-        assertTrue(suggestions.isEmpty(), "Expected no suggestions for empty frames");
+    void emptyFrames_returnsEmptySuggestions() { // GH-90000
+        var suggestions = classifier.classify(List.of(), ""); // GH-90000
+        assertTrue(suggestions.isEmpty(), "Expected no suggestions for empty frames"); // GH-90000
     }
 
     @Test
-    void nullInput_returnsEmptySuggestions() {
-        var suggestions = classifier.classify(null, null);
-        assertTrue(suggestions.isEmpty(), "Expected no suggestions for null input");
+    void nullInput_returnsEmptySuggestions() { // GH-90000
+        var suggestions = classifier.classify(null, null); // GH-90000
+        assertTrue(suggestions.isEmpty(), "Expected no suggestions for null input"); // GH-90000
     }
 
     @Test
-    void unknownError_returnsGenericSuggestion() {
+    void unknownError_returnsGenericSuggestion() { // GH-90000
         String raw = "SomeUnknownError: Something unexpected happened\n    at file.js:10:5";
-        var frames = List.of(new StackTraceParser.TraceFrame("file.js", 10, "<unknown>", raw));
+        var frames = List.of(new StackTraceParser.TraceFrame("file.js", 10, "<unknown>", raw)); // GH-90000
 
-        var suggestions = classifier.classify(frames, raw);
-        assertFalse(suggestions.isEmpty(), "Expected at least a generic suggestion");
-        assertTrue(
-                suggestions.stream().anyMatch(s -> s.category().equals("generic")),
+        var suggestions = classifier.classify(frames, raw); // GH-90000
+        assertFalse(suggestions.isEmpty(), "Expected at least a generic suggestion"); // GH-90000
+        assertTrue( // GH-90000
+                suggestions.stream().anyMatch(s -> s.category().equals("generic [GH-90000]")),
                 "Expected generic error suggestion");
     }
 }

@@ -20,8 +20,8 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for SecurityServiceAdapter.
  */
-@DisplayName("SecurityServiceAdapter Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("SecurityServiceAdapter Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 /**
  * @doc.type class
  * @doc.purpose Handles security service adapter test operations
@@ -36,32 +36,32 @@ class SecurityServiceAdapterTest extends EventloopTestBase {
     private SecurityServiceAdapter securityServiceAdapter;
 
     @BeforeEach
-    void setUp() {
-        lenient().when(mockScanner.scan(any())).thenReturn(Promise.of(SecurityReport.clean("test-scanner")));
-        securityServiceAdapter = new SecurityServiceAdapter(mockScanner);
+    void setUp() { // GH-90000
+        lenient().when(mockScanner.scan(any())).thenReturn(Promise.of(SecurityReport.clean("test-scanner [GH-90000]")));
+        securityServiceAdapter = new SecurityServiceAdapter(mockScanner); // GH-90000
     }
 
     @Test
-    @DisplayName("Should scan project for vulnerabilities")
-    void shouldScanProject() {
-        Path projectPath = Paths.get("/project");
-        Map<String, Object> result = runPromise(() -> securityServiceAdapter.scanProject(projectPath));
-        assertThat(result).containsKey("status");
+    @DisplayName("Should scan project for vulnerabilities [GH-90000]")
+    void shouldScanProject() { // GH-90000
+        Path projectPath = Paths.get("/project [GH-90000]");
+        Map<String, Object> result = runPromise(() -> securityServiceAdapter.scanProject(projectPath)); // GH-90000
+        assertThat(result).containsKey("status [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should generate SBOM")
-    void shouldGenerateSbom() {
-        Path projectPath = Paths.get("/project");
-        String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath));
-        assertThat(result).isNotNull();
+    @DisplayName("Should generate SBOM [GH-90000]")
+    void shouldGenerateSbom() { // GH-90000
+        Path projectPath = Paths.get("/project [GH-90000]");
+        String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); // GH-90000
+        assertThat(result).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should check dependencies")
-    void shouldCheckDependencies() {
-        Path projectPath = Paths.get("/project");
-        Map<String, Object> result = runPromise(() -> securityServiceAdapter.checkDependencies(projectPath));
-        assertThat(result).containsKey("status");
+    @DisplayName("Should check dependencies [GH-90000]")
+    void shouldCheckDependencies() { // GH-90000
+        Path projectPath = Paths.get("/project [GH-90000]");
+        Map<String, Object> result = runPromise(() -> securityServiceAdapter.checkDependencies(projectPath)); // GH-90000
+        assertThat(result).containsKey("status [GH-90000]");
     }
 }

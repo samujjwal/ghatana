@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.services.userprofile;
@@ -22,66 +22,66 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer shared-service
  * @doc.pattern Test
  */
-@Tag("unit")
-@DisplayName("UserProfile — Jackson JSON serialization tests")
+@Tag("unit [GH-90000]")
+@DisplayName("UserProfile — Jackson JSON serialization tests [GH-90000]")
 class UserProfileJacksonSerializationTest {
 
-    private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper();
+    private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper(); // GH-90000
 
     @Test
-    @DisplayName("UserProfile serializes to valid JSON")
-    void userProfile_serializesToJson() throws Exception {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-123")
-                .tenantId("tenant-abc")
-                .email("user@example.com")
-                .displayName("John Doe")
-                .avatarUrl("https://example.com/avatar.jpg")
-                .preferredLanguage("en")
-                .timezone("America/Los_Angeles")
-                .theme("dark")
-                .notificationsEnabled(true)
-                .build();
+    @DisplayName("UserProfile serializes to valid JSON [GH-90000]")
+    void userProfile_serializesToJson() throws Exception { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-123 [GH-90000]")
+                .tenantId("tenant-abc [GH-90000]")
+                .email("user@example.com [GH-90000]")
+                .displayName("John Doe [GH-90000]")
+                .avatarUrl("https://example.com/avatar.jpg [GH-90000]")
+                .preferredLanguage("en [GH-90000]")
+                .timezone("America/Los_Angeles [GH-90000]")
+                .theme("dark [GH-90000]")
+                .notificationsEnabled(true) // GH-90000
+                .build(); // GH-90000
 
-        String json = objectMapper.writeValueAsString(profile);
+        String json = objectMapper.writeValueAsString(profile); // GH-90000
 
-        assertThat(json).contains("\"userId\":\"user-123\"");
-        assertThat(json).contains("\"tenantId\":\"tenant-abc\"");
-        assertThat(json).contains("\"email\":\"user@example.com\"");
-        assertThat(json).contains("\"displayName\":\"John Doe\"");
-        assertThat(json).contains("\"avatarUrl\":\"https://example.com/avatar.jpg\"");
-        assertThat(json).contains("\"preferredLanguage\":\"en\"");
-        assertThat(json).contains("\"timezone\":\"America/Los_Angeles\"");
-        assertThat(json).contains("\"theme\":\"dark\"");
-        assertThat(json).contains("\"notificationsEnabled\":true");
+        assertThat(json).contains("\"userId\":\"user-123\""); // GH-90000
+        assertThat(json).contains("\"tenantId\":\"tenant-abc\""); // GH-90000
+        assertThat(json).contains("\"email\":\"user@example.com\""); // GH-90000
+        assertThat(json).contains("\"displayName\":\"John Doe\""); // GH-90000
+        assertThat(json).contains("\"avatarUrl\":\"https://example.com/avatar.jpg\""); // GH-90000
+        assertThat(json).contains("\"preferredLanguage\":\"en\""); // GH-90000
+        assertThat(json).contains("\"timezone\":\"America/Los_Angeles\""); // GH-90000
+        assertThat(json).contains("\"theme\":\"dark\""); // GH-90000
+        assertThat(json).contains("\"notificationsEnabled\":true"); // GH-90000
     }
 
     @Test
-    @DisplayName("UserProfile with null avatarUrl omits the field (Jackson default)")
-    void userProfile_nullAvatarUrl_omitsField() throws Exception {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-123")
-                .tenantId("tenant-abc")
-                .email("user@example.com")
-                .displayName("John Doe")
-                .avatarUrl(null)
-                .preferredLanguage("en")
-                .timezone("America/Los_Angeles")
-                .theme("light")
-                .notificationsEnabled(false)
-                .build();
+    @DisplayName("UserProfile with null avatarUrl omits the field (Jackson default) [GH-90000]")
+    void userProfile_nullAvatarUrl_omitsField() throws Exception { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-123 [GH-90000]")
+                .tenantId("tenant-abc [GH-90000]")
+                .email("user@example.com [GH-90000]")
+                .displayName("John Doe [GH-90000]")
+                .avatarUrl(null) // GH-90000
+                .preferredLanguage("en [GH-90000]")
+                .timezone("America/Los_Angeles [GH-90000]")
+                .theme("light [GH-90000]")
+                .notificationsEnabled(false) // GH-90000
+                .build(); // GH-90000
 
-        String json = objectMapper.writeValueAsString(profile);
+        String json = objectMapper.writeValueAsString(profile); // GH-90000
 
         // Jackson's default behavior is to omit null fields
-        assertThat(json).doesNotContain("avatarUrl");
-        assertThat(json).contains("\"userId\":\"user-123\"");
-        assertThat(json).contains("\"tenantId\":\"tenant-abc\"");
+        assertThat(json).doesNotContain("avatarUrl [GH-90000]");
+        assertThat(json).contains("\"userId\":\"user-123\""); // GH-90000
+        assertThat(json).contains("\"tenantId\":\"tenant-abc\""); // GH-90000
     }
 
     @Test
-    @DisplayName("UserProfile deserializes from JSON")
-    void userProfile_deserializesFromJson() throws Exception {
+    @DisplayName("UserProfile deserializes from JSON [GH-90000]")
+    void userProfile_deserializesFromJson() throws Exception { // GH-90000
         String json = """
             {
                 "userId": "user-456",
@@ -96,90 +96,90 @@ class UserProfileJacksonSerializationTest {
             }
             """;
 
-        UserProfile profile = objectMapper.readValue(json, UserProfile.class);
+        UserProfile profile = objectMapper.readValue(json, UserProfile.class); // GH-90000
 
-        assertThat(profile.userId()).isEqualTo("user-456");
-        assertThat(profile.tenantId()).isEqualTo("tenant-xyz");
-        assertThat(profile.email()).isEqualTo("jane@example.com");
-        assertThat(profile.displayName()).isEqualTo("Jane Doe");
-        assertThat(profile.avatarUrl()).isEqualTo("https://example.com/jane.jpg");
-        assertThat(profile.preferredLanguage()).isEqualTo("es");
-        assertThat(profile.timezone()).isEqualTo("Europe/Madrid");
-        assertThat(profile.theme()).isEqualTo("dark");
-        assertThat(profile.notificationsEnabled()).isTrue();
+        assertThat(profile.userId()).isEqualTo("user-456 [GH-90000]");
+        assertThat(profile.tenantId()).isEqualTo("tenant-xyz [GH-90000]");
+        assertThat(profile.email()).isEqualTo("jane@example.com [GH-90000]");
+        assertThat(profile.displayName()).isEqualTo("Jane Doe [GH-90000]");
+        assertThat(profile.avatarUrl()).isEqualTo("https://example.com/jane.jpg [GH-90000]");
+        assertThat(profile.preferredLanguage()).isEqualTo("es [GH-90000]");
+        assertThat(profile.timezone()).isEqualTo("Europe/Madrid [GH-90000]");
+        assertThat(profile.theme()).isEqualTo("dark [GH-90000]");
+        assertThat(profile.notificationsEnabled()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("UserProfile round-trip serialization preserves data")
-    void userProfile_roundTrip_preservesData() throws Exception {
-        UserProfile original = UserProfile.builder()
-                .userId("user-789")
-                .tenantId("tenant-def")
-                .email("roundtrip@example.com")
-                .displayName("Round Trip Test")
-                .avatarUrl("https://example.com/roundtrip.jpg")
-                .preferredLanguage("fr")
-                .timezone("Asia/Tokyo")
-                .theme("system")
-                .notificationsEnabled(true)
-                .build();
+    @DisplayName("UserProfile round-trip serialization preserves data [GH-90000]")
+    void userProfile_roundTrip_preservesData() throws Exception { // GH-90000
+        UserProfile original = UserProfile.builder() // GH-90000
+                .userId("user-789 [GH-90000]")
+                .tenantId("tenant-def [GH-90000]")
+                .email("roundtrip@example.com [GH-90000]")
+                .displayName("Round Trip Test [GH-90000]")
+                .avatarUrl("https://example.com/roundtrip.jpg [GH-90000]")
+                .preferredLanguage("fr [GH-90000]")
+                .timezone("Asia/Tokyo [GH-90000]")
+                .theme("system [GH-90000]")
+                .notificationsEnabled(true) // GH-90000
+                .build(); // GH-90000
 
-        String json = objectMapper.writeValueAsString(original);
-        UserProfile deserialized = objectMapper.readValue(json, UserProfile.class);
+        String json = objectMapper.writeValueAsString(original); // GH-90000
+        UserProfile deserialized = objectMapper.readValue(json, UserProfile.class); // GH-90000
 
-        assertThat(deserialized.userId()).isEqualTo(original.userId());
-        assertThat(deserialized.tenantId()).isEqualTo(original.tenantId());
-        assertThat(deserialized.email()).isEqualTo(original.email());
-        assertThat(deserialized.displayName()).isEqualTo(original.displayName());
-        assertThat(deserialized.avatarUrl()).isEqualTo(original.avatarUrl());
-        assertThat(deserialized.preferredLanguage()).isEqualTo(original.preferredLanguage());
-        assertThat(deserialized.timezone()).isEqualTo(original.timezone());
-        assertThat(deserialized.theme()).isEqualTo(original.theme());
-        assertThat(deserialized.notificationsEnabled()).isEqualTo(original.notificationsEnabled());
+        assertThat(deserialized.userId()).isEqualTo(original.userId()); // GH-90000
+        assertThat(deserialized.tenantId()).isEqualTo(original.tenantId()); // GH-90000
+        assertThat(deserialized.email()).isEqualTo(original.email()); // GH-90000
+        assertThat(deserialized.displayName()).isEqualTo(original.displayName()); // GH-90000
+        assertThat(deserialized.avatarUrl()).isEqualTo(original.avatarUrl()); // GH-90000
+        assertThat(deserialized.preferredLanguage()).isEqualTo(original.preferredLanguage()); // GH-90000
+        assertThat(deserialized.timezone()).isEqualTo(original.timezone()); // GH-90000
+        assertThat(deserialized.theme()).isEqualTo(original.theme()); // GH-90000
+        assertThat(deserialized.notificationsEnabled()).isEqualTo(original.notificationsEnabled()); // GH-90000
     }
 
     @Test
-    @DisplayName("UserProfile handles special characters in fields")
-    void userProfile_handlesSpecialCharacters() throws Exception {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-special")
-                .tenantId("tenant-special")
-                .email("user+tag@example.com")
-                .displayName("John \"The Rock\" Doe")
-                .preferredLanguage("en")
-                .timezone("America/Los_Angeles")
-                .theme("dark")
-                .notificationsEnabled(true)
-                .build();
+    @DisplayName("UserProfile handles special characters in fields [GH-90000]")
+    void userProfile_handlesSpecialCharacters() throws Exception { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-special [GH-90000]")
+                .tenantId("tenant-special [GH-90000]")
+                .email("user+tag@example.com [GH-90000]")
+                .displayName("John \"The Rock\" Doe") // GH-90000
+                .preferredLanguage("en [GH-90000]")
+                .timezone("America/Los_Angeles [GH-90000]")
+                .theme("dark [GH-90000]")
+                .notificationsEnabled(true) // GH-90000
+                .build(); // GH-90000
 
-        String json = objectMapper.writeValueAsString(profile);
-        UserProfile deserialized = objectMapper.readValue(json, UserProfile.class);
+        String json = objectMapper.writeValueAsString(profile); // GH-90000
+        UserProfile deserialized = objectMapper.readValue(json, UserProfile.class); // GH-90000
 
-        assertThat(deserialized.email()).isEqualTo("user+tag@example.com");
-        assertThat(deserialized.displayName()).isEqualTo("John \"The Rock\" Doe");
+        assertThat(deserialized.email()).isEqualTo("user+tag@example.com [GH-90000]");
+        assertThat(deserialized.displayName()).isEqualTo("John \"The Rock\" Doe"); // GH-90000
     }
 
     @Test
-    @DisplayName("UserProfile handles boolean notificationsEnabled field")
-    void userProfile_handlesBooleanField() throws Exception {
-        UserProfile enabled = UserProfile.builder()
-                .userId("user-1")
-                .tenantId("tenant-1")
-                .email("enabled@example.com")
-                .notificationsEnabled(true)
-                .build();
+    @DisplayName("UserProfile handles boolean notificationsEnabled field [GH-90000]")
+    void userProfile_handlesBooleanField() throws Exception { // GH-90000
+        UserProfile enabled = UserProfile.builder() // GH-90000
+                .userId("user-1 [GH-90000]")
+                .tenantId("tenant-1 [GH-90000]")
+                .email("enabled@example.com [GH-90000]")
+                .notificationsEnabled(true) // GH-90000
+                .build(); // GH-90000
 
-        UserProfile disabled = UserProfile.builder()
-                .userId("user-2")
-                .tenantId("tenant-1")
-                .email("disabled@example.com")
-                .notificationsEnabled(false)
-                .build();
+        UserProfile disabled = UserProfile.builder() // GH-90000
+                .userId("user-2 [GH-90000]")
+                .tenantId("tenant-1 [GH-90000]")
+                .email("disabled@example.com [GH-90000]")
+                .notificationsEnabled(false) // GH-90000
+                .build(); // GH-90000
 
-        String enabledJson = objectMapper.writeValueAsString(enabled);
-        String disabledJson = objectMapper.writeValueAsString(disabled);
+        String enabledJson = objectMapper.writeValueAsString(enabled); // GH-90000
+        String disabledJson = objectMapper.writeValueAsString(disabled); // GH-90000
 
-        assertThat(enabledJson).contains("\"notificationsEnabled\":true");
-        assertThat(disabledJson).contains("\"notificationsEnabled\":false");
+        assertThat(enabledJson).contains("\"notificationsEnabled\":true"); // GH-90000
+        assertThat(disabledJson).contains("\"notificationsEnabled\":false"); // GH-90000
     }
 }

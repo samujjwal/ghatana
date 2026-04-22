@@ -1,5 +1,6 @@
-/**
- * Testing utilities for @ghatana/ui components
+l/**
+
+ * Testing utilities for @ghatana/design-system components
  */
 
 /**

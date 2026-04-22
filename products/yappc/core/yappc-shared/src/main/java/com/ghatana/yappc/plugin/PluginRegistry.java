@@ -30,6 +30,7 @@ public class PluginRegistry {
      * @return a new PluginRegistry instance
      */
     public static PluginRegistry create(PluginContext context) {
+        Objects.requireNonNull(context, "context cannot be null");
         return new PluginRegistry(context);
     }
 
@@ -48,11 +49,15 @@ public class PluginRegistry {
      * @return Promise that resolves when shutdown is complete
      */
     public Promise<Void> shutdown() {
-        List<Promise<Void>> shutdowns = pluginsById.values().stream()
-                .map(YAPPCPlugin::shutdown)
-                .collect(Collectors.toList());
-        pluginsById.clear();
-        return Promise.complete();
+        List<YAPPCPlugin> plugins = List.copyOf(pluginsById.values());
+        Promise<Void> chain = Promise.complete();
+        for (YAPPCPlugin plugin : plugins) {
+            chain = chain.then(v -> plugin.shutdown());
+        }
+        return chain.map(v -> {
+            pluginsById.clear();
+            return null;
+        });
     }
 
     /**
@@ -62,8 +67,16 @@ public class PluginRegistry {
      * @return Promise that resolves when registration is complete
      */
     public Promise<Void> registerPlugin(YAPPCPlugin plugin) {
-        String id = plugin.getMetadata().getId();
-        pluginsById.put(id, plugin);
+        Objects.requireNonNull(plugin, "plugin cannot be null");
+        PluginMetadata metadata = Objects.requireNonNull(plugin.getMetadata(), "plugin metadata cannot be null");
+        String id = Objects.requireNonNull(metadata.getId(), "plugin id cannot be null").trim();
+        if (id.isEmpty()) {
+            throw new IllegalArgumentException("plugin id cannot be blank");
+        }
+        YAPPCPlugin existing = pluginsById.putIfAbsent(id, plugin);
+        if (existing != null) {
+            throw new IllegalArgumentException("Plugin already registered: " + id);
+        }
         return plugin.initialize(context);
     }
 
@@ -127,6 +140,7 @@ public class PluginRegistry {
      * @return list of matching validator plugins
      */
     public List<ValidatorPlugin> getValidatorsByCategory(String category) {
+        Objects.requireNonNull(category, "category cannot be null");
         return getValidators().stream()
                 .filter(v -> category.equals(v.getValidatorCategory()))
                 .collect(Collectors.toList());
@@ -139,6 +153,7 @@ public class PluginRegistry {
      * @return list of matching generator plugins
      */
     public List<GeneratorPlugin> getGeneratorsByLanguage(String language) {
+        Objects.requireNonNull(language, "language cannot be null");
         return getGenerators().stream()
                 .filter(g -> g.getSupportedLanguages().contains(language))
                 .collect(Collectors.toList());
@@ -151,6 +166,7 @@ public class PluginRegistry {
      * @return list of matching agent plugins
      */
     public List<AgentPlugin> getAgentsByPhase(String phase) {
+        Objects.requireNonNull(phase, "phase cannot be null");
         return pluginsById.values().stream()
                 .filter(p -> p instanceof AgentPlugin)
                 .map(p -> (AgentPlugin) p)
@@ -166,6 +182,7 @@ public class PluginRegistry {
      * @return Optional containing the agent plugin if found
      */
     public Optional<AgentPlugin> getAgent(String phase, String stepName) {
+        Objects.requireNonNull(stepName, "stepName cannot be null");
         return getAgentsByPhase(phase).stream()
                 .filter(a -> stepName.equals(a.getStepName()))
                 .findFirst();
@@ -184,7 +201,7 @@ public class PluginRegistry {
                             result.put(entry.getKey(), health);
                             return (Void) null;
                         }))
-                .collect(Collectors.toList());
+                .toList();
         // Run health checks sequentially using promise chaining
         Promise<Void> chain = Promise.complete();
         for (Promise<Void> check : checks) {

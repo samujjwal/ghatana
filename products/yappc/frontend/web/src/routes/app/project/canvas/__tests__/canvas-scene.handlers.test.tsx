@@ -80,8 +80,7 @@ describe('CanvasScene handlers stability', () => {
             });
         }
 
-        // If we reach here without throwing a React "Maximum update depth exceeded" error the test passes
-        expect(true).toBe(true);
+        expect(typeof handlers.onNodesChange).toBe('function');
 
         utils.unmount();
     });

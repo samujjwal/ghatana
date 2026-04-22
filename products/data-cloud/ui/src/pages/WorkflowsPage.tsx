@@ -37,6 +37,8 @@ import {
     CheckCircle2,
     ArrowRight,
 } from 'lucide-react';
+import { SearchFilterBar } from '../components/common/SearchFilterBar';
+import { LoadingState, EmptyState, NotFoundState } from '../components/common/AsyncStates';
 import { getPipelineOptimisationHints, aiQueryKeys, type PipelineOptimisationHint } from '../lib/api/ai';
 import {
     WORKFLOW_HINTS_DEGRADED_DETAIL,
@@ -52,12 +54,12 @@ import { workflowsApi, type Workflow } from '../lib/api/workflows';
  */
 const getStatusIcon = (status: Workflow['status']) => {
     switch (status) {
-        case 'active':   return <Play   className="h-4 w-4 text-green-500" />;
-        case 'paused':   return <Pause  className="h-4 w-4 text-yellow-500" />;
+        case 'active': return <Play className="h-4 w-4 text-green-500" />;
+        case 'paused': return <Pause className="h-4 w-4 text-yellow-500" />;
         case 'archived': return <Square className="h-4 w-4 text-gray-500" />;
-        case 'draft':    return <Clock  className="h-4 w-4 text-blue-400" />;
+        case 'draft': return <Clock className="h-4 w-4 text-blue-400" />;
         // no-op to satisfy exhaustive check
-        default:         return <Clock  className="h-4 w-4 text-gray-400" />;
+        default: return <Clock className="h-4 w-4 text-gray-400" />;
     }
 };
 
@@ -66,11 +68,11 @@ const getStatusIcon = (status: Workflow['status']) => {
  */
 const getStatusColor = (status: Workflow['status']) => {
     switch (status) {
-        case 'active':   return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
-        case 'paused':   return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300';
+        case 'active': return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+        case 'paused': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300';
         case 'archived': return 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300';
-        case 'draft':    return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
-        default:         return 'bg-gray-100 text-gray-700';
+        case 'draft': return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+        default: return 'bg-gray-100 text-gray-700';
     }
 };
 
@@ -184,12 +186,12 @@ function getWorkflowToneIcon(tone: 'attention' | 'healthy' | 'draft'): React.Rea
 // ── Hint type icon mapping ─────────────────────────────────────────────────
 function HintTypeIcon({ type }: { type: PipelineOptimisationHint['type'] }) {
     switch (type) {
-        case 'performance':     return <Zap       className="h-4 w-4 text-yellow-500" />;
+        case 'performance': return <Zap className="h-4 w-4 text-yellow-500" />;
         case 'parallelisation': return <TrendingUp className="h-4 w-4 text-blue-500" />;
-        case 'error_handling':  return <Shield    className="h-4 w-4 text-red-500" />;
-        case 'data_quality':    return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-        case 'cost':            return <BarChart2 className="h-4 w-4 text-green-500" />;
-        default:                return <Sparkles  className="h-4 w-4 text-purple-500" />;
+        case 'error_handling': return <Shield className="h-4 w-4 text-red-500" />;
+        case 'data_quality': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+        case 'cost': return <BarChart2 className="h-4 w-4 text-green-500" />;
+        default: return <Sparkles className="h-4 w-4 text-purple-500" />;
     }
 }
 
@@ -283,9 +285,9 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
                                     </span>
                                     <span className={cn(
                                         'text-xs font-medium px-1.5 py-0.5 rounded',
-                                        hint.impact === 'high'   ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                                        hint.impact === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
-                                                                   'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                        hint.impact === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                            hint.impact === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                                'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                                     )}>
                                         {hint.impact} impact
                                     </span>
@@ -333,22 +335,22 @@ export function WorkflowsPage() {
 
     const stats = useMemo(() => ({
         total: workflowsPage?.total ?? workflows.length,
-        active:   workflows.filter(w => w.status === 'active').length,
-        paused:   workflows.filter(w => w.status === 'paused').length,
-        draft:    workflows.filter(w => w.status === 'draft').length,
+        active: workflows.filter(w => w.status === 'active').length,
+        paused: workflows.filter(w => w.status === 'paused').length,
+        draft: workflows.filter(w => w.status === 'draft').length,
         archived: workflows.filter(w => w.status === 'archived').length,
     }), [workflows, workflowsPage]);
 
     const statusOptions = [
-        { value: 'all',      label: 'All Workflows' },
-        { value: 'active',   label: 'Active' },
-        { value: 'paused',   label: 'Paused' },
-        { value: 'draft',    label: 'Draft' },
+        { value: 'all', label: 'All Workflows' },
+        { value: 'active', label: 'Active' },
+        { value: 'paused', label: 'Paused' },
+        { value: 'draft', label: 'Draft' },
         { value: 'archived', label: 'Archived' },
     ];
 
     return (
-        <div className="p-6" data-testid="workflows-page">
+        <main className="p-6" data-testid="workflows-page" aria-label="Workflows">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
@@ -458,55 +460,42 @@ export function WorkflowsPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <input
-                        type="text"
-                        placeholder="Search workflows by outcome, schedule, or owner..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    />
-                </div>
-                <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-gray-500" />
-                    <select
-                        data-testid="workflow-status-filter"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-                    >
-                        {statusOptions.map(option => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+            <div className="mb-6">
+                <SearchFilterBar
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    searchPlaceholder="Search workflows by outcome, schedule, or owner..."
+                    filters={[
+                        {
+                            id: 'workflow-status-filter',
+                            label: 'Status',
+                            value: statusFilter,
+                            options: statusOptions,
+                            onChange: setStatusFilter,
+                        },
+                    ]}
+                    hasActiveFilters={searchQuery.length > 0 || statusFilter !== 'all'}
+                    onClear={() => {
+                        setSearchQuery('');
+                        setStatusFilter('all');
+                    }}
+                />
             </div>
 
             {/* Pipelines list */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
                 {isLoading ? (
-                    <div className="flex items-center justify-center p-8">
-                        <div className="flex items-center gap-2 text-gray-500">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-sm">Loading pipelines...</span>
-                        </div>
-                    </div>
+                    <LoadingState message="Loading pipelines..." />
                 ) : workflows.length === 0 ? (
-                    <div className="text-center py-12">
-                        <WorkflowIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            No workflows found
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400">
-                            {searchQuery || statusFilter !== 'all'
+                    <EmptyState
+                        title="No workflows found"
+                        description={
+                            searchQuery || statusFilter !== 'all'
                                 ? 'Try adjusting your filters'
-                                : 'Create your first workflow to get started'}
-                        </p>
-                    </div>
+                                : 'Create your first workflow to get started'
+                        }
+                        icon={<WorkflowIcon className="h-12 w-12 text-gray-400 mb-4" />}
+                    />
                 ) : (
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                         {visibleWorkflows.map((workflow) => {
@@ -743,7 +732,7 @@ export function WorkflowsPage() {
                     </div>
                 </div>
             )}
-        </div>
+        </main>
     );
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.spi;
@@ -16,118 +16,118 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link TenantContext}.
  */
-@DisplayName("TenantContext")
+@DisplayName("TenantContext [GH-90000]")
 class TenantContextTest {
 
     @Nested
-    @DisplayName("of(tenantId) factory")
+    @DisplayName("of(tenantId) factory [GH-90000]")
     class SimpleFactory {
 
         @Test
-        void createWithTenantId() {
-            TenantContext ctx = TenantContext.of("t-1");
-            assertThat(ctx.tenantId()).isEqualTo("t-1");
-            assertThat(ctx.workspaceId()).isEmpty();
-            assertThat(ctx.metadata()).isEmpty();
+        void createWithTenantId() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1 [GH-90000]");
+            assertThat(ctx.tenantId()).isEqualTo("t-1 [GH-90000]");
+            assertThat(ctx.workspaceId()).isEmpty(); // GH-90000
+            assertThat(ctx.metadata()).isEmpty(); // GH-90000
         }
 
         @Test
-        void rejectsNullTenantId() {
-            assertThatThrownBy(() -> TenantContext.of(null))
-                    .isInstanceOf(NullPointerException.class);
+        void rejectsNullTenantId() { // GH-90000
+            assertThatThrownBy(() -> TenantContext.of(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void rejectsBlankTenantId() {
-            assertThatThrownBy(() -> TenantContext.of("  "))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("blank");
+        void rejectsBlankTenantId() { // GH-90000
+            assertThatThrownBy(() -> TenantContext.of("   [GH-90000]"))
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("blank [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("of(tenantId, workspaceId) factory")
+    @DisplayName("of(tenantId, workspaceId) factory [GH-90000]")
     class WithWorkspace {
 
         @Test
-        void createWithWorkspace() {
-            TenantContext ctx = TenantContext.of("t-1", "ws-1");
-            assertThat(ctx.workspaceId()).contains("ws-1");
+        void createWithWorkspace() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1", "ws-1"); // GH-90000
+            assertThat(ctx.workspaceId()).contains("ws-1 [GH-90000]");
         }
 
         @Test
-        void nullWorkspaceIdBecomesEmpty() {
-            TenantContext ctx = TenantContext.of("t-1", (String) null);
-            assertThat(ctx.workspaceId()).isEmpty();
+        void nullWorkspaceIdBecomesEmpty() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1", (String) null); // GH-90000
+            assertThat(ctx.workspaceId()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("of(tenantId, metadata) factory")
+    @DisplayName("of(tenantId, metadata) factory [GH-90000]")
     class WithMetadata {
 
         @Test
-        void createWithMetadata() {
-            TenantContext ctx = TenantContext.of("t-1", Map.of("env", "prod"));
-            assertThat(ctx.metadata()).containsEntry("env", "prod");
+        void createWithMetadata() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1", Map.of("env", "prod")); // GH-90000
+            assertThat(ctx.metadata()).containsEntry("env", "prod"); // GH-90000
         }
 
         @Test
-        void nullMetadataBecomesEmpty() {
-            TenantContext ctx = TenantContext.of("t-1", (Map<String, String>) null);
-            assertThat(ctx.metadata()).isEmpty();
+        void nullMetadataBecomesEmpty() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1", (Map<String, String>) null); // GH-90000
+            assertThat(ctx.metadata()).isEmpty(); // GH-90000
         }
 
         @Test
-        void metadataIsImmutable() {
-            TenantContext ctx = TenantContext.of("t-1", Map.of("k", "v"));
-            assertThatThrownBy(() -> ctx.metadata().put("new", "entry"))
-                    .isInstanceOf(UnsupportedOperationException.class);
+        void metadataIsImmutable() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1", Map.of("k", "v")); // GH-90000
+            assertThatThrownBy(() -> ctx.metadata().put("new", "entry")) // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("withMetadata()")
+    @DisplayName("withMetadata() [GH-90000]")
     class WithMetadataMethod {
 
         @Test
-        void addsKeyToNewContext() {
-            TenantContext ctx = TenantContext.of("t-1");
-            TenantContext ctx2 = ctx.withMetadata("region", "us-east-1");
-            assertThat(ctx2.metadata()).containsEntry("region", "us-east-1");
+        void addsKeyToNewContext() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1 [GH-90000]");
+            TenantContext ctx2 = ctx.withMetadata("region", "us-east-1"); // GH-90000
+            assertThat(ctx2.metadata()).containsEntry("region", "us-east-1"); // GH-90000
         }
 
         @Test
-        void doesNotMutateOriginal() {
-            TenantContext ctx = TenantContext.of("t-1");
-            ctx.withMetadata("region", "us-east-1");
-            assertThat(ctx.metadata()).isEmpty();
+        void doesNotMutateOriginal() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1 [GH-90000]");
+            ctx.withMetadata("region", "us-east-1"); // GH-90000
+            assertThat(ctx.metadata()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("withWorkspace()")
+    @DisplayName("withWorkspace() [GH-90000]")
     class WithWorkspaceMethod {
 
         @Test
-        void setsWorkspace() {
-            TenantContext ctx = TenantContext.of("t-1").withWorkspace("ws-2");
-            assertThat(ctx.workspaceId()).contains("ws-2");
+        void setsWorkspace() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1 [GH-90000]").withWorkspace("ws-2 [GH-90000]");
+            assertThat(ctx.workspaceId()).contains("ws-2 [GH-90000]");
         }
 
         @Test
-        void nullWorkspaceClearsIt() {
-            TenantContext ctx = TenantContext.of("t-1", "ws-1").withWorkspace(null);
-            assertThat(ctx.workspaceId()).isEmpty();
+        void nullWorkspaceClearsIt() { // GH-90000
+            TenantContext ctx = TenantContext.of("t-1", "ws-1").withWorkspace(null); // GH-90000
+            assertThat(ctx.workspaceId()).isEmpty(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("record equality and hashCode")
-    void recordEquality() {
-        TenantContext a = TenantContext.of("t-1", Map.of("k", "v"));
-        TenantContext b = TenantContext.of("t-1", Map.of("k", "v"));
-        assertThat(a).isEqualTo(b);
-        assertThat(a.hashCode()).isEqualTo(b.hashCode());
+    @DisplayName("record equality and hashCode [GH-90000]")
+    void recordEquality() { // GH-90000
+        TenantContext a = TenantContext.of("t-1", Map.of("k", "v")); // GH-90000
+        TenantContext b = TenantContext.of("t-1", Map.of("k", "v")); // GH-90000
+        assertThat(a).isEqualTo(b); // GH-90000
+        assertThat(a.hashCode()).isEqualTo(b.hashCode()); // GH-90000
     }
 }

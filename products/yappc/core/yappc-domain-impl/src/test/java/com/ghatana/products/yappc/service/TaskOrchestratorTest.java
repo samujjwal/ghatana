@@ -27,8 +27,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TaskOrchestrator Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("TaskOrchestrator Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class TaskOrchestratorTest extends EventloopTestBase {
 
   private AgentRegistry agentRegistry;
@@ -36,229 +36,229 @@ class TaskOrchestratorTest extends EventloopTestBase {
   private TaskOrchestrator orchestrator;
 
   @BeforeEach
-  void setUp() {
-    agentRegistry = new AgentRegistry(new NoopMetricsCollector());
-    capabilityMatcher = new CapabilityMatcher();
-    orchestrator = new TaskOrchestrator(agentRegistry, capabilityMatcher);
+  void setUp() { // GH-90000
+    agentRegistry = new AgentRegistry(new NoopMetricsCollector()); // GH-90000
+    capabilityMatcher = new CapabilityMatcher(); // GH-90000
+    orchestrator = new TaskOrchestrator(agentRegistry, capabilityMatcher); // GH-90000
   }
 
   // ===== Sequential Execution =====
 
   @Nested
-  @DisplayName("Sequential Execution")
+  @DisplayName("Sequential Execution [GH-90000]")
   class SequentialExecution {
 
     @Test
-    @DisplayName("Should execute task sequentially with capable agent")
-    void shouldExecuteSequentially() {
+    @DisplayName("Should execute task sequentially with capable agent [GH-90000]")
+    void shouldExecuteSequentially() { // GH-90000
       // Register a mock agent with matching capability
-      AIAgent<Map<String, Object>, String> mockAgent = createMockAgent(
+      AIAgent<Map<String, Object>, String> mockAgent = createMockAgent( // GH-90000
           AgentName.CODE_GENERATOR_AGENT,
-          List.of("code-generation"),
-          Promise.of(AgentResult.success("generated code", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
-      agentRegistry.register(mockAgent);
+          List.of("code-generation [GH-90000]"),
+          Promise.of(AgentResult.success("generated code", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request")))); // GH-90000
+      agentRegistry.register(mockAgent); // GH-90000
 
-      TaskDefinition task = TaskDefinition.builder()
-          .id("task-1")
-          .name("Generate Code")
-          .description("Generate Java code")
-          .domain("implementation")
-          .phase(SDLCPhase.IMPLEMENTATION)
-          .requiredCapabilities(List.of("code-generation"))
-          .build();
+      TaskDefinition task = TaskDefinition.builder() // GH-90000
+          .id("task-1 [GH-90000]")
+          .name("Generate Code [GH-90000]")
+          .description("Generate Java code [GH-90000]")
+          .domain("implementation [GH-90000]")
+          .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
+          .requiredCapabilities(List.of("code-generation [GH-90000]"))
+          .build(); // GH-90000
 
-      TaskExecutionContext ctx = TaskExecutionContext.builder()
-          .userId("user-1")
-          .tenantId("tenant-1")
-          .build();
+      TaskExecutionContext ctx = TaskExecutionContext.builder() // GH-90000
+          .userId("user-1 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .build(); // GH-90000
 
-      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx));
+      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx)); // GH-90000
 
-      assertThat(result).isEqualTo("generated code");
+      assertThat(result).isEqualTo("generated code [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should fail when no capable agent found")
-    void shouldFailWhenNoCapableAgent() {
-      TaskDefinition task = TaskDefinition.builder()
-          .id("task-2")
-          .name("Unknown Task")
-          .description("No agent has this capability")
-          .domain("unknown")
-          .phase(SDLCPhase.DISCOVERY)
-          .requiredCapabilities(List.of("non-existent-capability"))
-          .build();
+    @DisplayName("Should fail when no capable agent found [GH-90000]")
+    void shouldFailWhenNoCapableAgent() { // GH-90000
+      TaskDefinition task = TaskDefinition.builder() // GH-90000
+          .id("task-2 [GH-90000]")
+          .name("Unknown Task [GH-90000]")
+          .description("No agent has this capability [GH-90000]")
+          .domain("unknown [GH-90000]")
+          .phase(SDLCPhase.DISCOVERY) // GH-90000
+          .requiredCapabilities(List.of("non-existent-capability [GH-90000]"))
+          .build(); // GH-90000
 
-      TaskExecutionContext ctx = TaskExecutionContext.builder()
-          .userId("user-1")
-          .tenantId("tenant-1")
-          .build();
+      TaskExecutionContext ctx = TaskExecutionContext.builder() // GH-90000
+          .userId("user-1 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .build(); // GH-90000
 
-      assertThatThrownBy(() -> runPromise(() -> orchestrator.execute(task, Map.of(), ctx)))
-          .isInstanceOf(TaskOrchestrator.NoCapableAgentException.class)
-          .hasMessageContaining("non-existent-capability");
+      assertThatThrownBy(() -> runPromise(() -> orchestrator.execute(task, Map.of(), ctx))) // GH-90000
+          .isInstanceOf(TaskOrchestrator.NoCapableAgentException.class) // GH-90000
+          .hasMessageContaining("non-existent-capability [GH-90000]");
     }
   }
 
   // ===== Parallel Execution =====
 
   @Nested
-  @DisplayName("Parallel Execution")
+  @DisplayName("Parallel Execution [GH-90000]")
   class ParallelExecution {
 
     @Test
-    @DisplayName("Should execute in parallel and return first success")
-    void shouldReturnFirstSuccess() {
-      AIAgent<Map<String, Object>, String> agent1 = createMockAgent(
-          AgentName.COPILOT_AGENT, List.of("analysis"),
-          Promise.of(AgentResult.success("result-from-copilot", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
-      AIAgent<Map<String, Object>, String> agent2 = createMockAgent(
-          AgentName.PREDICTION_AGENT, List.of("analysis"),
-          Promise.of(AgentResult.success("result-from-prediction", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
-      agentRegistry.register(agent1);
-      agentRegistry.register(agent2);
+    @DisplayName("Should execute in parallel and return first success [GH-90000]")
+    void shouldReturnFirstSuccess() { // GH-90000
+      AIAgent<Map<String, Object>, String> agent1 = createMockAgent( // GH-90000
+          AgentName.COPILOT_AGENT, List.of("analysis [GH-90000]"),
+          Promise.of(AgentResult.success("result-from-copilot", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request")))); // GH-90000
+      AIAgent<Map<String, Object>, String> agent2 = createMockAgent( // GH-90000
+          AgentName.PREDICTION_AGENT, List.of("analysis [GH-90000]"),
+          Promise.of(AgentResult.success("result-from-prediction", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request")))); // GH-90000
+      agentRegistry.register(agent1); // GH-90000
+      agentRegistry.register(agent2); // GH-90000
 
-      TaskDefinition task = TaskDefinition.builder()
-          .id("task-parallel")
-          .name("Parallel Analysis")
-          .description("Run analysis in parallel")
-          .domain("analysis")
-          .phase(SDLCPhase.TESTING)
-          .requiredCapabilities(List.of("analysis"))
-          .build();
+      TaskDefinition task = TaskDefinition.builder() // GH-90000
+          .id("task-parallel [GH-90000]")
+          .name("Parallel Analysis [GH-90000]")
+          .description("Run analysis in parallel [GH-90000]")
+          .domain("analysis [GH-90000]")
+          .phase(SDLCPhase.TESTING) // GH-90000
+          .requiredCapabilities(List.of("analysis [GH-90000]"))
+          .build(); // GH-90000
 
-      TaskExecutionContext ctx = TaskExecutionContext.builder()
-          .userId("user-1")
-          .tenantId("tenant-1")
-          .metadata(Map.of("orchestrationPattern", "PARALLEL"))
-          .build();
+      TaskExecutionContext ctx = TaskExecutionContext.builder() // GH-90000
+          .userId("user-1 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .metadata(Map.of("orchestrationPattern", "PARALLEL")) // GH-90000
+          .build(); // GH-90000
 
-      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx));
+      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx)); // GH-90000
 
       // At least one result should be returned
-      assertThat(result).isIn("result-from-copilot", "result-from-prediction");
+      assertThat(result).isIn("result-from-copilot", "result-from-prediction"); // GH-90000
     }
   }
 
   // ===== Conditional Execution =====
 
   @Nested
-  @DisplayName("Conditional Execution")
+  @DisplayName("Conditional Execution [GH-90000]")
   class ConditionalExecution {
 
     @Test
-    @DisplayName("Should fall back to sequential when no condition found")
-    void shouldFallbackToSequential() {
-      AIAgent<Map<String, Object>, String> agent = createMockAgent(
-          AgentName.ANOMALY_DETECTOR_AGENT, List.of("anomaly-detection"),
-          Promise.of(AgentResult.success("anomaly result", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
-      agentRegistry.register(agent);
+    @DisplayName("Should fall back to sequential when no condition found [GH-90000]")
+    void shouldFallbackToSequential() { // GH-90000
+      AIAgent<Map<String, Object>, String> agent = createMockAgent( // GH-90000
+          AgentName.ANOMALY_DETECTOR_AGENT, List.of("anomaly-detection [GH-90000]"),
+          Promise.of(AgentResult.success("anomaly result", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request")))); // GH-90000
+      agentRegistry.register(agent); // GH-90000
 
-      TaskDefinition task = TaskDefinition.builder()
-          .id("task-conditional")
-          .name("Conditional Task")
-          .description("Conditional execution")
-          .domain("operations")
-          .phase(SDLCPhase.OPERATIONS)
-          .requiredCapabilities(List.of("anomaly-detection"))
-          .build();
+      TaskDefinition task = TaskDefinition.builder() // GH-90000
+          .id("task-conditional [GH-90000]")
+          .name("Conditional Task [GH-90000]")
+          .description("Conditional execution [GH-90000]")
+          .domain("operations [GH-90000]")
+          .phase(SDLCPhase.OPERATIONS) // GH-90000
+          .requiredCapabilities(List.of("anomaly-detection [GH-90000]"))
+          .build(); // GH-90000
 
-      TaskExecutionContext ctx = TaskExecutionContext.builder()
-          .userId("user-1")
-          .tenantId("tenant-1")
-          .metadata(Map.of("orchestrationPattern", "CONDITIONAL"))
-          .build();
+      TaskExecutionContext ctx = TaskExecutionContext.builder() // GH-90000
+          .userId("user-1 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .metadata(Map.of("orchestrationPattern", "CONDITIONAL")) // GH-90000
+          .build(); // GH-90000
 
       // Input without conditionCapability - should fall back to sequential
-      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx));
-      assertThat(result).isEqualTo("anomaly result");
+      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx)); // GH-90000
+      assertThat(result).isEqualTo("anomaly result [GH-90000]");
     }
   }
 
   // ===== Orchestration Pattern Resolution =====
 
   @Nested
-  @DisplayName("Pattern Resolution")
+  @DisplayName("Pattern Resolution [GH-90000]")
   class PatternResolution {
 
     @Test
-    @DisplayName("Should default to SEQUENTIAL when no pattern specified")
-    void shouldDefaultToSequential() {
-      AIAgent<Map<String, Object>, String> agent = createMockAgent(
-          AgentName.SENTIMENT_AGENT, List.of("sentiment"),
-          Promise.of(AgentResult.success("sentiment ok", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
-      agentRegistry.register(agent);
+    @DisplayName("Should default to SEQUENTIAL when no pattern specified [GH-90000]")
+    void shouldDefaultToSequential() { // GH-90000
+      AIAgent<Map<String, Object>, String> agent = createMockAgent( // GH-90000
+          AgentName.SENTIMENT_AGENT, List.of("sentiment [GH-90000]"),
+          Promise.of(AgentResult.success("sentiment ok", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request")))); // GH-90000
+      agentRegistry.register(agent); // GH-90000
 
-      TaskDefinition task = TaskDefinition.builder()
-          .id("task-default")
-          .name("Default Pattern")
-          .description("No pattern specified")
-          .domain("analysis")
-          .phase(SDLCPhase.TESTING)
-          .requiredCapabilities(List.of("sentiment"))
-          .build();
+      TaskDefinition task = TaskDefinition.builder() // GH-90000
+          .id("task-default [GH-90000]")
+          .name("Default Pattern [GH-90000]")
+          .description("No pattern specified [GH-90000]")
+          .domain("analysis [GH-90000]")
+          .phase(SDLCPhase.TESTING) // GH-90000
+          .requiredCapabilities(List.of("sentiment [GH-90000]"))
+          .build(); // GH-90000
 
-      TaskExecutionContext ctx = TaskExecutionContext.builder()
-          .userId("user-1")
-          .tenantId("tenant-1")
-          .build();
+      TaskExecutionContext ctx = TaskExecutionContext.builder() // GH-90000
+          .userId("user-1 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .build(); // GH-90000
 
-      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx));
-      assertThat(result).isEqualTo("sentiment ok");
+      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx)); // GH-90000
+      assertThat(result).isEqualTo("sentiment ok [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle invalid pattern gracefully")
-    void shouldHandleInvalidPattern() {
-      AIAgent<Map<String, Object>, String> agent = createMockAgent(
-          AgentName.RECOMMENDATION_AGENT, List.of("recommendations"),
-          Promise.of(AgentResult.success("recommendation", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
-      agentRegistry.register(agent);
+    @DisplayName("Should handle invalid pattern gracefully [GH-90000]")
+    void shouldHandleInvalidPattern() { // GH-90000
+      AIAgent<Map<String, Object>, String> agent = createMockAgent( // GH-90000
+          AgentName.RECOMMENDATION_AGENT, List.of("recommendations [GH-90000]"),
+          Promise.of(AgentResult.success("recommendation", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request")))); // GH-90000
+      agentRegistry.register(agent); // GH-90000
 
-      TaskDefinition task = TaskDefinition.builder()
-          .id("task-invalid-pattern")
-          .name("Invalid Pattern")
-          .description("Invalid pattern string")
-          .domain("analysis")
-          .phase(SDLCPhase.DISCOVERY)
-          .requiredCapabilities(List.of("recommendations"))
-          .build();
+      TaskDefinition task = TaskDefinition.builder() // GH-90000
+          .id("task-invalid-pattern [GH-90000]")
+          .name("Invalid Pattern [GH-90000]")
+          .description("Invalid pattern string [GH-90000]")
+          .domain("analysis [GH-90000]")
+          .phase(SDLCPhase.DISCOVERY) // GH-90000
+          .requiredCapabilities(List.of("recommendations [GH-90000]"))
+          .build(); // GH-90000
 
-      TaskExecutionContext ctx = TaskExecutionContext.builder()
-          .userId("user-1")
-          .tenantId("tenant-1")
-          .metadata(Map.of("orchestrationPattern", "NONEXISTENT"))
-          .build();
+      TaskExecutionContext ctx = TaskExecutionContext.builder() // GH-90000
+          .userId("user-1 [GH-90000]")
+          .tenantId("tenant-1 [GH-90000]")
+          .metadata(Map.of("orchestrationPattern", "NONEXISTENT")) // GH-90000
+          .build(); // GH-90000
 
       // Should fall back to SEQUENTIAL
-      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx));
-      assertThat(result).isEqualTo("recommendation");
+      String result = runPromise(() -> orchestrator.execute(task, Map.of(), ctx)); // GH-90000
+      assertThat(result).isEqualTo("recommendation [GH-90000]");
     }
   }
 
   // ===== Helper Methods =====
 
-  @SuppressWarnings("unchecked")
-  private <TIn, TOut> AIAgent<TIn, TOut> createMockAgent(
+  @SuppressWarnings("unchecked [GH-90000]")
+  private <TIn, TOut> AIAgent<TIn, TOut> createMockAgent( // GH-90000
       AgentName name,
       List<String> capabilities,
       Promise<AgentResult<TOut>> result) {
 
-    AIAgent<TIn, TOut> agent = mock(AIAgent.class);
+    AIAgent<TIn, TOut> agent = mock(AIAgent.class); // GH-90000
 
-    AgentMetadata metadata = AgentMetadata.builder()
-        .name(name)
-        .version("1.0.0")
-        .description("Mock agent: " + name.getDisplayName())
-        .capabilities(capabilities)
-        .supportedModels(List.of("gpt-4"))
-        .latencySLA(5000)
-        .build();
+    AgentMetadata metadata = AgentMetadata.builder() // GH-90000
+        .name(name) // GH-90000
+        .version("1.0.0 [GH-90000]")
+        .description("Mock agent: " + name.getDisplayName()) // GH-90000
+        .capabilities(capabilities) // GH-90000
+        .supportedModels(List.of("gpt-4 [GH-90000]"))
+        .latencySLA(5000) // GH-90000
+        .build(); // GH-90000
 
-    lenient().when(agent.getMetadata()).thenReturn(metadata);
-    lenient().when(agent.getId()).thenReturn(name.name().toLowerCase().replace("_", "-"));
-    lenient().when(agent.healthCheck()).thenReturn(Promise.of(AgentHealth.healthy(0L)));
-    lenient().when(agent.execute(any(), any())).thenReturn(result);
+    lenient().when(agent.getMetadata()).thenReturn(metadata); // GH-90000
+    lenient().when(agent.getId()).thenReturn(name.name().toLowerCase().replace("_", "-")); // GH-90000
+    lenient().when(agent.healthCheck()).thenReturn(Promise.of(AgentHealth.healthy(0L))); // GH-90000
+    lenient().when(agent.execute(any(), any())).thenReturn(result); // GH-90000
 
     return agent;
   }

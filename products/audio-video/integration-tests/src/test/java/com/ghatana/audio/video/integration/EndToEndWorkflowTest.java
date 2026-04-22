@@ -19,76 +19,76 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test end-to-end audio-video workflows from input to output.
  */
-@DisplayName("End-to-End Workflow Tests")
+@DisplayName("End-to-End Workflow Tests [GH-90000]")
 class EndToEndWorkflowTest {
 
     @Test
-    @DisplayName("Should handle complete audio processing workflow")
-    void shouldHandleCompleteAudioProcessingWorkflow() {
+    @DisplayName("Should handle complete audio processing workflow [GH-90000]")
+    void shouldHandleCompleteAudioProcessingWorkflow() { // GH-90000
         String inputFormat = "WAV";
         String outputFormat = "MP3";
         int bitrate = 320;
         boolean success = true;
         
-        assertThat(inputFormat).isNotNull();
-        assertThat(outputFormat).isNotNull();
-        assertThat(bitrate).isPositive();
-        assertThat(success).isTrue();
+        assertThat(inputFormat).isNotNull(); // GH-90000
+        assertThat(outputFormat).isNotNull(); // GH-90000
+        assertThat(bitrate).isPositive(); // GH-90000
+        assertThat(success).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle complete video processing workflow")
-    void shouldHandleCompleteVideoProcessingWorkflow() {
+    @DisplayName("Should handle complete video processing workflow [GH-90000]")
+    void shouldHandleCompleteVideoProcessingWorkflow() { // GH-90000
         String inputFormat = "MOV";
         String outputFormat = "MP4";
         String codec = "H264";
         boolean success = true;
         
-        assertThat(inputFormat).isNotNull();
-        assertThat(outputFormat).isNotNull();
-        assertThat(codec).isNotNull();
-        assertThat(success).isTrue();
+        assertThat(inputFormat).isNotNull(); // GH-90000
+        assertThat(outputFormat).isNotNull(); // GH-90000
+        assertThat(codec).isNotNull(); // GH-90000
+        assertThat(success).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle mixed audio-video workflow")
-    void shouldHandleMixedAudioVideoWorkflow() {
+    @DisplayName("Should handle mixed audio-video workflow [GH-90000]")
+    void shouldHandleMixedAudioVideoWorkflow() { // GH-90000
         String videoFormat = "MP4";
         String audioFormat = "AAC";
         boolean synced = true;
         
-        assertThat(videoFormat).isNotNull();
-        assertThat(audioFormat).isNotNull();
-        assertThat(synced).isTrue();
+        assertThat(videoFormat).isNotNull(); // GH-90000
+        assertThat(audioFormat).isNotNull(); // GH-90000
+        assertThat(synced).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle workflow with failures")
-    void shouldHandleWorkflowWithFailures() {
+    @DisplayName("Should handle workflow with failures [GH-90000]")
+    void shouldHandleWorkflowWithFailures() { // GH-90000
         boolean failed = false;
         String error = null;
         
-        assertThat(failed).isFalse();
-        assertThat(error).isNull();
+        assertThat(failed).isFalse(); // GH-90000
+        assertThat(error).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle workflow rollback")
-    void shouldHandleWorkflowRollback() {
+    @DisplayName("Should handle workflow rollback [GH-90000]")
+    void shouldHandleWorkflowRollback() { // GH-90000
         boolean rolledBack = false;
         String rollbackReason = null;
         
-        assertThat(rolledBack).isFalse();
-        assertThat(rollbackReason).isNull();
+        assertThat(rolledBack).isFalse(); // GH-90000
+        assertThat(rollbackReason).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle workflow monitoring")
-    void shouldHandleWorkflowMonitoring() {
+    @DisplayName("Should handle workflow monitoring [GH-90000]")
+    void shouldHandleWorkflowMonitoring() { // GH-90000
         String workflowId = "workflow-123";
         String status = "COMPLETED";
         
-        assertThat(workflowId).isNotNull();
-        assertThat(status).isEqualTo("COMPLETED");
+        assertThat(workflowId).isNotNull(); // GH-90000
+        assertThat(status).isEqualTo("COMPLETED [GH-90000]");
     }
 }

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Output Formatters Entry Point
- * @module @ghatana/accessibility-audit/formatters
+ * @module @ghatana/accessibility/formatters
  */
 
 export {

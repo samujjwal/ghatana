@@ -9,6 +9,9 @@ package com.ghatana.audio.streaming;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -16,75 +19,44 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test real-time audio streaming, buffering, and latency.
  */
-@DisplayName("Real-Time Audio Tests")
+@DisplayName("Real-Time Audio Tests [GH-90000]")
 class RealTimeAudioTest {
 
+    private final AudioStreamSession session = new AudioStreamSession();
+
     @Test
-    @DisplayName("Should handle streaming")
-    void shouldHandleStreaming() {
-        String streamId = "stream-123";
-        String codec = "AAC";
-        boolean active = true;
-        
-        assertThat(streamId).isNotNull();
-        assertThat(codec).isNotNull();
-        assertThat(active).isTrue();
+    @DisplayName("AV-1: should measure stable streaming throughput")
+    void shouldMeasureStreamingThroughput() {
+        double fps = session.framesPerSecond(120, 1_000);
+
+        assertThat(fps).isEqualTo(120.0d);
+        assertThat(fps).isGreaterThan(60.0d);
     }
 
     @Test
-    @DisplayName("Should handle buffering")
-    void shouldHandleBuffering() {
-        int bufferSize = 1024;
-        int maxBufferSize = 8192;
-        int currentBufferLevel = 512;
-        
-        assertThat(bufferSize).isPositive();
-        assertThat(currentBufferLevel).isLessThan(bufferSize);
-        assertThat(bufferSize).isLessThan(maxBufferSize);
+    @DisplayName("AV-2: should recover expected next sequence after network loss")
+    void shouldRecoverAfterNetworkLoss() {
+        int nextSequence = session.expectedNextSequenceAfterReconnect(41);
+
+        assertThat(nextSequence).isEqualTo(42);
     }
 
     @Test
-    @DisplayName("Should handle latency minimization")
-    void shouldHandleLatencyMinimization() {
-        int latencyMs = 50;
-        int maxLatencyMs = 100;
-        int targetLatencyMs = 30;
-        
-        assertThat(latencyMs).isLessThan(maxLatencyMs);
-        assertThat(latencyMs).isGreaterThan(targetLatencyMs);
+    @DisplayName("AV-3: should preserve wire-format contract across encode/decode")
+    void shouldPreserveWireFormatContract() {
+        byte[] encoded = session.encodeFrame(7, 1_700_000_000_000L, "pcm-bytes".getBytes(StandardCharsets.UTF_8));
+        AudioStreamSession.DecodedFrame decoded = session.decodeFrame(encoded);
+
+        assertThat(decoded.sequenceNumber()).isEqualTo(7);
+        assertThat(decoded.timestampMillis()).isEqualTo(1_700_000_000_000L);
+        assertThat(new String(decoded.payload(), StandardCharsets.UTF_8)).isEqualTo("pcm-bytes");
     }
 
     @Test
-    @DisplayName("Should handle network interruption")
-    void shouldHandleNetworkInterruption() {
-        boolean interrupted = false;
-        int reconnectionAttempts = 0;
-        int maxReconnectAttempts = 3;
-        
-        assertThat(interrupted).isFalse();
-        assertThat(reconnectionAttempts).isLessThan(maxReconnectAttempts);
-    }
+    @DisplayName("AV-4: should restore frame ordering across reconnect duplicates")
+    void shouldRestoreFrameOrderAcrossReconnect() {
+        List<Integer> reordered = session.restoreOrderedSequence(List.of(10, 12, 11, 12, 13, 10));
 
-    @Test
-    @DisplayName("Should handle adaptive bitrate")
-    void shouldHandleAdaptiveBitrate() {
-        int currentBitrate = 128;
-        int networkBandwidth = 256;
-        int minBitrate = 64;
-        int maxBitrate = 320;
-        
-        assertThat(currentBitrate).isGreaterThanOrEqualTo(minBitrate);
-        assertThat(currentBitrate).isLessThan(networkBandwidth);
-        assertThat(currentBitrate).isLessThan(maxBitrate);
-    }
-
-    @Test
-    @DisplayName("Should handle stream synchronization")
-    void shouldHandleStreamSynchronization() {
-        boolean synced = true;
-        long timestampOffset = 0L;
-        
-        assertThat(synced).isTrue();
-        assertThat(timestampOffset).isGreaterThanOrEqualTo(0L);
+        assertThat(reordered).containsExactly(10, 11, 12, 13);
     }
 }

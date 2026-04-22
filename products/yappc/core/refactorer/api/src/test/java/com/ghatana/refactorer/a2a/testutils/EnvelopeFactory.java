@@ -16,79 +16,79 @@ import java.util.Map;
 */
 public final class EnvelopeFactory {
 
-    private EnvelopeFactory() {
+    private EnvelopeFactory() { // GH-90000
         // Utility class
     }
 
     /** Creates a sample task request envelope. */
-    public static Envelope sampleTaskRequest() {
+    public static Envelope sampleTaskRequest() { // GH-90000
         Map<String, Object> payload =
-                Map.of(
+                Map.of( // GH-90000
                         "operation",
                         "run",
                         "repoRoot",
                         "/tmp/test-repo",
                         "languages",
-                        List.of("java", "typescript"),
+                        List.of("java", "typescript"), // GH-90000
                         "formatters",
                         true);
 
-        return Envelope.request("req-123", "corr-123", payload);
+        return Envelope.request("req-123", "corr-123", payload); // GH-90000
     }
 
     /** Creates a sample task response envelope. */
-    public static Envelope sampleTaskResponse() {
+    public static Envelope sampleTaskResponse() { // GH-90000
         Map<String, Object> payload =
-                Map.of(
+                Map.of( // GH-90000
                         "status", "ACCEPTED",
                         "jobId", "job-123");
 
-        return Envelope.response("resp-123", "corr-123", payload);
+        return Envelope.response("resp-123", "corr-123", payload); // GH-90000
     }
 
     /** Creates a sample progress envelope. */
-    public static Envelope sampleProgressEvent() {
+    public static Envelope sampleProgressEvent() { // GH-90000
         Map<String, Object> payload =
-                Map.of(
+                Map.of( // GH-90000
                         "jobId", "job-123",
                         "eventType", "progress",
                         "message", "Processing step 1",
                         "currentPass", 1,
                         "totalPasses", 3);
 
-        return Envelope.progress("prog-123", "corr-123", payload);
+        return Envelope.progress("prog-123", "corr-123", payload); // GH-90000
     }
 
     /** Creates a sample error envelope. */
-    public static Envelope sampleErrorEvent() {
-        return Envelope.error("err-123", "corr-123", "Sample error message");
+    public static Envelope sampleErrorEvent() { // GH-90000
+        return Envelope.error("err-123", "corr-123", "Sample error message"); // GH-90000
     }
 
     /** Creates a sample capabilities envelope. */
-    public static Envelope sampleCapabilities() {
+    public static Envelope sampleCapabilities() { // GH-90000
         Map<String, Object> capabilities =
-                Map.of(
-                        "operations", List.of("run", "diagnose", "status", "report"),
-                        "languages", List.of("java", "typescript", "python"),
+                Map.of( // GH-90000
+                        "operations", List.of("run", "diagnose", "status", "report"), // GH-90000
+                        "languages", List.of("java", "typescript", "python"), // GH-90000
                         "version", "1.0.0");
 
-        return Envelope.capabilities("cap-123", capabilities);
+        return Envelope.capabilities("cap-123", capabilities); // GH-90000
     }
 
     /** Creates a sample heartbeat envelope. */
-    public static Envelope sampleHeartbeat() {
-        Map<String, Object> payload = Map.of("timestamp", System.currentTimeMillis());
-        return Envelope.create(EnvelopeTypes.HEARTBEAT, "hb-123", null, payload);
+    public static Envelope sampleHeartbeat() { // GH-90000
+        Map<String, Object> payload = Map.of("timestamp", System.currentTimeMillis()); // GH-90000
+        return Envelope.create(EnvelopeTypes.HEARTBEAT, "hb-123", null, payload); // GH-90000
     }
 
     /** Builder for custom task request envelopes. */
-    public static TaskRequestBuilder taskRequest() {
-        return new TaskRequestBuilder();
+    public static TaskRequestBuilder taskRequest() { // GH-90000
+        return new TaskRequestBuilder(); // GH-90000
     }
 
     /** Builder for custom task response envelopes. */
-    public static TaskResponseBuilder taskResponse() {
-        return new TaskResponseBuilder();
+    public static TaskResponseBuilder taskResponse() { // GH-90000
+        return new TaskResponseBuilder(); // GH-90000
     }
 
     public static class TaskRequestBuilder {
@@ -96,48 +96,48 @@ public final class EnvelopeFactory {
         private String correlationId = "corr-123";
         private String operation = "run";
         private String repoRoot = "/tmp/test-repo";
-        private List<String> languages = List.of("java");
+        private List<String> languages = List.of("java [GH-90000]");
         private boolean formatters = true;
 
-        public TaskRequestBuilder id(String id) {
+        public TaskRequestBuilder id(String id) { // GH-90000
             this.id = id;
             return this;
         }
 
-        public TaskRequestBuilder correlationId(String correlationId) {
+        public TaskRequestBuilder correlationId(String correlationId) { // GH-90000
             this.correlationId = correlationId;
             return this;
         }
 
-        public TaskRequestBuilder operation(String operation) {
+        public TaskRequestBuilder operation(String operation) { // GH-90000
             this.operation = operation;
             return this;
         }
 
-        public TaskRequestBuilder repoRoot(String repoRoot) {
+        public TaskRequestBuilder repoRoot(String repoRoot) { // GH-90000
             this.repoRoot = repoRoot;
             return this;
         }
 
-        public TaskRequestBuilder languages(String... languages) {
-            this.languages = List.of(languages);
+        public TaskRequestBuilder languages(String... languages) { // GH-90000
+            this.languages = List.of(languages); // GH-90000
             return this;
         }
 
-        public TaskRequestBuilder formatters(boolean formatters) {
+        public TaskRequestBuilder formatters(boolean formatters) { // GH-90000
             this.formatters = formatters;
             return this;
         }
 
-        public Envelope build() {
+        public Envelope build() { // GH-90000
             Map<String, Object> payload =
-                    Map.of(
+                    Map.of( // GH-90000
                             "operation", operation,
                             "repoRoot", repoRoot,
                             "languages", languages,
                             "formatters", formatters);
 
-            return Envelope.request(id, correlationId, payload);
+            return Envelope.request(id, correlationId, payload); // GH-90000
         }
     }
 
@@ -147,33 +147,33 @@ public final class EnvelopeFactory {
         private String status = "ACCEPTED";
         private String jobId = "job-123";
 
-        public TaskResponseBuilder id(String id) {
+        public TaskResponseBuilder id(String id) { // GH-90000
             this.id = id;
             return this;
         }
 
-        public TaskResponseBuilder correlationId(String correlationId) {
+        public TaskResponseBuilder correlationId(String correlationId) { // GH-90000
             this.correlationId = correlationId;
             return this;
         }
 
-        public TaskResponseBuilder status(String status) {
+        public TaskResponseBuilder status(String status) { // GH-90000
             this.status = status;
             return this;
         }
 
-        public TaskResponseBuilder jobId(String jobId) {
+        public TaskResponseBuilder jobId(String jobId) { // GH-90000
             this.jobId = jobId;
             return this;
         }
 
-        public Envelope build() {
+        public Envelope build() { // GH-90000
             Map<String, Object> payload =
-                    Map.of(
+                    Map.of( // GH-90000
                             "status", status,
                             "jobId", jobId);
 
-            return Envelope.response(id, correlationId, payload);
+            return Envelope.response(id, correlationId, payload); // GH-90000
         }
     }
 }

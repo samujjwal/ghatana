@@ -24,7 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(MockitoExtension.class) // GH-90000
 /**
  * @doc.type class
  * @doc.purpose Handles type script java script language service es lint test operations
@@ -45,29 +45,29 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
     private PolyfixConfig testConfig;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() throws IOException { // GH-90000
         // Create a simple test file
-        testFile = tempDir.resolve("sample.ts");
-        Files.createDirectories(testFile.getParent());
+        testFile = tempDir.resolve("sample.ts [GH-90000]");
+        Files.createDirectories(testFile.getParent()); // GH-90000
 
         // Create test config
-        testConfig = createTestConfig();
+        testConfig = createTestConfig(); // GH-90000
 
         projectContext =
-                new PolyfixProjectContext(
-                        tempDir, testConfig, List.of(), null, LogManager.getLogger("test"));
+                new PolyfixProjectContext( // GH-90000
+                        tempDir, testConfig, List.of(), null, LogManager.getLogger("test [GH-90000]"));
 
         // Create the service with our mock ESLintService and reactor
-        tsJsService = new TypeScriptJavaScriptLanguageService(projectContext, mockESLintService, eventloop());
+        tsJsService = new TypeScriptJavaScriptLanguageService(projectContext, mockESLintService, eventloop()); // GH-90000
     }
 
-    private PolyfixConfig createTestConfig() {
-        return new PolyfixConfig(
-                List.of("typescript", "javascript"),
-                List.of(),
-                new PolyfixConfig.Budgets(100, 1000),
-                new PolyfixConfig.Policies(true, true, true, true),
-                new PolyfixConfig.Tools(
+    private PolyfixConfig createTestConfig() { // GH-90000
+        return new PolyfixConfig( // GH-90000
+                List.of("typescript", "javascript"), // GH-90000
+                List.of(), // GH-90000
+                new PolyfixConfig.Budgets(100, 1000), // GH-90000
+                new PolyfixConfig.Policies(true, true, true, true), // GH-90000
+                new PolyfixConfig.Tools( // GH-90000
                         "node",
                         "eslint",
                         "tsc",
@@ -83,119 +83,119 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
     }
 
     @Test
-    void testAnalyzeWithESLint() throws IOException {
+    void testAnalyzeWithESLint() throws IOException { // GH-90000
         // Setup test file with content
-        String content = "let x: number = 'hello';\nconsole.log(x);";
-        Files.writeString(testFile, content);
+        String content = "let x: number = 'hello';\nconsole.log(x);"; // GH-90000
+        Files.writeString(testFile, content); // GH-90000
 
         // Create a mock diagnostic
-        UnifiedDiagnostic mockDiagnostic = mock(UnifiedDiagnostic.class);
-        when(mockDiagnostic.rule()).thenReturn("test-rule");
+        UnifiedDiagnostic mockDiagnostic = mock(UnifiedDiagnostic.class); // GH-90000
+        when(mockDiagnostic.rule()).thenReturn("test-rule [GH-90000]");
 
         // Configure the mock ESLint service to return our mock diagnostic
-        when(mockESLintService.analyze(
-                        argThat(
+        when(mockESLintService.analyze( // GH-90000
+                        argThat( // GH-90000
                                 files ->
                                         files != null
-                                                && files.size() == 1
-                                                && files.get(0).equals(testFile))))
-                .thenReturn(Collections.singletonList(mockDiagnostic));
+                                                && files.size() == 1 // GH-90000
+                                                && files.get(0).equals(testFile)))) // GH-90000
+                .thenReturn(Collections.singletonList(mockDiagnostic)); // GH-90000
 
         // Execute the test
-        List<UnifiedDiagnostic> diagnostics = runPromise(
-                () -> tsJsService.diagnose(projectContext, Collections.singletonList(testFile)));
+        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
+                () -> tsJsService.diagnose(projectContext, Collections.singletonList(testFile))); // GH-90000
 
         // Verify the results
-        assertThat(diagnostics)
-                .as("Should contain the mock diagnostic from ESLint")
-                .isNotEmpty()
-                .anySatisfy(diag -> assertThat(diag.rule()).isEqualTo("test-rule"));
+        assertThat(diagnostics) // GH-90000
+                .as("Should contain the mock diagnostic from ESLint [GH-90000]")
+                .isNotEmpty() // GH-90000
+                .anySatisfy(diag -> assertThat(diag.rule()).isEqualTo("test-rule [GH-90000]"));
 
         // Verify the mock was called with the correct arguments
-        verify(mockESLintService)
-                .analyze(
-                        argThat(
+        verify(mockESLintService) // GH-90000
+                .analyze( // GH-90000
+                        argThat( // GH-90000
                                 files ->
                                         files != null
-                                                && files.size() == 1
-                                                && files.get(0).equals(testFile)));
+                                                && files.size() == 1 // GH-90000
+                                                && files.get(0).equals(testFile))); // GH-90000
     }
 
     @Test
-    void testDetectsESLintIssues() throws IOException {
+    void testDetectsESLintIssues() throws IOException { // GH-90000
         // Setup test file with content that would trigger an ESLint rule
-        Files.writeString(testFile, "const unused = 42;");
+        Files.writeString(testFile, "const unused = 42;"); // GH-90000
 
         // Create a mock diagnostic for the ESLint rule
-        UnifiedDiagnostic mockDiagnostic = mock(UnifiedDiagnostic.class);
-        when(mockDiagnostic.rule()).thenReturn("@typescript-eslint/no-unused-vars");
+        UnifiedDiagnostic mockDiagnostic = mock(UnifiedDiagnostic.class); // GH-90000
+        when(mockDiagnostic.rule()).thenReturn("@typescript-eslint/no-unused-vars [GH-90000]");
 
         // Configure the mock ESLint service to return our mock diagnostic
-        when(mockESLintService.analyze(anyList()))
-                .thenReturn(Collections.singletonList(mockDiagnostic));
+        when(mockESLintService.analyze(anyList())) // GH-90000
+                .thenReturn(Collections.singletonList(mockDiagnostic)); // GH-90000
 
         // Execute the test
-        List<UnifiedDiagnostic> diagnostics = runPromise(
-                () -> tsJsService.diagnose(projectContext, Collections.singletonList(testFile)));
+        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
+                () -> tsJsService.diagnose(projectContext, Collections.singletonList(testFile))); // GH-90000
 
         // Verify the results
-        assertThat(diagnostics)
-                .as("Should detect ESLint issues")
-                .isNotEmpty()
-                .extracting(UnifiedDiagnostic::rule)
-                .contains("@typescript-eslint/no-unused-vars");
+        assertThat(diagnostics) // GH-90000
+                .as("Should detect ESLint issues [GH-90000]")
+                .isNotEmpty() // GH-90000
+                .extracting(UnifiedDiagnostic::rule) // GH-90000
+                .contains("@typescript-eslint/no-unused-vars [GH-90000]");
 
         // Verify the mock was called with the correct arguments
-        verify(mockESLintService)
-                .analyze(
-                        argThat(
+        verify(mockESLintService) // GH-90000
+                .analyze( // GH-90000
+                        argThat( // GH-90000
                                 files ->
                                         files != null
-                                                && files.size() == 1
-                                                && files.get(0).equals(testFile)));
+                                                && files.size() == 1 // GH-90000
+                                                && files.get(0).equals(testFile))); // GH-90000
     }
 
     @Test
-    void testNoFalsePositivesOnValidCode() throws IOException {
+    void testNoFalsePositivesOnValidCode() throws IOException { // GH-90000
         // Setup a valid test file
-        Path validFile = tempDir.resolve("valid.ts");
-        Files.writeString(validFile, "const x: number = 42;\nconsole.log(x);");
+        Path validFile = tempDir.resolve("valid.ts [GH-90000]");
+        Files.writeString(validFile, "const x: number = 42;\nconsole.log(x);"); // GH-90000
 
         // Configure the mock ESLint service to return no issues
-        when(mockESLintService.analyze(anyList())).thenReturn(Collections.emptyList());
+        when(mockESLintService.analyze(anyList())).thenReturn(Collections.emptyList()); // GH-90000
 
         // Execute the test
-        List<UnifiedDiagnostic> diagnostics = runPromise(
-                () -> tsJsService.diagnose(projectContext, Collections.singletonList(validFile)));
+        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
+                () -> tsJsService.diagnose(projectContext, Collections.singletonList(validFile))); // GH-90000
 
         // Verify no issues were found
-        assertThat(diagnostics).as("Should not report issues on valid code").isEmpty();
+        assertThat(diagnostics).as("Should not report issues on valid code [GH-90000]").isEmpty();
 
         // Verify the mock was called with the correct arguments
-        verify(mockESLintService)
-                .analyze(
-                        argThat(
+        verify(mockESLintService) // GH-90000
+                .analyze( // GH-90000
+                        argThat( // GH-90000
                                 files ->
                                         files != null
-                                                && files.size() == 1
-                                                && files.get(0).equals(validFile)));
+                                                && files.size() == 1 // GH-90000
+                                                && files.get(0).equals(validFile))); // GH-90000
     }
 
     @Test
-    void testHandlesMissingESLintGracefully() throws IOException {
+    void testHandlesMissingESLintGracefully() throws IOException { // GH-90000
         // Setup test file with content
-        Files.writeString(testFile, "const x = 42;");
+        Files.writeString(testFile, "const x = 42;"); // GH-90000
 
         // Create a new service instance with a null ESLintService to simulate initialization
         // failure
         TypeScriptJavaScriptLanguageService serviceWithNoESLint =
-                new TypeScriptJavaScriptLanguageService(projectContext, null, eventloop());
+                new TypeScriptJavaScriptLanguageService(projectContext, null, eventloop()); // GH-90000
 
         // Execute the test - should not throw an exception
-        List<UnifiedDiagnostic> diagnostics = runPromise(
-                () -> serviceWithNoESLint.diagnose(projectContext, Collections.singletonList(testFile)));
+        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
+                () -> serviceWithNoESLint.diagnose(projectContext, Collections.singletonList(testFile))); // GH-90000
 
-        // Verify that no diagnostics were returned (graceful degradation)
-        assertThat(diagnostics).as("Should handle missing ESLint gracefully").isEmpty();
+        // Verify that no diagnostics were returned (graceful degradation) // GH-90000
+        assertThat(diagnostics).as("Should handle missing ESLint gracefully [GH-90000]").isEmpty();
     }
 }

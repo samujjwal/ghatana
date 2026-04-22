@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
 */
 public final class TestConfig {
 
-    private TestConfig() {}
+    private TestConfig() {} // GH-90000
 
     /**
      * Creates a test-friendly {@link PolyfixProjectContext} rooted at the given directory.
@@ -25,22 +25,22 @@ public final class TestConfig {
      * @param root the temporary directory to use as project root
      * @return a configured context for testing
      */
-    public static PolyfixProjectContext createTestContext(Path root) {
+    public static PolyfixProjectContext createTestContext(Path root) { // GH-90000
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of("java", "typescript"),
-                        List.of(),
-                        new PolyfixConfig.Budgets(3, 20),
-                        new PolyfixConfig.Policies(true, true, true, true),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of("java", "typescript"), // GH-90000
+                        List.of(), // GH-90000
+                        new PolyfixConfig.Budgets(3, 20), // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, true), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 "node", "eslint", "tsc", "prettier",
                                 "ruff", "black", "mypy",
                                 "shellcheck", "shfmt", "cargo", "rustfmt", "semgrep"));
-        return new PolyfixProjectContext(
+        return new PolyfixProjectContext( // GH-90000
                 root,
                 config,
-                List.of(),
-                Executors.newSingleThreadExecutor(),
-                LogManager.getLogger(TestConfig.class));
+                List.of(), // GH-90000
+                Executors.newSingleThreadExecutor(), // GH-90000
+                LogManager.getLogger(TestConfig.class)); // GH-90000
     }
 }

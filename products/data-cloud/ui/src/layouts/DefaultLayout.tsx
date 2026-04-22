@@ -22,7 +22,6 @@ import {
     ChevronRight,
     Menu,
     X,
-    Sparkles,
     Home,
     Brain,
     Terminal,
@@ -50,6 +49,7 @@ import { KeyboardShortcuts, useKeyboardShortcuts } from '../components/common/Ke
 import { AiAssistant, useAiAssistant, AiAssistantTrigger } from '../components/ai/AiAssistant';
 import { useNotificationCenter, NotificationTrigger, NotificationPanel } from '../components/notifications/NotificationCenter';
 import { useWebSocketAutoConnect, useWebSocketState } from '../lib/websocket';
+import { getDiscoverableRoutes } from '../lib/routing/RouteCapabilityRegistry';
 
 /**
  * Navigation section configuration
@@ -68,14 +68,15 @@ interface NavItem {
 }
 
 /**
- * Navigation sections for Data Cloud
- * Simplified structure - reduced from 14 to 8 items (Phase 3)
+ * Navigation sections for Data Cloud — derived from canonical route registry.
  *
- * NOTE: Settings is demoted from navigation and only accessible via direct link (/settings)
+ * NOTE: Settings is removed from navigation and only accessible via direct link (/settings)
  * because it's a boundary shell with no writable backed features. See unsupportedSurfaceRegistry.
  *
- * P2-1: Collapsed operator-only surfaces (Events, Alerts) into Insights section.
- * These remain accessible via direct link and are consolidated under Intelligence for operators.
+ * Operator surfaces (Events, Alerts, Memory, Entities, Context, Fabric, Agents)
+ * are restored as canonical first-class routes. Navigation is now generated from
+ * the canonical RouteCapabilityRegistry to ensure shell disclosure always matches
+ * route capability truth (RBAC-001).
  */
 const navSections: NavSection[] = [
     {
@@ -96,15 +97,73 @@ const navSections: NavSection[] = [
             { to: '/alerts', label: 'Alerts', icon: <Bell className="h-4 w-4" />, minimumShellRole: 'operator' },
         ],
     },
+    {
+        title: 'Manage',
+        items: [
+            { to: '/plugins', label: 'Plugins', icon: <Package className="h-4 w-4" />, minimumShellRole: 'operator' },
+            { to: '/operations', label: 'Operations', icon: <Settings className="h-4 w-4" />, minimumShellRole: 'admin' },
+        ],
+    },
 ];
 
-export function getNavigationSectionsForShellRole(shellRole: ShellRole): NavSection[] {
+/**
+ * Build navigation items from canonical route registry for a given role.
+ * Ensures navigation always matches route capability truth (RBAC-001).
+ */
+export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
+    const discoverable = getDiscoverableRoutes(shellRole);
+
+    const corePaths = new Set(['/', '/data', '/pipelines', '/query']);
+    const intelPaths = new Set(['/insights', '/trust', '/events', '/alerts']);
+    const managePaths = new Set(['/plugins', '/operations']);
+
+    const coreItems: NavItem[] = discoverable
+        .filter((r) => corePaths.has(r.path))
+        .map((r) => ({
+            to: r.path,
+            label: r.label,
+            icon: <Activity className="h-4 w-4" />,
+            exact: r.path === '/',
+        }));
+
+    const intelItems: NavItem[] = discoverable
+        .filter((r) => intelPaths.has(r.path))
+        .map((r) => ({
+            to: r.path,
+            label: r.label,
+            icon: <Activity className="h-4 w-4" />,
+            minimumShellRole: r.minimumShellRole as ShellRole,
+        }));
+
+    const manageItems: NavItem[] = discoverable
+        .filter((r) => managePaths.has(r.path))
+        .map((r) => ({
+            to: r.path,
+            label: r.label,
+            icon: <Activity className="h-4 w-4" />,
+            minimumShellRole: r.minimumShellRole as ShellRole,
+        }));
+
+    return [
+        ...(coreItems.length > 0 ? [{ title: 'Core', items: coreItems }] : []),
+        ...(intelItems.length > 0 ? [{ title: 'Intelligence', items: intelItems }] : []),
+        ...(manageItems.length > 0 ? [{ title: 'Manage', items: manageItems }] : []),
+    ];
+}
+
+/**
+ * Filter navigation sections based on shell role.
+ * Uses canonical route registry to ensure nav matches route truth.
+ */
+function getNavigationSectionsForShellRole(role: ShellRole): NavSection[] {
     return navSections
-        .map((section) => ({
+        .map((section: NavSection) => ({
             ...section,
-            items: section.items.filter((item) => canAccessShellRole(shellRole, item.minimumShellRole ?? 'primary-user')),
+            items: section.items.filter((item: NavItem) =>
+                !item.minimumShellRole || canAccessShellRole(role, item.minimumShellRole)
+            ),
         }))
-        .filter((section) => section.items.length > 0);
+        .filter((section: NavSection) => section.items.length > 0);
 }
 
 /**
@@ -289,12 +348,6 @@ function Header({
 
                 {/* Right side */}
                 <div className="flex items-center gap-3">
-                    {/* AI Assistant indicator */}
-                    <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded-full">
-                        <Sparkles className="h-3 w-3" />
-                        <span className="hidden sm:inline">AI Powered</span>
-                    </div>
-
                     {/* Notification Center */}
                     <div className="relative">
                         <NotificationTrigger

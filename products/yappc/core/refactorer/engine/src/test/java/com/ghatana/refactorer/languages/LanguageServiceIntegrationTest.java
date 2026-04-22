@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Integration tests for language service discovery and basic functionality. */
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(MockitoExtension.class) // GH-90000
 /**
  * @doc.type class
  * @doc.purpose Handles language service integration test operations
@@ -28,60 +28,60 @@ class LanguageServiceIntegrationTest extends AbstractLanguageTest {
     private List<LanguageService> languageServices;
 
     @BeforeEach
-    void setUpServices() {
+    void setUpServices() { // GH-90000
         // Discover language services using ServiceLoader
         languageServices =
-                StreamSupport.stream(ServiceLoader.load(LanguageService.class).spliterator(), false)
-                        .collect(Collectors.toList());
+                StreamSupport.stream(ServiceLoader.load(LanguageService.class).spliterator(), false) // GH-90000
+                        .collect(Collectors.toList()); // GH-90000
 
         // Add discovered services to the project context
         projectContext =
-                new PolyfixProjectContext(
-                        projectContext.root(), // root
-                        projectContext.config(), // config
+                new PolyfixProjectContext( // GH-90000
+                        projectContext.root(), // root // GH-90000
+                        projectContext.config(), // config // GH-90000
                         languageServices, // languages
-                        projectContext.exec(), // exec
-                        projectContext.log() // log
+                        projectContext.exec(), // exec // GH-90000
+                        projectContext.log() // log // GH-90000
                         );
     }
 
     @Test
-    void shouldDiscoverJavaLanguageService() {
-        assertThat(languageServices)
-                .as("Should discover Java language service")
-                .anyMatch(service -> "java".equals(service.id()));
+    void shouldDiscoverJavaLanguageService() { // GH-90000
+        assertThat(languageServices) // GH-90000
+                .as("Should discover Java language service [GH-90000]")
+                .anyMatch(service -> "java".equals(service.id())); // GH-90000
     }
 
     @Test
-    void shouldDiscoverPythonLanguageService() {
-        assertThat(languageServices)
-                .as("Should discover Python language service")
-                .anyMatch(service -> "python".equals(service.id()));
+    void shouldDiscoverPythonLanguageService() { // GH-90000
+        assertThat(languageServices) // GH-90000
+                .as("Should discover Python language service [GH-90000]")
+                .anyMatch(service -> "python".equals(service.id())); // GH-90000
     }
 
     @Test
-    void javaServiceShouldSupportJavaFiles() {
+    void javaServiceShouldSupportJavaFiles() { // GH-90000
         LanguageService javaService =
-                languageServices.stream()
-                        .filter(service -> "java".equals(service.id()))
-                        .findFirst()
-                        .orElseThrow();
+                languageServices.stream() // GH-90000
+                        .filter(service -> "java".equals(service.id())) // GH-90000
+                        .findFirst() // GH-90000
+                        .orElseThrow(); // GH-90000
 
-        assertThat(javaService.supports(Path.of("Test.java"))).isTrue();
-        assertThat(javaService.supports(Path.of("src/main/java/com/example/Test.java"))).isTrue();
-        assertThat(javaService.supports(Path.of("pom.xml"))).isFalse();
+        assertThat(javaService.supports(Path.of("Test.java [GH-90000]"))).isTrue();
+        assertThat(javaService.supports(Path.of("src/main/java/com/example/Test.java [GH-90000]"))).isTrue();
+        assertThat(javaService.supports(Path.of("pom.xml [GH-90000]"))).isFalse();
     }
 
     @Test
-    void pythonServiceShouldSupportPythonFiles() {
+    void pythonServiceShouldSupportPythonFiles() { // GH-90000
         LanguageService pythonService =
-                languageServices.stream()
-                        .filter(service -> "python".equals(service.id()))
-                        .findFirst()
-                        .orElseThrow();
+                languageServices.stream() // GH-90000
+                        .filter(service -> "python".equals(service.id())) // GH-90000
+                        .findFirst() // GH-90000
+                        .orElseThrow(); // GH-90000
 
-        assertThat(pythonService.supports(Path.of("script.py"))).isTrue();
-        assertThat(pythonService.supports(Path.of("src/main/python/module/__init__.py"))).isTrue();
-        assertThat(pythonService.supports(Path.of("requirements.txt"))).isFalse();
+        assertThat(pythonService.supports(Path.of("script.py [GH-90000]"))).isTrue();
+        assertThat(pythonService.supports(Path.of("src/main/python/module/__init__.py [GH-90000]"))).isTrue();
+        assertThat(pythonService.supports(Path.of("requirements.txt [GH-90000]"))).isFalse();
     }
 }

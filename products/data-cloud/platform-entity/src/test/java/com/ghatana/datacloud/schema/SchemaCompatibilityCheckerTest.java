@@ -9,149 +9,149 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
-@DisplayName("SchemaCompatibilityChecker")
+@DisplayName("SchemaCompatibilityChecker [GH-90000]")
 class SchemaCompatibilityCheckerTest {
 
-    private final SchemaCompatibilityChecker checker = new SchemaCompatibilityChecker();
+    private final SchemaCompatibilityChecker checker = new SchemaCompatibilityChecker(); // GH-90000
 
     @Test
-    @DisplayName("NONE mode accepts all changes")
-    void noneModeAcceptsAllChanges() {
-        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string")
+    @DisplayName("NONE mode accepts all changes [GH-90000]")
+    void noneModeAcceptsAllChanges() { // GH-90000
+        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string") // GH-90000
         ));
-        EventSchema newSchema = schema("subject-a", SchemaFormat.AVRO, List.of(
-                EventSchema.SchemaField.required("count", "int")
+        EventSchema newSchema = schema("subject-a", SchemaFormat.AVRO, List.of( // GH-90000
+                EventSchema.SchemaField.required("count", "int") // GH-90000
         ));
 
-        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.NONE);
+        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.NONE); // GH-90000
 
-        assertThat(result.compatible()).isTrue();
-        assertThat(result.violations()).isEmpty();
+        assertThat(result.compatible()).isTrue(); // GH-90000
+        assertThat(result.violations()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("format change is incompatible for enforced modes")
-    void formatChangeIsIncompatible() {
-        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of());
-        EventSchema newSchema = schema("subject-a", SchemaFormat.AVRO, List.of());
+    @DisplayName("format change is incompatible for enforced modes [GH-90000]")
+    void formatChangeIsIncompatible() { // GH-90000
+        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of()); // GH-90000
+        EventSchema newSchema = schema("subject-a", SchemaFormat.AVRO, List.of()); // GH-90000
 
-        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD);
+        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD); // GH-90000
 
-        assertThat(result.compatible()).isFalse();
-        assertThat(result.violations()).singleElement().asString().contains("Schema format changed");
+        assertThat(result.compatible()).isFalse(); // GH-90000
+        assertThat(result.violations()).singleElement().asString().contains("Schema format changed [GH-90000]");
     }
 
     @Test
-    @DisplayName("BACKWARD mode rejects new required field without default and type changes")
-    void backwardModeRejectsUnsafeChanges() {
-        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string"),
-                EventSchema.SchemaField.optional("status", "string")
+    @DisplayName("BACKWARD mode rejects new required field without default and type changes [GH-90000]")
+    void backwardModeRejectsUnsafeChanges() { // GH-90000
+        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string"), // GH-90000
+                EventSchema.SchemaField.optional("status", "string") // GH-90000
         ));
-        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "uuid"),
-                EventSchema.SchemaField.optional("status", "string"),
-                EventSchema.SchemaField.required("tenant", "string")
+        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "uuid"), // GH-90000
+                EventSchema.SchemaField.optional("status", "string"), // GH-90000
+                EventSchema.SchemaField.required("tenant", "string") // GH-90000
         ));
 
-        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD);
+        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD); // GH-90000
 
-        assertThat(result.compatible()).isFalse();
-        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant'"));
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed"));
+        assertThat(result.compatible()).isFalse(); // GH-90000
+        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant' [GH-90000]"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed [GH-90000]"));
     }
 
     @Test
-    @DisplayName("BACKWARD mode allows new required field with default")
-    void backwardModeAllowsRequiredFieldWithDefault() {
-        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string")
+    @DisplayName("BACKWARD mode allows new required field with default [GH-90000]")
+    void backwardModeAllowsRequiredFieldWithDefault() { // GH-90000
+        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string") // GH-90000
         ));
-        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string"),
-                EventSchema.SchemaField.required("tenant", "string", "default-tenant")
+        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string"), // GH-90000
+                EventSchema.SchemaField.required("tenant", "string", "default-tenant") // GH-90000
         ));
 
-        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD);
+        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD); // GH-90000
 
-        assertThat(result.compatible()).isTrue();
+        assertThat(result.compatible()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("FORWARD mode rejects removed fields and type changes")
-    void forwardModeRejectsRemovedFieldsAndTypeChanges() {
-        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string"),
-                EventSchema.SchemaField.optional("status", "string")
+    @DisplayName("FORWARD mode rejects removed fields and type changes [GH-90000]")
+    void forwardModeRejectsRemovedFieldsAndTypeChanges() { // GH-90000
+        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string"), // GH-90000
+                EventSchema.SchemaField.optional("status", "string") // GH-90000
         ));
-        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "uuid")
+        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "uuid") // GH-90000
         ));
 
-        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FORWARD);
+        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FORWARD); // GH-90000
 
-        assertThat(result.compatible()).isFalse();
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed"));
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed"));
+        assertThat(result.compatible()).isFalse(); // GH-90000
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed [GH-90000]"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed [GH-90000]"));
     }
 
     @Test
-    @DisplayName("FULL mode rejects removed fields and new required fields")
-    void fullModeRejectsRemovedAndNewRequiredFields() {
-        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string"),
-                EventSchema.SchemaField.optional("status", "string")
+    @DisplayName("FULL mode rejects removed fields and new required fields [GH-90000]")
+    void fullModeRejectsRemovedAndNewRequiredFields() { // GH-90000
+        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string"), // GH-90000
+                EventSchema.SchemaField.optional("status", "string") // GH-90000
         ));
-        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string"),
-                EventSchema.SchemaField.required("tenant", "string")
+        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string"), // GH-90000
+                EventSchema.SchemaField.required("tenant", "string") // GH-90000
         ));
 
-        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FULL);
+        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FULL); // GH-90000
 
-        assertThat(result.compatible()).isFalse();
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed"));
-        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant'"));
+        assertThat(result.compatible()).isFalse(); // GH-90000
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed [GH-90000]"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant' [GH-90000]"));
     }
 
     @Test
-    @DisplayName("compatible schemas return ok result")
-    void compatibleSchemasReturnOk() {
-        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string")
+    @DisplayName("compatible schemas return ok result [GH-90000]")
+    void compatibleSchemasReturnOk() { // GH-90000
+        EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string") // GH-90000
         ));
-        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of(
-                EventSchema.SchemaField.required("id", "string"),
-                EventSchema.SchemaField.optional("status", "string")
+        EventSchema newSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
+                EventSchema.SchemaField.required("id", "string"), // GH-90000
+                EventSchema.SchemaField.optional("status", "string") // GH-90000
         ));
 
-        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FULL);
+        SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FULL); // GH-90000
 
-        assertThat(result.compatible()).isTrue();
-        assertThat(result.violations()).isEmpty();
+        assertThat(result.compatible()).isTrue(); // GH-90000
+        assertThat(result.violations()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("check rejects null arguments")
-    void checkRejectsNullArguments() {
-        EventSchema schema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of());
+    @DisplayName("check rejects null arguments [GH-90000]")
+    void checkRejectsNullArguments() { // GH-90000
+        EventSchema schema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of()); // GH-90000
 
-        assertThatNullPointerException().isThrownBy(() -> checker.check(null, schema, CompatibilityMode.BACKWARD));
-        assertThatNullPointerException().isThrownBy(() -> checker.check(schema, null, CompatibilityMode.BACKWARD));
-        assertThatNullPointerException().isThrownBy(() -> checker.check(schema, schema, null));
+        assertThatNullPointerException().isThrownBy(() -> checker.check(null, schema, CompatibilityMode.BACKWARD)); // GH-90000
+        assertThatNullPointerException().isThrownBy(() -> checker.check(schema, null, CompatibilityMode.BACKWARD)); // GH-90000
+        assertThatNullPointerException().isThrownBy(() -> checker.check(schema, schema, null)); // GH-90000
     }
 
-    private static EventSchema schema(String subject, SchemaFormat format, List<EventSchema.SchemaField> fields) {
-        return new EventSchema(
+    private static EventSchema schema(String subject, SchemaFormat format, List<EventSchema.SchemaField> fields) { // GH-90000
+        return new EventSchema( // GH-90000
                 subject + "-id",
                 subject,
                 1,
                 format,
                 "{}",
                 fields,
-                java.util.Map.of(),
-                Instant.parse("2026-04-02T00:00:00Z")
+                java.util.Map.of(), // GH-90000
+                Instant.parse("2026-04-02T00:00:00Z [GH-90000]")
         );
     }
 }

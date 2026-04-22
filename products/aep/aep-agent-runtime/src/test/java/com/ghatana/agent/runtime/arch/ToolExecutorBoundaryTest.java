@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.agent.runtime.arch;
@@ -17,7 +17,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *
  * <p>Rationale: Phase 3 introduces a canonical {@code ToolExecutor} boundary in
  * {@code platform:java:tool-runtime}. All side-effecting tool calls must pass through this
- * boundary for governance, approval, and audit. Direct use of {@code FunctionTool.invoke()},
+ * boundary for governance, approval, and audit. Direct use of {@code FunctionTool.invoke()}, // GH-90000
  * custom lambda invocations, or {@code ToolRegistry} bypasses these controls.
  *
  * @doc.type class
@@ -25,7 +25,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * @doc.layer product
  * @doc.pattern TestSuite
  */
-@AnalyzeClasses(
+@AnalyzeClasses( // GH-90000
         packages = "com.ghatana.agent",
         importOptions = ImportOption.DoNotIncludeTests.class
 )
@@ -40,16 +40,16 @@ class ToolExecutorBoundaryTest {
      */
     @ArchTest
     static final ArchRule dispatch_must_not_call_function_tool_directly =
-            noClasses()
-                    .that().resideInAnyPackage(
+            noClasses() // GH-90000
+                    .that().resideInAnyPackage( // GH-90000
                             "com.ghatana.agent.dispatch..",
                             "com.ghatana.agent.runtime..")
-                    .should().dependOnClassesThat()
-                    .haveFullyQualifiedName(
+                    .should().dependOnClassesThat() // GH-90000
+                    .haveFullyQualifiedName( // GH-90000
                             "com.ghatana.agent.framework.tools.FunctionTool")
-                    .allowEmptyShould(true)
-                    .because("Tool calls from the dispatch and runtime layers must route through "
-                            + "ToolExecutor (platform:java:tool-runtime) to enforce governance, "
+                    .allowEmptyShould(true) // GH-90000
+                    .because("Tool calls from the dispatch and runtime layers must route through " // GH-90000
+                            + "ToolExecutor (platform:java:tool-runtime) to enforce governance, " // GH-90000
                             + "approval gates, and audit emission. "
                             + "See docs/agent-system/AGENT_SYSTEM_MODERNIZATION_BLUEPRINT_2026-04-06.md §Phase3.");
 
@@ -62,12 +62,12 @@ class ToolExecutorBoundaryTest {
      */
     @ArchTest
     static final ArchRule safety_layer_must_not_use_tool_sandbox_directly =
-            noClasses()
-                    .that().resideInAPackage("com.ghatana.agent.runtime.safety..")
-                    .should().dependOnClassesThat()
-                    .haveFullyQualifiedName("com.ghatana.platform.toolruntime.ToolSandbox")
-                    .allowEmptyShould(true)
-                    .because("The safety layer must use ToolExecutor as the governed entry point, "
+            noClasses() // GH-90000
+                    .that().resideInAPackage("com.ghatana.agent.runtime.safety.. [GH-90000]")
+                    .should().dependOnClassesThat() // GH-90000
+                    .haveFullyQualifiedName("com.ghatana.platform.toolruntime.ToolSandbox [GH-90000]")
+                    .allowEmptyShould(true) // GH-90000
+                    .because("The safety layer must use ToolExecutor as the governed entry point, " // GH-90000
                             + "not reach into ToolSandbox directly. "
                             + "ToolSandbox is an implementation detail of DefaultToolExecutor.");
 }

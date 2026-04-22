@@ -8,34 +8,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PipelineEdgeSpecTest {
 
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
 
     @Test
-    void shouldSerializeAndDeserializeFromYaml() throws Exception {
+    void shouldSerializeAndDeserializeFromYaml() throws Exception { // GH-90000
         // Given
-        PipelineEdgeSpec original = PipelineEdgeSpec.builder()
-            .fromStageId("stage-1")
-            .toStageId("stage-2")
-            .label("primary")
-            .build();
+        PipelineEdgeSpec original = PipelineEdgeSpec.builder() // GH-90000
+            .fromStageId("stage-1 [GH-90000]")
+            .toStageId("stage-2 [GH-90000]")
+            .label("primary [GH-90000]")
+            .build(); // GH-90000
 
         // When
-        String yaml = yamlMapper.writeValueAsString(original);
-        PipelineEdgeSpec deserialized = yamlMapper.readValue(yaml, PipelineEdgeSpec.class);
+        String yaml = yamlMapper.writeValueAsString(original); // GH-90000
+        PipelineEdgeSpec deserialized = yamlMapper.readValue(yaml, PipelineEdgeSpec.class); // GH-90000
 
         // Then
-        assertThat(deserialized).isEqualTo(original);
-        assertThat(deserialized.getFromStageId()).isEqualTo("stage-1");
-        assertThat(deserialized.getToStageId()).isEqualTo("stage-2");
-        assertThat(deserialized.getLabel()).isEqualTo("primary");
+        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized.getFromStageId()).isEqualTo("stage-1 [GH-90000]");
+        assertThat(deserialized.getToStageId()).isEqualTo("stage-2 [GH-90000]");
+        assertThat(deserialized.getLabel()).isEqualTo("primary [GH-90000]");
     }
 
     @Test
-    void shouldHandleNullValues() {
-        PipelineEdgeSpec edgeSpec = new PipelineEdgeSpec();
+    void shouldHandleNullValues() { // GH-90000
+        PipelineEdgeSpec edgeSpec = new PipelineEdgeSpec(); // GH-90000
 
-        assertThat(edgeSpec.getFromStageId()).isNull();
-        assertThat(edgeSpec.getToStageId()).isNull();
-        assertThat(edgeSpec.getLabel()).isNull();
+        assertThat(edgeSpec.getFromStageId()).isNull(); // GH-90000
+        assertThat(edgeSpec.getToStageId()).isNull(); // GH-90000
+        assertThat(edgeSpec.getLabel()).isNull(); // GH-90000
     }
 }

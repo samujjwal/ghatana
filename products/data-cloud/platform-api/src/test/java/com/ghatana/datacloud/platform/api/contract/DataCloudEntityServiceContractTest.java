@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * Data Cloud entity service contract tests for CRUD boundaries.
  *
  * Validates contracts for entity operations in Data Cloud.
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
  *
  * <p>Validates contracts for:
  * <ul>
- *   <li>Entity CRUD operations (Create, Read, Update, Delete)</li>
+ *   <li>Entity CRUD operations (Create, Read, Update, Delete)</li> // GH-90000
  *   <li>Entity attribute validation against collection schema</li>
  *   <li>Tenant isolation for entity queries</li>
  *   <li>Audit logging contracts</li>
@@ -39,8 +39,8 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test, Contract
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("Data Cloud Entity Service API Contract Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("Data Cloud Entity Service API Contract Tests [GH-90000]")
 class DataCloudEntityServiceContractTest extends EventloopTestBase {
 
     @Mock
@@ -59,22 +59,22 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         String createdBy;
         String updatedBy;
 
-        Entity(String id, String collectionId, String tenantId, Map<String, Object> attributes) {
+        Entity(String id, String collectionId, String tenantId, Map<String, Object> attributes) { // GH-90000
             this.id = id;
             this.collectionId = collectionId;
             this.tenantId = tenantId;
             this.attributes = attributes;
-            this.createdAt = System.currentTimeMillis();
-            this.updatedAt = System.currentTimeMillis();
+            this.createdAt = System.currentTimeMillis(); // GH-90000
+            this.updatedAt = System.currentTimeMillis(); // GH-90000
         }
     }
 
     interface EntityService {
-        Promise<Entity> create(String tenantId, String collectionId, Entity entity);
-        Promise<Optional<Entity>> getById(String tenantId, String collectionId, String entityId);
-        Promise<Void> update(String tenantId, String collectionId, String entityId, Entity entity);
-        Promise<Void> delete(String tenantId, String collectionId, String entityId);
-        Promise<Long> count(String tenantId, String collectionId);
+        Promise<Entity> create(String tenantId, String collectionId, Entity entity); // GH-90000
+        Promise<Optional<Entity>> getById(String tenantId, String collectionId, String entityId); // GH-90000
+        Promise<Void> update(String tenantId, String collectionId, String entityId, Entity entity); // GH-90000
+        Promise<Void> delete(String tenantId, String collectionId, String entityId); // GH-90000
+        Promise<Long> count(String tenantId, String collectionId); // GH-90000
     }
 
     // =========================================================================
@@ -82,91 +82,91 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Creation Contracts")
+    @DisplayName("Entity Creation Contracts [GH-90000]")
     class EntityCreationContract {
 
         @Test
-        @DisplayName("POST /api/v1/collections/:collectionId/entities creates entity with generated ID")
-        void createMustGenerateEntityId() {
+        @DisplayName("POST /api/v1/collections/:collectionId/entities creates entity with generated ID [GH-90000]")
+        void createMustGenerateEntityId() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
-            Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Alice", "age", 28));
-            Entity expected = new Entity("ent-abc-123", collectionId, tenantId, newEntity.attributes);
-            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any()))
-                    .thenReturn(Promise.of(expected));
+            Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Alice", "age", 28)); // GH-90000
+            Entity expected = new Entity("ent-abc-123", collectionId, tenantId, newEntity.attributes); // GH-90000
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any())) // GH-90000
+                    .thenReturn(Promise.of(expected)); // GH-90000
 
-            Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity));
+            Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity)); // GH-90000
 
-            assertThat(created.id).isNotBlank().isNotEqualTo("");
+            assertThat(created.id).isNotBlank().isNotEqualTo(" [GH-90000]");
         }
 
         @Test
-        @DisplayName("created entity must inherit tenant from collection")
-        void createdEntityMustHaveTenantIsolation() {
+        @DisplayName("created entity must inherit tenant from collection [GH-90000]")
+        void createdEntityMustHaveTenantIsolation() { // GH-90000
             String tenantId = "tenant-org";
             String collectionId = "coll-employees";
-            Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Bob"));
-            Entity expected = new Entity("ent-1", collectionId, tenantId, newEntity.attributes);
-            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any()))
-                    .thenReturn(Promise.of(expected));
+            Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Bob")); // GH-90000
+            Entity expected = new Entity("ent-1", collectionId, tenantId, newEntity.attributes); // GH-90000
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any())) // GH-90000
+                    .thenReturn(Promise.of(expected)); // GH-90000
 
-            Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity));
+            Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity)); // GH-90000
 
-            assertThat(created.tenantId).isEqualTo(tenantId);
+            assertThat(created.tenantId).isEqualTo(tenantId); // GH-90000
         }
 
         @Test
-        @DisplayName("created entity must be validated against collection schema")
-        void createMustValidateSchema() {
+        @DisplayName("created entity must be validated against collection schema [GH-90000]")
+        void createMustValidateSchema() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-strict-schema";
-            // Collection schema requires: name (string), email (string)
-            Entity invalidEntity = new Entity("", collectionId, tenantId,
-                    Map.of("missing_required_field", "value"));
-            lenient().when(entityService.create(eq(tenantId), eq(collectionId), eq(invalidEntity)))
-                    .thenReturn(Promise.ofException(
-                            new IllegalArgumentException("Missing required field: name")));
+            // Collection schema requires: name (string), email (string) // GH-90000
+            Entity invalidEntity = new Entity("", collectionId, tenantId, // GH-90000
+                    Map.of("missing_required_field", "value")); // GH-90000
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), eq(invalidEntity))) // GH-90000
+                    .thenReturn(Promise.ofException( // GH-90000
+                            new IllegalArgumentException("Missing required field: name [GH-90000]")));
 
-            Throwable thrown = catchThrowable(() ->
-                    runPromise(() -> entityService.create(tenantId, collectionId, invalidEntity)));
+            Throwable thrown = catchThrowable(() -> // GH-90000
+                    runPromise(() -> entityService.create(tenantId, collectionId, invalidEntity))); // GH-90000
 
-            assertThat(thrown).isNotNull();
+            assertThat(thrown).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("created entity must have audit fields (createdAt, createdBy)")
-        void createdEntityMustHaveAuditFields() {
+        @DisplayName("created entity must have audit fields (createdAt, createdBy) [GH-90000]")
+        void createdEntityMustHaveAuditFields() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
-            Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Charlie"));
-            Entity expected = new Entity("ent-2", collectionId, tenantId, newEntity.attributes);
+            Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Charlie")); // GH-90000
+            Entity expected = new Entity("ent-2", collectionId, tenantId, newEntity.attributes); // GH-90000
             expected.createdBy = "user-creator";
             expected.updatedBy = "user-creator";
-            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any()))
-                    .thenReturn(Promise.of(expected));
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any())) // GH-90000
+                    .thenReturn(Promise.of(expected)); // GH-90000
 
-            Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity));
+            Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity)); // GH-90000
 
-            assertThat(created.createdAt).isGreaterThan(0);
-            assertThat(created.updatedAt).isGreaterThanOrEqualTo(created.createdAt);
-            assertThat(created.createdBy).isNotBlank();
+            assertThat(created.createdAt).isGreaterThan(0); // GH-90000
+            assertThat(created.updatedAt).isGreaterThanOrEqualTo(created.createdAt); // GH-90000
+            assertThat(created.createdBy).isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("cannot create entity in another tenant's collection")
-        void createMustPreventCrossTenantEntity() {
+        @DisplayName("cannot create entity in another tenant's collection [GH-90000]")
+        void createMustPreventCrossTenantEntity() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
-            Entity newEntity = new Entity("", collectionId, owningTenant, Map.of());
-            lenient().when(entityService.create(eq(requestingTenant), eq(collectionId), any()))
-                    .thenReturn(Promise.ofException(
-                            new SecurityException("Not authorized for this collection")));
+            Entity newEntity = new Entity("", collectionId, owningTenant, Map.of()); // GH-90000
+            lenient().when(entityService.create(eq(requestingTenant), eq(collectionId), any())) // GH-90000
+                    .thenReturn(Promise.ofException( // GH-90000
+                            new SecurityException("Not authorized for this collection [GH-90000]")));
 
-            Throwable thrown = catchThrowable(() ->
-                    runPromise(() -> entityService.create(requestingTenant, collectionId, newEntity)));
+            Throwable thrown = catchThrowable(() -> // GH-90000
+                    runPromise(() -> entityService.create(requestingTenant, collectionId, newEntity))); // GH-90000
 
-            assertThat(thrown).isNotNull();
+            assertThat(thrown).isNotNull(); // GH-90000
         }
     }
 
@@ -175,56 +175,56 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Read Contracts")
+    @DisplayName("Entity Read Contracts [GH-90000]")
     class EntityReadContract {
 
         @Test
-        @DisplayName("GET /api/v1/collections/:collectionId/entities/:id returns entity if accessible")
-        void getByIdMustReturnEntity() {
+        @DisplayName("GET /api/v1/collections/:collectionId/entities/:id returns entity if accessible [GH-90000]")
+        void getByIdMustReturnEntity() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String entityId = "ent-123";
-            Entity expected = new Entity(entityId, collectionId, tenantId, Map.of("name", "Dave"));
-            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq(entityId)))
-                    .thenReturn(Promise.of(Optional.of(expected)));
+            Entity expected = new Entity(entityId, collectionId, tenantId, Map.of("name", "Dave")); // GH-90000
+            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq(entityId))) // GH-90000
+                    .thenReturn(Promise.of(Optional.of(expected))); // GH-90000
 
-            Optional<Entity> result = runPromise(() ->
-                    entityService.getById(tenantId, collectionId, entityId));
+            Optional<Entity> result = runPromise(() -> // GH-90000
+                    entityService.getById(tenantId, collectionId, entityId)); // GH-90000
 
-            assertThat(result).isPresent();
-            assertThat(result.get().id).isEqualTo(entityId);
+            assertThat(result).isPresent(); // GH-90000
+            assertThat(result.get().id).isEqualTo(entityId); // GH-90000
         }
 
         @Test
-        @DisplayName("get entity from other tenant's collection must return empty")
-        void getByIdMustIsolateTenant() {
+        @DisplayName("get entity from other tenant's collection must return empty [GH-90000]")
+        void getByIdMustIsolateTenant() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
             String entityId = "ent-secret";
-            lenient().when(entityService.getById(eq(requestingTenant), eq(collectionId), eq(entityId)))
-                    .thenReturn(Promise.of(Optional.empty()));
+            lenient().when(entityService.getById(eq(requestingTenant), eq(collectionId), eq(entityId))) // GH-90000
+                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
-            Optional<Entity> result = runPromise(() ->
-                    entityService.getById(requestingTenant, collectionId, entityId));
+            Optional<Entity> result = runPromise(() -> // GH-90000
+                    entityService.getById(requestingTenant, collectionId, entityId)); // GH-90000
 
-            assertThat(result).isEmpty();
+            assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("entity response must include all required attributes")
-        void entityResponseMustBeComplete() {
+        @DisplayName("entity response must include all required attributes [GH-90000]")
+        void entityResponseMustBeComplete() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
-            Entity entity = new Entity("ent-1", collectionId, tenantId,
-                    Map.of("name", "Eve", "email", "eve@example.com"));
-            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq("ent-1")))
-                    .thenReturn(Promise.of(Optional.of(entity)));
+            Entity entity = new Entity("ent-1", collectionId, tenantId, // GH-90000
+                    Map.of("name", "Eve", "email", "eve@example.com")); // GH-90000
+            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq("ent-1 [GH-90000]")))
+                    .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
-            Optional<Entity> result = runPromise(() ->
-                    entityService.getById(tenantId, collectionId, "ent-1"));
+            Optional<Entity> result = runPromise(() -> // GH-90000
+                    entityService.getById(tenantId, collectionId, "ent-1")); // GH-90000
 
-            assertThat(result.get().attributes).containsKeys("name", "email");
+            assertThat(result.get().attributes).containsKeys("name", "email"); // GH-90000
         }
     }
 
@@ -233,83 +233,83 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Update Contracts")
+    @DisplayName("Entity Update Contracts [GH-90000]")
     class EntityUpdateContract {
 
         @Test
-        @DisplayName("PATCH /api/v1/collections/:collectionId/entities/:id updates attributes")
-        void updateMustModifyAttributes() {
+        @DisplayName("PATCH /api/v1/collections/:collectionId/entities/:id updates attributes [GH-90000]")
+        void updateMustModifyAttributes() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String entityId = "ent-1";
-            Entity updated = new Entity(entityId, collectionId, tenantId,
-                    Map.of("name", "Frank", "age", 35));
+            Entity updated = new Entity(entityId, collectionId, tenantId, // GH-90000
+                    Map.of("name", "Frank", "age", 35)); // GH-90000
             updated.updatedBy = "user-updater";
-            lenient().when(entityService.update(eq(tenantId), eq(collectionId), eq(entityId), any()))
-                    .thenReturn(Promise.of(null));
+            lenient().when(entityService.update(eq(tenantId), eq(collectionId), eq(entityId), any())) // GH-90000
+                    .thenReturn(Promise.of(null)); // GH-90000
 
-            runPromise(() -> entityService.update(tenantId, collectionId, entityId, updated));
+            runPromise(() -> entityService.update(tenantId, collectionId, entityId, updated)); // GH-90000
 
-            verify(entityService, times(1)).update(eq(tenantId), eq(collectionId), eq(entityId), any());
+            verify(entityService, times(1)).update(eq(tenantId), eq(collectionId), eq(entityId), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("update must validate attributes against schema")
-        void updateMustValidateSchema() {
+        @DisplayName("update must validate attributes against schema [GH-90000]")
+        void updateMustValidateSchema() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String entityId = "ent-1";
             // Invalid: email must be email format
-            Entity invalidUpdate = new Entity(entityId, collectionId, tenantId,
-                    Map.of("email", "not-an-email"));
-            lenient().when(entityService.update(eq(tenantId), eq(collectionId), eq(entityId), eq(invalidUpdate)))
-                    .thenReturn(Promise.ofException(
-                            new IllegalArgumentException("Invalid email format")));
+            Entity invalidUpdate = new Entity(entityId, collectionId, tenantId, // GH-90000
+                    Map.of("email", "not-an-email")); // GH-90000
+            lenient().when(entityService.update(eq(tenantId), eq(collectionId), eq(entityId), eq(invalidUpdate))) // GH-90000
+                    .thenReturn(Promise.ofException( // GH-90000
+                            new IllegalArgumentException("Invalid email format [GH-90000]")));
 
-            Throwable thrown = catchThrowable(() ->
-                    runPromise(() -> entityService.update(tenantId, collectionId, entityId, invalidUpdate)));
+            Throwable thrown = catchThrowable(() -> // GH-90000
+                    runPromise(() -> entityService.update(tenantId, collectionId, entityId, invalidUpdate))); // GH-90000
 
-            assertThat(thrown).isNotNull();
+            assertThat(thrown).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("update must not change entity ID or createdAt")
-        void updateMustNotChangeImmutableFields() {
+        @DisplayName("update must not change entity ID or createdAt [GH-90000]")
+        void updateMustNotChangeImmutableFields() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String entityId = "ent-1";
-            long originalCreatedAt = System.currentTimeMillis() - 60_000;
+            long originalCreatedAt = System.currentTimeMillis() - 60_000; // GH-90000
 
-            Map<String, Object> attributes = new java.util.HashMap<>();
-            attributes.put("name", "Grace");
-            Entity entity = new Entity(entityId, collectionId, tenantId, attributes);
+            Map<String, Object> attributes = new java.util.HashMap<>(); // GH-90000
+            attributes.put("name", "Grace"); // GH-90000
+            Entity entity = new Entity(entityId, collectionId, tenantId, attributes); // GH-90000
             entity.createdAt = originalCreatedAt;
 
             // After update:
-            entity.attributes.put("name", "Grace Updated");
-            entity.updatedAt = System.currentTimeMillis();
+            entity.attributes.put("name", "Grace Updated"); // GH-90000
+            entity.updatedAt = System.currentTimeMillis(); // GH-90000
 
-            assertThat(entity.id).isEqualTo(entityId); // ID must not change
-            assertThat(entity.createdAt).isEqualTo(originalCreatedAt); // createdAt must not change
-            assertThat(entity.updatedAt).isGreaterThan(entity.createdAt); // updatedAt must change
+            assertThat(entity.id).isEqualTo(entityId); // ID must not change // GH-90000
+            assertThat(entity.createdAt).isEqualTo(originalCreatedAt); // createdAt must not change // GH-90000
+            assertThat(entity.updatedAt).isGreaterThan(entity.createdAt); // updatedAt must change // GH-90000
         }
 
         @Test
-        @DisplayName("cannot update entity in another tenant's collection")
-        void updateMustPreventCrossTenantMod() {
+        @DisplayName("cannot update entity in another tenant's collection [GH-90000]")
+        void updateMustPreventCrossTenantMod() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
             String entityId = "ent-secret";
-            Entity update = new Entity(entityId, collectionId, owningTenant, Map.of());
-            lenient().when(entityService.update(eq(requestingTenant), eq(collectionId), eq(entityId), eq(update)))
-                    .thenReturn(Promise.ofException(
-                            new SecurityException("Not authorized")));
+            Entity update = new Entity(entityId, collectionId, owningTenant, Map.of()); // GH-90000
+            lenient().when(entityService.update(eq(requestingTenant), eq(collectionId), eq(entityId), eq(update))) // GH-90000
+                    .thenReturn(Promise.ofException( // GH-90000
+                            new SecurityException("Not authorized [GH-90000]")));
 
-            Throwable thrown = catchThrowable(() ->
-                    runPromise(() -> entityService.update(requestingTenant, collectionId, entityId, update)));
+            Throwable thrown = catchThrowable(() -> // GH-90000
+                    runPromise(() -> entityService.update(requestingTenant, collectionId, entityId, update))); // GH-90000
 
-            assertThat(thrown).isNotNull();
+            assertThat(thrown).isNotNull(); // GH-90000
         }
     }
 
@@ -318,52 +318,52 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Deletion Contracts")
+    @DisplayName("Entity Deletion Contracts [GH-90000]")
     class EntityDeletionContract {
 
         @Test
-        @DisplayName("DELETE /api/v1/collections/:collectionId/entities/:id deletes entity")
-        void deleteMustRemoveEntity() {
+        @DisplayName("DELETE /api/v1/collections/:collectionId/entities/:id deletes entity [GH-90000]")
+        void deleteMustRemoveEntity() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String entityId = "ent-temp";
-            lenient().when(entityService.delete(eq(tenantId), eq(collectionId), eq(entityId)))
-                    .thenReturn(Promise.of(null));
+            lenient().when(entityService.delete(eq(tenantId), eq(collectionId), eq(entityId))) // GH-90000
+                    .thenReturn(Promise.of(null)); // GH-90000
 
-            runPromise(() -> entityService.delete(tenantId, collectionId, entityId));
+            runPromise(() -> entityService.delete(tenantId, collectionId, entityId)); // GH-90000
 
-            verify(entityService, times(1)).delete(eq(tenantId), eq(collectionId), eq(entityId));
+            verify(entityService, times(1)).delete(eq(tenantId), eq(collectionId), eq(entityId)); // GH-90000
         }
 
         @Test
-        @DisplayName("delete of non-existent entity must be idempotent")
-        void deleteNonExistentMustBeSafe() {
+        @DisplayName("delete of non-existent entity must be idempotent [GH-90000]")
+        void deleteNonExistentMustBeSafe() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String nonExistentId = "ent-does-not-exist";
-            lenient().when(entityService.delete(eq(tenantId), eq(collectionId), eq(nonExistentId)))
-                    .thenReturn(Promise.of(null)); // Success even if not found
+            lenient().when(entityService.delete(eq(tenantId), eq(collectionId), eq(nonExistentId))) // GH-90000
+                    .thenReturn(Promise.of(null)); // Success even if not found // GH-90000
 
-            runPromise(() -> entityService.delete(tenantId, collectionId, nonExistentId));
+            runPromise(() -> entityService.delete(tenantId, collectionId, nonExistentId)); // GH-90000
 
             // Contract: deletion is idempotent
         }
 
         @Test
-        @DisplayName("cannot delete entities from another tenant's collection")
-        void deleteMustPreventCrossTenantDelete() {
+        @DisplayName("cannot delete entities from another tenant's collection [GH-90000]")
+        void deleteMustPreventCrossTenantDelete() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
             String entityId = "ent-secret";
-            lenient().when(entityService.delete(eq(requestingTenant), eq(collectionId), eq(entityId)))
-                    .thenReturn(Promise.ofException(
-                            new SecurityException("Not authorized")));
+            lenient().when(entityService.delete(eq(requestingTenant), eq(collectionId), eq(entityId))) // GH-90000
+                    .thenReturn(Promise.ofException( // GH-90000
+                            new SecurityException("Not authorized [GH-90000]")));
 
-            Throwable thrown = catchThrowable(() ->
-                    runPromise(() -> entityService.delete(requestingTenant, collectionId, entityId)));
+            Throwable thrown = catchThrowable(() -> // GH-90000
+                    runPromise(() -> entityService.delete(requestingTenant, collectionId, entityId))); // GH-90000
 
-            assertThat(thrown).isNotNull();
+            assertThat(thrown).isNotNull(); // GH-90000
         }
     }
 
@@ -372,52 +372,52 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Counting Contracts")
+    @DisplayName("Entity Counting Contracts [GH-90000]")
     class EntityCountingContract {
 
         @Test
-        @DisplayName("count API returns entity count for given collection")
-        void countMustReturnAccurateCount() {
+        @DisplayName("count API returns entity count for given collection [GH-90000]")
+        void countMustReturnAccurateCount() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
-            lenient().when(entityService.count(eq(tenantId), eq(collectionId)))
-                    .thenReturn(Promise.of(42L));
+            lenient().when(entityService.count(eq(tenantId), eq(collectionId))) // GH-90000
+                    .thenReturn(Promise.of(42L)); // GH-90000
 
-            Long count = runPromise(() -> entityService.count(tenantId, collectionId));
+            Long count = runPromise(() -> entityService.count(tenantId, collectionId)); // GH-90000
 
-            assertThat(count).isEqualTo(42L);
+            assertThat(count).isEqualTo(42L); // GH-90000
         }
 
         @Test
-        @DisplayName("count must only include entities from requesting tenant")
-        void countMustIsolateTenant() {
+        @DisplayName("count must only include entities from requesting tenant [GH-90000]")
+        void countMustIsolateTenant() { // GH-90000
             String tenant1 = "tenant-1";
             String tenant2 = "tenant-2";
             String collectionId = "coll-users";
-            lenient().when(entityService.count(eq(tenant1), eq(collectionId)))
-                    .thenReturn(Promise.of(10L));
-            lenient().when(entityService.count(eq(tenant2), eq(collectionId)))
-                    .thenReturn(Promise.of(20L));
+            lenient().when(entityService.count(eq(tenant1), eq(collectionId))) // GH-90000
+                    .thenReturn(Promise.of(10L)); // GH-90000
+            lenient().when(entityService.count(eq(tenant2), eq(collectionId))) // GH-90000
+                    .thenReturn(Promise.of(20L)); // GH-90000
 
-            Long tenant1Count = runPromise(() -> entityService.count(tenant1, collectionId));
-            Long tenant2Count = runPromise(() -> entityService.count(tenant2, collectionId));
+            Long tenant1Count = runPromise(() -> entityService.count(tenant1, collectionId)); // GH-90000
+            Long tenant2Count = runPromise(() -> entityService.count(tenant2, collectionId)); // GH-90000
 
-            assertThat(tenant1Count).isEqualTo(10L);
-            assertThat(tenant2Count).isEqualTo(20L);
-            assertThat(tenant1Count).isNotEqualTo(tenant2Count);
+            assertThat(tenant1Count).isEqualTo(10L); // GH-90000
+            assertThat(tenant2Count).isEqualTo(20L); // GH-90000
+            assertThat(tenant1Count).isNotEqualTo(tenant2Count); // GH-90000
         }
 
         @Test
-        @DisplayName("count for non-existent collection must return 0")
-        void countNonExistentMustReturn0() {
+        @DisplayName("count for non-existent collection must return 0 [GH-90000]")
+        void countNonExistentMustReturn0() { // GH-90000
             String tenantId = "tenant-1";
             String nonExistentCollection = "coll-does-not-exist";
-            lenient().when(entityService.count(eq(tenantId), eq(nonExistentCollection)))
-                    .thenReturn(Promise.of(0L));
+            lenient().when(entityService.count(eq(tenantId), eq(nonExistentCollection))) // GH-90000
+                    .thenReturn(Promise.of(0L)); // GH-90000
 
-            Long count = runPromise(() -> entityService.count(tenantId, nonExistentCollection));
+            Long count = runPromise(() -> entityService.count(tenantId, nonExistentCollection)); // GH-90000
 
-            assertThat(count).isEqualTo(0L);
+            assertThat(count).isEqualTo(0L); // GH-90000
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.memory.media;
@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link MediaArtifactRecord} and {@link DataCloudMediaArtifactRepository}.
  */
-@DisplayName("MediaArtifact (P7-T4)")
+@DisplayName("MediaArtifact (P7-T4) [GH-90000]")
 class MediaArtifactTest {
 
     // =========================================================================
@@ -27,57 +27,57 @@ class MediaArtifactTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("MediaArtifactRecord")
+    @DisplayName("MediaArtifactRecord [GH-90000]")
     class RecordTests {
 
         @Test
-        @DisplayName("create() generates non-null artifactId and current timestamp")
-        void createGeneratesIds() {
-            MediaArtifactRecord record = MediaArtifactRecord.create(
+        @DisplayName("create() generates non-null artifactId and current timestamp [GH-90000]")
+        void createGeneratesIds() { // GH-90000
+            MediaArtifactRecord record = MediaArtifactRecord.create( // GH-90000
                     "tenant-1", "agent-1", "audio/wav",
                     "gs://bucket/file.wav", 1024L, "sha256abc",
-                    3000L, "av.speech-to-text", "corr-1", Map.of());
-            assertThat(record.artifactId()).isNotBlank();
-            assertThat(record.createdAt()).isNotNull();
-            assertThat(record.tenantId()).isEqualTo("tenant-1");
-            assertThat(record.mediaType()).isEqualTo("audio/wav");
+                    3000L, "av.speech-to-text", "corr-1", Map.of()); // GH-90000
+            assertThat(record.artifactId()).isNotBlank(); // GH-90000
+            assertThat(record.createdAt()).isNotNull(); // GH-90000
+            assertThat(record.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(record.mediaType()).isEqualTo("audio/wav [GH-90000]");
         }
 
         @Test
-        @DisplayName("metadata is immutable after creation")
-        void metadataIsImmutable() {
-            MediaArtifactRecord record = MediaArtifactRecord.create(
+        @DisplayName("metadata is immutable after creation [GH-90000]")
+        void metadataIsImmutable() { // GH-90000
+            MediaArtifactRecord record = MediaArtifactRecord.create( // GH-90000
                     "tenant-1", "agent-1", "image/jpeg",
                     "s3://bucket/img.jpg", 512L, null,
-                    0, null, null, Map.of("key", "val"));
-            assertThatThrownBy(() -> record.metadata().put("extra", "val"))
-                    .isInstanceOf(UnsupportedOperationException.class);
+                    0, null, null, Map.of("key", "val")); // GH-90000
+            assertThatThrownBy(() -> record.metadata().put("extra", "val")) // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null metadata defaults to empty map")
-        void nullMetadataDefaultsToEmpty() {
-            MediaArtifactRecord record = MediaArtifactRecord.create(
+        @DisplayName("null metadata defaults to empty map [GH-90000]")
+        void nullMetadataDefaultsToEmpty() { // GH-90000
+            MediaArtifactRecord record = MediaArtifactRecord.create( // GH-90000
                     "t1", "a1", "video/mp4", "uri", 100L, null, 0, null, null, null);
-            assertThat(record.metadata()).isEmpty();
+            assertThat(record.metadata()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("negative sizeBytes throws")
-        void negativeSizeBytesThrows() {
-            assertThatThrownBy(() -> MediaArtifactRecord.create(
+        @DisplayName("negative sizeBytes throws [GH-90000]")
+        void negativeSizeBytesThrows() { // GH-90000
+            assertThatThrownBy(() -> MediaArtifactRecord.create( // GH-90000
                     "t1", "a1", "audio/wav", "uri", -1L, null, 0, null, null, null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("sizeBytes");
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("sizeBytes [GH-90000]");
         }
 
         @Test
-        @DisplayName("blank mediaType throws")
-        void blankMediaTypeThrows() {
-            assertThatThrownBy(() -> MediaArtifactRecord.create(
+        @DisplayName("blank mediaType throws [GH-90000]")
+        void blankMediaTypeThrows() { // GH-90000
+            assertThatThrownBy(() -> MediaArtifactRecord.create( // GH-90000
                     "t1", "a1", "  ", "uri", 100L, null, 0, null, null, null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("mediaType");
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("mediaType [GH-90000]");
         }
     }
 
@@ -86,89 +86,89 @@ class MediaArtifactTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("DataCloudMediaArtifactRepository")
+    @DisplayName("DataCloudMediaArtifactRepository [GH-90000]")
     class RepositoryTests {
 
         private DataCloudMediaArtifactRepository repo;
 
         @BeforeEach
-        void setUp() {
-            repo = new DataCloudMediaArtifactRepository();
+        void setUp() { // GH-90000
+            repo = new DataCloudMediaArtifactRepository(); // GH-90000
         }
 
-        private MediaArtifactRecord buildRecord(String tenantId, String agentId, String mediaType) {
-            return MediaArtifactRecord.create(
+        private MediaArtifactRecord buildRecord(String tenantId, String agentId, String mediaType) { // GH-90000
+            return MediaArtifactRecord.create( // GH-90000
                     tenantId, agentId, mediaType,
-                    "gs://bucket/test.wav", 100L, null, 0, "av.stt", "corr-1", Map.of());
+                    "gs://bucket/test.wav", 100L, null, 0, "av.stt", "corr-1", Map.of()); // GH-90000
         }
 
         @Test
-        @DisplayName("save and findById returns saved record")
-        void saveAndFindById() {
-            MediaArtifactRecord record = buildRecord("t1", "agent-1", "audio/wav");
-            MediaArtifactRecord saved = repo.save(record).getResult();
-            assertThat(saved).isEqualTo(record);
-            Optional<MediaArtifactRecord> found = repo.findById(record.artifactId(), "t1").getResult();
-            assertThat(found).contains(record);
+        @DisplayName("save and findById returns saved record [GH-90000]")
+        void saveAndFindById() { // GH-90000
+            MediaArtifactRecord record = buildRecord("t1", "agent-1", "audio/wav"); // GH-90000
+            MediaArtifactRecord saved = repo.save(record).getResult(); // GH-90000
+            assertThat(saved).isEqualTo(record); // GH-90000
+            Optional<MediaArtifactRecord> found = repo.findById(record.artifactId(), "t1").getResult(); // GH-90000
+            assertThat(found).contains(record); // GH-90000
         }
 
         @Test
-        @DisplayName("findById returns empty when not found")
-        void findByIdReturnsEmpty() {
-            Optional<MediaArtifactRecord> result = repo.findById("nonexistent", "t1").getResult();
-            assertThat(result).isEmpty();
+        @DisplayName("findById returns empty when not found [GH-90000]")
+        void findByIdReturnsEmpty() { // GH-90000
+            Optional<MediaArtifactRecord> result = repo.findById("nonexistent", "t1").getResult(); // GH-90000
+            assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("tenant isolation: different tenants cannot see each other's artifacts")
-        void tenantIsolation() {
-            MediaArtifactRecord t1 = buildRecord("tenant-A", "agent-1", "audio/wav");
-            MediaArtifactRecord t2 = buildRecord("tenant-B", "agent-1", "audio/wav");
-            repo.save(t1).getResult();
-            repo.save(t2).getResult();
+        @DisplayName("tenant isolation: different tenants cannot see each other's artifacts [GH-90000]")
+        void tenantIsolation() { // GH-90000
+            MediaArtifactRecord t1 = buildRecord("tenant-A", "agent-1", "audio/wav"); // GH-90000
+            MediaArtifactRecord t2 = buildRecord("tenant-B", "agent-1", "audio/wav"); // GH-90000
+            repo.save(t1).getResult(); // GH-90000
+            repo.save(t2).getResult(); // GH-90000
 
-            assertThat(repo.findById(t1.artifactId(), "tenant-B").getResult()).isEmpty();
-            assertThat(repo.findById(t2.artifactId(), "tenant-A").getResult()).isEmpty();
-            assertThat(repo.findById(t1.artifactId(), "tenant-A").getResult()).contains(t1);
+            assertThat(repo.findById(t1.artifactId(), "tenant-B").getResult()).isEmpty(); // GH-90000
+            assertThat(repo.findById(t2.artifactId(), "tenant-A").getResult()).isEmpty(); // GH-90000
+            assertThat(repo.findById(t1.artifactId(), "tenant-A").getResult()).contains(t1); // GH-90000
         }
 
         @Test
-        @DisplayName("findByAgent returns matching records within limit")
-        void findByAgent() {
-            repo.save(buildRecord("t1", "agent-x", "audio/wav")).getResult();
-            repo.save(buildRecord("t1", "agent-x", "video/mp4")).getResult();
-            repo.save(buildRecord("t1", "agent-y", "image/jpeg")).getResult();
+        @DisplayName("findByAgent returns matching records within limit [GH-90000]")
+        void findByAgent() { // GH-90000
+            repo.save(buildRecord("t1", "agent-x", "audio/wav")).getResult(); // GH-90000
+            repo.save(buildRecord("t1", "agent-x", "video/mp4")).getResult(); // GH-90000
+            repo.save(buildRecord("t1", "agent-y", "image/jpeg")).getResult(); // GH-90000
 
-            List<MediaArtifactRecord> results = repo.findByAgent("agent-x", "t1", 10).getResult();
-            assertThat(results).hasSize(2);
+            List<MediaArtifactRecord> results = repo.findByAgent("agent-x", "t1", 10).getResult(); // GH-90000
+            assertThat(results).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("findByMediaType filters by MIME type")
-        void findByMediaType() {
-            repo.save(buildRecord("t1", "a1", "audio/wav")).getResult();
-            repo.save(buildRecord("t1", "a1", "audio/wav")).getResult();
-            repo.save(buildRecord("t1", "a1", "video/mp4")).getResult();
+        @DisplayName("findByMediaType filters by MIME type [GH-90000]")
+        void findByMediaType() { // GH-90000
+            repo.save(buildRecord("t1", "a1", "audio/wav")).getResult(); // GH-90000
+            repo.save(buildRecord("t1", "a1", "audio/wav")).getResult(); // GH-90000
+            repo.save(buildRecord("t1", "a1", "video/mp4")).getResult(); // GH-90000
 
-            List<MediaArtifactRecord> results = repo.findByMediaType("audio/wav", "t1", 10).getResult();
-            assertThat(results).hasSize(2);
+            List<MediaArtifactRecord> results = repo.findByMediaType("audio/wav", "t1", 10).getResult(); // GH-90000
+            assertThat(results).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("delete returns true and removes record")
-        void deleteRemovesRecord() {
-            MediaArtifactRecord record = buildRecord("t1", "a1", "audio/wav");
-            repo.save(record).getResult();
-            Boolean deleted = repo.delete(record.artifactId(), "t1").getResult();
-            assertThat(deleted).isTrue();
-            assertThat(repo.findById(record.artifactId(), "t1").getResult()).isEmpty();
+        @DisplayName("delete returns true and removes record [GH-90000]")
+        void deleteRemovesRecord() { // GH-90000
+            MediaArtifactRecord record = buildRecord("t1", "a1", "audio/wav"); // GH-90000
+            repo.save(record).getResult(); // GH-90000
+            Boolean deleted = repo.delete(record.artifactId(), "t1").getResult(); // GH-90000
+            assertThat(deleted).isTrue(); // GH-90000
+            assertThat(repo.findById(record.artifactId(), "t1").getResult()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("delete returns false when record not found")
-        void deleteReturnsFalseWhenMissing() {
-            Boolean deleted = repo.delete("nonexistent", "t1").getResult();
-            assertThat(deleted).isFalse();
+        @DisplayName("delete returns false when record not found [GH-90000]")
+        void deleteReturnsFalseWhenMissing() { // GH-90000
+            Boolean deleted = repo.delete("nonexistent", "t1").getResult(); // GH-90000
+            assertThat(deleted).isFalse(); // GH-90000
         }
     }
 }

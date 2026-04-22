@@ -8,7 +8,7 @@
 
 - `@ghatana/platform-events` for shared event-driven workflow contracts
 - `@ghatana/primitives` for low-level UI building blocks
-- `@ghatana/ui` for higher-level shared UI components
+- `@ghatana/design-system` for higher-level shared UI components
 
 ## Usage
 

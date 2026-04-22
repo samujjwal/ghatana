@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 Ghatana, Inc.
+ * Copyright (c) 2024 Ghatana, Inc. // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -36,11 +36,11 @@ import org.junit.jupiter.api.io.TempDir;
 class CodemodExecutorTest {
 
     @Test
-    void testJavaImportSorting(@TempDir Path tempDir) throws Exception {
-        CodemodExecutor executor = new CodemodExecutor();
+    void testJavaImportSorting(@TempDir Path tempDir) throws Exception { // GH-90000
+        CodemodExecutor executor = new CodemodExecutor(); // GH-90000
 
         // Create a Java file with unsorted imports
-        Path javaFile = tempDir.resolve("TestClass.java");
+        Path javaFile = tempDir.resolve("TestClass.java [GH-90000]");
         String javaContent =
                 """
             package com.example;
@@ -52,82 +52,82 @@ class CodemodExecutorTest {
             import java.nio.file.Path;
 
             public class TestClass {
-                private List<String> items = new ArrayList<>();
+                private List<String> items = new ArrayList<>(); // GH-90000
             }
             """;
-        Files.writeString(javaFile, javaContent);
+        Files.writeString(javaFile, javaContent); // GH-90000
 
-        CodemodExecutor.CodemodResult result = executor.executeCodemods(tempDir, Map.of());
+        CodemodExecutor.CodemodResult result = executor.executeCodemods(tempDir, Map.of()); // GH-90000
 
-        assertTrue(result.successful());
-        assertEquals(1, result.filesProcessed());
-        assertTrue(result.transformationsApplied() > 0);
+        assertTrue(result.successful()); // GH-90000
+        assertEquals(1, result.filesProcessed()); // GH-90000
+        assertTrue(result.transformationsApplied() > 0); // GH-90000
 
         // Verify import formatting was applied
-        String transformedContent = Files.readString(javaFile);
-        assertFalse(transformedContent.contains("\n\n\nimport"));
+        String transformedContent = Files.readString(javaFile); // GH-90000
+        assertFalse(transformedContent.contains("\n\n\nimport [GH-90000]"));
     }
 
     @Test
-    void testTypeScriptImportFormatting(@TempDir Path tempDir) throws Exception {
-        CodemodExecutor executor = new CodemodExecutor();
+    void testTypeScriptImportFormatting(@TempDir Path tempDir) throws Exception { // GH-90000
+        CodemodExecutor executor = new CodemodExecutor(); // GH-90000
 
         // Create TypeScript files with formatting issues
-        Path tsFile = tempDir.resolve("test.ts");
+        Path tsFile = tempDir.resolve("test.ts [GH-90000]");
         String tsContent =
                 """
             import {  Component,  useState  } from 'react';
             import{Button}from './Button';
 
-            export default function App() {
-                const [count, setCount] = useState(0);
-                return <Button onClick={() => setCount(count + 1)}>{count}</Button>;
+            export default function App() { // GH-90000
+                const [count, setCount] = useState(0); // GH-90000
+                return <Button onClick={() => setCount(count + 1)}>{count}</Button>; // GH-90000
             }
             """;
-        Files.writeString(tsFile, tsContent);
+        Files.writeString(tsFile, tsContent); // GH-90000
 
-        CodemodExecutor.CodemodResult result = executor.executeCodemods(tempDir, Map.of());
+        CodemodExecutor.CodemodResult result = executor.executeCodemods(tempDir, Map.of()); // GH-90000
 
-        assertTrue(result.successful());
-        assertEquals(1, result.filesProcessed());
-        assertTrue(result.transformationsApplied() >= 0); // May or may not apply transformations
+        assertTrue(result.successful()); // GH-90000
+        assertEquals(1, result.filesProcessed()); // GH-90000
+        assertTrue(result.transformationsApplied() >= 0); // May or may not apply transformations // GH-90000
     }
 
     @Test
-    void testESLintFixes(@TempDir Path tempDir) throws Exception {
-        CodemodExecutor executor = new CodemodExecutor();
+    void testESLintFixes(@TempDir Path tempDir) throws Exception { // GH-90000
+        CodemodExecutor executor = new CodemodExecutor(); // GH-90000
 
         // Create TypeScript file in src directory with ESLint issues
-        Path srcDir = tempDir.resolve("src");
-        Files.createDirectories(srcDir);
-        Path tsFile = srcDir.resolve("component.tsx");
+        Path srcDir = tempDir.resolve("src [GH-90000]");
+        Files.createDirectories(srcDir); // GH-90000
+        Path tsFile = srcDir.resolve("component.tsx [GH-90000]");
 
         String tsContent =
                 """
-            export function Button(){
-            const handleClick=()=>{
-            console.log('clicked')    ;
+            export function Button(){ // GH-90000
+            const handleClick=()=>{ // GH-90000
+            console.log('clicked')    ; // GH-90000
             }
             return<button onClick={handleClick}>Click me</button>;}
             """;
-        Files.writeString(tsFile, tsContent);
+        Files.writeString(tsFile, tsContent); // GH-90000
 
         CodemodExecutor.CodemodResult result =
-                executor.executeCodemods(tempDir, Map.of("enableESLint", true));
+                executor.executeCodemods(tempDir, Map.of("enableESLint", true)); // GH-90000
 
-        assertTrue(result.successful());
+        assertTrue(result.successful()); // GH-90000
         // Files processed count may vary based on ESLint transformation logic
-        assertTrue(result.filesProcessed() >= 0);
+        assertTrue(result.filesProcessed() >= 0); // GH-90000
     }
 
     @Test
-    void testEmptyProject(@TempDir Path tempDir) throws Exception {
-        CodemodExecutor executor = new CodemodExecutor();
+    void testEmptyProject(@TempDir Path tempDir) throws Exception { // GH-90000
+        CodemodExecutor executor = new CodemodExecutor(); // GH-90000
 
-        CodemodExecutor.CodemodResult result = executor.executeCodemods(tempDir, Map.of());
+        CodemodExecutor.CodemodResult result = executor.executeCodemods(tempDir, Map.of()); // GH-90000
 
-        assertTrue(result.successful());
-        assertEquals(0, result.filesProcessed());
-        assertEquals(0, result.transformationsApplied());
+        assertTrue(result.successful()); // GH-90000
+        assertEquals(0, result.filesProcessed()); // GH-90000
+        assertEquals(0, result.transformationsApplied()); // GH-90000
     }
 }

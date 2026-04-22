@@ -12,8 +12,8 @@
  * 
  * @example
  * ```tsx
- * import { cardStyles, textStyles, cn } from '@ghatana/ui';
- * 
+ * import { cardStyles, textStyles, cn } from '@ghatana/design-system';
+ *
  * function MyCard() {
  *   return (
  *     <div className={cn(cardStyles.base, cardStyles.padded)}>

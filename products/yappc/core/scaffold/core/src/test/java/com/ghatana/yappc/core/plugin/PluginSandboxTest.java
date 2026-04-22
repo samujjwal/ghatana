@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors
+ * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -39,80 +39,80 @@ import static org.junit.jupiter.api.Assertions.*;
 class PluginSandboxTest {
 
     @Test
-    void testPermissiveSandbox() {
-        Path workspace = Paths.get("/workspace");
-        PluginSandbox sandbox = PluginSandbox.permissive(workspace);
+    void testPermissiveSandbox() { // GH-90000
+        Path workspace = Paths.get("/workspace [GH-90000]");
+        PluginSandbox sandbox = PluginSandbox.permissive(workspace); // GH-90000
 
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("subdir/file.txt")));
-        assertEquals(Duration.ofMinutes(5), sandbox.timeout());
-        assertFalse(sandbox.dryRunOnly());
-        assertTrue(sandbox.allowNetworkAccess());
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("subdir/file.txt [GH-90000]")));
+        assertEquals(Duration.ofMinutes(5), sandbox.timeout()); // GH-90000
+        assertFalse(sandbox.dryRunOnly()); // GH-90000
+        assertTrue(sandbox.allowNetworkAccess()); // GH-90000
     }
 
     @Test
-    void testRestrictiveSandbox() {
-        Path allowed = Paths.get("/workspace");
-        PluginSandbox sandbox = PluginSandbox.restrictive(List.of(allowed));
+    void testRestrictiveSandbox() { // GH-90000
+        Path allowed = Paths.get("/workspace [GH-90000]");
+        PluginSandbox sandbox = PluginSandbox.restrictive(List.of(allowed)); // GH-90000
 
-        assertTrue(sandbox.isWriteAllowed(allowed.resolve("file.txt")));
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/etc/passwd")));
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/sys/config")));
-        assertEquals(Duration.ofMinutes(1), sandbox.timeout());
-        assertFalse(sandbox.dryRunOnly());
-        assertFalse(sandbox.allowNetworkAccess());
+        assertTrue(sandbox.isWriteAllowed(allowed.resolve("file.txt [GH-90000]")));
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/etc/passwd [GH-90000]")));
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/sys/config [GH-90000]")));
+        assertEquals(Duration.ofMinutes(1), sandbox.timeout()); // GH-90000
+        assertFalse(sandbox.dryRunOnly()); // GH-90000
+        assertFalse(sandbox.allowNetworkAccess()); // GH-90000
     }
 
     @Test
-    void testDryRunSandbox() {
-        PluginSandbox sandbox = PluginSandbox.dryRun();
+    void testDryRunSandbox() { // GH-90000
+        PluginSandbox sandbox = PluginSandbox.dryRun(); // GH-90000
 
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/any/path")));
-        assertEquals(Duration.ofSeconds(30), sandbox.timeout());
-        assertTrue(sandbox.dryRunOnly());
-        assertFalse(sandbox.allowNetworkAccess());
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/any/path [GH-90000]")));
+        assertEquals(Duration.ofSeconds(30), sandbox.timeout()); // GH-90000
+        assertTrue(sandbox.dryRunOnly()); // GH-90000
+        assertFalse(sandbox.allowNetworkAccess()); // GH-90000
     }
 
     @Test
-    void testIsWriteAllowedWithDeniedPaths() {
-        Path workspace = Paths.get("/workspace");
-        Path denied = workspace.resolve("restricted");
+    void testIsWriteAllowedWithDeniedPaths() { // GH-90000
+        Path workspace = Paths.get("/workspace [GH-90000]");
+        Path denied = workspace.resolve("restricted [GH-90000]");
 
-        PluginSandbox sandbox = new PluginSandbox(
-                List.of(workspace),
-                List.of(denied),
-                Duration.ofMinutes(1),
+        PluginSandbox sandbox = new PluginSandbox( // GH-90000
+                List.of(workspace), // GH-90000
+                List.of(denied), // GH-90000
+                Duration.ofMinutes(1), // GH-90000
                 false,
                 true);
 
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
-        assertFalse(sandbox.isWriteAllowed(denied.resolve("file.txt")));
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
+        assertFalse(sandbox.isWriteAllowed(denied.resolve("file.txt [GH-90000]")));
     }
 
     @Test
-    void testIsWriteAllowedOutsideAllowedPaths() {
-        Path workspace = Paths.get("/workspace");
-        PluginSandbox sandbox = new PluginSandbox(
-                List.of(workspace),
-                List.of(),
-                Duration.ofMinutes(1),
+    void testIsWriteAllowedOutsideAllowedPaths() { // GH-90000
+        Path workspace = Paths.get("/workspace [GH-90000]");
+        PluginSandbox sandbox = new PluginSandbox( // GH-90000
+                List.of(workspace), // GH-90000
+                List.of(), // GH-90000
+                Duration.ofMinutes(1), // GH-90000
                 false,
                 true);
 
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/other/file.txt")));
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/other/file.txt [GH-90000]")));
     }
 
     @Test
-    void testDryRunBlocksAllWrites() {
-        Path workspace = Paths.get("/workspace");
-        PluginSandbox sandbox = new PluginSandbox(
-                List.of(workspace),
-                List.of(),
-                Duration.ofMinutes(1),
+    void testDryRunBlocksAllWrites() { // GH-90000
+        Path workspace = Paths.get("/workspace [GH-90000]");
+        PluginSandbox sandbox = new PluginSandbox( // GH-90000
+                List.of(workspace), // GH-90000
+                List.of(), // GH-90000
+                Duration.ofMinutes(1), // GH-90000
                 true, // dry run
                 true);
 
-        assertFalse(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
+        assertFalse(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
     }
 }

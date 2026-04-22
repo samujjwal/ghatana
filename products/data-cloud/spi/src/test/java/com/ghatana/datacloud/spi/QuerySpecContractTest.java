@@ -10,13 +10,13 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("QuerySpec contracts")
+@DisplayName("QuerySpec contracts [GH-90000]")
 class QuerySpecContractTest {
 
     @Test
-    @DisplayName("EntityStore query spec normalizes defaults and bounds")
-    void entityStoreQuerySpecNormalizesDefaultsAndBounds() {
-        EntityStore.QuerySpec spec = new EntityStore.QuerySpec(
+    @DisplayName("EntityStore query spec normalizes defaults and bounds [GH-90000]")
+    void entityStoreQuerySpecNormalizesDefaultsAndBounds() { // GH-90000
+        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
                 "orders",
                 null,
                 null,
@@ -24,57 +24,57 @@ class QuerySpecContractTest {
                 0
         );
 
-        assertThat(spec.collection()).isEqualTo("orders");
-        assertThat(spec.filters()).isEmpty();
-        assertThat(spec.sorts()).isEmpty();
-        assertThat(spec.offset()).isZero();
-        assertThat(spec.limit()).isEqualTo(EntityStore.QuerySpec.DEFAULT_LIMIT);
+        assertThat(spec.collection()).isEqualTo("orders [GH-90000]");
+        assertThat(spec.filters()).isEmpty(); // GH-90000
+        assertThat(spec.sorts()).isEmpty(); // GH-90000
+        assertThat(spec.offset()).isZero(); // GH-90000
+        assertThat(spec.limit()).isEqualTo(EntityStore.QuerySpec.DEFAULT_LIMIT); // GH-90000
     }
 
     @Test
-    @DisplayName("EntityStore query spec rejects runaway limits")
-    void entityStoreQuerySpecRejectsRunawayLimits() {
-        assertThatThrownBy(() -> new EntityStore.QuerySpec(
+    @DisplayName("EntityStore query spec rejects runaway limits [GH-90000]")
+    void entityStoreQuerySpecRejectsRunawayLimits() { // GH-90000
+        assertThatThrownBy(() -> new EntityStore.QuerySpec( // GH-90000
                 "orders",
-                List.of(),
-                List.of(),
+                List.of(), // GH-90000
+                List.of(), // GH-90000
                 0,
                 EntityStore.QuerySpec.MAX_LIMIT + 1
-        )).isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("exceeds maximum allowed value");
+        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("exceeds maximum allowed value [GH-90000]");
     }
 
     @Test
-    @DisplayName("QueryCapability query spec builder keeps plugin-native shape")
-    void queryCapabilityQuerySpecBuilderKeepsPluginNativeShape() {
-        QueryCapability.QuerySpec spec = QueryCapability.QuerySpec.builder()
-                .filter("status", "active")
-                .orderBy("createdAt", "priority")
-                .projections(List.of("id", "status"))
-                .build();
+    @DisplayName("QueryCapability query spec builder keeps plugin-native shape [GH-90000]")
+    void queryCapabilityQuerySpecBuilderKeepsPluginNativeShape() { // GH-90000
+        QueryCapability.QuerySpec spec = QueryCapability.QuerySpec.builder() // GH-90000
+                .filter("status", "active") // GH-90000
+                .orderBy("createdAt", "priority") // GH-90000
+                .projections(List.of("id", "status")) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(spec.filters()).containsEntry("status", "active");
-        assertThat(spec.orderBy()).containsExactly("createdAt", "priority");
-        assertThat(spec.ascending()).isTrue();
-        assertThat(spec.projections()).containsExactly("id", "status");
+        assertThat(spec.filters()).containsEntry("status", "active"); // GH-90000
+        assertThat(spec.orderBy()).containsExactly("createdAt", "priority"); // GH-90000
+        assertThat(spec.ascending()).isTrue(); // GH-90000
+        assertThat(spec.projections()).containsExactly("id", "status"); // GH-90000
     }
 
     @Test
-    @DisplayName("QuerySpec types remain intentionally distinct")
-    void querySpecTypesRemainIntentionallyDistinct() {
-        EntityStore.QuerySpec entityStoreSpec = EntityStore.QuerySpec.builder()
-                .collection("orders")
-                .filter(EntityStore.Filter.eq("status", "active"))
-                .build();
-        QueryCapability.QuerySpec capabilitySpec = QueryCapability.QuerySpec.builder()
-                .filters(Map.of("status", "active"))
-                .build();
+    @DisplayName("QuerySpec types remain intentionally distinct [GH-90000]")
+    void querySpecTypesRemainIntentionallyDistinct() { // GH-90000
+        EntityStore.QuerySpec entityStoreSpec = EntityStore.QuerySpec.builder() // GH-90000
+                .collection("orders [GH-90000]")
+                .filter(EntityStore.Filter.eq("status", "active")) // GH-90000
+                .build(); // GH-90000
+        QueryCapability.QuerySpec capabilitySpec = QueryCapability.QuerySpec.builder() // GH-90000
+                .filters(Map.of("status", "active")) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(entityStoreSpec.collection()).isEqualTo("orders");
-        assertThat(entityStoreSpec.filters()).singleElement()
-                .extracting(EntityStore.Filter::field)
-                .isEqualTo("status");
-        assertThat(capabilitySpec.filters()).containsEntry("status", "active");
-        assertThat(capabilitySpec.projections()).isEmpty();
+        assertThat(entityStoreSpec.collection()).isEqualTo("orders [GH-90000]");
+        assertThat(entityStoreSpec.filters()).singleElement() // GH-90000
+                .extracting(EntityStore.Filter::field) // GH-90000
+                .isEqualTo("status [GH-90000]");
+        assertThat(capabilitySpec.filters()).containsEntry("status", "active"); // GH-90000
+        assertThat(capabilitySpec.projections()).isEmpty(); // GH-90000
     }
 }

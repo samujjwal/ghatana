@@ -24,292 +24,292 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Query Correctness Tests")
-@Tag("integration")
+@DisplayName("Query Correctness Tests [GH-90000]")
+@Tag("integration [GH-90000]")
 class QueryCorrectnessTest extends EventloopTestBase {
 
     // ── Test data ─────────────────────────────────────────────────────────────
 
-    record User(int id, String name, String department, int salary) {}
+    record User(int id, String name, String department, int salary) {} // GH-90000
 
-    static final List<User> USERS = List.of(
-            new User(1, "Alice",   "Engineering", 90_000),
-            new User(2, "Bob",     "Marketing",   70_000),
-            new User(3, "Charlie", "Engineering", 85_000),
-            new User(4, "Diana",   "HR",          65_000),
-            new User(5, "Eve",     "Engineering", 95_000),
-            new User(6, "Frank",   "Marketing",   72_000)
+    static final List<User> USERS = List.of( // GH-90000
+            new User(1, "Alice",   "Engineering", 90_000), // GH-90000
+            new User(2, "Bob",     "Marketing",   70_000), // GH-90000
+            new User(3, "Charlie", "Engineering", 85_000), // GH-90000
+            new User(4, "Diana",   "HR",          65_000), // GH-90000
+            new User(5, "Eve",     "Engineering", 95_000), // GH-90000
+            new User(6, "Frank",   "Marketing",   72_000) // GH-90000
     );
 
     // ── SELECT with filters ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("SELECT with filters (WHERE clause)")
+    @DisplayName("SELECT with filters (WHERE clause) [GH-90000]")
     class SelectWithFilters {
 
         @Test
-        @DisplayName("equality filter returns only matching rows")
-        void equalityFilter_returnsOnlyMatchingRows() {
-            List<User> engineering = USERS.stream()
-                    .filter(u -> "Engineering".equals(u.department()))
-                    .toList();
+        @DisplayName("equality filter returns only matching rows [GH-90000]")
+        void equalityFilter_returnsOnlyMatchingRows() { // GH-90000
+            List<User> engineering = USERS.stream() // GH-90000
+                    .filter(u -> "Engineering".equals(u.department())) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(engineering).hasSize(3);
-            assertThat(engineering).extracting(User::name)
-                    .containsExactlyInAnyOrder("Alice", "Charlie", "Eve");
+            assertThat(engineering).hasSize(3); // GH-90000
+            assertThat(engineering).extracting(User::name) // GH-90000
+                    .containsExactlyInAnyOrder("Alice", "Charlie", "Eve"); // GH-90000
         }
 
         @Test
-        @DisplayName("range filter (salary > X) returns correct rows")
-        void rangeFilter_returnsCorrectRows() {
-            List<User> highEarners = USERS.stream()
-                    .filter(u -> u.salary() > 80_000)
-                    .toList();
+        @DisplayName("range filter (salary > X) returns correct rows [GH-90000]")
+        void rangeFilter_returnsCorrectRows() { // GH-90000
+            List<User> highEarners = USERS.stream() // GH-90000
+                    .filter(u -> u.salary() > 80_000) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(highEarners).hasSize(3);
-            assertThat(highEarners).extracting(User::name)
-                    .containsExactlyInAnyOrder("Alice", "Charlie", "Eve");
+            assertThat(highEarners).hasSize(3); // GH-90000
+            assertThat(highEarners).extracting(User::name) // GH-90000
+                    .containsExactlyInAnyOrder("Alice", "Charlie", "Eve"); // GH-90000
         }
 
         @Test
-        @DisplayName("IN filter returns all matching rows")
-        void inFilter_returnsAllMatchingRows() {
-            List<String> departments = List.of("Marketing", "HR");
-            List<User> filtered = USERS.stream()
-                    .filter(u -> departments.contains(u.department()))
-                    .toList();
+        @DisplayName("IN filter returns all matching rows [GH-90000]")
+        void inFilter_returnsAllMatchingRows() { // GH-90000
+            List<String> departments = List.of("Marketing", "HR"); // GH-90000
+            List<User> filtered = USERS.stream() // GH-90000
+                    .filter(u -> departments.contains(u.department())) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(filtered).hasSize(3);
-            assertThat(filtered).extracting(User::name)
-                    .containsExactlyInAnyOrder("Bob", "Diana", "Frank");
+            assertThat(filtered).hasSize(3); // GH-90000
+            assertThat(filtered).extracting(User::name) // GH-90000
+                    .containsExactlyInAnyOrder("Bob", "Diana", "Frank"); // GH-90000
         }
 
         @Test
-        @DisplayName("compound AND filter narrows result set correctly")
-        void compoundAndFilter_narrowsResultSet() {
-            List<User> result = USERS.stream()
-                    .filter(u -> "Engineering".equals(u.department()) && u.salary() >= 90_000)
-                    .toList();
+        @DisplayName("compound AND filter narrows result set correctly [GH-90000]")
+        void compoundAndFilter_narrowsResultSet() { // GH-90000
+            List<User> result = USERS.stream() // GH-90000
+                    .filter(u -> "Engineering".equals(u.department()) && u.salary() >= 90_000) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(result).hasSize(2);
-            assertThat(result).extracting(User::name)
-                    .containsExactlyInAnyOrder("Alice", "Eve");
+            assertThat(result).hasSize(2); // GH-90000
+            assertThat(result).extracting(User::name) // GH-90000
+                    .containsExactlyInAnyOrder("Alice", "Eve"); // GH-90000
         }
     }
 
     // ── ORDER BY ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ORDER BY sorting")
+    @DisplayName("ORDER BY sorting [GH-90000]")
     class OrderBy {
 
         @Test
-        @DisplayName("ORDER BY salary ASC produces correct order")
-        void orderBySalaryAsc_producesCorrectOrder() {
-            List<User> sorted = USERS.stream()
-                    .sorted(Comparator.comparingInt(User::salary))
-                    .toList();
+        @DisplayName("ORDER BY salary ASC produces correct order [GH-90000]")
+        void orderBySalaryAsc_producesCorrectOrder() { // GH-90000
+            List<User> sorted = USERS.stream() // GH-90000
+                    .sorted(Comparator.comparingInt(User::salary)) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(sorted).extracting(User::name)
-                    .containsExactly("Diana", "Bob", "Frank", "Charlie", "Alice", "Eve");
+            assertThat(sorted).extracting(User::name) // GH-90000
+                    .containsExactly("Diana", "Bob", "Frank", "Charlie", "Alice", "Eve"); // GH-90000
         }
 
         @Test
-        @DisplayName("ORDER BY salary DESC produces reversed correct order")
-        void orderBySalaryDesc_producesReversedCorrectOrder() {
-            List<User> sorted = USERS.stream()
-                    .sorted(Comparator.comparingInt(User::salary).reversed())
-                    .toList();
+        @DisplayName("ORDER BY salary DESC produces reversed correct order [GH-90000]")
+        void orderBySalaryDesc_producesReversedCorrectOrder() { // GH-90000
+            List<User> sorted = USERS.stream() // GH-90000
+                    .sorted(Comparator.comparingInt(User::salary).reversed()) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(sorted).extracting(User::name)
-                    .containsExactly("Eve", "Alice", "Charlie", "Frank", "Bob", "Diana");
+            assertThat(sorted).extracting(User::name) // GH-90000
+                    .containsExactly("Eve", "Alice", "Charlie", "Frank", "Bob", "Diana"); // GH-90000
         }
 
         @Test
-        @DisplayName("ORDER BY multiple columns applies tie-breaking correctly")
-        void orderByMultipleColumns_appliesTieBreaking() {
-            List<User> sorted = USERS.stream()
-                    .sorted(Comparator.comparing(User::department)
-                            .thenComparingInt(User::salary))
-                    .toList();
+        @DisplayName("ORDER BY multiple columns applies tie-breaking correctly [GH-90000]")
+        void orderByMultipleColumns_appliesTieBreaking() { // GH-90000
+            List<User> sorted = USERS.stream() // GH-90000
+                    .sorted(Comparator.comparing(User::department) // GH-90000
+                            .thenComparingInt(User::salary)) // GH-90000
+                    .toList(); // GH-90000
 
             // Engineering comes before HR and Marketing alphabetically
-            assertThat(sorted.getFirst().department()).isEqualTo("Engineering");
+            assertThat(sorted.getFirst().department()).isEqualTo("Engineering [GH-90000]");
         }
     }
 
     // ── LIMIT and OFFSET ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("LIMIT / OFFSET pagination")
+    @DisplayName("LIMIT / OFFSET pagination [GH-90000]")
     class LimitOffset {
 
         @Test
-        @DisplayName("LIMIT 2 returns only first 2 rows")
-        void limit2_returnsOnlyFirst2Rows() {
-            List<User> page = USERS.stream()
-                    .sorted(Comparator.comparingInt(User::id))
-                    .limit(2)
-                    .toList();
+        @DisplayName("LIMIT 2 returns only first 2 rows [GH-90000]")
+        void limit2_returnsOnlyFirst2Rows() { // GH-90000
+            List<User> page = USERS.stream() // GH-90000
+                    .sorted(Comparator.comparingInt(User::id)) // GH-90000
+                    .limit(2) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(page).hasSize(2);
-            assertThat(page).extracting(User::id).containsExactly(1, 2);
+            assertThat(page).hasSize(2); // GH-90000
+            assertThat(page).extracting(User::id).containsExactly(1, 2); // GH-90000
         }
 
         @Test
-        @DisplayName("OFFSET 2 LIMIT 2 returns correct middle page")
-        void offset2Limit2_returnsCorrectMiddlePage() {
-            List<User> page = USERS.stream()
-                    .sorted(Comparator.comparingInt(User::id))
-                    .skip(2)
-                    .limit(2)
-                    .toList();
+        @DisplayName("OFFSET 2 LIMIT 2 returns correct middle page [GH-90000]")
+        void offset2Limit2_returnsCorrectMiddlePage() { // GH-90000
+            List<User> page = USERS.stream() // GH-90000
+                    .sorted(Comparator.comparingInt(User::id)) // GH-90000
+                    .skip(2) // GH-90000
+                    .limit(2) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(page).hasSize(2);
-            assertThat(page).extracting(User::id).containsExactly(3, 4);
+            assertThat(page).hasSize(2); // GH-90000
+            assertThat(page).extracting(User::id).containsExactly(3, 4); // GH-90000
         }
 
         @Test
-        @DisplayName("OFFSET beyond total rows returns empty result")
-        void offsetBeyondTotalRows_returnsEmptyResult() {
-            List<User> page = USERS.stream()
-                    .skip(100)
-                    .limit(10)
-                    .toList();
+        @DisplayName("OFFSET beyond total rows returns empty result [GH-90000]")
+        void offsetBeyondTotalRows_returnsEmptyResult() { // GH-90000
+            List<User> page = USERS.stream() // GH-90000
+                    .skip(100) // GH-90000
+                    .limit(10) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(page).isEmpty();
+            assertThat(page).isEmpty(); // GH-90000
         }
     }
 
     // ── GROUP BY with aggregation ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GROUP BY with aggregation")
+    @DisplayName("GROUP BY with aggregation [GH-90000]")
     class GroupBy {
 
         @Test
-        @DisplayName("GROUP BY department with COUNT returns correct counts")
-        void groupByDepartment_withCount_returnsCorrectCounts() {
-            Map<String, Long> counts = USERS.stream()
-                    .collect(Collectors.groupingBy(User::department, Collectors.counting()));
+        @DisplayName("GROUP BY department with COUNT returns correct counts [GH-90000]")
+        void groupByDepartment_withCount_returnsCorrectCounts() { // GH-90000
+            Map<String, Long> counts = USERS.stream() // GH-90000
+                    .collect(Collectors.groupingBy(User::department, Collectors.counting())); // GH-90000
 
-            assertThat(counts).containsEntry("Engineering", 3L);
-            assertThat(counts).containsEntry("Marketing", 2L);
-            assertThat(counts).containsEntry("HR", 1L);
+            assertThat(counts).containsEntry("Engineering", 3L); // GH-90000
+            assertThat(counts).containsEntry("Marketing", 2L); // GH-90000
+            assertThat(counts).containsEntry("HR", 1L); // GH-90000
         }
 
         @Test
-        @DisplayName("GROUP BY department with AVG salary computes correct averages")
-        void groupByDepartment_withAvgSalary_computesCorrectAverages() {
-            Map<String, Double> avgSalaries = USERS.stream()
-                    .collect(Collectors.groupingBy(User::department,
-                            Collectors.averagingInt(User::salary)));
+        @DisplayName("GROUP BY department with AVG salary computes correct averages [GH-90000]")
+        void groupByDepartment_withAvgSalary_computesCorrectAverages() { // GH-90000
+            Map<String, Double> avgSalaries = USERS.stream() // GH-90000
+                    .collect(Collectors.groupingBy(User::department, // GH-90000
+                            Collectors.averagingInt(User::salary))); // GH-90000
 
-            assertThat(avgSalaries.get("Engineering")).isEqualTo((90_000.0 + 85_000.0 + 95_000.0) / 3);
-            assertThat(avgSalaries.get("Marketing")).isEqualTo((70_000.0 + 72_000.0) / 2);
+            assertThat(avgSalaries.get("Engineering [GH-90000]")).isEqualTo((90_000.0 + 85_000.0 + 95_000.0) / 3);
+            assertThat(avgSalaries.get("Marketing [GH-90000]")).isEqualTo((70_000.0 + 72_000.0) / 2);
         }
 
         @Test
-        @DisplayName("HAVING filters groups by aggregate condition")
-        void having_filtersGroupsByAggregateCondition() {
-            Map<String, Long> counts = USERS.stream()
-                    .collect(Collectors.groupingBy(User::department, Collectors.counting()));
+        @DisplayName("HAVING filters groups by aggregate condition [GH-90000]")
+        void having_filtersGroupsByAggregateCondition() { // GH-90000
+            Map<String, Long> counts = USERS.stream() // GH-90000
+                    .collect(Collectors.groupingBy(User::department, Collectors.counting())); // GH-90000
 
             // HAVING count > 1
-            Map<String, Long> filtered = counts.entrySet().stream()
-                    .filter(e -> e.getValue() > 1)
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            Map<String, Long> filtered = counts.entrySet().stream() // GH-90000
+                    .filter(e -> e.getValue() > 1) // GH-90000
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)); // GH-90000
 
-            assertThat(filtered).containsKeys("Engineering", "Marketing");
-            assertThat(filtered).doesNotContainKey("HR");
+            assertThat(filtered).containsKeys("Engineering", "Marketing"); // GH-90000
+            assertThat(filtered).doesNotContainKey("HR [GH-90000]");
         }
     }
 
     // ── UNION ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("UNION operations")
+    @DisplayName("UNION operations [GH-90000]")
     class UnionOperations {
 
         @Test
-        @DisplayName("UNION deduplicates rows from both sets")
-        void union_deduplicatesRowsFromBothSets() {
-            List<String> setA = List.of("alice", "bob", "charlie");
-            List<String> setB = List.of("charlie", "diana", "eve");
+        @DisplayName("UNION deduplicates rows from both sets [GH-90000]")
+        void union_deduplicatesRowsFromBothSets() { // GH-90000
+            List<String> setA = List.of("alice", "bob", "charlie"); // GH-90000
+            List<String> setB = List.of("charlie", "diana", "eve"); // GH-90000
 
-            List<String> union = new ArrayList<>();
-            union.addAll(setA);
-            setB.stream().filter(s -> !union.contains(s)).forEach(union::add);
+            List<String> union = new ArrayList<>(); // GH-90000
+            union.addAll(setA); // GH-90000
+            setB.stream().filter(s -> !union.contains(s)).forEach(union::add); // GH-90000
 
-            assertThat(union).containsExactlyInAnyOrder("alice", "bob", "charlie", "diana", "eve");
-            assertThat(union).doesNotHaveDuplicates();
+            assertThat(union).containsExactlyInAnyOrder("alice", "bob", "charlie", "diana", "eve"); // GH-90000
+            assertThat(union).doesNotHaveDuplicates(); // GH-90000
         }
 
         @Test
-        @DisplayName("UNION ALL preserves duplicates")
-        void unionAll_preservesDuplicates() {
-            List<String> setA = List.of("alice", "bob");
-            List<String> setB = List.of("alice", "charlie");
+        @DisplayName("UNION ALL preserves duplicates [GH-90000]")
+        void unionAll_preservesDuplicates() { // GH-90000
+            List<String> setA = List.of("alice", "bob"); // GH-90000
+            List<String> setB = List.of("alice", "charlie"); // GH-90000
 
-            List<String> unionAll = new ArrayList<>();
-            unionAll.addAll(setA);
-            unionAll.addAll(setB);
+            List<String> unionAll = new ArrayList<>(); // GH-90000
+            unionAll.addAll(setA); // GH-90000
+            unionAll.addAll(setB); // GH-90000
 
-            assertThat(unionAll).hasSize(4);
-            assertThat(unionAll.stream().filter("alice"::equals).count()).isEqualTo(2);
+            assertThat(unionAll).hasSize(4); // GH-90000
+            assertThat(unionAll.stream().filter("alice"::equals).count()).isEqualTo(2); // GH-90000
         }
     }
 
     // ── JOIN operations ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("JOIN operations")
+    @DisplayName("JOIN operations [GH-90000]")
     class JoinOperations {
 
-        record Department(String name, String manager) {}
+        record Department(String name, String manager) {} // GH-90000
 
-        static final List<Department> DEPARTMENTS = List.of(
-                new Department("Engineering", "Eve"),
-                new Department("Marketing",   "Frank"),
-                new Department("HR",          "Diana")
+        static final List<Department> DEPARTMENTS = List.of( // GH-90000
+                new Department("Engineering", "Eve"), // GH-90000
+                new Department("Marketing",   "Frank"), // GH-90000
+                new Department("HR",          "Diana") // GH-90000
         );
 
         @Test
-        @DisplayName("INNER JOIN returns only rows with matching key in both tables")
-        void innerJoin_returnsOnlyMatchingRows() {
+        @DisplayName("INNER JOIN returns only rows with matching key in both tables [GH-90000]")
+        void innerJoin_returnsOnlyMatchingRows() { // GH-90000
             // Join users to departments on department name
-            List<String> joined = USERS.stream()
-                    .flatMap(u -> DEPARTMENTS.stream()
-                            .filter(d -> d.name().equals(u.department()))
-                            .map(d -> u.name() + "-" + d.manager()))
-                    .toList();
+            List<String> joined = USERS.stream() // GH-90000
+                    .flatMap(u -> DEPARTMENTS.stream() // GH-90000
+                            .filter(d -> d.name().equals(u.department())) // GH-90000
+                            .map(d -> u.name() + "-" + d.manager())) // GH-90000
+                    .toList(); // GH-90000
 
-            assertThat(joined).hasSize(6); // all users match a department
+            assertThat(joined).hasSize(6); // all users match a department // GH-90000
         }
 
         @Test
-        @DisplayName("LEFT JOIN preserves all left rows even without right match")
-        void leftJoin_preservesAllLeftRows() {
-            List<User> usersWithUnmatchedDept = List.of(
-                    new User(99, "Orphan", "UnknownDept", 50_000)
+        @DisplayName("LEFT JOIN preserves all left rows even without right match [GH-90000]")
+        void leftJoin_preservesAllLeftRows() { // GH-90000
+            List<User> usersWithUnmatchedDept = List.of( // GH-90000
+                    new User(99, "Orphan", "UnknownDept", 50_000) // GH-90000
             );
-            List<User> allUsers = new ArrayList<>(USERS);
-            allUsers.addAll(usersWithUnmatchedDept);
+            List<User> allUsers = new ArrayList<>(USERS); // GH-90000
+            allUsers.addAll(usersWithUnmatchedDept); // GH-90000
 
             // Left join: all users, null department info for unmatched
-            List<String> leftJoined = allUsers.stream()
-                    .map(u -> {
-                        String manager = DEPARTMENTS.stream()
-                                .filter(d -> d.name().equals(u.department()))
-                                .map(Department::manager)
-                                .findFirst()
-                                .orElse("NULL");
-                        return u.name() + "-" + manager;
+            List<String> leftJoined = allUsers.stream() // GH-90000
+                    .map(u -> { // GH-90000
+                        String manager = DEPARTMENTS.stream() // GH-90000
+                                .filter(d -> d.name().equals(u.department())) // GH-90000
+                                .map(Department::manager) // GH-90000
+                                .findFirst() // GH-90000
+                                .orElse("NULL [GH-90000]");
+                        return u.name() + "-" + manager; // GH-90000
                     })
-                    .toList();
+                    .toList(); // GH-90000
 
-            assertThat(leftJoined).hasSize(7);
-            assertThat(leftJoined).contains("Orphan-NULL");
+            assertThat(leftJoined).hasSize(7); // GH-90000
+            assertThat(leftJoined).contains("Orphan-NULL [GH-90000]");
         }
     }
 }

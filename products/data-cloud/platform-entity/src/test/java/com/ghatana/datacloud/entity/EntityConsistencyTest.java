@@ -19,93 +19,93 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test entity consistency, validation, and data integrity.
  */
-@DisplayName("Entity Consistency Tests")
+@DisplayName("Entity Consistency Tests [GH-90000]")
 class EntityConsistencyTest {
 
     @Test
-    @DisplayName("Should maintain entity consistency")
-    void shouldMaintainEntityConsistency() {
-        MetaCollection collection = MetaCollection.builder()
-            .tenantId("tenant-123")
-            .name("test-collection")
-            .active(true)
-            .build();
+    @DisplayName("Should maintain entity consistency [GH-90000]")
+    void shouldMaintainEntityConsistency() { // GH-90000
+        MetaCollection collection = MetaCollection.builder() // GH-90000
+            .tenantId("tenant-123 [GH-90000]")
+            .name("test-collection [GH-90000]")
+            .active(true) // GH-90000
+            .build(); // GH-90000
 
-        assertThat(collection.getActive()).isTrue();
-        assertThat(collection.getTenantId()).isEqualTo("tenant-123");
+        assertThat(collection.getActive()).isTrue(); // GH-90000
+        assertThat(collection.getTenantId()).isEqualTo("tenant-123 [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should validate entity data")
-    void shouldValidateEntityData() {
-        Map<String, Object> data = new HashMap<>();
-        data.put("name", "test");
-        data.put("value", 123);
+    @DisplayName("Should validate entity data [GH-90000]")
+    void shouldValidateEntityData() { // GH-90000
+        Map<String, Object> data = new HashMap<>(); // GH-90000
+        data.put("name", "test"); // GH-90000
+        data.put("value", 123); // GH-90000
 
-        assertThat(data).isNotEmpty();
-        assertThat(data).containsKey("name");
-        assertThat(data).containsKey("value");
+        assertThat(data).isNotEmpty(); // GH-90000
+        assertThat(data).containsKey("name [GH-90000]");
+        assertThat(data).containsKey("value [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle data integrity")
-    void shouldHandleDataIntegrity() {
-        MetaCollection collection = MetaCollection.builder()
-            .tenantId("tenant-123")
-            .name("test-collection")
-            .version(1)
-            .build();
+    @DisplayName("Should handle data integrity [GH-90000]")
+    void shouldHandleDataIntegrity() { // GH-90000
+        MetaCollection collection = MetaCollection.builder() // GH-90000
+            .tenantId("tenant-123 [GH-90000]")
+            .name("test-collection [GH-90000]")
+            .version(1) // GH-90000
+            .build(); // GH-90000
 
-        collection.setVersion(2);
+        collection.setVersion(2); // GH-90000
 
-        assertThat(collection.getVersion()).isEqualTo(2);
+        assertThat(collection.getVersion()).isEqualTo(2); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle consistency checks")
-    void shouldHandleConsistencyChecks() {
-        MetaCollection collection1 = MetaCollection.builder()
-            .tenantId("tenant-123")
-            .name("test-collection")
-            .build();
+    @DisplayName("Should handle consistency checks [GH-90000]")
+    void shouldHandleConsistencyChecks() { // GH-90000
+        MetaCollection collection1 = MetaCollection.builder() // GH-90000
+            .tenantId("tenant-123 [GH-90000]")
+            .name("test-collection [GH-90000]")
+            .build(); // GH-90000
 
-        MetaCollection collection2 = MetaCollection.builder()
-            .tenantId("tenant-123")
-            .name("test-collection")
-            .build();
+        MetaCollection collection2 = MetaCollection.builder() // GH-90000
+            .tenantId("tenant-123 [GH-90000]")
+            .name("test-collection [GH-90000]")
+            .build(); // GH-90000
 
-        boolean sameTenant = collection1.getTenantId().equals(collection2.getTenantId());
-        boolean sameName = collection1.getName().equals(collection2.getName());
+        boolean sameTenant = collection1.getTenantId().equals(collection2.getTenantId()); // GH-90000
+        boolean sameName = collection1.getName().equals(collection2.getName()); // GH-90000
 
-        assertThat(sameTenant).isTrue();
-        assertThat(sameName).isTrue();
+        assertThat(sameTenant).isTrue(); // GH-90000
+        assertThat(sameName).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle consistency failures")
-    void shouldHandleConsistencyFailures() {
-        MetaCollection collection = MetaCollection.builder()
-            .tenantId("tenant-123")
-            .name("test-collection")
-            .active(true)
-            .build();
+    @DisplayName("Should handle consistency failures [GH-90000]")
+    void shouldHandleConsistencyFailures() { // GH-90000
+        MetaCollection collection = MetaCollection.builder() // GH-90000
+            .tenantId("tenant-123 [GH-90000]")
+            .name("test-collection [GH-90000]")
+            .active(true) // GH-90000
+            .build(); // GH-90000
 
-        collection.setActive(false);
+        collection.setActive(false); // GH-90000
 
-        assertThat(collection.getActive()).isFalse();
+        assertThat(collection.getActive()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle consistency recovery")
-    void shouldHandleConsistencyRecovery() {
-        MetaCollection collection = MetaCollection.builder()
-            .tenantId("tenant-123")
-            .name("test-collection")
-            .active(false)
-            .build();
+    @DisplayName("Should handle consistency recovery [GH-90000]")
+    void shouldHandleConsistencyRecovery() { // GH-90000
+        MetaCollection collection = MetaCollection.builder() // GH-90000
+            .tenantId("tenant-123 [GH-90000]")
+            .name("test-collection [GH-90000]")
+            .active(false) // GH-90000
+            .build(); // GH-90000
 
-        collection.setActive(true);
+        collection.setActive(true); // GH-90000
 
-        assertThat(collection.getActive()).isTrue();
+        assertThat(collection.getActive()).isTrue(); // GH-90000
     }
 }

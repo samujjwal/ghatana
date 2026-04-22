@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.core.pipeline;
@@ -22,184 +22,184 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("StageSuggestionService")
+@DisplayName("StageSuggestionService [GH-90000]")
 class StageSuggestionServiceTest {
 
     private StageSuggestionService service;
 
     @BeforeEach
-    void setUp() {
-        service = new DefaultStageSuggestionService();
+    void setUp() { // GH-90000
+        service = new DefaultStageSuggestionService(); // GH-90000
     }
 
     @Nested
-    @DisplayName("suggestStages()")
+    @DisplayName("suggestStages() [GH-90000]")
     class SuggestStagesTests {
 
         @Test
-        @DisplayName("returns empty list for null event types")
-        void returnsEmptyListForNullEventTypes() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(null, Map.of());
-            assertThat(suggestions).isEmpty();
+        @DisplayName("returns empty list for null event types [GH-90000]")
+        void returnsEmptyListForNullEventTypes() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(null, Map.of()); // GH-90000
+            assertThat(suggestions).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty list for empty event types")
-        void returnsEmptyListForEmptyEventTypes() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(List.of(), Map.of());
-            assertThat(suggestions).isEmpty();
+        @DisplayName("returns empty list for empty event types [GH-90000]")
+        void returnsEmptyListForEmptyEventTypes() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(List.of(), Map.of()); // GH-90000
+            assertThat(suggestions).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("suggests transaction stages for transaction events")
-        void suggestsTransactionStagesForTransactionEvents() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("transaction.created", "transaction.updated"), Map.of()
+        @DisplayName("suggests transaction stages for transaction events [GH-90000]")
+        void suggestsTransactionStagesForTransactionEvents() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("transaction.created", "transaction.updated"), Map.of() // GH-90000
             );
 
-            assertThat(suggestions).isNotEmpty();
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("filter"));
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("detect"));
-            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("fraud"));
+            assertThat(suggestions).isNotEmpty(); // GH-90000
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("filter [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("detect [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("fraud [GH-90000]"));
         }
 
         @Test
-        @DisplayName("suggests auth stages for login events")
-        void suggestsAuthStagesForLoginEvents() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("user.login", "auth.token"), Map.of()
+        @DisplayName("suggests auth stages for login events [GH-90000]")
+        void suggestsAuthStagesForLoginEvents() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("user.login", "auth.token"), Map.of() // GH-90000
             );
 
-            assertThat(suggestions).isNotEmpty();
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("validate"));
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("detect"));
-            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("auth"));
+            assertThat(suggestions).isNotEmpty(); // GH-90000
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("validate [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("detect [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("auth [GH-90000]"));
         }
 
         @Test
-        @DisplayName("suggests order stages for order events")
-        void suggestsOrderStagesForOrderEvents() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("order.created", "cart.updated"), Map.of()
+        @DisplayName("suggests order stages for order events [GH-90000]")
+        void suggestsOrderStagesForOrderEvents() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("order.created", "cart.updated"), Map.of() // GH-90000
             );
 
-            assertThat(suggestions).isNotEmpty();
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("validate"));
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("transform"));
-            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("order"));
+            assertThat(suggestions).isNotEmpty(); // GH-90000
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("validate [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("transform [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("order [GH-90000]"));
         }
 
         @Test
-        @DisplayName("suggests sensor stages for iot events")
-        void suggestsSensorStagesForIotEvents() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("sensor.reading", "iot.data"), Map.of()
+        @DisplayName("suggests sensor stages for iot events [GH-90000]")
+        void suggestsSensorStagesForIotEvents() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("sensor.reading", "iot.data"), Map.of() // GH-90000
             );
 
-            assertThat(suggestions).isNotEmpty();
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("filter"));
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("aggregate"));
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("detect"));
-            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("sensor"));
+            assertThat(suggestions).isNotEmpty(); // GH-90000
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("filter [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("aggregate [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("detect [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.description().toLowerCase().contains("sensor [GH-90000]"));
         }
 
         @Test
-        @DisplayName("always includes utility stages")
-        void alwaysIncludesUtilityStages() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("any.event"), Map.of()
+        @DisplayName("always includes utility stages [GH-90000]")
+        void alwaysIncludesUtilityStages() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("any.event [GH-90000]"), Map.of()
             );
 
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("log"));
-            assertThat(suggestions).anyMatch(s -> s.stageType().equals("metrics"));
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("log [GH-90000]"));
+            assertThat(suggestions).anyMatch(s -> s.stageType().equals("metrics [GH-90000]"));
         }
 
         @Test
-        @DisplayName("confidence scores are between 0 and 1")
-        void confidenceScoresAreBetween0And1() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("transaction.created"), Map.of()
+        @DisplayName("confidence scores are between 0 and 1 [GH-90000]")
+        void confidenceScoresAreBetween0And1() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("transaction.created [GH-90000]"), Map.of()
             );
 
-            for (StageSuggestionService.StageSuggestion suggestion : suggestions) {
-                assertThat(suggestion.confidence()).isBetween(0.0, 1.0);
+            for (StageSuggestionService.StageSuggestion suggestion : suggestions) { // GH-90000
+                assertThat(suggestion.confidence()).isBetween(0.0, 1.0); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("suggestions include configuration")
-        void suggestionsIncludeConfiguration() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("transaction.created"), Map.of()
+        @DisplayName("suggestions include configuration [GH-90000]")
+        void suggestionsIncludeConfiguration() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("transaction.created [GH-90000]"), Map.of()
             );
 
-            for (StageSuggestionService.StageSuggestion suggestion : suggestions) {
-                assertThat(suggestion.suggestedConfig()).isNotNull();
+            for (StageSuggestionService.StageSuggestion suggestion : suggestions) { // GH-90000
+                assertThat(suggestion.suggestedConfig()).isNotNull(); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("suggestions include dependencies")
-        void suggestionsIncludeDependencies() {
-            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages(
-                List.of("transaction.created"), Map.of()
+        @DisplayName("suggestions include dependencies [GH-90000]")
+        void suggestionsIncludeDependencies() { // GH-90000
+            List<StageSuggestionService.StageSuggestion> suggestions = service.suggestStages( // GH-90000
+                List.of("transaction.created [GH-90000]"), Map.of()
             );
 
-            for (StageSuggestionService.StageSuggestion suggestion : suggestions) {
-                assertThat(suggestion.dependencies()).isNotNull();
+            for (StageSuggestionService.StageSuggestion suggestion : suggestions) { // GH-90000
+                assertThat(suggestion.dependencies()).isNotNull(); // GH-90000
             }
         }
     }
 
     @Nested
-    @DisplayName("getStageTemplates()")
+    @DisplayName("getStageTemplates() [GH-90000]")
     class GetStageTemplatesTests {
 
         @Test
-        @DisplayName("returns templates for valid stage type")
-        void returnsTemplatesForValidStageType() {
-            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("filter");
-            assertThat(templates).isNotEmpty();
+        @DisplayName("returns templates for valid stage type [GH-90000]")
+        void returnsTemplatesForValidStageType() { // GH-90000
+            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("filter [GH-90000]");
+            assertThat(templates).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty list for unknown stage type")
-        void returnsEmptyListForUnknownStageType() {
-            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("unknown");
-            assertThat(templates).isEmpty();
+        @DisplayName("returns empty list for unknown stage type [GH-90000]")
+        void returnsEmptyListForUnknownStageType() { // GH-90000
+            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("unknown [GH-90000]");
+            assertThat(templates).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("templates have required fields")
-        void templatesHaveRequiredFields() {
-            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("filter");
+        @DisplayName("templates have required fields [GH-90000]")
+        void templatesHaveRequiredFields() { // GH-90000
+            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("filter [GH-90000]");
             
-            for (StageSuggestionService.StageTemplate template : templates) {
-                assertThat(template.id()).isNotNull();
-                assertThat(template.name()).isNotNull();
-                assertThat(template.description()).isNotNull();
-                assertThat(template.stageType()).isNotNull();
-                assertThat(template.defaultConfig()).isNotNull();
-                assertThat(template.applicableEventTypes()).isNotNull();
+            for (StageSuggestionService.StageTemplate template : templates) { // GH-90000
+                assertThat(template.id()).isNotNull(); // GH-90000
+                assertThat(template.name()).isNotNull(); // GH-90000
+                assertThat(template.description()).isNotNull(); // GH-90000
+                assertThat(template.stageType()).isNotNull(); // GH-90000
+                assertThat(template.defaultConfig()).isNotNull(); // GH-90000
+                assertThat(template.applicableEventTypes()).isNotNull(); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("filter templates include transaction and sensor filters")
-        void filterTemplatesIncludeTransactionAndSensorFilters() {
-            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("filter");
+        @DisplayName("filter templates include transaction and sensor filters [GH-90000]")
+        void filterTemplatesIncludeTransactionAndSensorFilters() { // GH-90000
+            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("filter [GH-90000]");
             
-            assertThat(templates).anyMatch(t -> t.id().equals("filter-transaction"));
-            assertThat(templates).anyMatch(t -> t.id().equals("filter-sensor"));
+            assertThat(templates).anyMatch(t -> t.id().equals("filter-transaction [GH-90000]"));
+            assertThat(templates).anyMatch(t -> t.id().equals("filter-sensor [GH-90000]"));
         }
 
         @Test
-        @DisplayName("detect templates include fraud and anomaly detection")
-        void detectTemplatesIncludeFraudAndAnomalyDetection() {
-            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("detect");
+        @DisplayName("detect templates include fraud and anomaly detection [GH-90000]")
+        void detectTemplatesIncludeFraudAndAnomalyDetection() { // GH-90000
+            List<StageSuggestionService.StageTemplate> templates = service.getStageTemplates("detect [GH-90000]");
             
-            assertThat(templates).anyMatch(t -> t.id().equals("detect-fraud"));
-            assertThat(templates).anyMatch(t -> t.id().equals("detect-anomaly"));
+            assertThat(templates).anyMatch(t -> t.id().equals("detect-fraud [GH-90000]"));
+            assertThat(templates).anyMatch(t -> t.id().equals("detect-anomaly [GH-90000]"));
         }
     }
 }

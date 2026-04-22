@@ -9,7 +9,8 @@ package com.ghatana.video.streaming;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,75 +19,45 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test video streaming, adaptive bitrate, and quality of service.
  */
-@DisplayName("Video Streaming Tests")
+@DisplayName("Video Streaming Tests [GH-90000]")
 class VideoStreamingTest {
 
+    private final VideoStreamSession session = new VideoStreamSession();
+
     @Test
-    @DisplayName("Should handle video streaming")
-    void shouldHandleVideoStreaming() {
-        String streamId = "video-stream-123";
-        String codec = "H264";
-        boolean active = true;
-        
-        assertThat(streamId).isNotNull();
-        assertThat(codec).isNotNull();
-        assertThat(active).isTrue();
+    @DisplayName("AV-1: should measure stable video throughput")
+    void shouldMeasureVideoThroughput() {
+        double fps = session.framesPerSecond(300, 2_000);
+
+        assertThat(fps).isEqualTo(150.0d);
+        assertThat(fps).isGreaterThan(60.0d);
     }
 
     @Test
-    @DisplayName("Should handle adaptive bitrate")
-    void shouldHandleAdaptiveBitrate() {
-        int currentBitrate = 2500;
-        int networkBandwidth = 5000;
-        int minBitrate = 500;
-        int maxBitrate = 10000;
-        
-        assertThat(currentBitrate).isGreaterThanOrEqualTo(minBitrate);
-        assertThat(currentBitrate).isLessThan(networkBandwidth);
-        assertThat(currentBitrate).isLessThan(maxBitrate);
+    @DisplayName("AV-2: should recover expected next frame after reconnect")
+    void shouldRecoverAfterReconnect() {
+        int next = session.expectedNextFrameAfterReconnect(88);
+
+        assertThat(next).isEqualTo(89);
     }
 
     @Test
-    @DisplayName("Should handle video buffering")
-    void shouldHandleVideoBuffering() {
-        int bufferSize = 1024 * 1024; // 1MB
-        int maxBufferSize = 10 * 1024 * 1024; // 10MB
-        int currentBufferLevel = 512 * 1024; // 512KB
-        
-        assertThat(bufferSize).isPositive();
-        assertThat(currentBufferLevel).isLessThan(bufferSize);
-        assertThat(bufferSize).isLessThan(maxBufferSize);
+    @DisplayName("AV-3: should preserve video wire-format contract")
+    void shouldPreserveVideoWireFormatContract() {
+        byte[] encoded = session.encodeFrame(3, true, 1_700_000_100_000L, "h264-frame".getBytes(StandardCharsets.UTF_8));
+        VideoStreamSession.DecodedFrame decoded = session.decodeFrame(encoded);
+
+        assertThat(decoded.sequenceNumber()).isEqualTo(3);
+        assertThat(decoded.keyFrame()).isTrue();
+        assertThat(decoded.timestampMillis()).isEqualTo(1_700_000_100_000L);
+        assertThat(new String(decoded.payload(), StandardCharsets.UTF_8)).isEqualTo("h264-frame");
     }
 
     @Test
-    @DisplayName("Should handle network conditions")
-    void shouldHandleNetworkConditions() {
-        int bandwidthKbps = 5000;
-        int latencyMs = 50;
-        double packetLoss = 0.01; // 1%
-        
-        assertThat(bandwidthKbps).isPositive();
-        assertThat(latencyMs).isPositive();
-        assertThat(packetLoss).isLessThan(0.1); // Less than 10% packet loss
-    }
+    @DisplayName("AV-4: should restore frame ordering across reconnect duplicates")
+    void shouldRestoreOrderingAcrossReconnect() {
+        List<Integer> restored = session.restoreFrameOrder(List.of(100, 98, 99, 100, 101, 99));
 
-    @Test
-    @DisplayName("Should handle multiple resolutions")
-    void shouldHandleMultipleResolutions() {
-        Set<String> resolutions = Set.of("720p", "1080p", "4K");
-        String currentResolution = "1080p";
-        
-        assertThat(resolutions).contains(currentResolution);
-        assertThat(resolutions).isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("Should handle streaming failures")
-    void shouldHandleStreamingFailures() {
-        boolean failed = false;
-        String error = null;
-        
-        assertThat(failed).isFalse();
-        assertThat(error).isNull();
+        assertThat(restored).containsExactly(98, 99, 100, 101);
     }
 }

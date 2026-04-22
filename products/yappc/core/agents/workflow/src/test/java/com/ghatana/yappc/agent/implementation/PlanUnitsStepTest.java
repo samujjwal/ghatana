@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation PlanUnitsStep Tests")
+@DisplayName("Implementation PlanUnitsStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles plan units step test operations
@@ -33,49 +33,49 @@ class PlanUnitsStepTest extends EventloopTestBase {
   private PlanUnitsStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new PlanUnitsStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new PlanUnitsStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("implementation.plan_units");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("implementation.plan_units [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should plan implementation units from architecture baseline")
-  void shouldPlanImplementationUnits() {
+  @DisplayName("Should plan implementation units from architecture baseline [GH-90000]")
+  void shouldPlanImplementationUnits() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("architectureBaselineId", "arch-baseline-001");
-    context.put("tenantId", "tenant-abc"); // Required by step validation
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("architectureBaselineId", "arch-baseline-001"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // Required by step validation // GH-90000
 
     Map<String, Object> baseline =
-        Map.of(
+        Map.of( // GH-90000
             "baselineId",
             "arch-baseline-001",
             "tenantId",
             "tenant-abc",
             "content",
-            Map.of(
+            Map.of( // GH-90000
                 "c4ContainerView", "Container1, Container2",
                 "c4ComponentView", "Component1, Component2"),
             "components",
-            List.of());
-    when(dbClient.query(eq("architecture_published"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(baseline)));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+            List.of()); // GH-90000
+    when(dbClient.query(eq("architecture_published [GH-90000]"), any(), anyInt()))
+        .thenReturn(Promise.of(List.of(baseline))); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("architectureBaselineId")).isEqualTo("arch-baseline-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("architectureBaselineId [GH-90000]")).isEqualTo("arch-baseline-001 [GH-90000]");
   }
 }

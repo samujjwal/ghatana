@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.agent.registry;
@@ -37,13 +37,13 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudEvaluationResultRepository")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("DataCloudEvaluationResultRepository [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudEvaluationResultRepositoryTest extends EventloopTestBase {
 
     private static final String TENANT_ID  = "tenant-eval-test";
     private static final String RELEASE_ID = "rel-eval-001";
-    private static final Instant NOW       = Instant.parse("2026-04-01T10:00:00Z");
+    private static final Instant NOW       = Instant.parse("2026-04-01T10:00:00Z [GH-90000]");
 
     @Mock
     private DataCloudClient dataCloud;
@@ -54,180 +54,180 @@ class DataCloudEvaluationResultRepositoryTest extends EventloopTestBase {
     private DataCloudEvaluationResultRepository repo;
 
     @BeforeEach
-    void setUp() {
-        repo = new DataCloudEvaluationResultRepository(dataCloud, TENANT_ID);
+    void setUp() { // GH-90000
+        repo = new DataCloudEvaluationResultRepository(dataCloud, TENANT_ID); // GH-90000
     }
 
     // ─────────────────── helpers ──────────────────────────────────────────────
 
-    private EvaluationResult passingResult(String evalId) {
-        return EvaluationResult.of(evalId, RELEASE_ID, TENANT_ID, "llm-judge", 0.90, true, NOW);
+    private EvaluationResult passingResult(String evalId) { // GH-90000
+        return EvaluationResult.of(evalId, RELEASE_ID, TENANT_ID, "llm-judge", 0.90, true, NOW); // GH-90000
     }
 
-    private Map<String, Object> resultDataMap(EvaluationResult r) {
-        Map<String, Object> m = new java.util.HashMap<>();
-        m.put("evaluationId",    r.evaluationId());
-        m.put("agentReleaseId",  r.agentReleaseId());
-        m.put("tenantId",        r.tenantId());
-        m.put("evaluatorType",   r.evaluatorType());
-        m.put("score",           r.score());
-        m.put("passed",          String.valueOf(r.passed()));
-        m.put("evaluatedAt",     r.evaluatedAt().toString());
+    private Map<String, Object> resultDataMap(EvaluationResult r) { // GH-90000
+        Map<String, Object> m = new java.util.HashMap<>(); // GH-90000
+        m.put("evaluationId",    r.evaluationId()); // GH-90000
+        m.put("agentReleaseId",  r.agentReleaseId()); // GH-90000
+        m.put("tenantId",        r.tenantId()); // GH-90000
+        m.put("evaluatorType",   r.evaluatorType()); // GH-90000
+        m.put("score",           r.score()); // GH-90000
+        m.put("passed",          String.valueOf(r.passed())); // GH-90000
+        m.put("evaluatedAt",     r.evaluatedAt().toString()); // GH-90000
         return m;
     }
 
     // ─────────────────── constructor ──────────────────────────────────────────
 
     @Nested
-    @DisplayName("constructor")
+    @DisplayName("constructor [GH-90000]")
     class Constructor {
 
         @Test
-        @DisplayName("rejects null dataCloud")
-        void rejectsNullDataCloud() {
-            assertThatThrownBy(() -> new DataCloudEvaluationResultRepository(null, TENANT_ID))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("rejects null dataCloud [GH-90000]")
+        void rejectsNullDataCloud() { // GH-90000
+            assertThatThrownBy(() -> new DataCloudEvaluationResultRepository(null, TENANT_ID)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("rejects null tenantId")
-        void rejectsNullTenantId() {
-            assertThatThrownBy(() -> new DataCloudEvaluationResultRepository(dataCloud, null))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("rejects null tenantId [GH-90000]")
+        void rejectsNullTenantId() { // GH-90000
+            assertThatThrownBy(() -> new DataCloudEvaluationResultRepository(dataCloud, null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 
     // ─────────────────── save ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("save")
+    @DisplayName("save [GH-90000]")
     class Save {
 
         @Test
-        @DisplayName("delegates to createEntity and returns the original result")
-        void delegatesToCreateEntity() {
-            EvaluationResult r = passingResult("eval-1");
-            when(mockEntity.getId()).thenReturn(UUID.randomUUID());
-            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any()))
-                    .thenReturn(Promise.of(mockEntity));
+        @DisplayName("delegates to createEntity and returns the original result [GH-90000]")
+        void delegatesToCreateEntity() { // GH-90000
+            EvaluationResult r = passingResult("eval-1 [GH-90000]");
+            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); // GH-90000
+            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any())) // GH-90000
+                    .thenReturn(Promise.of(mockEntity)); // GH-90000
 
-            EvaluationResult saved = runPromise(() -> repo.save(r));
+            EvaluationResult saved = runPromise(() -> repo.save(r)); // GH-90000
 
-            assertThat(saved).isSameAs(r);
-            verify(dataCloud).createEntity(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any());
+            assertThat(saved).isSameAs(r); // GH-90000
+            verify(dataCloud).createEntity(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("serialises evaluationId into data map")
-        void serialisesEvaluationId() {
-            EvaluationResult r = passingResult("eval-999");
-            when(mockEntity.getId()).thenReturn(UUID.randomUUID());
-            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
-            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), captor.capture()))
-                    .thenReturn(Promise.of(mockEntity));
+        @DisplayName("serialises evaluationId into data map [GH-90000]")
+        void serialisesEvaluationId() { // GH-90000
+            EvaluationResult r = passingResult("eval-999 [GH-90000]");
+            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); // GH-90000
+            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class); // GH-90000
+            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), captor.capture())) // GH-90000
+                    .thenReturn(Promise.of(mockEntity)); // GH-90000
 
-            runPromise(() -> repo.save(r));
+            runPromise(() -> repo.save(r)); // GH-90000
 
-            Map<String, Object> data = captor.getValue();
-            assertThat(data).containsEntry("evaluationId", "eval-999");
-            assertThat(data).containsKey("passed");
-            assertThat(data).containsKey("score");
+            Map<String, Object> data = captor.getValue(); // GH-90000
+            assertThat(data).containsEntry("evaluationId", "eval-999"); // GH-90000
+            assertThat(data).containsKey("passed [GH-90000]");
+            assertThat(data).containsKey("score [GH-90000]");
         }
     }
 
     // ─────────────────── findById ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("findById")
+    @DisplayName("findById [GH-90000]")
     class FindById {
 
         @Test
-        @DisplayName("returns deserialized result when entity found")
-        void returnsDeserializedResult() {
-            EvaluationResult r = passingResult("eval-1");
-            when(mockEntity.getData()).thenReturn(resultDataMap(r));
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any(QuerySpecInterface.class)))
-                    .thenReturn(Promise.of(List.of(mockEntity)));
+        @DisplayName("returns deserialized result when entity found [GH-90000]")
+        void returnsDeserializedResult() { // GH-90000
+            EvaluationResult r = passingResult("eval-1 [GH-90000]");
+            when(mockEntity.getData()).thenReturn(resultDataMap(r)); // GH-90000
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any(QuerySpecInterface.class))) // GH-90000
+                    .thenReturn(Promise.of(List.of(mockEntity))); // GH-90000
 
-            Optional<EvaluationResult> found = runPromise(() -> repo.findById("eval-1"));
+            Optional<EvaluationResult> found = runPromise(() -> repo.findById("eval-1 [GH-90000]"));
 
-            assertThat(found).isPresent();
-            assertThat(found.get().evaluationId()).isEqualTo("eval-1");
-            assertThat(found.get().passed()).isTrue();
+            assertThat(found).isPresent(); // GH-90000
+            assertThat(found.get().evaluationId()).isEqualTo("eval-1 [GH-90000]");
+            assertThat(found.get().passed()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty when no entity found")
-        void returnsEmptyWhenNotFound() {
-            when(dataCloud.queryEntities(any(), any(), any(QuerySpecInterface.class)))
-                    .thenReturn(Promise.of(List.of()));
+        @DisplayName("returns empty when no entity found [GH-90000]")
+        void returnsEmptyWhenNotFound() { // GH-90000
+            when(dataCloud.queryEntities(any(), any(), any(QuerySpecInterface.class))) // GH-90000
+                    .thenReturn(Promise.of(List.of())); // GH-90000
 
-            Optional<EvaluationResult> found = runPromise(() -> repo.findById("missing"));
+            Optional<EvaluationResult> found = runPromise(() -> repo.findById("missing [GH-90000]"));
 
-            assertThat(found).isEmpty();
+            assertThat(found).isEmpty(); // GH-90000
         }
     }
 
     // ─────────────────── findByRelease ────────────────────────────────────────
 
     @Nested
-    @DisplayName("findByRelease")
+    @DisplayName("findByRelease [GH-90000]")
     class FindByRelease {
 
         @Test
-        @DisplayName("returns all results for a release")
-        void returnsAllResults() {
-            EvaluationResult r1 = passingResult("eval-1");
-            EvaluationResult r2 = EvaluationResult.of("eval-2", RELEASE_ID, TENANT_ID, "rubric", 0.30, false, NOW);
-            EntityInterface e1 = mock(EntityInterface.class);
-            EntityInterface e2 = mock(EntityInterface.class);
-            when(e1.getData()).thenReturn(resultDataMap(r1));
-            when(e2.getData()).thenReturn(resultDataMap(r2));
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any()))
-                    .thenReturn(Promise.of(List.of(e1, e2)));
+        @DisplayName("returns all results for a release [GH-90000]")
+        void returnsAllResults() { // GH-90000
+            EvaluationResult r1 = passingResult("eval-1 [GH-90000]");
+            EvaluationResult r2 = EvaluationResult.of("eval-2", RELEASE_ID, TENANT_ID, "rubric", 0.30, false, NOW); // GH-90000
+            EntityInterface e1 = mock(EntityInterface.class); // GH-90000
+            EntityInterface e2 = mock(EntityInterface.class); // GH-90000
+            when(e1.getData()).thenReturn(resultDataMap(r1)); // GH-90000
+            when(e2.getData()).thenReturn(resultDataMap(r2)); // GH-90000
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(e1, e2))); // GH-90000
 
-            List<EvaluationResult> results = runPromise(() -> repo.findByRelease(RELEASE_ID, TENANT_ID));
+            List<EvaluationResult> results = runPromise(() -> repo.findByRelease(RELEASE_ID, TENANT_ID)); // GH-90000
 
-            assertThat(results).hasSize(2);
+            assertThat(results).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("findPassingByRelease returns only passed results")
-        void findPassingFiltersForPassed() {
-            EvaluationResult passing = passingResult("eval-1");
+        @DisplayName("findPassingByRelease returns only passed results [GH-90000]")
+        void findPassingFiltersForPassed() { // GH-90000
+            EvaluationResult passing = passingResult("eval-1 [GH-90000]");
             // Data with passed=false to verify client-side filter does not re-include it
-            Map<String, Object> failData = resultDataMap(
-                    EvaluationResult.of("eval-f", RELEASE_ID, TENANT_ID, "rubric", 0.3, false, NOW));
-            EntityInterface e = mock(EntityInterface.class);
-            when(e.getData()).thenReturn(resultDataMap(passing));
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any()))
-                    .thenReturn(Promise.of(List.of(e)));
+            Map<String, Object> failData = resultDataMap( // GH-90000
+                    EvaluationResult.of("eval-f", RELEASE_ID, TENANT_ID, "rubric", 0.3, false, NOW)); // GH-90000
+            EntityInterface e = mock(EntityInterface.class); // GH-90000
+            when(e.getData()).thenReturn(resultDataMap(passing)); // GH-90000
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(e))); // GH-90000
 
-            List<EvaluationResult> results = runPromise(() -> repo.findPassingByRelease(RELEASE_ID, TENANT_ID));
+            List<EvaluationResult> results = runPromise(() -> repo.findPassingByRelease(RELEASE_ID, TENANT_ID)); // GH-90000
 
-            assertThat(results).hasSize(1);
-            assertThat(results.getFirst().passed()).isTrue();
+            assertThat(results).hasSize(1); // GH-90000
+            assertThat(results.getFirst().passed()).isTrue(); // GH-90000
         }
     }
 
     // ─────────────────── countPassing ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("countPassing")
+    @DisplayName("countPassing [GH-90000]")
     class CountPassing {
 
         @Test
-        @DisplayName("count delegates to findPassingByRelease")
-        void countDelegatesToFindPassing() {
-            EvaluationResult r = passingResult("eval-1");
-            EntityInterface e = mock(EntityInterface.class);
-            when(e.getData()).thenReturn(resultDataMap(r));
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any()))
-                    .thenReturn(Promise.of(List.of(e)));
+        @DisplayName("count delegates to findPassingByRelease [GH-90000]")
+        void countDelegatesToFindPassing() { // GH-90000
+            EvaluationResult r = passingResult("eval-1 [GH-90000]");
+            EntityInterface e = mock(EntityInterface.class); // GH-90000
+            when(e.getData()).thenReturn(resultDataMap(r)); // GH-90000
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudEvaluationResultRepository.COLLECTION), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(e))); // GH-90000
 
-            long count = runPromise(() -> repo.countPassing(RELEASE_ID, TENANT_ID));
+            long count = runPromise(() -> repo.countPassing(RELEASE_ID, TENANT_ID)); // GH-90000
 
-            assertThat(count).isEqualTo(1L);
+            assertThat(count).isEqualTo(1L); // GH-90000
         }
     }
 }

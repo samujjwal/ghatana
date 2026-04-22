@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.server.http.controllers;
@@ -33,75 +33,75 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("NlpController")
+@DisplayName("NlpController [GH-90000]")
 class NlpControllerTest {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper(); // GH-90000
 
     private NlpController controller;
 
     @BeforeEach
-    void setUp() {
-        controller = new NlpController();
+    void setUp() { // GH-90000
+        controller = new NlpController(); // GH-90000
     }
 
-    private HttpRequest buildPostRequest(String body) {
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.getMethod()).thenReturn(HttpMethod.POST);
-        when(request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"))).thenReturn(null);
-        when(request.getQueryParameter("tenantId")).thenReturn(null);
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-        io.activej.bytebuf.ByteBuf buf = io.activej.bytebuf.ByteBuf.wrapForReading(bytes);
-        when(request.loadBody()).thenReturn(Promise.of(buf));
+    private HttpRequest buildPostRequest(String body) { // GH-90000
+        HttpRequest request = mock(HttpRequest.class); // GH-90000
+        when(request.getMethod()).thenReturn(HttpMethod.POST); // GH-90000
+        when(request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id [GH-90000]"))).thenReturn(null);
+        when(request.getQueryParameter("tenantId [GH-90000]")).thenReturn(null);
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8); // GH-90000
+        io.activej.bytebuf.ByteBuf buf = io.activej.bytebuf.ByteBuf.wrapForReading(bytes); // GH-90000
+        when(request.loadBody()).thenReturn(Promise.of(buf)); // GH-90000
         return request;
     }
 
-    private Map<String, Object> parseBody(HttpResponse response) throws Exception {
-        String json = response.getBody().getString(StandardCharsets.UTF_8);
-        return MAPPER.readValue(json, new TypeReference<>() {});
+    private Map<String, Object> parseBody(HttpResponse response) throws Exception { // GH-90000
+        String json = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
+        return MAPPER.readValue(json, new TypeReference<>() {}); // GH-90000
     }
 
     // ─── Missing query ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("validation")
+    @DisplayName("validation [GH-90000]")
     class Validation {
 
         @Test
-        @DisplayName("returns 400 when query field is missing")
-        void missingQuery_returns400() throws Exception {
-            HttpRequest request = buildPostRequest("""
+        @DisplayName("returns 400 when query field is missing [GH-90000]")
+        void missingQuery_returns400() throws Exception { // GH-90000
+            HttpRequest request = buildPostRequest(""" // GH-90000
                     {"tenantId":"tenant-a"}
                     """);
-            Promise<HttpResponse> promise = controller.handleParseQuery(request);
-            HttpResponse response = promise.getResult();
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
+            HttpResponse response = promise.getResult(); // GH-90000
 
-            assertThat(response.getCode()).isEqualTo(400);
-            Map<String, Object> body = parseBody(response);
-            assertThat(body.get("message").toString()).contains("query");
+            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            Map<String, Object> body = parseBody(response); // GH-90000
+            assertThat(body.get("message [GH-90000]").toString()).contains("query [GH-90000]");
         }
 
         @Test
-        @DisplayName("returns 400 when body is blank")
-        void blankQuery_returns400() throws Exception {
-            HttpRequest request = buildPostRequest("""
+        @DisplayName("returns 400 when body is blank [GH-90000]")
+        void blankQuery_returns400() throws Exception { // GH-90000
+            HttpRequest request = buildPostRequest(""" // GH-90000
                     {"query":"   ","tenantId":"tenant-a"}
                     """);
-            Promise<HttpResponse> promise = controller.handleParseQuery(request);
-            HttpResponse response = promise.getResult();
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
+            HttpResponse response = promise.getResult(); // GH-90000
 
-            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getCode()).isEqualTo(400); // GH-90000
         }
     }
 
     // ─── Intent classification ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("intent classification")
+    @DisplayName("intent classification [GH-90000]")
     class IntentClassification {
 
-        @ParameterizedTest(name = "query=''{0}'' → intent=''{1}''")
-        @CsvSource({
+        @ParameterizedTest(name = "query=''{0}'' → intent=''{1}''") // GH-90000
+        @CsvSource({ // GH-90000
                 "show me all runs,                         list_runs",
                 "list all pipelines,                       list_pipelines",
                 "get me the agents,                        list_agents",
@@ -112,96 +112,96 @@ class NlpControllerTest {
                 "trigger reflect for tenant-a,             trigger_reflect",
                 "what is the status of the system,         status_query",
         })
-        @DisplayName("classifies intent correctly")
-        void classifiesIntent(String query, String expectedIntent) throws Exception {
-            String body = MAPPER.writeValueAsString(Map.of("query", query, "tenantId", "t1"));
-            HttpRequest request = buildPostRequest(body);
+        @DisplayName("classifies intent correctly [GH-90000]")
+        void classifiesIntent(String query, String expectedIntent) throws Exception { // GH-90000
+            String body = MAPPER.writeValueAsString(Map.of("query", query, "tenantId", "t1")); // GH-90000
+            HttpRequest request = buildPostRequest(body); // GH-90000
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request);
-            HttpResponse response = promise.getResult();
-            Map<String, Object> result = parseBody(response);
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
+            HttpResponse response = promise.getResult(); // GH-90000
+            Map<String, Object> result = parseBody(response); // GH-90000
 
-            assertThat(response.getCode()).isEqualTo(200);
-            assertThat(result.get("intent")).isEqualTo(expectedIntent);
-            assertThat(((Number) result.get("confidence")).doubleValue()).isGreaterThan(0.5);
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(result.get("intent [GH-90000]")).isEqualTo(expectedIntent);
+            assertThat(((Number) result.get("confidence [GH-90000]")).doubleValue()).isGreaterThan(0.5);
         }
 
         @Test
-        @DisplayName("returns unknown intent for unrecognised query")
-        void unrecognisedQuery_returnsUnknown() throws Exception {
-            String body = MAPPER.writeValueAsString(Map.of("query", "xyzzy frobozz", "tenantId", "t1"));
-            HttpRequest request = buildPostRequest(body);
+        @DisplayName("returns unknown intent for unrecognised query [GH-90000]")
+        void unrecognisedQuery_returnsUnknown() throws Exception { // GH-90000
+            String body = MAPPER.writeValueAsString(Map.of("query", "xyzzy frobozz", "tenantId", "t1")); // GH-90000
+            HttpRequest request = buildPostRequest(body); // GH-90000
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request);
-            HttpResponse response = promise.getResult();
-            Map<String, Object> result = parseBody(response);
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
+            HttpResponse response = promise.getResult(); // GH-90000
+            Map<String, Object> result = parseBody(response); // GH-90000
 
-            assertThat(response.getCode()).isEqualTo(200);
-            assertThat(result.get("intent")).isEqualTo("unknown");
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(result.get("intent [GH-90000]")).isEqualTo("unknown [GH-90000]");
         }
     }
 
     // ─── Entity extraction ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("entity extraction")
+    @DisplayName("entity extraction [GH-90000]")
     class EntityExtraction {
 
         @Test
-        @DisplayName("extracts time_window entity correctly")
-        void extractsTimeWindow() throws Exception {
-            String body = MAPPER.writeValueAsString(Map.of(
+        @DisplayName("extracts time_window entity correctly [GH-90000]")
+        void extractsTimeWindow() throws Exception { // GH-90000
+            String body = MAPPER.writeValueAsString(Map.of( // GH-90000
                     "query", "show me failing pipelines last 2 hours", "tenantId", "t1"));
-            HttpRequest request = buildPostRequest(body);
+            HttpRequest request = buildPostRequest(body); // GH-90000
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request);
-            HttpResponse response = promise.getResult();
-            Map<String, Object> result = parseBody(response);
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
+            HttpResponse response = promise.getResult(); // GH-90000
+            Map<String, Object> result = parseBody(response); // GH-90000
 
-            assertThat(response.getCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> entities = (List<Map<String, Object>>) result.get("entities");
-            assertThat(entities).isNotEmpty();
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            List<Map<String, Object>> entities = (List<Map<String, Object>>) result.get("entities [GH-90000]");
+            assertThat(entities).isNotEmpty(); // GH-90000
 
-            Map<String, Object> timeEntity = entities.stream()
-                    .filter(e -> "time_window".equals(e.get("type")))
-                    .findFirst()
-                    .orElse(null);
-            assertThat(timeEntity).isNotNull();
-            assertThat(timeEntity.get("amount")).isEqualTo(2);
-            assertThat(timeEntity.get("unit")).isEqualTo("hours");
-            assertThat(timeEntity.get("iso8601")).isEqualTo("PT2H");
+            Map<String, Object> timeEntity = entities.stream() // GH-90000
+                    .filter(e -> "time_window".equals(e.get("type [GH-90000]")))
+                    .findFirst() // GH-90000
+                    .orElse(null); // GH-90000
+            assertThat(timeEntity).isNotNull(); // GH-90000
+            assertThat(timeEntity.get("amount [GH-90000]")).isEqualTo(2);
+            assertThat(timeEntity.get("unit [GH-90000]")).isEqualTo("hours [GH-90000]");
+            assertThat(timeEntity.get("iso8601 [GH-90000]")).isEqualTo("PT2H [GH-90000]");
         }
 
         @Test
-        @DisplayName("extracts status entity correctly")
-        void extractsStatus() throws Exception {
-            String body = MAPPER.writeValueAsString(Map.of(
+        @DisplayName("extracts status entity correctly [GH-90000]")
+        void extractsStatus() throws Exception { // GH-90000
+            String body = MAPPER.writeValueAsString(Map.of( // GH-90000
                     "query", "list all failed runs", "tenantId", "t1"));
-            HttpRequest request = buildPostRequest(body);
+            HttpRequest request = buildPostRequest(body); // GH-90000
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request);
-            HttpResponse response = promise.getResult();
-            Map<String, Object> result = parseBody(response);
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
+            HttpResponse response = promise.getResult(); // GH-90000
+            Map<String, Object> result = parseBody(response); // GH-90000
 
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> entities = (List<Map<String, Object>>) result.get("entities");
-            boolean hasStatus = entities.stream()
-                    .anyMatch(e -> "status".equals(e.get("type")) && "FAILED".equals(e.get("value")));
-            assertThat(hasStatus).isTrue();
+            @SuppressWarnings("unchecked [GH-90000]")
+            List<Map<String, Object>> entities = (List<Map<String, Object>>) result.get("entities [GH-90000]");
+            boolean hasStatus = entities.stream() // GH-90000
+                    .anyMatch(e -> "status".equals(e.get("type [GH-90000]")) && "FAILED".equals(e.get("value [GH-90000]")));
+            assertThat(hasStatus).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns tenant in response")
-        void returnsTenantId() throws Exception {
-            String body = MAPPER.writeValueAsString(Map.of("query", "list runs", "tenantId", "my-tenant"));
-            HttpRequest request = buildPostRequest(body);
+        @DisplayName("returns tenant in response [GH-90000]")
+        void returnsTenantId() throws Exception { // GH-90000
+            String body = MAPPER.writeValueAsString(Map.of("query", "list runs", "tenantId", "my-tenant")); // GH-90000
+            HttpRequest request = buildPostRequest(body); // GH-90000
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request);
-            HttpResponse response = promise.getResult();
-            Map<String, Object> result = parseBody(response);
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
+            HttpResponse response = promise.getResult(); // GH-90000
+            Map<String, Object> result = parseBody(response); // GH-90000
 
-            assertThat(result.get("tenantId")).isEqualTo("my-tenant");
+            assertThat(result.get("tenantId [GH-90000]")).isEqualTo("my-tenant [GH-90000]");
         }
     }
 }

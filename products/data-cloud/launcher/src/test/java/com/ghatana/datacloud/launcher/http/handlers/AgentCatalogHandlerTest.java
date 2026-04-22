@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AgentCatalogHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("AgentCatalogHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class AgentCatalogHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,31 +41,31 @@ class AgentCatalogHandlerTest extends EventloopTestBase {
     private AgentCatalogHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new AgentCatalogHandler(http, metrics);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new AgentCatalogHandler(http, metrics); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("list rejects missing tenant before metrics or catalog work")
-    void listRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("list rejects missing tenant before metrics or catalog work [GH-90000]")
+    void listRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleListCatalog(request));
+        HttpResponse response = runPromise(() -> handler.handleListCatalog(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(metrics, never()).incrementCounter("agent.catalog.list", "tenant", "default");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(metrics, never()).incrementCounter("agent.catalog.list", "tenant", "default"); // GH-90000
     }
 
     @Test
-    @DisplayName("get rejects missing tenant before metrics or catalog work")
-    void getRejectsMissingTenant() {
-        when(request.getPathParameter("id")).thenReturn("agent-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("get rejects missing tenant before metrics or catalog work [GH-90000]")
+    void getRejectsMissingTenant() { // GH-90000
+        when(request.getPathParameter("id [GH-90000]")).thenReturn("agent-1 [GH-90000]");
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleGetAgent(request));
+        HttpResponse response = runPromise(() -> handler.handleGetAgent(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(metrics, never()).incrementCounter("agent.catalog.get", "tenant", "default", "agentId", "agent-1");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(metrics, never()).incrementCounter("agent.catalog.get", "tenant", "default", "agentId", "agent-1"); // GH-90000
     }
 }

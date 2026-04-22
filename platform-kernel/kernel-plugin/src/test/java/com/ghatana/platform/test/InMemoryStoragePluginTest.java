@@ -19,59 +19,59 @@ import static org.junit.jupiter.api.Assertions.*;
 public class InMemoryStoragePluginTest extends PluginTestBase {
 
     @Test
-    public void shouldInitializeAndStart() {
-        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin();
+    public void shouldInitializeAndStart() { // GH-90000
+        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin(); // GH-90000
 
-        runPromise(() -> registerAndInit(plugin)
-                .then(() -> registry.startAll())
-                .whenResult(() -> {
-                    assertEquals(PluginState.RUNNING, plugin.getState());
+        runPromise(() -> registerAndInit(plugin) // GH-90000
+                .then(() -> registry.startAll()) // GH-90000
+                .whenResult(() -> { // GH-90000
+                    assertEquals(PluginState.RUNNING, plugin.getState()); // GH-90000
                     // Health check not implemented in base Plugin interface default, but good to have
-                    // assertTrue(plugin.healthCheck().getResult().isHealthy());
+                    // assertTrue(plugin.healthCheck().getResult().isHealthy()); // GH-90000
                 }));
     }
 
     @Test
-    public void shouldWriteAndRead() {
-        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin();
-        TenantId tenantId = TenantId.random();
+    public void shouldWriteAndRead() { // GH-90000
+        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin(); // GH-90000
+        TenantId tenantId = TenantId.random(); // GH-90000
         String record = "test-record";
 
-        runPromise(() -> registerAndInit(plugin)
-                .then(() -> registry.startAll())
-                .then(() -> plugin.write(record, tenantId))
-                .then(offset -> plugin.read("default", tenantId, offset, 10))
-                .whenResult(records -> {
-                    assertTrue(records.contains(record));
+        runPromise(() -> registerAndInit(plugin) // GH-90000
+                .then(() -> registry.startAll()) // GH-90000
+                .then(() -> plugin.write(record, tenantId)) // GH-90000
+                .then(offset -> plugin.read("default", tenantId, offset, 10)) // GH-90000
+                .whenResult(records -> { // GH-90000
+                    assertTrue(records.contains(record)); // GH-90000
                 }));
     }
 
     @Test
-    public void shouldHandleMissingData() {
-        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin();
-        TenantId tenantId = TenantId.random();
+    public void shouldHandleMissingData() { // GH-90000
+        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin(); // GH-90000
+        TenantId tenantId = TenantId.random(); // GH-90000
 
-        runPromise(() -> registerAndInit(plugin)
-                .then(() -> registry.startAll())
-                .then(() -> plugin.read("missing", tenantId, Offset.zero(), 10))
-                .whenResult(records -> {
-                    assertTrue(records.isEmpty());
+        runPromise(() -> registerAndInit(plugin) // GH-90000
+                .then(() -> registry.startAll()) // GH-90000
+                .then(() -> plugin.read("missing", tenantId, Offset.zero(), 10)) // GH-90000
+                .whenResult(records -> { // GH-90000
+                    assertTrue(records.isEmpty()); // GH-90000
                 }));
     }
 
     @Test
-    public void shouldDelete() {
-        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin();
-        TenantId tenantId = TenantId.random();
+    public void shouldDelete() { // GH-90000
+        InMemoryStoragePlugin plugin = new InMemoryStoragePlugin(); // GH-90000
+        TenantId tenantId = TenantId.random(); // GH-90000
         String record = "del-record";
 
-        runPromise(() -> registerAndInit(plugin)
-                .then(() -> registry.startAll())
-                .then(() -> plugin.write(record, tenantId))
-                .then(offset -> plugin.delete("default", tenantId, offset))
-                .then(() -> plugin.read("default", tenantId, Offset.zero(), 10))
-                .whenResult(records -> {
-                    assertTrue(records.isEmpty());
+        runPromise(() -> registerAndInit(plugin) // GH-90000
+                .then(() -> registry.startAll()) // GH-90000
+                .then(() -> plugin.write(record, tenantId)) // GH-90000
+                .then(offset -> plugin.delete("default", tenantId, offset)) // GH-90000
+                .then(() -> plugin.read("default", tenantId, Offset.zero(), 10)) // GH-90000
+                .whenResult(records -> { // GH-90000
+                    assertTrue(records.isEmpty()); // GH-90000
                 }));
     }
 }

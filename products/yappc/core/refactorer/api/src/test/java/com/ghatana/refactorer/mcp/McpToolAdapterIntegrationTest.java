@@ -21,56 +21,56 @@ class McpToolAdapterIntegrationTest {
     private McpToolAdapter adapter;
 
     @BeforeEach
-    void setUp() throws Exception {
-        harness = new ServerTestHarness().start();
-        adapter = new McpToolAdapter("localhost", harness.getGrpcPort());
+    void setUp() throws Exception { // GH-90000
+        harness = new ServerTestHarness().start(); // GH-90000
+        adapter = new McpToolAdapter("localhost", harness.getGrpcPort()); // GH-90000
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        if (adapter != null) {
-            adapter.shutdown();
+    void tearDown() throws Exception { // GH-90000
+        if (adapter != null) { // GH-90000
+            adapter.shutdown(); // GH-90000
         }
-        if (harness != null) {
-            harness.close();
+        if (harness != null) { // GH-90000
+            harness.close(); // GH-90000
         }
     }
 
     @Test
-    void runStatusReportAndDiagnoseFlow() {
+    void runStatusReportAndDiagnoseFlow() { // GH-90000
         McpToolResult runResult =
-                adapter.handleRun(
-                        Map.of(
+                adapter.handleRun( // GH-90000
+                        Map.of( // GH-90000
                                 "repoRoot",
                                 "/tmp/mcp-repo",
                                 "languages",
-                                List.of("java", "python"),
+                                List.of("java", "python"), // GH-90000
                                 "formatters",
                                 Boolean.TRUE,
                                 "idempotencyKey",
                                 "mcp-run-123"));
 
-        assertThat(runResult.success()).isTrue();
-        assertThat(runResult.data()).containsKey("jobId");
-        String jobId = (String) runResult.data().get("jobId");
+        assertThat(runResult.success()).isTrue(); // GH-90000
+        assertThat(runResult.data()).containsKey("jobId [GH-90000]");
+        String jobId = (String) runResult.data().get("jobId [GH-90000]");
 
-        McpToolResult statusResult = adapter.handleStatus(Map.of("jobId", jobId));
-        assertThat(statusResult.success()).isTrue();
-        assertThat(statusResult.data()).containsEntry("state", "QUEUED");
-        assertThat(statusResult.data()).containsEntry("jobId", jobId);
+        McpToolResult statusResult = adapter.handleStatus(Map.of("jobId", jobId)); // GH-90000
+        assertThat(statusResult.success()).isTrue(); // GH-90000
+        assertThat(statusResult.data()).containsEntry("state", "QUEUED"); // GH-90000
+        assertThat(statusResult.data()).containsEntry("jobId", jobId); // GH-90000
 
-        McpToolResult reportResult = adapter.handleReport(Map.of("jobId", jobId));
-        assertThat(reportResult.success()).isTrue();
-        assertThat(reportResult.data()).containsKey("summaryJson");
+        McpToolResult reportResult = adapter.handleReport(Map.of("jobId", jobId)); // GH-90000
+        assertThat(reportResult.success()).isTrue(); // GH-90000
+        assertThat(reportResult.data()).containsKey("summaryJson [GH-90000]");
 
         McpToolResult diagnoseResult =
-                adapter.handleDiagnose(
-                        Map.of(
+                adapter.handleDiagnose( // GH-90000
+                        Map.of( // GH-90000
                                 "repoRoot",
                                 "/tmp/mcp-repo",
                                 "languages",
-                                List.of("java", "typescript")));
-        assertThat(diagnoseResult.success()).isTrue();
-        assertThat(diagnoseResult.data()).containsKey("diagnostics");
+                                List.of("java", "typescript"))); // GH-90000
+        assertThat(diagnoseResult.success()).isTrue(); // GH-90000
+        assertThat(diagnoseResult.data()).containsKey("diagnostics [GH-90000]");
     }
 }

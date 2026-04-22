@@ -21,8 +21,8 @@
  * 
  * @example
  * ```tsx
- * import { MobileShell } from '@ghatana/ui';
- * 
+ * import { MobileShell } from '@ghatana/design-system';
+ *
  * function App() {
  *   return (
  *     <MobileShell

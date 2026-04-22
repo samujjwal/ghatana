@@ -11,226 +11,226 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AuditTrailTest {
 
-    private AuditEntry createTestEntry(String action, String resourceId) {
-        return AuditEntry.builder()
-            .action(action)
-            .resourceId(resourceId)
-            .resourceType("TEST")
-            .performedBy("test")
-            .timestamp(System.currentTimeMillis())
-            .build();
+    private AuditEntry createTestEntry(String action, String resourceId) { // GH-90000
+        return AuditEntry.builder() // GH-90000
+            .action(action) // GH-90000
+            .resourceId(resourceId) // GH-90000
+            .resourceType("TEST [GH-90000]")
+            .performedBy("test [GH-90000]")
+            .timestamp(System.currentTimeMillis()) // GH-90000
+            .build(); // GH-90000
     }
 
     @Test
-    void shouldCreateEmptyAuditTrail() {
+    void shouldCreateEmptyAuditTrail() { // GH-90000
         // When
-        AuditTrail trail = new AuditTrail(List.of());
+        AuditTrail trail = new AuditTrail(List.of()); // GH-90000
 
         // Then
-        assertThat(trail.isEmpty()).isTrue();
-        assertThat(trail.size()).isZero();
-        assertThat(trail.getEntries()).isEmpty();
-        assertThat(trail.getLatestEntry()).isEmpty();
+        assertThat(trail.isEmpty()).isTrue(); // GH-90000
+        assertThat(trail.size()).isZero(); // GH-90000
+        assertThat(trail.getEntries()).isEmpty(); // GH-90000
+        assertThat(trail.getLatestEntry()).isEmpty(); // GH-90000
     }
 
     @Test
-    void shouldCreateAuditTrailWithEntries() {
+    void shouldCreateAuditTrailWithEntries() { // GH-90000
         // Given
-        AuditEntry entry1 = createTestEntry("CREATE", "res1");
-        AuditEntry entry2 = createTestEntry("UPDATE", "res1");
+        AuditEntry entry1 = createTestEntry("CREATE", "res1"); // GH-90000
+        AuditEntry entry2 = createTestEntry("UPDATE", "res1"); // GH-90000
 
         // When
-        AuditTrail trail = new AuditTrail(List.of(entry1, entry2));
+        AuditTrail trail = new AuditTrail(List.of(entry1, entry2)); // GH-90000
 
         // Then
-        assertThat(trail.isEmpty()).isFalse();
-        assertThat(trail.size()).isEqualTo(2);
-        assertThat(trail.getEntries()).containsExactly(entry1, entry2);
-        assertThat(trail.getLatestEntry()).contains(entry2);
+        assertThat(trail.isEmpty()).isFalse(); // GH-90000
+        assertThat(trail.size()).isEqualTo(2); // GH-90000
+        assertThat(trail.getEntries()).containsExactly(entry1, entry2); // GH-90000
+        assertThat(trail.getLatestEntry()).contains(entry2); // GH-90000
     }
 
     @Test
-    void shouldAddEntryToAuditTrail() {
+    void shouldAddEntryToAuditTrail() { // GH-90000
         // Given
-        AuditEntry entry1 = createTestEntry("CREATE", "res1");
-        AuditEntry entry2 = createTestEntry("UPDATE", "res1");
-        AuditTrail trail = new AuditTrail(List.of(entry1));
+        AuditEntry entry1 = createTestEntry("CREATE", "res1"); // GH-90000
+        AuditEntry entry2 = createTestEntry("UPDATE", "res1"); // GH-90000
+        AuditTrail trail = new AuditTrail(List.of(entry1)); // GH-90000
 
         // When
-        AuditTrail updatedTrail = trail.withEntry(entry2);
+        AuditTrail updatedTrail = trail.withEntry(entry2); // GH-90000
 
         // Then
-        assertThat(updatedTrail.size()).isEqualTo(2);
-        assertThat(updatedTrail.getEntries()).containsExactly(entry1, entry2);
-        assertThat(updatedTrail.getLatestEntry()).contains(entry2);
+        assertThat(updatedTrail.size()).isEqualTo(2); // GH-90000
+        assertThat(updatedTrail.getEntries()).containsExactly(entry1, entry2); // GH-90000
+        assertThat(updatedTrail.getLatestEntry()).contains(entry2); // GH-90000
 
         // Original trail should remain unchanged
-        assertThat(trail.size()).isEqualTo(1);
+        assertThat(trail.size()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    void shouldNotAllowNullEntriesInConstructor() {
+    void shouldNotAllowNullEntriesInConstructor() { // GH-90000
         // When/Then
-        assertThatThrownBy(() -> new AuditTrail(null))
-            .isInstanceOf(NullPointerException.class)
-            .hasMessage("Entries list cannot be null");
+        assertThatThrownBy(() -> new AuditTrail(null)) // GH-90000
+            .isInstanceOf(NullPointerException.class) // GH-90000
+            .hasMessage("Entries list cannot be null [GH-90000]");
     }
 
     @Test
-    void shouldNotAllowNullEntryInWithEntry() {
+    void shouldNotAllowNullEntryInWithEntry() { // GH-90000
         // Given
-        AuditTrail trail = new AuditTrail(List.of());
+        AuditTrail trail = new AuditTrail(List.of()); // GH-90000
 
         // When/Then
-        assertThatThrownBy(() -> trail.withEntry(null))
-            .isInstanceOf(NullPointerException.class)
-            .hasMessage("Audit entry cannot be null");
+        assertThatThrownBy(() -> trail.withEntry(null)) // GH-90000
+            .isInstanceOf(NullPointerException.class) // GH-90000
+            .hasMessage("Audit entry cannot be null [GH-90000]");
     }
 
     @Test
-    void shouldFilterAuditTrail() {
+    void shouldFilterAuditTrail() { // GH-90000
         // Given
-        AuditEntry entry1 = createTestEntry("CREATE", "res1");
-        AuditEntry entry2 = createTestEntry("UPDATE", "res1");
-        AuditEntry entry3 = createTestEntry("CREATE", "res2");
-        AuditTrail trail = new AuditTrail(List.of(entry1, entry2, entry3));
+        AuditEntry entry1 = createTestEntry("CREATE", "res1"); // GH-90000
+        AuditEntry entry2 = createTestEntry("UPDATE", "res1"); // GH-90000
+        AuditEntry entry3 = createTestEntry("CREATE", "res2"); // GH-90000
+        AuditTrail trail = new AuditTrail(List.of(entry1, entry2, entry3)); // GH-90000
 
         // When
-        AuditTrail filteredTrail = trail.filter(entry -> "res1".equals(entry.getResourceId()));
+        AuditTrail filteredTrail = trail.filter(entry -> "res1".equals(entry.getResourceId())); // GH-90000
 
         // Then
-        assertThat(filteredTrail.size()).isEqualTo(2);
-        assertThat(filteredTrail.getEntries())
-            .extracting(AuditEntry::getResourceId)
-            .containsOnly("res1");
+        assertThat(filteredTrail.size()).isEqualTo(2); // GH-90000
+        assertThat(filteredTrail.getEntries()) // GH-90000
+            .extracting(AuditEntry::getResourceId) // GH-90000
+            .containsOnly("res1 [GH-90000]");
     }
 
     @Test
-    void shouldReturnEmptyTrailWhenFilteringOutAllEntries() {
+    void shouldReturnEmptyTrailWhenFilteringOutAllEntries() { // GH-90000
         // Given
-        AuditEntry entry1 = createTestEntry("CREATE", "res1");
-        AuditEntry entry2 = createTestEntry("UPDATE", "res1");
-        AuditTrail trail = new AuditTrail(List.of(entry1, entry2));
+        AuditEntry entry1 = createTestEntry("CREATE", "res1"); // GH-90000
+        AuditEntry entry2 = createTestEntry("UPDATE", "res1"); // GH-90000
+        AuditTrail trail = new AuditTrail(List.of(entry1, entry2)); // GH-90000
 
         // When
-        AuditTrail filteredTrail = trail.filter(entry -> false);
+        AuditTrail filteredTrail = trail.filter(entry -> false); // GH-90000
 
         // Then
-        assertThat(filteredTrail.isEmpty()).isTrue();
+        assertThat(filteredTrail.isEmpty()).isTrue(); // GH-90000
     }
 
     @Test
-    void shouldReturnLatestEntry() {
+    void shouldReturnLatestEntry() { // GH-90000
         // Given
-        AuditEntry entry1 = createTestEntry("CREATE", "res1");
-        AuditEntry entry2 = createTestEntry("UPDATE", "res1");
-        AuditTrail trail = new AuditTrail(List.of(entry1, entry2));
+        AuditEntry entry1 = createTestEntry("CREATE", "res1"); // GH-90000
+        AuditEntry entry2 = createTestEntry("UPDATE", "res1"); // GH-90000
+        AuditTrail trail = new AuditTrail(List.of(entry1, entry2)); // GH-90000
 
         // When/Then
-        assertThat(trail.getLatestEntry())
-            .isPresent()
-            .contains(entry2);
+        assertThat(trail.getLatestEntry()) // GH-90000
+            .isPresent() // GH-90000
+            .contains(entry2); // GH-90000
     }
 
     @Test
-    void shouldReturnEmptyForLatestEntryWhenTrailIsEmpty() {
+    void shouldReturnEmptyForLatestEntryWhenTrailIsEmpty() { // GH-90000
         // Given
-        AuditTrail trail = new AuditTrail(List.of());
+        AuditTrail trail = new AuditTrail(List.of()); // GH-90000
 
         // When/Then
-        assertThat(trail.getLatestEntry()).isEmpty();
+        assertThat(trail.getLatestEntry()).isEmpty(); // GH-90000
     }
 
     @Test
-    void shouldImplementEqualsAndHashCode() {
+    void shouldImplementEqualsAndHashCode() { // GH-90000
         // Given
-        AuditEntry entry1 = createTestEntry("CREATE", "res1");
-        AuditEntry entry2 = createTestEntry("UPDATE", "res1");
+        AuditEntry entry1 = createTestEntry("CREATE", "res1"); // GH-90000
+        AuditEntry entry2 = createTestEntry("UPDATE", "res1"); // GH-90000
 
-        AuditTrail trail1 = new AuditTrail(List.of(entry1, entry2));
-        AuditTrail trail2 = new AuditTrail(List.of(entry1, entry2));
-        AuditTrail trail3 = new AuditTrail(List.of(entry1));
+        AuditTrail trail1 = new AuditTrail(List.of(entry1, entry2)); // GH-90000
+        AuditTrail trail2 = new AuditTrail(List.of(entry1, entry2)); // GH-90000
+        AuditTrail trail3 = new AuditTrail(List.of(entry1)); // GH-90000
 
         // Then
-        assertThat(trail1).isEqualTo(trail2);
-        assertThat(trail1.hashCode()).isEqualTo(trail2.hashCode());
+        assertThat(trail1).isEqualTo(trail2); // GH-90000
+        assertThat(trail1.hashCode()).isEqualTo(trail2.hashCode()); // GH-90000
 
-        assertThat(trail1).isNotEqualTo(trail3);
-        assertThat(trail1).isNotEqualTo(null);
-        assertThat(trail1).isNotEqualTo("not an audit trail");
+        assertThat(trail1).isNotEqualTo(trail3); // GH-90000
+        assertThat(trail1).isNotEqualTo(null); // GH-90000
+        assertThat(trail1).isNotEqualTo("not an audit trail [GH-90000]");
     }
 
     @Test
-    void shouldHaveMeaningfulToString() {
+    void shouldHaveMeaningfulToString() { // GH-90000
         // Given
-        AuditEntry entry1 = createTestEntry("CREATE", "res1");
-        AuditTrail trail = new AuditTrail(List.of(entry1));
+        AuditEntry entry1 = createTestEntry("CREATE", "res1"); // GH-90000
+        AuditTrail trail = new AuditTrail(List.of(entry1)); // GH-90000
 
         // When
-        String str = trail.toString();
+        String str = trail.toString(); // GH-90000
 
         // Then
-        assertThat(str).contains("AuditTrail");
-        assertThat(str).contains("entries=1");
+        assertThat(str).contains("AuditTrail [GH-90000]");
+        assertThat(str).contains("entries=1 [GH-90000]");
     }
 
     @Test
-    void shouldHandleLargeNumberOfEntries() {
+    void shouldHandleLargeNumberOfEntries() { // GH-90000
         // Given
-        List<AuditEntry> entries = new java.util.ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
-            entries.add(createTestEntry("ACTION_" + i, "res" + i));
+        List<AuditEntry> entries = new java.util.ArrayList<>(); // GH-90000
+        for (int i = 0; i < 1000; i++) { // GH-90000
+            entries.add(createTestEntry("ACTION_" + i, "res" + i)); // GH-90000
         }
 
         // When
-        AuditTrail trail = new AuditTrail(entries);
+        AuditTrail trail = new AuditTrail(entries); // GH-90000
 
         // Then
-        assertThat(trail.size()).isEqualTo(1000);
-        assertThat(trail.getLatestEntry())
-            .isPresent()
-            .hasValueSatisfying(e ->
-                assertThat(e.getAction()).isEqualTo("ACTION_999"));
+        assertThat(trail.size()).isEqualTo(1000); // GH-90000
+        assertThat(trail.getLatestEntry()) // GH-90000
+            .isPresent() // GH-90000
+            .hasValueSatisfying(e -> // GH-90000
+                assertThat(e.getAction()).isEqualTo("ACTION_999 [GH-90000]"));
     }
 
     @Test
-    void shouldHandleConcurrentAccess() {
+    void shouldHandleConcurrentAccess() { // GH-90000
         // Given
-        List<AuditEntry> entries = new CopyOnWriteArrayList<>();
+        List<AuditEntry> entries = new CopyOnWriteArrayList<>(); // GH-90000
         int numThreads = 100;
         int entriesPerThread = 100;
 
         // When
-        List<Thread> threads = new java.util.ArrayList<>();
-        for (int i = 0; i < numThreads; i++) {
+        List<Thread> threads = new java.util.ArrayList<>(); // GH-90000
+        for (int i = 0; i < numThreads; i++) { // GH-90000
             final int threadId = i;
-            Thread t = new Thread(() -> {
-                for (int j = 0; j < entriesPerThread; j++) {
-                    entries.add(createTestEntry(
+            Thread t = new Thread(() -> { // GH-90000
+                for (int j = 0; j < entriesPerThread; j++) { // GH-90000
+                    entries.add(createTestEntry( // GH-90000
                         "ACTION_" + threadId + "_" + j,
                         "RESOURCE_" + threadId + "_" + j
                     ));
                 }
             });
-            t.setName("TestThread-" + threadId);
-            threads.add(t);
-            t.start();
+            t.setName("TestThread-" + threadId); // GH-90000
+            threads.add(t); // GH-90000
+            t.start(); // GH-90000
         }
 
         // Wait for all threads to complete
-        for (Thread t : threads) {
+        for (Thread t : threads) { // GH-90000
             try {
-                t.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                fail("Thread was interrupted", e);
+                t.join(); // GH-90000
+            } catch (InterruptedException e) { // GH-90000
+                Thread.currentThread().interrupt(); // GH-90000
+                fail("Thread was interrupted", e); // GH-90000
             }
         }
 
         // Build the final AuditTrail instance
-        AuditTrail auditTrail = new AuditTrail(entries);
+        AuditTrail auditTrail = new AuditTrail(entries); // GH-90000
 
         // Then
-        assertEquals(numThreads * entriesPerThread, auditTrail.getEntries().size());
+        assertEquals(numThreads * entriesPerThread, auditTrail.getEntries().size()); // GH-90000
     }
 }

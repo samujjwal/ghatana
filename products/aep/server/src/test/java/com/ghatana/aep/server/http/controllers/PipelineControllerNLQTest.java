@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.server.http.controllers;
@@ -40,176 +40,176 @@ class PipelineControllerNLQTest {
     private PipelineController controller;
 
     @BeforeEach
-    void setUp() {
-        mockRepository = mock(PipelineRepository.class);
-        objectMapper = new ObjectMapper();
-        nlqService = new DefaultNaturalLanguagePipelineService();
-        controller = new PipelineController(mockRepository, objectMapper, nlqService);
+    void setUp() { // GH-90000
+        mockRepository = mock(PipelineRepository.class); // GH-90000
+        objectMapper = new ObjectMapper(); // GH-90000
+        nlqService = new DefaultNaturalLanguagePipelineService(); // GH-90000
+        controller = new PipelineController(mockRepository, objectMapper, nlqService); // GH-90000
     }
 
     @Test
-    void shouldCreatePipelineFromNaturalLanguageDescription() throws Exception {
+    void shouldCreatePipelineFromNaturalLanguageDescription() throws Exception { // GH-90000
         // Arrange
         String description = "Create a fraud detection pipeline for transactions";
-        Map<String, Object> payload = Map.of("description", description);
-        String body = objectMapper.writeValueAsString(payload);
+        Map<String, Object> payload = Map.of("description", description); // GH-90000
+        String body = objectMapper.writeValueAsString(payload); // GH-90000
         
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.getMethod()).thenReturn(HttpMethod.POST);
-        when(request.loadBody()).thenReturn(Promise.of(
-            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+        HttpRequest request = mock(HttpRequest.class); // GH-90000
+        when(request.getMethod()).thenReturn(HttpMethod.POST); // GH-90000
+        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)) // GH-90000
         ));
 
-        PipelineRegistration savedPipeline = PipelineRegistration.builder()
-            .id(UUID.randomUUID().toString())
-            .name("Fraud Detection Pipeline")
-            .description("Auto-generated pipeline from: " + description)
-            .active(true)
-            .version(1)
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .build();
+        PipelineRegistration savedPipeline = PipelineRegistration.builder() // GH-90000
+            .id(UUID.randomUUID().toString()) // GH-90000
+            .name("Fraud Detection Pipeline [GH-90000]")
+            .description("Auto-generated pipeline from: " + description) // GH-90000
+            .active(true) // GH-90000
+            .version(1) // GH-90000
+            .createdAt(Instant.now()) // GH-90000
+            .updatedAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
 
-        when(mockRepository.save(any(PipelineRegistration.class))).thenReturn(Promise.of(savedPipeline));
+        when(mockRepository.save(any(PipelineRegistration.class))).thenReturn(Promise.of(savedPipeline)); // GH-90000
 
         // Act
-        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
-        HttpResponse response = responsePromise.getResult();
+        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq"); // GH-90000
+        HttpResponse response = responsePromise.getResult(); // GH-90000
         
         // Assert
-        assertNotNull(response);
-        assertEquals(201, response.getCode());
-        verify(mockRepository).save(any(PipelineRegistration.class));
+        assertNotNull(response); // GH-90000
+        assertEquals(201, response.getCode()); // GH-90000
+        verify(mockRepository).save(any(PipelineRegistration.class)); // GH-90000
     }
 
     @Test
-    void shouldRejectEmptyDescription() throws Exception {
+    void shouldRejectEmptyDescription() throws Exception { // GH-90000
         // Arrange
-        Map<String, Object> payload = Map.of("description", "");
-        String body = objectMapper.writeValueAsString(payload);
+        Map<String, Object> payload = Map.of("description", ""); // GH-90000
+        String body = objectMapper.writeValueAsString(payload); // GH-90000
         
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.getMethod()).thenReturn(HttpMethod.POST);
-        when(request.loadBody()).thenReturn(Promise.of(
-            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+        HttpRequest request = mock(HttpRequest.class); // GH-90000
+        when(request.getMethod()).thenReturn(HttpMethod.POST); // GH-90000
+        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)) // GH-90000
         ));
 
         // Act
-        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
-        HttpResponse response = responsePromise.getResult();
+        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq"); // GH-90000
+        HttpResponse response = responsePromise.getResult(); // GH-90000
 
         // Assert
-        assertNotNull(response);
-        assertEquals(400, response.getCode());
-        verify(mockRepository, never()).save(any());
+        assertNotNull(response); // GH-90000
+        assertEquals(400, response.getCode()); // GH-90000
+        verify(mockRepository, never()).save(any()); // GH-90000
     }
 
     @Test
-    void shouldRejectNullDescription() throws Exception {
+    void shouldRejectNullDescription() throws Exception { // GH-90000
         // Arrange
-        Map<String, Object> payload = new HashMap<>();
-        String body = objectMapper.writeValueAsString(payload);
+        Map<String, Object> payload = new HashMap<>(); // GH-90000
+        String body = objectMapper.writeValueAsString(payload); // GH-90000
         
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.getMethod()).thenReturn(HttpMethod.POST);
-        when(request.loadBody()).thenReturn(Promise.of(
-            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+        HttpRequest request = mock(HttpRequest.class); // GH-90000
+        when(request.getMethod()).thenReturn(HttpMethod.POST); // GH-90000
+        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)) // GH-90000
         ));
 
         // Act
-        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
-        HttpResponse response = responsePromise.getResult();
+        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq"); // GH-90000
+        HttpResponse response = responsePromise.getResult(); // GH-90000
 
         // Assert
-        assertNotNull(response);
-        assertEquals(400, response.getCode());
-        verify(mockRepository, never()).save(any());
+        assertNotNull(response); // GH-90000
+        assertEquals(400, response.getCode()); // GH-90000
+        verify(mockRepository, never()).save(any()); // GH-90000
     }
 
     @Test
-    void shouldReturn501WhenNLQServiceNotConfigured() throws Exception {
+    void shouldReturn501WhenNLQServiceNotConfigured() throws Exception { // GH-90000
         // Arrange
         PipelineController controllerWithoutNLQ = 
-            new PipelineController(mockRepository, objectMapper, null);
+            new PipelineController(mockRepository, objectMapper, null); // GH-90000
         
-        Map<String, Object> payload = Map.of("description", "test pipeline");
-        String body = objectMapper.writeValueAsString(payload);
+        Map<String, Object> payload = Map.of("description", "test pipeline"); // GH-90000
+        String body = objectMapper.writeValueAsString(payload); // GH-90000
         
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.getMethod()).thenReturn(HttpMethod.POST);
-        when(request.loadBody()).thenReturn(Promise.of(
-            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+        HttpRequest request = mock(HttpRequest.class); // GH-90000
+        when(request.getMethod()).thenReturn(HttpMethod.POST); // GH-90000
+        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)) // GH-90000
         ));
 
         // Act
-        Promise<HttpResponse> responsePromise = controllerWithoutNLQ.handle(request, "/nlq");
-        HttpResponse response = responsePromise.getResult();
+        Promise<HttpResponse> responsePromise = controllerWithoutNLQ.handle(request, "/nlq"); // GH-90000
+        HttpResponse response = responsePromise.getResult(); // GH-90000
 
         // Assert
-        assertNotNull(response);
-        assertEquals(501, response.getCode());
-        verify(mockRepository, never()).save(any());
+        assertNotNull(response); // GH-90000
+        assertEquals(501, response.getCode()); // GH-90000
+        verify(mockRepository, never()).save(any()); // GH-90000
     }
 
     @Test
-    void shouldValidateDescriptionBeforeGeneration() throws Exception {
+    void shouldValidateDescriptionBeforeGeneration() throws Exception { // GH-90000
         // Arrange
         String tooShortDescription = "abc";
-        Map<String, Object> payload = Map.of("description", tooShortDescription);
-        String body = objectMapper.writeValueAsString(payload);
+        Map<String, Object> payload = Map.of("description", tooShortDescription); // GH-90000
+        String body = objectMapper.writeValueAsString(payload); // GH-90000
         
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.loadBody()).thenReturn(Promise.of(
-            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+        HttpRequest request = mock(HttpRequest.class); // GH-90000
+        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)) // GH-90000
         ));
         
         // Act
-        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
-        HttpResponse response = responsePromise.getResult();
+        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq"); // GH-90000
+        HttpResponse response = responsePromise.getResult(); // GH-90000
         
         // Assert
-        // Should succeed but with warning (validation doesn't fail, just warns)
+        // Should succeed but with warning (validation doesn't fail, just warns) // GH-90000
         // The actual behavior depends on the validation implementation
-        assertNotNull(response);
+        assertNotNull(response); // GH-90000
     }
 
     @Test
-    void shouldIncludeEventTypeInContextWhenProvided() throws Exception {
+    void shouldIncludeEventTypeInContextWhenProvided() throws Exception { // GH-90000
         // Arrange
         String description = "Process events";
-        Map<String, Object> payload = Map.of(
+        Map<String, Object> payload = Map.of( // GH-90000
             "description", description,
             "eventType", "transaction.created"
         );
-        String body = objectMapper.writeValueAsString(payload);
+        String body = objectMapper.writeValueAsString(payload); // GH-90000
         
-        HttpRequest request = mock(HttpRequest.class);
-        when(request.getMethod()).thenReturn(HttpMethod.POST);
-        when(request.loadBody()).thenReturn(Promise.of(
-            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))
+        HttpRequest request = mock(HttpRequest.class); // GH-90000
+        when(request.getMethod()).thenReturn(HttpMethod.POST); // GH-90000
+        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
+            ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)) // GH-90000
         ));
 
-        PipelineRegistration savedPipeline = PipelineRegistration.builder()
-            .id(UUID.randomUUID().toString())
-            .name("Process Events Pipeline")
-            .description("Auto-generated pipeline from: " + description)
-            .active(true)
-            .version(1)
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .build();
+        PipelineRegistration savedPipeline = PipelineRegistration.builder() // GH-90000
+            .id(UUID.randomUUID().toString()) // GH-90000
+            .name("Process Events Pipeline [GH-90000]")
+            .description("Auto-generated pipeline from: " + description) // GH-90000
+            .active(true) // GH-90000
+            .version(1) // GH-90000
+            .createdAt(Instant.now()) // GH-90000
+            .updatedAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
 
-        when(mockRepository.save(any(PipelineRegistration.class))).thenReturn(Promise.of(savedPipeline));
+        when(mockRepository.save(any(PipelineRegistration.class))).thenReturn(Promise.of(savedPipeline)); // GH-90000
 
         // Act
-        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq");
-        HttpResponse response = responsePromise.getResult();
+        Promise<HttpResponse> responsePromise = controller.handle(request, "/nlq"); // GH-90000
+        HttpResponse response = responsePromise.getResult(); // GH-90000
 
         // Assert
-        assertNotNull(response);
-        assertEquals(201, response.getCode());
-        verify(mockRepository).save(argThat((PipelineRegistration pipeline) ->
-            pipeline.getConfig() != null && pipeline.getConfig().contains("transaction.created")
+        assertNotNull(response); // GH-90000
+        assertEquals(201, response.getCode()); // GH-90000
+        verify(mockRepository).save(argThat((PipelineRegistration pipeline) -> // GH-90000
+            pipeline.getConfig() != null && pipeline.getConfig().contains("transaction.created [GH-90000]")
         ));
     }
 }

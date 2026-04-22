@@ -14,23 +14,23 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("ConfigurationValidator Tests")
+@DisplayName("ConfigurationValidator Tests [GH-90000]")
 class ConfigurationValidatorTest {
 
     private ConfigurationValidator validator;
     private File schemasDir;
 
     @BeforeEach
-    void setUp(@TempDir Path tempDir) throws IOException {
-        schemasDir = tempDir.toFile();
-        validator = new ConfigurationValidator(schemasDir);
+    void setUp(@TempDir Path tempDir) throws IOException { // GH-90000
+        schemasDir = tempDir.toFile(); // GH-90000
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
 
         // Create minimal test schemas
-        createMinimalPoliciesSchema();
-        createMinimalAgentSchema();
+        createMinimalPoliciesSchema(); // GH-90000
+        createMinimalAgentSchema(); // GH-90000
     }
 
-    private void createMinimalPoliciesSchema() throws IOException {
+    private void createMinimalPoliciesSchema() throws IOException { // GH-90000
         String schema = """
             {
               "$schema": "http://json-schema.org/draft-07/schema#",
@@ -52,13 +52,13 @@ class ConfigurationValidatorTest {
               }
             }
             """;
-        Files.write(
-            new File(schemasDir, "policies-schema.json").toPath(),
-            schema.getBytes(StandardCharsets.UTF_8)
+        Files.write( // GH-90000
+            new File(schemasDir, "policies-schema.json").toPath(), // GH-90000
+            schema.getBytes(StandardCharsets.UTF_8) // GH-90000
         );
     }
 
-    private void createMinimalAgentSchema() throws IOException {
+    private void createMinimalAgentSchema() throws IOException { // GH-90000
         String schema = """
             {
               "$schema": "http://json-schema.org/draft-07/schema#",
@@ -71,15 +71,15 @@ class ConfigurationValidatorTest {
               }
             }
             """;
-        Files.write(
-            new File(schemasDir, "agent-schema.json").toPath(),
-            schema.getBytes(StandardCharsets.UTF_8)
+        Files.write( // GH-90000
+            new File(schemasDir, "agent-schema.json").toPath(), // GH-90000
+            schema.getBytes(StandardCharsets.UTF_8) // GH-90000
         );
     }
 
     @Test
-    @DisplayName("Should validate valid policies YAML")
-    void shouldValidateValidPoliciesYaml(@TempDir Path tempDir) throws IOException {
+    @DisplayName("Should validate valid policies YAML [GH-90000]")
+    void shouldValidateValidPoliciesYaml(@TempDir Path tempDir) throws IOException { // GH-90000
         String validYaml = """
             apiVersion: v1.0
             policies:
@@ -87,155 +87,155 @@ class ConfigurationValidatorTest {
                 version: "1.0"
             """;
 
-        File yamlFile = tempDir.resolve("valid-policies.yaml").toFile();
-        Files.write(yamlFile.toPath(), validYaml.getBytes(StandardCharsets.UTF_8));
+        File yamlFile = tempDir.resolve("valid-policies.yaml [GH-90000]").toFile();
+        Files.write(yamlFile.toPath(), validYaml.getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        validator = new ConfigurationValidator(schemasDir);
-        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile);
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
+        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile); // GH-90000
 
-        assertThat(result.isValid()).isTrue();
-        assertThat(result.getErrors()).isEmpty();
+        assertThat(result.isValid()).isTrue(); // GH-90000
+        assertThat(result.getErrors()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject policies YAML with missing required fields")
-    void shouldRejectPoliciesWithMissingFields(@TempDir Path tempDir) throws IOException {
+    @DisplayName("Should reject policies YAML with missing required fields [GH-90000]")
+    void shouldRejectPoliciesWithMissingFields(@TempDir Path tempDir) throws IOException { // GH-90000
         String invalidYaml = """
             policies:
               - version: "1.0"
             """;
 
-        File yamlFile = tempDir.resolve("invalid-policies.yaml").toFile();
-        Files.write(yamlFile.toPath(), invalidYaml.getBytes(StandardCharsets.UTF_8));
+        File yamlFile = tempDir.resolve("invalid-policies.yaml [GH-90000]").toFile();
+        Files.write(yamlFile.toPath(), invalidYaml.getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        validator = new ConfigurationValidator(schemasDir);
-        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile);
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
+        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile); // GH-90000
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.getErrors()).isNotEmpty();
+        assertThat(result.isValid()).isFalse(); // GH-90000
+        assertThat(result.getErrors()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate valid agent YAML")
-    void shouldValidateValidAgentYaml(@TempDir Path tempDir) throws IOException {
+    @DisplayName("Should validate valid agent YAML [GH-90000]")
+    void shouldValidateValidAgentYaml(@TempDir Path tempDir) throws IOException { // GH-90000
         String validYaml = """
             id: test-agent
             name: Test Agent
             version: "1.0"
             """;
 
-        File yamlFile = tempDir.resolve("valid-agent.yaml").toFile();
-        Files.write(yamlFile.toPath(), validYaml.getBytes(StandardCharsets.UTF_8));
+        File yamlFile = tempDir.resolve("valid-agent.yaml [GH-90000]").toFile();
+        Files.write(yamlFile.toPath(), validYaml.getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        validator = new ConfigurationValidator(schemasDir);
-        ConfigurationValidator.ValidationResult result = validator.validateAgentFile(yamlFile);
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
+        ConfigurationValidator.ValidationResult result = validator.validateAgentFile(yamlFile); // GH-90000
 
-        assertThat(result.isValid()).isTrue();
-        assertThat(result.getErrors()).isEmpty();
+        assertThat(result.isValid()).isTrue(); // GH-90000
+        assertThat(result.getErrors()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject agent YAML with missing required fields")
-    void shouldRejectAgentWithMissingFields(@TempDir Path tempDir) throws IOException {
+    @DisplayName("Should reject agent YAML with missing required fields [GH-90000]")
+    void shouldRejectAgentWithMissingFields(@TempDir Path tempDir) throws IOException { // GH-90000
         String invalidYaml = """
             name: Missing ID
             version: "1.0"
             """;
 
-        File yamlFile = tempDir.resolve("invalid-agent.yaml").toFile();
-        Files.write(yamlFile.toPath(), invalidYaml.getBytes(StandardCharsets.UTF_8));
+        File yamlFile = tempDir.resolve("invalid-agent.yaml [GH-90000]").toFile();
+        Files.write(yamlFile.toPath(), invalidYaml.getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        validator = new ConfigurationValidator(schemasDir);
-        ConfigurationValidator.ValidationResult result = validator.validateAgentFile(yamlFile);
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
+        ConfigurationValidator.ValidationResult result = validator.validateAgentFile(yamlFile); // GH-90000
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.getErrors()).isNotEmpty();
+        assertThat(result.isValid()).isFalse(); // GH-90000
+        assertThat(result.getErrors()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle File not found gracefully")
-    void shouldHandleNotFoundFile() throws IOException {
-        File nonExistentFile = new File("/nonexistent/file.yaml");
-        validator = new ConfigurationValidator(schemasDir);
+    @DisplayName("Should handle File not found gracefully [GH-90000]")
+    void shouldHandleNotFoundFile() throws IOException { // GH-90000
+        File nonExistentFile = new File("/nonexistent/file.yaml [GH-90000]");
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
 
-        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(nonExistentFile);
+        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(nonExistentFile); // GH-90000
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.getErrors()).isNotEmpty();
-        assertThat(result.getErrors().get(0)).contains("not found");
+        assertThat(result.isValid()).isFalse(); // GH-90000
+        assertThat(result.getErrors()).isNotEmpty(); // GH-90000
+        assertThat(result.getErrors().get(0)).contains("not found [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle malformed YAML gracefully")
-    void shouldHandleMalformedYaml(@TempDir Path tempDir) throws IOException {
+    @DisplayName("Should handle malformed YAML gracefully [GH-90000]")
+    void shouldHandleMalformedYaml(@TempDir Path tempDir) throws IOException { // GH-90000
         String malformedYaml = """
             invalid: [yaml
               unterminated: list
             """;
 
-        File yamlFile = tempDir.resolve("malformed.yaml").toFile();
-        Files.write(yamlFile.toPath(), malformedYaml.getBytes(StandardCharsets.UTF_8));
+        File yamlFile = tempDir.resolve("malformed.yaml [GH-90000]").toFile();
+        Files.write(yamlFile.toPath(), malformedYaml.getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        validator = new ConfigurationValidator(schemasDir);
-        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile);
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
+        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile); // GH-90000
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.getErrors()).isNotEmpty();
+        assertThat(result.isValid()).isFalse(); // GH-90000
+        assertThat(result.getErrors()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should provide error summary")
-    void shouldProvideErrorSummary(@TempDir Path tempDir) throws IOException {
+    @DisplayName("Should provide error summary [GH-90000]")
+    void shouldProvideErrorSummary(@TempDir Path tempDir) throws IOException { // GH-90000
         String invalidYaml = """
             policies: []
             """;
 
-        File yamlFile = tempDir.resolve("test.yaml").toFile();
-        Files.write(yamlFile.toPath(), invalidYaml.getBytes(StandardCharsets.UTF_8));
+        File yamlFile = tempDir.resolve("test.yaml [GH-90000]").toFile();
+        Files.write(yamlFile.toPath(), invalidYaml.getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        validator = new ConfigurationValidator(schemasDir);
-        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile);
+        validator = new ConfigurationValidator(schemasDir); // GH-90000
+        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile); // GH-90000
 
-        String summary = result.getErrorsSummary();
-        assertThat(summary).isNotEmpty();
-        assertThat(summary).doesNotContain("null");
+        String summary = result.getErrorsSummary(); // GH-90000
+        assertThat(summary).isNotEmpty(); // GH-90000
+        assertThat(summary).doesNotContain("null [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should return warning when schema not loaded")
-    void shouldReturnWarningWhenSchemaNotLoaded(@TempDir Path tempDir) throws IOException {
-        File emptySchemaDir = tempDir.resolve("empty").toFile();
-        emptySchemaDir.mkdirs();
+    @DisplayName("Should return warning when schema not loaded [GH-90000]")
+    void shouldReturnWarningWhenSchemaNotLoaded(@TempDir Path tempDir) throws IOException { // GH-90000
+        File emptySchemaDir = tempDir.resolve("empty [GH-90000]").toFile();
+        emptySchemaDir.mkdirs(); // GH-90000
 
-        validator = new ConfigurationValidator(emptySchemaDir);
+        validator = new ConfigurationValidator(emptySchemaDir); // GH-90000
         String validYaml = "test: value";
-        File yamlFile = tempDir.resolve("test.yaml").toFile();
-        Files.write(yamlFile.toPath(), validYaml.getBytes(StandardCharsets.UTF_8));
+        File yamlFile = tempDir.resolve("test.yaml [GH-90000]").toFile();
+        Files.write(yamlFile.toPath(), validYaml.getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile);
+        ConfigurationValidator.ValidationResult result = validator.validatePoliciesFile(yamlFile); // GH-90000
 
-        assertThat(result.isValid()).isTrue();
-        assertThat(result.isWarning()).isTrue();
-        assertThat(result.getErrors()).isNotEmpty();
+        assertThat(result.isValid()).isTrue(); // GH-90000
+        assertThat(result.isWarning()).isTrue(); // GH-90000
+        assertThat(result.getErrors()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Success result should have no errors")
-    void successResultShouldHaveNoErrors() {
-        ConfigurationValidator.ValidationResult result = ConfigurationValidator.ValidationResult.success();
+    @DisplayName("Success result should have no errors [GH-90000]")
+    void successResultShouldHaveNoErrors() { // GH-90000
+        ConfigurationValidator.ValidationResult result = ConfigurationValidator.ValidationResult.success(); // GH-90000
 
-        assertThat(result.isValid()).isTrue();
-        assertThat(result.isWarning()).isFalse();
-        assertThat(result.getErrors()).isEmpty();
+        assertThat(result.isValid()).isTrue(); // GH-90000
+        assertThat(result.isWarning()).isFalse(); // GH-90000
+        assertThat(result.getErrors()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Invalid result should contain errors")
-    void invalidResultShouldContainErrors() {
-        List<String> errors = List.of("Error 1", "Error 2");
-        ConfigurationValidator.ValidationResult result = ConfigurationValidator.ValidationResult.invalid(errors);
+    @DisplayName("Invalid result should contain errors [GH-90000]")
+    void invalidResultShouldContainErrors() { // GH-90000
+        List<String> errors = List.of("Error 1", "Error 2"); // GH-90000
+        ConfigurationValidator.ValidationResult result = ConfigurationValidator.ValidationResult.invalid(errors); // GH-90000
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.getErrors()).containsExactlyElementsOf(errors);
+        assertThat(result.isValid()).isFalse(); // GH-90000
+        assertThat(result.getErrors()).containsExactlyElementsOf(errors); // GH-90000
     }
 }

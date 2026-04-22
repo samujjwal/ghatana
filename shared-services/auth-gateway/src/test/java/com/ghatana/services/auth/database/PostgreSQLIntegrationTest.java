@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * PostgreSQL integration tests for auth-gateway JDBC persistence layer.
  *
- * <p>Uses a real Testcontainers PostgreSQL instance (no mocks). Validates credential
+ * <p>Uses a real Testcontainers PostgreSQL instance (no mocks). Validates credential // GH-90000
  * storage, token storage, session persistence, connection pool behaviour, and
  * transaction rollback/commit semantics.
  *
@@ -29,282 +29,282 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration")
+@Tag("integration [GH-90000]")
 @Testcontainers
-@DisplayName("Auth-Gateway — PostgreSQL integration tests")
+@DisplayName("Auth-Gateway — PostgreSQL integration tests [GH-90000]")
 class PostgreSQLIntegrationTest {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine")
-                    .withDatabaseName("auth_integration_test")
-                    .withUsername("auth_test")
-                    .withPassword("auth_test_pw");
+            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
+                    .withDatabaseName("auth_integration_test [GH-90000]")
+                    .withUsername("auth_test [GH-90000]")
+                    .withPassword("auth_test_pw [GH-90000]");
 
     private HikariDataSource dataSource;
 
     @BeforeEach
-    void setUp() throws Exception {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(POSTGRES.getJdbcUrl());
-        config.setUsername(POSTGRES.getUsername());
-        config.setPassword(POSTGRES.getPassword());
-        config.setMaximumPoolSize(10);
-        config.setMinimumIdle(2);
-        config.setConnectionTimeout(3_000);
-        dataSource = new HikariDataSource(config);
-        initSchema();
+    void setUp() throws Exception { // GH-90000
+        HikariConfig config = new HikariConfig(); // GH-90000
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
+        config.setUsername(POSTGRES.getUsername()); // GH-90000
+        config.setPassword(POSTGRES.getPassword()); // GH-90000
+        config.setMaximumPoolSize(10); // GH-90000
+        config.setMinimumIdle(2); // GH-90000
+        config.setConnectionTimeout(3_000); // GH-90000
+        dataSource = new HikariDataSource(config); // GH-90000
+        initSchema(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("DROP TABLE IF EXISTS auth_sessions, auth_tokens, auth_credentials CASCADE");
+    void tearDown() throws Exception { // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             Statement stmt = conn.createStatement()) { // GH-90000
+            stmt.execute("DROP TABLE IF EXISTS auth_sessions, auth_tokens, auth_credentials CASCADE [GH-90000]");
         }
-        dataSource.close();
+        dataSource.close(); // GH-90000
     }
 
     // ── Credential storage ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("credential is persisted and readable by username")
-    void credentialPersistAndRead() throws Exception {
-        String username = "user_" + uid();
-        insertCredential(username, "hashed_pw", "tenant-1");
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+    @DisplayName("credential is persisted and readable by username [GH-90000]")
+    void credentialPersistAndRead() throws Exception { // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "hashed_pw", "tenant-1"); // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
                      "SELECT username, tenant_id FROM auth_credentials WHERE username = ?")) {
-            ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            assertThat(rs.next()).isTrue();
-            assertThat(rs.getString("username")).isEqualTo(username);
-            assertThat(rs.getString("tenant_id")).isEqualTo("tenant-1");
+            ps.setString(1, username); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            assertThat(rs.next()).isTrue(); // GH-90000
+            assertThat(rs.getString("username [GH-90000]")).isEqualTo(username);
+            assertThat(rs.getString("tenant_id [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
         }
     }
 
     @Test
-    @DisplayName("credential update modifies password_hash")
-    void credentialUpdate() throws Exception {
-        String username = "user_" + uid();
-        insertCredential(username, "old_hash", "tenant-1");
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+    @DisplayName("credential update modifies password_hash [GH-90000]")
+    void credentialUpdate() throws Exception { // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "old_hash", "tenant-1"); // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
                      "UPDATE auth_credentials SET password_hash = ? WHERE username = ?")) {
-            ps.setString(1, "new_hash");
-            ps.setString(2, username);
-            int updated = ps.executeUpdate();
-            assertThat(updated).isEqualTo(1);
+            ps.setString(1, "new_hash"); // GH-90000
+            ps.setString(2, username); // GH-90000
+            int updated = ps.executeUpdate(); // GH-90000
+            assertThat(updated).isEqualTo(1); // GH-90000
         }
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
                      "SELECT password_hash FROM auth_credentials WHERE username = ?")) {
-            ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            assertThat(rs.next()).isTrue();
-            assertThat(rs.getString("password_hash")).isEqualTo("new_hash");
+            ps.setString(1, username); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            assertThat(rs.next()).isTrue(); // GH-90000
+            assertThat(rs.getString("password_hash [GH-90000]")).isEqualTo("new_hash [GH-90000]");
         }
     }
 
     @Test
-    @DisplayName("credential deletion removes the row")
-    void credentialDelete() throws Exception {
-        String username = "user_" + uid();
-        insertCredential(username, "hash", "tenant-2");
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+    @DisplayName("credential deletion removes the row [GH-90000]")
+    void credentialDelete() throws Exception { // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "hash", "tenant-2"); // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
                      "DELETE FROM auth_credentials WHERE username = ?")) {
-            ps.setString(1, username);
-            int deleted = ps.executeUpdate();
-            assertThat(deleted).isEqualTo(1);
+            ps.setString(1, username); // GH-90000
+            int deleted = ps.executeUpdate(); // GH-90000
+            assertThat(deleted).isEqualTo(1); // GH-90000
         }
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT count(*) FROM auth_credentials WHERE username = ?")) {
-            ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            assertThat(rs.getInt(1)).isZero();
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
+                     "SELECT count(*) FROM auth_credentials WHERE username = ?")) { // GH-90000
+            ps.setString(1, username); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            rs.next(); // GH-90000
+            assertThat(rs.getInt(1)).isZero(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("duplicate username violates unique constraint")
-    void duplicateUsernameViolatesConstraint() throws Exception {
-        String username = "user_" + uid();
-        insertCredential(username, "hash", "tenant-1");
-        assertThatThrownBy(() -> insertCredential(username, "hash2", "tenant-1"))
-                .isInstanceOf(SQLException.class);
+    @DisplayName("duplicate username violates unique constraint [GH-90000]")
+    void duplicateUsernameViolatesConstraint() throws Exception { // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "hash", "tenant-1"); // GH-90000
+        assertThatThrownBy(() -> insertCredential(username, "hash2", "tenant-1")) // GH-90000
+                .isInstanceOf(SQLException.class); // GH-90000
     }
 
     // ── Token storage ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("token is persisted and retrievable by token_id")
-    void tokenPersistAndRead() throws Exception {
-        String tokenId = uid();
-        String username = "user_" + uid();
-        insertCredential(username, "hash", "tenant-1");
-        insertToken(tokenId, username, "ACCESS", Instant.now().plusSeconds(3600).toEpochMilli());
+    @DisplayName("token is persisted and retrievable by token_id [GH-90000]")
+    void tokenPersistAndRead() throws Exception { // GH-90000
+        String tokenId = uid(); // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "hash", "tenant-1"); // GH-90000
+        insertToken(tokenId, username, "ACCESS", Instant.now().plusSeconds(3600).toEpochMilli()); // GH-90000
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
                      "SELECT token_id, username, token_type FROM auth_tokens WHERE token_id = ?")) {
-            ps.setString(1, tokenId);
-            ResultSet rs = ps.executeQuery();
-            assertThat(rs.next()).isTrue();
-            assertThat(rs.getString("token_type")).isEqualTo("ACCESS");
+            ps.setString(1, tokenId); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            assertThat(rs.next()).isTrue(); // GH-90000
+            assertThat(rs.getString("token_type [GH-90000]")).isEqualTo("ACCESS [GH-90000]");
         }
     }
 
     @Test
-    @DisplayName("expired tokens can be queried by expiry")
-    void expiredTokensQuery() throws Exception {
-        String username = "user_" + uid();
-        insertCredential(username, "hash", "tenant-1");
-        String expiredTokenId = uid();
-        insertToken(expiredTokenId, username, "ACCESS", Instant.now().minusSeconds(10).toEpochMilli());
+    @DisplayName("expired tokens can be queried by expiry [GH-90000]")
+    void expiredTokensQuery() throws Exception { // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "hash", "tenant-1"); // GH-90000
+        String expiredTokenId = uid(); // GH-90000
+        insertToken(expiredTokenId, username, "ACCESS", Instant.now().minusSeconds(10).toEpochMilli()); // GH-90000
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT count(*) FROM auth_tokens WHERE expires_at < ?")) {
-            ps.setLong(1, Instant.now().toEpochMilli());
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            assertThat(rs.getInt(1)).isGreaterThanOrEqualTo(1);
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
+                     "SELECT count(*) FROM auth_tokens WHERE expires_at < ?")) { // GH-90000
+            ps.setLong(1, Instant.now().toEpochMilli()); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            rs.next(); // GH-90000
+            assertThat(rs.getInt(1)).isGreaterThanOrEqualTo(1); // GH-90000
         }
     }
 
     // ── Session storage ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("session is persisted and readable by session_id")
-    void sessionPersistAndRead() throws Exception {
-        String sessionId = uid();
-        String username = "user_" + uid();
-        insertCredential(username, "hash", "tenant-1");
-        insertSession(sessionId, username, "tenant-1");
+    @DisplayName("session is persisted and readable by session_id [GH-90000]")
+    void sessionPersistAndRead() throws Exception { // GH-90000
+        String sessionId = uid(); // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "hash", "tenant-1"); // GH-90000
+        insertSession(sessionId, username, "tenant-1"); // GH-90000
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
                      "SELECT session_id, username FROM auth_sessions WHERE session_id = ?")) {
-            ps.setString(1, sessionId);
-            ResultSet rs = ps.executeQuery();
-            assertThat(rs.next()).isTrue();
-            assertThat(rs.getString("username")).isEqualTo(username);
+            ps.setString(1, sessionId); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            assertThat(rs.next()).isTrue(); // GH-90000
+            assertThat(rs.getString("username [GH-90000]")).isEqualTo(username);
         }
     }
 
     @Test
-    @DisplayName("session deletion removes the session")
-    void sessionDelete() throws Exception {
-        String sessionId = uid();
-        String username = "user_" + uid();
-        insertCredential(username, "hash", "tenant-1");
-        insertSession(sessionId, username, "tenant-1");
+    @DisplayName("session deletion removes the session [GH-90000]")
+    void sessionDelete() throws Exception { // GH-90000
+        String sessionId = uid(); // GH-90000
+        String username = "user_" + uid(); // GH-90000
+        insertCredential(username, "hash", "tenant-1"); // GH-90000
+        insertSession(sessionId, username, "tenant-1"); // GH-90000
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
                      "DELETE FROM auth_sessions WHERE session_id = ?")) {
-            ps.setString(1, sessionId);
-            int deleted = ps.executeUpdate();
-            assertThat(deleted).isEqualTo(1);
+            ps.setString(1, sessionId); // GH-90000
+            int deleted = ps.executeUpdate(); // GH-90000
+            assertThat(deleted).isEqualTo(1); // GH-90000
         }
     }
 
     // ── Connection pool behavior ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("connection pool provides connections within timeout")
-    void connectionPoolRespondsWithinTimeout() throws Exception {
-        for (int i = 0; i < 5; i++) {
-            try (Connection conn = dataSource.getConnection()) {
-                assertThat(conn.isValid(1)).isTrue();
+    @DisplayName("connection pool provides connections within timeout [GH-90000]")
+    void connectionPoolRespondsWithinTimeout() throws Exception { // GH-90000
+        for (int i = 0; i < 5; i++) { // GH-90000
+            try (Connection conn = dataSource.getConnection()) { // GH-90000
+                assertThat(conn.isValid(1)).isTrue(); // GH-90000
             }
         }
     }
 
-    @ParameterizedTest(name = "concurrent={0}")
-    @ValueSource(ints = {2, 5, 8})
-    @DisplayName("concurrent connections do not exceed pool max or deadlock")
-    void concurrentConnectionsWithinPool(int threads) throws Exception {
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicInteger successCount = new AtomicInteger(0);
-        ExecutorService executor = Executors.newFixedThreadPool(threads);
-        for (int i = 0; i < threads; i++) {
-            executor.submit(() -> {
+    @ParameterizedTest(name = "concurrent={0}") // GH-90000
+    @ValueSource(ints = {2, 5, 8}) // GH-90000
+    @DisplayName("concurrent connections do not exceed pool max or deadlock [GH-90000]")
+    void concurrentConnectionsWithinPool(int threads) throws Exception { // GH-90000
+        CountDownLatch latch = new CountDownLatch(1); // GH-90000
+        AtomicInteger successCount = new AtomicInteger(0); // GH-90000
+        ExecutorService executor = Executors.newFixedThreadPool(threads); // GH-90000
+        for (int i = 0; i < threads; i++) { // GH-90000
+            executor.submit(() -> { // GH-90000
                 try {
-                    latch.await();
-                    try (Connection conn = dataSource.getConnection();
-                         ResultSet rs = conn.createStatement().executeQuery("SELECT 1")) {
-                        if (rs.next()) successCount.incrementAndGet();
+                    latch.await(); // GH-90000
+                    try (Connection conn = dataSource.getConnection(); // GH-90000
+                         ResultSet rs = conn.createStatement().executeQuery("SELECT 1 [GH-90000]")) {
+                        if (rs.next()) successCount.incrementAndGet(); // GH-90000
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {} // GH-90000
             });
         }
-        latch.countDown();
-        executor.shutdown();
-        assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(successCount.get()).isEqualTo(threads);
+        latch.countDown(); // GH-90000
+        executor.shutdown(); // GH-90000
+        assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue(); // GH-90000
+        assertThat(successCount.get()).isEqualTo(threads); // GH-90000
     }
 
     // ── Transaction behavior ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("committed transaction is visible to subsequent reads")
-    void committedTransactionIsVisible() throws Exception {
-        String username = "txn_user_" + uid();
-        try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false);
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO auth_credentials(username, password_hash, tenant_id) VALUES (?, ?, ?)")) {
-                ps.setString(1, username);
-                ps.setString(2, "hash");
-                ps.setString(3, "txn-tenant");
-                ps.executeUpdate();
+    @DisplayName("committed transaction is visible to subsequent reads [GH-90000]")
+    void committedTransactionIsVisible() throws Exception { // GH-90000
+        String username = "txn_user_" + uid(); // GH-90000
+        try (Connection conn = dataSource.getConnection()) { // GH-90000
+            conn.setAutoCommit(false); // GH-90000
+            try (PreparedStatement ps = conn.prepareStatement( // GH-90000
+                    "INSERT INTO auth_credentials(username, password_hash, tenant_id) VALUES (?, ?, ?)")) { // GH-90000
+                ps.setString(1, username); // GH-90000
+                ps.setString(2, "hash"); // GH-90000
+                ps.setString(3, "txn-tenant"); // GH-90000
+                ps.executeUpdate(); // GH-90000
             }
-            conn.commit();
+            conn.commit(); // GH-90000
         }
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT count(*) FROM auth_credentials WHERE username = ?")) {
-            ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            assertThat(rs.getInt(1)).isEqualTo(1);
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
+                     "SELECT count(*) FROM auth_credentials WHERE username = ?")) { // GH-90000
+            ps.setString(1, username); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            rs.next(); // GH-90000
+            assertThat(rs.getInt(1)).isEqualTo(1); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("rolled-back transaction is not visible to subsequent reads")
-    void rolledBackTransactionNotVisible() throws Exception {
-        String username = "rollback_user_" + uid();
-        try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false);
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO auth_credentials(username, password_hash, tenant_id) VALUES (?, ?, ?)")) {
-                ps.setString(1, username);
-                ps.setString(2, "hash");
-                ps.setString(3, "rollback-tenant");
-                ps.executeUpdate();
+    @DisplayName("rolled-back transaction is not visible to subsequent reads [GH-90000]")
+    void rolledBackTransactionNotVisible() throws Exception { // GH-90000
+        String username = "rollback_user_" + uid(); // GH-90000
+        try (Connection conn = dataSource.getConnection()) { // GH-90000
+            conn.setAutoCommit(false); // GH-90000
+            try (PreparedStatement ps = conn.prepareStatement( // GH-90000
+                    "INSERT INTO auth_credentials(username, password_hash, tenant_id) VALUES (?, ?, ?)")) { // GH-90000
+                ps.setString(1, username); // GH-90000
+                ps.setString(2, "hash"); // GH-90000
+                ps.setString(3, "rollback-tenant"); // GH-90000
+                ps.executeUpdate(); // GH-90000
             }
-            conn.rollback();
+            conn.rollback(); // GH-90000
         }
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT count(*) FROM auth_credentials WHERE username = ?")) {
-            ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            assertThat(rs.getInt(1)).isZero();
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
+                     "SELECT count(*) FROM auth_credentials WHERE username = ?")) { // GH-90000
+            ps.setString(1, username); // GH-90000
+            ResultSet rs = ps.executeQuery(); // GH-90000
+            rs.next(); // GH-90000
+            assertThat(rs.getInt(1)).isZero(); // GH-90000
         }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private void initSchema() throws Exception {
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
+    private void initSchema() throws Exception { // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute("""
                     CREATE TABLE IF NOT EXISTS auth_credentials (
                         id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -330,41 +330,41 @@ class PostgreSQLIntegrationTest {
         }
     }
 
-    private void insertCredential(String username, String passwordHash, String tenantId) throws Exception {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "INSERT INTO auth_credentials(username, password_hash, tenant_id) VALUES (?, ?, ?)")) {
-            ps.setString(1, username);
-            ps.setString(2, passwordHash);
-            ps.setString(3, tenantId);
-            ps.executeUpdate();
+    private void insertCredential(String username, String passwordHash, String tenantId) throws Exception { // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
+                     "INSERT INTO auth_credentials(username, password_hash, tenant_id) VALUES (?, ?, ?)")) { // GH-90000
+            ps.setString(1, username); // GH-90000
+            ps.setString(2, passwordHash); // GH-90000
+            ps.setString(3, tenantId); // GH-90000
+            ps.executeUpdate(); // GH-90000
         }
     }
 
-    private void insertToken(String tokenId, String username, String type, long expiresAt) throws Exception {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "INSERT INTO auth_tokens(token_id, username, token_type, expires_at) VALUES (?, ?, ?, ?)")) {
-            ps.setString(1, tokenId);
-            ps.setString(2, username);
-            ps.setString(3, type);
-            ps.setLong(4, expiresAt);
-            ps.executeUpdate();
+    private void insertToken(String tokenId, String username, String type, long expiresAt) throws Exception { // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
+                     "INSERT INTO auth_tokens(token_id, username, token_type, expires_at) VALUES (?, ?, ?, ?)")) { // GH-90000
+            ps.setString(1, tokenId); // GH-90000
+            ps.setString(2, username); // GH-90000
+            ps.setString(3, type); // GH-90000
+            ps.setLong(4, expiresAt); // GH-90000
+            ps.executeUpdate(); // GH-90000
         }
     }
 
-    private void insertSession(String sessionId, String username, String tenantId) throws Exception {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "INSERT INTO auth_sessions(session_id, username, tenant_id) VALUES (?, ?, ?)")) {
-            ps.setString(1, sessionId);
-            ps.setString(2, username);
-            ps.setString(3, tenantId);
-            ps.executeUpdate();
+    private void insertSession(String sessionId, String username, String tenantId) throws Exception { // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             PreparedStatement ps = conn.prepareStatement( // GH-90000
+                     "INSERT INTO auth_sessions(session_id, username, tenant_id) VALUES (?, ?, ?)")) { // GH-90000
+            ps.setString(1, sessionId); // GH-90000
+            ps.setString(2, username); // GH-90000
+            ps.setString(3, tenantId); // GH-90000
+            ps.executeUpdate(); // GH-90000
         }
     }
 
-    private String uid() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    private String uid() { // GH-90000
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 12); // GH-90000
     }
 }

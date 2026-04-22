@@ -17,46 +17,46 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RefactorerValidationService")
+@DisplayName("RefactorerValidationService [GH-90000]")
 class RefactorerValidationServiceTest extends EventloopTestBase {
 
-    private final RefactorerValidationService service = new RefactorerValidationService();
+    private final RefactorerValidationService service = new RefactorerValidationService(); // GH-90000
 
     @Test
-    @DisplayName("rejects gRPC diagnose requests without languages or a valid budget")
-    void rejectsInvalidGrpcDiagnoseRequests() {
-        DiagnoseRequest request = DiagnoseRequest.newBuilder()
-                .setRepoRoot("/tmp/repo")
-                .setBudget(Budget.newBuilder().setMaxPasses(0).setMaxEditsPerFile(-1).setTimeoutSeconds(0).build())
-                .build();
+    @DisplayName("rejects gRPC diagnose requests without languages or a valid budget [GH-90000]")
+    void rejectsInvalidGrpcDiagnoseRequests() { // GH-90000
+        DiagnoseRequest request = DiagnoseRequest.newBuilder() // GH-90000
+                .setRepoRoot("/tmp/repo [GH-90000]")
+                .setBudget(Budget.newBuilder().setMaxPasses(0).setMaxEditsPerFile(-1).setTimeoutSeconds(0).build()) // GH-90000
+                .build(); // GH-90000
 
-        ValidationResult result = runPromise(() -> service.validateEvent(request));
+        ValidationResult result = runPromise(() -> service.validateEvent(request)); // GH-90000
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.violations())
-                .extracting(violation -> violation.field())
-                .contains("languages", "budget.maxPasses", "budget.maxEditsPerFile", "budget.timeoutSeconds");
+        assertThat(result.isValid()).isFalse(); // GH-90000
+        assertThat(result.violations()) // GH-90000
+                .extracting(violation -> violation.field()) // GH-90000
+                .contains("languages", "budget.maxPasses", "budget.maxEditsPerFile", "budget.timeoutSeconds"); // GH-90000
     }
 
     @Test
-    @DisplayName("rejects gRPC run requests without config and idempotency key")
-    void rejectsInvalidGrpcRunRequests() {
-        RunRequest request = RunRequest.newBuilder().build();
+    @DisplayName("rejects gRPC run requests without config and idempotency key [GH-90000]")
+    void rejectsInvalidGrpcRunRequests() { // GH-90000
+        RunRequest request = RunRequest.newBuilder().build(); // GH-90000
 
-        ValidationResult result = runPromise(() -> service.validateEvent(request));
+        ValidationResult result = runPromise(() -> service.validateEvent(request)); // GH-90000
 
-        assertThat(result.isValid()).isFalse();
-        assertThat(result.violations())
-                .extracting(violation -> violation.field())
-                .contains("config", "idempotencyKey");
+        assertThat(result.isValid()).isFalse(); // GH-90000
+        assertThat(result.violations()) // GH-90000
+                .extracting(violation -> violation.field()) // GH-90000
+                .contains("config", "idempotencyKey"); // GH-90000
     }
 
     @Test
-    @DisplayName("accepts valid gRPC requests using the same rules as REST")
-    void acceptsValidGrpcRequests() {
-        ValidationResult result = runPromise(() -> service.validateEvent(GrpcProtoFactory.sampleRunRequest()));
+    @DisplayName("accepts valid gRPC requests using the same rules as REST [GH-90000]")
+    void acceptsValidGrpcRequests() { // GH-90000
+        ValidationResult result = runPromise(() -> service.validateEvent(GrpcProtoFactory.sampleRunRequest())); // GH-90000
 
-        assertThat(result.isValid()).isTrue();
-        assertThat(result.violations()).isEmpty();
+        assertThat(result.isValid()).isTrue(); // GH-90000
+        assertThat(result.violations()).isEmpty(); // GH-90000
     }
 }

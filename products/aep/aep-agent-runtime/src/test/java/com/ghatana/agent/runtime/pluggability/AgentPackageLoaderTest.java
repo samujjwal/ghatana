@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.agent.runtime.pluggability;
@@ -18,110 +18,110 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("AgentPackageLoader + AgentSwapCoordinator")
+@DisplayName("AgentPackageLoader + AgentSwapCoordinator [GH-90000]")
 class AgentPackageLoaderTest extends EventloopTestBase {
 
     private AgentPackageLoader loader;
     private AgentSwapCoordinator swap;
 
-    private AgentPackage buildPackage(String agentId, String version,
+    private AgentPackage buildPackage(String agentId, String version, // GH-90000
                                       AgentPackage.ReleaseState state) {
-        AgentCapabilityManifest manifest = AgentCapabilityManifest.standalone(agentId, version, "tenant-1");
-        return AgentPackage.builder()
-                .packageId(agentId + "-" + version)
-                .manifest(manifest)
-                .implementationClass("com.example.Agent")
-                .source(AgentPackageSource.BUILT_IN)
-                .releaseState(state)
-                .registeredAt(Instant.now())
-                .metadata(Map.of())
-                .build();
+        AgentCapabilityManifest manifest = AgentCapabilityManifest.standalone(agentId, version, "tenant-1"); // GH-90000
+        return AgentPackage.builder() // GH-90000
+                .packageId(agentId + "-" + version) // GH-90000
+                .manifest(manifest) // GH-90000
+                .implementationClass("com.example.Agent [GH-90000]")
+                .source(AgentPackageSource.BUILT_IN) // GH-90000
+                .releaseState(state) // GH-90000
+                .registeredAt(Instant.now()) // GH-90000
+                .metadata(Map.of()) // GH-90000
+                .build(); // GH-90000
     }
 
     @BeforeEach
-    void setUp() {
-        loader = new AgentPackageLoader();
-        swap = new AgentSwapCoordinator(loader);
+    void setUp() { // GH-90000
+        loader = new AgentPackageLoader(); // GH-90000
+        swap = new AgentSwapCoordinator(loader); // GH-90000
     }
 
     // ─── AgentPackageLoader ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AgentPackageLoader")
+    @DisplayName("AgentPackageLoader [GH-90000]")
     class LoaderTests {
 
         @Test
-        @DisplayName("STABLE package loads successfully")
-        void stableLoadSucceeds() {
-            AgentPackage pkg = buildPackage("agent-1", "1.0.0", AgentPackage.ReleaseState.STABLE);
-            AgentPackageLoader.LoadResult result = runPromise(() -> loader.load(pkg));
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(loader.isLoaded("agent-1")).isTrue();
+        @DisplayName("STABLE package loads successfully [GH-90000]")
+        void stableLoadSucceeds() { // GH-90000
+            AgentPackage pkg = buildPackage("agent-1", "1.0.0", AgentPackage.ReleaseState.STABLE); // GH-90000
+            AgentPackageLoader.LoadResult result = runPromise(() -> loader.load(pkg)); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(loader.isLoaded("agent-1 [GH-90000]")).isTrue();
         }
 
         @Test
-        @DisplayName("DRAFT package is rejected")
-        void draftIsRejected() {
-            AgentPackage pkg = buildPackage("agent-2", "0.1.0", AgentPackage.ReleaseState.DRAFT);
-            AgentPackageLoader.LoadResult result = runPromise(() -> loader.load(pkg));
-            assertThat(result).isInstanceOf(AgentPackageLoader.LoadResult.Rejected.class);
-            assertThat(loader.isLoaded("agent-2")).isFalse();
+        @DisplayName("DRAFT package is rejected [GH-90000]")
+        void draftIsRejected() { // GH-90000
+            AgentPackage pkg = buildPackage("agent-2", "0.1.0", AgentPackage.ReleaseState.DRAFT); // GH-90000
+            AgentPackageLoader.LoadResult result = runPromise(() -> loader.load(pkg)); // GH-90000
+            assertThat(result).isInstanceOf(AgentPackageLoader.LoadResult.Rejected.class); // GH-90000
+            assertThat(loader.isLoaded("agent-2 [GH-90000]")).isFalse();
         }
 
         @Test
-        @DisplayName("loading the same version twice is idempotent")
-        void idempotentLoad() {
-            AgentPackage pkg = buildPackage("agent-3", "2.0.0", AgentPackage.ReleaseState.STABLE);
-            runPromise(() -> loader.load(pkg));
-            AgentPackageLoader.LoadResult second = runPromise(() -> loader.load(pkg));
-            assertThat(second).isInstanceOf(AgentPackageLoader.LoadResult.AlreadyLoaded.class);
+        @DisplayName("loading the same version twice is idempotent [GH-90000]")
+        void idempotentLoad() { // GH-90000
+            AgentPackage pkg = buildPackage("agent-3", "2.0.0", AgentPackage.ReleaseState.STABLE); // GH-90000
+            runPromise(() -> loader.load(pkg)); // GH-90000
+            AgentPackageLoader.LoadResult second = runPromise(() -> loader.load(pkg)); // GH-90000
+            assertThat(second).isInstanceOf(AgentPackageLoader.LoadResult.AlreadyLoaded.class); // GH-90000
         }
 
         @Test
-        @DisplayName("loading a different version for same agent is rejected")
-        void differentVersionRejected() {
-            runPromise(() -> loader.load(buildPackage("agent-4", "1.0.0", AgentPackage.ReleaseState.STABLE)));
+        @DisplayName("loading a different version for same agent is rejected [GH-90000]")
+        void differentVersionRejected() { // GH-90000
+            runPromise(() -> loader.load(buildPackage("agent-4", "1.0.0", AgentPackage.ReleaseState.STABLE))); // GH-90000
             AgentPackageLoader.LoadResult result =
-                    runPromise(() -> loader.load(buildPackage("agent-4", "2.0.0", AgentPackage.ReleaseState.STABLE)));
-            assertThat(result).isInstanceOf(AgentPackageLoader.LoadResult.Rejected.class);
+                    runPromise(() -> loader.load(buildPackage("agent-4", "2.0.0", AgentPackage.ReleaseState.STABLE))); // GH-90000
+            assertThat(result).isInstanceOf(AgentPackageLoader.LoadResult.Rejected.class); // GH-90000
         }
     }
 
     // ─── AgentSwapCoordinator ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AgentSwapCoordinator")
+    @DisplayName("AgentSwapCoordinator [GH-90000]")
     class SwapTests {
 
         @Test
-        @DisplayName("swaps a loaded agent to a new version")
-        void swapsToNewVersion() {
-            runPromise(() -> loader.load(buildPackage("agent-x", "1.0.0", AgentPackage.ReleaseState.STABLE)));
+        @DisplayName("swaps a loaded agent to a new version [GH-90000]")
+        void swapsToNewVersion() { // GH-90000
+            runPromise(() -> loader.load(buildPackage("agent-x", "1.0.0", AgentPackage.ReleaseState.STABLE))); // GH-90000
             AgentSwapCoordinator.SwapHandle handle =
-                    runPromise(() -> swap.swap(buildPackage("agent-x", "2.0.0", AgentPackage.ReleaseState.STABLE)));
-            assertThat(handle.isSuccess()).isTrue();
-            assertThat(loader.getLoaded("agent-x").agentVersion()).isEqualTo("2.0.0");
+                    runPromise(() -> swap.swap(buildPackage("agent-x", "2.0.0", AgentPackage.ReleaseState.STABLE))); // GH-90000
+            assertThat(handle.isSuccess()).isTrue(); // GH-90000
+            assertThat(loader.getLoaded("agent-x [GH-90000]").agentVersion()).isEqualTo("2.0.0 [GH-90000]");
         }
 
         @Test
-        @DisplayName("swapping the same version is a no-op")
-        void sameVersionIsNoOp() {
-            runPromise(() -> loader.load(buildPackage("agent-y", "1.0.0", AgentPackage.ReleaseState.STABLE)));
+        @DisplayName("swapping the same version is a no-op [GH-90000]")
+        void sameVersionIsNoOp() { // GH-90000
+            runPromise(() -> loader.load(buildPackage("agent-y", "1.0.0", AgentPackage.ReleaseState.STABLE))); // GH-90000
             AgentSwapCoordinator.SwapHandle handle =
-                    runPromise(() -> swap.swap(buildPackage("agent-y", "1.0.0", AgentPackage.ReleaseState.STABLE)));
-            assertThat(handle).isInstanceOf(AgentSwapCoordinator.SwapHandle.NoOp.class);
+                    runPromise(() -> swap.swap(buildPackage("agent-y", "1.0.0", AgentPackage.ReleaseState.STABLE))); // GH-90000
+            assertThat(handle).isInstanceOf(AgentSwapCoordinator.SwapHandle.NoOp.class); // GH-90000
         }
 
         @Test
-        @DisplayName("swap with DRAFT incoming package fails and rolls back")
-        void draftSwapFails() {
-            runPromise(() -> loader.load(buildPackage("agent-z", "1.0.0", AgentPackage.ReleaseState.STABLE)));
+        @DisplayName("swap with DRAFT incoming package fails and rolls back [GH-90000]")
+        void draftSwapFails() { // GH-90000
+            runPromise(() -> loader.load(buildPackage("agent-z", "1.0.0", AgentPackage.ReleaseState.STABLE))); // GH-90000
             AgentSwapCoordinator.SwapHandle handle =
-                    runPromise(() -> swap.swap(buildPackage("agent-z", "2.0.0", AgentPackage.ReleaseState.DRAFT)));
-            assertThat(handle).isInstanceOf(AgentSwapCoordinator.SwapHandle.Failed.class);
+                    runPromise(() -> swap.swap(buildPackage("agent-z", "2.0.0", AgentPackage.ReleaseState.DRAFT))); // GH-90000
+            assertThat(handle).isInstanceOf(AgentSwapCoordinator.SwapHandle.Failed.class); // GH-90000
             // Rollback: old version should be restored
-            assertThat(loader.isLoaded("agent-z")).isTrue();
-            assertThat(loader.getLoaded("agent-z").agentVersion()).isEqualTo("1.0.0");
+            assertThat(loader.isLoaded("agent-z [GH-90000]")).isTrue();
+            assertThat(loader.getLoaded("agent-z [GH-90000]").agentVersion()).isEqualTo("1.0.0 [GH-90000]");
         }
     }
 }

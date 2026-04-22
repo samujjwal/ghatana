@@ -21,7 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(MockitoExtension.class) // GH-90000
 /**
  * @doc.type class
  * @doc.purpose Handles debug entry test operations
@@ -34,156 +34,156 @@ class DebugEntryTest {
     private Path tempDir;
 
     @BeforeAll
-    static void setUpClass() {
+    static void setUpClass() { // GH-90000
         // Initialize test resources before any tests run
-        TestResourceInitializer.initialize();
+        TestResourceInitializer.initialize(); // GH-90000
     }
 
     @BeforeEach
-    void setUp(@TempDir Path tempDir) throws IOException {
+    void setUp(@TempDir Path tempDir) throws IOException { // GH-90000
         this.tempDir = tempDir;
         // No default stubbing here to avoid UnnecessaryStubbingException.
         // Stub only in tests that actually execute a process and need the working dir.
 
         // Create a simple test file to verify command execution if needed by tests
-        Path testFile = tempDir.resolve("test.txt");
-        Files.writeString(testFile, "test content");
+        Path testFile = tempDir.resolve("test.txt [GH-90000]");
+        Files.writeString(testFile, "test content"); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() { // GH-90000
         // Clean up any resources if needed
     }
 
     @Test
-    void run_executesCommandAndReturnsResult() throws Exception {
+    void run_executesCommandAndReturnsResult() throws Exception { // GH-90000
         // Arrange - Use a simple command that's available on all platforms
         List<String> command;
         String expectedOutput;
 
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            command = List.of("cmd", "/c", "echo", "hello");
+        String os = System.getProperty("os.name [GH-90000]").toLowerCase();
+        if (os.contains("win [GH-90000]")) {
+            command = List.of("cmd", "/c", "echo", "hello"); // GH-90000
             expectedOutput = "hello";
         } else {
-            command = List.of("echo", "hello");
+            command = List.of("echo", "hello"); // GH-90000
             expectedOutput = "hello";
         }
 
         // Arrange working directory for process execution
-        when(mockContext.root()).thenReturn(tempDir);
+        when(mockContext.root()).thenReturn(tempDir); // GH-90000
         // Act
         DebugController.ParseResult result =
-                DebugEntry.run(mockContext, command, Duration.ofSeconds(5));
+                DebugEntry.run(mockContext, command, Duration.ofSeconds(5)); // GH-90000
 
         // Assert
-        assertNotNull(result, "Result should not be null");
-        String output = result.raw().trim();
-        assertTrue(
-                output.endsWith(expectedOutput),
+        assertNotNull(result, "Result should not be null"); // GH-90000
+        String output = result.raw().trim(); // GH-90000
+        assertTrue( // GH-90000
+                output.endsWith(expectedOutput), // GH-90000
                 "Output should contain '" + expectedOutput + "' but was: " + output);
     }
 
     @Test
-    void run_withNullContext_usesCurrentDirectory() throws Exception {
+    void run_withNullContext_usesCurrentDirectory() throws Exception { // GH-90000
         // Skip this test on Windows as it may not work consistently
-        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+        if (System.getProperty("os.name [GH-90000]").toLowerCase().contains("win [GH-90000]")) {
             return;
         }
 
         // Use a simple command that's available on all Unix-like systems
-        List<String> command = List.of("echo", "test");
+        List<String> command = List.of("echo", "test"); // GH-90000
 
         // Act - Run with null context which should use the current directory
-        DebugController.ParseResult result = DebugEntry.run(null, command, Duration.ofSeconds(5));
+        DebugController.ParseResult result = DebugEntry.run(null, command, Duration.ofSeconds(5)); // GH-90000
 
         // Assert
-        assertNotNull(result, "Result should not be null");
-        String output = result.raw().trim();
-        assertEquals("test", output, "Output should match the expected value");
+        assertNotNull(result, "Result should not be null"); // GH-90000
+        String output = result.raw().trim(); // GH-90000
+        assertEquals("test", output, "Output should match the expected value"); // GH-90000
     }
 
     @Test
-    void run_withTimeout_throwsException() {
+    void run_withTimeout_throwsException() { // GH-90000
         // Skip this test on Windows as it may not work consistently
-        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+        if (System.getProperty("os.name [GH-90000]").toLowerCase().contains("win [GH-90000]")) {
             return;
         }
 
         // Arrange - Use a command that will take longer than the timeout
-        List<String> command = List.of("sleep", "10");
+        List<String> command = List.of("sleep", "10"); // GH-90000
         // Arrange working directory for process execution
-        when(mockContext.root()).thenReturn(tempDir);
+        when(mockContext.root()).thenReturn(tempDir); // GH-90000
 
         // Act & Assert - Should throw when command times out
         Exception exception =
-                assertThrows(
+                assertThrows( // GH-90000
                 RefactorerOperationException.class,
-                        () -> DebugEntry.run(mockContext, command, Duration.ofMillis(100)),
+                        () -> DebugEntry.run(mockContext, command, Duration.ofMillis(100)), // GH-90000
                         "Expected timeout exception");
 
-        assertTrue(
-                exception.getMessage().contains("timed out"),
+        assertTrue( // GH-90000
+                exception.getMessage().contains("timed out [GH-90000]"),
                 "Exception message should indicate timeout");
     }
 
     @Test
-    void run_withEmptyCommand_throwsException() {
+    void run_withEmptyCommand_throwsException() { // GH-90000
         // Arrange
-        List<String> command = List.of();
+        List<String> command = List.of(); // GH-90000
 
         // Act & Assert - Empty command should throw IllegalArgumentException
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> DebugEntry.run(mockContext, command, Duration.ofSeconds(1)),
+                        () -> DebugEntry.run(mockContext, command, Duration.ofSeconds(1)), // GH-90000
                         "Expected IllegalArgumentException for empty command");
 
-        assertEquals(
+        assertEquals( // GH-90000
                 "Command cannot be empty",
-                exception.getMessage(),
+                exception.getMessage(), // GH-90000
                 "Exception message should indicate empty command");
     }
 
     @Test
-    void run_withNullCommand_throwsException() {
+    void run_withNullCommand_throwsException() { // GH-90000
         // Act & Assert - Null command should throw IllegalArgumentException
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> DebugEntry.run(mockContext, null, Duration.ofSeconds(1)),
+                        () -> DebugEntry.run(mockContext, null, Duration.ofSeconds(1)), // GH-90000
                         "Expected IllegalArgumentException for null command");
 
-        assertEquals(
+        assertEquals( // GH-90000
                 "Command cannot be null",
-                exception.getMessage(),
+                exception.getMessage(), // GH-90000
                 "Exception message should indicate null command");
     }
 
     @Test
-    void run_withNullTimeout_usesDefault() throws Exception {
+    void run_withNullTimeout_usesDefault() throws Exception { // GH-90000
         // Arrange - Use a simple command that's available on all platforms
         List<String> command;
         String expectedOutput;
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            command = List.of("cmd", "/c", "echo", "default_timeout");
+        String os = System.getProperty("os.name [GH-90000]").toLowerCase();
+        if (os.contains("win [GH-90000]")) {
+            command = List.of("cmd", "/c", "echo", "default_timeout"); // GH-90000
             expectedOutput = "default_timeout";
         } else {
-            command = List.of("echo", "default_timeout");
+            command = List.of("echo", "default_timeout"); // GH-90000
             expectedOutput = "default_timeout";
         }
 
         // Arrange working directory for process execution
-        when(mockContext.root()).thenReturn(tempDir);
+        when(mockContext.root()).thenReturn(tempDir); // GH-90000
         // Act - Pass null for timeout to use default
-        DebugController.ParseResult result = DebugEntry.run(mockContext, command, null);
+        DebugController.ParseResult result = DebugEntry.run(mockContext, command, null); // GH-90000
 
         // Assert - Should complete successfully with default timeout
-        assertNotNull(result, "Result should not be null");
-        String output = result.raw().trim();
-        assertTrue(
-                output.endsWith(expectedOutput),
+        assertNotNull(result, "Result should not be null"); // GH-90000
+        String output = result.raw().trim(); // GH-90000
+        assertTrue( // GH-90000
+                output.endsWith(expectedOutput), // GH-90000
                 "Output should contain '" + expectedOutput + "' but was: " + output);
     }
 }

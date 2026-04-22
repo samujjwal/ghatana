@@ -13,63 +13,63 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  */
 class AgentBoundaryTest {
 
-    private static final JavaClasses CLASSES = new ClassFileImporter()
-        .importPackages("com.ghatana.yappc.agents.code");
+    private static final JavaClasses CLASSES = new ClassFileImporter() // GH-90000
+        .importPackages("com.ghatana.yappc.agents.code [GH-90000]");
 
     @Test
-    void codeSpecialistsShouldNotDependOnArchitectureSpecialists() {
-        ArchRule rule = noClasses()
-            .that().resideInAPackage("..agents.code..")
-            .should().dependOnClassesThat().resideInAPackage("..agents.architecture..")
-            .because("Code specialists must not depend on architecture specialists")
-            .allowEmptyShould(true);
+    void codeSpecialistsShouldNotDependOnArchitectureSpecialists() { // GH-90000
+        ArchRule rule = noClasses() // GH-90000
+            .that().resideInAPackage("..agents.code.. [GH-90000]")
+            .should().dependOnClassesThat().resideInAPackage("..agents.architecture.. [GH-90000]")
+            .because("Code specialists must not depend on architecture specialists [GH-90000]")
+            .allowEmptyShould(true); // GH-90000
 
-        rule.check(CLASSES);
+        rule.check(CLASSES); // GH-90000
     }
 
     @Test
-    void codeSpecialistsShouldNotDependOnTestingSpecialists() {
-        ArchRule rule = noClasses()
-            .that().resideInAPackage("..agents.code..")
-            .should().dependOnClassesThat().resideInAPackage("..agents.testing..")
-            .because("Code specialists must not depend on testing specialists")
-            .allowEmptyShould(true);
+    void codeSpecialistsShouldNotDependOnTestingSpecialists() { // GH-90000
+        ArchRule rule = noClasses() // GH-90000
+            .that().resideInAPackage("..agents.code.. [GH-90000]")
+            .should().dependOnClassesThat().resideInAPackage("..agents.testing.. [GH-90000]")
+            .because("Code specialists must not depend on testing specialists [GH-90000]")
+            .allowEmptyShould(true); // GH-90000
 
-        rule.check(CLASSES);
+        rule.check(CLASSES); // GH-90000
     }
 
     @Test
-    void agentsShouldNotDependOnScaffold() {
-        ArchRule rule = noClasses()
-            .that().resideInAPackage("..agents..")
-            .should().dependOnClassesThat().resideInAPackage("..scaffold..")
-            .because("Agents must not depend on scaffold - they are different concerns")
-            .allowEmptyShould(true);
+    void agentsShouldNotDependOnScaffold() { // GH-90000
+        ArchRule rule = noClasses() // GH-90000
+            .that().resideInAPackage("..agents.. [GH-90000]")
+            .should().dependOnClassesThat().resideInAPackage("..scaffold.. [GH-90000]")
+            .because("Agents must not depend on scaffold - they are different concerns [GH-90000]")
+            .allowEmptyShould(true); // GH-90000
 
-        rule.check(CLASSES);
+        rule.check(CLASSES); // GH-90000
     }
 
     @Test
-    void agentsShouldNotDependOnRefactorer() {
-        ArchRule rule = noClasses()
-            .that().resideInAPackage("..agents..")
-            .should().dependOnClassesThat().resideInAPackage("..refactorer..")
-            .because("Agents must not depend on refactorer")
-            .allowEmptyShould(true);
+    void agentsShouldNotDependOnRefactorer() { // GH-90000
+        ArchRule rule = noClasses() // GH-90000
+            .that().resideInAPackage("..agents.. [GH-90000]")
+            .should().dependOnClassesThat().resideInAPackage("..refactorer.. [GH-90000]")
+            .because("Agents must not depend on refactorer [GH-90000]")
+            .allowEmptyShould(true); // GH-90000
 
-        rule.check(CLASSES);
+        rule.check(CLASSES); // GH-90000
     }
 
     @Test
-    void modulesShouldHaveMaximum150Files() {
+    void modulesShouldHaveMaximum150Files() { // GH-90000
         // This is enforced by Gradle checkModuleSize task
         // This test documents the requirement
-        ArchRule rule = classes()
-            .that().resideInAPackage("..agents.code..")
-            .should().haveSimpleNameNotContaining("TooManyFiles")
-            .because("Modules should have maximum 150 files")
-            .allowEmptyShould(true);
+        ArchRule rule = classes() // GH-90000
+            .that().resideInAPackage("..agents.code.. [GH-90000]")
+            .should().haveSimpleNameNotContaining("TooManyFiles [GH-90000]")
+            .because("Modules should have maximum 150 files [GH-90000]")
+            .allowEmptyShould(true); // GH-90000
 
-        rule.check(CLASSES);
+        rule.check(CLASSES); // GH-90000
     }
 }

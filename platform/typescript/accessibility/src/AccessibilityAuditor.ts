@@ -1,6 +1,6 @@
 /**
  * @fileoverview Enhanced Accessibility Auditor with comprehensive reporting
- * @module @ghatana/accessibility-audit
+ * @module @ghatana/accessibility
  *
  * Provides accessibility auditing for pages, components, and design systems
  * with actionable reports and multiple output formats.

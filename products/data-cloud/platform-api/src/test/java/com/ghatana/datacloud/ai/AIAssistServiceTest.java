@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.ai;
@@ -22,331 +22,331 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for AI assist service query processing (AI001).
+ * Tests for AI assist service query processing (AI001). // GH-90000
  *
  * @doc.type class
  * @doc.purpose AI query processing tests
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AIAssistService – Query Processing (AI001)")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("AIAssistService – Query Processing (AI001) [GH-90000]")
 class AIAssistServiceTest extends EventloopTestBase {
 
     @Mock
     private AIAssistService aiAssistService;
 
     @Nested
-    @DisplayName("Query Processing")
+    @DisplayName("Query Processing [GH-90000]")
     class QueryProcessingTests {
 
         @Test
-        @DisplayName("[AI001]: process_query_returns_results")
-        void processQueryReturnsResults() {
+        @DisplayName("[AI001]: process_query_returns_results [GH-90000]")
+        void processQueryReturnsResults() { // GH-90000
             String query = "Show me sales data from last month";
-            AIAssistService.QueryContext context = createQueryContext();
+            AIAssistService.QueryContext context = createQueryContext(); // GH-90000
 
-            AIAssistService.GeneratedSQL generatedSQL = new AIAssistService.GeneratedSQL(
+            AIAssistService.GeneratedSQL generatedSQL = new AIAssistService.GeneratedSQL( // GH-90000
                 "SELECT * FROM sales WHERE date >= '2024-01-01'",
                 "Query to get sales data from January 2024",
-                List.of("sales"), List.of(), true
+                List.of("sales [GH-90000]"), List.of(), true
             );
 
-            AIAssistService.QueryResult result = new AIAssistService.QueryResult(
+            AIAssistService.QueryResult result = new AIAssistService.QueryResult( // GH-90000
                 "query-001", query, "sales_query", generatedSQL,
-                List.of(Map.of("total", 100000)),
+                List.of(Map.of("total", 100000)), // GH-90000
                 null, 1500, false, 0.95
             );
 
-            when(aiAssistService.processQuery(query, context))
-                .thenReturn(Promise.of(result));
+            when(aiAssistService.processQuery(query, context)) // GH-90000
+                .thenReturn(Promise.of(result)); // GH-90000
 
-            AIAssistService.QueryResult processed = runPromise(() ->
-                aiAssistService.processQuery(query, context)
+            AIAssistService.QueryResult processed = runPromise(() -> // GH-90000
+                aiAssistService.processQuery(query, context) // GH-90000
             );
 
-            assertThat(processed.queryId()).isEqualTo("query-001");
-            assertThat(processed.confidenceScore()).isEqualTo(0.95);
-            assertThat(processed.generatedSQL().isSafe()).isTrue();
+            assertThat(processed.queryId()).isEqualTo("query-001 [GH-90000]");
+            assertThat(processed.confidenceScore()).isEqualTo(0.95); // GH-90000
+            assertThat(processed.generatedSQL().isSafe()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: process_query_with_low_confidence_flagged")
-        void processQueryWithLowConfidenceFlagged() {
+        @DisplayName("[AI001]: process_query_with_low_confidence_flagged [GH-90000]")
+        void processQueryWithLowConfidenceFlagged() { // GH-90000
             String query = "ambiguous query";
-            AIAssistService.QueryContext context = createQueryContext();
+            AIAssistService.QueryContext context = createQueryContext(); // GH-90000
 
-            AIAssistService.QueryResult result = new AIAssistService.QueryResult(
-                "query-002", query, "unknown", null, List.of(),
+            AIAssistService.QueryResult result = new AIAssistService.QueryResult( // GH-90000
+                "query-002", query, "unknown", null, List.of(), // GH-90000
                 null, 500, false, 0.45
             );
 
-            when(aiAssistService.processQuery(query, context))
-                .thenReturn(Promise.of(result));
+            when(aiAssistService.processQuery(query, context)) // GH-90000
+                .thenReturn(Promise.of(result)); // GH-90000
 
-            AIAssistService.QueryResult processed = runPromise(() ->
-                aiAssistService.processQuery(query, context)
+            AIAssistService.QueryResult processed = runPromise(() -> // GH-90000
+                aiAssistService.processQuery(query, context) // GH-90000
             );
 
-            assertThat(processed.confidenceScore()).isLessThan(0.50);
+            assertThat(processed.confidenceScore()).isLessThan(0.50); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("SQL Generation")
+    @DisplayName("SQL Generation [GH-90000]")
     class SQLGenerationTests {
 
         @Test
-        @DisplayName("[AI001]: generate_sql_creates_valid_query")
-        void generateSQLCreatesValidQuery() {
+        @DisplayName("[AI001]: generate_sql_creates_valid_query [GH-90000]")
+        void generateSQLCreatesValidQuery() { // GH-90000
             String description = "Find all active users";
-            AIAssistService.DatabaseSchema schema = createDatabaseSchema();
+            AIAssistService.DatabaseSchema schema = createDatabaseSchema(); // GH-90000
 
-            AIAssistService.GeneratedSQL result = new AIAssistService.GeneratedSQL(
+            AIAssistService.GeneratedSQL result = new AIAssistService.GeneratedSQL( // GH-90000
                 "SELECT * FROM users WHERE status = 'active'",
                 "Query to find users with active status",
-                List.of("users"), List.of(), true
+                List.of("users [GH-90000]"), List.of(), true
             );
 
-            when(aiAssistService.generateSQL(description, schema))
-                .thenReturn(Promise.of(result));
+            when(aiAssistService.generateSQL(description, schema)) // GH-90000
+                .thenReturn(Promise.of(result)); // GH-90000
 
-            AIAssistService.GeneratedSQL generated = runPromise(() ->
-                aiAssistService.generateSQL(description, schema)
+            AIAssistService.GeneratedSQL generated = runPromise(() -> // GH-90000
+                aiAssistService.generateSQL(description, schema) // GH-90000
             );
 
-            assertThat(generated.sql()).containsIgnoringCase("SELECT");
-            assertThat(generated.tablesUsed()).contains("users");
-            assertThat(generated.isReadOnly()).isTrue();
-            assertThat(generated.isSafe()).isTrue();
+            assertThat(generated.sql()).containsIgnoringCase("SELECT [GH-90000]");
+            assertThat(generated.tablesUsed()).contains("users [GH-90000]");
+            assertThat(generated.isReadOnly()).isTrue(); // GH-90000
+            assertThat(generated.isSafe()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: generate_sql_detects_unsafe_operations")
-        void generateSQLDetectsUnsafeOperations() {
+        @DisplayName("[AI001]: generate_sql_detects_unsafe_operations [GH-90000]")
+        void generateSQLDetectsUnsafeOperations() { // GH-90000
             String description = "Delete all users";
-            AIAssistService.DatabaseSchema schema = createDatabaseSchema();
+            AIAssistService.DatabaseSchema schema = createDatabaseSchema(); // GH-90000
 
-            AIAssistService.GeneratedSQL result = new AIAssistService.GeneratedSQL(
+            AIAssistService.GeneratedSQL result = new AIAssistService.GeneratedSQL( // GH-90000
                 "DELETE FROM users",
                 "WARNING: This will delete all users",
-                List.of("users"),
-                List.of("DESTRUCTIVE_OPERATION"),
+                List.of("users [GH-90000]"),
+                List.of("DESTRUCTIVE_OPERATION [GH-90000]"),
                 false
             );
 
-            when(aiAssistService.generateSQL(description, schema))
-                .thenReturn(Promise.of(result));
+            when(aiAssistService.generateSQL(description, schema)) // GH-90000
+                .thenReturn(Promise.of(result)); // GH-90000
 
-            AIAssistService.GeneratedSQL generated = runPromise(() ->
-                aiAssistService.generateSQL(description, schema)
+            AIAssistService.GeneratedSQL generated = runPromise(() -> // GH-90000
+                aiAssistService.generateSQL(description, schema) // GH-90000
             );
 
-            assertThat(generated.isReadOnly()).isFalse();
-            assertThat(generated.isSafe()).isFalse();
-            assertThat(generated.warnings()).contains("DESTRUCTIVE_OPERATION");
+            assertThat(generated.isReadOnly()).isFalse(); // GH-90000
+            assertThat(generated.isSafe()).isFalse(); // GH-90000
+            assertThat(generated.warnings()).contains("DESTRUCTIVE_OPERATION [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Query Explanation")
+    @DisplayName("Query Explanation [GH-90000]")
     class QueryExplanationTests {
 
         @Test
-        @DisplayName("[AI001]: explain_results_provides_summary")
-        void explainResultsProvidesSummary() {
+        @DisplayName("[AI001]: explain_results_provides_summary [GH-90000]")
+        void explainResultsProvidesSummary() { // GH-90000
             String query = "SELECT * FROM sales";
-            List<Map<String, Object>> results = List.of(
-                Map.of("region", "North", "amount", 50000),
-                Map.of("region", "South", "amount", 75000)
+            List<Map<String, Object>> results = List.of( // GH-90000
+                Map.of("region", "North", "amount", 50000), // GH-90000
+                Map.of("region", "South", "amount", 75000) // GH-90000
             );
-            AIAssistService.QueryContext context = createQueryContext();
+            AIAssistService.QueryContext context = createQueryContext(); // GH-90000
 
-            AIAssistService.Explanation explanation = new AIAssistService.Explanation(
+            AIAssistService.Explanation explanation = new AIAssistService.Explanation( // GH-90000
                 "Sales data shows North region at $50K and South at $75K",
-                List.of("South region outperforms North by 50%", "Total sales: $125K"),
-                List.of("Focus marketing on South region"),
+                List.of("South region outperforms North by 50%", "Total sales: $125K"), // GH-90000
+                List.of("Focus marketing on South region [GH-90000]"),
                 "bar_chart"
             );
 
-            when(aiAssistService.explainResults(query, results, context))
-                .thenReturn(Promise.of(explanation));
+            when(aiAssistService.explainResults(query, results, context)) // GH-90000
+                .thenReturn(Promise.of(explanation)); // GH-90000
 
-            AIAssistService.Explanation result = runPromise(() ->
-                aiAssistService.explainResults(query, results, context)
+            AIAssistService.Explanation result = runPromise(() -> // GH-90000
+                aiAssistService.explainResults(query, results, context) // GH-90000
             );
 
-            assertThat(result.summary()).contains("North");
-            assertThat(result.keyPoints()).hasSize(2);
-            assertThat(result.visualizationSuggestion()).isEqualTo("bar_chart");
+            assertThat(result.summary()).contains("North [GH-90000]");
+            assertThat(result.keyPoints()).hasSize(2); // GH-90000
+            assertThat(result.visualizationSuggestion()).isEqualTo("bar_chart [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Query Suggestions")
+    @DisplayName("Query Suggestions [GH-90000]")
     class QuerySuggestionsTests {
 
         @Test
-        @DisplayName("[AI001]: suggest_queries_returns_relevant_suggestions")
-        void suggestQueriesReturnsRelevantSuggestions() {
-            AIAssistService.QueryContext context = createQueryContext();
+        @DisplayName("[AI001]: suggest_queries_returns_relevant_suggestions [GH-90000]")
+        void suggestQueriesReturnsRelevantSuggestions() { // GH-90000
+            AIAssistService.QueryContext context = createQueryContext(); // GH-90000
 
-            List<AIAssistService.QuerySuggestion> suggestions = List.of(
-                new AIAssistService.QuerySuggestion(
+            List<AIAssistService.QuerySuggestion> suggestions = List.of( // GH-90000
+                new AIAssistService.QuerySuggestion( // GH-90000
                     "Show sales by region", "Regional sales breakdown", 0.95, "analytics"
                 ),
-                new AIAssistService.QuerySuggestion(
+                new AIAssistService.QuerySuggestion( // GH-90000
                     "Compare this month vs last month", "Month-over-month comparison", 0.90, "comparison"
                 ),
-                new AIAssistService.QuerySuggestion(
+                new AIAssistService.QuerySuggestion( // GH-90000
                     "Top 10 products", "Best performing products", 0.85, "ranking"
                 )
             );
 
-            when(aiAssistService.suggestQueries(context, 5))
-                .thenReturn(Promise.of(suggestions));
+            when(aiAssistService.suggestQueries(context, 5)) // GH-90000
+                .thenReturn(Promise.of(suggestions)); // GH-90000
 
-            List<AIAssistService.QuerySuggestion> result = runPromise(() ->
-                aiAssistService.suggestQueries(context, 5)
+            List<AIAssistService.QuerySuggestion> result = runPromise(() -> // GH-90000
+                aiAssistService.suggestQueries(context, 5) // GH-90000
             );
 
-            assertThat(result).hasSize(3);
-            assertThat(result.get(0).relevanceScore()).isGreaterThan(0.9);
+            assertThat(result).hasSize(3); // GH-90000
+            assertThat(result.get(0).relevanceScore()).isGreaterThan(0.9); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Conversation Management")
+    @DisplayName("Conversation Management [GH-90000]")
     class ConversationManagementTests {
 
         @Test
-        @DisplayName("[AI001]: create_conversation_creates_new")
-        void createConversationCreatesNew() {
+        @DisplayName("[AI001]: create_conversation_creates_new [GH-90000]")
+        void createConversationCreatesNew() { // GH-90000
             String tenantId = "tenant-alpha";
             String userId = "user-001";
 
-            AIAssistService.Conversation conv = new AIAssistService.Conversation(
-                "conv-001", tenantId, userId, List.of(),
-                Instant.now(), Instant.now(), 0
+            AIAssistService.Conversation conv = new AIAssistService.Conversation( // GH-90000
+                "conv-001", tenantId, userId, List.of(), // GH-90000
+                Instant.now(), Instant.now(), 0 // GH-90000
             );
 
-            when(aiAssistService.createConversation(tenantId, userId))
-                .thenReturn(Promise.of(conv));
+            when(aiAssistService.createConversation(tenantId, userId)) // GH-90000
+                .thenReturn(Promise.of(conv)); // GH-90000
 
-            AIAssistService.Conversation result = runPromise(() ->
-                aiAssistService.createConversation(tenantId, userId)
+            AIAssistService.Conversation result = runPromise(() -> // GH-90000
+                aiAssistService.createConversation(tenantId, userId) // GH-90000
             );
 
-            assertThat(result.id()).isEqualTo("conv-001");
-            assertThat(result.tenantId()).isEqualTo(tenantId);
-            assertThat(result.messageCount()).isZero();
+            assertThat(result.id()).isEqualTo("conv-001 [GH-90000]");
+            assertThat(result.tenantId()).isEqualTo(tenantId); // GH-90000
+            assertThat(result.messageCount()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: add_message_updates_conversation")
-        void addMessageUpdatesConversation() {
+        @DisplayName("[AI001]: add_message_updates_conversation [GH-90000]")
+        void addMessageUpdatesConversation() { // GH-90000
             String conversationId = "conv-001";
-            AIAssistService.Message message = new AIAssistService.Message(
+            AIAssistService.Message message = new AIAssistService.Message( // GH-90000
                 "msg-001", AIAssistService.MessageRole.USER,
-                "Show me data", Instant.now(), Map.of()
+                "Show me data", Instant.now(), Map.of() // GH-90000
             );
 
-            AIAssistService.Conversation updated = new AIAssistService.Conversation(
+            AIAssistService.Conversation updated = new AIAssistService.Conversation( // GH-90000
                 conversationId, "tenant-alpha", "user-001",
-                List.of(message), Instant.now(), Instant.now(), 1
+                List.of(message), Instant.now(), Instant.now(), 1 // GH-90000
             );
 
-            when(aiAssistService.addMessage(conversationId, message))
-                .thenReturn(Promise.of(updated));
+            when(aiAssistService.addMessage(conversationId, message)) // GH-90000
+                .thenReturn(Promise.of(updated)); // GH-90000
 
-            AIAssistService.Conversation result = runPromise(() ->
-                aiAssistService.addMessage(conversationId, message)
+            AIAssistService.Conversation result = runPromise(() -> // GH-90000
+                aiAssistService.addMessage(conversationId, message) // GH-90000
             );
 
-            assertThat(result.messageCount()).isEqualTo(1);
-            assertThat(result.messages()).hasSize(1);
+            assertThat(result.messageCount()).isEqualTo(1); // GH-90000
+            assertThat(result.messages()).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: get_conversation_returns_history")
-        void getConversationReturnsHistory() {
+        @DisplayName("[AI001]: get_conversation_returns_history [GH-90000]")
+        void getConversationReturnsHistory() { // GH-90000
             String conversationId = "conv-001";
 
-            List<AIAssistService.Message> messages = List.of(
-                new AIAssistService.Message("m1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of()),
-                new AIAssistService.Message("m2", AIAssistService.MessageRole.ASSISTANT, "Hi!", Instant.now(), Map.of())
+            List<AIAssistService.Message> messages = List.of( // GH-90000
+                new AIAssistService.Message("m1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of()), // GH-90000
+                new AIAssistService.Message("m2", AIAssistService.MessageRole.ASSISTANT, "Hi!", Instant.now(), Map.of()) // GH-90000
             );
 
-            AIAssistService.Conversation conv = new AIAssistService.Conversation(
+            AIAssistService.Conversation conv = new AIAssistService.Conversation( // GH-90000
                 conversationId, "tenant-alpha", "user-001",
-                messages, Instant.now(), Instant.now(), 2
+                messages, Instant.now(), Instant.now(), 2 // GH-90000
             );
 
-            when(aiAssistService.getConversation(conversationId))
-                .thenReturn(Promise.of(conv));
+            when(aiAssistService.getConversation(conversationId)) // GH-90000
+                .thenReturn(Promise.of(conv)); // GH-90000
 
-            AIAssistService.Conversation result = runPromise(() ->
-                aiAssistService.getConversation(conversationId)
+            AIAssistService.Conversation result = runPromise(() -> // GH-90000
+                aiAssistService.getConversation(conversationId) // GH-90000
             );
 
-            assertThat(result.messages()).hasSize(2);
+            assertThat(result.messages()).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: clear_conversation_removes_messages")
-        void clearConversationRemovesMessages() {
+        @DisplayName("[AI001]: clear_conversation_removes_messages [GH-90000]")
+        void clearConversationRemovesMessages() { // GH-90000
             String conversationId = "conv-001";
 
-            when(aiAssistService.clearConversation(conversationId))
-                .thenReturn(Promise.of((Void) null));
+            when(aiAssistService.clearConversation(conversationId)) // GH-90000
+                .thenReturn(Promise.of((Void) null)); // GH-90000
 
-            runPromise(() -> aiAssistService.clearConversation(conversationId));
+            runPromise(() -> aiAssistService.clearConversation(conversationId)); // GH-90000
 
-            verify(aiAssistService).clearConversation(conversationId);
+            verify(aiAssistService).clearConversation(conversationId); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Service Status")
+    @DisplayName("Service Status [GH-90000]")
     class ServiceStatusTests {
 
         @Test
-        @DisplayName("[AI001]: get_status_returns_service_info")
-        void getStatusReturnsServiceInfo() {
-            AIAssistService.ServiceStatus status = new AIAssistService.ServiceStatus(
-                true, "openai", "gpt-4", 1000, 500.0, Instant.now()
+        @DisplayName("[AI001]: get_status_returns_service_info [GH-90000]")
+        void getStatusReturnsServiceInfo() { // GH-90000
+            AIAssistService.ServiceStatus status = new AIAssistService.ServiceStatus( // GH-90000
+                true, "openai", "gpt-4", 1000, 500.0, Instant.now() // GH-90000
             );
 
-            when(aiAssistService.getStatus())
-                .thenReturn(Promise.of(status));
+            when(aiAssistService.getStatus()) // GH-90000
+                .thenReturn(Promise.of(status)); // GH-90000
 
-            AIAssistService.ServiceStatus result = runPromise(() -> aiAssistService.getStatus());
+            AIAssistService.ServiceStatus result = runPromise(() -> aiAssistService.getStatus()); // GH-90000
 
-            assertThat(result.available()).isTrue();
-            assertThat(result.provider()).isEqualTo("openai");
-            assertThat(result.model()).isEqualTo("gpt-4");
-            assertThat(result.averageLatencyMs()).isEqualTo(500.0);
+            assertThat(result.available()).isTrue(); // GH-90000
+            assertThat(result.provider()).isEqualTo("openai [GH-90000]");
+            assertThat(result.model()).isEqualTo("gpt-4 [GH-90000]");
+            assertThat(result.averageLatencyMs()).isEqualTo(500.0); // GH-90000
         }
     }
 
-    private AIAssistService.QueryContext createQueryContext() {
-        return new AIAssistService.QueryContext(
+    private AIAssistService.QueryContext createQueryContext() { // GH-90000
+        return new AIAssistService.QueryContext( // GH-90000
             "tenant-alpha", "user-001", "conv-001",
-            null, List.of("sales", "users"), null, null
+            null, List.of("sales", "users"), null, null // GH-90000
         );
     }
 
-    private AIAssistService.DatabaseSchema createDatabaseSchema() {
-        return new AIAssistService.DatabaseSchema(
+    private AIAssistService.DatabaseSchema createDatabaseSchema() { // GH-90000
+        return new AIAssistService.DatabaseSchema( // GH-90000
             "default",
-            List.of(new AIAssistService.TableInfo(
+            List.of(new AIAssistService.TableInfo( // GH-90000
                 "users",
-                List.of(
-                    new AIAssistService.ColumnInfo("id", "INTEGER", false, "User ID"),
-                    new AIAssistService.ColumnInfo("name", "VARCHAR", true, "User name"),
-                    new AIAssistService.ColumnInfo("status", "VARCHAR", true, "User status")
+                List.of( // GH-90000
+                    new AIAssistService.ColumnInfo("id", "INTEGER", false, "User ID"), // GH-90000
+                    new AIAssistService.ColumnInfo("name", "VARCHAR", true, "User name"), // GH-90000
+                    new AIAssistService.ColumnInfo("status", "VARCHAR", true, "User status") // GH-90000
                 ),
-                List.of()
+                List.of() // GH-90000
             ))
         );
     }

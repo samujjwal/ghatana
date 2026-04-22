@@ -50,8 +50,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("LifecycleApiController")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("LifecycleApiController [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class LifecycleApiControllerTest extends EventloopTestBase {
 
     @Mock
@@ -87,8 +87,8 @@ class LifecycleApiControllerTest extends EventloopTestBase {
     private LifecycleApiController controller;
 
     @BeforeEach
-    void setUp() {
-        controller = new LifecycleApiController(
+    void setUp() { // GH-90000
+        controller = new LifecycleApiController( // GH-90000
             intentService,
             shapeService,
             validationService,
@@ -103,132 +103,132 @@ class LifecycleApiControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute full lifecycle returns all phase outputs when validation passes")
-    void executeFullLifecycleSuccessPath() throws Exception {
-        IntentSpec intentSpec = IntentSpec.builder()
-            .id("intent-1")
-            .productName("Order Service")
-            .description("Build an order service")
-            .goals(List.of())
-            .personas(List.of())
-            .constraints(List.of())
-            .metadata(Map.of())
-            .tenantId("tenant-1")
-            .build();
-        ShapeSpec shapeSpec = ShapeSpec.builder()
-            .id("shape-1")
-            .intentRef(intentSpec.id())
-            .metadata(Map.of())
-            .tenantId("tenant-1")
-            .build();
-        LifecycleValidationResult validationResult = LifecycleValidationResult.builder()
-            .passed(true)
-            .issues(List.of())
-            .build();
-        GeneratedArtifacts artifacts = GeneratedArtifacts.builder()
-            .id("artifacts-1")
-            .specRef(shapeSpec.id())
-            .artifacts(List.of())
-            .build();
-        RunResult runResult = RunResult.builder()
-            .id("run-1")
-            .runSpecRef("run-spec-1")
-            .status(RunStatus.SUCCESS)
-            .taskResults(List.of())
-            .startedAt(Instant.now())
-            .completedAt(Instant.now())
-            .metadata(Map.of())
-            .build();
-        Observation observation = Observation.builder()
-            .id("obs-1")
-            .runRef(runResult.runSpecRef())
-            .metrics(List.of())
-            .logs(List.of())
-            .traces(List.of())
-            .build();
-        Insights insights = Insights.builder()
-            .id("insights-1")
-            .observationRef(observation.id())
-            .patterns(List.of())
-            .anomalies(List.of())
-            .recommendations(List.of())
-            .build();
-        EvolutionPlan evolutionPlan = EvolutionPlan.builder()
-            .id("evolution-1")
-            .insightsRef(insights.id())
-            .tasks(List.of())
-            .metadata(Map.of())
-            .build();
+    @DisplayName("execute full lifecycle returns all phase outputs when validation passes [GH-90000]")
+    void executeFullLifecycleSuccessPath() throws Exception { // GH-90000
+        IntentSpec intentSpec = IntentSpec.builder() // GH-90000
+            .id("intent-1 [GH-90000]")
+            .productName("Order Service [GH-90000]")
+            .description("Build an order service [GH-90000]")
+            .goals(List.of()) // GH-90000
+            .personas(List.of()) // GH-90000
+            .constraints(List.of()) // GH-90000
+            .metadata(Map.of()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .build(); // GH-90000
+        ShapeSpec shapeSpec = ShapeSpec.builder() // GH-90000
+            .id("shape-1 [GH-90000]")
+            .intentRef(intentSpec.id()) // GH-90000
+            .metadata(Map.of()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .build(); // GH-90000
+        LifecycleValidationResult validationResult = LifecycleValidationResult.builder() // GH-90000
+            .passed(true) // GH-90000
+            .issues(List.of()) // GH-90000
+            .build(); // GH-90000
+        GeneratedArtifacts artifacts = GeneratedArtifacts.builder() // GH-90000
+            .id("artifacts-1 [GH-90000]")
+            .specRef(shapeSpec.id()) // GH-90000
+            .artifacts(List.of()) // GH-90000
+            .build(); // GH-90000
+        RunResult runResult = RunResult.builder() // GH-90000
+            .id("run-1 [GH-90000]")
+            .runSpecRef("run-spec-1 [GH-90000]")
+            .status(RunStatus.SUCCESS) // GH-90000
+            .taskResults(List.of()) // GH-90000
+            .startedAt(Instant.now()) // GH-90000
+            .completedAt(Instant.now()) // GH-90000
+            .metadata(Map.of()) // GH-90000
+            .build(); // GH-90000
+        Observation observation = Observation.builder() // GH-90000
+            .id("obs-1 [GH-90000]")
+            .runRef(runResult.runSpecRef()) // GH-90000
+            .metrics(List.of()) // GH-90000
+            .logs(List.of()) // GH-90000
+            .traces(List.of()) // GH-90000
+            .build(); // GH-90000
+        Insights insights = Insights.builder() // GH-90000
+            .id("insights-1 [GH-90000]")
+            .observationRef(observation.id()) // GH-90000
+            .patterns(List.of()) // GH-90000
+            .anomalies(List.of()) // GH-90000
+            .recommendations(List.of()) // GH-90000
+            .build(); // GH-90000
+        EvolutionPlan evolutionPlan = EvolutionPlan.builder() // GH-90000
+            .id("evolution-1 [GH-90000]")
+            .insightsRef(insights.id()) // GH-90000
+            .tasks(List.of()) // GH-90000
+            .metadata(Map.of()) // GH-90000
+            .build(); // GH-90000
 
-        when(intentService.capture(any())).thenReturn(Promise.of(intentSpec));
-        when(shapeService.derive(any())).thenReturn(Promise.of(shapeSpec));
-        when(validationService.validate(any())).thenReturn(Promise.of(validationResult));
-        when(generationService.generate(any())).thenReturn(Promise.of(artifacts));
-        when(runService.execute(any())).thenReturn(Promise.of(runResult));
-        when(observeService.collect(any())).thenReturn(Promise.of(observation));
-        when(learningService.analyze(any())).thenReturn(Promise.of(insights));
-        when(evolutionService.propose(any())).thenReturn(Promise.of(evolutionPlan));
+        when(intentService.capture(any())).thenReturn(Promise.of(intentSpec)); // GH-90000
+        when(shapeService.derive(any())).thenReturn(Promise.of(shapeSpec)); // GH-90000
+        when(validationService.validate(any())).thenReturn(Promise.of(validationResult)); // GH-90000
+        when(generationService.generate(any())).thenReturn(Promise.of(artifacts)); // GH-90000
+        when(runService.execute(any())).thenReturn(Promise.of(runResult)); // GH-90000
+        when(observeService.collect(any())).thenReturn(Promise.of(observation)); // GH-90000
+        when(learningService.analyze(any())).thenReturn(Promise.of(insights)); // GH-90000
+        when(evolutionService.propose(any())).thenReturn(Promise.of(evolutionPlan)); // GH-90000
 
-        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service"), "staging"));
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
-            .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8)))
-            .build();
+        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service [GH-90000]"), "staging"));
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute [GH-90000]")
+            .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
+            .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request));
+        HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        String responseJson = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(responseJson).contains("\"pipelineMode\" : \"DAG\"");
-        assertThat(responseJson).contains("\"status\" : \"SUCCESS\"");
-        verify(evolutionService).propose(any());
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        String responseJson = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+        assertThat(responseJson).contains("\"pipelineMode\" : \"DAG\""); // GH-90000
+        assertThat(responseJson).contains("\"status\" : \"SUCCESS\""); // GH-90000
+        verify(evolutionService).propose(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("execute full lifecycle stops after validation when blocking issues exist")
-    void executeFullLifecycleStopsOnValidationFailure() throws Exception {
-        IntentSpec intentSpec = IntentSpec.builder()
-            .id("intent-1")
-            .productName("Order Service")
-            .description("Build an order service")
-            .goals(List.of())
-            .personas(List.of())
-            .constraints(List.of())
-            .metadata(Map.of())
-            .tenantId("tenant-1")
-            .build();
-        ShapeSpec shapeSpec = ShapeSpec.builder()
-            .id("shape-1")
-            .intentRef(intentSpec.id())
-            .metadata(Map.of())
-            .tenantId("tenant-1")
-            .build();
-        LifecycleValidationResult validationResult = LifecycleValidationResult.builder()
-            .passed(false)
-            .issues(List.of())
-            .build();
+    @DisplayName("execute full lifecycle stops after validation when blocking issues exist [GH-90000]")
+    void executeFullLifecycleStopsOnValidationFailure() throws Exception { // GH-90000
+        IntentSpec intentSpec = IntentSpec.builder() // GH-90000
+            .id("intent-1 [GH-90000]")
+            .productName("Order Service [GH-90000]")
+            .description("Build an order service [GH-90000]")
+            .goals(List.of()) // GH-90000
+            .personas(List.of()) // GH-90000
+            .constraints(List.of()) // GH-90000
+            .metadata(Map.of()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .build(); // GH-90000
+        ShapeSpec shapeSpec = ShapeSpec.builder() // GH-90000
+            .id("shape-1 [GH-90000]")
+            .intentRef(intentSpec.id()) // GH-90000
+            .metadata(Map.of()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .build(); // GH-90000
+        LifecycleValidationResult validationResult = LifecycleValidationResult.builder() // GH-90000
+            .passed(false) // GH-90000
+            .issues(List.of()) // GH-90000
+            .build(); // GH-90000
 
-        when(intentService.capture(any())).thenReturn(Promise.of(intentSpec));
-        when(shapeService.derive(any())).thenReturn(Promise.of(shapeSpec));
-        when(validationService.validate(any())).thenReturn(Promise.of(validationResult));
+        when(intentService.capture(any())).thenReturn(Promise.of(intentSpec)); // GH-90000
+        when(shapeService.derive(any())).thenReturn(Promise.of(shapeSpec)); // GH-90000
+        when(validationService.validate(any())).thenReturn(Promise.of(validationResult)); // GH-90000
 
-        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service"), "staging"));
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
-            .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8)))
-            .build();
+        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service [GH-90000]"), "staging"));
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute [GH-90000]")
+            .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
+            .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request));
+        HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        String responseJson = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(responseJson).contains("\"status\" : \"VALIDATION_FAILED\"");
-        assertThat(responseJson).contains("\"pipelineMode\" : \"DAG\"");
-        verify(generationService, never()).generate(any());
-        verify(runService, never()).execute(any());
-        verify(observeService, never()).collect(any());
-        verify(learningService, never()).analyze(any());
-        verify(evolutionService, never()).propose(any());
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        String responseJson = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+        assertThat(responseJson).contains("\"status\" : \"VALIDATION_FAILED\""); // GH-90000
+        assertThat(responseJson).contains("\"pipelineMode\" : \"DAG\""); // GH-90000
+        verify(generationService, never()).generate(any()); // GH-90000
+        verify(runService, never()).execute(any()); // GH-90000
+        verify(observeService, never()).collect(any()); // GH-90000
+        verify(learningService, never()).analyze(any()); // GH-90000
+        verify(evolutionService, never()).propose(any()); // GH-90000
     }
 
-    private record LifecycleRequest(IntentInput intentInput, String environment) {
+    private record LifecycleRequest(IntentInput intentInput, String environment) { // GH-90000
     }
 }

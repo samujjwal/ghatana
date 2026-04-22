@@ -27,112 +27,112 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
-@DisplayName("SDLC Integration Tests")
+@DisplayName("SDLC Integration Tests [GH-90000]")
 class SDLCIntegrationTest extends EventloopTestBase {
 
   private DatabaseClient dbClient;
   private EventPublisher eventClient;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
 
     // Setup default mock responses
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null));
-    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of()));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of())); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
   }
 
   @Test
-  @DisplayName("Should execute complete requirements phase workflow")
-  void shouldExecuteRequirementsPhase() {
+  @DisplayName("Should execute complete requirements phase workflow [GH-90000]")
+  void shouldExecuteRequirementsPhase() { // GH-90000
     // GIVEN
-    IntakeStep intakeStep = new IntakeStep(dbClient, eventClient);
+    IntakeStep intakeStep = new IntakeStep(dbClient, eventClient); // GH-90000
 
-    Map<String, Object> inputData = new HashMap<>();
-    inputData.put("source", "user-request");
-    inputData.put("content", "Need authentication system");
+    Map<String, Object> inputData = new HashMap<>(); // GH-90000
+    inputData.put("source", "user-request"); // GH-90000
+    inputData.put("content", "Need authentication system"); // GH-90000
 
-    WorkflowContext context = WorkflowContext.forWorkflow("sdlc-workflow-001", "tenant-test");
-    inputData.forEach(context::put);
+    WorkflowContext context = WorkflowContext.forWorkflow("sdlc-workflow-001", "tenant-test"); // GH-90000
+    inputData.forEach(context::put); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> intakeStep.execute(context));
+    WorkflowContext result = runPromise(() -> intakeStep.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.getWorkflowId()).isEqualTo("sdlc-workflow-001");
-    assertThat(result.getTenantId()).isEqualTo("tenant-test");
-    assertThat(result.getData()).containsKey("requirementId");
-    assertThat(result.getData()).containsKey("source");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.getWorkflowId()).isEqualTo("sdlc-workflow-001 [GH-90000]");
+    assertThat(result.getTenantId()).isEqualTo("tenant-test [GH-90000]");
+    assertThat(result.getData()).containsKey("requirementId [GH-90000]");
+    assertThat(result.getData()).containsKey("source [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should maintain trace links across phases")
-  void shouldMaintainTraceLinks() {
+  @DisplayName("Should maintain trace links across phases [GH-90000]")
+  void shouldMaintainTraceLinks() { // GH-90000
     // GIVEN
-    IntakeStep step = new IntakeStep(dbClient, eventClient);
+    IntakeStep step = new IntakeStep(dbClient, eventClient); // GH-90000
 
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-trace", "tenant-test");
-    context.put("source", "integration-test");
-    context.put("content", "Test requirement");
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-trace", "tenant-test"); // GH-90000
+    context.put("source", "integration-test"); // GH-90000
+    context.put("content", "Test requirement"); // GH-90000
 
     // Mock baseline with trace links
     Map<String, Object> mockBaseline =
-        Map.of("_id", "baseline-001", "traceLinks", Map.of("parentBaseline", "parent-001"));
+        Map.of("_id", "baseline-001", "traceLinks", Map.of("parentBaseline", "parent-001")); // GH-90000
 
-    when(dbClient.query(anyString(), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(mockBaseline)));
+    when(dbClient.query(anyString(), any(), anyInt())) // GH-90000
+        .thenReturn(Promise.of(List.of(mockBaseline))); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.getData()).isNotEmpty();
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.getData()).isNotEmpty(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should handle workflow context propagation")
-  void shouldPropagateContext() {
+  @DisplayName("Should handle workflow context propagation [GH-90000]")
+  void shouldPropagateContext() { // GH-90000
     // GIVEN
-    IntakeStep step = new IntakeStep(dbClient, eventClient);
+    IntakeStep step = new IntakeStep(dbClient, eventClient); // GH-90000
 
-    WorkflowContext initialContext = WorkflowContext.forWorkflow("prop-test", "tenant-abc");
-    initialContext.put("source", "context-test");
-    initialContext.put("content", "Test propagation");
-    initialContext.put("customProperty", "preserved-value");
+    WorkflowContext initialContext = WorkflowContext.forWorkflow("prop-test", "tenant-abc"); // GH-90000
+    initialContext.put("source", "context-test"); // GH-90000
+    initialContext.put("content", "Test propagation"); // GH-90000
+    initialContext.put("customProperty", "preserved-value"); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(initialContext));
+    WorkflowContext result = runPromise(() -> step.execute(initialContext)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.getWorkflowId()).isEqualTo("prop-test");
-    assertThat(result.getTenantId()).isEqualTo("tenant-abc");
-    assertThat(result.get("customProperty")).isEqualTo("preserved-value");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.getWorkflowId()).isEqualTo("prop-test [GH-90000]");
+    assertThat(result.getTenantId()).isEqualTo("tenant-abc [GH-90000]");
+    assertThat(result.get("customProperty [GH-90000]")).isEqualTo("preserved-value [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should preserve baseline immutability")
-  void shouldPreserveBaselineImmutability() {
+  @DisplayName("Should preserve baseline immutability [GH-90000]")
+  void shouldPreserveBaselineImmutability() { // GH-90000
     // GIVEN
-    IntakeStep step = new IntakeStep(dbClient, eventClient);
+    IntakeStep step = new IntakeStep(dbClient, eventClient); // GH-90000
 
-    WorkflowContext context = WorkflowContext.forWorkflow("immutable-test", "tenant-test");
-    context.put("source", "immutability-test");
-    context.put("content", "Test baseline immutability");
+    WorkflowContext context = WorkflowContext.forWorkflow("immutable-test", "tenant-test"); // GH-90000
+    context.put("source", "immutability-test"); // GH-90000
+    context.put("content", "Test baseline immutability"); // GH-90000
 
     String originalContent = "Test baseline immutability";
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN - Original context should remain unchanged
-    assertThat(context.get("content")).isEqualTo(originalContent);
-    assertThat(result).isNotNull();
-    assertThat(result.getData()).containsKey("requirementId");
+    assertThat(context.get("content [GH-90000]")).isEqualTo(originalContent);
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.getData()).containsKey("requirementId [GH-90000]");
   }
 }

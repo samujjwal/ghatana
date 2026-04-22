@@ -46,144 +46,144 @@ import org.slf4j.Logger;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpLauncherBootstrap")
+@DisplayName("DataCloudHttpLauncherBootstrap [GH-90000]")
 class DataCloudHttpLauncherBootstrapTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
 
     @Test
-    @DisplayName("buildJwtProvider returns null when JWT auth is not configured")
-    void buildJwtProviderReturnsNullWhenNotConfigured() {
-        Logger log = mock(Logger.class);
+    @DisplayName("buildJwtProvider returns null when JWT auth is not configured [GH-90000]")
+    void buildJwtProviderReturnsNullWhenNotConfigured() { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider(Map.of(), log);
+        JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider(Map.of(), log); // GH-90000
 
-        assertThat(provider).isNull();
+        assertThat(provider).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("buildApiKeyResolver returns null for empty keys in local profile")
-    void buildApiKeyResolverReturnsNullForEmptyKeysInLocalProfile() {
-        Logger log = mock(Logger.class);
+    @DisplayName("buildApiKeyResolver returns null for empty keys in local profile [GH-90000]")
+    void buildApiKeyResolverReturnsNullForEmptyKeysInLocalProfile() { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        assertThat(DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
-                Map.of(
+        assertThat(DataCloudHttpLauncherBootstrap.buildApiKeyResolver( // GH-90000
+                Map.of( // GH-90000
                     "DATACLOUD_PROFILE", "local",
                     "DATACLOUD_API_KEYS", " , , "),
                 log))
-            .isNull();
+            .isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("buildApiKeyResolver fails for empty keys in production profile")
-    void buildApiKeyResolverFailsForEmptyKeysInProductionProfile() {
-        Logger log = mock(Logger.class);
+    @DisplayName("buildApiKeyResolver fails for empty keys in production profile [GH-90000]")
+    void buildApiKeyResolverFailsForEmptyKeysInProductionProfile() { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
-                Map.of(
+        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.buildApiKeyResolver( // GH-90000
+                Map.of( // GH-90000
                     "DATACLOUD_PROFILE", "production",
                     "DATACLOUD_API_KEYS", " , , "),
                 log))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("must contain at least one non-blank API key");
+            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .hasMessageContaining("must contain at least one non-blank API key [GH-90000]");
     }
 
     @Test
-    @DisplayName("buildJwtProvider creates shared-secret provider when JWT auth is configured")
-    void buildJwtProviderCreatesSharedSecretProvider() {
-        Logger log = mock(Logger.class);
+    @DisplayName("buildJwtProvider creates shared-secret provider when JWT auth is configured [GH-90000]")
+    void buildJwtProviderCreatesSharedSecretProvider() { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider(
-                Map.of(
+        JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider( // GH-90000
+                Map.of( // GH-90000
                 "DATACLOUD_JWT_SECRET", TEST_JWT_SECRET,
                         "DATACLOUD_JWT_TENANT_CLAIM", "tenant_id",
                         "DATACLOUD_JWT_VALIDITY_MS", "60000"),
                 log);
 
-        assertThat(provider).isNotNull();
-        String token = provider.createToken("svc-user", java.util.List.of("reader"), Map.of("tenant_id", "tenant-a"));
-        assertThat(provider.validateToken(token)).isTrue();
-        assertThat(provider.getUserIdFromToken(token)).contains("svc-user");
-        assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-a");
+        assertThat(provider).isNotNull(); // GH-90000
+        String token = provider.createToken("svc-user", java.util.List.of("reader [GH-90000]"), Map.of("tenant_id", "tenant-a"));
+        assertThat(provider.validateToken(token)).isTrue(); // GH-90000
+        assertThat(provider.getUserIdFromToken(token)).contains("svc-user [GH-90000]");
+        assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-a"); // GH-90000
     }
 
     @Test
-    @DisplayName("buildJwtProvider creates JWKS-backed provider when JWKS URL is configured")
-    void buildJwtProviderCreatesJwksProvider() throws Exception {
-        Logger log = mock(Logger.class);
+    @DisplayName("buildJwtProvider creates JWKS-backed provider when JWKS URL is configured [GH-90000]")
+    void buildJwtProviderCreatesJwksProvider() throws Exception { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        try (RsaJwksFixture fixture = RsaJwksFixture.create()) {
-            JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider(
-                    Map.of(
-                            "DATACLOUD_JWT_JWKS_URL", fixture.jwksUrl(),
+        try (RsaJwksFixture fixture = RsaJwksFixture.create()) { // GH-90000
+            JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider( // GH-90000
+                    Map.of( // GH-90000
+                            "DATACLOUD_JWT_JWKS_URL", fixture.jwksUrl(), // GH-90000
                             "DATACLOUD_JWT_TENANT_CLAIM", "tenant_id"),
                     log);
 
-            assertThat(provider).isNotNull();
-            String token = fixture.createToken("svc-jwks", java.util.List.of("reader"), Map.of("tenant_id", "tenant-jwks"));
-            assertThat(provider.validateToken(token)).isTrue();
-            assertThat(provider.getUserIdFromToken(token)).contains("svc-jwks");
-            assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-jwks");
+            assertThat(provider).isNotNull(); // GH-90000
+            String token = fixture.createToken("svc-jwks", java.util.List.of("reader [GH-90000]"), Map.of("tenant_id", "tenant-jwks"));
+            assertThat(provider.validateToken(token)).isTrue(); // GH-90000
+            assertThat(provider.getUserIdFromToken(token)).contains("svc-jwks [GH-90000]");
+            assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-jwks"); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("trace sampling defaults to full coverage in local and staging profiles")
-    void traceSamplingDefaultsToFullCoverageInLocalAndStaging() {
-        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "local")))
-                .isEqualTo(1.0);
-        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "staging")))
-                .isEqualTo(1.0);
+    @DisplayName("trace sampling defaults to full coverage in local and staging profiles [GH-90000]")
+    void traceSamplingDefaultsToFullCoverageInLocalAndStaging() { // GH-90000
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "local"))) // GH-90000
+                .isEqualTo(1.0); // GH-90000
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "staging"))) // GH-90000
+                .isEqualTo(1.0); // GH-90000
     }
 
     @Test
-    @DisplayName("trace sampling defaults to one percent outside local and staging")
-    void traceSamplingDefaultsToOnePercentOutsideLocalAndStaging() {
-        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "production")))
-                .isEqualTo(0.01);
+    @DisplayName("trace sampling defaults to one percent outside local and staging [GH-90000]")
+    void traceSamplingDefaultsToOnePercentOutsideLocalAndStaging() { // GH-90000
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "production"))) // GH-90000
+                .isEqualTo(0.01); // GH-90000
     }
 
     @Test
-    @DisplayName("trace sampling honors explicit environment override")
-    void traceSamplingHonorsExplicitOverride() {
-        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(
-                Map.of("DATACLOUD_PROFILE", "production", "DATACLOUD_TRACE_SAMPLING_RATIO", "0.25")))
-                .isEqualTo(0.25);
+    @DisplayName("trace sampling honors explicit environment override [GH-90000]")
+    void traceSamplingHonorsExplicitOverride() { // GH-90000
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate( // GH-90000
+                Map.of("DATACLOUD_PROFILE", "production", "DATACLOUD_TRACE_SAMPLING_RATIO", "0.25"))) // GH-90000
+                .isEqualTo(0.25); // GH-90000
     }
 
     @Test
-    @DisplayName("wires database health subsystem and shutdown hook on successful startup")
-    void wiresDatabaseHealthSubsystemAndShutdownHook() throws Exception {
-        DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class);
-        DataSource dataSource = mock(DataSource.class);
-        Logger log = mock(Logger.class);
-        AtomicReference<Thread> registeredHook = new AtomicReference<>();
+    @DisplayName("wires database health subsystem and shutdown hook on successful startup [GH-90000]")
+    void wiresDatabaseHealthSubsystemAndShutdownHook() throws Exception { // GH-90000
+        DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class); // GH-90000
+        DataSource dataSource = mock(DataSource.class); // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
+        AtomicReference<Thread> registeredHook = new AtomicReference<>(); // GH-90000
 
-        when(httpServer.withHealthSubsystem(eq("database"), any())).thenReturn(httpServer);
-        when(httpServer.withHealthSubsystem(eq("ai_inference"), any())).thenReturn(httpServer);
+        when(httpServer.withHealthSubsystem(eq("database [GH-90000]"), any())).thenReturn(httpServer);
+        when(httpServer.withHealthSubsystem(eq("ai_inference [GH-90000]"), any())).thenReturn(httpServer);
 
-        DataCloudHttpLauncherBootstrap.startTransport(
+        DataCloudHttpLauncherBootstrap.startTransport( // GH-90000
                 httpServer,
                 8082,
                 true,
-            new DataCloudHttpLauncherBootstrap.AiServices(mock(AIModelManager.class), mock(com.ghatana.aiplatform.featurestore.FeatureStoreService.class)),
+            new DataCloudHttpLauncherBootstrap.AiServices(mock(AIModelManager.class), mock(com.ghatana.aiplatform.featurestore.FeatureStoreService.class)), // GH-90000
                 dataSource,
                 log,
                 registeredHook::set);
 
-        verify(httpServer).withHealthSubsystem(eq("database"), any());
-        verify(httpServer).withHealthSubsystem(eq("ai_inference"), any());
-        verify(httpServer).start();
-        assertThat(registeredHook.get()).isNotNull();
+        verify(httpServer).withHealthSubsystem(eq("database [GH-90000]"), any());
+        verify(httpServer).withHealthSubsystem(eq("ai_inference [GH-90000]"), any());
+        verify(httpServer).start(); // GH-90000
+        assertThat(registeredHook.get()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("does not wire database health subsystem when database is disabled")
-    void skipsDatabaseHealthSubsystemWhenDatabaseDisabled() throws Exception {
-        DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class);
-        Logger log = mock(Logger.class);
+    @DisplayName("does not wire database health subsystem when database is disabled [GH-90000]")
+    void skipsDatabaseHealthSubsystemWhenDatabaseDisabled() throws Exception { // GH-90000
+        DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class); // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        DataCloudHttpLauncherBootstrap.startTransport(
+        DataCloudHttpLauncherBootstrap.startTransport( // GH-90000
                 httpServer,
                 8082,
                 false,
@@ -192,19 +192,19 @@ class DataCloudHttpLauncherBootstrapTest {
                 log,
                 hook -> {});
 
-        verify(httpServer, never()).withHealthSubsystem(eq("database"), any());
-        verify(httpServer, never()).withHealthSubsystem(eq("ai_inference"), any());
-        verify(httpServer).start();
+        verify(httpServer, never()).withHealthSubsystem(eq("database [GH-90000]"), any());
+        verify(httpServer, never()).withHealthSubsystem(eq("ai_inference [GH-90000]"), any());
+        verify(httpServer).start(); // GH-90000
     }
 
     @Test
-    @DisplayName("wraps server startup failures in typed transport exception")
-    void wrapsServerStartupFailuresInTypedTransportException() throws Exception {
-        DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class);
-        Logger log = mock(Logger.class);
-        doThrow(new IllegalStateException("boom")).when(httpServer).start();
+    @DisplayName("wraps server startup failures in typed transport exception [GH-90000]")
+    void wrapsServerStartupFailuresInTypedTransportException() throws Exception { // GH-90000
+        DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class); // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
+        doThrow(new IllegalStateException("boom [GH-90000]")).when(httpServer).start();
 
-        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startTransport(
+        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startTransport( // GH-90000
                 httpServer,
                 8082,
                 false,
@@ -212,227 +212,227 @@ class DataCloudHttpLauncherBootstrapTest {
                 null,
                 log,
                 hook -> {}))
-                .isInstanceOf(DataCloudTransportStartupException.class)
-                .hasMessage("Failed to start HTTP server on port 8082")
-                .hasCauseInstanceOf(IllegalStateException.class);
+                .isInstanceOf(DataCloudTransportStartupException.class) // GH-90000
+                .hasMessage("Failed to start HTTP server on port 8082 [GH-90000]")
+                .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
 
-        verify(log).error(eq("Failed to start HTTP server on port {}"), eq(8082), any(IllegalStateException.class));
+        verify(log).error(eq("Failed to start HTTP server on port {} [GH-90000]"), eq(8082), any(IllegalStateException.class));
     }
 
     @Test
-    @DisplayName("ai inference health probe reports startup-initialized services as up")
-    void aiInferenceHealthProbeReportsStartupInitializedServicesAsUp() {
-        Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe(
-                new DataCloudHttpLauncherBootstrap.AiServices(
-                        mock(AIModelManager.class),
-                        mock(com.ghatana.aiplatform.featurestore.FeatureStoreService.class)))
-                .get();
+    @DisplayName("ai inference health probe reports startup-initialized services as up [GH-90000]")
+    void aiInferenceHealthProbeReportsStartupInitializedServicesAsUp() { // GH-90000
+        Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe( // GH-90000
+                new DataCloudHttpLauncherBootstrap.AiServices( // GH-90000
+                        mock(AIModelManager.class), // GH-90000
+                        mock(com.ghatana.aiplatform.featurestore.FeatureStoreService.class))) // GH-90000
+                .get(); // GH-90000
 
-        assertThat(snapshot).containsEntry("status", "UP");
-        assertThat(snapshot).containsEntry("model_registry", "UP");
-        assertThat(snapshot).containsEntry("feature_store", "UP");
-        assertThat(snapshot).containsEntry("mode", "startup-initialized");
+        assertThat(snapshot).containsEntry("status", "UP"); // GH-90000
+        assertThat(snapshot).containsEntry("model_registry", "UP"); // GH-90000
+        assertThat(snapshot).containsEntry("feature_store", "UP"); // GH-90000
+        assertThat(snapshot).containsEntry("mode", "startup-initialized"); // GH-90000
     }
 
     @Test
-    @DisplayName("ai inference health probe reports incomplete services as down")
-    void aiInferenceHealthProbeReportsIncompleteServicesAsDown() {
-        Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe(
-                new DataCloudHttpLauncherBootstrap.AiServices(mock(AIModelManager.class), null))
-                .get();
+    @DisplayName("ai inference health probe reports incomplete services as down [GH-90000]")
+    void aiInferenceHealthProbeReportsIncompleteServicesAsDown() { // GH-90000
+        Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe( // GH-90000
+                new DataCloudHttpLauncherBootstrap.AiServices(mock(AIModelManager.class), null)) // GH-90000
+                .get(); // GH-90000
 
-        assertThat(snapshot).containsEntry("status", "DOWN");
-        assertThat(snapshot).containsEntry("model_registry", "UP");
-        assertThat(snapshot).containsEntry("feature_store", "DOWN");
-        assertThat(snapshot).containsEntry("message", "AI services incomplete");
+        assertThat(snapshot).containsEntry("status", "DOWN"); // GH-90000
+        assertThat(snapshot).containsEntry("model_registry", "UP"); // GH-90000
+        assertThat(snapshot).containsEntry("feature_store", "DOWN"); // GH-90000
+        assertThat(snapshot).containsEntry("message", "AI services incomplete"); // GH-90000
     }
 
     @Test
-    @DisplayName("fails fast when required database datasource startup fails")
-    void failsFastWhenRequiredDatabaseDatasourceStartupFails() {
-        Logger log = mock(Logger.class);
+    @DisplayName("fails fast when required database datasource startup fails [GH-90000]")
+    void failsFastWhenRequiredDatabaseDatasourceStartupFails() { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startRequiredDatabaseDataSource(
+        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startRequiredDatabaseDataSource( // GH-90000
                 log,
-                () -> {
-                    throw new IllegalStateException("db unavailable");
+                () -> { // GH-90000
+                    throw new IllegalStateException("db unavailable [GH-90000]");
                 }))
-                .isInstanceOf(DataCloudTransportStartupException.class)
-                .hasMessage("Failed to create standalone database DataSource for enabled DB-backed features")
-                .hasCauseInstanceOf(IllegalStateException.class);
+                .isInstanceOf(DataCloudTransportStartupException.class) // GH-90000
+                .hasMessage("Failed to create standalone database DataSource for enabled DB-backed features [GH-90000]")
+                .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
 
-        verify(log).error(eq("Failed to create standalone database DataSource for enabled DB-backed features"), any(IllegalStateException.class));
+        verify(log).error(eq("Failed to create standalone database DataSource for enabled DB-backed features [GH-90000]"), any(IllegalStateException.class));
     }
 
     @Test
-    @DisplayName("fails fast when required AI services startup fails")
-    void failsFastWhenRequiredAiServicesStartupFails() {
-        Logger log = mock(Logger.class);
+    @DisplayName("fails fast when required AI services startup fails [GH-90000]")
+    void failsFastWhenRequiredAiServicesStartupFails() { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startRequiredAiServices(
+        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startRequiredAiServices( // GH-90000
                 log,
-                () -> {
-                    throw new IllegalStateException("ai unavailable");
+                () -> { // GH-90000
+                    throw new IllegalStateException("ai unavailable [GH-90000]");
                 }))
-                .isInstanceOf(DataCloudTransportStartupException.class)
-                .hasMessage("Failed to start AI services while DATACLOUD_AI_ENABLED=true")
-                .hasCauseInstanceOf(IllegalStateException.class);
+                .isInstanceOf(DataCloudTransportStartupException.class) // GH-90000
+                .hasMessage("Failed to start AI services while DATACLOUD_AI_ENABLED=true [GH-90000]")
+                .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
 
-        verify(log).error(eq("Failed to start AI services while DATACLOUD_AI_ENABLED=true"), any(IllegalStateException.class));
+        verify(log).error(eq("Failed to start AI services while DATACLOUD_AI_ENABLED=true [GH-90000]"), any(IllegalStateException.class));
     }
 
     @Test
-    @DisplayName("starts brain services and registers a shutdown hook when brain is enabled")
-    void startsBrainServicesAndRegistersShutdownHook() {
-        DataCloudBrain brain = mock(DataCloudBrain.class);
-        DataCloudLearningBridge learningBridge = mock(DataCloudLearningBridge.class);
-        Logger log = mock(Logger.class);
-        AtomicReference<Thread> registeredHook = new AtomicReference<>();
+    @DisplayName("starts brain services and registers a shutdown hook when brain is enabled [GH-90000]")
+    void startsBrainServicesAndRegistersShutdownHook() { // GH-90000
+        DataCloudBrain brain = mock(DataCloudBrain.class); // GH-90000
+        DataCloudLearningBridge learningBridge = mock(DataCloudLearningBridge.class); // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
+        AtomicReference<Thread> registeredHook = new AtomicReference<>(); // GH-90000
 
-        DataCloudHttpLauncherBootstrap.BrainServices services = DataCloudHttpLauncherBootstrap.startBrainServices(
+        DataCloudHttpLauncherBootstrap.BrainServices services = DataCloudHttpLauncherBootstrap.startBrainServices( // GH-90000
                 log,
-                () -> brain,
+                () -> brain, // GH-90000
                 ignoredBrain -> learningBridge,
                 registeredHook::set);
 
-        assertThat(services.brain()).isSameAs(brain);
-        assertThat(services.learningBridge()).isSameAs(learningBridge);
-        verify(learningBridge).start();
-        assertThat(registeredHook.get()).isNotNull();
+        assertThat(services.brain()).isSameAs(brain); // GH-90000
+        assertThat(services.learningBridge()).isSameAs(learningBridge); // GH-90000
+        verify(learningBridge).start(); // GH-90000
+        assertThat(registeredHook.get()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("disables brain services when learning bridge startup fails")
-    void disablesBrainServicesWhenStartupFails() {
-        DataCloudBrain brain = mock(DataCloudBrain.class);
-        DataCloudLearningBridge learningBridge = mock(DataCloudLearningBridge.class);
-        Logger log = mock(Logger.class);
-        doThrow(new IllegalStateException("bridge failed")).when(learningBridge).start();
+    @DisplayName("disables brain services when learning bridge startup fails [GH-90000]")
+    void disablesBrainServicesWhenStartupFails() { // GH-90000
+        DataCloudBrain brain = mock(DataCloudBrain.class); // GH-90000
+        DataCloudLearningBridge learningBridge = mock(DataCloudLearningBridge.class); // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
+        doThrow(new IllegalStateException("bridge failed [GH-90000]")).when(learningBridge).start();
 
-        DataCloudHttpLauncherBootstrap.BrainServices services = DataCloudHttpLauncherBootstrap.startBrainServices(
+        DataCloudHttpLauncherBootstrap.BrainServices services = DataCloudHttpLauncherBootstrap.startBrainServices( // GH-90000
                 log,
-                () -> brain,
+                () -> brain, // GH-90000
                 ignoredBrain -> learningBridge,
                 hook -> {});
 
-        assertThat(services.brain()).isNull();
-        assertThat(services.learningBridge()).isNull();
-        verify(log).warn(
-                eq("Failed to start brain/learning bridge, continuing without: {}"),
-                eq("bridge failed"),
-                any(IllegalStateException.class));
+        assertThat(services.brain()).isNull(); // GH-90000
+        assertThat(services.learningBridge()).isNull(); // GH-90000
+        verify(log).warn( // GH-90000
+                eq("Failed to start brain/learning bridge, continuing without: {} [GH-90000]"),
+                eq("bridge failed [GH-90000]"),
+                any(IllegalStateException.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("starts analytics and report services when analytics is enabled")
-    void startsAnalyticsAndReportServices() {
-        AnalyticsQueryEngine analyticsEngine = mock(AnalyticsQueryEngine.class);
-        ReportService reportService = mock(ReportService.class);
-        Logger log = mock(Logger.class);
+    @DisplayName("starts analytics and report services when analytics is enabled [GH-90000]")
+    void startsAnalyticsAndReportServices() { // GH-90000
+        AnalyticsQueryEngine analyticsEngine = mock(AnalyticsQueryEngine.class); // GH-90000
+        ReportService reportService = mock(ReportService.class); // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        DataCloudHttpLauncherBootstrap.AnalyticsServices services = DataCloudHttpLauncherBootstrap.startAnalyticsServices(
+        DataCloudHttpLauncherBootstrap.AnalyticsServices services = DataCloudHttpLauncherBootstrap.startAnalyticsServices( // GH-90000
                 log,
-                () -> analyticsEngine,
+                () -> analyticsEngine, // GH-90000
                 ignored -> reportService);
 
-        assertThat(services.analyticsEngine()).isSameAs(analyticsEngine);
-        assertThat(services.reportService()).isSameAs(reportService);
+        assertThat(services.analyticsEngine()).isSameAs(analyticsEngine); // GH-90000
+        assertThat(services.reportService()).isSameAs(reportService); // GH-90000
     }
 
     @Test
-    @DisplayName("keeps analytics engine when report service startup fails")
-    void keepsAnalyticsEngineWhenReportStartupFails() {
-        AnalyticsQueryEngine analyticsEngine = mock(AnalyticsQueryEngine.class);
-        Logger log = mock(Logger.class);
+    @DisplayName("keeps analytics engine when report service startup fails [GH-90000]")
+    void keepsAnalyticsEngineWhenReportStartupFails() { // GH-90000
+        AnalyticsQueryEngine analyticsEngine = mock(AnalyticsQueryEngine.class); // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        DataCloudHttpLauncherBootstrap.AnalyticsServices services = DataCloudHttpLauncherBootstrap.startAnalyticsServices(
+        DataCloudHttpLauncherBootstrap.AnalyticsServices services = DataCloudHttpLauncherBootstrap.startAnalyticsServices( // GH-90000
                 log,
-                () -> analyticsEngine,
+                () -> analyticsEngine, // GH-90000
                 ignored -> {
-                    throw new IllegalStateException("report failed");
+                    throw new IllegalStateException("report failed [GH-90000]");
                 });
 
-        assertThat(services.analyticsEngine()).isSameAs(analyticsEngine);
-        assertThat(services.reportService()).isNull();
-        verify(log).warn(
-                eq("Failed to start report service, continuing without: {}"),
-                eq("report failed"),
-                any(IllegalStateException.class));
+        assertThat(services.analyticsEngine()).isSameAs(analyticsEngine); // GH-90000
+        assertThat(services.reportService()).isNull(); // GH-90000
+        verify(log).warn( // GH-90000
+                eq("Failed to start report service, continuing without: {} [GH-90000]"),
+                eq("report failed [GH-90000]"),
+                any(IllegalStateException.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("disables analytics services when analytics engine startup fails")
-    void disablesAnalyticsServicesWhenAnalyticsStartupFails() {
-        Logger log = mock(Logger.class);
+    @DisplayName("disables analytics services when analytics engine startup fails [GH-90000]")
+    void disablesAnalyticsServicesWhenAnalyticsStartupFails() { // GH-90000
+        Logger log = mock(Logger.class); // GH-90000
 
-        DataCloudHttpLauncherBootstrap.AnalyticsServices services = DataCloudHttpLauncherBootstrap.startAnalyticsServices(
+        DataCloudHttpLauncherBootstrap.AnalyticsServices services = DataCloudHttpLauncherBootstrap.startAnalyticsServices( // GH-90000
                 log,
-                () -> {
-                    throw new IllegalStateException("analytics failed");
+                () -> { // GH-90000
+                    throw new IllegalStateException("analytics failed [GH-90000]");
                 },
                 ReportService::new);
 
-        assertThat(services.analyticsEngine()).isNull();
-        assertThat(services.reportService()).isNull();
-        verify(log).warn(
-                eq("Failed to start analytics engine, continuing without: {}"),
-                eq("analytics failed"),
-                any(IllegalStateException.class));
+        assertThat(services.analyticsEngine()).isNull(); // GH-90000
+        assertThat(services.reportService()).isNull(); // GH-90000
+        verify(log).warn( // GH-90000
+                eq("Failed to start analytics engine, continuing without: {} [GH-90000]"),
+                eq("analytics failed [GH-90000]"),
+                any(IllegalStateException.class)); // GH-90000
     }
 
     private static final class RsaJwksFixture implements AutoCloseable {
         private final RSAKey rsaKey;
         private final HttpServer server;
 
-        private RsaJwksFixture(RSAKey rsaKey, HttpServer server) {
+        private RsaJwksFixture(RSAKey rsaKey, HttpServer server) { // GH-90000
             this.rsaKey = rsaKey;
             this.server = server;
         }
 
-        static RsaJwksFixture create() throws Exception {
-            RSAKey rsaKey = new RSAKeyGenerator(2048)
-                    .keyID("kid-" + UUID.randomUUID())
-                    .generate();
-            HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
-            String jwks = new JWKSet(rsaKey.toPublicJWK()).toString();
-            server.createContext("/jwks", exchange -> {
-                byte[] body = jwks.getBytes(StandardCharsets.UTF_8);
-                exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(200, body.length);
-                try (OutputStream outputStream = exchange.getResponseBody()) {
-                    outputStream.write(body);
+        static RsaJwksFixture create() throws Exception { // GH-90000
+            RSAKey rsaKey = new RSAKeyGenerator(2048) // GH-90000
+                    .keyID("kid-" + UUID.randomUUID()) // GH-90000
+                    .generate(); // GH-90000
+            HttpServer server = HttpServer.create(new InetSocketAddress(0), 0); // GH-90000
+            String jwks = new JWKSet(rsaKey.toPublicJWK()).toString(); // GH-90000
+            server.createContext("/jwks", exchange -> { // GH-90000
+                byte[] body = jwks.getBytes(StandardCharsets.UTF_8); // GH-90000
+                exchange.getResponseHeaders().set("Content-Type", "application/json"); // GH-90000
+                exchange.sendResponseHeaders(200, body.length); // GH-90000
+                try (OutputStream outputStream = exchange.getResponseBody()) { // GH-90000
+                    outputStream.write(body); // GH-90000
                 }
             });
-            server.start();
-            return new RsaJwksFixture(rsaKey, server);
+            server.start(); // GH-90000
+            return new RsaJwksFixture(rsaKey, server); // GH-90000
         }
 
-        String jwksUrl() {
-            return "http://localhost:" + server.getAddress().getPort() + "/jwks";
+        String jwksUrl() { // GH-90000
+            return "http://localhost:" + server.getAddress().getPort() + "/jwks"; // GH-90000
         }
 
-        String createToken(String userId, java.util.List<String> roles, Map<String, Object> additionalClaims)
+        String createToken(String userId, java.util.List<String> roles, Map<String, Object> additionalClaims) // GH-90000
                 throws JOSEException {
-            JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
-                    .subject(userId)
-                    .claim("roles", roles)
-                    .issueTime(new java.util.Date())
-                    .expirationTime(new java.util.Date(System.currentTimeMillis() + 60_000L));
-            additionalClaims.forEach(claimsBuilder::claim);
+            JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder() // GH-90000
+                    .subject(userId) // GH-90000
+                    .claim("roles", roles) // GH-90000
+                    .issueTime(new java.util.Date()) // GH-90000
+                    .expirationTime(new java.util.Date(System.currentTimeMillis() + 60_000L)); // GH-90000
+            additionalClaims.forEach(claimsBuilder::claim); // GH-90000
 
-            SignedJWT signedJwt = new SignedJWT(
-                    new JWSHeader.Builder(JWSAlgorithm.RS256)
-                            .keyID(rsaKey.getKeyID())
-                            .type(JOSEObjectType.JWT)
-                            .build(),
-                    claimsBuilder.build());
-            signedJwt.sign(new RSASSASigner(rsaKey.toPrivateKey()));
-            return signedJwt.serialize();
+            SignedJWT signedJwt = new SignedJWT( // GH-90000
+                    new JWSHeader.Builder(JWSAlgorithm.RS256) // GH-90000
+                            .keyID(rsaKey.getKeyID()) // GH-90000
+                            .type(JOSEObjectType.JWT) // GH-90000
+                            .build(), // GH-90000
+                    claimsBuilder.build()); // GH-90000
+            signedJwt.sign(new RSASSASigner(rsaKey.toPrivateKey())); // GH-90000
+            return signedJwt.serialize(); // GH-90000
         }
 
         @Override
-        public void close() {
-            server.stop(0);
+        public void close() { // GH-90000
+            server.stop(0); // GH-90000
         }
     }
 }

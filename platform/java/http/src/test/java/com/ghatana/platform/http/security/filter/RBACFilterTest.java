@@ -25,146 +25,146 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RBACFilter — role-based access control on HTTP endpoints")
+@DisplayName("RBACFilter — role-based access control on HTTP endpoints [GH-90000]")
 class RBACFilterTest extends EventloopTestBase {
 
     private PolicyService policyService;
     private RBACFilter rbacFilter;
 
-    private static final AsyncServlet OK_DELEGATE = req -> Promise.of(HttpResponse.ok200().build());
+    private static final AsyncServlet OK_DELEGATE = req -> Promise.of(HttpResponse.ok200().build()); // GH-90000
 
     @BeforeEach
-    void setUp() {
-        InMemoryPolicyRepository repository = new InMemoryPolicyRepository();
-        policyService = new PolicyService(repository);
+    void setUp() { // GH-90000
+        InMemoryPolicyRepository repository = new InMemoryPolicyRepository(); // GH-90000
+        policyService = new PolicyService(repository); // GH-90000
         // Grant ADMIN role permission "write" on resource "data"
-        policyService.createPolicy("admin-write", "admin write data", "ADMIN", "data", Set.of("write"));
+        policyService.createPolicy("admin-write", "admin write data", "ADMIN", "data", Set.of("write [GH-90000]"));
         // Grant USER role permission "read" on resource "data"
-        policyService.createPolicy("user-read", "user read data", "USER", "data", Set.of("read"));
+        policyService.createPolicy("user-read", "user read data", "USER", "data", Set.of("read [GH-90000]"));
 
-        rbacFilter = new RBACFilter(policyService, "write", "data");
+        rbacFilter = new RBACFilter(policyService, "write", "data"); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        TenantContext.clear();
+    void tearDown() { // GH-90000
+        TenantContext.clear(); // GH-90000
     }
 
     // ── No principal ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("secure() returns 401 when no principal in request or TenantContext")
-    void returns401WhenNoPrincipal() {
-        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-        HttpRequest request = HttpRequest.get("http://localhost/data").build();
+    @DisplayName("secure() returns 401 when no principal in request or TenantContext [GH-90000]")
+    void returns401WhenNoPrincipal() { // GH-90000
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/data [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> secured.serve(request));
+        HttpResponse response = runPromise(() -> secured.serve(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(401);
+        assertThat(response.getCode()).isEqualTo(401); // GH-90000
     }
 
     @Test
-    @DisplayName("401 response body contains UNAUTHORIZED code")
-    void unauthorizedBodyContainsCode() {
-        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-        HttpRequest request = HttpRequest.get("http://localhost/data").build();
+    @DisplayName("401 response body contains UNAUTHORIZED code [GH-90000]")
+    void unauthorizedBodyContainsCode() { // GH-90000
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/data [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> secured.serve(request));
+        HttpResponse response = runPromise(() -> secured.serve(request)); // GH-90000
 
-        String body = response.getBody() != null ? new String(response.getBody().asArray()) : "";
-        assertThat(body).contains("UNAUTHORIZED");
+        String body = response.getBody() != null ? new String(response.getBody().asArray()) : ""; // GH-90000
+        assertThat(body).contains("UNAUTHORIZED [GH-90000]");
     }
 
     // ── Principal present but lacks permission ────────────────────────────────
 
     @Test
-    @DisplayName("secure() returns 403 when principal exists but lacks permission")
-    void returns403WhenPrincipalLacksPermission() {
-        Principal viewer = new Principal("viewer", List.of("USER"), "tenant-1");
-        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-        HttpRequest request = HttpRequest.get("http://localhost/data").build();
+    @DisplayName("secure() returns 403 when principal exists but lacks permission [GH-90000]")
+    void returns403WhenPrincipalLacksPermission() { // GH-90000
+        Principal viewer = new Principal("viewer", List.of("USER [GH-90000]"), "tenant-1");
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/data [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(viewer)) {
-                return secured.serve(request);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(viewer)) { // GH-90000
+                return secured.serve(request); // GH-90000
             }
         });
 
-        assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getCode()).isEqualTo(403); // GH-90000
     }
 
     @Test
-    @DisplayName("403 response body contains FORBIDDEN code")
-    void forbiddenBodyContainsCode() {
-        Principal viewer = new Principal("viewer", List.of("USER"), "tenant-1");
-        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-        HttpRequest request = HttpRequest.get("http://localhost/data").build();
+    @DisplayName("403 response body contains FORBIDDEN code [GH-90000]")
+    void forbiddenBodyContainsCode() { // GH-90000
+        Principal viewer = new Principal("viewer", List.of("USER [GH-90000]"), "tenant-1");
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/data [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(viewer)) {
-                return secured.serve(request);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(viewer)) { // GH-90000
+                return secured.serve(request); // GH-90000
             }
         });
 
-        String body = response.getBody() != null ? new String(response.getBody().asArray()) : "";
-        assertThat(body).contains("FORBIDDEN");
+        String body = response.getBody() != null ? new String(response.getBody().asArray()) : ""; // GH-90000
+        assertThat(body).contains("FORBIDDEN [GH-90000]");
     }
 
     // ── Principal with required permission ────────────────────────────────────
 
     @Test
-    @DisplayName("secure() delegates to inner servlet when principal has required permission")
-    void delegatesWhenPrincipalHasPermission() {
-        Principal admin = new Principal("admin-user", List.of("ADMIN"), "tenant-1");
-        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-        HttpRequest request = HttpRequest.get("http://localhost/data").build();
+    @DisplayName("secure() delegates to inner servlet when principal has required permission [GH-90000]")
+    void delegatesWhenPrincipalHasPermission() { // GH-90000
+        Principal admin = new Principal("admin-user", List.of("ADMIN [GH-90000]"), "tenant-1");
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/data [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(admin)) {
-                return secured.serve(request);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(admin)) { // GH-90000
+                return secured.serve(request); // GH-90000
             }
         });
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     // ── Request attachment ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("secure() checks request attachment before TenantContext")
-    void checksRequestAttachmentFirst() {
-        Principal admin = new Principal("attached-admin", List.of("ADMIN"), "tenant-1");
+    @DisplayName("secure() checks request attachment before TenantContext [GH-90000]")
+    void checksRequestAttachmentFirst() { // GH-90000
+        Principal admin = new Principal("attached-admin", List.of("ADMIN [GH-90000]"), "tenant-1");
         // Do NOT set TenantContext — principal is only in request attachment
-        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-        HttpRequest request = HttpRequest.get("http://localhost/data").build();
-        request.attach(Principal.class, admin);
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/data [GH-90000]").build();
+        request.attach(Principal.class, admin); // GH-90000
 
-        HttpResponse response = runPromise(() -> secured.serve(request));
+        HttpResponse response = runPromise(() -> secured.serve(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("secure() returns different AsyncServlet wrapping each call")
-    void secureReturnsNewServletEachCall() {
-        AsyncServlet s1 = rbacFilter.secure(OK_DELEGATE);
-        AsyncServlet s2 = rbacFilter.secure(OK_DELEGATE);
-        assertThat(s1).isNotSameAs(s2);
+    @DisplayName("secure() returns different AsyncServlet wrapping each call [GH-90000]")
+    void secureReturnsNewServletEachCall() { // GH-90000
+        AsyncServlet s1 = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        AsyncServlet s2 = rbacFilter.secure(OK_DELEGATE); // GH-90000
+        assertThat(s1).isNotSameAs(s2); // GH-90000
     }
 
     // ── Null / empty resource ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("filter with null resource is handled gracefully — no principal returns 401")
-    void nullResourceHandledGracefully() {
-        RBACFilter nullResourceFilter = new RBACFilter(policyService, "read", null);
-        AsyncServlet secured = nullResourceFilter.secure(OK_DELEGATE);
-        HttpRequest request = HttpRequest.get("http://localhost/any").build();
+    @DisplayName("filter with null resource is handled gracefully — no principal returns 401 [GH-90000]")
+    void nullResourceHandledGracefully() { // GH-90000
+        RBACFilter nullResourceFilter = new RBACFilter(policyService, "read", null); // GH-90000
+        AsyncServlet secured = nullResourceFilter.secure(OK_DELEGATE); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/any [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> secured.serve(request));
+        HttpResponse response = runPromise(() -> secured.serve(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(401);
+        assertThat(response.getCode()).isEqualTo(401); // GH-90000
     }
 }

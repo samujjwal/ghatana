@@ -17,48 +17,48 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
-@DisplayName("PersistentSttGrpcService")
+@DisplayName("PersistentSttGrpcService [GH-90000]")
 class PersistentSttGrpcServiceTest {
 
     private PersistentSttGrpcService service;
 
     @BeforeEach
-    void setUp() {
-        service = new PersistentSttGrpcService(
-            mock(AudioVideoLibrary.class),
-            mock(AudioFileService.class),
-            mock(TranscriptionService.class),
-            new SimpleMeterRegistry()
+    void setUp() { // GH-90000
+        service = new PersistentSttGrpcService( // GH-90000
+            mock(AudioVideoLibrary.class), // GH-90000
+            mock(AudioFileService.class), // GH-90000
+            mock(TranscriptionService.class), // GH-90000
+            new SimpleMeterRegistry() // GH-90000
         );
-        MDC.clear();
+        MDC.clear(); // GH-90000
     }
 
     @Test
-    @DisplayName("transcribe rejects requests without tenant context")
-    void transcribeRejectsRequestsWithoutTenantContext() {
-        CapturingObserver<TranscribeResponse> observer = new CapturingObserver<>();
+    @DisplayName("transcribe rejects requests without tenant context [GH-90000]")
+    void transcribeRejectsRequestsWithoutTenantContext() { // GH-90000
+        CapturingObserver<TranscribeResponse> observer = new CapturingObserver<>(); // GH-90000
 
-        service.transcribe(TranscribeRequest.newBuilder().build(), observer);
+        service.transcribe(TranscribeRequest.newBuilder().build(), observer); // GH-90000
 
-        assertThat(observer.error).isInstanceOf(StatusRuntimeException.class);
-        assertThat(((StatusRuntimeException) observer.error).getStatus().getCode())
-            .isEqualTo(Status.UNAUTHENTICATED.getCode());
+        assertThat(observer.error).isInstanceOf(StatusRuntimeException.class); // GH-90000
+        assertThat(((StatusRuntimeException) observer.error).getStatus().getCode()) // GH-90000
+            .isEqualTo(Status.UNAUTHENTICATED.getCode()); // GH-90000
     }
 
     private static final class CapturingObserver<T> implements StreamObserver<T> {
         private Throwable error;
 
         @Override
-        public void onNext(T value) {
+        public void onNext(T value) { // GH-90000
         }
 
         @Override
-        public void onError(Throwable t) {
+        public void onError(Throwable t) { // GH-90000
             this.error = t;
         }
 
         @Override
-        public void onCompleted() {
+        public void onCompleted() { // GH-90000
         }
     }
 }

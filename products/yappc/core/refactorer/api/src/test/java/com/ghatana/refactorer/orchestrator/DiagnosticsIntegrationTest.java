@@ -21,7 +21,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(MockitoExtension.class) // GH-90000
 /**
  * @doc.type class
  * @doc.purpose Handles diagnostics integration test operations
@@ -33,20 +33,20 @@ class DiagnosticsIntegrationTest {
     @Mock private LanguageService mockLanguageService;
 
     @Test
-    void discoverLanguageServices_shouldNotThrow() {
-        List<LanguageService> services = DiagnosticsRunner.discoverLanguageServices();
-        assertNotNull(services);
+    void discoverLanguageServices_shouldNotThrow() { // GH-90000
+        List<LanguageService> services = DiagnosticsRunner.discoverLanguageServices(); // GH-90000
+        assertNotNull(services); // GH-90000
     }
 
     @Test
-    void runAll_shouldUseProvidedContext() {
+    void runAll_shouldUseProvidedContext() { // GH-90000
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of("java"),
-                        List.of(),
-                        new PolyfixConfig.Budgets(1, 5),
-                        new PolyfixConfig.Policies(true, true, true, false),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of("java [GH-90000]"),
+                        List.of(), // GH-90000
+                        new PolyfixConfig.Budgets(1, 5), // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 "node",
                                 "eslint",
                                 "tsc",
@@ -60,20 +60,20 @@ class DiagnosticsIntegrationTest {
                                 "rustfmt",
                                 "semgrep"));
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Logger logger = LogManager.getLogger(DiagnosticsIntegrationTest.class);
+        ExecutorService executor = Executors.newSingleThreadExecutor(); // GH-90000
+        Logger logger = LogManager.getLogger(DiagnosticsIntegrationTest.class); // GH-90000
         PolyfixProjectContext context =
-                new PolyfixProjectContext(
-                        Path.of("."), config, List.of(mockLanguageService), executor, logger);
+                new PolyfixProjectContext( // GH-90000
+                        Path.of(". [GH-90000]"), config, List.of(mockLanguageService), executor, logger);
 
-        try (MockedStatic<DiagnosticsRunner> mocked = mockStatic(DiagnosticsRunner.class)) {
-            mocked.when(() -> DiagnosticsRunner.discoverLanguageServices())
-                    .thenReturn(List.of(mockLanguageService));
-            mocked.when(() -> DiagnosticsRunner.runAll(context)).thenReturn(List.of());
+        try (MockedStatic<DiagnosticsRunner> mocked = mockStatic(DiagnosticsRunner.class)) { // GH-90000
+            mocked.when(() -> DiagnosticsRunner.discoverLanguageServices()) // GH-90000
+                    .thenReturn(List.of(mockLanguageService)); // GH-90000
+            mocked.when(() -> DiagnosticsRunner.runAll(context)).thenReturn(List.of()); // GH-90000
 
-            List<UnifiedDiagnostic> diagnostics = DiagnosticsRunner.runAll(context);
-            assertNotNull(diagnostics);
-            assertTrue(diagnostics.isEmpty());
+            List<UnifiedDiagnostic> diagnostics = DiagnosticsRunner.runAll(context); // GH-90000
+            assertNotNull(diagnostics); // GH-90000
+            assertTrue(diagnostics.isEmpty()); // GH-90000
         }
     }
 }

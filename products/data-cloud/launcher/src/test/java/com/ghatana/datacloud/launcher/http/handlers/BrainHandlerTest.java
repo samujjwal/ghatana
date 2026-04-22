@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("BrainHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("BrainHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class BrainHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -43,53 +43,53 @@ class BrainHandlerTest extends EventloopTestBase {
     private BrainHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new BrainHandler(brain, http);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new BrainHandler(brain, http); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("brain stats rejects missing tenant before stats lookup")
-    void brainStatsRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("brain stats rejects missing tenant before stats lookup [GH-90000]")
+    void brainStatsRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleBrainStats(request));
+        HttpResponse response = runPromise(() -> handler.handleBrainStats(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(brain, never()).getStats(any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(brain, never()).getStats(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("attention elevate rejects missing tenant before manager or body access")
-    void attentionElevateRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("attention elevate rejects missing tenant before manager or body access [GH-90000]")
+    void attentionElevateRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleBrainAttentionElevate(request));
+        HttpResponse response = runPromise(() -> handler.handleBrainAttentionElevate(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(brain, never()).getAttentionManager();
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(brain, never()).getAttentionManager(); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 
     @Test
-    @DisplayName("patterns rejects missing tenant before pattern lookup")
-    void patternsRejectMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("patterns rejects missing tenant before pattern lookup [GH-90000]")
+    void patternsRejectMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleBrainPatterns(request));
+        HttpResponse response = runPromise(() -> handler.handleBrainPatterns(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(brain, never()).listPatterns(anyInt(), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(brain, never()).listPatterns(anyInt(), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("pattern match rejects missing tenant before body access")
-    void patternMatchRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("pattern match rejects missing tenant before body access [GH-90000]")
+    void patternMatchRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleBrainPatternsMatch(request));
+        HttpResponse response = runPromise(() -> handler.handleBrainPatternsMatch(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 }

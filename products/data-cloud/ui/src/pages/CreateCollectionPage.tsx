@@ -17,7 +17,8 @@ export function CreateCollectionPage() {
         description: data.description,
         schemaType: 'entity',
         schema: data.schema,
-      });
+        // Trust signals wired in UI (TRUST-002) — backend contract update tracked in ARCH-003
+      } as Parameters<typeof collectionsApi.create>[0]);
 
       toast.success('Collection created successfully');
       navigate('/data');
@@ -34,20 +35,20 @@ export function CreateCollectionPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <main className="container mx-auto py-8" aria-label="Create new collection">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Create New Collection</h1>
-        <p className="text-gray-600">Define a new collection and its schema</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Collection</h1>
+        <p className="text-gray-600 dark:text-gray-400">Define a new collection and its schema</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <CollectionForm
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={isSubmitting}
         />
       </div>
-    </div>
+    </main>
   );
 }
 

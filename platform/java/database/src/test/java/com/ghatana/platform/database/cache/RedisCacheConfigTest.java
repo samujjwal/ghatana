@@ -12,213 +12,213 @@ import static org.junit.jupiter.api.Assertions.*;
 class RedisCacheConfigTest {
 
     @Test
-    void testDefaultConfiguration() {
-        RedisCacheConfig config = RedisCacheConfig.builder().build();
+    void testDefaultConfiguration() { // GH-90000
+        RedisCacheConfig config = RedisCacheConfig.builder().build(); // GH-90000
 
-        assertEquals("localhost", config.getHost());
-        assertEquals(6379, config.getPort());
-        assertNull(config.getPassword());
-        assertEquals(0, config.getDatabase());
-        assertEquals(Duration.ofSeconds(5), config.getTimeout());
-        assertEquals(86400, config.getTtlSeconds());
-        assertEquals("", config.getKeyPrefix());
+        assertEquals("localhost", config.getHost()); // GH-90000
+        assertEquals(6379, config.getPort()); // GH-90000
+        assertNull(config.getPassword()); // GH-90000
+        assertEquals(0, config.getDatabase()); // GH-90000
+        assertEquals(Duration.ofSeconds(5), config.getTimeout()); // GH-90000
+        assertEquals(86400, config.getTtlSeconds()); // GH-90000
+        assertEquals("", config.getKeyPrefix()); // GH-90000
     }
 
     @Test
-    void testCustomConfiguration() {
-        RedisCacheConfig config = RedisCacheConfig.builder()
-                .host("redis.example.com")
-                .port(6380)
-                .password("secret")
-                .database(5)
-                .timeout(Duration.ofSeconds(10))
-                .ttlSeconds(3600)
-                .keyPrefix("myapp:")
-                .build();
+    void testCustomConfiguration() { // GH-90000
+        RedisCacheConfig config = RedisCacheConfig.builder() // GH-90000
+                .host("redis.example.com [GH-90000]")
+                .port(6380) // GH-90000
+                .password("secret [GH-90000]")
+                .database(5) // GH-90000
+                .timeout(Duration.ofSeconds(10)) // GH-90000
+                .ttlSeconds(3600) // GH-90000
+                .keyPrefix("myapp: [GH-90000]")
+                .build(); // GH-90000
 
-        assertEquals("redis.example.com", config.getHost());
-        assertEquals(6380, config.getPort());
-        assertEquals("secret", config.getPassword());
-        assertEquals(5, config.getDatabase());
-        assertEquals(Duration.ofSeconds(10), config.getTimeout());
-        assertEquals(3600, config.getTtlSeconds());
-        assertEquals("myapp:", config.getKeyPrefix());
+        assertEquals("redis.example.com", config.getHost()); // GH-90000
+        assertEquals(6380, config.getPort()); // GH-90000
+        assertEquals("secret", config.getPassword()); // GH-90000
+        assertEquals(5, config.getDatabase()); // GH-90000
+        assertEquals(Duration.ofSeconds(10), config.getTimeout()); // GH-90000
+        assertEquals(3600, config.getTtlSeconds()); // GH-90000
+        assertEquals("myapp:", config.getKeyPrefix()); // GH-90000
     }
 
     @Test
-    void testToBuilder() {
-        RedisCacheConfig original = RedisCacheConfig.builder()
-                .host("redis.example.com")
-                .port(6380)
-                .keyPrefix("original:")
-                .build();
+    void testToBuilder() { // GH-90000
+        RedisCacheConfig original = RedisCacheConfig.builder() // GH-90000
+                .host("redis.example.com [GH-90000]")
+                .port(6380) // GH-90000
+                .keyPrefix("original: [GH-90000]")
+                .build(); // GH-90000
 
-        RedisCacheConfig modified = original.toBuilder()
-                .database(3)
-                .keyPrefix("modified:")
-                .build();
+        RedisCacheConfig modified = original.toBuilder() // GH-90000
+                .database(3) // GH-90000
+                .keyPrefix("modified: [GH-90000]")
+                .build(); // GH-90000
 
         // Original unchanged
-        assertEquals("original:", original.getKeyPrefix());
-        assertEquals(0, original.getDatabase());
+        assertEquals("original:", original.getKeyPrefix()); // GH-90000
+        assertEquals(0, original.getDatabase()); // GH-90000
 
         // Modified has new values
-        assertEquals("modified:", modified.getKeyPrefix());
-        assertEquals(3, modified.getDatabase());
+        assertEquals("modified:", modified.getKeyPrefix()); // GH-90000
+        assertEquals(3, modified.getDatabase()); // GH-90000
 
         // Shared values preserved
-        assertEquals("redis.example.com", modified.getHost());
-        assertEquals(6380, modified.getPort());
+        assertEquals("redis.example.com", modified.getHost()); // GH-90000
+        assertEquals(6380, modified.getPort()); // GH-90000
     }
 
     @Test
-    void testInvalidPort() {
-        assertThrows(IllegalArgumentException.class, () ->
-                RedisCacheConfig.builder().port(0).build()
+    void testInvalidPort() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+                RedisCacheConfig.builder().port(0).build() // GH-90000
         );
 
-        assertThrows(IllegalArgumentException.class, () ->
-                RedisCacheConfig.builder().port(-1).build()
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+                RedisCacheConfig.builder().port(-1).build() // GH-90000
         );
 
-        assertThrows(IllegalArgumentException.class, () ->
-                RedisCacheConfig.builder().port(65536).build()
-        );
-    }
-
-    @Test
-    void testInvalidDatabase() {
-        assertThrows(IllegalArgumentException.class, () ->
-                RedisCacheConfig.builder().database(-1).build()
-        );
-
-        assertThrows(IllegalArgumentException.class, () ->
-                RedisCacheConfig.builder().database(16).build()
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+                RedisCacheConfig.builder().port(65536).build() // GH-90000
         );
     }
 
     @Test
-    void testInvalidTtl() {
-        assertThrows(IllegalArgumentException.class, () ->
-                RedisCacheConfig.builder().ttlSeconds(-1).build()
+    void testInvalidDatabase() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+                RedisCacheConfig.builder().database(-1).build() // GH-90000
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+                RedisCacheConfig.builder().database(16).build() // GH-90000
         );
     }
 
     @Test
-    void testNullHost() {
-        assertThrows(NullPointerException.class, () ->
-                RedisCacheConfig.builder().host(null).build()
+    void testInvalidTtl() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+                RedisCacheConfig.builder().ttlSeconds(-1).build() // GH-90000
         );
     }
 
     @Test
-    void testNullTimeout() {
-        assertThrows(NullPointerException.class, () ->
-                RedisCacheConfig.builder().timeout(null).build()
+    void testNullHost() { // GH-90000
+        assertThrows(NullPointerException.class, () -> // GH-90000
+                RedisCacheConfig.builder().host(null).build() // GH-90000
         );
     }
 
     @Test
-    void testNullKeyPrefix() {
-        assertThrows(NullPointerException.class, () ->
-                RedisCacheConfig.builder().keyPrefix(null).build()
+    void testNullTimeout() { // GH-90000
+        assertThrows(NullPointerException.class, () -> // GH-90000
+                RedisCacheConfig.builder().timeout(null).build() // GH-90000
         );
     }
 
     @Test
-    void testNullPassword() {
-        // Null password is allowed (no authentication)
-        RedisCacheConfig config = RedisCacheConfig.builder()
-                .password(null)
-                .build();
-
-        assertNull(config.getPassword());
+    void testNullKeyPrefix() { // GH-90000
+        assertThrows(NullPointerException.class, () -> // GH-90000
+                RedisCacheConfig.builder().keyPrefix(null).build() // GH-90000
+        );
     }
 
     @Test
-    void testEquals() {
-        RedisCacheConfig config1 = RedisCacheConfig.builder()
-                .host("redis.example.com")
-                .port(6380)
-                .build();
+    void testNullPassword() { // GH-90000
+        // Null password is allowed (no authentication) // GH-90000
+        RedisCacheConfig config = RedisCacheConfig.builder() // GH-90000
+                .password(null) // GH-90000
+                .build(); // GH-90000
 
-        RedisCacheConfig config2 = RedisCacheConfig.builder()
-                .host("redis.example.com")
-                .port(6380)
-                .build();
-
-        RedisCacheConfig config3 = RedisCacheConfig.builder()
-                .host("redis.other.com")
-                .port(6380)
-                .build();
-
-        assertEquals(config1, config2);
-        assertNotEquals(config1, config3);
-        assertNotEquals(config1, null);
-        assertNotEquals(config1, "not a config");
+        assertNull(config.getPassword()); // GH-90000
     }
 
     @Test
-    void testHashCode() {
-        RedisCacheConfig config1 = RedisCacheConfig.builder()
-                .host("redis.example.com")
-                .port(6380)
-                .build();
+    void testEquals() { // GH-90000
+        RedisCacheConfig config1 = RedisCacheConfig.builder() // GH-90000
+                .host("redis.example.com [GH-90000]")
+                .port(6380) // GH-90000
+                .build(); // GH-90000
 
-        RedisCacheConfig config2 = RedisCacheConfig.builder()
-                .host("redis.example.com")
-                .port(6380)
-                .build();
+        RedisCacheConfig config2 = RedisCacheConfig.builder() // GH-90000
+                .host("redis.example.com [GH-90000]")
+                .port(6380) // GH-90000
+                .build(); // GH-90000
 
-        assertEquals(config1.hashCode(), config2.hashCode());
+        RedisCacheConfig config3 = RedisCacheConfig.builder() // GH-90000
+                .host("redis.other.com [GH-90000]")
+                .port(6380) // GH-90000
+                .build(); // GH-90000
+
+        assertEquals(config1, config2); // GH-90000
+        assertNotEquals(config1, config3); // GH-90000
+        assertNotEquals(config1, null); // GH-90000
+        assertNotEquals(config1, "not a config"); // GH-90000
     }
 
     @Test
-    void testToString() {
-        RedisCacheConfig config = RedisCacheConfig.builder()
-                .host("redis.example.com")
-                .port(6380)
-                .database(5)
-                .keyPrefix("test:")
-                .build();
+    void testHashCode() { // GH-90000
+        RedisCacheConfig config1 = RedisCacheConfig.builder() // GH-90000
+                .host("redis.example.com [GH-90000]")
+                .port(6380) // GH-90000
+                .build(); // GH-90000
 
-        String str = config.toString();
+        RedisCacheConfig config2 = RedisCacheConfig.builder() // GH-90000
+                .host("redis.example.com [GH-90000]")
+                .port(6380) // GH-90000
+                .build(); // GH-90000
 
-        assertNotNull(str);
-        assertTrue(str.contains("redis.example.com"));
-        assertTrue(str.contains("6380"));
-        assertTrue(str.contains("5"));
-        assertTrue(str.contains("test:"));
+        assertEquals(config1.hashCode(), config2.hashCode()); // GH-90000
+    }
+
+    @Test
+    void testToString() { // GH-90000
+        RedisCacheConfig config = RedisCacheConfig.builder() // GH-90000
+                .host("redis.example.com [GH-90000]")
+                .port(6380) // GH-90000
+                .database(5) // GH-90000
+                .keyPrefix("test: [GH-90000]")
+                .build(); // GH-90000
+
+        String str = config.toString(); // GH-90000
+
+        assertNotNull(str); // GH-90000
+        assertTrue(str.contains("redis.example.com [GH-90000]"));
+        assertTrue(str.contains("6380 [GH-90000]"));
+        assertTrue(str.contains("5 [GH-90000]"));
+        assertTrue(str.contains("test: [GH-90000]"));
         // Password should not be in toString for security
-        assertFalse(str.contains("password"));
+        assertFalse(str.contains("password [GH-90000]"));
     }
 
     @Test
-    void testValidPortBoundaries() {
+    void testValidPortBoundaries() { // GH-90000
         // Min valid port
-        RedisCacheConfig minPort = RedisCacheConfig.builder().port(1).build();
-        assertEquals(1, minPort.getPort());
+        RedisCacheConfig minPort = RedisCacheConfig.builder().port(1).build(); // GH-90000
+        assertEquals(1, minPort.getPort()); // GH-90000
 
         // Max valid port
-        RedisCacheConfig maxPort = RedisCacheConfig.builder().port(65535).build();
-        assertEquals(65535, maxPort.getPort());
+        RedisCacheConfig maxPort = RedisCacheConfig.builder().port(65535).build(); // GH-90000
+        assertEquals(65535, maxPort.getPort()); // GH-90000
     }
 
     @Test
-    void testValidDatabaseBoundaries() {
+    void testValidDatabaseBoundaries() { // GH-90000
         // Min valid database
-        RedisCacheConfig minDb = RedisCacheConfig.builder().database(0).build();
-        assertEquals(0, minDb.getDatabase());
+        RedisCacheConfig minDb = RedisCacheConfig.builder().database(0).build(); // GH-90000
+        assertEquals(0, minDb.getDatabase()); // GH-90000
 
         // Max valid database
-        RedisCacheConfig maxDb = RedisCacheConfig.builder().database(15).build();
-        assertEquals(15, maxDb.getDatabase());
+        RedisCacheConfig maxDb = RedisCacheConfig.builder().database(15).build(); // GH-90000
+        assertEquals(15, maxDb.getDatabase()); // GH-90000
     }
 
     @Test
-    void testZeroTtl() {
-        // Zero TTL is valid (infinite)
-        RedisCacheConfig config = RedisCacheConfig.builder().ttlSeconds(0).build();
-        assertEquals(0, config.getTtlSeconds());
+    void testZeroTtl() { // GH-90000
+        // Zero TTL is valid (infinite) // GH-90000
+        RedisCacheConfig config = RedisCacheConfig.builder().ttlSeconds(0).build(); // GH-90000
+        assertEquals(0, config.getTtlSeconds()); // GH-90000
     }
 }

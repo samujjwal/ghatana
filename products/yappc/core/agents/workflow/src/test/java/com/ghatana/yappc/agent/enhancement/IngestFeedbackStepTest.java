@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Enhancement IngestFeedbackStep Tests")
+@DisplayName("Enhancement IngestFeedbackStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles ingest feedback step test operations
@@ -33,54 +33,54 @@ class IngestFeedbackStepTest extends EventloopTestBase {
   private IngestFeedbackStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new IngestFeedbackStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new IngestFeedbackStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("enhancement.ingest_feedback");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("enhancement.ingest_feedback [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should ingest feedback from multiple sources")
-  void shouldIngestFeedback() {
+  @DisplayName("Should ingest feedback from multiple sources [GH-90000]")
+  void shouldIngestFeedback() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("opsBaselineId", "ops-baseline-001");
-    context.put("runId", "run-001"); // Required by IngestFeedbackStep
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("opsBaselineId", "ops-baseline-001"); // GH-90000
+    context.put("runId", "run-001"); // Required by IngestFeedbackStep // GH-90000
 
     Map<String, Object> baseline =
-        Map.of(
+        Map.of( // GH-90000
             "_id",
             "ops-baseline-001",
             "productionVerified",
             true,
             "summary",
-            Map.of(
+            Map.of( // GH-90000
                 "totalDeployments", 21,
                 "incidentsResolved", 8,
                 "avgIncidentResponseTime", 30,
                 "avgRecoveryTime", 60),
             "metrics",
-            Map.of());
-    when(dbClient.query(eq("ops_baselines"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(baseline)));
-    when(dbClient.query(eq("feedback"), any(), anyInt())).thenReturn(Promise.of(List.of()));
-    when(dbClient.query(eq("incidents"), any(), anyInt())).thenReturn(Promise.of(List.of()));
-    when(dbClient.query(eq("app_usage"), any(), anyInt())).thenReturn(Promise.of(List.of()));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+            Map.of()); // GH-90000
+    when(dbClient.query(eq("ops_baselines [GH-90000]"), any(), anyInt()))
+        .thenReturn(Promise.of(List.of(baseline))); // GH-90000
+    when(dbClient.query(eq("feedback [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(List.of()));
+    when(dbClient.query(eq("incidents [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(List.of()));
+    when(dbClient.query(eq("app_usage [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(List.of()));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("opsBaselineId")).isEqualTo("ops-baseline-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("opsBaselineId [GH-90000]")).isEqualTo("ops-baseline-001 [GH-90000]");
   }
 }

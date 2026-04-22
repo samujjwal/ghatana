@@ -30,10 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>These tests validate the documented profile-management flows and boundary requirements
  * without depending on a Spring Boot harness that is not wired into this shared-service module.</p>
  */
-@DisplayName("User Profile Service E2E Tests")
+@DisplayName("User Profile Service E2E Tests [GH-90000]")
 public class UserProfileServiceE2ETest {
 
-    private static final Path SPEC_PATH = Path.of(
+    private static final Path SPEC_PATH = Path.of( // GH-90000
             "..",
             "..",
             "platform",
@@ -42,57 +42,57 @@ public class UserProfileServiceE2ETest {
             "user-profile-service.yaml"
     );
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
 
     @Test
-    @DisplayName("Profile CRUD endpoints exist for documented end-to-end flows")
-    void profileCrudEndpointsExist() throws Exception {
-        JsonNode paths = readSpec().path("paths");
+    @DisplayName("Profile CRUD endpoints exist for documented end-to-end flows [GH-90000]")
+    void profileCrudEndpointsExist() throws Exception { // GH-90000
+        JsonNode paths = readSpec().path("paths [GH-90000]");
 
-        assertThat(paths.has("/profiles/{userId}")).isTrue();
-        assertThat(paths.path("/profiles/{userId}").has("get")).isTrue();
-        assertThat(paths.path("/profiles/{userId}").has("put")).isTrue();
-        assertThat(paths.path("/profiles/{userId}").has("delete")).isTrue();
+        assertThat(paths.has("/profiles/{userId} [GH-90000]")).isTrue();
+        assertThat(paths.path("/profiles/{userId} [GH-90000]").has("get [GH-90000]")).isTrue();
+        assertThat(paths.path("/profiles/{userId} [GH-90000]").has("put [GH-90000]")).isTrue();
+        assertThat(paths.path("/profiles/{userId} [GH-90000]").has("delete [GH-90000]")).isTrue();
     }
 
     @Test
-    @DisplayName("Profile endpoints declare tenant-scoped bearer and internal-key security")
-    void profileEndpointsDeclareSecurity() throws Exception {
-        JsonNode profilePath = readSpec().path("paths").path("/profiles/{userId}");
+    @DisplayName("Profile endpoints declare tenant-scoped bearer and internal-key security [GH-90000]")
+    void profileEndpointsDeclareSecurity() throws Exception { // GH-90000
+        JsonNode profilePath = readSpec().path("paths [GH-90000]").path("/profiles/{userId} [GH-90000]");
 
-        assertThat(profilePath.path("get").path("security")).isNotEmpty();
-        assertThat(profilePath.path("put").path("security")).isNotEmpty();
-        assertThat(profilePath.path("delete").path("security")).isNotEmpty();
+        assertThat(profilePath.path("get [GH-90000]").path("security [GH-90000]")).isNotEmpty();
+        assertThat(profilePath.path("put [GH-90000]").path("security [GH-90000]")).isNotEmpty();
+        assertThat(profilePath.path("delete [GH-90000]").path("security [GH-90000]")).isNotEmpty();
     }
 
     @Test
-    @DisplayName("Schema documents complete profile payload and update request fields")
-    void profileSchemasDocumentFlowPayloads() throws Exception {
-        JsonNode schemas = readSpec().path("components").path("schemas");
+    @DisplayName("Schema documents complete profile payload and update request fields [GH-90000]")
+    void profileSchemasDocumentFlowPayloads() throws Exception { // GH-90000
+        JsonNode schemas = readSpec().path("components [GH-90000]").path("schemas [GH-90000]");
 
-        assertThat(schemas.path("UserProfile").path("properties").has("userId")).isTrue();
-        assertThat(schemas.path("UserProfile").path("properties").has("tenantId")).isTrue();
-        assertThat(schemas.path("UserProfile").path("properties").has("email")).isTrue();
-        assertThat(schemas.path("UserProfile").path("properties").has("theme")).isTrue();
-        assertThat(schemas.path("UpsertProfileRequest").path("properties").has("displayName")).isTrue();
-        assertThat(schemas.path("UpsertProfileRequest").path("properties").has("notificationsEnabled")).isTrue();
+        assertThat(schemas.path("UserProfile [GH-90000]").path("properties [GH-90000]").has("userId [GH-90000]")).isTrue();
+        assertThat(schemas.path("UserProfile [GH-90000]").path("properties [GH-90000]").has("tenantId [GH-90000]")).isTrue();
+        assertThat(schemas.path("UserProfile [GH-90000]").path("properties [GH-90000]").has("email [GH-90000]")).isTrue();
+        assertThat(schemas.path("UserProfile [GH-90000]").path("properties [GH-90000]").has("theme [GH-90000]")).isTrue();
+        assertThat(schemas.path("UpsertProfileRequest [GH-90000]").path("properties [GH-90000]").has("displayName [GH-90000]")).isTrue();
+        assertThat(schemas.path("UpsertProfileRequest [GH-90000]").path("properties [GH-90000]").has("notificationsEnabled [GH-90000]")).isTrue();
     }
 
     @Test
-    @DisplayName("Observability endpoints remain part of the documented service surface")
-    void observabilityEndpointsRemainDocumented() throws Exception {
-        JsonNode paths = readSpec().path("paths");
-        JsonNode healthSchema = readSpec().path("components").path("schemas").path("HealthResponse");
+    @DisplayName("Observability endpoints remain part of the documented service surface [GH-90000]")
+    void observabilityEndpointsRemainDocumented() throws Exception { // GH-90000
+        JsonNode paths = readSpec().path("paths [GH-90000]");
+        JsonNode healthSchema = readSpec().path("components [GH-90000]").path("schemas [GH-90000]").path("HealthResponse [GH-90000]");
 
-        assertThat(paths.has("/health")).isTrue();
-        assertThat(paths.has("/metrics")).isTrue();
-        assertThat(healthSchema.path("properties").path("service").path("example").asText())
-                .isEqualTo("user-profile-service");
+        assertThat(paths.has("/health [GH-90000]")).isTrue();
+        assertThat(paths.has("/metrics [GH-90000]")).isTrue();
+        assertThat(healthSchema.path("properties [GH-90000]").path("service [GH-90000]").path("example [GH-90000]").asText())
+                .isEqualTo("user-profile-service [GH-90000]");
     }
 
-    private JsonNode readSpec() throws IOException {
-        try (var inputStream = Files.newInputStream(SPEC_PATH)) {
-            return objectMapper.readTree(inputStream);
+    private JsonNode readSpec() throws IOException { // GH-90000
+        try (var inputStream = Files.newInputStream(SPEC_PATH)) { // GH-90000
+            return objectMapper.readTree(inputStream); // GH-90000
         }
     }
 }

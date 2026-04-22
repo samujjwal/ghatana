@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Boundary Policy Resolution Tests")
+@DisplayName("Boundary Policy Resolution Tests [GH-90000]")
 class BoundaryPolicyResolutionTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -30,189 +30,189 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     private TestPolicyResolver policyResolver;
 
     @BeforeEach
-    void setUp() {
-        registry = new KernelRegistryImpl();
-        context = TestKernelContextFactory.create(registry);
-        policyResolver = new TestPolicyResolver();
+    void setUp() { // GH-90000
+        registry = new KernelRegistryImpl(); // GH-90000
+        context = TestKernelContextFactory.create(registry); // GH-90000
+        policyResolver = new TestPolicyResolver(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should resolve single policy without conflicts")
-    void testSinglePolicyResolution() {
+    @DisplayName("Should resolve single policy without conflicts [GH-90000]")
+    void testSinglePolicyResolution() { // GH-90000
         // GIVEN: Single policy
-        BoundaryPolicy policy = new BoundaryPolicy("policy-1", PolicyType.ALLOW);
-        policy.addRule("module:finance", "action:read");
+        BoundaryPolicy policy = new BoundaryPolicy("policy-1", PolicyType.ALLOW); // GH-90000
+        policy.addRule("module:finance", "action:read"); // GH-90000
 
-        policyResolver.registerPolicy(policy);
+        policyResolver.registerPolicy(policy); // GH-90000
 
         // WHEN: Resolve policy
-        PolicyDecision decision = runPromise(() ->
-            policyResolver.resolve("module:finance", "action:read")
+        PolicyDecision decision = runPromise(() -> // GH-90000
+            policyResolver.resolve("module:finance", "action:read") // GH-90000
         );
 
         // THEN: Policy allows action
-        assertThat(decision.isAllowed()).isTrue();
-        assertThat(decision.getAppliedPolicies()).containsExactly("policy-1");
+        assertThat(decision.isAllowed()).isTrue(); // GH-90000
+        assertThat(decision.getAppliedPolicies()).containsExactly("policy-1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should resolve conflicting policies with priority")
-    void testConflictingPolicyResolution() {
+    @DisplayName("Should resolve conflicting policies with priority [GH-90000]")
+    void testConflictingPolicyResolution() { // GH-90000
         // GIVEN: Conflicting policies with different priorities
-        BoundaryPolicy allowPolicy = new BoundaryPolicy("allow-policy", PolicyType.ALLOW);
-        allowPolicy.setPriority(10);
-        allowPolicy.addRule("module:finance", "action:write");
+        BoundaryPolicy allowPolicy = new BoundaryPolicy("allow-policy", PolicyType.ALLOW); // GH-90000
+        allowPolicy.setPriority(10); // GH-90000
+        allowPolicy.addRule("module:finance", "action:write"); // GH-90000
 
-        BoundaryPolicy denyPolicy = new BoundaryPolicy("deny-policy", PolicyType.DENY);
-        denyPolicy.setPriority(20); // Higher priority
-        denyPolicy.addRule("module:finance", "action:write");
+        BoundaryPolicy denyPolicy = new BoundaryPolicy("deny-policy", PolicyType.DENY); // GH-90000
+        denyPolicy.setPriority(20); // Higher priority // GH-90000
+        denyPolicy.addRule("module:finance", "action:write"); // GH-90000
 
-        policyResolver.registerPolicy(allowPolicy);
-        policyResolver.registerPolicy(denyPolicy);
+        policyResolver.registerPolicy(allowPolicy); // GH-90000
+        policyResolver.registerPolicy(denyPolicy); // GH-90000
 
         // WHEN: Resolve conflicting policies
-        PolicyDecision decision = runPromise(() ->
-            policyResolver.resolve("module:finance", "action:write")
+        PolicyDecision decision = runPromise(() -> // GH-90000
+            policyResolver.resolve("module:finance", "action:write") // GH-90000
         );
 
-        // THEN: Higher priority policy wins (deny)
-        assertThat(decision.isAllowed()).isFalse();
-        assertThat(decision.getAppliedPolicies()).contains("deny-policy");
+        // THEN: Higher priority policy wins (deny) // GH-90000
+        assertThat(decision.isAllowed()).isFalse(); // GH-90000
+        assertThat(decision.getAppliedPolicies()).contains("deny-policy [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle policy inheritance across module boundaries")
-    void testPolicyInheritance() {
+    @DisplayName("Should handle policy inheritance across module boundaries [GH-90000]")
+    void testPolicyInheritance() { // GH-90000
         // GIVEN: Parent and child module policies
-        BoundaryPolicy parentPolicy = new BoundaryPolicy("parent-policy", PolicyType.ALLOW);
-        parentPolicy.addRule("module:*", "action:read");
+        BoundaryPolicy parentPolicy = new BoundaryPolicy("parent-policy", PolicyType.ALLOW); // GH-90000
+        parentPolicy.addRule("module:*", "action:read"); // GH-90000
 
-        BoundaryPolicy childPolicy = new BoundaryPolicy("child-policy", PolicyType.DENY);
-        childPolicy.setPriority(1);
-        childPolicy.addRule("module:finance:sensitive", "action:read");
+        BoundaryPolicy childPolicy = new BoundaryPolicy("child-policy", PolicyType.DENY); // GH-90000
+        childPolicy.setPriority(1); // GH-90000
+        childPolicy.addRule("module:finance:sensitive", "action:read"); // GH-90000
 
-        policyResolver.registerPolicy(parentPolicy);
-        policyResolver.registerPolicy(childPolicy);
+        policyResolver.registerPolicy(parentPolicy); // GH-90000
+        policyResolver.registerPolicy(childPolicy); // GH-90000
 
         // WHEN: Resolve for child module
-        PolicyDecision generalDecision = runPromise(() ->
-            policyResolver.resolve("module:finance", "action:read")
+        PolicyDecision generalDecision = runPromise(() -> // GH-90000
+            policyResolver.resolve("module:finance", "action:read") // GH-90000
         );
-        PolicyDecision sensitiveDecision = runPromise(() ->
-            policyResolver.resolve("module:finance:sensitive", "action:read")
+        PolicyDecision sensitiveDecision = runPromise(() -> // GH-90000
+            policyResolver.resolve("module:finance:sensitive", "action:read") // GH-90000
         );
 
         // THEN: Child policy overrides parent
-        assertThat(generalDecision.isAllowed()).isTrue();
-        assertThat(sensitiveDecision.isAllowed()).isFalse();
+        assertThat(generalDecision.isAllowed()).isTrue(); // GH-90000
+        assertThat(sensitiveDecision.isAllowed()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should enforce default deny policy")
-    void testDefaultDenyPolicy() {
+    @DisplayName("Should enforce default deny policy [GH-90000]")
+    void testDefaultDenyPolicy() { // GH-90000
         // GIVEN: No explicit policies
 
         // WHEN: Resolve for unspecified resource
-        PolicyDecision decision = runPromise(() ->
-            policyResolver.resolve("module:unknown", "action:execute")
+        PolicyDecision decision = runPromise(() -> // GH-90000
+            policyResolver.resolve("module:unknown", "action:execute") // GH-90000
         );
 
         // THEN: Default deny applies
-        assertThat(decision.isAllowed()).isFalse();
-        assertThat(decision.getReason()).contains("No matching policy");
+        assertThat(decision.isAllowed()).isFalse(); // GH-90000
+        assertThat(decision.getReason()).contains("No matching policy [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle wildcard policy patterns")
-    void testWildcardPolicyPatterns() {
+    @DisplayName("Should handle wildcard policy patterns [GH-90000]")
+    void testWildcardPolicyPatterns() { // GH-90000
         // GIVEN: Wildcard policy
-        BoundaryPolicy wildcardPolicy = new BoundaryPolicy("wildcard-policy", PolicyType.ALLOW);
-        wildcardPolicy.addRule("module:*", "action:read");
-        wildcardPolicy.addRule("module:finance", "action:*");
+        BoundaryPolicy wildcardPolicy = new BoundaryPolicy("wildcard-policy", PolicyType.ALLOW); // GH-90000
+        wildcardPolicy.addRule("module:*", "action:read"); // GH-90000
+        wildcardPolicy.addRule("module:finance", "action:*"); // GH-90000
 
-        policyResolver.registerPolicy(wildcardPolicy);
+        policyResolver.registerPolicy(wildcardPolicy); // GH-90000
 
         // WHEN: Resolve with wildcards
-        PolicyDecision readAny = runPromise(() ->
-            policyResolver.resolve("module:phr", "action:read")
+        PolicyDecision readAny = runPromise(() -> // GH-90000
+            policyResolver.resolve("module:phr", "action:read") // GH-90000
         );
-        PolicyDecision financeAny = runPromise(() ->
-            policyResolver.resolve("module:finance", "action:delete")
+        PolicyDecision financeAny = runPromise(() -> // GH-90000
+            policyResolver.resolve("module:finance", "action:delete") // GH-90000
         );
 
         // THEN: Wildcards match correctly
-        assertThat(readAny.isAllowed()).isTrue();
-        assertThat(financeAny.isAllowed()).isTrue();
+        assertThat(readAny.isAllowed()).isTrue(); // GH-90000
+        assertThat(financeAny.isAllowed()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should resolve time-based policies")
-    void testTimeBasedPolicies() {
+    @DisplayName("Should resolve time-based policies [GH-90000]")
+    void testTimeBasedPolicies() { // GH-90000
         // GIVEN: Time-based policy
-        BoundaryPolicy timePolicy = new BoundaryPolicy("time-policy", PolicyType.ALLOW);
-        timePolicy.addRule("module:finance", "action:trade");
-        timePolicy.setTimeWindow(9, 17); // 9 AM to 5 PM
+        BoundaryPolicy timePolicy = new BoundaryPolicy("time-policy", PolicyType.ALLOW); // GH-90000
+        timePolicy.addRule("module:finance", "action:trade"); // GH-90000
+        timePolicy.setTimeWindow(9, 17); // 9 AM to 5 PM // GH-90000
 
-        policyResolver.registerPolicy(timePolicy);
+        policyResolver.registerPolicy(timePolicy); // GH-90000
 
         // WHEN: Resolve during and outside time window
-        PolicyDecision duringHours = runPromise(() ->
-            policyResolver.resolveWithTime("module:finance", "action:trade", 12)
+        PolicyDecision duringHours = runPromise(() -> // GH-90000
+            policyResolver.resolveWithTime("module:finance", "action:trade", 12) // GH-90000
         );
-        PolicyDecision afterHours = runPromise(() ->
-            policyResolver.resolveWithTime("module:finance", "action:trade", 20)
+        PolicyDecision afterHours = runPromise(() -> // GH-90000
+            policyResolver.resolveWithTime("module:finance", "action:trade", 20) // GH-90000
         );
 
         // THEN: Time window enforced
-        assertThat(duringHours.isAllowed()).isTrue();
-        assertThat(afterHours.isAllowed()).isFalse();
+        assertThat(duringHours.isAllowed()).isTrue(); // GH-90000
+        assertThat(afterHours.isAllowed()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle conditional policies")
-    void testConditionalPolicies() {
+    @DisplayName("Should handle conditional policies [GH-90000]")
+    void testConditionalPolicies() { // GH-90000
         // GIVEN: Conditional policy
-        ConditionalPolicy conditionalPolicy = new ConditionalPolicy("conditional-policy");
-        conditionalPolicy.addCondition("user.role", "admin");
-        conditionalPolicy.addRule("module:system", "action:configure");
+        ConditionalPolicy conditionalPolicy = new ConditionalPolicy("conditional-policy [GH-90000]");
+        conditionalPolicy.addCondition("user.role", "admin"); // GH-90000
+        conditionalPolicy.addRule("module:system", "action:configure"); // GH-90000
 
-        policyResolver.registerConditionalPolicy(conditionalPolicy);
+        policyResolver.registerConditionalPolicy(conditionalPolicy); // GH-90000
 
         // WHEN: Resolve with and without condition
-        Map<String, String> adminContext = Map.of("user.role", "admin");
-        Map<String, String> userContext = Map.of("user.role", "user");
+        Map<String, String> adminContext = Map.of("user.role", "admin"); // GH-90000
+        Map<String, String> userContext = Map.of("user.role", "user"); // GH-90000
 
-        PolicyDecision adminDecision = runPromise(() ->
-            policyResolver.resolveWithContext("module:system", "action:configure", adminContext)
+        PolicyDecision adminDecision = runPromise(() -> // GH-90000
+            policyResolver.resolveWithContext("module:system", "action:configure", adminContext) // GH-90000
         );
-        PolicyDecision userDecision = runPromise(() ->
-            policyResolver.resolveWithContext("module:system", "action:configure", userContext)
+        PolicyDecision userDecision = runPromise(() -> // GH-90000
+            policyResolver.resolveWithContext("module:system", "action:configure", userContext) // GH-90000
         );
 
         // THEN: Condition enforced
-        assertThat(adminDecision.isAllowed()).isTrue();
-        assertThat(userDecision.isAllowed()).isFalse();
+        assertThat(adminDecision.isAllowed()).isTrue(); // GH-90000
+        assertThat(userDecision.isAllowed()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should audit policy decisions")
-    void testPolicyDecisionAuditing() {
+    @DisplayName("Should audit policy decisions [GH-90000]")
+    void testPolicyDecisionAuditing() { // GH-90000
         // GIVEN: Policy with auditing enabled
-        BoundaryPolicy policy = new BoundaryPolicy("audit-policy", PolicyType.ALLOW);
-        policy.addRule("module:finance", "action:transfer");
-        policy.setAuditEnabled(true);
+        BoundaryPolicy policy = new BoundaryPolicy("audit-policy", PolicyType.ALLOW); // GH-90000
+        policy.addRule("module:finance", "action:transfer"); // GH-90000
+        policy.setAuditEnabled(true); // GH-90000
 
-        policyResolver.registerPolicy(policy);
+        policyResolver.registerPolicy(policy); // GH-90000
 
         // WHEN: Resolve policy
-        runPromise(() -> policyResolver.resolve("module:finance", "action:transfer"));
+        runPromise(() -> policyResolver.resolve("module:finance", "action:transfer")); // GH-90000
 
         // THEN: Decision is audited
-        assertThat(policyResolver.getAuditLog()).isNotEmpty();
-        assertThat(policyResolver.getAuditLog().get(0))
-            .contains("module:finance")
-            .contains("action:transfer")
-            .contains("ALLOW");
+        assertThat(policyResolver.getAuditLog()).isNotEmpty(); // GH-90000
+        assertThat(policyResolver.getAuditLog().get(0)) // GH-90000
+            .contains("module:finance [GH-90000]")
+            .contains("action:transfer [GH-90000]")
+            .contains("ALLOW [GH-90000]");
     }
 
     // Test policy implementations
@@ -225,51 +225,51 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     private static class BoundaryPolicy {
         private final String name;
         private final PolicyType type;
-        private final Map<String, Set<String>> rules = new HashMap<>();
+        private final Map<String, Set<String>> rules = new HashMap<>(); // GH-90000
         private int priority = 0;
         private Integer startHour;
         private Integer endHour;
         private boolean auditEnabled = false;
 
-        BoundaryPolicy(String name, PolicyType type) {
+        BoundaryPolicy(String name, PolicyType type) { // GH-90000
             this.name = name;
             this.type = type;
         }
 
-        void addRule(String resource, String action) {
-            rules.computeIfAbsent(resource, k -> new HashSet<>()).add(action);
+        void addRule(String resource, String action) { // GH-90000
+            rules.computeIfAbsent(resource, k -> new HashSet<>()).add(action); // GH-90000
         }
 
-        void setPriority(int priority) {
+        void setPriority(int priority) { // GH-90000
             this.priority = priority;
         }
 
-        void setTimeWindow(int startHour, int endHour) {
+        void setTimeWindow(int startHour, int endHour) { // GH-90000
             this.startHour = startHour;
             this.endHour = endHour;
         }
 
-        void setAuditEnabled(boolean enabled) {
+        void setAuditEnabled(boolean enabled) { // GH-90000
             this.auditEnabled = enabled;
         }
 
-        String getName() {
+        String getName() { // GH-90000
             return name;
         }
 
-        PolicyType getType() {
+        PolicyType getType() { // GH-90000
             return type;
         }
 
-        int getPriority() {
+        int getPriority() { // GH-90000
             return priority;
         }
 
-        boolean matches(String resource, String action) {
-            for (Map.Entry<String, Set<String>> entry : rules.entrySet()) {
-                if (matchesPattern(entry.getKey(), resource)) {
-                    for (String ruleAction : entry.getValue()) {
-                        if (matchesPattern(ruleAction, action)) {
+        boolean matches(String resource, String action) { // GH-90000
+            for (Map.Entry<String, Set<String>> entry : rules.entrySet()) { // GH-90000
+                if (matchesPattern(entry.getKey(), resource)) { // GH-90000
+                    for (String ruleAction : entry.getValue()) { // GH-90000
+                        if (matchesPattern(ruleAction, action)) { // GH-90000
                             return true;
                         }
                     }
@@ -278,40 +278,40 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
             return false;
         }
 
-        boolean isWithinTimeWindow(int currentHour) {
-            if (startHour == null || endHour == null) {
+        boolean isWithinTimeWindow(int currentHour) { // GH-90000
+            if (startHour == null || endHour == null) { // GH-90000
                 return true;
             }
             return currentHour >= startHour && currentHour < endHour;
         }
 
-        boolean isAuditEnabled() {
+        boolean isAuditEnabled() { // GH-90000
             return auditEnabled;
         }
 
-        private boolean matchesPattern(String pattern, String value) {
-            if (pattern.equals("*") || pattern.endsWith(":*")) {
-                String prefix = pattern.replace(":*", "");
-                return value.startsWith(prefix) || pattern.equals("*");
+        private boolean matchesPattern(String pattern, String value) { // GH-90000
+            if (pattern.equals("* [GH-90000]") || pattern.endsWith(":* [GH-90000]")) {
+                String prefix = pattern.replace(":*", ""); // GH-90000
+                return value.startsWith(prefix) || pattern.equals("* [GH-90000]");
             }
-            return pattern.equals(value);
+            return pattern.equals(value); // GH-90000
         }
     }
 
     private static class ConditionalPolicy extends BoundaryPolicy {
-        private final Map<String, String> conditions = new HashMap<>();
+        private final Map<String, String> conditions = new HashMap<>(); // GH-90000
 
-        ConditionalPolicy(String name) {
-            super(name, PolicyType.ALLOW);
+        ConditionalPolicy(String name) { // GH-90000
+            super(name, PolicyType.ALLOW); // GH-90000
         }
 
-        void addCondition(String key, String value) {
-            conditions.put(key, value);
+        void addCondition(String key, String value) { // GH-90000
+            conditions.put(key, value); // GH-90000
         }
 
-        boolean matchesConditions(Map<String, String> context) {
-            for (Map.Entry<String, String> condition : conditions.entrySet()) {
-                if (!condition.getValue().equals(context.get(condition.getKey()))) {
+        boolean matchesConditions(Map<String, String> context) { // GH-90000
+            for (Map.Entry<String, String> condition : conditions.entrySet()) { // GH-90000
+                if (!condition.getValue().equals(context.get(condition.getKey()))) { // GH-90000
                     return false;
                 }
             }
@@ -324,81 +324,81 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         private final List<String> appliedPolicies;
         private final String reason;
 
-        PolicyDecision(boolean allowed, List<String> appliedPolicies, String reason) {
+        PolicyDecision(boolean allowed, List<String> appliedPolicies, String reason) { // GH-90000
             this.allowed = allowed;
             this.appliedPolicies = appliedPolicies;
             this.reason = reason;
         }
 
-        boolean isAllowed() {
+        boolean isAllowed() { // GH-90000
             return allowed;
         }
 
-        List<String> getAppliedPolicies() {
+        List<String> getAppliedPolicies() { // GH-90000
             return appliedPolicies;
         }
 
-        String getReason() {
+        String getReason() { // GH-90000
             return reason;
         }
     }
 
     private static class TestPolicyResolver {
-        private final List<BoundaryPolicy> policies = new ArrayList<>();
-        private final List<ConditionalPolicy> conditionalPolicies = new ArrayList<>();
-        private final List<String> auditLog = new ArrayList<>();
+        private final List<BoundaryPolicy> policies = new ArrayList<>(); // GH-90000
+        private final List<ConditionalPolicy> conditionalPolicies = new ArrayList<>(); // GH-90000
+        private final List<String> auditLog = new ArrayList<>(); // GH-90000
 
-        void registerPolicy(BoundaryPolicy policy) {
-            policies.add(policy);
-            policies.sort(Comparator.comparingInt(BoundaryPolicy::getPriority).reversed());
+        void registerPolicy(BoundaryPolicy policy) { // GH-90000
+            policies.add(policy); // GH-90000
+            policies.sort(Comparator.comparingInt(BoundaryPolicy::getPriority).reversed()); // GH-90000
         }
 
-        void registerConditionalPolicy(ConditionalPolicy policy) {
-            conditionalPolicies.add(policy);
+        void registerConditionalPolicy(ConditionalPolicy policy) { // GH-90000
+            conditionalPolicies.add(policy); // GH-90000
         }
 
-        Promise<PolicyDecision> resolve(String resource, String action) {
-            return resolveWithTime(resource, action, 12); // Default to noon
+        Promise<PolicyDecision> resolve(String resource, String action) { // GH-90000
+            return resolveWithTime(resource, action, 12); // Default to noon // GH-90000
         }
 
-        Promise<PolicyDecision> resolveWithTime(String resource, String action, int currentHour) {
-            List<String> appliedPolicies = new ArrayList<>();
+        Promise<PolicyDecision> resolveWithTime(String resource, String action, int currentHour) { // GH-90000
+            List<String> appliedPolicies = new ArrayList<>(); // GH-90000
 
-            for (BoundaryPolicy policy : policies) {
-                if (policy.matches(resource, action) && policy.isWithinTimeWindow(currentHour)) {
-                    appliedPolicies.add(policy.getName());
+            for (BoundaryPolicy policy : policies) { // GH-90000
+                if (policy.matches(resource, action) && policy.isWithinTimeWindow(currentHour)) { // GH-90000
+                    appliedPolicies.add(policy.getName()); // GH-90000
 
-                    if (policy.isAuditEnabled()) {
-                        auditLog.add(String.format("Policy: %s, Resource: %s, Action: %s, Decision: %s",
-                            policy.getName(), resource, action, policy.getType()));
+                    if (policy.isAuditEnabled()) { // GH-90000
+                        auditLog.add(String.format("Policy: %s, Resource: %s, Action: %s, Decision: %s", // GH-90000
+                            policy.getName(), resource, action, policy.getType())); // GH-90000
                     }
 
-                    boolean allowed = policy.getType() == PolicyType.ALLOW;
-                    return Promise.of(new PolicyDecision(allowed, appliedPolicies,
-                        policy.getType().toString()));
+                    boolean allowed = policy.getType() == PolicyType.ALLOW; // GH-90000
+                    return Promise.of(new PolicyDecision(allowed, appliedPolicies, // GH-90000
+                        policy.getType().toString())); // GH-90000
                 }
             }
 
-            return Promise.of(new PolicyDecision(false, appliedPolicies,
+            return Promise.of(new PolicyDecision(false, appliedPolicies, // GH-90000
                 "No matching policy - default deny"));
         }
 
-        Promise<PolicyDecision> resolveWithContext(String resource, String action,
+        Promise<PolicyDecision> resolveWithContext(String resource, String action, // GH-90000
                                                    Map<String, String> context) {
-            List<String> appliedPolicies = new ArrayList<>();
+            List<String> appliedPolicies = new ArrayList<>(); // GH-90000
 
-            for (ConditionalPolicy policy : conditionalPolicies) {
-                if (policy.matches(resource, action) && policy.matchesConditions(context)) {
-                    appliedPolicies.add(policy.getName());
-                    return Promise.of(new PolicyDecision(true, appliedPolicies, "Conditional policy matched"));
+            for (ConditionalPolicy policy : conditionalPolicies) { // GH-90000
+                if (policy.matches(resource, action) && policy.matchesConditions(context)) { // GH-90000
+                    appliedPolicies.add(policy.getName()); // GH-90000
+                    return Promise.of(new PolicyDecision(true, appliedPolicies, "Conditional policy matched")); // GH-90000
                 }
             }
 
-            return resolve(resource, action);
+            return resolve(resource, action); // GH-90000
         }
 
-        List<String> getAuditLog() {
-            return new ArrayList<>(auditLog);
+        List<String> getAuditLog() { // GH-90000
+            return new ArrayList<>(auditLog); // GH-90000
         }
     }
 }

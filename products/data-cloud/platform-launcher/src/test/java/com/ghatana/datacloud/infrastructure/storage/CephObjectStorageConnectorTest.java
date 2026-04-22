@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.infrastructure.storage;
@@ -36,9 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, EventloopTestBase
  */
-@Testcontainers(disabledWithoutDocker = true)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("CephObjectStorageConnector — Integration Tests (MinIO via Testcontainers)")
+@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
+@DisplayName("CephObjectStorageConnector — Integration Tests (MinIO via Testcontainers) [GH-90000]")
 class CephObjectStorageConnectorTest extends EventloopTestBase {
 
     private static final int    MINIO_PORT = 9000;
@@ -49,165 +49,165 @@ class CephObjectStorageConnectorTest extends EventloopTestBase {
     private static final String COLLECTION = "events";
 
     @Container
-    @SuppressWarnings("resource")
+    @SuppressWarnings("resource [GH-90000]")
     static final GenericContainer<?> MINIO =
-            new GenericContainer<>("minio/minio:RELEASE.2024-02-26T09-33-48Z")
-                    .withExposedPorts(MINIO_PORT, 9001)
-                    .withEnv("MINIO_ROOT_USER",     ACCESS)
-                    .withEnv("MINIO_ROOT_PASSWORD",  SECRET)
-                    .withCommand("server", "/data", "--console-address", ":9001")
-                    .waitingFor(new HttpWaitStrategy()
-                            .forPath("/minio/health/live")
-                            .forPort(MINIO_PORT)
-                            .withStartupTimeout(Duration.ofMinutes(2)));
+            new GenericContainer<>("minio/minio:RELEASE.2024-02-26T09-33-48Z [GH-90000]")
+                    .withExposedPorts(MINIO_PORT, 9001) // GH-90000
+                    .withEnv("MINIO_ROOT_USER",     ACCESS) // GH-90000
+                    .withEnv("MINIO_ROOT_PASSWORD",  SECRET) // GH-90000
+                    .withCommand("server", "/data", "--console-address", ":9001") // GH-90000
+                    .waitingFor(new HttpWaitStrategy() // GH-90000
+                            .forPath("/minio/health/live [GH-90000]")
+                            .forPort(MINIO_PORT) // GH-90000
+                            .withStartupTimeout(Duration.ofMinutes(2))); // GH-90000
 
     private static CephObjectStorageConnector connector;
     private UUID collectionId;
 
     @BeforeAll
-    static void setUpConnector() {
-        String endpoint = "http://" + MINIO.getHost() + ":" + MINIO.getMappedPort(MINIO_PORT);
-        CephObjectStorageConfig config = CephObjectStorageConfig.builder()
-                .endpoint(endpoint)
-                .accessKey(ACCESS)
-                .secretKey(SECRET)
-                .bucket(BUCKET)
-                .region("us-east-1")
-                .build();
-        connector = new CephObjectStorageConnector(config);
+    static void setUpConnector() { // GH-90000
+        String endpoint = "http://" + MINIO.getHost() + ":" + MINIO.getMappedPort(MINIO_PORT); // GH-90000
+        CephObjectStorageConfig config = CephObjectStorageConfig.builder() // GH-90000
+                .endpoint(endpoint) // GH-90000
+                .accessKey(ACCESS) // GH-90000
+                .secretKey(SECRET) // GH-90000
+                .bucket(BUCKET) // GH-90000
+                .region("us-east-1 [GH-90000]")
+                .build(); // GH-90000
+        connector = new CephObjectStorageConnector(config); // GH-90000
     }
 
     @BeforeEach
-    void setUp() {
-        collectionId = UUID.randomUUID();
+    void setUp() { // GH-90000
+        collectionId = UUID.randomUUID(); // GH-90000
     }
 
     // ── Health check ─────────────────────────────────────────────────────────
 
     @Test
-    @Order(1)
-    @DisplayName("healthCheck — bucket accessible")
-    void healthCheck_bucketAccessible() {
-        runPromise(() -> connector.healthCheck());
+    @Order(1) // GH-90000
+    @DisplayName("healthCheck — bucket accessible [GH-90000]")
+    void healthCheck_bucketAccessible() { // GH-90000
+        runPromise(() -> connector.healthCheck()); // GH-90000
         // No exception == healthy
     }
 
     // ── getMetadata ──────────────────────────────────────────────────────────
 
     @Test
-    @Order(2)
-    @DisplayName("getMetadata — reports BLOB backend type")
-    void getMetadata_reportsBlobBackend() {
-        StorageConnector.ConnectorMetadata meta = connector.getMetadata();
-        assertThat(meta.backendType()).isEqualTo(StorageBackendType.BLOB);
-        assertThat(meta.supportsTimeSeries()).isFalse();
-        assertThat(meta.supportsFullText()).isFalse();
-        assertThat(meta.supportsSchemaless()).isTrue();
+    @Order(2) // GH-90000
+    @DisplayName("getMetadata — reports BLOB backend type [GH-90000]")
+    void getMetadata_reportsBlobBackend() { // GH-90000
+        StorageConnector.ConnectorMetadata meta = connector.getMetadata(); // GH-90000
+        assertThat(meta.backendType()).isEqualTo(StorageBackendType.BLOB); // GH-90000
+        assertThat(meta.supportsTimeSeries()).isFalse(); // GH-90000
+        assertThat(meta.supportsFullText()).isFalse(); // GH-90000
+        assertThat(meta.supportsSchemaless()).isTrue(); // GH-90000
     }
 
     // ── CREATE ───────────────────────────────────────────────────────────────
 
     @Test
-    @Order(3)
-    @DisplayName("create — stores entity and returns it with same ID")
-    void create_storesAndReturnsEntity() {
-        Entity entity = entity(UUID.randomUUID(), Map.of("name", "CephWidget", "price", 7.50));
+    @Order(3) // GH-90000
+    @DisplayName("create — stores entity and returns it with same ID [GH-90000]")
+    void create_storesAndReturnsEntity() { // GH-90000
+        Entity entity = entity(UUID.randomUUID(), Map.of("name", "CephWidget", "price", 7.50)); // GH-90000
 
-        Entity saved = runPromise(() -> connector.create(entity));
+        Entity saved = runPromise(() -> connector.create(entity)); // GH-90000
 
-        assertThat(saved.getId()).isEqualTo(entity.getId());
-        assertThat(saved.getTenantId()).isEqualTo(TENANT);
+        assertThat(saved.getId()).isEqualTo(entity.getId()); // GH-90000
+        assertThat(saved.getTenantId()).isEqualTo(TENANT); // GH-90000
     }
 
     // ── READ ─────────────────────────────────────────────────────────────────
 
     @Test
-    @Order(4)
-    @DisplayName("read — retrieves previously stored entity")
-    void read_retrievesStoredEntity() {
-        UUID id     = UUID.randomUUID();
-        Entity entity = entity(id, Map.of("key", "value"));
-        runPromise(() -> connector.create(entity));
+    @Order(4) // GH-90000
+    @DisplayName("read — retrieves previously stored entity [GH-90000]")
+    void read_retrievesStoredEntity() { // GH-90000
+        UUID id     = UUID.randomUUID(); // GH-90000
+        Entity entity = entity(id, Map.of("key", "value")); // GH-90000
+        runPromise(() -> connector.create(entity)); // GH-90000
 
-        Optional<Entity> found = runPromise(() -> connector.read(collectionId, TENANT, id));
+        Optional<Entity> found = runPromise(() -> connector.read(collectionId, TENANT, id)); // GH-90000
 
-        assertThat(found).isPresent();
+        assertThat(found).isPresent(); // GH-90000
     }
 
     @Test
-    @Order(5)
-    @DisplayName("read — returns empty for unknown ID")
-    void read_returnsEmptyForUnknownId() {
-        Optional<Entity> found = runPromise(() ->
-                connector.read(collectionId, TENANT, UUID.randomUUID()));
-        assertThat(found).isEmpty();
+    @Order(5) // GH-90000
+    @DisplayName("read — returns empty for unknown ID [GH-90000]")
+    void read_returnsEmptyForUnknownId() { // GH-90000
+        Optional<Entity> found = runPromise(() -> // GH-90000
+                connector.read(collectionId, TENANT, UUID.randomUUID())); // GH-90000
+        assertThat(found).isEmpty(); // GH-90000
     }
 
     // ── UPDATE ───────────────────────────────────────────────────────────────
 
     @Test
-    @Order(6)
-    @DisplayName("update — overwrites object in place")
-    void update_overwritesObject() {
-        UUID id = UUID.randomUUID();
-        Entity original = entity(id, Map.of("version", 1));
-        runPromise(() -> connector.create(original));
+    @Order(6) // GH-90000
+    @DisplayName("update — overwrites object in place [GH-90000]")
+    void update_overwritesObject() { // GH-90000
+        UUID id = UUID.randomUUID(); // GH-90000
+        Entity original = entity(id, Map.of("version", 1)); // GH-90000
+        runPromise(() -> connector.create(original)); // GH-90000
 
-        Entity updated = entity(id, Map.of("version", 2));
-        Entity result  = runPromise(() -> connector.update(updated));
+        Entity updated = entity(id, Map.of("version", 2)); // GH-90000
+        Entity result  = runPromise(() -> connector.update(updated)); // GH-90000
 
-        assertThat(result.getData().get("version")).isEqualTo(2);
+        assertThat(result.getData().get("version [GH-90000]")).isEqualTo(2);
     }
 
     // ── DELETE ───────────────────────────────────────────────────────────────
 
     @Test
-    @Order(7)
-    @DisplayName("delete — object no longer findable after deletion")
-    void delete_objectNoLongerFindable() {
-        UUID id = UUID.randomUUID();
-        runPromise(() -> connector.create(entity(id, Map.of("x", 1))));
+    @Order(7) // GH-90000
+    @DisplayName("delete — object no longer findable after deletion [GH-90000]")
+    void delete_objectNoLongerFindable() { // GH-90000
+        UUID id = UUID.randomUUID(); // GH-90000
+        runPromise(() -> connector.create(entity(id, Map.of("x", 1)))); // GH-90000
 
-        runPromise(() -> connector.delete(collectionId, TENANT, id));
+        runPromise(() -> connector.delete(collectionId, TENANT, id)); // GH-90000
 
-        Optional<Entity> found = runPromise(() -> connector.read(collectionId, TENANT, id));
-        assertThat(found).isEmpty();
+        Optional<Entity> found = runPromise(() -> connector.read(collectionId, TENANT, id)); // GH-90000
+        assertThat(found).isEmpty(); // GH-90000
     }
 
     // ── BULK CREATE ──────────────────────────────────────────────────────────
 
     @Test
-    @Order(8)
-    @DisplayName("bulkCreate — creates all entities")
-    void bulkCreate_createsAllEntities() {
-        List<Entity> batch = List.of(
-                entity(UUID.randomUUID(), Map.of("idx", 0)),
-                entity(UUID.randomUUID(), Map.of("idx", 1)),
-                entity(UUID.randomUUID(), Map.of("idx", 2)));
+    @Order(8) // GH-90000
+    @DisplayName("bulkCreate — creates all entities [GH-90000]")
+    void bulkCreate_createsAllEntities() { // GH-90000
+        List<Entity> batch = List.of( // GH-90000
+                entity(UUID.randomUUID(), Map.of("idx", 0)), // GH-90000
+                entity(UUID.randomUUID(), Map.of("idx", 1)), // GH-90000
+                entity(UUID.randomUUID(), Map.of("idx", 2))); // GH-90000
 
-        List<Entity> created = runPromise(() ->
-                connector.bulkCreate(collectionId, TENANT, batch));
+        List<Entity> created = runPromise(() -> // GH-90000
+                connector.bulkCreate(collectionId, TENANT, batch)); // GH-90000
 
-        assertThat(created).hasSize(3);
+        assertThat(created).hasSize(3); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    private Entity entity(UUID id, Map<String, Object> data) {
-        if (id != null) {
-            return Entity.builder()
-                    .id(id)
-                    .tenantId(TENANT)
-                    .collectionName(COLLECTION)
-                    .data(data)
-                    .build();
+    private Entity entity(UUID id, Map<String, Object> data) { // GH-90000
+        if (id != null) { // GH-90000
+            return Entity.builder() // GH-90000
+                    .id(id) // GH-90000
+                    .tenantId(TENANT) // GH-90000
+                    .collectionName(COLLECTION) // GH-90000
+                    .data(data) // GH-90000
+                    .build(); // GH-90000
         }
-        return Entity.builder()
-                .tenantId(TENANT)
-                .collectionName(COLLECTION)
-                .data(data)
-                .build();
+        return Entity.builder() // GH-90000
+                .tenantId(TENANT) // GH-90000
+                .collectionName(COLLECTION) // GH-90000
+                .data(data) // GH-90000
+                .build(); // GH-90000
     }
 }

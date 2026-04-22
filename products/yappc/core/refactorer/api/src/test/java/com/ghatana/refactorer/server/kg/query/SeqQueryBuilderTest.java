@@ -16,85 +16,85 @@ import org.junit.jupiter.api.Test;
 class SeqQueryBuilderTest extends EventloopTestBase {
 
   @Test
-  void testCreateSeqWithTwoEvents() {
-    String spec = SeqQueryBuilder.create("login", "access").build();
-    assertThat(spec).contains("SEQ(login, access)").contains("[5m]").contains("@50");
+  void testCreateSeqWithTwoEvents() { // GH-90000
+    String spec = SeqQueryBuilder.create("login", "access").build(); // GH-90000
+    assertThat(spec).contains("SEQ(login, access) [GH-90000]").contains("[5m] [GH-90000]").contains("@50 [GH-90000]");
   }
 
   @Test
-  void testSeqWithMultipleEvents() {
+  void testSeqWithMultipleEvents() { // GH-90000
     String spec =
-        SeqQueryBuilder.create("login", "data-access", "file-read", "logout").build();
-    assertThat(spec).contains("SEQ(login, data-access, file-read, logout)");
+        SeqQueryBuilder.create("login", "data-access", "file-read", "logout").build(); // GH-90000
+    assertThat(spec).contains("SEQ(login, data-access, file-read, logout) [GH-90000]");
   }
 
   @Test
-  void testSeqWithCustomTimeWindow() {
+  void testSeqWithCustomTimeWindow() { // GH-90000
     String spec =
-        SeqQueryBuilder.create("login", "access")
-            .within(Duration.ofMinutes(30))
-            .build();
-    assertThat(spec).contains("[30m]");
+        SeqQueryBuilder.create("login", "access") // GH-90000
+            .within(Duration.ofMinutes(30)) // GH-90000
+            .build(); // GH-90000
+    assertThat(spec).contains("[30m] [GH-90000]");
   }
 
   @Test
-  void testSeqWithConfidence() {
+  void testSeqWithConfidence() { // GH-90000
     String spec =
-        SeqQueryBuilder.create("login", "access")
-            .confidence(0.85)
-            .build();
-    assertThat(spec).contains("@85");
+        SeqQueryBuilder.create("login", "access") // GH-90000
+            .confidence(0.85) // GH-90000
+            .build(); // GH-90000
+    assertThat(spec).contains("@85 [GH-90000]");
   }
 
   @Test
-  void testSeqWithAllParameters() {
+  void testSeqWithAllParameters() { // GH-90000
     String spec =
-        SeqQueryBuilder.create("event1", "event2", "event3")
-            .within(Duration.ofMinutes(10))
-            .confidence(0.92)
-            .description("Test sequence pattern")
-            .build();
-    assertThat(spec)
-        .contains("SEQ(event1, event2, event3)")
-        .contains("[10m]")
-        .contains("@92");
+        SeqQueryBuilder.create("event1", "event2", "event3") // GH-90000
+            .within(Duration.ofMinutes(10)) // GH-90000
+            .confidence(0.92) // GH-90000
+            .description("Test sequence pattern [GH-90000]")
+            .build(); // GH-90000
+    assertThat(spec) // GH-90000
+        .contains("SEQ(event1, event2, event3) [GH-90000]")
+        .contains("[10m] [GH-90000]")
+        .contains("@92 [GH-90000]");
   }
 
   @Test
-  void testSeqRequiresAtLeastTwoEvents() {
-    assertThatThrownBy(() -> SeqQueryBuilder.create("single"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("SEQ pattern requires at least 2 event types");
+  void testSeqRequiresAtLeastTwoEvents() { // GH-90000
+    assertThatThrownBy(() -> SeqQueryBuilder.create("single [GH-90000]"))
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessage("SEQ pattern requires at least 2 event types [GH-90000]");
   }
 
   @Test
-  void testSeqWithInvalidConfidence() {
-    SeqQueryBuilder builder = SeqQueryBuilder.create("a", "b");
-    assertThatThrownBy(() -> builder.confidence(1.5))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Confidence must be between 0 and 1");
+  void testSeqWithInvalidConfidence() { // GH-90000
+    SeqQueryBuilder builder = SeqQueryBuilder.create("a", "b"); // GH-90000
+    assertThatThrownBy(() -> builder.confidence(1.5)) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessage("Confidence must be between 0 and 1 [GH-90000]");
   }
 
   @Test
-  void testSeqGettersReturnCorrectValues() {
+  void testSeqGettersReturnCorrectValues() { // GH-90000
     SeqQueryBuilder builder =
-        SeqQueryBuilder.create("login", "access")
-            .within(Duration.ofMinutes(15))
-            .confidence(0.75);
+        SeqQueryBuilder.create("login", "access") // GH-90000
+            .within(Duration.ofMinutes(15)) // GH-90000
+            .confidence(0.75); // GH-90000
 
-    assertThat(builder.getEventTypes()).containsExactly("login", "access");
-    assertThat(builder.getTimeWindow()).isEqualTo(Duration.ofMinutes(15));
-    assertThat(builder.getConfidence()).isEqualTo(0.75);
+    assertThat(builder.getEventTypes()).containsExactly("login", "access"); // GH-90000
+    assertThat(builder.getTimeWindow()).isEqualTo(Duration.ofMinutes(15)); // GH-90000
+    assertThat(builder.getConfidence()).isEqualTo(0.75); // GH-90000
   }
 
   @Test
-  void testSeqChaining() {
+  void testSeqChaining() { // GH-90000
     String spec =
-        SeqQueryBuilder.create("a", "b")
-            .within(Duration.ofSeconds(30))
-            .confidence(0.5)
-            .description("desc")
-            .build();
-    assertThat(spec).isNotBlank();
+        SeqQueryBuilder.create("a", "b") // GH-90000
+            .within(Duration.ofSeconds(30)) // GH-90000
+            .confidence(0.5) // GH-90000
+            .description("desc [GH-90000]")
+            .build(); // GH-90000
+    assertThat(spec).isNotBlank(); // GH-90000
   }
 }

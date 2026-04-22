@@ -389,10 +389,10 @@ describe('ThreatIntelligenceService', () => {
      */
     it('should update threat cache', async () => {
       // GIVEN & WHEN
-      await service.updateThreatIntelligence();
+      const updatedThreatCount = await service.updateThreatIntelligence();
 
-      // THEN - should complete without error
-      expect(true).toBe(true);
+      // THEN - update returns the current cache size
+      expect(updatedThreatCount).toBeGreaterThanOrEqual(0);
     });
 
     /**

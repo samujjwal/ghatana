@@ -20,85 +20,85 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Validates tenant isolation enforcement including strict/lenient modes,
  * authentication requirements, role-based access, and cross-tenant validation.
  */
-@DisplayName("TenantIsolationEnforcer")
+@DisplayName("TenantIsolationEnforcer [GH-90000]")
 class TenantIsolationEnforcerTest {
 
     @AfterEach
-    void tearDown() {
-        TenantContext.clear();
+    void tearDown() { // GH-90000
+        TenantContext.clear(); // GH-90000
     }
 
     // ---- getTenantIdOrThrow ----
 
     @Nested
-    @DisplayName("getTenantIdOrThrow")
+    @DisplayName("getTenantIdOrThrow [GH-90000]")
     class GetTenantIdOrThrow {
 
         @Test
-        @DisplayName("strict mode with no context throws TenantIsolationException")
-        void strictMode_noContext_throws() {
-            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("strict mode with no context throws TenantIsolationException [GH-90000]")
+        void strictMode_noContext_throws() { // GH-90000
+            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-            assertThatThrownBy(enforcer::getTenantIdOrThrow)
-                    .isInstanceOf(TenantIsolationException.class)
-                    .hasMessageContaining("No tenant context set");
+            assertThatThrownBy(enforcer::getTenantIdOrThrow) // GH-90000
+                    .isInstanceOf(TenantIsolationException.class) // GH-90000
+                    .hasMessageContaining("No tenant context set [GH-90000]");
         }
 
         @Test
-        @DisplayName("strict mode with principal set returns tenant ID")
-        void strictMode_withPrincipal_returnsTenantId() throws Exception {
-            Principal principal = new Principal("alice", List.of("viewer"), "tenant-abc");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("strict mode with principal set returns tenant ID [GH-90000]")
+        void strictMode_withPrincipal_returnsTenantId() throws Exception { // GH-90000
+            Principal principal = new Principal("alice", List.of("viewer [GH-90000]"), "tenant-abc");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-                assertThat(enforcer.getTenantIdOrThrow()).isEqualTo("tenant-abc");
+                assertThat(enforcer.getTenantIdOrThrow()).isEqualTo("tenant-abc [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("strict mode with default-tenant principal succeeds because principal exists")
-        void strictMode_defaultTenantWithPrincipal_returnsTenantId() throws Exception {
-            Principal principal = new Principal("system", List.of("admin"), "default-tenant");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("strict mode with default-tenant principal succeeds because principal exists [GH-90000]")
+        void strictMode_defaultTenantWithPrincipal_returnsTenantId() throws Exception { // GH-90000
+            Principal principal = new Principal("system", List.of("admin [GH-90000]"), "default-tenant");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-                assertThat(enforcer.getTenantIdOrThrow()).isEqualTo("default-tenant");
+                assertThat(enforcer.getTenantIdOrThrow()).isEqualTo("default-tenant [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("lenient mode with no context returns default-tenant")
-        void lenientMode_noContext_returnsDefault() {
-            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.lenient();
+        @DisplayName("lenient mode with no context returns default-tenant [GH-90000]")
+        void lenientMode_noContext_returnsDefault() { // GH-90000
+            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.lenient(); // GH-90000
 
-            assertThat(enforcer.getTenantIdOrThrow()).isEqualTo("default-tenant");
+            assertThat(enforcer.getTenantIdOrThrow()).isEqualTo("default-tenant [GH-90000]");
         }
     }
 
     // ---- getTenantId ----
 
     @Nested
-    @DisplayName("getTenantId")
+    @DisplayName("getTenantId [GH-90000]")
     class GetTenantId {
 
         @Test
-        @DisplayName("returns empty when no context is set")
-        void noContext_returnsEmpty() {
-            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("returns empty when no context is set [GH-90000]")
+        void noContext_returnsEmpty() { // GH-90000
+            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-            assertThat(enforcer.getTenantId()).isEmpty();
+            assertThat(enforcer.getTenantId()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns tenant ID when context is set")
-        void withContext_returnsTenantId() throws Exception {
-            Principal principal = new Principal("bob", List.of("editor"), "tenant-xyz");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("returns tenant ID when context is set [GH-90000]")
+        void withContext_returnsTenantId() throws Exception { // GH-90000
+            Principal principal = new Principal("bob", List.of("editor [GH-90000]"), "tenant-xyz");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-                assertThat(enforcer.getTenantId())
-                        .isPresent()
-                        .hasValue("tenant-xyz");
+                assertThat(enforcer.getTenantId()) // GH-90000
+                        .isPresent() // GH-90000
+                        .hasValue("tenant-xyz [GH-90000]");
             }
         }
     }
@@ -106,28 +106,28 @@ class TenantIsolationEnforcerTest {
     // ---- requireAuthenticated ----
 
     @Nested
-    @DisplayName("requireAuthenticated")
+    @DisplayName("requireAuthenticated [GH-90000]")
     class RequireAuthenticated {
 
         @Test
-        @DisplayName("throws when no principal in context")
-        void noPrincipal_throws() {
-            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("throws when no principal in context [GH-90000]")
+        void noPrincipal_throws() { // GH-90000
+            TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-            assertThatThrownBy(enforcer::requireAuthenticated)
-                    .isInstanceOf(TenantIsolationException.class)
-                    .hasMessageContaining("Authentication required");
+            assertThatThrownBy(enforcer::requireAuthenticated) // GH-90000
+                    .isInstanceOf(TenantIsolationException.class) // GH-90000
+                    .hasMessageContaining("Authentication required [GH-90000]");
         }
 
         @Test
-        @DisplayName("succeeds when principal is present")
-        void withPrincipal_succeeds() throws Exception {
-            Principal principal = new Principal("carol", List.of("viewer"), "tenant-1");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("succeeds when principal is present [GH-90000]")
+        void withPrincipal_succeeds() throws Exception { // GH-90000
+            Principal principal = new Principal("carol", List.of("viewer [GH-90000]"), "tenant-1");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
                 // Should not throw
-                enforcer.requireAuthenticated();
+                enforcer.requireAuthenticated(); // GH-90000
             }
         }
     }
@@ -135,44 +135,44 @@ class TenantIsolationEnforcerTest {
     // ---- requireRole ----
 
     @Nested
-    @DisplayName("requireRole")
+    @DisplayName("requireRole [GH-90000]")
     class RequireRole {
 
         @Test
-        @DisplayName("succeeds when principal has matching role")
-        void matchingRole_succeeds() throws Exception {
-            Principal principal = new Principal("dave", List.of("admin", "editor"), "tenant-1");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("succeeds when principal has matching role [GH-90000]")
+        void matchingRole_succeeds() throws Exception { // GH-90000
+            Principal principal = new Principal("dave", List.of("admin", "editor"), "tenant-1"); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
                 // Should not throw
-                enforcer.requireRole("admin");
+                enforcer.requireRole("admin [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("succeeds when principal has one of multiple required roles")
-        void oneOfMultipleRoles_succeeds() throws Exception {
-            Principal principal = new Principal("eve", List.of("viewer"), "tenant-1");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("succeeds when principal has one of multiple required roles [GH-90000]")
+        void oneOfMultipleRoles_succeeds() throws Exception { // GH-90000
+            Principal principal = new Principal("eve", List.of("viewer [GH-90000]"), "tenant-1");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
                 // Should not throw — viewer matches one of the required roles
-                enforcer.requireRole("admin", "viewer");
+                enforcer.requireRole("admin", "viewer"); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("throws when principal lacks required role")
-        void noMatchingRole_throws() throws Exception {
-            Principal principal = new Principal("frank", List.of("viewer"), "tenant-1");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("throws when principal lacks required role [GH-90000]")
+        void noMatchingRole_throws() throws Exception { // GH-90000
+            Principal principal = new Principal("frank", List.of("viewer [GH-90000]"), "tenant-1");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-                assertThatThrownBy(() -> enforcer.requireRole("admin"))
-                        .isInstanceOf(TenantIsolationException.class)
-                        .hasMessageContaining("Access denied")
-                        .hasMessageContaining("admin");
+                assertThatThrownBy(() -> enforcer.requireRole("admin [GH-90000]"))
+                        .isInstanceOf(TenantIsolationException.class) // GH-90000
+                        .hasMessageContaining("Access denied [GH-90000]")
+                        .hasMessageContaining("admin [GH-90000]");
             }
         }
     }
@@ -180,50 +180,50 @@ class TenantIsolationEnforcerTest {
     // ---- validateTenantAccess ----
 
     @Nested
-    @DisplayName("validateTenantAccess")
+    @DisplayName("validateTenantAccess [GH-90000]")
     class ValidateTenantAccess {
 
         @Test
-        @DisplayName("matching tenant passes without violation")
-        void matchingTenant_noViolation() throws Exception {
-            Principal principal = new Principal("grace", List.of("viewer"), "tenant-match");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("matching tenant passes without violation [GH-90000]")
+        void matchingTenant_noViolation() throws Exception { // GH-90000
+            Principal principal = new Principal("grace", List.of("viewer [GH-90000]"), "tenant-match");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
                 // Should not throw
-                enforcer.validateTenantAccess("tenant-match");
+                enforcer.validateTenantAccess("tenant-match [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("mismatching tenant in strict mode throws exception")
-        void mismatchingTenant_strict_throws() throws Exception {
-            Principal principal = new Principal("hank", List.of("viewer"), "tenant-A");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
+        @DisplayName("mismatching tenant in strict mode throws exception [GH-90000]")
+        void mismatchingTenant_strict_throws() throws Exception { // GH-90000
+            Principal principal = new Principal("hank", List.of("viewer [GH-90000]"), "tenant-A");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant(); // GH-90000
 
-                assertThatThrownBy(() -> enforcer.validateTenantAccess("tenant-B"))
-                        .isInstanceOf(TenantIsolationException.class)
-                        .hasMessageContaining("Tenant isolation violation");
+                assertThatThrownBy(() -> enforcer.validateTenantAccess("tenant-B [GH-90000]"))
+                        .isInstanceOf(TenantIsolationException.class) // GH-90000
+                        .hasMessageContaining("Tenant isolation violation [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("mismatching tenant with custom handler invokes handler")
-        void mismatchingTenant_customHandler_invoked() throws Exception {
-            AtomicReference<TenantIsolationEnforcer.TenantViolation> captured = new AtomicReference<>();
+        @DisplayName("mismatching tenant with custom handler invokes handler [GH-90000]")
+        void mismatchingTenant_customHandler_invoked() throws Exception { // GH-90000
+            AtomicReference<TenantIsolationEnforcer.TenantViolation> captured = new AtomicReference<>(); // GH-90000
             TenantViolationHandler captureHandler = captured::set;
 
-            Principal principal = new Principal("iris", List.of("viewer"), "tenant-X");
-            try (AutoCloseable scope = TenantContext.scope(principal)) {
-                TenantIsolationEnforcer enforcer = new TenantIsolationEnforcer(true, captureHandler);
+            Principal principal = new Principal("iris", List.of("viewer [GH-90000]"), "tenant-X");
+            try (AutoCloseable scope = TenantContext.scope(principal)) { // GH-90000
+                TenantIsolationEnforcer enforcer = new TenantIsolationEnforcer(true, captureHandler); // GH-90000
 
-                enforcer.validateTenantAccess("tenant-Y");
+                enforcer.validateTenantAccess("tenant-Y [GH-90000]");
 
-                assertThat(captured.get()).isNotNull();
-                assertThat(captured.get().requestedTenantId()).isEqualTo("tenant-X");
-                assertThat(captured.get().actualTenantId()).isEqualTo("tenant-Y");
-                assertThat(captured.get().principalName()).isEqualTo("iris");
+                assertThat(captured.get()).isNotNull(); // GH-90000
+                assertThat(captured.get().requestedTenantId()).isEqualTo("tenant-X [GH-90000]");
+                assertThat(captured.get().actualTenantId()).isEqualTo("tenant-Y [GH-90000]");
+                assertThat(captured.get().principalName()).isEqualTo("iris [GH-90000]");
             }
         }
     }
@@ -231,51 +231,51 @@ class TenantIsolationEnforcerTest {
     // ---- executeAs ----
 
     @Nested
-    @DisplayName("executeAs")
+    @DisplayName("executeAs [GH-90000]")
     class ExecuteAs {
 
         @Test
-        @DisplayName("runs operation with the specified tenant context")
-        void executeAs_setsTenantContext() {
-            Principal principal = new Principal("admin-user", List.of("admin"), "admin-tenant");
+        @DisplayName("runs operation with the specified tenant context [GH-90000]")
+        void executeAs_setsTenantContext() { // GH-90000
+            Principal principal = new Principal("admin-user", List.of("admin [GH-90000]"), "admin-tenant");
 
-            String result = TenantIsolationEnforcer.executeAs("target-tenant", principal, () -> {
-                return TenantContext.getCurrentTenantId();
+            String result = TenantIsolationEnforcer.executeAs("target-tenant", principal, () -> { // GH-90000
+                return TenantContext.getCurrentTenantId(); // GH-90000
             });
 
-            // The executeAs uses the principal's tenantId (which equals "admin-tenant"),
-            // because TenantContext.scope sets tenantId from principal.getTenantId()
-            assertThat(result).isEqualTo("admin-tenant");
+            // The executeAs uses the principal's tenantId (which equals "admin-tenant"), // GH-90000
+            // because TenantContext.scope sets tenantId from principal.getTenantId() // GH-90000
+            assertThat(result).isEqualTo("admin-tenant [GH-90000]");
         }
 
         @Test
-        @DisplayName("executeAs with null principal creates system principal")
-        void executeAs_nullPrincipal_createsSystem() {
-            String result = TenantIsolationEnforcer.executeAs("sys-tenant", null, () -> {
-                Optional<Principal> current = TenantContext.current();
-                assertThat(current).isPresent();
-                assertThat(current.get().getName()).isEqualTo("system");
-                assertThat(current.get().getTenantId()).isEqualTo("sys-tenant");
-                return TenantContext.getCurrentTenantId();
+        @DisplayName("executeAs with null principal creates system principal [GH-90000]")
+        void executeAs_nullPrincipal_createsSystem() { // GH-90000
+            String result = TenantIsolationEnforcer.executeAs("sys-tenant", null, () -> { // GH-90000
+                Optional<Principal> current = TenantContext.current(); // GH-90000
+                assertThat(current).isPresent(); // GH-90000
+                assertThat(current.get().getName()).isEqualTo("system [GH-90000]");
+                assertThat(current.get().getTenantId()).isEqualTo("sys-tenant [GH-90000]");
+                return TenantContext.getCurrentTenantId(); // GH-90000
             });
 
-            assertThat(result).isEqualTo("sys-tenant");
+            assertThat(result).isEqualTo("sys-tenant [GH-90000]");
         }
 
         @Test
-        @DisplayName("executeAs restores previous context after completion")
-        void executeAs_restoresPreviousContext() throws Exception {
-            Principal outer = new Principal("outer-user", List.of("viewer"), "outer-tenant");
-            try (AutoCloseable scope = TenantContext.scope(outer)) {
-                TenantIsolationEnforcer.executeAs("inner-tenant", null, () -> {
-                    assertThat(TenantContext.getCurrentTenantId()).isEqualTo("inner-tenant");
+        @DisplayName("executeAs restores previous context after completion [GH-90000]")
+        void executeAs_restoresPreviousContext() throws Exception { // GH-90000
+            Principal outer = new Principal("outer-user", List.of("viewer [GH-90000]"), "outer-tenant");
+            try (AutoCloseable scope = TenantContext.scope(outer)) { // GH-90000
+                TenantIsolationEnforcer.executeAs("inner-tenant", null, () -> { // GH-90000
+                    assertThat(TenantContext.getCurrentTenantId()).isEqualTo("inner-tenant [GH-90000]");
                     return null;
                 });
 
                 // After executeAs, context should be restored
-                assertThat(TenantContext.getCurrentTenantId()).isEqualTo("outer-tenant");
-                assertThat(TenantContext.current()).isPresent();
-                assertThat(TenantContext.current().get().getName()).isEqualTo("outer-user");
+                assertThat(TenantContext.getCurrentTenantId()).isEqualTo("outer-tenant [GH-90000]");
+                assertThat(TenantContext.current()).isPresent(); // GH-90000
+                assertThat(TenantContext.current().get().getName()).isEqualTo("outer-user [GH-90000]");
             }
         }
     }

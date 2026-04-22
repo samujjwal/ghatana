@@ -1,7 +1,7 @@
 /**
  * TreeTable Storybook Stories
  *
- * @package @ghatana/ui
+ * @package @ghatana/design-system
  */
 
 import type { Meta, StoryObj } from '@storybook/react';

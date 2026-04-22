@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.identity;
@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DefaultAuthenticationService")
+@DisplayName("DefaultAuthenticationService [GH-90000]")
 class AuthenticationServiceTest extends EventloopTestBase {
 
     private DefaultAuthenticationService authService;
@@ -35,253 +35,253 @@ class AuthenticationServiceTest extends EventloopTestBase {
     private InMemoryIdentityResolver resolver;
 
     @BeforeEach
-    void setUp() {
-        tokenProvider = new DefaultTokenProvider();
-        resolver = new InMemoryIdentityResolver();
-        identityService = new DefaultIdentityService(resolver);
-        authService = new DefaultAuthenticationService(tokenProvider, identityService);
+    void setUp() { // GH-90000
+        tokenProvider = new DefaultTokenProvider(); // GH-90000
+        resolver = new InMemoryIdentityResolver(); // GH-90000
+        identityService = new DefaultIdentityService(resolver); // GH-90000
+        authService = new DefaultAuthenticationService(tokenProvider, identityService); // GH-90000
 
         // Register test agent
-        AgentIdentity agent = new AgentIdentity("t1", "agent-1",
-            "spiffe://ghatana.io/t1/agent-1", Set.of("read", "write"), Instant.now());
-        resolver.register(agent);
+        AgentIdentity agent = new AgentIdentity("t1", "agent-1", // GH-90000
+            "spiffe://ghatana.io/t1/agent-1", Set.of("read", "write"), Instant.now()); // GH-90000
+        resolver.register(agent); // GH-90000
     }
 
     @Nested
-    @DisplayName("recordFailedAttempt()")
+    @DisplayName("recordFailedAttempt() [GH-90000]")
     class FailedAttemptTests {
 
         @Test
-        @DisplayName("Records and increments failed attempts")
-        void recordsFailedAttempts() {
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+        @DisplayName("Records and increments failed attempts [GH-90000]")
+        void recordsFailedAttempts() { // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
 
-            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(lockout).isEmpty(); // Not locked yet (need 5 attempts)
+            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(lockout).isEmpty(); // Not locked yet (need 5 attempts) // GH-90000
         }
 
         @Test
-        @DisplayName("Locks account after 5 failed attempts")
-        void locksAfter5Attempts() {
-            for (int i = 0; i < 5; i++) {
-                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+        @DisplayName("Locks account after 5 failed attempts [GH-90000]")
+        void locksAfter5Attempts() { // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
+                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             }
 
-            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(lockout).isPresent();
-            assertThat(lockout.get().failedAttempts()).isEqualTo(5);
-            assertThat(lockout.get().isActive()).isTrue();
+            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(lockout).isPresent(); // GH-90000
+            assertThat(lockout.get().failedAttempts()).isEqualTo(5); // GH-90000
+            assertThat(lockout.get().isActive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("Different tenants have separate counters")
-        void tenantSeparation() {
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
-            runPromise(() -> authService.recordFailedAttempt("t2", "agent-1"));
+        @DisplayName("Different tenants have separate counters [GH-90000]")
+        void tenantSeparation() { // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t2", "agent-1")); // GH-90000
 
-            Optional<LockoutInfo> t1Lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            Optional<LockoutInfo> t2Lockout = runPromise(() -> authService.checkLockout("t2", "agent-1"));
+            Optional<LockoutInfo> t1Lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            Optional<LockoutInfo> t2Lockout = runPromise(() -> authService.checkLockout("t2", "agent-1")); // GH-90000
 
-            assertThat(t1Lockout).isEmpty();
-            assertThat(t2Lockout).isEmpty();
+            assertThat(t1Lockout).isEmpty(); // GH-90000
+            assertThat(t2Lockout).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("checkLockout()")
+    @DisplayName("checkLockout() [GH-90000]")
     class LockoutCheckTests {
 
         @Test
-        @DisplayName("Returns empty when not locked")
-        void returnsEmptyWhenNotLocked() {
-            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(lockout).isEmpty();
+        @DisplayName("Returns empty when not locked [GH-90000]")
+        void returnsEmptyWhenNotLocked() { // GH-90000
+            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(lockout).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Returns active lockout info")
-        void returnsLockoutInfo() {
-            for (int i = 0; i < 5; i++) {
-                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+        @DisplayName("Returns active lockout info [GH-90000]")
+        void returnsLockoutInfo() { // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
+                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             }
 
-            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(lockout).isPresent();
-            assertThat(lockout.get().failedAttempts()).isEqualTo(5);
-            assertThat(lockout.get().remainingTime()).isGreaterThan(Duration.ZERO);
+            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(lockout).isPresent(); // GH-90000
+            assertThat(lockout.get().failedAttempts()).isEqualTo(5); // GH-90000
+            assertThat(lockout.get().remainingTime()).isGreaterThan(Duration.ZERO); // GH-90000
         }
 
         @Test
-        @DisplayName("Expires lockout after grace period")
-        void expiresLockoutAfterDelay() {
-            for (int i = 0; i < 5; i++) {
-                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+        @DisplayName("Expires lockout after grace period [GH-90000]")
+        void expiresLockoutAfterDelay() { // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
+                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             }
 
-            Optional<LockoutInfo> locked = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(locked).isPresent();
+            Optional<LockoutInfo> locked = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(locked).isPresent(); // GH-90000
 
             // Note: In actual test, we'd wait for grace period; this validates the inactive case
             // For now, just verify structure
-            assertThat(locked.get().isActive()).isTrue();
+            assertThat(locked.get().isActive()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("resetFailedAttempts()")
+    @DisplayName("resetFailedAttempts() [GH-90000]")
     class ResetFailedAttemptsTests {
 
         @Test
-        @DisplayName("Clears failed attempt counter")
-        void clearsCounter() {
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
-            runPromise(() -> authService.resetFailedAttempts("t1", "agent-1"));
+        @DisplayName("Clears failed attempt counter [GH-90000]")
+        void clearsCounter() { // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
+            runPromise(() -> authService.resetFailedAttempts("t1", "agent-1")); // GH-90000
 
-            for (int i = 0; i < 4; i++) {
-                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+            for (int i = 0; i < 4; i++) { // GH-90000
+                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             }
 
-            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(lockout).isEmpty(); // Would be locked if counter wasn't reset
+            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(lockout).isEmpty(); // Would be locked if counter wasn't reset // GH-90000
         }
 
         @Test
-        @DisplayName("Removes active lockout")
-        void removesLockout() {
-            for (int i = 0; i < 5; i++) {
-                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+        @DisplayName("Removes active lockout [GH-90000]")
+        void removesLockout() { // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
+                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             }
 
-            Optional<LockoutInfo> locked = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(locked).isPresent();
+            Optional<LockoutInfo> locked = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(locked).isPresent(); // GH-90000
 
-            runPromise(() -> authService.resetFailedAttempts("t1", "agent-1"));
-            Optional<LockoutInfo> unlocked = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(unlocked).isEmpty();
+            runPromise(() -> authService.resetFailedAttempts("t1", "agent-1")); // GH-90000
+            Optional<LockoutInfo> unlocked = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(unlocked).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("authenticate()")
+    @DisplayName("authenticate() [GH-90000]")
     class AuthenticateTests {
 
         @Test
-        @DisplayName("Successful authentication returns session token")
-        void successfulAuthReturnsToken() {
-            Optional<String> sessionToken = runPromise(() ->
-                authService.authenticate("t1", "agent-1", "valid-hash"));
+        @DisplayName("Successful authentication returns session token [GH-90000]")
+        void successfulAuthReturnsToken() { // GH-90000
+            Optional<String> sessionToken = runPromise(() -> // GH-90000
+                authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
 
-            assertThat(sessionToken).isPresent();
-            assertThat(sessionToken.get()).isNotBlank();
+            assertThat(sessionToken).isPresent(); // GH-90000
+            assertThat(sessionToken.get()).isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("Failed authentication with invalid credentials")
-        void failedAuthWithInvalidCredentials() {
-            Optional<String> sessionToken = runPromise(() ->
-                authService.authenticate("t1", "agent-1", ""));
+        @DisplayName("Failed authentication with invalid credentials [GH-90000]")
+        void failedAuthWithInvalidCredentials() { // GH-90000
+            Optional<String> sessionToken = runPromise(() -> // GH-90000
+                authService.authenticate("t1", "agent-1", "")); // GH-90000
 
-            assertThat(sessionToken).isEmpty();
+            assertThat(sessionToken).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Failed authentication increments attempt counter")
-        void failedAuthIncrementsCounter() {
-            runPromise(() -> authService.authenticate("t1", "agent-1", ""));
-            runPromise(() -> authService.authenticate("t1", "agent-1", ""));
+        @DisplayName("Failed authentication increments attempt counter [GH-90000]")
+        void failedAuthIncrementsCounter() { // GH-90000
+            runPromise(() -> authService.authenticate("t1", "agent-1", "")); // GH-90000
+            runPromise(() -> authService.authenticate("t1", "agent-1", "")); // GH-90000
 
-            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(lockout).isEmpty(); // Not locked yet
+            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(lockout).isEmpty(); // Not locked yet // GH-90000
         }
 
         @Test
-        @DisplayName("Cannot authenticate when locked")
-        void cannotAuthWhenLocked() {
+        @DisplayName("Cannot authenticate when locked [GH-90000]")
+        void cannotAuthWhenLocked() { // GH-90000
             // Lock the account
-            for (int i = 0; i < 5; i++) {
-                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+            for (int i = 0; i < 5; i++) { // GH-90000
+                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             }
 
-            Optional<String> sessionToken = runPromise(() ->
-                authService.authenticate("t1", "agent-1", "valid-hash"));
+            Optional<String> sessionToken = runPromise(() -> // GH-90000
+                authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
 
-            assertThat(sessionToken).isEmpty();
+            assertThat(sessionToken).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Successful auth resets failed attempts")
-        void successfulAuthResetsAttempts() {
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
-            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+        @DisplayName("Successful auth resets failed attempts [GH-90000]")
+        void successfulAuthResetsAttempts() { // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
+            runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
 
-            runPromise(() -> authService.authenticate("t1", "agent-1", "valid-hash"));
+            runPromise(() -> authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
 
             // Should be able to fail 5 times again without lockout
-            for (int i = 0; i < 4; i++) {
-                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1"));
+            for (int i = 0; i < 4; i++) { // GH-90000
+                runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             }
 
-            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1"));
-            assertThat(lockout).isEmpty();
+            Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
+            assertThat(lockout).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Authentication rejects unknown agent")
-        void authRejectsUnknownAgent() {
-            Optional<String> sessionToken = runPromise(() ->
-                authService.authenticate("t1", "unknown-agent", "valid-hash"));
+        @DisplayName("Authentication rejects unknown agent [GH-90000]")
+        void authRejectsUnknownAgent() { // GH-90000
+            Optional<String> sessionToken = runPromise(() -> // GH-90000
+                authService.authenticate("t1", "unknown-agent", "valid-hash")); // GH-90000
 
-            assertThat(sessionToken).isEmpty();
+            assertThat(sessionToken).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Authenticated session token is valid immediately")
-        void sessionTokenValid() {
-            Optional<String> sessionToken = runPromise(() ->
-                authService.authenticate("t1", "agent-1", "valid-hash"));
+        @DisplayName("Authenticated session token is valid immediately [GH-90000]")
+        void sessionTokenValid() { // GH-90000
+            Optional<String> sessionToken = runPromise(() -> // GH-90000
+                authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
 
-            assertThat(sessionToken).isPresent();
+            assertThat(sessionToken).isPresent(); // GH-90000
             // Token should be verifiable by tokenProvider
         }
     }
 
     @Nested
-    @DisplayName("logout()")
+    @DisplayName("logout() [GH-90000]")
     class LogoutTests {
 
         @Test
-        @DisplayName("Logout invalidates session token")
-        void logoutInvalidatesToken() {
-            Optional<String> sessionToken = runPromise(() ->
-                authService.authenticate("t1", "agent-1", "valid-hash"));
+        @DisplayName("Logout invalidates session token [GH-90000]")
+        void logoutInvalidatesToken() { // GH-90000
+            Optional<String> sessionToken = runPromise(() -> // GH-90000
+                authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
 
-            assertThat(sessionToken).isPresent();
+            assertThat(sessionToken).isPresent(); // GH-90000
 
-            runPromise(() -> authService.logout(sessionToken.get()));
+            runPromise(() -> authService.logout(sessionToken.get())); // GH-90000
 
-            // Session should be terminated (would be checked by session verification service)
+            // Session should be terminated (would be checked by session verification service) // GH-90000
         }
 
         @Test
-        @DisplayName("Logout unknown token is no-op")
-        void logoutUnknownTokenNoOp() {
+        @DisplayName("Logout unknown token is no-op [GH-90000]")
+        void logoutUnknownTokenNoOp() { // GH-90000
             // Must not throw
-            runPromise(() -> authService.logout("nonexistent-session"));
+            runPromise(() -> authService.logout("nonexistent-session [GH-90000]"));
         }
 
         @Test
-        @DisplayName("Multiple logouts of same token is no-op")
-        void multipleLogoutsNoOp() {
-            Optional<String> sessionToken = runPromise(() ->
-                authService.authenticate("t1", "agent-1", "valid-hash"));
+        @DisplayName("Multiple logouts of same token is no-op [GH-90000]")
+        void multipleLogoutsNoOp() { // GH-90000
+            Optional<String> sessionToken = runPromise(() -> // GH-90000
+                authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
 
-            runPromise(() -> authService.logout(sessionToken.get()));
+            runPromise(() -> authService.logout(sessionToken.get())); // GH-90000
             // Second logout should not throw
-            runPromise(() -> authService.logout(sessionToken.get()));
+            runPromise(() -> authService.logout(sessionToken.get())); // GH-90000
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors
+ * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
  */
 
 package com.ghatana.yappc.core.python;
@@ -24,52 +24,52 @@ import static org.junit.jupiter.api.Assertions.*;
 class PythonBuildSpecTest {
 
     @Test
-    void testBuilderCreatesValidSpec() {
-        PythonBuildSpec spec = PythonBuildSpec.builder()
-                .projectName("test-project")
-                .version("0.1.0")
-                .pythonVersion(">=3.11")
-                .projectType(PythonBuildSpec.PythonProjectType.SERVICE)
-                .buildTool(PythonBuildSpec.PythonBuildTool.UV)
-                .build();
+    void testBuilderCreatesValidSpec() { // GH-90000
+        PythonBuildSpec spec = PythonBuildSpec.builder() // GH-90000
+                .projectName("test-project [GH-90000]")
+                .version("0.1.0 [GH-90000]")
+                .pythonVersion(">=3.11 [GH-90000]")
+                .projectType(PythonBuildSpec.PythonProjectType.SERVICE) // GH-90000
+                .buildTool(PythonBuildSpec.PythonBuildTool.UV) // GH-90000
+                .build(); // GH-90000
 
-        assertEquals("test-project", spec.projectName());
-        assertEquals("0.1.0", spec.version());
-        assertEquals(">=3.11", spec.pythonVersion());
-        assertEquals(PythonBuildSpec.PythonProjectType.SERVICE, spec.projectType());
-        assertEquals(PythonBuildSpec.PythonBuildTool.UV, spec.buildTool());
+        assertEquals("test-project", spec.projectName()); // GH-90000
+        assertEquals("0.1.0", spec.version()); // GH-90000
+        assertEquals(">=3.11", spec.pythonVersion()); // GH-90000
+        assertEquals(PythonBuildSpec.PythonProjectType.SERVICE, spec.projectType()); // GH-90000
+        assertEquals(PythonBuildSpec.PythonBuildTool.UV, spec.buildTool()); // GH-90000
     }
 
     @Test
-    void testBuilderRequiresProjectName() {
-        assertThrows(IllegalStateException.class, () -> {
-            PythonBuildSpec.builder()
-                    .version("0.1.0")
-                    .build();
+    void testBuilderRequiresProjectName() { // GH-90000
+        assertThrows(IllegalStateException.class, () -> { // GH-90000
+            PythonBuildSpec.builder() // GH-90000
+                    .version("0.1.0 [GH-90000]")
+                    .build(); // GH-90000
         });
     }
 
     @Test
-    void testBuilderWithDependencies() {
-        List<PythonBuildSpec.PythonDependency> deps = List.of(
-                new PythonBuildSpec.PythonDependency("fastapi", ">=0.104.0"),
-                new PythonBuildSpec.PythonDependency("uvicorn", ">=0.24.0"));
+    void testBuilderWithDependencies() { // GH-90000
+        List<PythonBuildSpec.PythonDependency> deps = List.of( // GH-90000
+                new PythonBuildSpec.PythonDependency("fastapi", ">=0.104.0"), // GH-90000
+                new PythonBuildSpec.PythonDependency("uvicorn", ">=0.24.0")); // GH-90000
 
-        PythonBuildSpec spec = PythonBuildSpec.builder()
-                .projectName("test-project")
-                .dependencies(deps)
-                .build();
+        PythonBuildSpec spec = PythonBuildSpec.builder() // GH-90000
+                .projectName("test-project [GH-90000]")
+                .dependencies(deps) // GH-90000
+                .build(); // GH-90000
 
-        assertEquals(2, spec.dependencies().size());
-        assertEquals("fastapi", spec.dependencies().get(0).name());
+        assertEquals(2, spec.dependencies().size()); // GH-90000
+        assertEquals("fastapi", spec.dependencies().get(0).name()); // GH-90000
     }
 
     @Test
-    void testDefaultFeatures() {
-        PythonBuildSpec.PythonFeatures features = PythonBuildSpec.PythonFeatures.defaults();
+    void testDefaultFeatures() { // GH-90000
+        PythonBuildSpec.PythonFeatures features = PythonBuildSpec.PythonFeatures.defaults(); // GH-90000
 
-        assertTrue(features.enableLinting());
-        assertTrue(features.enableTypeChecking());
-        assertTrue(features.enableTesting());
+        assertTrue(features.enableLinting()); // GH-90000
+        assertTrue(features.enableTypeChecking()); // GH-90000
+        assertTrue(features.enableTesting()); // GH-90000
     }
 }

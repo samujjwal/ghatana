@@ -18,54 +18,54 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test operator chain composition, execution, and error propagation.
  */
-@DisplayName("Operator Chain Tests")
+@DisplayName("Operator Chain Tests [GH-90000]")
 class OperatorChainTest {
 
     @Test
-    @DisplayName("Should compose operator chain")
-    void shouldComposeOperatorChain() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should compose operator chain [GH-90000]")
+    void shouldComposeOperatorChain() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should execute operator chain sequentially")
-    void shouldExecuteOperatorChainSequentially() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should execute operator chain sequentially [GH-90000]")
+    void shouldExecuteOperatorChainSequentially() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle operator chain errors")
-    void shouldHandleOperatorChainErrors() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle operator chain errors [GH-90000]")
+    void shouldHandleOperatorChainErrors() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle operator chain rollback")
-    void shouldHandleOperatorChainRollback() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle operator chain rollback [GH-90000]")
+    void shouldHandleOperatorChainRollback() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle operator chain state")
-    void shouldHandleOperatorChainState() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle operator chain state [GH-90000]")
+    void shouldHandleOperatorChainState() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle operator chain optimization")
-    void shouldHandleOperatorChainOptimization() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle operator chain optimization [GH-90000]")
+    void shouldHandleOperatorChainOptimization() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 }

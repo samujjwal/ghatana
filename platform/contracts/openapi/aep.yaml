@@ -681,6 +681,25 @@ paths:
                 additionalProperties: true
 
   /api/v1/agents:
+    post:
+      summary: Register a new agent
+      operationId: registerAgent
+      tags: [Agents]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentRegistrationRequest'
+      responses:
+        '200':
+          description: Agent registration result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRegistrationResponse'
     get:
       summary: List registered agents
       operationId: listAgents
@@ -733,16 +752,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/AgentExecuteRequest'
       responses:
         '200':
           description: Agent execution result
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/AgentExecuteResponse'
 
   /api/v1/agents/{agentId}/memory:
     get:
@@ -2230,6 +2247,64 @@ components:
             timestamp:
               type: string
               format: date-time
+
+    AgentRegistrationRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    AgentRegistrationResponse:
+      type: object
+      required: [id, tenantId, status, timestamp]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    AgentExecuteRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        tenantId:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+
+    AgentExecuteResponse:
+      type: object
+      required: [agentId, tenantId, eventId, success, timestamp]
+      properties:
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        eventId:
+          type: string
+        success:
+          type: boolean
+        detections:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
 
     HealthResponse:
       type: object

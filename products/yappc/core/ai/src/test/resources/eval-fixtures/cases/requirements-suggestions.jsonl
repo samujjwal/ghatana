@@ -1,0 +1,3 @@
+{"id":"yappc-req-001","input":{"requirement":"User can export audit logs as CSV"},"expected":{"mustIncludeConcepts":["export","audit logs","CSV"]},"tags":["requirements","suggestion"]}
+{"id":"yappc-req-002","input":{"requirement":"System must support SSO with tenant-scoped access"},"expected":{"mustIncludeConcepts":["SSO","tenant","access control"]},"tags":["requirements","security"]}
+

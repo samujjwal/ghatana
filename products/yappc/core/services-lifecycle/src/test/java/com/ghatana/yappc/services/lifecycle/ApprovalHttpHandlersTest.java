@@ -30,8 +30,8 @@ import static org.mockito.Mockito.lenient;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("ApprovalHttpHandlers")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("ApprovalHttpHandlers [GH-90000]")
 class ApprovalHttpHandlersTest extends EventloopTestBase {
 
     @Mock
@@ -41,205 +41,205 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
     private HumanApprovalService humanApprovalService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() { // GH-90000
         // lenient: publisher stub is only needed for tests that call requestApproval
-        lenient().when(publisher.publish(anyString(), anyString(), any())).thenReturn(Promise.complete());
-        humanApprovalService = new HumanApprovalService(publisher);
-        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        handlers = new ApprovalHttpHandlers(humanApprovalService, objectMapper);
+        lenient().when(publisher.publish(anyString(), anyString(), any())).thenReturn(Promise.complete()); // GH-90000
+        humanApprovalService = new HumanApprovalService(publisher); // GH-90000
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule()); // GH-90000
+        handlers = new ApprovalHttpHandlers(humanApprovalService, objectMapper); // GH-90000
     }
 
     @Test
-    @DisplayName("listPending rejects requests without tenant header")
-    void listPendingRejectsMissingTenantHeader() {
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending").build();
+    @DisplayName("listPending rejects requests without tenant header [GH-90000]")
+    void listPendingRejectsMissingTenantHeader() { // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> handlers.listPending(request));
+        HttpResponse response = runPromise(() -> handlers.listPending(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("listPending returns pending approvals for tenant")
-    void listPendingReturnsPendingApprovals() {
-        ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval(
+    @DisplayName("listPending returns pending approvals for tenant [GH-90000]")
+    void listPendingReturnsPendingApprovals() { // GH-90000
+        ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval( // GH-90000
                 "tenant-1",
                 "project-1",
                 "agent-1",
                 ApprovalRequest.ApprovalType.PHASE_ADVANCE,
-                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria"), List.of())
+                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria [GH-90000]"), List.of())
         ));
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.listPending(request));
-        String body = response.getBody().getString(StandardCharsets.UTF_8);
+        HttpResponse response = runPromise(() -> handlers.listPending(request)); // GH-90000
+        String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        assertThat(body).contains(created.id());
-        assertThat(body).contains("PENDING");
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(body).contains(created.id()); // GH-90000
+        assertThat(body).contains("PENDING [GH-90000]");
     }
 
     @Test
-    @DisplayName("approve transitions request to approved")
-    void approveTransitionsRequest() {
-        ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval(
+    @DisplayName("approve transitions request to approved [GH-90000]")
+    void approveTransitionsRequest() { // GH-90000
+        ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval( // GH-90000
                 "tenant-1",
                 "project-1",
                 "agent-1",
                 ApprovalRequest.ApprovalType.PHASE_ADVANCE,
-                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria"), List.of())
+                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria [GH-90000]"), List.of())
         ));
 
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/" + created.id() + "/approve")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .withBody(ByteBuf.wrapForReading("{\"decidedBy\":\"reviewer-1\"}".getBytes(StandardCharsets.UTF_8)))
-                .build();
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/" + created.id() + "/approve") // GH-90000
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withBody(ByteBuf.wrapForReading("{\"decidedBy\":\"reviewer-1\"}".getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.approve(request, created.id()));
-        String body = response.getBody().getString(StandardCharsets.UTF_8);
+        HttpResponse response = runPromise(() -> handlers.approve(request, created.id())); // GH-90000
+        String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        assertThat(body).contains("APPROVED");
-        assertThat(body).contains("reviewer-1");
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(body).contains("APPROVED [GH-90000]");
+        assertThat(body).contains("reviewer-1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("reject returns conflict when approval request is missing")
-    void rejectReturnsConflictWhenRequestMissing() {
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/missing/reject")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .withBody(ByteBuf.wrapForReading("{\"decidedBy\":\"reviewer-1\"}".getBytes(StandardCharsets.UTF_8)))
-                .build();
+    @DisplayName("reject returns conflict when approval request is missing [GH-90000]")
+    void rejectReturnsConflictWhenRequestMissing() { // GH-90000
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/missing/reject [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withBody(ByteBuf.wrapForReading("{\"decidedBy\":\"reviewer-1\"}".getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.reject(request, "missing"));
-        String body = response.getBody().getString(StandardCharsets.UTF_8);
+        HttpResponse response = runPromise(() -> handlers.reject(request, "missing")); // GH-90000
+        String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(409);
-        assertThat(body).contains("Approval request not found");
+        assertThat(response.getCode()).isEqualTo(409); // GH-90000
+        assertThat(body).contains("Approval request not found [GH-90000]");
     }
 
     @Test
-    @DisplayName("approve rejects malformed payload")
-    void approveRejectsMalformedPayload() {
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/request-1/approve")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .withBody(ByteBuf.wrapForReading("not-json".getBytes(StandardCharsets.UTF_8)))
-                .build();
+    @DisplayName("approve rejects malformed payload [GH-90000]")
+    void approveRejectsMalformedPayload() { // GH-90000
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/request-1/approve [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withBody(ByteBuf.wrapForReading("not-json".getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.approve(request, "request-1"));
+        HttpResponse response = runPromise(() -> handlers.approve(request, "request-1")); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("create returns 400 when missing tenant header")
-    void createRejectsMissingTenantHeader() {
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
-                .withBody(ByteBuf.wrapForReading("{}".getBytes(StandardCharsets.UTF_8)))
-                .build();
+    @DisplayName("create returns 400 when missing tenant header [GH-90000]")
+    void createRejectsMissingTenantHeader() { // GH-90000
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
+                .withBody(ByteBuf.wrapForReading("{}".getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.create(request));
+        HttpResponse response = runPromise(() -> handlers.create(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("create returns 400 when projectId is missing")
-    void createRejectsMissingProjectId() {
+    @DisplayName("create returns 400 when projectId is missing [GH-90000]")
+    void createRejectsMissingProjectId() { // GH-90000
         String body = "{\"approvalType\":\"PHASE_ADVANCE\"}";
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)))
-                .build();
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.create(request));
+        HttpResponse response = runPromise(() -> handlers.create(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(400);
-        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("projectId");
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
+        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("projectId [GH-90000]");
     }
 
     @Test
-    @DisplayName("create returns 400 for unknown approvalType")
-    void createRejectsUnknownApprovalType() {
+    @DisplayName("create returns 400 for unknown approvalType [GH-90000]")
+    void createRejectsUnknownApprovalType() { // GH-90000
         String body = "{\"projectId\":\"p1\",\"approvalType\":\"NONEXISTENT\"}";
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)))
-                .build();
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.create(request));
+        HttpResponse response = runPromise(() -> handlers.create(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(400);
-        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("NONEXISTENT");
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
+        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("NONEXISTENT [GH-90000]");
     }
 
     @Test
-    @DisplayName("create returns 201 and persists a new PENDING approval request")
-    void createPersistsNewPendingApprovalRequest() {
+    @DisplayName("create returns 201 and persists a new PENDING approval request [GH-90000]")
+    void createPersistsNewPendingApprovalRequest() { // GH-90000
         String body = "{\"projectId\":\"p1\",\"approvalType\":\"PHASE_ADVANCE\","
                 + "\"context\":{\"fromPhase\":\"INTENT\",\"toPhase\":\"SHAPE\","
                 + "\"blockReason\":\"criteria not met\",\"unmetCriteria\":[],\"missingArtifacts\":[]}}";
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8)))
-                .build();
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.create(request));
-        String responseBody = response.getBody().getString(StandardCharsets.UTF_8);
+        HttpResponse response = runPromise(() -> handlers.create(request)); // GH-90000
+        String responseBody = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(201);
-        assertThat(responseBody).contains("PENDING");
-        assertThat(responseBody).contains("p1");
-        assertThat(responseBody).contains("PHASE_ADVANCE");
+        assertThat(response.getCode()).isEqualTo(201); // GH-90000
+        assertThat(responseBody).contains("PENDING [GH-90000]");
+        assertThat(responseBody).contains("p1 [GH-90000]");
+        assertThat(responseBody).contains("PHASE_ADVANCE [GH-90000]");
     }
 
     @Test
-    @DisplayName("getById returns 400 when missing tenant header")
-    void getByIdRejectsMissingTenantHeader() {
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/some-id").build();
+    @DisplayName("getById returns 400 when missing tenant header [GH-90000]")
+    void getByIdRejectsMissingTenantHeader() { // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/some-id [GH-90000]").build();
 
-        HttpResponse response = runPromise(() -> handlers.getById(request, "some-id"));
+        HttpResponse response = runPromise(() -> handlers.getById(request, "some-id")); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("getById returns 404 when request does not exist")
-    void getByIdReturnsNotFoundForMissingRequest() {
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/missing")
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .build();
+    @DisplayName("getById returns 404 when request does not exist [GH-90000]")
+    void getByIdReturnsNotFoundForMissingRequest() { // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/missing [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.getById(request, "missing"));
+        HttpResponse response = runPromise(() -> handlers.getById(request, "missing")); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(404);
-        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("not found");
+        assertThat(response.getCode()).isEqualTo(404); // GH-90000
+        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("not found [GH-90000]");
     }
 
     @Test
-    @DisplayName("getById returns the approval request when it exists")
-    void getByIdReturnsExistingApprovalRequest() {
-        ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval(
+    @DisplayName("getById returns the approval request when it exists [GH-90000]")
+    void getByIdReturnsExistingApprovalRequest() { // GH-90000
+        ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval( // GH-90000
                 "tenant-1",
                 "project-get",
                 null,
                 ApprovalRequest.ApprovalType.DEPLOYMENT,
-                new ApprovalRequest.ApprovalContext("", "", "deployment gate", List.of(), List.of())
+                new ApprovalRequest.ApprovalContext("", "", "deployment gate", List.of(), List.of()) // GH-90000
         ));
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/" + created.id())
-                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
-                .build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/" + created.id()) // GH-90000
+                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> handlers.getById(request, created.id()));
-        String responseBody = response.getBody().getString(StandardCharsets.UTF_8);
+        HttpResponse response = runPromise(() -> handlers.getById(request, created.id())); // GH-90000
+        String responseBody = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        assertThat(responseBody).contains(created.id());
-        assertThat(responseBody).contains("DEPLOYMENT");
-        assertThat(responseBody).contains("PENDING");
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(responseBody).contains(created.id()); // GH-90000
+        assertThat(responseBody).contains("DEPLOYMENT [GH-90000]");
+        assertThat(responseBody).contains("PENDING [GH-90000]");
     }
 }

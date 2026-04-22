@@ -16,255 +16,255 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("ScanType Enum Tests")
+@DisplayName("ScanType Enum Tests [GH-90000]")
 class ScanTypeTest {
 
     @Nested
-    @DisplayName("Display Name Tests")
+    @DisplayName("Display Name Tests [GH-90000]")
     class DisplayNameTests {
 
         @Test
-        @DisplayName("SAST has correct display name")
-        void sastHasCorrectDisplayName() {
-            assertThat(ScanType.SAST.getDisplayName()).isEqualTo("Static Analysis");
+        @DisplayName("SAST has correct display name [GH-90000]")
+        void sastHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.SAST.getDisplayName()).isEqualTo("Static Analysis [GH-90000]");
         }
 
         @Test
-        @DisplayName("DAST has correct display name")
-        void dastHasCorrectDisplayName() {
-            assertThat(ScanType.DAST.getDisplayName()).isEqualTo("Dynamic Analysis");
+        @DisplayName("DAST has correct display name [GH-90000]")
+        void dastHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.DAST.getDisplayName()).isEqualTo("Dynamic Analysis [GH-90000]");
         }
 
         @Test
-        @DisplayName("SCA has correct display name")
-        void scaHasCorrectDisplayName() {
-            assertThat(ScanType.SCA.getDisplayName()).isEqualTo("Dependency Scan");
+        @DisplayName("SCA has correct display name [GH-90000]")
+        void scaHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.SCA.getDisplayName()).isEqualTo("Dependency Scan [GH-90000]");
         }
 
         @Test
-        @DisplayName("IAC has correct display name")
-        void iacHasCorrectDisplayName() {
-            assertThat(ScanType.IAC.getDisplayName()).isEqualTo("IaC Scan");
+        @DisplayName("IAC has correct display name [GH-90000]")
+        void iacHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.IAC.getDisplayName()).isEqualTo("IaC Scan [GH-90000]");
         }
 
         @Test
-        @DisplayName("CONTAINER has correct display name")
-        void containerHasCorrectDisplayName() {
-            assertThat(ScanType.CONTAINER.getDisplayName()).isEqualTo("Container Scan");
+        @DisplayName("CONTAINER has correct display name [GH-90000]")
+        void containerHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.CONTAINER.getDisplayName()).isEqualTo("Container Scan [GH-90000]");
         }
 
         @Test
-        @DisplayName("SECRET has correct display name")
-        void secretHasCorrectDisplayName() {
-            assertThat(ScanType.SECRET.getDisplayName()).isEqualTo("Secret Detection");
+        @DisplayName("SECRET has correct display name [GH-90000]")
+        void secretHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.SECRET.getDisplayName()).isEqualTo("Secret Detection [GH-90000]");
         }
 
         @Test
-        @DisplayName("FULL has correct display name")
-        void fullHasCorrectDisplayName() {
-            assertThat(ScanType.FULL.getDisplayName()).isEqualTo("Full Scan");
+        @DisplayName("FULL has correct display name [GH-90000]")
+        void fullHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.FULL.getDisplayName()).isEqualTo("Full Scan [GH-90000]");
         }
 
         @Test
-        @DisplayName("QUICK has correct display name")
-        void quickHasCorrectDisplayName() {
-            assertThat(ScanType.QUICK.getDisplayName()).isEqualTo("Quick Scan");
+        @DisplayName("QUICK has correct display name [GH-90000]")
+        void quickHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.QUICK.getDisplayName()).isEqualTo("Quick Scan [GH-90000]");
         }
 
         @Test
-        @DisplayName("INCREMENTAL has correct display name")
-        void incrementalHasCorrectDisplayName() {
-            assertThat(ScanType.INCREMENTAL.getDisplayName()).isEqualTo("Incremental Scan");
+        @DisplayName("INCREMENTAL has correct display name [GH-90000]")
+        void incrementalHasCorrectDisplayName() { // GH-90000
+            assertThat(ScanType.INCREMENTAL.getDisplayName()).isEqualTo("Incremental Scan [GH-90000]");
         }
 
         @ParameterizedTest
-        @EnumSource(ScanType.class)
-        @DisplayName("all scan types have non-null display names")
-        void allScanTypesHaveNonNullDisplayNames(ScanType scanType) {
-            assertThat(scanType.getDisplayName())
-                    .as("Display name for %s", scanType.name())
-                    .isNotNull()
-                    .isNotEmpty();
+        @EnumSource(ScanType.class) // GH-90000
+        @DisplayName("all scan types have non-null display names [GH-90000]")
+        void allScanTypesHaveNonNullDisplayNames(ScanType scanType) { // GH-90000
+            assertThat(scanType.getDisplayName()) // GH-90000
+                    .as("Display name for %s", scanType.name()) // GH-90000
+                    .isNotNull() // GH-90000
+                    .isNotEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Description Tests")
+    @DisplayName("Description Tests [GH-90000]")
     class DescriptionTests {
 
         @Test
-        @DisplayName("SAST has correct description")
-        void sastHasCorrectDescription() {
-            assertThat(ScanType.SAST.getDescription())
-                    .isEqualTo("Analyzes source code for security vulnerabilities");
+        @DisplayName("SAST has correct description [GH-90000]")
+        void sastHasCorrectDescription() { // GH-90000
+            assertThat(ScanType.SAST.getDescription()) // GH-90000
+                    .isEqualTo("Analyzes source code for security vulnerabilities [GH-90000]");
         }
 
         @Test
-        @DisplayName("SCA has correct description")
-        void scaHasCorrectDescription() {
-            assertThat(ScanType.SCA.getDescription())
-                    .isEqualTo("Checks third-party dependencies for known vulnerabilities");
+        @DisplayName("SCA has correct description [GH-90000]")
+        void scaHasCorrectDescription() { // GH-90000
+            assertThat(ScanType.SCA.getDescription()) // GH-90000
+                    .isEqualTo("Checks third-party dependencies for known vulnerabilities [GH-90000]");
         }
 
         @Test
-        @DisplayName("SECRET has correct description")
-        void secretHasCorrectDescription() {
-            assertThat(ScanType.SECRET.getDescription())
-                    .isEqualTo("Detects exposed secrets and credentials in code");
+        @DisplayName("SECRET has correct description [GH-90000]")
+        void secretHasCorrectDescription() { // GH-90000
+            assertThat(ScanType.SECRET.getDescription()) // GH-90000
+                    .isEqualTo("Detects exposed secrets and credentials in code [GH-90000]");
         }
 
         @ParameterizedTest
-        @EnumSource(ScanType.class)
-        @DisplayName("all scan types have non-null descriptions")
-        void allScanTypesHaveNonNullDescriptions(ScanType scanType) {
-            assertThat(scanType.getDescription())
-                    .as("Description for %s", scanType.name())
-                    .isNotNull()
-                    .isNotEmpty();
+        @EnumSource(ScanType.class) // GH-90000
+        @DisplayName("all scan types have non-null descriptions [GH-90000]")
+        void allScanTypesHaveNonNullDescriptions(ScanType scanType) { // GH-90000
+            assertThat(scanType.getDescription()) // GH-90000
+                    .as("Description for %s", scanType.name()) // GH-90000
+                    .isNotNull() // GH-90000
+                    .isNotEmpty(); // GH-90000
         }
 
         @ParameterizedTest
-        @EnumSource(ScanType.class)
-        @DisplayName("all descriptions are meaningful (more than 10 chars)")
-        void allDescriptionsAreMeaningful(ScanType scanType) {
-            assertThat(scanType.getDescription().length())
-                    .as("Description length for %s", scanType.name())
-                    .isGreaterThan(10);
+        @EnumSource(ScanType.class) // GH-90000
+        @DisplayName("all descriptions are meaningful (more than 10 chars) [GH-90000]")
+        void allDescriptionsAreMeaningful(ScanType scanType) { // GH-90000
+            assertThat(scanType.getDescription().length()) // GH-90000
+                    .as("Description length for %s", scanType.name()) // GH-90000
+                    .isGreaterThan(10); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("isComprehensive() Tests")
+    @DisplayName("isComprehensive() Tests [GH-90000]")
     class IsComprehensiveTests {
 
         @Test
-        @DisplayName("FULL is comprehensive")
-        void fullIsComprehensive() {
-            assertThat(ScanType.FULL.isComprehensive()).isTrue();
+        @DisplayName("FULL is comprehensive [GH-90000]")
+        void fullIsComprehensive() { // GH-90000
+            assertThat(ScanType.FULL.isComprehensive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("SAST is not comprehensive")
-        void sastIsNotComprehensive() {
-            assertThat(ScanType.SAST.isComprehensive()).isFalse();
+        @DisplayName("SAST is not comprehensive [GH-90000]")
+        void sastIsNotComprehensive() { // GH-90000
+            assertThat(ScanType.SAST.isComprehensive()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("DAST is not comprehensive")
-        void dastIsNotComprehensive() {
-            assertThat(ScanType.DAST.isComprehensive()).isFalse();
+        @DisplayName("DAST is not comprehensive [GH-90000]")
+        void dastIsNotComprehensive() { // GH-90000
+            assertThat(ScanType.DAST.isComprehensive()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("QUICK is not comprehensive")
-        void quickIsNotComprehensive() {
-            assertThat(ScanType.QUICK.isComprehensive()).isFalse();
+        @DisplayName("QUICK is not comprehensive [GH-90000]")
+        void quickIsNotComprehensive() { // GH-90000
+            assertThat(ScanType.QUICK.isComprehensive()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("only FULL is comprehensive")
-        void onlyFullIsComprehensive() {
-            long comprehensiveCount = java.util.stream.Stream.of(ScanType.values())
-                    .filter(ScanType::isComprehensive)
-                    .count();
-            assertThat(comprehensiveCount).isEqualTo(1);
+        @DisplayName("only FULL is comprehensive [GH-90000]")
+        void onlyFullIsComprehensive() { // GH-90000
+            long comprehensiveCount = java.util.stream.Stream.of(ScanType.values()) // GH-90000
+                    .filter(ScanType::isComprehensive) // GH-90000
+                    .count(); // GH-90000
+            assertThat(comprehensiveCount).isEqualTo(1); // GH-90000
         }
 
         @ParameterizedTest
-        @EnumSource(value = ScanType.class, names = {"SAST", "DAST", "SCA", "IAC", "CONTAINER", "SECRET", "QUICK", "INCREMENTAL"})
-        @DisplayName("non-FULL scan types are not comprehensive")
-        void nonFullScanTypesAreNotComprehensive(ScanType scanType) {
-            assertThat(scanType.isComprehensive()).isFalse();
+        @EnumSource(value = ScanType.class, names = {"SAST", "DAST", "SCA", "IAC", "CONTAINER", "SECRET", "QUICK", "INCREMENTAL"}) // GH-90000
+        @DisplayName("non-FULL scan types are not comprehensive [GH-90000]")
+        void nonFullScanTypesAreNotComprehensive(ScanType scanType) { // GH-90000
+            assertThat(scanType.isComprehensive()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Scan Type Categories Tests")
+    @DisplayName("Scan Type Categories Tests [GH-90000]")
     class CategoryTests {
 
         @Test
-        @DisplayName("static analysis scans include SAST")
-        void staticAnalysisScansIncludeSast() {
-            assertThat(ScanType.SAST.getDisplayName()).contains("Static");
+        @DisplayName("static analysis scans include SAST [GH-90000]")
+        void staticAnalysisScansIncludeSast() { // GH-90000
+            assertThat(ScanType.SAST.getDisplayName()).contains("Static [GH-90000]");
         }
 
         @Test
-        @DisplayName("dynamic analysis scans include DAST")
-        void dynamicAnalysisScansIncludeDast() {
-            assertThat(ScanType.DAST.getDisplayName()).contains("Dynamic");
+        @DisplayName("dynamic analysis scans include DAST [GH-90000]")
+        void dynamicAnalysisScansIncludeDast() { // GH-90000
+            assertThat(ScanType.DAST.getDisplayName()).contains("Dynamic [GH-90000]");
         }
 
         @Test
-        @DisplayName("dependency-related scans include SCA")
-        void dependencyRelatedScansIncludeSca() {
-            assertThat(ScanType.SCA.getDescription()).containsIgnoringCase("dependencies");
+        @DisplayName("dependency-related scans include SCA [GH-90000]")
+        void dependencyRelatedScansIncludeSca() { // GH-90000
+            assertThat(ScanType.SCA.getDescription()).containsIgnoringCase("dependencies [GH-90000]");
         }
 
         @Test
-        @DisplayName("infrastructure scans include IAC")
-        void infrastructureScansIncludeIac() {
-            assertThat(ScanType.IAC.getDescription()).containsIgnoringCase("infrastructure");
+        @DisplayName("infrastructure scans include IAC [GH-90000]")
+        void infrastructureScansIncludeIac() { // GH-90000
+            assertThat(ScanType.IAC.getDescription()).containsIgnoringCase("infrastructure [GH-90000]");
         }
 
         @Test
-        @DisplayName("container scans focus on images")
-        void containerScansFocusOnImages() {
-            assertThat(ScanType.CONTAINER.getDescription()).containsIgnoringCase("container");
+        @DisplayName("container scans focus on images [GH-90000]")
+        void containerScansFocusOnImages() { // GH-90000
+            assertThat(ScanType.CONTAINER.getDescription()).containsIgnoringCase("container [GH-90000]");
         }
 
         @Test
-        @DisplayName("secret detection focuses on credentials")
-        void secretDetectionFocusesOnCredentials() {
-            assertThat(ScanType.SECRET.getDescription()).containsIgnoringCase("secrets");
+        @DisplayName("secret detection focuses on credentials [GH-90000]")
+        void secretDetectionFocusesOnCredentials() { // GH-90000
+            assertThat(ScanType.SECRET.getDescription()).containsIgnoringCase("secrets [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Enum Value Tests")
+    @DisplayName("Enum Value Tests [GH-90000]")
     class EnumValueTests {
 
         @Test
-        @DisplayName("enum has expected number of values")
-        void enumHasExpectedNumberOfValues() {
-            assertThat(ScanType.values()).hasSize(9);
+        @DisplayName("enum has expected number of values [GH-90000]")
+        void enumHasExpectedNumberOfValues() { // GH-90000
+            assertThat(ScanType.values()).hasSize(9); // GH-90000
         }
 
         @Test
-        @DisplayName("enum values can be retrieved by name")
-        void enumValuesCanBeRetrievedByName() {
-            assertThat(ScanType.valueOf("SAST")).isEqualTo(ScanType.SAST);
-            assertThat(ScanType.valueOf("DAST")).isEqualTo(ScanType.DAST);
-            assertThat(ScanType.valueOf("SCA")).isEqualTo(ScanType.SCA);
-            assertThat(ScanType.valueOf("IAC")).isEqualTo(ScanType.IAC);
-            assertThat(ScanType.valueOf("CONTAINER")).isEqualTo(ScanType.CONTAINER);
-            assertThat(ScanType.valueOf("SECRET")).isEqualTo(ScanType.SECRET);
-            assertThat(ScanType.valueOf("FULL")).isEqualTo(ScanType.FULL);
-            assertThat(ScanType.valueOf("QUICK")).isEqualTo(ScanType.QUICK);
-            assertThat(ScanType.valueOf("INCREMENTAL")).isEqualTo(ScanType.INCREMENTAL);
+        @DisplayName("enum values can be retrieved by name [GH-90000]")
+        void enumValuesCanBeRetrievedByName() { // GH-90000
+            assertThat(ScanType.valueOf("SAST [GH-90000]")).isEqualTo(ScanType.SAST);
+            assertThat(ScanType.valueOf("DAST [GH-90000]")).isEqualTo(ScanType.DAST);
+            assertThat(ScanType.valueOf("SCA [GH-90000]")).isEqualTo(ScanType.SCA);
+            assertThat(ScanType.valueOf("IAC [GH-90000]")).isEqualTo(ScanType.IAC);
+            assertThat(ScanType.valueOf("CONTAINER [GH-90000]")).isEqualTo(ScanType.CONTAINER);
+            assertThat(ScanType.valueOf("SECRET [GH-90000]")).isEqualTo(ScanType.SECRET);
+            assertThat(ScanType.valueOf("FULL [GH-90000]")).isEqualTo(ScanType.FULL);
+            assertThat(ScanType.valueOf("QUICK [GH-90000]")).isEqualTo(ScanType.QUICK);
+            assertThat(ScanType.valueOf("INCREMENTAL [GH-90000]")).isEqualTo(ScanType.INCREMENTAL);
         }
     }
 
     @Nested
-    @DisplayName("Scan Speed/Scope Tests")
+    @DisplayName("Scan Speed/Scope Tests [GH-90000]")
     class ScanSpeedScopeTests {
 
         @Test
-        @DisplayName("QUICK is designed for fast scans")
-        void quickIsDesignedForFastScans() {
-            assertThat(ScanType.QUICK.getDisplayName()).containsIgnoringCase("Quick");
-            assertThat(ScanType.QUICK.getDescription()).containsIgnoringCase("Fast");
+        @DisplayName("QUICK is designed for fast scans [GH-90000]")
+        void quickIsDesignedForFastScans() { // GH-90000
+            assertThat(ScanType.QUICK.getDisplayName()).containsIgnoringCase("Quick [GH-90000]");
+            assertThat(ScanType.QUICK.getDescription()).containsIgnoringCase("Fast [GH-90000]");
         }
 
         @Test
-        @DisplayName("INCREMENTAL only scans changes")
-        void incrementalOnlyScansChanges() {
-            assertThat(ScanType.INCREMENTAL.getDescription()).containsIgnoringCase("changed");
+        @DisplayName("INCREMENTAL only scans changes [GH-90000]")
+        void incrementalOnlyScansChanges() { // GH-90000
+            assertThat(ScanType.INCREMENTAL.getDescription()).containsIgnoringCase("changed [GH-90000]");
         }
 
         @Test
-        @DisplayName("FULL includes all checks")
-        void fullIncludesAllChecks() {
-            assertThat(ScanType.FULL.getDescription()).containsIgnoringCase("Comprehensive");
+        @DisplayName("FULL includes all checks [GH-90000]")
+        void fullIncludesAllChecks() { // GH-90000
+            assertThat(ScanType.FULL.getDescription()).containsIgnoringCase("Comprehensive [GH-90000]");
         }
     }
 }

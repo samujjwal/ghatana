@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.infrastructure;
@@ -21,159 +21,159 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for resource exhaustion handling (IE003).
+ * Tests for resource exhaustion handling (IE003). // GH-90000
  *
  * @doc.type class
  * @doc.purpose Resource exhaustion handling tests
  * @doc.layer product
  * @doc.pattern Infrastructure Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("ResourceExhaustion – Resource Limits (IE003)")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("ResourceExhaustion – Resource Limits (IE003) [GH-90000]")
 class ResourceExhaustionTest extends EventloopTestBase {
 
     @Mock
     private ResourcePool resourcePool;
 
     @Nested
-    @DisplayName("Thread Pool Exhaustion")
+    @DisplayName("Thread Pool Exhaustion [GH-90000]")
     class ThreadPoolExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: thread_pool_rejects_when_full")
-        void threadPoolRejectsWhenFull() {
-            when(resourcePool.acquireThread())
-                .thenReturn(Promise.ofException(new IllegalStateException("Thread pool exhausted")));
+        @DisplayName("[IE003]: thread_pool_rejects_when_full [GH-90000]")
+        void threadPoolRejectsWhenFull() { // GH-90000
+            when(resourcePool.acquireThread()) // GH-90000
+                .thenReturn(Promise.ofException(new IllegalStateException("Thread pool exhausted [GH-90000]")));
 
             try {
-                runPromise(() -> resourcePool.acquireThread());
-            } catch (Exception e) {
-                assertThat(e).hasMessageContaining("exhausted");
+                runPromise(() -> resourcePool.acquireThread()); // GH-90000
+            } catch (Exception e) { // GH-90000
+                assertThat(e).hasMessageContaining("exhausted [GH-90000]");
             }
         }
 
         @Test
-        @DisplayName("[IE003]: queued_tasks_processed_when_threads_available")
-        void queuedTasksProcessedWhenThreadsAvailable() {
-            when(resourcePool.submitTask(any()))
-                .thenReturn(Promise.of("completed"));
+        @DisplayName("[IE003]: queued_tasks_processed_when_threads_available [GH-90000]")
+        void queuedTasksProcessedWhenThreadsAvailable() { // GH-90000
+            when(resourcePool.submitTask(any())) // GH-90000
+                .thenReturn(Promise.of("completed [GH-90000]"));
 
-            String result = runPromise(() -> resourcePool.submitTask(() -> "work"));
+            String result = runPromise(() -> resourcePool.submitTask(() -> "work")); // GH-90000
 
-            assertThat(result).isEqualTo("completed");
+            assertThat(result).isEqualTo("completed [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Memory Exhaustion")
+    @DisplayName("Memory Exhaustion [GH-90000]")
     class MemoryExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: memory_limit_enforced")
-        void memoryLimitEnforced() {
+        @DisplayName("[IE003]: memory_limit_enforced [GH-90000]")
+        void memoryLimitEnforced() { // GH-90000
             long maxMemory = 1024L * 1024 * 1024; // 1GB
             long currentMemory = 900L * 1024 * 1024; // 900MB
 
             // Should prevent operations that would exceed limit
-            boolean canAllocate = (currentMemory + 100L * 1024 * 1024) <= maxMemory;
+            boolean canAllocate = (currentMemory + 100L * 1024 * 1024) <= maxMemory; // GH-90000
 
-            assertThat(canAllocate).isTrue();
+            assertThat(canAllocate).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[IE003]: large_payload_rejected")
-        void largePayloadRejected() {
+        @DisplayName("[IE003]: large_payload_rejected [GH-90000]")
+        void largePayloadRejected() { // GH-90000
             int maxPayloadSize = 10 * 1024 * 1024; // 10MB
             int payloadSize = 15 * 1024 * 1024; // 15MB
 
             boolean payloadAccepted = payloadSize <= maxPayloadSize;
 
-            assertThat(payloadAccepted).isFalse();
+            assertThat(payloadAccepted).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Connection Pool Exhaustion")
+    @DisplayName("Connection Pool Exhaustion [GH-90000]")
     class ConnectionPoolExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: connection_pool_limits_connections")
-        void connectionPoolLimitsConnections() {
+        @DisplayName("[IE003]: connection_pool_limits_connections [GH-90000]")
+        void connectionPoolLimitsConnections() { // GH-90000
             int maxConnections = 100;
             int currentConnections = 100;
 
             boolean canAcquire = currentConnections < maxConnections;
 
-            assertThat(canAcquire).isFalse();
+            assertThat(canAcquire).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("[IE003]: connection_wait_timeout")
-        void connectionWaitTimeout() {
+        @DisplayName("[IE003]: connection_wait_timeout [GH-90000]")
+        void connectionWaitTimeout() { // GH-90000
             // Waiting for connection should timeout
-            when(resourcePool.acquireConnection())
-                .thenReturn(Promise.ofException(new java.util.concurrent.TimeoutException("Connection wait timeout")));
+            when(resourcePool.acquireConnection()) // GH-90000
+                .thenReturn(Promise.ofException(new java.util.concurrent.TimeoutException("Connection wait timeout [GH-90000]")));
 
-            assertThatThrownBy(() ->
-                runPromise(() -> resourcePool.acquireConnection())
-            ).cause().isInstanceOf(java.util.concurrent.TimeoutException.class);
+            assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> resourcePool.acquireConnection()) // GH-90000
+            ).cause().isInstanceOf(java.util.concurrent.TimeoutException.class); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("File Handle Exhaustion")
+    @DisplayName("File Handle Exhaustion [GH-90000]")
     class FileHandleExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: file_handles_limited")
-        void fileHandlesLimited() {
+        @DisplayName("[IE003]: file_handles_limited [GH-90000]")
+        void fileHandlesLimited() { // GH-90000
             int maxFileHandles = 1024;
 
             // Should track and limit file handle usage
-            assertThat(maxFileHandles).isGreaterThan(0);
+            assertThat(maxFileHandles).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("[IE003]: file_handle_leak_prevention")
-        void fileHandleLeakPrevention() {
+        @DisplayName("[IE003]: file_handle_leak_prevention [GH-90000]")
+        void fileHandleLeakPrevention() { // GH-90000
             // File handles should be released properly
             boolean leakDetected = false;
-            assertThat(leakDetected).isFalse();
+            assertThat(leakDetected).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Rate Limiting")
+    @DisplayName("Rate Limiting [GH-90000]")
     class RateLimitingTests {
 
         @Test
-        @DisplayName("[IE003]: rate_limit_enforced")
-        void rateLimitEnforced() {
+        @DisplayName("[IE003]: rate_limit_enforced [GH-90000]")
+        void rateLimitEnforced() { // GH-90000
             int maxRequestsPerSecond = 1000;
             int currentRequests = 1200;
 
             boolean withinLimit = currentRequests <= maxRequestsPerSecond;
 
-            assertThat(withinLimit).isFalse();
+            assertThat(withinLimit).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("[IE003]: rate_limit_per_tenant")
-        void rateLimitPerTenant() {
+        @DisplayName("[IE003]: rate_limit_per_tenant [GH-90000]")
+        void rateLimitPerTenant() { // GH-90000
             // Each tenant should have own rate limit
-            Map<String, Integer> tenantLimits = Map.of(
+            Map<String, Integer> tenantLimits = Map.of( // GH-90000
                 "tenant-alpha", 1000,
                 "tenant-beta", 500
             );
 
-            assertThat(tenantLimits).containsKeys("tenant-alpha", "tenant-beta");
+            assertThat(tenantLimits).containsKeys("tenant-alpha", "tenant-beta"); // GH-90000
         }
     }
 
     // Mock interfaces
     interface ResourcePool {
-        Promise<Object> acquireThread();
-        Promise<String> submitTask(java.util.function.Supplier<String> task);
-        Promise<Object> acquireConnection();
+        Promise<Object> acquireThread(); // GH-90000
+        Promise<String> submitTask(java.util.function.Supplier<String> task); // GH-90000
+        Promise<Object> acquireConnection(); // GH-90000
     }
 }

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Architecture IntakeStep Tests")
+@DisplayName("Architecture IntakeStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles intake step test operations
@@ -33,42 +33,42 @@ class IntakeStepTest extends EventloopTestBase {
   private IntakeStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new IntakeStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new IntakeStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("architecture.intake");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("architecture.intake [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should load requirements baseline and initiate architecture phase")
-  void shouldInitiateArchitecturePhase() {
+  @DisplayName("Should load requirements baseline and initiate architecture phase [GH-90000]")
+  void shouldInitiateArchitecturePhase() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("baselineId", "req-baseline-001");
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("baselineId", "req-baseline-001"); // GH-90000
 
     Map<String, Object> baseline =
-        Map.of(
+        Map.of( // GH-90000
             "baselineId", "req-baseline-001",
             "status", "PUBLISHED",
             "requirementId", "req-001",
             "version", "1.0",
-            "requirements", List.of());
-    when(dbClient.query(eq("requirements_published"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(baseline)));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+            "requirements", List.of()); // GH-90000
+    when(dbClient.query(eq("requirements_published [GH-90000]"), any(), anyInt()))
+        .thenReturn(Promise.of(List.of(baseline))); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("baselineId")).isEqualTo("req-baseline-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("baselineId [GH-90000]")).isEqualTo("req-baseline-001 [GH-90000]");
   }
 }

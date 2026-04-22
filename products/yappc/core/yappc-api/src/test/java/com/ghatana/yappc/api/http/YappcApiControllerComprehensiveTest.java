@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.yappc.api.http;
@@ -45,12 +45,12 @@ import static org.mockito.Mockito.when;
  * not just that code executes. Tests cover:
  * <ul>
  *   <li>Response schema correctness and data validation</li>
- *   <li>All HTTP status codes (2xx, 4xx, 5xx)</li>
+ *   <li>All HTTP status codes (2xx, 4xx, 5xx)</li> // GH-90000
  *   <li>Input validation and error handling</li>
- *   <li>State machine transitions (workflows)</li>
+ *   <li>State machine transitions (workflows)</li> // GH-90000
  *   <li>Tenant isolation and security</li>
  *   <li>Pagination, filtering, and sorting</li>
- *   <li>Integration outcomes (persistence, events, audit)</li>
+ *   <li>Integration outcomes (persistence, events, audit)</li> // GH-90000
  *   <li>Edge cases and boundary conditions</li>
  * </ul>
  *
@@ -59,8 +59,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("yappc-api HTTP Controllers - Expectation-Driven Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("yappc-api HTTP Controllers - Expectation-Driven Tests [GH-90000]")
 class YappcApiControllerComprehensiveTest extends EventloopTestBase {
 
     @Mock
@@ -81,8 +81,8 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void setUp() {
-        objectMapper = new ObjectMapper();
+    void setUp() { // GH-90000
+        objectMapper = new ObjectMapper(); // GH-90000
     }
 
     // =========================================================================
@@ -90,193 +90,193 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Agent API - List Agents")
+    @DisplayName("Agent API - List Agents [GH-90000]")
     class AgentListingTests {
 
         private AgentController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new AgentController(agentRegistry, objectMapper, auditLogger);
+        void setUp() { // GH-90000
+            controller = new AgentController(agentRegistry, objectMapper, auditLogger); // GH-90000
         }
 
         @Test
-        @DisplayName("listAgents returns 200 with valid response schema")
-        void listAgentsReturnsValidSchema() {
+        @DisplayName("listAgents returns 200 with valid response schema [GH-90000]")
+        void listAgentsReturnsValidSchema() { // GH-90000
             // GIVEN: Registry with agents
-            AgentMetadata agentMetadata = new AgentMetadata(
+            AgentMetadata agentMetadata = new AgentMetadata( // GH-90000
                 AgentName.COPILOT_AGENT,
                 "1.0.0",
                 "AI Copilot",
-                List.of("chat", "code-gen"),
-                List.of(),
+                List.of("chat", "code-gen"), // GH-90000
+                List.of(), // GH-90000
                 2000L,
                 null
             );
-            when(agentRegistry.getAllMetadata())
-                .thenReturn(List.of(agentMetadata));
+            when(agentRegistry.getAllMetadata()) // GH-90000
+                .thenReturn(List.of(agentMetadata)); // GH-90000
 
             // WHEN: List agents
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
-            HttpResponse response = runPromise(() -> controller.listAgents(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+            HttpResponse response = runPromise(() -> controller.listAgents(request)); // GH-90000
 
             // THEN: Response code is 200
-            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
 
             // AND: Response has required JSON structure
-            String body = response.getBody().asString(StandardCharsets.UTF_8);
-            assertThat(body).contains("\"agents\"").contains("\"total\"");
+            String body = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(body).contains("\"agents\"").contains("\"total\""); // GH-90000
 
             // AND: Service was called
-            verify(agentRegistry).getAllMetadata();
+            verify(agentRegistry).getAllMetadata(); // GH-90000
         }
 
         @Test
-        @DisplayName("listAgents returns metadata with required fields")
-        void listAgentsResponseContainsRequiredFields() {
+        @DisplayName("listAgents returns metadata with required fields [GH-90000]")
+        void listAgentsResponseContainsRequiredFields() { // GH-90000
             // GIVEN: Agent metadata in registry
-            AgentMetadata agentMeta = new AgentMetadata(
+            AgentMetadata agentMeta = new AgentMetadata( // GH-90000
                 AgentName.CODE_GENERATOR_AGENT,
                 "2.0.0",
                 "Code refactoring",
-                List.of(),
-                List.of(),
+                List.of(), // GH-90000
+                List.of(), // GH-90000
                 5000L,
                 null
             );
-            when(agentRegistry.getAllMetadata()).thenReturn(List.of(agentMeta));
+            when(agentRegistry.getAllMetadata()).thenReturn(List.of(agentMeta)); // GH-90000
 
             // WHEN: List agents
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
-            HttpResponse response = runPromise(() -> controller.listAgents(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+            HttpResponse response = runPromise(() -> controller.listAgents(request)); // GH-90000
 
             // THEN: Response contains agent name and total count
-            String body = response.getBody().asString(StandardCharsets.UTF_8);
-            assertThat(body).contains("CODE_GENERATOR_AGENT");
-            assertThat(body).contains("\"total\":1");
+            String body = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(body).contains("CODE_GENERATOR_AGENT [GH-90000]");
+            assertThat(body).contains("\"total\":1"); // GH-90000
         }
 
         @Test
-        @DisplayName("listAgents returns empty array when no agents registered")
-        void listAgentsEmptyRegistry() {
+        @DisplayName("listAgents returns empty array when no agents registered [GH-90000]")
+        void listAgentsEmptyRegistry() { // GH-90000
             // GIVEN: Empty registry
-            when(agentRegistry.getAllMetadata()).thenReturn(List.of());
+            when(agentRegistry.getAllMetadata()).thenReturn(List.of()); // GH-90000
 
             // WHEN: List agents
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
-            HttpResponse response = runPromise(() -> controller.listAgents(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+            HttpResponse response = runPromise(() -> controller.listAgents(request)); // GH-90000
 
-            // THEN: Returns 200 (not 404) with empty agents array
-            assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("\"agents\":[]");
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("\"total\":0");
+            // THEN: Returns 200 (not 404) with empty agents array // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("\"agents\":[]"); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("\"total\":0"); // GH-90000
         }
 
         @Test
-        @DisplayName("listAgents returns agents in consistent order")
-        void listAgentsOrdering() {
+        @DisplayName("listAgents returns agents in consistent order [GH-90000]")
+        void listAgentsOrdering() { // GH-90000
             // GIVEN: Multiple agents
-            List<AgentMetadata> agents = List.of(
-                new AgentMetadata(AgentName.COPILOT_AGENT, "1.0.0", "AI Copilot", List.of(), List.of(), 2000L, null),
-                new AgentMetadata(AgentName.QUERY_PARSER_AGENT, "1.0.0", "Query parser", List.of(), List.of(), 1000L, null),
-                new AgentMetadata(AgentName.CODE_GENERATOR_AGENT, "1.0.0", "Code generator", List.of(), List.of(), 5000L, null)
+            List<AgentMetadata> agents = List.of( // GH-90000
+                new AgentMetadata(AgentName.COPILOT_AGENT, "1.0.0", "AI Copilot", List.of(), List.of(), 2000L, null), // GH-90000
+                new AgentMetadata(AgentName.QUERY_PARSER_AGENT, "1.0.0", "Query parser", List.of(), List.of(), 1000L, null), // GH-90000
+                new AgentMetadata(AgentName.CODE_GENERATOR_AGENT, "1.0.0", "Code generator", List.of(), List.of(), 5000L, null) // GH-90000
             );
-            when(agentRegistry.getAllMetadata()).thenReturn(agents);
+            when(agentRegistry.getAllMetadata()).thenReturn(agents); // GH-90000
 
             // WHEN: List agents
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
-            HttpResponse response = runPromise(() -> controller.listAgents(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+            HttpResponse response = runPromise(() -> controller.listAgents(request)); // GH-90000
 
             // THEN: All agents present in response
-            String body = response.getBody().asString(StandardCharsets.UTF_8);
-            assertThat(body).contains("COPILOT_AGENT").contains("QUERY_PARSER_AGENT").contains("CODE_GENERATOR_AGENT");
-            assertThat(body).contains("\"total\":3");
+            String body = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(body).contains("COPILOT_AGENT [GH-90000]").contains("QUERY_PARSER_AGENT [GH-90000]").contains("CODE_GENERATOR_AGENT [GH-90000]");
+            assertThat(body).contains("\"total\":3"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Agent API - Get Agent Details")
+    @DisplayName("Agent API - Get Agent Details [GH-90000]")
     class AgentDetailsTests {
 
         private AgentController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new AgentController(agentRegistry, objectMapper, auditLogger);
+        void setUp() { // GH-90000
+            controller = new AgentController(agentRegistry, objectMapper, auditLogger); // GH-90000
         }
 
         @Test
-        @DisplayName("getAgent returns 404 when agent not found")
-        void getAgentNotFound() {
+        @DisplayName("getAgent returns 404 when agent not found [GH-90000]")
+        void getAgentNotFound() { // GH-90000
             // GIVEN: The agent name "unknown" doesn't map to any known AgentName enum value,
-            // so the controller returns 404 before ever calling registry.get()
+            // so the controller returns 404 before ever calling registry.get() // GH-90000
 
             // WHEN: Get non-existent agent
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents/unknown")
-                .build();
-            HttpResponse response = runPromise(() -> controller.getAgent(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents/unknown [GH-90000]")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getAgent(request)); // GH-90000
 
             // THEN: Returns 404 with error message
-            assertThat(response.getCode()).isEqualTo(404);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("not found").contains("unknown");
+            assertThat(response.getCode()).isEqualTo(404); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("not found [GH-90000]").contains("unknown [GH-90000]");
         }
 
         @Test
-        @DisplayName("getAgent returns 400 when agent name missing")
-        void getAgentMissingName() {
+        @DisplayName("getAgent returns 400 when agent name missing [GH-90000]")
+        void getAgentMissingName() { // GH-90000
             // GIVEN: Request with missing agent name
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents/").build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents/ [GH-90000]").build();
 
             // WHEN: Get agent
-            HttpResponse response = runPromise(() -> controller.getAgent(request));
+            HttpResponse response = runPromise(() -> controller.getAgent(request)); // GH-90000
 
             // THEN: Returns 400 Bad Request
-            assertThat(response.getCode()).isEqualTo(400);
+            assertThat(response.getCode()).isEqualTo(400); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Agent API - Execute Agent")
+    @DisplayName("Agent API - Execute Agent [GH-90000]")
     class AgentExecutionTests {
 
         private AgentController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new AgentController(agentRegistry, objectMapper, auditLogger);
+        void setUp() { // GH-90000
+            controller = new AgentController(agentRegistry, objectMapper, auditLogger); // GH-90000
         }
 
         @Test
-        @DisplayName("executeAgent returns 400 when X-Tenant-ID header missing")
-        void executeAgentMissingTenantHeader() {
+        @DisplayName("executeAgent returns 400 when X-Tenant-ID header missing [GH-90000]")
+        void executeAgentMissingTenantHeader() { // GH-90000
             // GIVEN: Request without X-Tenant-ID header
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute")
-                .build();
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute [GH-90000]")
+                .build(); // GH-90000
 
             // WHEN: Execute agent
-            HttpResponse response = runPromise(() -> controller.executeAgent(request));
+            HttpResponse response = runPromise(() -> controller.executeAgent(request)); // GH-90000
 
             // THEN: Returns 400 with missing header error
-            assertThat(response.getCode()).isEqualTo(400);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8))
-                .contains("X-Tenant-ID").contains("required");
+            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)) // GH-90000
+                .contains("X-Tenant-ID [GH-90000]").contains("required [GH-90000]");
         }
 
         @Test
-        @DisplayName("executeAgent returns 400 when required headers missing")
-        void executeAgentMissingRequiredHeaders() {
+        @DisplayName("executeAgent returns 400 when required headers missing [GH-90000]")
+        void executeAgentMissingRequiredHeaders() { // GH-90000
             // GIVEN: Request with only tenant ID, missing org/workspace
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
 
             // WHEN: Execute agent
-            HttpResponse response = runPromise(() -> controller.executeAgent(request));
+            HttpResponse response = runPromise(() -> controller.executeAgent(request)); // GH-90000
 
             // THEN: Returns 400 for missing organization header
-            assertThat(response.getCode()).isEqualTo(400);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8))
-                .contains("X-Organization-ID").contains("required");
+            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)) // GH-90000
+                .contains("X-Organization-ID [GH-90000]").contains("required [GH-90000]");
         }
     }
 
@@ -285,294 +285,294 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Workflow API - List Workflows")
+    @DisplayName("Workflow API - List Workflows [GH-90000]")
     class WorkflowListingTests {
 
         private WorkflowController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new WorkflowController(workflowService, objectMapper);
+        void setUp() { // GH-90000
+            controller = new WorkflowController(workflowService, objectMapper); // GH-90000
         }
 
         @Test
-        @DisplayName("listWorkflows returns 200 with pagination metadata")
-        void listWorkflowsReturnsPaginationMetadata() {
+        @DisplayName("listWorkflows returns 200 with pagination metadata [GH-90000]")
+        void listWorkflowsReturnsPaginationMetadata() { // GH-90000
             // GIVEN: Service returns workflows
-            List<AiWorkflowInstance> workflows = List.of(
-                createWorkflow("wf-1", "Workflow 1"),
-                createWorkflow("wf-2", "Workflow 2")
+            List<AiWorkflowInstance> workflows = List.of( // GH-90000
+                createWorkflow("wf-1", "Workflow 1"), // GH-90000
+                createWorkflow("wf-2", "Workflow 2") // GH-90000
             );
-            when(workflowService.listWorkflows("tenant-001", null, 20, 0))
-                .thenReturn(Promise.of(workflows));
+            when(workflowService.listWorkflows("tenant-001", null, 20, 0)) // GH-90000
+                .thenReturn(Promise.of(workflows)); // GH-90000
 
             // WHEN: List workflows
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.listWorkflows(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.listWorkflows(request)); // GH-90000
 
             // THEN: Returns 200 with pagination structure
-            assertThat(response.getCode()).isEqualTo(200);
-            String body = response.getBody().asString(StandardCharsets.UTF_8);
-            assertThat(body).contains("\"workflows\"").contains("\"count\":2")
-                .contains("\"limit\":20").contains("\"offset\":0");
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            String body = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(body).contains("\"workflows\"").contains("\"count\":2") // GH-90000
+                .contains("\"limit\":20").contains("\"offset\":0"); // GH-90000
         }
 
         @Test
-        @DisplayName("listWorkflows returns empty array when no workflows")
-        void listWorkflowsEmpty() {
+        @DisplayName("listWorkflows returns empty array when no workflows [GH-90000]")
+        void listWorkflowsEmpty() { // GH-90000
             // GIVEN: No workflows for tenant
-            when(workflowService.listWorkflows("tenant-001", null, 20, 0))
-                .thenReturn(Promise.of(List.of()));
+            when(workflowService.listWorkflows("tenant-001", null, 20, 0)) // GH-90000
+                .thenReturn(Promise.of(List.of())); // GH-90000
 
             // WHEN: List workflows
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.listWorkflows(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.listWorkflows(request)); // GH-90000
 
-            // THEN: Returns 200 with empty workflows array (not 404)
-            assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("\"count\":0");
+            // THEN: Returns 200 with empty workflows array (not 404) // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("\"count\":0"); // GH-90000
         }
 
         @Test
-        @DisplayName("listWorkflows filters by status parameter")
-        void listWorkflowsFilterByStatus() {
+        @DisplayName("listWorkflows filters by status parameter [GH-90000]")
+        void listWorkflowsFilterByStatus() { // GH-90000
             // GIVEN: Service call for specific status
-            when(workflowService.listWorkflows("tenant-001",
+            when(workflowService.listWorkflows("tenant-001", // GH-90000
                 AiWorkflowInstance.WorkflowStatus.IN_PROGRESS, 20, 0))
-                .thenReturn(Promise.of(List.of(createWorkflow("wf-1", "Active WF"))));
+                .thenReturn(Promise.of(List.of(createWorkflow("wf-1", "Active WF")))); // GH-90000
 
             // WHEN: List workflows with status filter
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?status=IN_PROGRESS")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.listWorkflows(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?status=IN_PROGRESS [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.listWorkflows(request)); // GH-90000
 
             // THEN: Service called with correct status filter
-            verify(workflowService).listWorkflows("tenant-001",
+            verify(workflowService).listWorkflows("tenant-001", // GH-90000
                 AiWorkflowInstance.WorkflowStatus.IN_PROGRESS, 20, 0);
-            assertThat(response.getCode()).isEqualTo(200);
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
         }
 
         @Test
-        @DisplayName("listWorkflows returns 400 for invalid status")
-        void listWorkflowsInvalidStatus() {
+        @DisplayName("listWorkflows returns 400 for invalid status [GH-90000]")
+        void listWorkflowsInvalidStatus() { // GH-90000
             // GIVEN: Invalid status parameter
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?status=INVALID")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?status=INVALID [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
 
             // WHEN: List workflows
-            HttpResponse response = runPromise(() -> controller.listWorkflows(request));
+            HttpResponse response = runPromise(() -> controller.listWorkflows(request)); // GH-90000
 
             // THEN: Returns 400 with error message
-            assertThat(response.getCode()).isEqualTo(400);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Invalid status");
+            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Invalid status [GH-90000]");
         }
 
         @Test
-        @DisplayName("listWorkflows respects pagination parameters")
-        void listWorkflowsPagination() {
+        @DisplayName("listWorkflows respects pagination parameters [GH-90000]")
+        void listWorkflowsPagination() { // GH-90000
             // GIVEN: Custom limit and offset
-            when(workflowService.listWorkflows("tenant-001", null, 50, 100))
-                .thenReturn(Promise.of(List.of()));
+            when(workflowService.listWorkflows("tenant-001", null, 50, 100)) // GH-90000
+                .thenReturn(Promise.of(List.of())); // GH-90000
 
             // WHEN: List with custom pagination
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?limit=50&offset=100")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.listWorkflows(request));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?limit=50&offset=100 [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.listWorkflows(request)); // GH-90000
 
             // THEN: Service called with custom pagination values
-            verify(workflowService).listWorkflows("tenant-001", null, 50, 100);
-            assertThat(response.getCode()).isEqualTo(200);
+            verify(workflowService).listWorkflows("tenant-001", null, 50, 100); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Workflow API - Get Workflow")
+    @DisplayName("Workflow API - Get Workflow [GH-90000]")
     class WorkflowDetailsTests {
 
         private WorkflowController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new WorkflowController(workflowService, objectMapper);
+        void setUp() { // GH-90000
+            controller = new WorkflowController(workflowService, objectMapper); // GH-90000
         }
 
         @Test
-        @DisplayName("getWorkflow returns 404 when workflow not found")
-        void getWorkflowNotFound() {
+        @DisplayName("getWorkflow returns 404 when workflow not found [GH-90000]")
+        void getWorkflowNotFound() { // GH-90000
             // GIVEN: Workflow doesn't exist
-            when(workflowService.getWorkflow("non-existent", "tenant-001"))
-                .thenReturn(Promise.of(Optional.empty()));
+            when(workflowService.getWorkflow("non-existent", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             // WHEN: Get workflow
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows/non-existent")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.getWorkflow(request, "non-existent"));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows/non-existent [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getWorkflow(request, "non-existent")); // GH-90000
 
             // THEN: Returns 404
-            assertThat(response.getCode()).isEqualTo(404);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("not found");
+            assertThat(response.getCode()).isEqualTo(404); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("not found [GH-90000]");
         }
 
         @Test
-        @DisplayName("getWorkflow returns workflow when found")
-        void getWorkflowFound() {
+        @DisplayName("getWorkflow returns workflow when found [GH-90000]")
+        void getWorkflowFound() { // GH-90000
             // GIVEN: Workflow exists
-            AiWorkflowInstance workflow = createWorkflow("wf-1", "Test Workflow");
-            when(workflowService.getWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(Optional.of(workflow)));
+            AiWorkflowInstance workflow = createWorkflow("wf-1", "Test Workflow"); // GH-90000
+            when(workflowService.getWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(Optional.of(workflow))); // GH-90000
 
             // WHEN: Get workflow
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows/wf-1")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.getWorkflow(request, "wf-1"));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows/wf-1 [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getWorkflow(request, "wf-1")); // GH-90000
 
             // THEN: Returns 200 with workflow
-            assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Test Workflow");
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Test Workflow [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Workflow API - Delete Workflow")
+    @DisplayName("Workflow API - Delete Workflow [GH-90000]")
     class WorkflowDeletionTests {
 
         private WorkflowController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new WorkflowController(workflowService, objectMapper);
+        void setUp() { // GH-90000
+            controller = new WorkflowController(workflowService, objectMapper); // GH-90000
         }
 
         @Test
-        @DisplayName("deleteWorkflow returns 204 when successful")
-        void deleteWorkflowSuccess() {
+        @DisplayName("deleteWorkflow returns 204 when successful [GH-90000]")
+        void deleteWorkflowSuccess() { // GH-90000
             // GIVEN: Workflow can be deleted
-            when(workflowService.deleteWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(true));
+            when(workflowService.deleteWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(true)); // GH-90000
 
             // WHEN: Delete workflow
-            HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.deleteWorkflow(request, "wf-1"));
+            HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1") // GH-90000
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.deleteWorkflow(request, "wf-1")); // GH-90000
 
             // THEN: Returns 204 No Content
-            assertThat(response.getCode()).isEqualTo(204);
+            assertThat(response.getCode()).isEqualTo(204); // GH-90000
         }
 
         @Test
-        @DisplayName("deleteWorkflow returns 404 when workflow not found")
-        void deleteWorkflowNotFound() {
+        @DisplayName("deleteWorkflow returns 404 when workflow not found [GH-90000]")
+        void deleteWorkflowNotFound() { // GH-90000
             // GIVEN: Workflow doesn't exist
-            when(workflowService.deleteWorkflow("non-existent", "tenant-001"))
-                .thenReturn(Promise.of(false));
+            when(workflowService.deleteWorkflow("non-existent", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(false)); // GH-90000
 
             // WHEN: Delete non-existent workflow
-            HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/non-existent")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.deleteWorkflow(request, "non-existent"));
+            HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/non-existent") // GH-90000
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.deleteWorkflow(request, "non-existent")); // GH-90000
 
             // THEN: Returns 404
-            assertThat(response.getCode()).isEqualTo(404);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("not found");
+            assertThat(response.getCode()).isEqualTo(404); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("not found [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Workflow API - State Transitions (Start, Pause, Resume, Cancel)")
+    @DisplayName("Workflow API - State Transitions (Start, Pause, Resume, Cancel) [GH-90000]")
     class WorkflowStateTransitionTests {
 
         private WorkflowController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new WorkflowController(workflowService, objectMapper);
+        void setUp() { // GH-90000
+            controller = new WorkflowController(workflowService, objectMapper); // GH-90000
         }
 
         @Test
-        @DisplayName("startWorkflow transitions workflow to ACTIVE")
-        void startWorkflowTransitionsToActive() {
+        @DisplayName("startWorkflow transitions workflow to ACTIVE [GH-90000]")
+        void startWorkflowTransitionsToActive() { // GH-90000
             // GIVEN: DRAFT workflow can be started
-            AiWorkflowInstance started = createWorkflowWithStatus("wf-1", "Test", true);
-            when(workflowService.startWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(started));
+            AiWorkflowInstance started = createWorkflowWithStatus("wf-1", "Test", true); // GH-90000
+            when(workflowService.startWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(started)); // GH-90000
 
             // WHEN: Start workflow
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/start")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.startWorkflow(request, "wf-1"));
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/start [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.startWorkflow(request, "wf-1")); // GH-90000
 
             // THEN: Returns 200 with started workflow
-            assertThat(response.getCode()).isEqualTo(200);
-            verify(workflowService).startWorkflow("wf-1", "tenant-001");
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            verify(workflowService).startWorkflow("wf-1", "tenant-001"); // GH-90000
         }
 
         @Test
-        @DisplayName("pauseWorkflow transitions ACTIVE to PAUSED")
-        void pauseWorkflowTransitionsToPaused() {
+        @DisplayName("pauseWorkflow transitions ACTIVE to PAUSED [GH-90000]")
+        void pauseWorkflowTransitionsToPaused() { // GH-90000
             // GIVEN: ACTIVE workflow can be paused
-            AiWorkflowInstance paused = createWorkflowWithStatus("wf-1", "Test", false);
-            when(workflowService.pauseWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(paused));
+            AiWorkflowInstance paused = createWorkflowWithStatus("wf-1", "Test", false); // GH-90000
+            when(workflowService.pauseWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(paused)); // GH-90000
 
             // WHEN: Pause workflow
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/pause")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.pauseWorkflow(request, "wf-1"));
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/pause [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.pauseWorkflow(request, "wf-1")); // GH-90000
 
             // THEN: Returns 200
-            assertThat(response.getCode()).isEqualTo(200);
-            verify(workflowService).pauseWorkflow("wf-1", "tenant-001");
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            verify(workflowService).pauseWorkflow("wf-1", "tenant-001"); // GH-90000
         }
 
         @Test
-        @DisplayName("resumeWorkflow transitions PAUSED to ACTIVE")
-        void resumeWorkflowTransitionsToActive() {
+        @DisplayName("resumeWorkflow transitions PAUSED to ACTIVE [GH-90000]")
+        void resumeWorkflowTransitionsToActive() { // GH-90000
             // GIVEN: PAUSED workflow can be resumed
-            AiWorkflowInstance resumed = createWorkflowWithStatus("wf-1", "Test", true);
-            when(workflowService.resumeWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(resumed));
+            AiWorkflowInstance resumed = createWorkflowWithStatus("wf-1", "Test", true); // GH-90000
+            when(workflowService.resumeWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(resumed)); // GH-90000
 
             // WHEN: Resume workflow
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/resume")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.resumeWorkflow(request, "wf-1"));
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/resume [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.resumeWorkflow(request, "wf-1")); // GH-90000
 
             // THEN: Returns 200
-            assertThat(response.getCode()).isEqualTo(200);
-            verify(workflowService).resumeWorkflow("wf-1", "tenant-001");
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            verify(workflowService).resumeWorkflow("wf-1", "tenant-001"); // GH-90000
         }
 
         @Test
-        @DisplayName("cancelWorkflow transitions to CANCELLED")
-        void cancelWorkflowTransitionsToCancelled() {
+        @DisplayName("cancelWorkflow transitions to CANCELLED [GH-90000]")
+        void cancelWorkflowTransitionsToCancelled() { // GH-90000
             // GIVEN: ACTIVE or PAUSED workflow can be cancelled
-            AiWorkflowInstance cancelled = createWorkflow("wf-1", "Test");
-            when(workflowService.cancelWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(cancelled));
+            AiWorkflowInstance cancelled = createWorkflow("wf-1", "Test"); // GH-90000
+            when(workflowService.cancelWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(cancelled)); // GH-90000
 
             // WHEN: Cancel workflow
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/cancel")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse response = runPromise(() -> controller.cancelWorkflow(request, "wf-1"));
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/cancel [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.cancelWorkflow(request, "wf-1")); // GH-90000
 
             // THEN: Returns 200
-            assertThat(response.getCode()).isEqualTo(200);
-            verify(workflowService).cancelWorkflow("wf-1", "tenant-001");
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            verify(workflowService).cancelWorkflow("wf-1", "tenant-001"); // GH-90000
         }
     }
 
@@ -581,119 +581,119 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Vector API - Semantic Search")
+    @DisplayName("Vector API - Semantic Search [GH-90000]")
     class SemanticSearchTests {
 
         private VectorController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new VectorController(searchService, ragService, objectMapper);
+        void setUp() { // GH-90000
+            controller = new VectorController(searchService, ragService, objectMapper); // GH-90000
         }
 
         @Test
-        @DisplayName("search returns 400 when query is empty")
-        void searchEmptyQuery() {
+        @DisplayName("search returns 400 when query is empty [GH-90000]")
+        void searchEmptyQuery() { // GH-90000
             // GIVEN: Empty search request
             String searchBody = "{\"query\": \"\", \"limit\": 10, \"threshold\": 0.7}";
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search")
-                .withBody(searchBody.getBytes(StandardCharsets.UTF_8))
-                .build();
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search [GH-90000]")
+                .withBody(searchBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
 
             // WHEN: Search
-            HttpResponse response = runPromise(() -> controller.search(request));
+            HttpResponse response = runPromise(() -> controller.search(request)); // GH-90000
 
-            // THEN: Returns 400 or validates empty query (depends on implementation)
-            assertThat(response.getCode()).isIn(200, 400); // Either validates or 400
+            // THEN: Returns 400 or validates empty query (depends on implementation) // GH-90000
+            assertThat(response.getCode()).isIn(200, 400); // Either validates or 400 // GH-90000
         }
 
         @Test
-        @DisplayName("search returns 200 with results when query valid")
-        void searchValidQuery() {
+        @DisplayName("search returns 200 with results when query valid [GH-90000]")
+        void searchValidQuery() { // GH-90000
             // GIVEN: Valid search results
-            SemanticSearchService.SemanticSearchResult result = new SemanticSearchService.SemanticSearchResult(
+            SemanticSearchService.SemanticSearchResult result = new SemanticSearchService.SemanticSearchResult( // GH-90000
                 "query text",
-                List.of(),
+                List.of(), // GH-90000
                 100,
                 0L,
                 null
             );
-            when(searchService.search(any()))
-                .thenReturn(Promise.of(result));
+            when(searchService.search(any())) // GH-90000
+                .thenReturn(Promise.of(result)); // GH-90000
 
             // WHEN: Search
             String searchBody = "{\"query\": \"test query\", \"limit\": 10, \"threshold\": 0.7}";
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search")
-                .withBody(searchBody.getBytes(StandardCharsets.UTF_8))
-                .build();
-            HttpResponse response = runPromise(() -> controller.search(request));
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search [GH-90000]")
+                .withBody(searchBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.search(request)); // GH-90000
 
             // THEN: Returns 200
-            assertThat(response.getCode()).isEqualTo(200);
-            verify(searchService).search(any());
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            verify(searchService).search(any()); // GH-90000
         }
 
         @Test
-        @DisplayName("search returns 200 with empty results when no matches")
-        void searchNoResults() {
+        @DisplayName("search returns 200 with empty results when no matches [GH-90000]")
+        void searchNoResults() { // GH-90000
             // GIVEN: Search returns no results
-            SemanticSearchService.SemanticSearchResult result = new SemanticSearchService.SemanticSearchResult(
+            SemanticSearchService.SemanticSearchResult result = new SemanticSearchService.SemanticSearchResult( // GH-90000
                 "query with no matches",
-                List.of(),
+                List.of(), // GH-90000
                 0,
                 0L,
                 null
             );
-            when(searchService.search(any()))
-                .thenReturn(Promise.of(result));
+            when(searchService.search(any())) // GH-90000
+                .thenReturn(Promise.of(result)); // GH-90000
 
             // WHEN: Search
             String searchBody = "{\"query\": \"no match\", \"limit\": 10, \"threshold\": 0.9}";
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search")
-                .withBody(searchBody.getBytes(StandardCharsets.UTF_8))
-                .build();
-            HttpResponse response = runPromise(() -> controller.search(request));
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search [GH-90000]")
+                .withBody(searchBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.search(request)); // GH-90000
 
-            // THEN: Returns 200 with empty results (not 404)
-            assertThat(response.getCode()).isEqualTo(200);
+            // THEN: Returns 200 with empty results (not 404) // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Vector API - Document Indexing")
+    @DisplayName("Vector API - Document Indexing [GH-90000]")
     class DocumentIndexingTests {
 
         private VectorController controller;
 
         @BeforeEach
-        void setUp() {
-            controller = new VectorController(searchService, ragService, objectMapper);
+        void setUp() { // GH-90000
+            controller = new VectorController(searchService, ragService, objectMapper); // GH-90000
         }
 
         @Test
-        @DisplayName("indexDocument returns 200 when successful")
-        void indexDocumentSuccessful() {
+        @DisplayName("indexDocument returns 200 when successful [GH-90000]")
+        void indexDocumentSuccessful() { // GH-90000
             // GIVEN: Document can be indexed
-            SemanticSearchService.IndexResult result = new SemanticSearchService.IndexResult(
+            SemanticSearchService.IndexResult result = new SemanticSearchService.IndexResult( // GH-90000
                 "doc-1",
                 true,
                 0L,
                 0,
                 null
             );
-            when(searchService.index(any()))
-                .thenReturn(Promise.of(result));
+            when(searchService.index(any())) // GH-90000
+                .thenReturn(Promise.of(result)); // GH-90000
 
             // WHEN: Index document
             String docBody = "{\"id\": \"doc-1\", \"content\": \"Test document\", \"metadata\": {}}";
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/index")
-                .withBody(docBody.getBytes(StandardCharsets.UTF_8))
-                .build();
-            HttpResponse response = runPromise(() -> controller.indexDocument(request));
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/index [GH-90000]")
+                .withBody(docBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
+            HttpResponse response = runPromise(() -> controller.indexDocument(request)); // GH-90000
 
             // THEN: Returns 200 OK
-            assertThat(response.getCode()).isEqualTo(200);
-            verify(searchService).index(any());
+            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            verify(searchService).index(any()); // GH-90000
         }
     }
 
@@ -702,103 +702,103 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Security - Tenant Isolation")
+    @DisplayName("Security - Tenant Isolation [GH-90000]")
     class TenantIsolationTests {
 
         private WorkflowController workflowController;
         private AgentController agentController;
 
         @BeforeEach
-        void setUp() {
-            workflowController = new WorkflowController(workflowService, objectMapper);
-            agentController = new AgentController(agentRegistry, objectMapper, auditLogger);
+        void setUp() { // GH-90000
+            workflowController = new WorkflowController(workflowService, objectMapper); // GH-90000
+            agentController = new AgentController(agentRegistry, objectMapper, auditLogger); // GH-90000
         }
 
         @Test
-        @DisplayName("listWorkflows filters by tenant ID from header")
-        void listWorkflowsFilteredByTenant() {
+        @DisplayName("listWorkflows filters by tenant ID from header [GH-90000]")
+        void listWorkflowsFilteredByTenant() { // GH-90000
             // GIVEN: Service returns workflows for specific tenant
-            when(workflowService.listWorkflows("tenant-001", null, 20, 0))
-                .thenReturn(Promise.of(List.of(createWorkflow("wf-1", "Tenant A WF"))));
-            when(workflowService.listWorkflows("tenant-002", null, 20, 0))
-                .thenReturn(Promise.of(List.of(createWorkflow("wf-2", "Tenant B WF"))));
+            when(workflowService.listWorkflows("tenant-001", null, 20, 0)) // GH-90000
+                .thenReturn(Promise.of(List.of(createWorkflow("wf-1", "Tenant A WF")))); // GH-90000
+            when(workflowService.listWorkflows("tenant-002", null, 20, 0)) // GH-90000
+                .thenReturn(Promise.of(List.of(createWorkflow("wf-2", "Tenant B WF")))); // GH-90000
 
             // WHEN: Tenant A lists workflows
-            HttpRequest requestA = HttpRequest.get("http://localhost/api/v1/workflows")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse responseA = runPromise(() -> workflowController.listWorkflows(requestA));
+            HttpRequest requestA = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse responseA = runPromise(() -> workflowController.listWorkflows(requestA)); // GH-90000
 
             // THEN: Tenant A gets only their workflows
-            assertThat(responseA.getCode()).isEqualTo(200);
-            verify(workflowService).listWorkflows("tenant-001", null, 20, 0);
+            assertThat(responseA.getCode()).isEqualTo(200); // GH-90000
+            verify(workflowService).listWorkflows("tenant-001", null, 20, 0); // GH-90000
 
             // WHEN: Tenant B lists workflows
-            HttpRequest requestB = HttpRequest.get("http://localhost/api/v1/workflows")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-002")
-                .build();
-            HttpResponse responseB = runPromise(() -> workflowController.listWorkflows(requestB));
+            HttpRequest requestB = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-002")
+                .build(); // GH-90000
+            HttpResponse responseB = runPromise(() -> workflowController.listWorkflows(requestB)); // GH-90000
 
             // THEN: Tenant B gets only their workflows
-            assertThat(responseB.getCode()).isEqualTo(200);
-            verify(workflowService).listWorkflows("tenant-002", null, 20, 0);
+            assertThat(responseB.getCode()).isEqualTo(200); // GH-90000
+            verify(workflowService).listWorkflows("tenant-002", null, 20, 0); // GH-90000
         }
 
         @Test
-        @DisplayName("getWorkflow uses tenant ID from header to verify ownership")
-        void getWorkflowVerifiesTenantOwnership() {
+        @DisplayName("getWorkflow uses tenant ID from header to verify ownership [GH-90000]")
+        void getWorkflowVerifiesTenantOwnership() { // GH-90000
             // GIVEN: Workflow for tenant-001
-            AiWorkflowInstance workflow = createWorkflow("wf-1", "Tenant A Workflow");
-            when(workflowService.getWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(Optional.of(workflow)));
-            when(workflowService.getWorkflow("wf-1", "tenant-002"))
-                .thenReturn(Promise.of(Optional.empty())); // Different tenant sees nothing
+            AiWorkflowInstance workflow = createWorkflow("wf-1", "Tenant A Workflow"); // GH-90000
+            when(workflowService.getWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(Optional.of(workflow))); // GH-90000
+            when(workflowService.getWorkflow("wf-1", "tenant-002")) // GH-90000
+                .thenReturn(Promise.of(Optional.empty())); // Different tenant sees nothing // GH-90000
 
             // WHEN: Tenant A gets their workflow
-            HttpRequest requestA = HttpRequest.get("http://localhost/api/v1/workflows/wf-1")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse responseA = runPromise(() -> workflowController.getWorkflow(requestA, "wf-1"));
+            HttpRequest requestA = HttpRequest.get("http://localhost/api/v1/workflows/wf-1 [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse responseA = runPromise(() -> workflowController.getWorkflow(requestA, "wf-1")); // GH-90000
 
             // THEN: Returns 200 with workflow
-            assertThat(responseA.getCode()).isEqualTo(200);
+            assertThat(responseA.getCode()).isEqualTo(200); // GH-90000
 
             // WHEN: Tenant B tries to get tenant A's workflow
-            HttpRequest requestB = HttpRequest.get("http://localhost/api/v1/workflows/wf-1")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-002")
-                .build();
-            HttpResponse responseB = runPromise(() -> workflowController.getWorkflow(requestB, "wf-1"));
+            HttpRequest requestB = HttpRequest.get("http://localhost/api/v1/workflows/wf-1 [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-002")
+                .build(); // GH-90000
+            HttpResponse responseB = runPromise(() -> workflowController.getWorkflow(requestB, "wf-1")); // GH-90000
 
-            // THEN: Returns 404 (not 200, enforcing isolation)
-            assertThat(responseB.getCode()).isEqualTo(404);
+            // THEN: Returns 404 (not 200, enforcing isolation) // GH-90000
+            assertThat(responseB.getCode()).isEqualTo(404); // GH-90000
         }
 
         @Test
-        @DisplayName("deleteWorkflow respects tenant boundaries")
-        void deleteWorkflowTenantBoundary() {
+        @DisplayName("deleteWorkflow respects tenant boundaries [GH-90000]")
+        void deleteWorkflowTenantBoundary() { // GH-90000
             // GIVEN: Workflow belongs to tenant-001
-            when(workflowService.deleteWorkflow("wf-1", "tenant-001"))
-                .thenReturn(Promise.of(true)); // Can delete
-            when(workflowService.deleteWorkflow("wf-1", "tenant-002"))
-                .thenReturn(Promise.of(false)); // Cannot delete (not owner)
+            when(workflowService.deleteWorkflow("wf-1", "tenant-001")) // GH-90000
+                .thenReturn(Promise.of(true)); // Can delete // GH-90000
+            when(workflowService.deleteWorkflow("wf-1", "tenant-002")) // GH-90000
+                .thenReturn(Promise.of(false)); // Cannot delete (not owner) // GH-90000
 
             // WHEN: Tenant A deletes their workflow
-            HttpRequest requestA = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
-            HttpResponse responseA = runPromise(() -> workflowController.deleteWorkflow(requestA, "wf-1"));
+            HttpRequest requestA = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1") // GH-90000
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
+            HttpResponse responseA = runPromise(() -> workflowController.deleteWorkflow(requestA, "wf-1")); // GH-90000
 
             // THEN: Returns 204
-            assertThat(responseA.getCode()).isEqualTo(204);
+            assertThat(responseA.getCode()).isEqualTo(204); // GH-90000
 
             // WHEN: Tenant B tries to delete tenant A's workflow
-            HttpRequest requestB = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-002")
-                .build();
-            HttpResponse responseB = runPromise(() -> workflowController.deleteWorkflow(requestB, "wf-1"));
+            HttpRequest requestB = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1") // GH-90000
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-002")
+                .build(); // GH-90000
+            HttpResponse responseB = runPromise(() -> workflowController.deleteWorkflow(requestB, "wf-1")); // GH-90000
 
-            // THEN: Returns 404 (enforcing tenant isolation)
-            assertThat(responseB.getCode()).isEqualTo(404);
+            // THEN: Returns 404 (enforcing tenant isolation) // GH-90000
+            assertThat(responseB.getCode()).isEqualTo(404); // GH-90000
         }
     }
 
@@ -807,44 +807,44 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Error Handling - HTTP Status Codes")
+    @DisplayName("Error Handling - HTTP Status Codes [GH-90000]")
     class ErrorHandlingTests {
 
         private WorkflowController workflowController;
 
         @BeforeEach
-        void setUp() {
-            workflowController = new WorkflowController(workflowService, objectMapper);
+        void setUp() { // GH-90000
+            workflowController = new WorkflowController(workflowService, objectMapper); // GH-90000
         }
 
         @Test
-        @DisplayName("listWorkflows with invalid status returns 400")
-        void invalidStatusReturns400() {
+        @DisplayName("listWorkflows with invalid status returns 400 [GH-90000]")
+        void invalidStatusReturns400() { // GH-90000
             // GIVEN: Invalid status value
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?status=NOTASTATE")
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
-                .build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?status=NOTASTATE [GH-90000]")
+                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .build(); // GH-90000
 
             // WHEN: List workflows
-            HttpResponse response = runPromise(() -> workflowController.listWorkflows(request));
+            HttpResponse response = runPromise(() -> workflowController.listWorkflows(request)); // GH-90000
 
             // THEN: Returns 400 Bad Request
-            assertThat(response.getCode()).isEqualTo(400);
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Invalid status");
+            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Invalid status [GH-90000]");
         }
-        void nullTenantIdUsesDefault() {
+        void nullTenantIdUsesDefault() { // GH-90000
             // GIVEN: No X-Tenant-ID header
-            AiWorkflowInstance workflow = createWorkflow("wf-1", "Default Tenant WF");
-            when(workflowService.getWorkflow("wf-1", "default-tenant"))
-                .thenReturn(Promise.of(Optional.of(workflow)));
+            AiWorkflowInstance workflow = createWorkflow("wf-1", "Default Tenant WF"); // GH-90000
+            when(workflowService.getWorkflow("wf-1", "default-tenant")) // GH-90000
+                .thenReturn(Promise.of(Optional.of(workflow))); // GH-90000
 
             // WHEN: Get workflow without tenant header
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows/wf-1")
-                .build(); // No X-Tenant-ID header
-            HttpResponse response = runPromise(() -> workflowController.getWorkflow(request, "wf-1"));
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows/wf-1 [GH-90000]")
+                .build(); // No X-Tenant-ID header // GH-90000
+            HttpResponse response = runPromise(() -> workflowController.getWorkflow(request, "wf-1")); // GH-90000
 
-            // THEN: Still works (uses default tenant)
-            assertThat(response.getCode()).isIn(200, 404); // Depends on implementation
+            // THEN: Still works (uses default tenant) // GH-90000
+            assertThat(response.getCode()).isIn(200, 404); // Depends on implementation // GH-90000
         }
     }
 
@@ -852,8 +852,8 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
     // HELPER METHODS
     // =========================================================================
 
-    private AiWorkflowInstance createWorkflow(String id, String name) {
-        return new AiWorkflowInstance(
+    private AiWorkflowInstance createWorkflow(String id, String name) { // GH-90000
+        return new AiWorkflowInstance( // GH-90000
             id,
             "tenant-001",
             name,
@@ -863,19 +863,19 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
             "step-1",
             0,
             1,
-            new HashMap<>(),
-            new HashMap<>(),
+            new HashMap<>(), // GH-90000
+            new HashMap<>(), // GH-90000
             null,
             "user-123",
-            Instant.now(),
-            Instant.now(),
+            Instant.now(), // GH-90000
+            Instant.now(), // GH-90000
             null,
             null
         );
     }
 
-    private AiWorkflowInstance createWorkflowWithStatus(String id, String name, boolean isActive) {
-        return new AiWorkflowInstance(
+    private AiWorkflowInstance createWorkflowWithStatus(String id, String name, boolean isActive) { // GH-90000
+        return new AiWorkflowInstance( // GH-90000
             id,
             "tenant-001",
             name,
@@ -885,12 +885,12 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
             "step-1",
             0,
             1,
-            new HashMap<>(),
-            new HashMap<>(),
+            new HashMap<>(), // GH-90000
+            new HashMap<>(), // GH-90000
             null,
             "user-123",
-            Instant.now(),
-            Instant.now(),
+            Instant.now(), // GH-90000
+            Instant.now(), // GH-90000
             null,
             null
         );

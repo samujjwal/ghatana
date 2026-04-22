@@ -13,366 +13,366 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("DataValidationProcessor Tests")
+@DisplayName("DataValidationProcessor Tests [GH-90000]")
 class DataValidationProcessorTest extends EventloopTestBase {
 
-    private static final TenantContext TENANT = TenantContext.of("tenant-a", "workspace-a");
+    private static final TenantContext TENANT = TenantContext.of("tenant-a", "workspace-a"); // GH-90000
 
     @Test
-    @DisplayName("default processor stays Data-Cloud-local and never auto-enables AEP validation")
-    @SuppressWarnings("deprecation")
-    void defaultProcessorDoesNotEnableAepValidation() {
-        DataValidationProcessor processor = new DataValidationProcessor();
+    @DisplayName("default processor stays Data-Cloud-local and never auto-enables AEP validation [GH-90000]")
+    @SuppressWarnings("deprecation [GH-90000]")
+    void defaultProcessorDoesNotEnableAepValidation() { // GH-90000
+        DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-        assertThat(processor.isAepAvailable()).isFalse();
+        assertThat(processor.isAepAvailable()).isFalse(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Basic Validation")
+    @DisplayName("Basic Validation [GH-90000]")
     class BasicValidationTests {
 
         @Test
-        @DisplayName("default processor rejects empty entity payloads")
-        void defaultProcessorRejectsEmptyEntityPayloads() {
-            DataValidationProcessor processor = new DataValidationProcessor();
-            EntityStore.Entity entity = EntityStore.Entity.builder()
-                    .collection("documents")
-                    .data(Map.of())
-                    .build();
+        @DisplayName("default processor rejects empty entity payloads [GH-90000]")
+        void defaultProcessorRejectsEmptyEntityPayloads() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
+            EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
+                    .collection("documents [GH-90000]")
+                    .data(Map.of()) // GH-90000
+                    .build(); // GH-90000
 
             DataValidationProcessor.ValidationResult result =
-                    runPromise(() -> processor.validate(TENANT, entity));
+                    runPromise(() -> processor.validate(TENANT, entity)); // GH-90000
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("EMPTY_DATA");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("EMPTY_DATA [GH-90000]");
         }
 
         @Test
-        @DisplayName("default processor accepts non-empty entity payloads")
-        void defaultProcessorAcceptsNonEmptyEntityPayloads() {
-            DataValidationProcessor processor = new DataValidationProcessor();
-            EntityStore.Entity entity = EntityStore.Entity.builder()
-                    .collection("documents")
-                    .data(Map.of("title", "Test Document"))
-                    .build();
+        @DisplayName("default processor accepts non-empty entity payloads [GH-90000]")
+        void defaultProcessorAcceptsNonEmptyEntityPayloads() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
+            EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
+                    .collection("documents [GH-90000]")
+                    .data(Map.of("title", "Test Document")) // GH-90000
+                    .build(); // GH-90000
 
             DataValidationProcessor.ValidationResult result =
-                    runPromise(() -> processor.validate(TENANT, entity));
+                    runPromise(() -> processor.validate(TENANT, entity)); // GH-90000
 
-            assertThat(result.valid()).isTrue();
+            assertThat(result.valid()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Rule-Based Validation")
+    @DisplayName("Rule-Based Validation [GH-90000]")
     class RuleValidationTests {
 
         @Test
-        @DisplayName("MIN_LENGTH rule rejects strings that are too short")
-        void minLengthRuleRejectsShortStrings() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MIN_LENGTH rule rejects strings that are too short [GH-90000]")
+        void minLengthRuleRejectsShortStrings() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("title", "x"),
-                    List.of(DataValidationProcessor.ValidationRule.minLength("title", 3))));
+                    Map.of("title", "x"), // GH-90000
+                    List.of(DataValidationProcessor.ValidationRule.minLength("title", 3)))); // GH-90000
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("MIN_LENGTH");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("MIN_LENGTH [GH-90000]");
         }
 
         @Test
-        @DisplayName("MIN_LENGTH rule accepts strings that meet minimum")
-        void minLengthRuleAcceptsValidStrings() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MIN_LENGTH rule accepts strings that meet minimum [GH-90000]")
+        void minLengthRuleAcceptsValidStrings() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("title", "Valid Title"),
-                    List.of(DataValidationProcessor.ValidationRule.minLength("title", 3))));
+                    Map.of("title", "Valid Title"), // GH-90000
+                    List.of(DataValidationProcessor.ValidationRule.minLength("title", 3)))); // GH-90000
 
-            assertThat(result.valid()).isTrue();
+            assertThat(result.valid()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("MAX_LENGTH rule rejects strings that are too long")
-        void maxLengthRuleRejectsLongStrings() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MAX_LENGTH rule rejects strings that are too long [GH-90000]")
+        void maxLengthRuleRejectsLongStrings() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("title", "This is a very long title that exceeds the maximum"),
-                    List.of(DataValidationProcessor.ValidationRule.maxLength("title", 20))));
+                    Map.of("title", "This is a very long title that exceeds the maximum"), // GH-90000
+                    List.of(DataValidationProcessor.ValidationRule.maxLength("title", 20)))); // GH-90000
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("MAX_LENGTH");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("MAX_LENGTH [GH-90000]");
         }
 
         @Test
-        @DisplayName("MAX_LENGTH rule accepts strings that meet maximum")
-        void maxLengthRuleAcceptsValidStrings() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MAX_LENGTH rule accepts strings that meet maximum [GH-90000]")
+        void maxLengthRuleAcceptsValidStrings() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("title", "Short"),
-                    List.of(DataValidationProcessor.ValidationRule.maxLength("title", 20))));
+                    Map.of("title", "Short"), // GH-90000
+                    List.of(DataValidationProcessor.ValidationRule.maxLength("title", 20)))); // GH-90000
 
-            assertThat(result.valid()).isTrue();
+            assertThat(result.valid()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("REQUIRED rule rejects null values")
-        void requiredRuleRejectsNullValues() {
-            DataValidationProcessor processor = new DataValidationProcessor();
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("title", null);
+        @DisplayName("REQUIRED rule rejects null values [GH-90000]")
+        void requiredRuleRejectsNullValues() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
+            Map<String, Object> payload = new HashMap<>(); // GH-90000
+            payload.put("title", null); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
                     payload,
-                    List.of(DataValidationProcessor.ValidationRule.required("title"))));
+                    List.of(DataValidationProcessor.ValidationRule.required("title [GH-90000]"))));
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("REQUIRED");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("REQUIRED [GH-90000]");
         }
 
         @Test
-        @DisplayName("REQUIRED rule rejects blank strings")
-        void requiredRuleRejectsBlankStrings() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("REQUIRED rule rejects blank strings [GH-90000]")
+        void requiredRuleRejectsBlankStrings() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("title", "   "),
-                    List.of(DataValidationProcessor.ValidationRule.required("title"))));
+                    Map.of("title", "   "), // GH-90000
+                    List.of(DataValidationProcessor.ValidationRule.required("title [GH-90000]"))));
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("REQUIRED");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("REQUIRED [GH-90000]");
         }
 
         @Test
-        @DisplayName("PATTERN rule rejects strings that don't match")
-        void patternRuleRejectsNonMatchingStrings() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("PATTERN rule rejects strings that don't match [GH-90000]")
+        void patternRuleRejectsNonMatchingStrings() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("email", "invalid-email"),
-                    List.of(DataValidationProcessor.ValidationRule.pattern("email", "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))));
+                    Map.of("email", "invalid-email"), // GH-90000
+                    List.of(DataValidationProcessor.ValidationRule.pattern("email", "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")))); // GH-90000
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("PATTERN");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("PATTERN [GH-90000]");
         }
 
         @Test
-        @DisplayName("PATTERN rule accepts strings that match")
-        void patternRuleAcceptsMatchingStrings() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("PATTERN rule accepts strings that match [GH-90000]")
+        void patternRuleAcceptsMatchingStrings() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() -> processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("email", "test@example.com"),
-                    List.of(DataValidationProcessor.ValidationRule.pattern("email", "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))));
+                    Map.of("email", "test@example.com"), // GH-90000
+                    List.of(DataValidationProcessor.ValidationRule.pattern("email", "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")))); // GH-90000
 
-            assertThat(result.valid()).isTrue();
+            assertThat(result.valid()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("MIN_VALUE rule rejects numbers below minimum")
-        void minValueRuleRejectsNumbersBelowMinimum() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MIN_VALUE rule rejects numbers below minimum [GH-90000]")
+        void minValueRuleRejectsNumbersBelowMinimum() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> 
-                processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() ->  // GH-90000
+                processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("age", 5),
-                    List.of(new DataValidationProcessor.ValidationRule(
+                    Map.of("age", 5), // GH-90000
+                    List.of(new DataValidationProcessor.ValidationRule( // GH-90000
                         "age", 
                         DataValidationProcessor.RuleType.MIN_VALUE, 
                         10, 
                         "Age must be at least 10"
                     ))));
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("MIN_VALUE");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("MIN_VALUE [GH-90000]");
         }
 
         @Test
-        @DisplayName("MIN_VALUE rule accepts numbers at or above minimum")
-        void minValueRuleAcceptsValidNumbers() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MIN_VALUE rule accepts numbers at or above minimum [GH-90000]")
+        void minValueRuleAcceptsValidNumbers() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> 
-                processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() ->  // GH-90000
+                processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("age", 15),
-                    List.of(new DataValidationProcessor.ValidationRule(
+                    Map.of("age", 15), // GH-90000
+                    List.of(new DataValidationProcessor.ValidationRule( // GH-90000
                         "age", 
                         DataValidationProcessor.RuleType.MIN_VALUE, 
                         10, 
                         "Age must be at least 10"
                     ))));
 
-            assertThat(result.valid()).isTrue();
+            assertThat(result.valid()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("MAX_VALUE rule rejects numbers above maximum")
-        void maxValueRuleRejectsNumbersAboveMaximum() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MAX_VALUE rule rejects numbers above maximum [GH-90000]")
+        void maxValueRuleRejectsNumbersAboveMaximum() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> 
-                processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() ->  // GH-90000
+                processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("age", 150),
-                    List.of(new DataValidationProcessor.ValidationRule(
+                    Map.of("age", 150), // GH-90000
+                    List.of(new DataValidationProcessor.ValidationRule( // GH-90000
                         "age", 
                         DataValidationProcessor.RuleType.MAX_VALUE, 
                         100, 
                         "Age must be at most 100"
                     ))));
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).singleElement()
-                    .extracting(DataValidationProcessor.ValidationError::code)
-                    .isEqualTo("MAX_VALUE");
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).singleElement() // GH-90000
+                    .extracting(DataValidationProcessor.ValidationError::code) // GH-90000
+                    .isEqualTo("MAX_VALUE [GH-90000]");
         }
 
         @Test
-        @DisplayName("MAX_VALUE rule accepts numbers at or below maximum")
-        void maxValueRuleAcceptsValidNumbers() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("MAX_VALUE rule accepts numbers at or below maximum [GH-90000]")
+        void maxValueRuleAcceptsValidNumbers() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> 
-                processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() ->  // GH-90000
+                processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("age", 50),
-                    List.of(new DataValidationProcessor.ValidationRule(
+                    Map.of("age", 50), // GH-90000
+                    List.of(new DataValidationProcessor.ValidationRule( // GH-90000
                         "age", 
                         DataValidationProcessor.RuleType.MAX_VALUE, 
                         100, 
                         "Age must be at most 100"
                     ))));
 
-            assertThat(result.valid()).isTrue();
+            assertThat(result.valid()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("multiple rules are validated together")
-        void multipleRulesAreValidatedTogether() {
-            DataValidationProcessor processor = new DataValidationProcessor();
+        @DisplayName("multiple rules are validated together [GH-90000]")
+        void multipleRulesAreValidatedTogether() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
 
-            DataValidationProcessor.ValidationResult result = runPromise(() -> 
-                processor.validateWithRules(
+            DataValidationProcessor.ValidationResult result = runPromise(() ->  // GH-90000
+                processor.validateWithRules( // GH-90000
                     TENANT,
                     "documents",
-                    Map.of("title", "x", "age", 150),
-                    List.of(
-                        DataValidationProcessor.ValidationRule.minLength("title", 3),
-                        new DataValidationProcessor.ValidationRule(
+                    Map.of("title", "x", "age", 150), // GH-90000
+                    List.of( // GH-90000
+                        DataValidationProcessor.ValidationRule.minLength("title", 3), // GH-90000
+                        new DataValidationProcessor.ValidationRule( // GH-90000
                             "age", 
                             DataValidationProcessor.RuleType.MAX_VALUE, 
                             100, 
                             "Age must be at most 100"
                         ))));
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.errors()).hasSize(2);
+            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.errors()).hasSize(2); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Pattern Detection")
+    @DisplayName("Pattern Detection [GH-90000]")
     class PatternDetectionTests {
 
         @Test
-        @DisplayName("detects email pattern in entity data")
-        void detectsEmailPattern() {
-            DataValidationProcessor processor = new DataValidationProcessor();
-            EntityStore.Entity entity = EntityStore.Entity.builder()
-                    .collection("contacts")
-                    .data(Map.of("email", "test@example.com"))
-                    .build();
+        @DisplayName("detects email pattern in entity data [GH-90000]")
+        void detectsEmailPattern() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
+            EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
+                    .collection("contacts [GH-90000]")
+                    .data(Map.of("email", "test@example.com")) // GH-90000
+                    .build(); // GH-90000
 
             List<DataValidationProcessor.DetectedPattern> patterns =
-                    runPromise(() -> processor.detectPatterns(TENANT, entity));
+                    runPromise(() -> processor.detectPatterns(TENANT, entity)); // GH-90000
 
-            assertThat(patterns).isNotEmpty();
-            assertThat(patterns).anyMatch(p -> p.patternId().equals("email"));
+            assertThat(patterns).isNotEmpty(); // GH-90000
+            assertThat(patterns).anyMatch(p -> p.patternId().equals("email [GH-90000]"));
         }
 
         @Test
-        @DisplayName("detects URL pattern in entity data")
-        void detectsUrlPattern() {
-            DataValidationProcessor processor = new DataValidationProcessor();
-            EntityStore.Entity entity = EntityStore.Entity.builder()
-                    .collection("resources")
-                    .data(Map.of("url", "https://example.com"))
-                    .build();
+        @DisplayName("detects URL pattern in entity data [GH-90000]")
+        void detectsUrlPattern() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
+            EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
+                    .collection("resources [GH-90000]")
+                    .data(Map.of("url", "https://example.com")) // GH-90000
+                    .build(); // GH-90000
 
             List<DataValidationProcessor.DetectedPattern> patterns =
-                    runPromise(() -> processor.detectPatterns(TENANT, entity));
+                    runPromise(() -> processor.detectPatterns(TENANT, entity)); // GH-90000
 
-            assertThat(patterns).isNotEmpty();
-            assertThat(patterns).anyMatch(p -> p.patternId().equals("url"));
+            assertThat(patterns).isNotEmpty(); // GH-90000
+            assertThat(patterns).anyMatch(p -> p.patternId().equals("url [GH-90000]"));
         }
 
         @Test
-        @DisplayName("detects UUID pattern in entity data")
-        void detectsUuidPattern() {
-            DataValidationProcessor processor = new DataValidationProcessor();
-            EntityStore.Entity entity = EntityStore.Entity.builder()
-                    .collection("entities")
-                    .data(Map.of("id", "550e8400-e29b-41d4-a716-446655440000"))
-                    .build();
+        @DisplayName("detects UUID pattern in entity data [GH-90000]")
+        void detectsUuidPattern() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
+            EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
+                    .collection("entities [GH-90000]")
+                    .data(Map.of("id", "550e8400-e29b-41d4-a716-446655440000")) // GH-90000
+                    .build(); // GH-90000
 
             List<DataValidationProcessor.DetectedPattern> patterns =
-                    runPromise(() -> processor.detectPatterns(TENANT, entity));
+                    runPromise(() -> processor.detectPatterns(TENANT, entity)); // GH-90000
 
-            assertThat(patterns).isNotEmpty();
-            assertThat(patterns).anyMatch(p -> p.patternId().equals("uuid"));
+            assertThat(patterns).isNotEmpty(); // GH-90000
+            assertThat(patterns).anyMatch(p -> p.patternId().equals("uuid [GH-90000]"));
         }
 
         @Test
-        @DisplayName("returns empty list when no patterns detected")
-        void returnsEmptyListWhenNoPatterns() {
-            DataValidationProcessor processor = new DataValidationProcessor();
-            EntityStore.Entity entity = EntityStore.Entity.builder()
-                    .collection("entities")
-                    .data(Map.of("name", "John Doe"))
-                    .build();
+        @DisplayName("returns empty list when no patterns detected [GH-90000]")
+        void returnsEmptyListWhenNoPatterns() { // GH-90000
+            DataValidationProcessor processor = new DataValidationProcessor(); // GH-90000
+            EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
+                    .collection("entities [GH-90000]")
+                    .data(Map.of("name", "John Doe")) // GH-90000
+                    .build(); // GH-90000
 
             List<DataValidationProcessor.DetectedPattern> patterns =
-                    runPromise(() -> processor.detectPatterns(TENANT, entity));
+                    runPromise(() -> processor.detectPatterns(TENANT, entity)); // GH-90000
 
-            assertThat(patterns).isEmpty();
+            assertThat(patterns).isEmpty(); // GH-90000
         }
     }
 }

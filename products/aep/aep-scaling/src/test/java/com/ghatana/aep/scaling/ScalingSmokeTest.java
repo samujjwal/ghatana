@@ -26,99 +26,99 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Platform Scaling — Smoke Tests")
+@DisplayName("Platform Scaling — Smoke Tests [GH-90000]")
 class ScalingSmokeTest {
 
     // ── Stateless Service Tests ──────────────────────────────────────────
 
     @Test
-    @DisplayName("DefaultMetricsCollector can be instantiated and returns metrics")
-    void defaultMetricsCollectorWorks() {
-        var collector = new DefaultMetricsCollector();
-        assertNotNull(collector);
-        var metrics = collector.collectClusterMetrics("cluster-1");
-        assertNotNull(metrics);
-        assertEquals("cluster-1", metrics.getClusterId());
+    @DisplayName("DefaultMetricsCollector can be instantiated and returns metrics [GH-90000]")
+    void defaultMetricsCollectorWorks() { // GH-90000
+        var collector = new DefaultMetricsCollector(); // GH-90000
+        assertNotNull(collector); // GH-90000
+        var metrics = collector.collectClusterMetrics("cluster-1 [GH-90000]");
+        assertNotNull(metrics); // GH-90000
+        assertEquals("cluster-1", metrics.getClusterId()); // GH-90000
     }
 
     @Test
-    @DisplayName("DefaultScalingPolicyManager can be instantiated")
-    void defaultScalingPolicyManagerWorks() {
-        var manager = new DefaultScalingPolicyManager();
-        assertNotNull(manager);
+    @DisplayName("DefaultScalingPolicyManager can be instantiated [GH-90000]")
+    void defaultScalingPolicyManagerWorks() { // GH-90000
+        var manager = new DefaultScalingPolicyManager(); // GH-90000
+        assertNotNull(manager); // GH-90000
     }
 
     @Test
-    @DisplayName("DefaultCostOptimizer can be instantiated")
-    void defaultCostOptimizerWorks() {
-        var optimizer = new DefaultCostOptimizer();
-        assertNotNull(optimizer);
+    @DisplayName("DefaultCostOptimizer can be instantiated [GH-90000]")
+    void defaultCostOptimizerWorks() { // GH-90000
+        var optimizer = new DefaultCostOptimizer(); // GH-90000
+        assertNotNull(optimizer); // GH-90000
     }
 
     @Test
-    @DisplayName("DefaultScalingExecutor can be instantiated")
-    void defaultScalingExecutorWorks() {
-        var executor = new DefaultScalingExecutor();
-        assertNotNull(executor);
+    @DisplayName("DefaultScalingExecutor can be instantiated [GH-90000]")
+    void defaultScalingExecutorWorks() { // GH-90000
+        var executor = new DefaultScalingExecutor(); // GH-90000
+        assertNotNull(executor); // GH-90000
     }
 
     // ── Model Tests ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("ScalingEvaluationRequest can be constructed")
-    void scalingEvaluationRequestFields() {
-        var request = new ScalingEvaluationRequest("cluster-1");
-        assertEquals("cluster-1", request.getClusterId());
-        assertNotNull(request.getEvaluationTime());
+    @DisplayName("ScalingEvaluationRequest can be constructed [GH-90000]")
+    void scalingEvaluationRequestFields() { // GH-90000
+        var request = new ScalingEvaluationRequest("cluster-1 [GH-90000]");
+        assertEquals("cluster-1", request.getClusterId()); // GH-90000
+        assertNotNull(request.getEvaluationTime()); // GH-90000
     }
 
     @Test
-    @DisplayName("ScalingDecision can be constructed")
-    void scalingDecisionFields() {
-        var action = new ScalingAction();
-        action.setType(ScalingAction.Type.SCALE_UP);
-        action.setNodeCount(3);
-        action.setReason("High CPU");
+    @DisplayName("ScalingDecision can be constructed [GH-90000]")
+    void scalingDecisionFields() { // GH-90000
+        var action = new ScalingAction(); // GH-90000
+        action.setType(ScalingAction.Type.SCALE_UP); // GH-90000
+        action.setNodeCount(3); // GH-90000
+        action.setReason("High CPU [GH-90000]");
 
-        var decision = new ScalingDecision("cluster-1", action);
-        assertEquals("cluster-1", decision.getClusterId());
-        assertEquals(ScalingAction.Type.SCALE_UP, decision.getAction().getType());
+        var decision = new ScalingDecision("cluster-1", action); // GH-90000
+        assertEquals("cluster-1", decision.getClusterId()); // GH-90000
+        assertEquals(ScalingAction.Type.SCALE_UP, decision.getAction().getType()); // GH-90000
     }
 
     @Test
-    @DisplayName("ScalingPolicy can be built")
-    void scalingPolicyBuilder() {
-        var policy = ScalingPolicy.builder()
-                .policyId("policy-1")
-                .name("CPU Scale Up")
-                .description("Scale up when CPU > 80%")
-                .scaleUpThreshold(0.8)
-                .build();
-        assertEquals("policy-1", policy.getPolicyId());
-        assertEquals(0.8, policy.getScaleUpThreshold());
+    @DisplayName("ScalingPolicy can be built [GH-90000]")
+    void scalingPolicyBuilder() { // GH-90000
+        var policy = ScalingPolicy.builder() // GH-90000
+                .policyId("policy-1 [GH-90000]")
+                .name("CPU Scale Up [GH-90000]")
+                .description("Scale up when CPU > 80% [GH-90000]")
+                .scaleUpThreshold(0.8) // GH-90000
+                .build(); // GH-90000
+        assertEquals("policy-1", policy.getPolicyId()); // GH-90000
+        assertEquals(0.8, policy.getScaleUpThreshold()); // GH-90000
     }
 
     @Test
-    @DisplayName("ClusterMetrics can be built")
-    void clusterMetricsBuilder() {
-        var metrics = ClusterMetrics.builder()
-                .clusterId("cluster-1")
-                .activeNodes(3)
-                .totalNodes(5)
-                .build();
-        assertEquals("cluster-1", metrics.getClusterId());
-        assertEquals(3, metrics.getActiveNodes());
+    @DisplayName("ClusterMetrics can be built [GH-90000]")
+    void clusterMetricsBuilder() { // GH-90000
+        var metrics = ClusterMetrics.builder() // GH-90000
+                .clusterId("cluster-1 [GH-90000]")
+                .activeNodes(3) // GH-90000
+                .totalNodes(5) // GH-90000
+                .build(); // GH-90000
+        assertEquals("cluster-1", metrics.getClusterId()); // GH-90000
+        assertEquals(3, metrics.getActiveNodes()); // GH-90000
     }
 
     @Test
-    @DisplayName("NodeRegistrationRequest can be built")
-    void nodeRegistrationRequestBuilder() {
-        var request = NodeRegistrationRequest.builder()
-                .nodeId("node-1")
-                .clusterId("cluster-1")
-                .metadata(Map.of("region", "us-east-1"))
-                .build();
-        assertEquals("node-1", request.getNodeId());
-        assertEquals("cluster-1", request.getClusterId());
+    @DisplayName("NodeRegistrationRequest can be built [GH-90000]")
+    void nodeRegistrationRequestBuilder() { // GH-90000
+        var request = NodeRegistrationRequest.builder() // GH-90000
+                .nodeId("node-1 [GH-90000]")
+                .clusterId("cluster-1 [GH-90000]")
+                .metadata(Map.of("region", "us-east-1")) // GH-90000
+                .build(); // GH-90000
+        assertEquals("node-1", request.getNodeId()); // GH-90000
+        assertEquals("cluster-1", request.getClusterId()); // GH-90000
     }
 }

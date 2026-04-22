@@ -35,7 +35,7 @@ const RUN = process.env.RUN_REAL_DB_TESTS === 'true';
 
 if (!RUN) {
   describe.skip(
-    'Real API E2E (skipped — set RUN_REAL_DB_TESTS=true to enable)',
+    'Real API E2E (skipped — set RUN_REAL_DB_TESTS=true to enable) [GH-90000]',
     () => {
       it('placeholder', () => {});
     },

@@ -1,0 +1,14 @@
+{
+  "suite": "aep-agent-runtime-golden-baseline",
+  "version": "1.0.0",
+  "owner": "products/aep/aep-agent-runtime",
+  "updatedAt": "2026-04-22T00:00:00Z",
+  "thresholds": {
+    "minPassRate": 0.95,
+    "maxTimeoutRate": 0.01
+  },
+  "caseFiles": [
+    "cases/runtime-routing-golden.jsonl"
+  ]
+}
+

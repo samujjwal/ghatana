@@ -25,11 +25,11 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern PerformanceRegressionTest
  *
- * Requirement: DC-F-027 (Performance Regression Detection)
+ * Requirement: DC-F-027 (Performance Regression Detection) // GH-90000
  * Focus: Baseline comparison, trend analysis, release comparison, historical analysis
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("PerformanceRegressionTest - DC-F-027")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("PerformanceRegressionTest - DC-F-027 [GH-90000]")
 class PerformanceRegressionTest {
 
     @Mock private PerformanceBaselineRepository baselineRepository;
@@ -39,304 +39,304 @@ class PerformanceRegressionTest {
     private PerformanceRegressionTestService regressionTestService;
 
     @BeforeEach
-    void setUp() {
-        regressionTestService = new PerformanceRegressionTestService(baselineRepository, regressionAnalysis, historicalData);
+    void setUp() { // GH-90000
+        regressionTestService = new PerformanceRegressionTestService(baselineRepository, regressionAnalysis, historicalData); // GH-90000
     }
 
     @Nested
-    @DisplayName("Baseline Comparison")
+    @DisplayName("Baseline Comparison [GH-90000]")
     class BaselineComparison {
 
         @Test
-        @DisplayName("shouldCompareThroughputToBaseline_whenLoadRuns_thenRegressionDetected")
-        void shouldCompareThroughputToBaseline_whenLoadRuns_thenRegressionDetected() {
-            when(baselineRepository.getBaselineThroughput()).thenReturn(50_000L);
-            when(baselineRepository.getCurrentThroughput()).thenReturn(45_000L);
+        @DisplayName("shouldCompareThroughputToBaseline_whenLoadRuns_thenRegressionDetected [GH-90000]")
+        void shouldCompareThroughputToBaseline_whenLoadRuns_thenRegressionDetected() { // GH-90000
+            when(baselineRepository.getBaselineThroughput()).thenReturn(50_000L); // GH-90000
+            when(baselineRepository.getCurrentThroughput()).thenReturn(45_000L); // GH-90000
 
-            long baseline = baselineRepository.getBaselineThroughput();
-            long current = baselineRepository.getCurrentThroughput();
-            double regression = (baseline - current) / (double) baseline;
+            long baseline = baselineRepository.getBaselineThroughput(); // GH-90000
+            long current = baselineRepository.getCurrentThroughput(); // GH-90000
+            double regression = (baseline - current) / (double) baseline; // GH-90000
 
-            assertTrue(regression > 0.05);
+            assertTrue(regression > 0.05); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldCompareLatencyToBaseline_whenLoadRuns_thenRegressionDetected")
-        void shouldCompareLatencyToBaseline_whenLoadRuns_thenRegressionDetected() {
-            when(baselineRepository.getBaselineLatency(50)).thenReturn(100L);
-            when(baselineRepository.getCurrentLatency(50)).thenReturn(120L);
+        @DisplayName("shouldCompareLatencyToBaseline_whenLoadRuns_thenRegressionDetected [GH-90000]")
+        void shouldCompareLatencyToBaseline_whenLoadRuns_thenRegressionDetected() { // GH-90000
+            when(baselineRepository.getBaselineLatency(50)).thenReturn(100L); // GH-90000
+            when(baselineRepository.getCurrentLatency(50)).thenReturn(120L); // GH-90000
 
-            long baseline = baselineRepository.getBaselineLatency(50);
-            long current = baselineRepository.getCurrentLatency(50);
+            long baseline = baselineRepository.getBaselineLatency(50); // GH-90000
+            long current = baselineRepository.getCurrentLatency(50); // GH-90000
 
-            assertTrue(current > baseline);
+            assertTrue(current > baseline); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldCompareMemoryUsageToBaseline_whenLoadRuns_thenRegressionDetected")
-        void shouldCompareMemoryUsageToBaseline_whenLoadRuns_thenRegressionDetected() {
-            when(baselineRepository.getBaselineMemoryUsage()).thenReturn(512_000_000L);
-            when(baselineRepository.getCurrentMemoryUsage()).thenReturn(620_000_000L);
+        @DisplayName("shouldCompareMemoryUsageToBaseline_whenLoadRuns_thenRegressionDetected [GH-90000]")
+        void shouldCompareMemoryUsageToBaseline_whenLoadRuns_thenRegressionDetected() { // GH-90000
+            when(baselineRepository.getBaselineMemoryUsage()).thenReturn(512_000_000L); // GH-90000
+            when(baselineRepository.getCurrentMemoryUsage()).thenReturn(620_000_000L); // GH-90000
 
-            long baseline = baselineRepository.getBaselineMemoryUsage();
-            long current = baselineRepository.getCurrentMemoryUsage();
+            long baseline = baselineRepository.getBaselineMemoryUsage(); // GH-90000
+            long current = baselineRepository.getCurrentMemoryUsage(); // GH-90000
 
-            assertTrue(current > baseline * 1.1);
+            assertTrue(current > baseline * 1.1); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldCompareCPUUsageToBaseline_whenLoadRuns_thenRegressionDetected")
-        void shouldCompareCPUUsageToBaseline_whenLoadRuns_thenRegressionDetected() {
-            when(baselineRepository.getBaselineCPUUsage()).thenReturn(45.0);
-            when(baselineRepository.getCurrentCPUUsage()).thenReturn(52.0);
+        @DisplayName("shouldCompareCPUUsageToBaseline_whenLoadRuns_thenRegressionDetected [GH-90000]")
+        void shouldCompareCPUUsageToBaseline_whenLoadRuns_thenRegressionDetected() { // GH-90000
+            when(baselineRepository.getBaselineCPUUsage()).thenReturn(45.0); // GH-90000
+            when(baselineRepository.getCurrentCPUUsage()).thenReturn(52.0); // GH-90000
 
-            double baseline = baselineRepository.getBaselineCPUUsage();
-            double current = baselineRepository.getCurrentCPUUsage();
+            double baseline = baselineRepository.getBaselineCPUUsage(); // GH-90000
+            double current = baselineRepository.getCurrentCPUUsage(); // GH-90000
 
-            assertTrue(current > baseline);
+            assertTrue(current > baseline); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldCompareGCPauseTimeToBaseline_whenLoadRuns_thenRegressionDetected")
-        void shouldCompareGCPauseTimeToBaseline_whenLoadRuns_thenRegressionDetected() {
-            when(baselineRepository.getBaselineGCPauseMs()).thenReturn(200L);
-            when(baselineRepository.getCurrentGCPauseMs()).thenReturn(350L);
+        @DisplayName("shouldCompareGCPauseTimeToBaseline_whenLoadRuns_thenRegressionDetected [GH-90000]")
+        void shouldCompareGCPauseTimeToBaseline_whenLoadRuns_thenRegressionDetected() { // GH-90000
+            when(baselineRepository.getBaselineGCPauseMs()).thenReturn(200L); // GH-90000
+            when(baselineRepository.getCurrentGCPauseMs()).thenReturn(350L); // GH-90000
 
-            long baseline = baselineRepository.getBaselineGCPauseMs();
-            long current = baselineRepository.getCurrentGCPauseMs();
+            long baseline = baselineRepository.getBaselineGCPauseMs(); // GH-90000
+            long current = baselineRepository.getCurrentGCPauseMs(); // GH-90000
 
-            assertTrue(current > baseline * 1.5);
+            assertTrue(current > baseline * 1.5); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldReportRegressionDetails_whenViolationFound_thenRootCauseHypotheses")
-        void shouldReportRegressionDetails_whenViolationFound_thenRootCauseHypotheses() {
-            when(regressionAnalysis.generateRootCauseHypotheses()).thenReturn(3);
+        @DisplayName("shouldReportRegressionDetails_whenViolationFound_thenRootCauseHypotheses [GH-90000]")
+        void shouldReportRegressionDetails_whenViolationFound_thenRootCauseHypotheses() { // GH-90000
+            when(regressionAnalysis.generateRootCauseHypotheses()).thenReturn(3); // GH-90000
 
-            int hypotheses = regressionAnalysis.generateRootCauseHypotheses();
+            int hypotheses = regressionAnalysis.generateRootCauseHypotheses(); // GH-90000
 
-            assertTrue(hypotheses > 0);
+            assertTrue(hypotheses > 0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Trend Analysis")
+    @DisplayName("Trend Analysis [GH-90000]")
     class TrendAnalysis {
 
         @Test
-        @DisplayName("shouldDetectLinearDegradation_whenPerformanceDeclines_thenTrendLine")
-        void shouldDetectLinearDegradation_whenPerformanceDeclines_thenTrendLine() {
-            List<Long> tps = new ArrayList<>();
-            tps.add(50_000L);
-            tps.add(48_000L);
-            tps.add(46_000L);
-            tps.add(44_000L);
+        @DisplayName("shouldDetectLinearDegradation_whenPerformanceDeclines_thenTrendLine [GH-90000]")
+        void shouldDetectLinearDegradation_whenPerformanceDeclines_thenTrendLine() { // GH-90000
+            List<Long> tps = new ArrayList<>(); // GH-90000
+            tps.add(50_000L); // GH-90000
+            tps.add(48_000L); // GH-90000
+            tps.add(46_000L); // GH-90000
+            tps.add(44_000L); // GH-90000
 
-            boolean declining = tps.get(3) < tps.get(0);
-            assertTrue(declining);
+            boolean declining = tps.get(3) < tps.get(0); // GH-90000
+            assertTrue(declining); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectExponentialDegradation_whenDegradationAccelerates_thenTrendLine")
-        void shouldDetectExponentialDegradation_whenDegradationAccelerates_thenTrendLine() {
-            when(regressionAnalysis.detectDegradationPattern()).thenReturn("EXPONENTIAL");
+        @DisplayName("shouldDetectExponentialDegradation_whenDegradationAccelerates_thenTrendLine [GH-90000]")
+        void shouldDetectExponentialDegradation_whenDegradationAccelerates_thenTrendLine() { // GH-90000
+            when(regressionAnalysis.detectDegradationPattern()).thenReturn("EXPONENTIAL [GH-90000]");
 
-            String pattern = regressionAnalysis.detectDegradationPattern();
+            String pattern = regressionAnalysis.detectDegradationPattern(); // GH-90000
 
-            assertEquals("EXPONENTIAL", pattern);
+            assertEquals("EXPONENTIAL", pattern); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectSeasonalPatterns_whenPatternsRecur_thenSeasonalityDetected")
-        void shouldDetectSeasonalPatterns_whenPatternsRecur_thenSeasonalityDetected() {
-            when(regressionAnalysis.detectSeasonality()).thenReturn(true);
+        @DisplayName("shouldDetectSeasonalPatterns_whenPatternsRecur_thenSeasonalityDetected [GH-90000]")
+        void shouldDetectSeasonalPatterns_whenPatternsRecur_thenSeasonalityDetected() { // GH-90000
+            when(regressionAnalysis.detectSeasonality()).thenReturn(true); // GH-90000
 
-            boolean seasonal = regressionAnalysis.detectSeasonality();
+            boolean seasonal = regressionAnalysis.detectSeasonality(); // GH-90000
 
-            assertTrue(seasonal);
+            assertTrue(seasonal); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldFilterNoiseFromMetrics_whenNormalVariation_thenSignalExtracted")
-        void shouldFilterNoiseFromMetrics_whenNormalVariation_thenSignalExtracted() {
-            when(regressionAnalysis.extractSignal()).thenReturn(0.85);
+        @DisplayName("shouldFilterNoiseFromMetrics_whenNormalVariation_thenSignalExtracted [GH-90000]")
+        void shouldFilterNoiseFromMetrics_whenNormalVariation_thenSignalExtracted() { // GH-90000
+            when(regressionAnalysis.extractSignal()).thenReturn(0.85); // GH-90000
 
-            double signalStrength = regressionAnalysis.extractSignal();
+            double signalStrength = regressionAnalysis.extractSignal(); // GH-90000
 
-            assertTrue(signalStrength > 0.5);
+            assertTrue(signalStrength > 0.5); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectAnomalousMetrics_whenOutliersOccur_thenAnomaliesMarked")
-        void shouldDetectAnomalousMetrics_whenOutliersOccur_thenAnomaliesMarked() {
-            when(regressionAnalysis.detectAnomalies()).thenReturn(5L);
+        @DisplayName("shouldDetectAnomalousMetrics_whenOutliersOccur_thenAnomaliesMarked [GH-90000]")
+        void shouldDetectAnomalousMetrics_whenOutliersOccur_thenAnomaliesMarked() { // GH-90000
+            when(regressionAnalysis.detectAnomalies()).thenReturn(5L); // GH-90000
 
-            long anomalies = regressionAnalysis.detectAnomalies();
+            long anomalies = regressionAnalysis.detectAnomalies(); // GH-90000
 
-            assertTrue(anomalies >= 0);
+            assertTrue(anomalies >= 0); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldPredictFutureRegressions_whenTrendContinues_thenProjectionCalculated")
-        void shouldPredictFutureRegressions_whenTrendContinues_thenProjectionCalculated() {
-            when(regressionAnalysis.projectFutureThroughput()).thenReturn(35_000L);
+        @DisplayName("shouldPredictFutureRegressions_whenTrendContinues_thenProjectionCalculated [GH-90000]")
+        void shouldPredictFutureRegressions_whenTrendContinues_thenProjectionCalculated() { // GH-90000
+            when(regressionAnalysis.projectFutureThroughput()).thenReturn(35_000L); // GH-90000
 
-            long projection = regressionAnalysis.projectFutureThroughput();
+            long projection = regressionAnalysis.projectFutureThroughput(); // GH-90000
 
-            assertTrue(projection > 0);
+            assertTrue(projection > 0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Release Comparison")
+    @DisplayName("Release Comparison [GH-90000]")
     class ReleaseComparison {
 
         @Test
-        @DisplayName("shouldComparePerformanceAcrossReleases_whenVersionsRunning_thenDifferencesReported")
-        void shouldComparePerformanceAcrossReleases_whenVersionsRunning_thenDifferencesReported() {
-            when(baselineRepository.getThroughputForRelease("v1.2.0")).thenReturn(50_000L);
-            when(baselineRepository.getThroughputForRelease("v1.3.0")).thenReturn(48_000L);
+        @DisplayName("shouldComparePerformanceAcrossReleases_whenVersionsRunning_thenDifferencesReported [GH-90000]")
+        void shouldComparePerformanceAcrossReleases_whenVersionsRunning_thenDifferencesReported() { // GH-90000
+            when(baselineRepository.getThroughputForRelease("v1.2.0 [GH-90000]")).thenReturn(50_000L);
+            when(baselineRepository.getThroughputForRelease("v1.3.0 [GH-90000]")).thenReturn(48_000L);
 
-            long v12tps = baselineRepository.getThroughputForRelease("v1.2.0");
-            long v13tps = baselineRepository.getThroughputForRelease("v1.3.0");
+            long v12tps = baselineRepository.getThroughputForRelease("v1.2.0 [GH-90000]");
+            long v13tps = baselineRepository.getThroughputForRelease("v1.3.0 [GH-90000]");
 
-            assertTrue(v12tps > v13tps);
+            assertTrue(v12tps > v13tps); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectPerformanceImprovement_whenOptimizationsApplied_thenImprovementMeasured")
-        void shouldDetectPerformanceImprovement_whenOptimizationsApplied_thenImprovementMeasured() {
+        @DisplayName("shouldDetectPerformanceImprovement_whenOptimizationsApplied_thenImprovementMeasured [GH-90000]")
+        void shouldDetectPerformanceImprovement_whenOptimizationsApplied_thenImprovementMeasured() { // GH-90000
             long before = 40_000L;
             long after = 52_000L;
 
-            double improvement = (after - before) / (double) before;
-            assertTrue(improvement > 0.2);
+            double improvement = (after - before) / (double) before; // GH-90000
+            assertTrue(improvement > 0.2); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectRegressionIntroduced_whenVersionDegraded_thenRegressionDetected")
-        void shouldDetectRegressionIntroduced_whenVersionDegraded_thenRegressionDetected() {
+        @DisplayName("shouldDetectRegressionIntroduced_whenVersionDegraded_thenRegressionDetected [GH-90000]")
+        void shouldDetectRegressionIntroduced_whenVersionDegraded_thenRegressionDetected() { // GH-90000
             long before = 50_000L;
             long after = 40_000L;
 
             boolean regressed = after < before;
-            assertTrue(regressed);
+            assertTrue(regressed); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldReportReleaseImpact_whenNewCodeDeployed_thenPerformanceDeltaReported")
-        void shouldReportReleaseImpact_whenNewCodeDeployed_thenPerformanceDeltaReported() {
-            when(regressionAnalysis.computePerformanceDelta()).thenReturn(-0.08);
+        @DisplayName("shouldReportReleaseImpact_whenNewCodeDeployed_thenPerformanceDeltaReported [GH-90000]")
+        void shouldReportReleaseImpact_whenNewCodeDeployed_thenPerformanceDeltaReported() { // GH-90000
+            when(regressionAnalysis.computePerformanceDelta()).thenReturn(-0.08); // GH-90000
 
-            double delta = regressionAnalysis.computePerformanceDelta();
+            double delta = regressionAnalysis.computePerformanceDelta(); // GH-90000
 
-            assertTrue(delta != 0);
+            assertTrue(delta != 0); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldValidateReleaseRollback_whenRollingBack_thenPerformanceRestores")
-        void shouldValidateReleaseRollback_whenRollingBack_thenPerformanceRestores() {
+        @DisplayName("shouldValidateReleaseRollback_whenRollingBack_thenPerformanceRestores [GH-90000]")
+        void shouldValidateReleaseRollback_whenRollingBack_thenPerformanceRestores() { // GH-90000
             long beforeRollback = 40_000L;
             long afterRollback = 50_000L;
 
-            assertTrue(afterRollback > beforeRollback);
+            assertTrue(afterRollback > beforeRollback); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldCompareLikelihoodOfRegression_betweenReleases_thenStatisticalSignificance")
-        void shouldCompareLikelihoodOfRegression_betweenReleases_thenStatisticalSignificance() {
-            when(regressionAnalysis.computeSignificance()).thenReturn(0.001);
+        @DisplayName("shouldCompareLikelihoodOfRegression_betweenReleases_thenStatisticalSignificance [GH-90000]")
+        void shouldCompareLikelihoodOfRegression_betweenReleases_thenStatisticalSignificance() { // GH-90000
+            when(regressionAnalysis.computeSignificance()).thenReturn(0.001); // GH-90000
 
-            double pvalue = regressionAnalysis.computeSignificance();
+            double pvalue = regressionAnalysis.computeSignificance(); // GH-90000
 
-            assertTrue(pvalue < 0.05);
+            assertTrue(pvalue < 0.05); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectPerformanceRegressionAtPercentiles_thenTailLatencyChanges")
-        void shouldDetectPerformanceRegressionAtPercentiles_thenTailLatencyChanges() {
-            when(baselineRepository.getBaselineLatency(99)).thenReturn(1000L);
-            when(baselineRepository.getCurrentLatency(99)).thenReturn(1500L);
+        @DisplayName("shouldDetectPerformanceRegressionAtPercentiles_thenTailLatencyChanges [GH-90000]")
+        void shouldDetectPerformanceRegressionAtPercentiles_thenTailLatencyChanges() { // GH-90000
+            when(baselineRepository.getBaselineLatency(99)).thenReturn(1000L); // GH-90000
+            when(baselineRepository.getCurrentLatency(99)).thenReturn(1500L); // GH-90000
 
-            long baseline = baselineRepository.getBaselineLatency(99);
-            long current = baselineRepository.getCurrentLatency(99);
+            long baseline = baselineRepository.getBaselineLatency(99); // GH-90000
+            long current = baselineRepository.getCurrentLatency(99); // GH-90000
 
-            assertTrue(current > baseline);
+            assertTrue(current > baseline); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Historical Analysis")
+    @DisplayName("Historical Analysis [GH-90000]")
     class HistoricalAnalysis {
 
         @Test
-        @DisplayName("shouldTrackMetricsOverWeeks_whenHistoryCollected_thenTrendVisible")
-        void shouldTrackMetricsOverWeeks_whenHistoryCollected_thenTrendVisible() {
-            when(historicalData.getWeeklyDataPoints()).thenReturn(4);
+        @DisplayName("shouldTrackMetricsOverWeeks_whenHistoryCollected_thenTrendVisible [GH-90000]")
+        void shouldTrackMetricsOverWeeks_whenHistoryCollected_thenTrendVisible() { // GH-90000
+            when(historicalData.getWeeklyDataPoints()).thenReturn(4); // GH-90000
 
-            int dataPoints = historicalData.getWeeklyDataPoints();
+            int dataPoints = historicalData.getWeeklyDataPoints(); // GH-90000
 
-            assertTrue(dataPoints >= 2);
+            assertTrue(dataPoints >= 2); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectSeasonalityInWorkload_whenPatternsAnalyzed_thenSeasonalDisplay")
-        void shouldDetectSeasonalityInWorkload_whenPatternsAnalyzed_thenSeasonalDisplay() {
-            when(historicalData.detectSeasonality()).thenReturn("WEEKLY");
+        @DisplayName("shouldDetectSeasonalityInWorkload_whenPatternsAnalyzed_thenSeasonalDisplay [GH-90000]")
+        void shouldDetectSeasonalityInWorkload_whenPatternsAnalyzed_thenSeasonalDisplay() { // GH-90000
+            when(historicalData.detectSeasonality()).thenReturn("WEEKLY [GH-90000]");
 
-            String seasonality = historicalData.detectSeasonality();
+            String seasonality = historicalData.detectSeasonality(); // GH-90000
 
-            assertNotNull(seasonality);
+            assertNotNull(seasonality); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldIdentifyCorrelations_betweenMetrics_thenCorrelationCoefficients")
-        void shouldIdentifyCorrelations_betweenMetrics_thenCorrelationCoefficients() {
-            when(historicalData.computeCorrelation("throughput", "latency")).thenReturn(-0.75);
+        @DisplayName("shouldIdentifyCorrelations_betweenMetrics_thenCorrelationCoefficients [GH-90000]")
+        void shouldIdentifyCorrelations_betweenMetrics_thenCorrelationCoefficients() { // GH-90000
+            when(historicalData.computeCorrelation("throughput", "latency")).thenReturn(-0.75); // GH-90000
 
-            double correlation = historicalData.computeCorrelation("throughput", "latency");
+            double correlation = historicalData.computeCorrelation("throughput", "latency"); // GH-90000
 
-            assertTrue(correlation >= -1.0 && correlation <= 1.0);
+            assertTrue(correlation >= -1.0 && correlation <= 1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldDetectRegressionCausalityToChange_whenChangeLogExamined_thenHypothesesGenerated")
-        void shouldDetectRegressionCausalityToChange_whenChangeLogExamined_thenHypothesesGenerated() {
-            when(historicalData.generateCausalityHypotheses()).thenReturn(3);
+        @DisplayName("shouldDetectRegressionCausalityToChange_whenChangeLogExamined_thenHypothesesGenerated [GH-90000]")
+        void shouldDetectRegressionCausalityToChange_whenChangeLogExamined_thenHypothesesGenerated() { // GH-90000
+            when(historicalData.generateCausalityHypotheses()).thenReturn(3); // GH-90000
 
-            int hypotheses = historicalData.generateCausalityHypotheses();
+            int hypotheses = historicalData.generateCausalityHypotheses(); // GH-90000
 
-            assertTrue(hypotheses > 0);
+            assertTrue(hypotheses > 0); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldReportRegressionSeverity_whenChangeImpactedMetrics_thenSeverityScored")
-        void shouldReportRegressionSeverity_whenChangeImpactedMetrics_thenSeverityScored() {
-            when(regressionAnalysis.computeSeverityScore()).thenReturn(8.5);
+        @DisplayName("shouldReportRegressionSeverity_whenChangeImpactedMetrics_thenSeverityScored [GH-90000]")
+        void shouldReportRegressionSeverity_whenChangeImpactedMetrics_thenSeverityScored() { // GH-90000
+            when(regressionAnalysis.computeSeverityScore()).thenReturn(8.5); // GH-90000
 
-            double severity = regressionAnalysis.computeSeverityScore();
+            double severity = regressionAnalysis.computeSeverityScore(); // GH-90000
 
-            assertTrue(severity > 0 && severity <= 10);
+            assertTrue(severity > 0 && severity <= 10); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldForecastMetricsIfTrendContinues_whenHistoryAnalyzed_thenProjectionMade")
-        void shouldForecastMetricsIfTrendContinues_whenHistoryAnalyzed_thenProjectionMade() {
-            when(historicalData.projectMetrics30Days()).thenReturn(35_000L);
+        @DisplayName("shouldForecastMetricsIfTrendContinues_whenHistoryAnalyzed_thenProjectionMade [GH-90000]")
+        void shouldForecastMetricsIfTrendContinues_whenHistoryAnalyzed_thenProjectionMade() { // GH-90000
+            when(historicalData.projectMetrics30Days()).thenReturn(35_000L); // GH-90000
 
-            long projection = historicalData.projectMetrics30Days();
+            long projection = historicalData.projectMetrics30Days(); // GH-90000
 
-            assertTrue(projection > 0);
+            assertTrue(projection > 0); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldValidateRecoveryAfterFix_whenRegressionFixed_thenMetricsImprove")
-        void shouldValidateRecoveryAfterFix_whenRegressionFixed_thenMetricsImprove() {
+        @DisplayName("shouldValidateRecoveryAfterFix_whenRegressionFixed_thenMetricsImprove [GH-90000]")
+        void shouldValidateRecoveryAfterFix_whenRegressionFixed_thenMetricsImprove() { // GH-90000
             long atRisk = 40_000L;
             long afterFix = 48_000L;
 
-            double recovery = (afterFix - atRisk) / (double) atRisk;
-            assertTrue(recovery > 0.1);
+            double recovery = (afterFix - atRisk) / (double) atRisk; // GH-90000
+            assertTrue(recovery > 0.1); // GH-90000
         }
     }
 
@@ -346,7 +346,7 @@ class PerformanceRegressionTest {
         private final RegressionAnalysisService regressionAnalysis;
         private final HistoricalDataService historicalData;
 
-        PerformanceRegressionTestService(PerformanceBaselineRepository baseline, RegressionAnalysisService regression, HistoricalDataService history) {
+        PerformanceRegressionTestService(PerformanceBaselineRepository baseline, RegressionAnalysisService regression, HistoricalDataService history) { // GH-90000
             this.baselineRepository = baseline;
             this.regressionAnalysis = regression;
             this.historicalData = history;
@@ -354,37 +354,37 @@ class PerformanceRegressionTest {
     }
 
     static class PerformanceBaselineRepository {
-        long getBaselineThroughput() { return 50_000L; }
-        long getCurrentThroughput() { return 45_000L; }
-        long getBaselineLatency(int percentile) { return percentile == 50 ? 100 : 1000; }
-        long getCurrentLatency(int percentile) { return percentile == 50 ? 120 : 1500; }
-        long getBaselineMemoryUsage() { return 512_000_000L; }
-        long getCurrentMemoryUsage() { return 620_000_000L; }
-        double getBaselineCPUUsage() { return 45.0; }
-        double getCurrentCPUUsage() { return 52.0; }
-        long getBaselineGCPauseMs() { return 200L; }
-        long getCurrentGCPauseMs() { return 350L; }
-        long getThroughputForRelease(String version) { return version.equals("v1.2.0") ? 50_000L : 48_000L; }
+        long getBaselineThroughput() { return 50_000L; } // GH-90000
+        long getCurrentThroughput() { return 45_000L; } // GH-90000
+        long getBaselineLatency(int percentile) { return percentile == 50 ? 100 : 1000; } // GH-90000
+        long getCurrentLatency(int percentile) { return percentile == 50 ? 120 : 1500; } // GH-90000
+        long getBaselineMemoryUsage() { return 512_000_000L; } // GH-90000
+        long getCurrentMemoryUsage() { return 620_000_000L; } // GH-90000
+        double getBaselineCPUUsage() { return 45.0; } // GH-90000
+        double getCurrentCPUUsage() { return 52.0; } // GH-90000
+        long getBaselineGCPauseMs() { return 200L; } // GH-90000
+        long getCurrentGCPauseMs() { return 350L; } // GH-90000
+        long getThroughputForRelease(String version) { return version.equals("v1.2.0 [GH-90000]") ? 50_000L : 48_000L; }
     }
 
     static class RegressionAnalysisService {
-        int generateRootCauseHypotheses() { return 3; }
-        String detectDegradationPattern() { return "EXPONENTIAL"; }
-        boolean detectSeasonality() { return true; }
-        double extractSignal() { return 0.85; }
-        long detectAnomalies() { return 5L; }
-        long projectFutureThroughput() { return 35_000L; }
-        double computePerformanceDelta() { return -0.08; }
-        double computeSignificance() { return 0.001; }
-        double computeSeverityScore() { return 8.5; }
+        int generateRootCauseHypotheses() { return 3; } // GH-90000
+        String detectDegradationPattern() { return "EXPONENTIAL"; } // GH-90000
+        boolean detectSeasonality() { return true; } // GH-90000
+        double extractSignal() { return 0.85; } // GH-90000
+        long detectAnomalies() { return 5L; } // GH-90000
+        long projectFutureThroughput() { return 35_000L; } // GH-90000
+        double computePerformanceDelta() { return -0.08; } // GH-90000
+        double computeSignificance() { return 0.001; } // GH-90000
+        double computeSeverityScore() { return 8.5; } // GH-90000
     }
 
     static class HistoricalDataService {
-        int getWeeklyDataPoints() { return 4; }
-        String detectSeasonality() { return "WEEKLY"; }
-        double computeCorrelation(String metric1, String metric2) { return -0.75; }
-        int generateCausalityHypotheses() { return 3; }
-        long projectMetrics30Days() { return 35_000L; }
+        int getWeeklyDataPoints() { return 4; } // GH-90000
+        String detectSeasonality() { return "WEEKLY"; } // GH-90000
+        double computeCorrelation(String metric1, String metric2) { return -0.75; } // GH-90000
+        int generateCausalityHypotheses() { return 3; } // GH-90000
+        long projectMetrics30Days() { return 35_000L; } // GH-90000
     }
 
     // Custom Exceptions

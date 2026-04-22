@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.eventcloud.store;
@@ -29,8 +29,8 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link EventCloudRunLedger}.
  */
-@DisplayName("EventCloudRunLedger")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("EventCloudRunLedger [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class EventCloudRunLedgerTest extends EventloopTestBase {
 
     @Mock
@@ -45,115 +45,115 @@ class EventCloudRunLedgerTest extends EventloopTestBase {
     private EventCloudRunLedger runLedger;
 
     @BeforeEach
-    void setUp() {
-        runLedger = new EventCloudRunLedger(eventLogStore);
+    void setUp() { // GH-90000
+        runLedger = new EventCloudRunLedger(eventLogStore); // GH-90000
     }
 
     @Test
-    void shouldRecordRunStarted() {
+    void shouldRecordRunStarted() { // GH-90000
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
-            .thenReturn(Promise.of(Offset.of("1")));
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+            .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
 
-        byte[] payload = "{\"config\":\"test\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] payload = "{\"config\":\"test\"}".getBytes(StandardCharsets.UTF_8); // GH-90000
 
         // WHEN
-        Offset offset = runPromise(() ->
-            runLedger.recordRunStarted("tenant-1", "run-1", "pipeline-1", payload));
+        Offset offset = runPromise(() -> // GH-90000
+            runLedger.recordRunStarted("tenant-1", "run-1", "pipeline-1", payload)); // GH-90000
 
         // THEN
-        assertThat(offset.value()).isEqualTo("1");
-        verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture());
+        assertThat(offset.value()).isEqualTo("1 [GH-90000]");
+        verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); // GH-90000
 
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1");
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1 [GH-90000]");
 
-        EventEntry entry = entryCaptor.getValue();
-        assertThat(entry.eventType()).isEqualTo("run.started");
-        assertThat(entry.headers().get("runId")).isEqualTo("run-1");
-        assertThat(entry.headers().get("pipelineId")).isEqualTo("pipeline-1");
+        EventEntry entry = entryCaptor.getValue(); // GH-90000
+        assertThat(entry.eventType()).isEqualTo("run.started [GH-90000]");
+        assertThat(entry.headers().get("runId [GH-90000]")).isEqualTo("run-1 [GH-90000]");
+        assertThat(entry.headers().get("pipelineId [GH-90000]")).isEqualTo("pipeline-1 [GH-90000]");
     }
 
     @Test
-    void shouldRecordRunCompleted() {
+    void shouldRecordRunCompleted() { // GH-90000
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
-            .thenReturn(Promise.of(Offset.of("2")));
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+            .thenReturn(Promise.of(Offset.of("2 [GH-90000]")));
 
         // WHEN
-        Offset offset = runPromise(() ->
-            runLedger.recordRunCompleted("t1", "run-1", "p1",
-                "{}".getBytes(StandardCharsets.UTF_8)));
+        Offset offset = runPromise(() -> // GH-90000
+            runLedger.recordRunCompleted("t1", "run-1", "p1", // GH-90000
+                "{}".getBytes(StandardCharsets.UTF_8))); // GH-90000
 
         // THEN
-        assertThat(offset).isNotNull();
-        verify(eventLogStore).append(any(), entryCaptor.capture());
-        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.completed");
+        assertThat(offset).isNotNull(); // GH-90000
+        verify(eventLogStore).append(any(), entryCaptor.capture()); // GH-90000
+        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.completed [GH-90000]");
     }
 
     @Test
-    void shouldRecordRunFailed() {
+    void shouldRecordRunFailed() { // GH-90000
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
-            .thenReturn(Promise.of(Offset.of("3")));
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+            .thenReturn(Promise.of(Offset.of("3 [GH-90000]")));
 
         // WHEN
-        Offset offset = runPromise(() ->
-            runLedger.recordRunFailed("t1", "run-2", "p1",
-                "{\"error\":\"timeout\"}".getBytes(StandardCharsets.UTF_8)));
+        Offset offset = runPromise(() -> // GH-90000
+            runLedger.recordRunFailed("t1", "run-2", "p1", // GH-90000
+                "{\"error\":\"timeout\"}".getBytes(StandardCharsets.UTF_8))); // GH-90000
 
         // THEN
-        assertThat(offset).isNotNull();
-        verify(eventLogStore).append(any(), entryCaptor.capture());
-        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.failed");
+        assertThat(offset).isNotNull(); // GH-90000
+        verify(eventLogStore).append(any(), entryCaptor.capture()); // GH-90000
+        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.failed [GH-90000]");
     }
 
     @Test
-    void shouldRecordStepCompleted() {
+    void shouldRecordStepCompleted() { // GH-90000
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
-            .thenReturn(Promise.of(Offset.of("4")));
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+            .thenReturn(Promise.of(Offset.of("4 [GH-90000]")));
 
         // WHEN
-        Offset offset = runPromise(() ->
-            runLedger.recordStepCompleted("t1", "run-1", "p1",
-                "{\"step\":\"transform\"}".getBytes(StandardCharsets.UTF_8)));
+        Offset offset = runPromise(() -> // GH-90000
+            runLedger.recordStepCompleted("t1", "run-1", "p1", // GH-90000
+                "{\"step\":\"transform\"}".getBytes(StandardCharsets.UTF_8))); // GH-90000
 
         // THEN
-        assertThat(offset).isNotNull();
-        verify(eventLogStore).append(any(), entryCaptor.capture());
-        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.step.completed");
+        assertThat(offset).isNotNull(); // GH-90000
+        verify(eventLogStore).append(any(), entryCaptor.capture()); // GH-90000
+        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.step.completed [GH-90000]");
     }
 
     @Test
-    void shouldRecordCheckpoint() {
+    void shouldRecordCheckpoint() { // GH-90000
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
-            .thenReturn(Promise.of(Offset.of("5")));
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+            .thenReturn(Promise.of(Offset.of("5 [GH-90000]")));
 
         // WHEN
-        Offset offset = runPromise(() ->
-            runLedger.recordCheckpoint("t1", "run-1", "p1",
-                "{\"state\":\"snapshot\"}".getBytes(StandardCharsets.UTF_8)));
+        Offset offset = runPromise(() -> // GH-90000
+            runLedger.recordCheckpoint("t1", "run-1", "p1", // GH-90000
+                "{\"state\":\"snapshot\"}".getBytes(StandardCharsets.UTF_8))); // GH-90000
 
         // THEN
-        assertThat(offset).isNotNull();
-        verify(eventLogStore).append(any(), entryCaptor.capture());
-        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.checkpoint");
+        assertThat(offset).isNotNull(); // GH-90000
+        verify(eventLogStore).append(any(), entryCaptor.capture()); // GH-90000
+        assertThat(entryCaptor.getValue().eventType()).isEqualTo("run.checkpoint [GH-90000]");
     }
 
     @Test
-    void shouldIncludeIdempotencyKey() {
+    void shouldIncludeIdempotencyKey() { // GH-90000
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class)))
-            .thenReturn(Promise.of(Offset.of("1")));
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+            .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
 
         // WHEN
-        runPromise(() -> runLedger.recordRunStarted("t1", "run-abc", "p1", new byte[0]));
+        runPromise(() -> runLedger.recordRunStarted("t1", "run-abc", "p1", new byte[0])); // GH-90000
 
         // THEN
-        verify(eventLogStore).append(any(), entryCaptor.capture());
-        assertThat(entryCaptor.getValue().idempotencyKey()).isPresent();
-        assertThat(entryCaptor.getValue().idempotencyKey().get())
-            .startsWith("run-abc:run.started:");
+        verify(eventLogStore).append(any(), entryCaptor.capture()); // GH-90000
+        assertThat(entryCaptor.getValue().idempotencyKey()).isPresent(); // GH-90000
+        assertThat(entryCaptor.getValue().idempotencyKey().get()) // GH-90000
+            .startsWith("run-abc:run.started: [GH-90000]");
     }
 }

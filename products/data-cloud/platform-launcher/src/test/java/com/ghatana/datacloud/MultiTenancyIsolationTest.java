@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud;
@@ -25,14 +25,14 @@ import static org.assertj.core.api.Assertions.*;
  * or receive events belonging to tenant B through any DataCloud API.
  *
  * <p>All async assertions use {@link EventloopTestBase#runPromise} — never
- * call {@code .getResult()} directly on a Promise.</p>
+ * call {@code .getResult()} directly on a Promise.</p> // GH-90000
  *
  * @doc.type class
  * @doc.purpose Tenant boundary enforcement stress tests
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Multi-Tenancy Isolation Tests")
+@DisplayName("Multi-Tenancy Isolation Tests [GH-90000]")
 class MultiTenancyIsolationTest extends EventloopTestBase {
 
     private static final String TENANT_A = "tenant-alpha";
@@ -43,8 +43,8 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
     private DataCloudClient client;
 
     @BeforeEach
-    void setUp() {
-        client = DataCloud.forTesting();
+    void setUp() { // GH-90000
+        client = DataCloud.forTesting(); // GH-90000
     }
 
     // =========================================================================
@@ -52,120 +52,120 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Store Isolation")
+    @DisplayName("Entity Store Isolation [GH-90000]")
     class EntityStoreIsolation {
 
         @Test
-        @DisplayName("entities saved under tenant-A are not visible to tenant-B")
-        void entitySavedByTenantA_invisibleToTenantB() {
-            runPromise(() -> client.save(TENANT_A, COLLECTION,
-                    Map.of("id", "shared-id", "secret", "alpha-value")));
+        @DisplayName("entities saved under tenant-A are not visible to tenant-B [GH-90000]")
+        void entitySavedByTenantA_invisibleToTenantB() { // GH-90000
+            runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
+                    Map.of("id", "shared-id", "secret", "alpha-value"))); // GH-90000
 
-            Optional<Entity> fromB = runPromise(
-                    () -> client.findById(TENANT_B, COLLECTION, "shared-id"));
+            Optional<Entity> fromB = runPromise( // GH-90000
+                    () -> client.findById(TENANT_B, COLLECTION, "shared-id")); // GH-90000
 
-            assertThat(fromB).isEmpty();
+            assertThat(fromB).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("same entity-id in different tenants stores independent values")
-        void sameEntityId_differentTenants_storeIndependently() {
+        @DisplayName("same entity-id in different tenants stores independent values [GH-90000]")
+        void sameEntityId_differentTenants_storeIndependently() { // GH-90000
             String sharedId = "entity-common-id";
-            runPromise(() -> client.save(TENANT_A, COLLECTION,
-                    Map.of("id", sharedId, "owner", "alpha")));
-            runPromise(() -> client.save(TENANT_B, COLLECTION,
-                    Map.of("id", sharedId, "owner", "beta")));
+            runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
+                    Map.of("id", sharedId, "owner", "alpha"))); // GH-90000
+            runPromise(() -> client.save(TENANT_B, COLLECTION, // GH-90000
+                    Map.of("id", sharedId, "owner", "beta"))); // GH-90000
 
-            Optional<Entity> fromA = runPromise(
-                    () -> client.findById(TENANT_A, COLLECTION, sharedId));
-            Optional<Entity> fromB = runPromise(
-                    () -> client.findById(TENANT_B, COLLECTION, sharedId));
+            Optional<Entity> fromA = runPromise( // GH-90000
+                    () -> client.findById(TENANT_A, COLLECTION, sharedId)); // GH-90000
+            Optional<Entity> fromB = runPromise( // GH-90000
+                    () -> client.findById(TENANT_B, COLLECTION, sharedId)); // GH-90000
 
-            assertThat(fromA).isPresent();
-            assertThat(fromA.get().data()).containsEntry("owner", "alpha");
+            assertThat(fromA).isPresent(); // GH-90000
+            assertThat(fromA.get().data()).containsEntry("owner", "alpha"); // GH-90000
 
-            assertThat(fromB).isPresent();
-            assertThat(fromB.get().data()).containsEntry("owner", "beta");
+            assertThat(fromB).isPresent(); // GH-90000
+            assertThat(fromB.get().data()).containsEntry("owner", "beta"); // GH-90000
         }
 
         @Test
-        @DisplayName("query for tenant-B returns only tenant-B entities")
-        void queryByTenantB_returnsOnlyTenantBEntities() {
-            for (int i = 1; i <= 5; i++) {
+        @DisplayName("query for tenant-B returns only tenant-B entities [GH-90000]")
+        void queryByTenantB_returnsOnlyTenantBEntities() { // GH-90000
+            for (int i = 1; i <= 5; i++) { // GH-90000
                 int idx = i;
-                runPromise(() -> client.save(TENANT_A, COLLECTION,
-                        Map.of("id", "a-" + idx, "tenant", "alpha")));
+                runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
+                        Map.of("id", "a-" + idx, "tenant", "alpha"))); // GH-90000
             }
-            for (int i = 1; i <= 3; i++) {
+            for (int i = 1; i <= 3; i++) { // GH-90000
                 int idx = i;
-                runPromise(() -> client.save(TENANT_B, COLLECTION,
-                        Map.of("id", "b-" + idx, "tenant", "beta")));
+                runPromise(() -> client.save(TENANT_B, COLLECTION, // GH-90000
+                        Map.of("id", "b-" + idx, "tenant", "beta"))); // GH-90000
             }
 
-            List<Entity> resultsForB = runPromise(
-                    () -> client.query(TENANT_B, COLLECTION, Query.all()));
+            List<Entity> resultsForB = runPromise( // GH-90000
+                    () -> client.query(TENANT_B, COLLECTION, Query.all())); // GH-90000
 
-            assertThat(resultsForB).hasSize(3);
-            assertThat(resultsForB)
-                    .extracting(e -> e.data().get("tenant"))
-                    .containsOnly("beta");
+            assertThat(resultsForB).hasSize(3); // GH-90000
+            assertThat(resultsForB) // GH-90000
+                    .extracting(e -> e.data().get("tenant [GH-90000]"))
+                    .containsOnly("beta [GH-90000]");
         }
 
         @Test
-        @DisplayName("deleting an entity for tenant-A does not affect tenant-B's copy")
-        void deleteByTenantA_doesNotAffectTenantB() {
+        @DisplayName("deleting an entity for tenant-A does not affect tenant-B's copy [GH-90000]")
+        void deleteByTenantA_doesNotAffectTenantB() { // GH-90000
             String id = "shared-del-id";
-            runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", id)));
-            runPromise(() -> client.save(TENANT_B, COLLECTION, Map.of("id", id)));
+            runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", id))); // GH-90000
+            runPromise(() -> client.save(TENANT_B, COLLECTION, Map.of("id", id))); // GH-90000
 
-            runPromise(() -> client.delete(TENANT_A, COLLECTION, id));
+            runPromise(() -> client.delete(TENANT_A, COLLECTION, id)); // GH-90000
 
-            Optional<Entity> afterDeleteA = runPromise(
-                    () -> client.findById(TENANT_A, COLLECTION, id));
-            Optional<Entity> afterDeleteB = runPromise(
-                    () -> client.findById(TENANT_B, COLLECTION, id));
+            Optional<Entity> afterDeleteA = runPromise( // GH-90000
+                    () -> client.findById(TENANT_A, COLLECTION, id)); // GH-90000
+            Optional<Entity> afterDeleteB = runPromise( // GH-90000
+                    () -> client.findById(TENANT_B, COLLECTION, id)); // GH-90000
 
-            assertThat(afterDeleteA).isEmpty();
-            assertThat(afterDeleteB).isPresent();
+            assertThat(afterDeleteA).isEmpty(); // GH-90000
+            assertThat(afterDeleteB).isPresent(); // GH-90000
         }
 
         @Test
-        @DisplayName("tenant isolation holds across N concurrent tenants")
-        void concurrentTenants_allIsolated() {
+        @DisplayName("tenant isolation holds across N concurrent tenants [GH-90000]")
+        void concurrentTenants_allIsolated() { // GH-90000
             int tenantCount = 20;
-            for (int i = 0; i < tenantCount; i++) {
+            for (int i = 0; i < tenantCount; i++) { // GH-90000
                 String tenantId = "concurrent-tenant-" + i;
                 int tIdx = i;
-                runPromise(() -> client.save(tenantId, COLLECTION,
-                        Map.of("id", "ent-" + tIdx, "value", "owned-by-" + tIdx)));
+                runPromise(() -> client.save(tenantId, COLLECTION, // GH-90000
+                        Map.of("id", "ent-" + tIdx, "value", "owned-by-" + tIdx))); // GH-90000
             }
 
             // Each tenant must only see its own entity
-            for (int i = 0; i < tenantCount; i++) {
+            for (int i = 0; i < tenantCount; i++) { // GH-90000
                 String tenantId = "concurrent-tenant-" + i;
                 int tIdx = i;
-                List<Entity> results = runPromise(
-                        () -> client.query(tenantId, COLLECTION, Query.all()));
-                assertThat(results).hasSize(1);
-                assertThat(results.get(0).data()).containsEntry("value", "owned-by-" + tIdx);
+                List<Entity> results = runPromise( // GH-90000
+                        () -> client.query(tenantId, COLLECTION, Query.all())); // GH-90000
+                assertThat(results).hasSize(1); // GH-90000
+                assertThat(results.get(0).data()).containsEntry("value", "owned-by-" + tIdx); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("collection namespace isolation: same collection name is scoped per tenant")
-        void collectionNameIsolation_sameNameDifferentTenants() {
+        @DisplayName("collection namespace isolation: same collection name is scoped per tenant [GH-90000]")
+        void collectionNameIsolation_sameNameDifferentTenants() { // GH-90000
             String colName = "customer-profiles";
-            runPromise(() -> client.save(TENANT_A, colName, Map.of("id", "p1", "tier", "gold")));
-            runPromise(() -> client.save(TENANT_B, colName, Map.of("id", "p2", "tier", "silver")));
+            runPromise(() -> client.save(TENANT_A, colName, Map.of("id", "p1", "tier", "gold"))); // GH-90000
+            runPromise(() -> client.save(TENANT_B, colName, Map.of("id", "p2", "tier", "silver"))); // GH-90000
 
-            List<Entity> aResults = runPromise(() -> client.query(TENANT_A, colName, Query.all()));
-            List<Entity> bResults = runPromise(() -> client.query(TENANT_B, colName, Query.all()));
+            List<Entity> aResults = runPromise(() -> client.query(TENANT_A, colName, Query.all())); // GH-90000
+            List<Entity> bResults = runPromise(() -> client.query(TENANT_B, colName, Query.all())); // GH-90000
 
-            assertThat(aResults).hasSize(1);
-            assertThat(aResults.get(0).data()).containsEntry("tier", "gold");
+            assertThat(aResults).hasSize(1); // GH-90000
+            assertThat(aResults.get(0).data()).containsEntry("tier", "gold"); // GH-90000
 
-            assertThat(bResults).hasSize(1);
-            assertThat(bResults.get(0).data()).containsEntry("tier", "silver");
+            assertThat(bResults).hasSize(1); // GH-90000
+            assertThat(bResults.get(0).data()).containsEntry("tier", "silver"); // GH-90000
         }
     }
 
@@ -174,75 +174,75 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Log Isolation")
+    @DisplayName("Event Log Isolation [GH-90000]")
     class EventLogIsolation {
 
         @Test
-        @DisplayName("events appended for tenant-A are not visible to tenant-B")
-        void eventsForTenantA_invisibleToTenantB() {
-            Event event = Event.of("order.created", Map.of("orderId", "A-001"));
-            runPromise(() -> client.appendEvent(TENANT_A, event));
+        @DisplayName("events appended for tenant-A are not visible to tenant-B [GH-90000]")
+        void eventsForTenantA_invisibleToTenantB() { // GH-90000
+            Event event = Event.of("order.created", Map.of("orderId", "A-001")); // GH-90000
+            runPromise(() -> client.appendEvent(TENANT_A, event)); // GH-90000
 
-            List<Event> fromB = runPromise(
-                    () -> client.queryEvents(TENANT_B, EventQuery.byType("order.created")));
+            List<Event> fromB = runPromise( // GH-90000
+                    () -> client.queryEvents(TENANT_B, EventQuery.byType("order.created [GH-90000]")));
 
-            assertThat(fromB).isEmpty();
+            assertThat(fromB).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("event query for tenant-B returns only tenant-B events")
-        void eventQueryByTenantB_returnsOnlyOwnEvents() {
-            for (int i = 1; i <= 4; i++) {
+        @DisplayName("event query for tenant-B returns only tenant-B events [GH-90000]")
+        void eventQueryByTenantB_returnsOnlyOwnEvents() { // GH-90000
+            for (int i = 1; i <= 4; i++) { // GH-90000
                 int idx = i;
-                runPromise(() -> client.appendEvent(TENANT_A,
-                        Event.of("payment.processed", Map.of("ref", "A-" + idx))));
+                runPromise(() -> client.appendEvent(TENANT_A, // GH-90000
+                        Event.of("payment.processed", Map.of("ref", "A-" + idx)))); // GH-90000
             }
-            for (int i = 1; i <= 2; i++) {
+            for (int i = 1; i <= 2; i++) { // GH-90000
                 int idx = i;
-                runPromise(() -> client.appendEvent(TENANT_B,
-                        Event.of("payment.processed", Map.of("ref", "B-" + idx))));
+                runPromise(() -> client.appendEvent(TENANT_B, // GH-90000
+                        Event.of("payment.processed", Map.of("ref", "B-" + idx)))); // GH-90000
             }
 
-            List<Event> fromB = runPromise(
-                    () -> client.queryEvents(TENANT_B, EventQuery.byType("payment.processed")));
+            List<Event> fromB = runPromise( // GH-90000
+                    () -> client.queryEvents(TENANT_B, EventQuery.byType("payment.processed [GH-90000]")));
 
-            assertThat(fromB).hasSize(2);
-            fromB.forEach(e ->
-                    assertThat(e.payload().get("ref").toString()).startsWith("B-"));
+            assertThat(fromB).hasSize(2); // GH-90000
+            fromB.forEach(e -> // GH-90000
+                    assertThat(e.payload().get("ref [GH-90000]").toString()).startsWith("B- [GH-90000]"));
         }
 
         @Test
-        @DisplayName("tenant event tail subscription does not receive other tenants' events")
-        void tailSubscription_receivesOnlyOwnTenantEvents() throws InterruptedException {
-            AtomicInteger receivedByA = new AtomicInteger(0);
-            CountDownLatch latch = new CountDownLatch(3);
+        @DisplayName("tenant event tail subscription does not receive other tenants' events [GH-90000]")
+        void tailSubscription_receivesOnlyOwnTenantEvents() throws InterruptedException { // GH-90000
+            AtomicInteger receivedByA = new AtomicInteger(0); // GH-90000
+            CountDownLatch latch = new CountDownLatch(3); // GH-90000
 
             // Tenant A subscribes to its own event stream
-            Subscription sub = client.tailEvents(TENANT_A,
-                    TailRequest.fromBeginning(),
+            Subscription sub = client.tailEvents(TENANT_A, // GH-90000
+                    TailRequest.fromBeginning(), // GH-90000
                     event -> {
-                        receivedByA.incrementAndGet();
-                        latch.countDown();
+                        receivedByA.incrementAndGet(); // GH-90000
+                        latch.countDown(); // GH-90000
                     });
 
             // Inject events for both tenants
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) { // GH-90000
                 int idx = i;
-                runPromise(() -> client.appendEvent(TENANT_A,
-                        Event.of("signal", Map.of("n", idx))));
+                runPromise(() -> client.appendEvent(TENANT_A, // GH-90000
+                        Event.of("signal", Map.of("n", idx)))); // GH-90000
             }
             // These should NOT be received by A's subscription
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 5; i++) { // GH-90000
                 int idx = i;
-                runPromise(() -> client.appendEvent(TENANT_B,
-                        Event.of("signal", Map.of("n", idx))));
+                runPromise(() -> client.appendEvent(TENANT_B, // GH-90000
+                        Event.of("signal", Map.of("n", idx)))); // GH-90000
             }
 
-            latch.await(5, TimeUnit.SECONDS);
-            sub.cancel();
+            latch.await(5, TimeUnit.SECONDS); // GH-90000
+            sub.cancel(); // GH-90000
 
             // A must have received exactly its 3 events, not B's 5
-            assertThat(receivedByA.get()).isEqualTo(3);
+            assertThat(receivedByA.get()).isEqualTo(3); // GH-90000
         }
     }
 
@@ -251,84 +251,84 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cross-Tenant Leakage Guards")
+    @DisplayName("Cross-Tenant Leakage Guards [GH-90000]")
     class CrossTenantLeakageGuards {
 
         @Test
-        @DisplayName("blank tenantId is rejected with IllegalArgumentException")
-        void blankTenantId_isRejected() {
-            assertThatThrownBy(() ->
-                    runPromise(() -> client.save("", COLLECTION, Map.of("id", "e1"))))
-                    .isInstanceOf(IllegalArgumentException.class);
+        @DisplayName("blank tenantId is rejected with IllegalArgumentException [GH-90000]")
+        void blankTenantId_isRejected() { // GH-90000
+            assertThatThrownBy(() -> // GH-90000
+                    runPromise(() -> client.save("", COLLECTION, Map.of("id", "e1")))) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null tenantId is rejected with NullPointerException")
-        void nullTenantId_isRejected() {
-            assertThatThrownBy(() ->
-                    runPromise(() -> client.save(null, COLLECTION, Map.of("id", "e1"))))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("null tenantId is rejected with NullPointerException [GH-90000]")
+        void nullTenantId_isRejected() { // GH-90000
+            assertThatThrownBy(() -> // GH-90000
+                    runPromise(() -> client.save(null, COLLECTION, Map.of("id", "e1")))) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("wildcard tenant injection attempt returns no cross-tenant data")
-        void wildcardTenantId_returnsNoData() {
+        @DisplayName("wildcard tenant injection attempt returns no cross-tenant data [GH-90000]")
+        void wildcardTenantId_returnsNoData() { // GH-90000
             // Plant data under a legitimate tenant
-            runPromise(() -> client.save(TENANT_A, COLLECTION,
-                    Map.of("id", "secret", "data", "confidential")));
+            runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
+                    Map.of("id", "secret", "data", "confidential"))); // GH-90000
 
             // Attempt to use a wildcard-like tenant string
-            List<Entity> results = runPromise(
-                    () -> client.query("*", COLLECTION, Query.all()));
-            assertThat(results).isEmpty();
+            List<Entity> results = runPromise( // GH-90000
+                    () -> client.query("*", COLLECTION, Query.all())); // GH-90000
+            assertThat(results).isEmpty(); // GH-90000
 
-            List<Entity> results2 = runPromise(
-                    () -> client.query("%", COLLECTION, Query.all()));
-            assertThat(results2).isEmpty();
+            List<Entity> results2 = runPromise( // GH-90000
+                    () -> client.query("%", COLLECTION, Query.all())); // GH-90000
+            assertThat(results2).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("three independent tenants see only their own data after interleaved writes")
-        void threeTenantsInterleavedWrites_eachSeesOnlyOwn() {
+        @DisplayName("three independent tenants see only their own data after interleaved writes [GH-90000]")
+        void threeTenantsInterleavedWrites_eachSeesOnlyOwn() { // GH-90000
             // Interleave writes from three tenants
-            runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", "a1", "v", "A")));
-            runPromise(() -> client.save(TENANT_B, COLLECTION, Map.of("id", "b1", "v", "B")));
-            runPromise(() -> client.save(TENANT_C, COLLECTION, Map.of("id", "c1", "v", "C")));
-            runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", "a2", "v", "A")));
-            runPromise(() -> client.save(TENANT_C, COLLECTION, Map.of("id", "c2", "v", "C")));
-            runPromise(() -> client.save(TENANT_B, COLLECTION, Map.of("id", "b2", "v", "B")));
+            runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", "a1", "v", "A"))); // GH-90000
+            runPromise(() -> client.save(TENANT_B, COLLECTION, Map.of("id", "b1", "v", "B"))); // GH-90000
+            runPromise(() -> client.save(TENANT_C, COLLECTION, Map.of("id", "c1", "v", "C"))); // GH-90000
+            runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", "a2", "v", "A"))); // GH-90000
+            runPromise(() -> client.save(TENANT_C, COLLECTION, Map.of("id", "c2", "v", "C"))); // GH-90000
+            runPromise(() -> client.save(TENANT_B, COLLECTION, Map.of("id", "b2", "v", "B"))); // GH-90000
 
-            List<Entity> a = runPromise(() -> client.query(TENANT_A, COLLECTION, Query.all()));
-            List<Entity> b = runPromise(() -> client.query(TENANT_B, COLLECTION, Query.all()));
-            List<Entity> c = runPromise(() -> client.query(TENANT_C, COLLECTION, Query.all()));
+            List<Entity> a = runPromise(() -> client.query(TENANT_A, COLLECTION, Query.all())); // GH-90000
+            List<Entity> b = runPromise(() -> client.query(TENANT_B, COLLECTION, Query.all())); // GH-90000
+            List<Entity> c = runPromise(() -> client.query(TENANT_C, COLLECTION, Query.all())); // GH-90000
 
-            assertThat(a).hasSize(2).allSatisfy(e ->
-                    assertThat(e.data().get("v")).isEqualTo("A"));
-            assertThat(b).hasSize(2).allSatisfy(e ->
-                    assertThat(e.data().get("v")).isEqualTo("B"));
-            assertThat(c).hasSize(2).allSatisfy(e ->
-                    assertThat(e.data().get("v")).isEqualTo("C"));
+            assertThat(a).hasSize(2).allSatisfy(e -> // GH-90000
+                    assertThat(e.data().get("v [GH-90000]")).isEqualTo("A [GH-90000]"));
+            assertThat(b).hasSize(2).allSatisfy(e -> // GH-90000
+                    assertThat(e.data().get("v [GH-90000]")).isEqualTo("B [GH-90000]"));
+            assertThat(c).hasSize(2).allSatisfy(e -> // GH-90000
+                    assertThat(e.data().get("v [GH-90000]")).isEqualTo("C [GH-90000]"));
         }
 
         @Test
-        @DisplayName("query filter cannot be used to escape tenant scope via field injection")
-        void queryFilterInjection_cannotLeakCrossTenantData() {
+        @DisplayName("query filter cannot be used to escape tenant scope via field injection [GH-90000]")
+        void queryFilterInjection_cannotLeakCrossTenantData() { // GH-90000
             // Setup: tenant A has sensitive data
-            runPromise(() -> client.save(TENANT_A, COLLECTION,
-                    Map.of("id", "priv-1", "classification", "secret")));
+            runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
+                    Map.of("id", "priv-1", "classification", "secret"))); // GH-90000
 
             // Tenant B tries to query with a filter that matches A's data
             // The tenantId scoping must be applied BEFORE the filter
-            List<Entity> leaked = runPromise(() -> client.query(
+            List<Entity> leaked = runPromise(() -> client.query( // GH-90000
                     TENANT_B,
                     COLLECTION,
-                    new Query(
-                            List.of(new Filter("classification", "eq", "secret")),
-                            List.of(),
+                    new Query( // GH-90000
+                            List.of(new Filter("classification", "eq", "secret")), // GH-90000
+                            List.of(), // GH-90000
                             0,
                             100)));
 
-            assertThat(leaked).isEmpty();
+            assertThat(leaked).isEmpty(); // GH-90000
         }
     }
 }

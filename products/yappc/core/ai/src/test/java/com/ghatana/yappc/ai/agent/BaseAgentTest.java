@@ -15,7 +15,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for BaseAgent.
  */
-@DisplayName("BaseAgent Tests")
+@DisplayName("BaseAgent Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles base agent test operations
@@ -30,48 +30,48 @@ class BaseAgentTest extends EventloopTestBase {
     private TestAgent testAgent;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        testAgent = new TestAgent(llmService);
+    void setUp() { // GH-90000
+        MockitoAnnotations.openMocks(this); // GH-90000
+        testAgent = new TestAgent(llmService); // GH-90000
     }
 
     @Test
-    @DisplayName("Should execute agent with input")
-    void shouldExecuteAgent() {
+    @DisplayName("Should execute agent with input [GH-90000]")
+    void shouldExecuteAgent() { // GH-90000
         // Given
         String input = "Analyze this code";
         String response = "Analysis result";
 
-        when(llmService.chat(anyString(), anyString()))
-            .thenReturn(Promise.of(response));
+        when(llmService.chat(anyString(), anyString())) // GH-90000
+            .thenReturn(Promise.of(response)); // GH-90000
 
         // When
-        Promise<String> result = testAgent.execute(input);
+        Promise<String> result = testAgent.execute(input); // GH-90000
 
         // Then
-        verify(llmService).chat(anyString(), anyString());
+        verify(llmService).chat(anyString(), anyString()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return agent name")
-    void shouldReturnAgentName() {
+    @DisplayName("Should return agent name [GH-90000]")
+    void shouldReturnAgentName() { // GH-90000
         // Given/When
-        String name = testAgent.getName();
+        String name = testAgent.getName(); // GH-90000
 
         // Then
-        assert name.equals("TestAgent");
+        assert name.equals("TestAgent [GH-90000]");
     }
 
     /**
      * Test implementation of BaseAgent.
      */
     private static class TestAgent extends BaseAgent {
-        public TestAgent(LLMService llmService) {
-            super(llmService, "TestAgent", "You are a test agent");
+        public TestAgent(LLMService llmService) { // GH-90000
+            super(llmService, "TestAgent", "You are a test agent"); // GH-90000
         }
 
         @org.jetbrains.annotations.NotNull
-        public String getCapabilities() {
+        public String getCapabilities() { // GH-90000
             return "Test agent capabilities";
         }
     }

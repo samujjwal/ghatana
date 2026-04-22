@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.application;
@@ -34,8 +34,8 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("EntityServiceImpl Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("EntityServiceImpl Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class EntityServiceImplTest extends EventloopTestBase {
 
     @Mock
@@ -47,268 +47,268 @@ class EntityServiceImplTest extends EventloopTestBase {
     private EntityServiceImpl service;
 
     @BeforeEach
-    void setUp() {
-        service = new EntityServiceImpl(repository, metrics);
+    void setUp() { // GH-90000
+        service = new EntityServiceImpl(repository, metrics); // GH-90000
     }
 
     @Nested
-    @DisplayName("Create Entity")
+    @DisplayName("Create Entity [GH-90000]")
     class CreateEntityTests {
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_successfully_creates_entity")
-        void createEntitySuccessfully() {
+        @DisplayName("[TEST-001]: createEntity_successfully_creates_entity [GH-90000]")
+        void createEntitySuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
             String userId = "user-123";
-            Map<String, Object> data = Map.of("name", "John", "email", "john@example.com");
+            Map<String, Object> data = Map.of("name", "John", "email", "john@example.com"); // GH-90000
 
-            Entity savedEntity = Entity.builder()
-                .id(UUID.randomUUID())
-                .tenantId(tenantId)
-                .collectionName(collectionName)
-                .data(data)
-                .createdBy(userId)
-                .updatedBy(userId)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .version(1)
-                .build();
+            Entity savedEntity = Entity.builder() // GH-90000
+                .id(UUID.randomUUID()) // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .collectionName(collectionName) // GH-90000
+                .data(data) // GH-90000
+                .createdBy(userId) // GH-90000
+                .updatedBy(userId) // GH-90000
+                .createdAt(Instant.now()) // GH-90000
+                .updatedAt(Instant.now()) // GH-90000
+                .version(1) // GH-90000
+                .build(); // GH-90000
 
-            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(savedEntity));
+            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(savedEntity)); // GH-90000
 
             // When
-            Entity result = runPromise(() -> service.createEntity(tenantId, collectionName, data, userId));
+            Entity result = runPromise(() -> service.createEntity(tenantId, collectionName, data, userId)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getTenantId()).isEqualTo(tenantId);
-            assertThat(result.getCollectionName()).isEqualTo(collectionName);
-            assertThat(result.getData()).isEqualTo(data);
-            assertThat(result.getCreatedBy()).isEqualTo(userId);
-            assertThat(result.getVersion()).isEqualTo(1);
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.getTenantId()).isEqualTo(tenantId); // GH-90000
+            assertThat(result.getCollectionName()).isEqualTo(collectionName); // GH-90000
+            assertThat(result.getData()).isEqualTo(data); // GH-90000
+            assertThat(result.getCreatedBy()).isEqualTo(userId); // GH-90000
+            assertThat(result.getVersion()).isEqualTo(1); // GH-90000
 
-            verify(metrics).incrementCounter("entity.create.success", "tenant", tenantId, "collection", collectionName);
+            verify(metrics).incrementCounter("entity.create.success", "tenant", tenantId, "collection", collectionName); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_with_null_tenantId_throws_exception")
-        void createEntityNullTenantId() {
+        @DisplayName("[TEST-001]: createEntity_with_null_tenantId_throws_exception [GH-90000]")
+        void createEntityNullTenantId() { // GH-90000
             // Given
             String tenantId = null;
             String collectionName = "customers";
             String userId = "user-123";
-            Map<String, Object> data = Map.of("name", "John");
+            Map<String, Object> data = Map.of("name", "John"); // GH-90000
 
             // When/Then
-            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                service.createEntity(tenantId, collectionName, data, userId);
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> { // GH-90000
+                service.createEntity(tenantId, collectionName, data, userId); // GH-90000
             });
         }
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_with_empty_tenantId_throws_exception")
-        void createEntityEmptyTenantId() {
+        @DisplayName("[TEST-001]: createEntity_with_empty_tenantId_throws_exception [GH-90000]")
+        void createEntityEmptyTenantId() { // GH-90000
             // Given
             String tenantId = "";
             String collectionName = "customers";
             String userId = "user-123";
-            Map<String, Object> data = Map.of("name", "John");
+            Map<String, Object> data = Map.of("name", "John"); // GH-90000
 
             // When/Then
-            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                service.createEntity(tenantId, collectionName, data, userId);
+            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> { // GH-90000
+                service.createEntity(tenantId, collectionName, data, userId); // GH-90000
             });
         }
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_repository_error_increments_error_metric")
-        void createEntityRepositoryError() {
+        @DisplayName("[TEST-001]: createEntity_repository_error_increments_error_metric [GH-90000]")
+        void createEntityRepositoryError() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
             String userId = "user-123";
-            Map<String, Object> data = Map.of("name", "John");
+            Map<String, Object> data = Map.of("name", "John"); // GH-90000
 
-            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.ofException(new RuntimeException("DB error")));
+            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.ofException(new RuntimeException("DB error [GH-90000]")));
 
             // When
-            clearFatalError();
+            clearFatalError(); // GH-90000
             try {
-                runPromise(() -> service.createEntity(tenantId, collectionName, data, userId));
-            } catch (Exception e) {
+                runPromise(() -> service.createEntity(tenantId, collectionName, data, userId)); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Expected
             }
 
             // Then
-            verify(metrics).incrementCounter("entity.create.error", "tenant", tenantId, "error", "RuntimeException");
+            verify(metrics).incrementCounter("entity.create.error", "tenant", tenantId, "error", "RuntimeException"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Get Entity")
+    @DisplayName("Get Entity [GH-90000]")
     class GetEntityTests {
 
         @Test
-        @DisplayName("[TEST-002]: getEntity_returns_entity_when_found")
-        void getEntityReturnsEntity() {
+        @DisplayName("[TEST-002]: getEntity_returns_entity_when_found [GH-90000]")
+        void getEntityReturnsEntity() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
 
-            Entity entity = Entity.builder()
-                .id(entityId)
-                .tenantId(tenantId)
-                .collectionName(collectionName)
-                .data(Map.of("name", "John"))
-                .build();
+            Entity entity = Entity.builder() // GH-90000
+                .id(entityId) // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .collectionName(collectionName) // GH-90000
+                .data(Map.of("name", "John")) // GH-90000
+                .build(); // GH-90000
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.of(entity)));
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
             // When
-            Entity result = runPromise(() -> service.getEntity(tenantId, collectionName, entityId));
+            Entity result = runPromise(() -> service.getEntity(tenantId, collectionName, entityId)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getId()).isEqualTo(entityId);
-            verify(metrics).incrementCounter("entity.get.success", "tenant", tenantId, "collection", collectionName);
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.getId()).isEqualTo(entityId); // GH-90000
+            verify(metrics).incrementCounter("entity.get.success", "tenant", tenantId, "collection", collectionName); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-002]: getEntity_returns_null_when_not_found")
-        void getEntityNotFound() {
+        @DisplayName("[TEST-002]: getEntity_returns_null_when_not_found [GH-90000]")
+        void getEntityNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.empty()));
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             // When
-            Entity result = runPromise(() -> service.getEntity(tenantId, collectionName, entityId));
+            Entity result = runPromise(() -> service.getEntity(tenantId, collectionName, entityId)); // GH-90000
 
             // Then
-            assertThat(result).isNull();
-            verify(metrics).incrementCounter("entity.get.not_found", "tenant", tenantId, "collection", collectionName);
+            assertThat(result).isNull(); // GH-90000
+            verify(metrics).incrementCounter("entity.get.not_found", "tenant", tenantId, "collection", collectionName); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Update Entity")
+    @DisplayName("Update Entity [GH-90000]")
     class UpdateEntityTests {
 
         @Test
-        @DisplayName("[TEST-003]: updateEntity_successfully_updates_entity")
-        void updateEntitySuccessfully() {
+        @DisplayName("[TEST-003]: updateEntity_successfully_updates_entity [GH-90000]")
+        void updateEntitySuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
             String userId = "user-123";
 
-            Entity existingEntity = Entity.builder()
-                .id(entityId)
-                .tenantId(tenantId)
-                .collectionName(collectionName)
-                .data(Map.of("name", "John"))
-                .createdBy("user-1")
-                .createdAt(Instant.now())
-                .updatedBy("user-1")
-                .updatedAt(Instant.now())
-                .version(1)
-                .build();
+            Entity existingEntity = Entity.builder() // GH-90000
+                .id(entityId) // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .collectionName(collectionName) // GH-90000
+                .data(Map.of("name", "John")) // GH-90000
+                .createdBy("user-1 [GH-90000]")
+                .createdAt(Instant.now()) // GH-90000
+                .updatedBy("user-1 [GH-90000]")
+                .updatedAt(Instant.now()) // GH-90000
+                .version(1) // GH-90000
+                .build(); // GH-90000
 
-            Map<String, Object> newData = Map.of("name", "John Updated");
+            Map<String, Object> newData = Map.of("name", "John Updated"); // GH-90000
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.of(existingEntity)));
-            when(repository.save(eq(tenantId), any(Entity.class))).thenAnswer(invocation -> {
-                Entity arg = invocation.getArgument(1);
-                return Promise.of(arg);
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.of(existingEntity))); // GH-90000
+            when(repository.save(eq(tenantId), any(Entity.class))).thenAnswer(invocation -> { // GH-90000
+                Entity arg = invocation.getArgument(1); // GH-90000
+                return Promise.of(arg); // GH-90000
             });
 
             // When
-            Entity result = runPromise(() -> service.updateEntity(tenantId, collectionName, entityId, newData, userId));
+            Entity result = runPromise(() -> service.updateEntity(tenantId, collectionName, entityId, newData, userId)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getVersion()).isEqualTo(2);
-            assertThat(result.getUpdatedBy()).isEqualTo(userId);
-            assertThat(result.getData()).isEqualTo(newData);
-            verify(metrics).incrementCounter("entity.update.success", "tenant", tenantId, "collection", collectionName);
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.getVersion()).isEqualTo(2); // GH-90000
+            assertThat(result.getUpdatedBy()).isEqualTo(userId); // GH-90000
+            assertThat(result.getData()).isEqualTo(newData); // GH-90000
+            verify(metrics).incrementCounter("entity.update.success", "tenant", tenantId, "collection", collectionName); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-003]: updateEntity_throws_when_entity_not_found")
-        void updateEntityNotFound() {
+        @DisplayName("[TEST-003]: updateEntity_throws_when_entity_not_found [GH-90000]")
+        void updateEntityNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
             String userId = "user-123";
-            Map<String, Object> data = Map.of("name", "John");
+            Map<String, Object> data = Map.of("name", "John"); // GH-90000
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.empty()));
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             // When
-            clearFatalError();
+            clearFatalError(); // GH-90000
             try {
-                runPromise(() -> service.updateEntity(tenantId, collectionName, entityId, data, userId));
-            } catch (Exception e) {
+                runPromise(() -> service.updateEntity(tenantId, collectionName, entityId, data, userId)); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Expected
             }
 
             // Then
-            verify(metrics).incrementCounter("entity.update.error", "tenant", tenantId, "error", "IllegalArgumentException");
+            verify(metrics).incrementCounter("entity.update.error", "tenant", tenantId, "error", "IllegalArgumentException"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Delete Entity")
+    @DisplayName("Delete Entity [GH-90000]")
     class DeleteEntityTests {
 
         @Test
-        @DisplayName("[TEST-004]: deleteEntity_successfully_deletes_entity")
-        void deleteEntitySuccessfully() {
+        @DisplayName("[TEST-004]: deleteEntity_successfully_deletes_entity [GH-90000]")
+        void deleteEntitySuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
             String userId = "user-123";
 
-            when(repository.delete(tenantId, collectionName, entityId)).thenReturn(Promise.of(null));
+            when(repository.delete(tenantId, collectionName, entityId)).thenReturn(Promise.of(null)); // GH-90000
 
             // When
-            runPromise(() -> service.deleteEntity(tenantId, collectionName, entityId, userId));
+            runPromise(() -> service.deleteEntity(tenantId, collectionName, entityId, userId)); // GH-90000
 
             // Then
-            verify(repository).delete(tenantId, collectionName, entityId);
-            verify(metrics).incrementCounter("entity.delete.success", "tenant", tenantId, "collection", collectionName);
+            verify(repository).delete(tenantId, collectionName, entityId); // GH-90000
+            verify(metrics).incrementCounter("entity.delete.success", "tenant", tenantId, "collection", collectionName); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-004]: deleteEntity_increments_error_metric_on_failure")
-        void deleteEntityError() {
+        @DisplayName("[TEST-004]: deleteEntity_increments_error_metric_on_failure [GH-90000]")
+        void deleteEntityError() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String collectionName = "customers";
-            UUID entityId = UUID.randomUUID();
+            UUID entityId = UUID.randomUUID(); // GH-90000
             String userId = "user-123";
 
-            when(repository.delete(tenantId, collectionName, entityId))
-                .thenReturn(Promise.ofException(new RuntimeException("Delete failed")));
+            when(repository.delete(tenantId, collectionName, entityId)) // GH-90000
+                .thenReturn(Promise.ofException(new RuntimeException("Delete failed [GH-90000]")));
 
             // When
-            clearFatalError();
+            clearFatalError(); // GH-90000
             try {
-                runPromise(() -> service.deleteEntity(tenantId, collectionName, entityId, userId));
-            } catch (Exception e) {
+                runPromise(() -> service.deleteEntity(tenantId, collectionName, entityId, userId)); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Expected
             }
 
             // Then
-            verify(metrics).incrementCounter("entity.delete.error", "tenant", tenantId, "error", "RuntimeException");
+            verify(metrics).incrementCounter("entity.delete.error", "tenant", tenantId, "error", "RuntimeException"); // GH-90000
         }
     }
 }

@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("CapabilityRegistryHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("CapabilityRegistryHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class CapabilityRegistryHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -45,33 +45,33 @@ class CapabilityRegistryHandlerTest extends EventloopTestBase {
     private CapabilityRegistryHandler handler;
 
     @BeforeEach
-    void setUp() {
-        Supplier<Map<String, Object>> snapshotSupplier = () -> Map.of("voiceGateway", Map.of("status", "available"));
-        handler = new CapabilityRegistryHandler(httpSupport, new ObjectMapper(), snapshotSupplier);
+    void setUp() { // GH-90000
+        Supplier<Map<String, Object>> snapshotSupplier = () -> Map.of("voiceGateway", Map.of("status", "available")); // GH-90000
+        handler = new CapabilityRegistryHandler(httpSupport, new ObjectMapper(), snapshotSupplier); // GH-90000
     }
 
     @Test
-    @DisplayName("returns capability envelope when tenant header is present")
-    void returnsCapabilityEnvelopeWhenTenantPresent() {
-        when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-capabilities");
-        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-1");
-        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse);
+    @DisplayName("returns capability envelope when tenant header is present [GH-90000]")
+    void returnsCapabilityEnvelopeWhenTenantPresent() { // GH-90000
+        when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-capabilities [GH-90000]");
+        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-1 [GH-90000]");
+        when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleCapabilities(request));
+        HttpResponse response = runPromise(() -> handler.handleCapabilities(request)); // GH-90000
 
-        assertThat(response).isSameAs(successResponse);
-        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class));
+        assertThat(response).isSameAs(successResponse); // GH-90000
+        verify(httpSupport).envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("returns 400 when tenant header is missing")
-    void returns400WhenTenantHeaderMissing() {
-        when(httpSupport.requireTenantIdOrFail(request)).thenReturn(null);
-        when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    @DisplayName("returns 400 when tenant header is missing [GH-90000]")
+    void returns400WhenTenantHeaderMissing() { // GH-90000
+        when(httpSupport.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+        when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleCapabilities(request));
+        HttpResponse response = runPromise(() -> handler.handleCapabilities(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required"); // GH-90000
     }
 }

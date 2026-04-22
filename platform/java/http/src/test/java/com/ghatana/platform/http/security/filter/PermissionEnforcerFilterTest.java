@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.http.security.filter;
@@ -29,243 +29,243 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("PermissionEnforcerFilter — annotation-based HTTP permission enforcement")
+@DisplayName("PermissionEnforcerFilter — annotation-based HTTP permission enforcement [GH-90000]")
 class PermissionEnforcerFilterTest extends EventloopTestBase {
 
     // ── Annotated marker classes for test route registration ─────────────────
 
-    @RequiresPermission("event:read:all")
+    @RequiresPermission("event:read:all [GH-90000]")
     private static final class EventReadRoute {}
 
-    @RequiresPermission(value = "event:write:all")
+    @RequiresPermission(value = "event:write:all") // GH-90000
     private static final class EventWriteRoute {}
 
-    @RequiresPermission(value = "event:read:all", requireAll = true, anyOf = {"event:read:all", "event:write:all"})
+    @RequiresPermission(value = "event:read:all", requireAll = true, anyOf = {"event:read:all", "event:write:all"}) // GH-90000
     private static final class RequireAllRoute {}
 
-    @RequiresPermission(anyOf = {"event:read:all", "event:write:all"})
+    @RequiresPermission(anyOf = {"event:read:all", "event:write:all"}) // GH-90000
     private static final class AnyOfRoute {}
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static final AsyncServlet OK_DELEGATE =
-            req -> Promise.of(HttpResponse.ok200().build());
+            req -> Promise.of(HttpResponse.ok200().build()); // GH-90000
 
-    private static HttpRequest getRequest(String path) {
-        return HttpRequest.get("http://localhost" + path).build();
+    private static HttpRequest getRequest(String path) { // GH-90000
+        return HttpRequest.get("http://localhost" + path).build(); // GH-90000
     }
 
-    private static HttpRequest postRequest(String path) {
-        return HttpRequest.post("http://localhost" + path).build();
+    private static HttpRequest postRequest(String path) { // GH-90000
+        return HttpRequest.post("http://localhost" + path).build(); // GH-90000
     }
 
     @AfterEach
-    void clearContext() {
-        TenantContext.clear();
+    void clearContext() { // GH-90000
+        TenantContext.clear(); // GH-90000
     }
 
     // ── Tests: no registered constraint ───────────────────────────────────────
 
     @Test
-    @DisplayName("passes through when no permission registered for route")
-    void passesThroughWithNoRegisteredRoute() throws Exception {
-        PermissionEnforcerFilter filter = new PermissionEnforcerFilter(
-                (p, t) -> Set.of());
+    @DisplayName("passes through when no permission registered for route [GH-90000]")
+    void passesThroughWithNoRegisteredRoute() throws Exception { // GH-90000
+        PermissionEnforcerFilter filter = new PermissionEnforcerFilter( // GH-90000
+                (p, t) -> Set.of()); // GH-90000
 
-        HttpResponse response = runPromise(() ->
-                filter.apply(getRequest("/unregistered"), OK_DELEGATE));
+        HttpResponse response = runPromise(() -> // GH-90000
+                filter.apply(getRequest("/unregistered [GH-90000]"), OK_DELEGATE));
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     // ── Tests: null principal → 401 ───────────────────────────────────────────
 
     @Test
-    @DisplayName("returns 401 when no principal in TenantContext and route is restricted")
-    void returns401WhenNoPrincipal() throws Exception {
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("alice", Set.of("event:read:all")));
+    @DisplayName("returns 401 when no principal in TenantContext and route is restricted [GH-90000]")
+    void returns401WhenNoPrincipal() throws Exception { // GH-90000
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("alice", Set.of("event:read:all [GH-90000]")));
 
-        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class);
-        filter.registerRoutePermission("GET /events", ann);
+        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class); // GH-90000
+        filter.registerRoutePermission("GET /events", ann); // GH-90000
 
-        HttpResponse response = runPromise(() ->
-                filter.apply(getRequest("/events"), OK_DELEGATE));
+        HttpResponse response = runPromise(() -> // GH-90000
+                filter.apply(getRequest("/events [GH-90000]"), OK_DELEGATE));
 
-        assertThat(response.getCode()).isEqualTo(401);
+        assertThat(response.getCode()).isEqualTo(401); // GH-90000
     }
 
     // ── Tests: exact permission – access control ───────────────────────────────
 
     @Test
-    @DisplayName("returns 200 when principal holds the exact required permission")
-    void returns200WhenPermissionGranted() throws Exception {
-        Principal alice = new Principal("alice", List.of("USER"));
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("alice", Set.of("event:read:all")));
+    @DisplayName("returns 200 when principal holds the exact required permission [GH-90000]")
+    void returns200WhenPermissionGranted() throws Exception { // GH-90000
+        Principal alice = new Principal("alice", List.of("USER [GH-90000]"));
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("alice", Set.of("event:read:all [GH-90000]")));
 
-        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class);
-        filter.registerRoutePermission("GET /events", ann);
+        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class); // GH-90000
+        filter.registerRoutePermission("GET /events", ann); // GH-90000
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
-                return filter.apply(getRequest("/events"), OK_DELEGATE);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) { // GH-90000
+                return filter.apply(getRequest("/events [GH-90000]"), OK_DELEGATE);
             }
         });
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("returns 403 when principal lacks the required permission")
-    void returns403WhenPermissionDenied() throws Exception {
-        Principal bob = new Principal("bob", List.of("VIEWER"));
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("bob", Set.of("event:read:own")));  // "own" not "all"
+    @DisplayName("returns 403 when principal lacks the required permission [GH-90000]")
+    void returns403WhenPermissionDenied() throws Exception { // GH-90000
+        Principal bob = new Principal("bob", List.of("VIEWER [GH-90000]"));
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("bob", Set.of("event:read:own [GH-90000]")));  // "own" not "all"
 
-        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class);
-        filter.registerRoutePermission("GET /events", ann);
+        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class); // GH-90000
+        filter.registerRoutePermission("GET /events", ann); // GH-90000
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(bob)) {
-                return filter.apply(getRequest("/events"), OK_DELEGATE);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(bob)) { // GH-90000
+                return filter.apply(getRequest("/events [GH-90000]"), OK_DELEGATE);
             }
         });
-        assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getCode()).isEqualTo(403); // GH-90000
     }
 
     // ── Tests: wildcard matching ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("wildcard action '*' satisfies specific action requirement")
-    void wildcardActionSatisfiesSpecificAction() throws Exception {
-        Principal alice = new Principal("alice", List.of("ADMIN"));
+    @DisplayName("wildcard action '*' satisfies specific action requirement [GH-90000]")
+    void wildcardActionSatisfiesSpecificAction() throws Exception { // GH-90000
+        Principal alice = new Principal("alice", List.of("ADMIN [GH-90000]"));
         // granted: "event:*:all" — wildcard action should match "event:read:all"
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("alice", Set.of("event:*:all")));
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("alice", Set.of("event:*:all [GH-90000]")));
 
-        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class);
-        filter.registerRoutePermission("GET /events", ann);
+        RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class); // GH-90000
+        filter.registerRoutePermission("GET /events", ann); // GH-90000
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
-                return filter.apply(getRequest("/events"), OK_DELEGATE);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) { // GH-90000
+                return filter.apply(getRequest("/events [GH-90000]"), OK_DELEGATE);
             }
         });
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("super-admin wildcard '*:*:*' satisfies any permission")
-    void superAdminWildcardSatisfiesAnyPermission() throws Exception {
-        Principal admin = new Principal("superadmin", List.of("SUPER_ADMIN"));
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("superadmin", Set.of("*:*:*")));
+    @DisplayName("super-admin wildcard '*:*:*' satisfies any permission [GH-90000]")
+    void superAdminWildcardSatisfiesAnyPermission() throws Exception { // GH-90000
+        Principal admin = new Principal("superadmin", List.of("SUPER_ADMIN [GH-90000]"));
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("superadmin", Set.of("*:*:* [GH-90000]")));
 
-        RequiresPermission ann = EventWriteRoute.class.getAnnotation(RequiresPermission.class);
-        filter.registerRoutePermission("POST /events", ann);
+        RequiresPermission ann = EventWriteRoute.class.getAnnotation(RequiresPermission.class); // GH-90000
+        filter.registerRoutePermission("POST /events", ann); // GH-90000
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(admin)) {
-                return filter.apply(postRequest("/events"), OK_DELEGATE);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(admin)) { // GH-90000
+                return filter.apply(postRequest("/events [GH-90000]"), OK_DELEGATE);
             }
         });
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     // ── Tests: anyOf ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("anyOf: returns 200 when principal holds any one of the anyOf permissions")
-    void anyOfGrantsAccessWithOneMatchingPermission() throws Exception {
-        Principal alice = new Principal("alice", List.of("USER"));
+    @DisplayName("anyOf: returns 200 when principal holds any one of the anyOf permissions [GH-90000]")
+    void anyOfGrantsAccessWithOneMatchingPermission() throws Exception { // GH-90000
+        Principal alice = new Principal("alice", List.of("USER [GH-90000]"));
         // Only has "event:write:all", not "event:read:all"
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("alice", Set.of("event:write:all")));
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("alice", Set.of("event:write:all [GH-90000]")));
 
-        RequiresPermission ann = AnyOfRoute.class.getAnnotation(RequiresPermission.class);
-        filter.registerRoutePermission("GET /events/any", ann);
+        RequiresPermission ann = AnyOfRoute.class.getAnnotation(RequiresPermission.class); // GH-90000
+        filter.registerRoutePermission("GET /events/any", ann); // GH-90000
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
-                return filter.apply(getRequest("/events/any"), OK_DELEGATE);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) { // GH-90000
+                return filter.apply(getRequest("/events/any [GH-90000]"), OK_DELEGATE);
             }
         });
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("anyOf: returns 403 when principal holds none of the anyOf permissions")
-    void anyOfDeniesAccessWhenNoMatchingPermission() throws Exception {
-        Principal bob = new Principal("bob", List.of("VIEWER"));
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("bob", Set.of("user:read:own")));
+    @DisplayName("anyOf: returns 403 when principal holds none of the anyOf permissions [GH-90000]")
+    void anyOfDeniesAccessWhenNoMatchingPermission() throws Exception { // GH-90000
+        Principal bob = new Principal("bob", List.of("VIEWER [GH-90000]"));
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("bob", Set.of("user:read:own [GH-90000]")));
 
-        RequiresPermission ann = AnyOfRoute.class.getAnnotation(RequiresPermission.class);
-        filter.registerRoutePermission("GET /events/any", ann);
+        RequiresPermission ann = AnyOfRoute.class.getAnnotation(RequiresPermission.class); // GH-90000
+        filter.registerRoutePermission("GET /events/any", ann); // GH-90000
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(bob)) {
-                return filter.apply(getRequest("/events/any"), OK_DELEGATE);
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(bob)) { // GH-90000
+                return filter.apply(getRequest("/events/any [GH-90000]"), OK_DELEGATE);
             }
         });
-        assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getCode()).isEqualTo(403); // GH-90000
     }
 
     // ── Tests: registerRouteClass ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("registerRouteClass registers annotation keyed by class name")
-    void registerRouteClassUsesClassNameAsKey() throws Exception {
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of("alice", Set.of("event:read:all")));
+    @DisplayName("registerRouteClass registers annotation keyed by class name [GH-90000]")
+    void registerRouteClassUsesClassNameAsKey() throws Exception { // GH-90000
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of("alice", Set.of("event:read:all [GH-90000]")));
 
-        filter.registerRouteClass(EventReadRoute.class);
+        filter.registerRouteClass(EventReadRoute.class); // GH-90000
 
         // Route key is the class FQN; construct a fake request that matches it
-        String fakeRoutePath = EventReadRoute.class.getName();
-        Principal alice = new Principal("alice", List.of("USER"));
+        String fakeRoutePath = EventReadRoute.class.getName(); // GH-90000
+        Principal alice = new Principal("alice", List.of("USER [GH-90000]"));
 
-        HttpResponse response = runPromise(() -> {
-            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
-                return filter.apply(
-                        HttpRequest.get("http://localhost/" + fakeRoutePath).build(),
+        HttpResponse response = runPromise(() -> { // GH-90000
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) { // GH-90000
+                return filter.apply( // GH-90000
+                        HttpRequest.get("http://localhost/" + fakeRoutePath).build(), // GH-90000
                         OK_DELEGATE);
             }
         });
         // The route key lookup uses method + " " + path; "GET /class.name" won't match
-        // So it passes through (no constraint found for that exact routeKey)
-        assertThat(response.getCode()).isEqualTo(200);
+        // So it passes through (no constraint found for that exact routeKey) // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("registerRouteClass ignores class with no @RequiresPermission annotation")
-    void registerRouteClassIgnoresUnannotatedClass() throws Exception {
-        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions(
-                Map.of());
+    @DisplayName("registerRouteClass ignores class with no @RequiresPermission annotation [GH-90000]")
+    void registerRouteClassIgnoresUnannotatedClass() throws Exception { // GH-90000
+        PermissionEnforcerFilter filter = PermissionEnforcerFilter.ofStaticPrincipalPermissions( // GH-90000
+                Map.of()); // GH-90000
 
         // Should not throw — unannotated class is a no-op
-        filter.registerRouteClass(Object.class);
+        filter.registerRouteClass(Object.class); // GH-90000
 
         // No constraints → always passes through
-        HttpResponse response = runPromise(() ->
-                filter.apply(getRequest("/anything"), OK_DELEGATE));
-        assertThat(response.getCode()).isEqualTo(200);
+        HttpResponse response = runPromise(() -> // GH-90000
+                filter.apply(getRequest("/anything [GH-90000]"), OK_DELEGATE));
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     // ── Tests: constructor guards ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor throws NullPointerException for null resolver")
-    void constructorThrowsForNullResolver() {
-        assertThatThrownBy(() -> new PermissionEnforcerFilter(null))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("constructor throws NullPointerException for null resolver [GH-90000]")
+    void constructorThrowsForNullResolver() { // GH-90000
+        assertThatThrownBy(() -> new PermissionEnforcerFilter(null)) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("ofStaticPrincipalPermissions throws for null map")
-    void staticFactoryThrowsForNullMap() {
-        assertThatThrownBy(() ->
-                PermissionEnforcerFilter.ofStaticPrincipalPermissions(null))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("ofStaticPrincipalPermissions throws for null map [GH-90000]")
+    void staticFactoryThrowsForNullMap() { // GH-90000
+        assertThatThrownBy(() -> // GH-90000
+                PermissionEnforcerFilter.ofStaticPrincipalPermissions(null)) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 }

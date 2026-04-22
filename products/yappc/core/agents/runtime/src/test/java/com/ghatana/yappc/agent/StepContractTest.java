@@ -16,16 +16,16 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("StepContract Tests")
+@DisplayName("StepContract Tests [GH-90000]")
 class StepContractTest {
 
   @Test
-  @DisplayName("should create StepContract with all fields")
-  void shouldCreateStepContract() {
-    List<String> capabilities = List.of("DATA_CLOUD", "EVENT_LOG");
-    Map<String, String> metadata = Map.of("key", "value");
+  @DisplayName("should create StepContract with all fields [GH-90000]")
+  void shouldCreateStepContract() { // GH-90000
+    List<String> capabilities = List.of("DATA_CLOUD", "EVENT_LOG"); // GH-90000
+    Map<String, String> metadata = Map.of("key", "value"); // GH-90000
 
-    StepContract contract = new StepContract(
+    StepContract contract = new StepContract( // GH-90000
         "test.step",
         "input-schema.json",
         "output-schema.json",
@@ -33,59 +33,59 @@ class StepContractTest {
         metadata
     );
 
-    assertThat(contract.name()).isEqualTo("test.step");
-    assertThat(contract.inputSchemaRef()).isEqualTo("input-schema.json");
-    assertThat(contract.outputSchemaRef()).isEqualTo("output-schema.json");
-    assertThat(contract.requiredCapabilities()).isEqualTo(capabilities);
-    assertThat(contract.metadata()).isEqualTo(metadata);
+    assertThat(contract.name()).isEqualTo("test.step [GH-90000]");
+    assertThat(contract.inputSchemaRef()).isEqualTo("input-schema.json [GH-90000]");
+    assertThat(contract.outputSchemaRef()).isEqualTo("output-schema.json [GH-90000]");
+    assertThat(contract.requiredCapabilities()).isEqualTo(capabilities); // GH-90000
+    assertThat(contract.metadata()).isEqualTo(metadata); // GH-90000
   }
 
   @Test
-  @DisplayName("capabilities should return requiredCapabilities")
-  void capabilitiesShouldReturnRequiredCapabilities() {
-    List<String> capabilities = List.of("CAP_1", "CAP_2");
+  @DisplayName("capabilities should return requiredCapabilities [GH-90000]")
+  void capabilitiesShouldReturnRequiredCapabilities() { // GH-90000
+    List<String> capabilities = List.of("CAP_1", "CAP_2"); // GH-90000
 
-    StepContract contract = new StepContract(
+    StepContract contract = new StepContract( // GH-90000
         "test.step", null, null, capabilities, null
     );
 
-    assertThat(contract.capabilities()).isEqualTo(capabilities);
-    assertThat(contract.capabilities()).isSameAs(contract.requiredCapabilities());
+    assertThat(contract.capabilities()).isEqualTo(capabilities); // GH-90000
+    assertThat(contract.capabilities()).isSameAs(contract.requiredCapabilities()); // GH-90000
   }
 
   @Test
-  @DisplayName("should handle null fields")
-  void shouldHandleNullFields() {
-    StepContract contract = new StepContract(null, null, null, null, null);
+  @DisplayName("should handle null fields [GH-90000]")
+  void shouldHandleNullFields() { // GH-90000
+    StepContract contract = new StepContract(null, null, null, null, null); // GH-90000
 
-    assertThat(contract.name()).isNull();
-    assertThat(contract.inputSchemaRef()).isNull();
-    assertThat(contract.outputSchemaRef()).isNull();
-    assertThat(contract.requiredCapabilities()).isNull();
-    assertThat(contract.metadata()).isNull();
-    assertThat(contract.capabilities()).isNull();
+    assertThat(contract.name()).isNull(); // GH-90000
+    assertThat(contract.inputSchemaRef()).isNull(); // GH-90000
+    assertThat(contract.outputSchemaRef()).isNull(); // GH-90000
+    assertThat(contract.requiredCapabilities()).isNull(); // GH-90000
+    assertThat(contract.metadata()).isNull(); // GH-90000
+    assertThat(contract.capabilities()).isNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("should implement equals correctly")
-  void shouldImplementEquals() {
-    StepContract c1 = new StepContract("step", "in", "out", List.of("cap"), Map.of("k", "v"));
-    StepContract c2 = new StepContract("step", "in", "out", List.of("cap"), Map.of("k", "v"));
-    StepContract c3 = new StepContract("other", "in", "out", List.of("cap"), Map.of("k", "v"));
+  @DisplayName("should implement equals correctly [GH-90000]")
+  void shouldImplementEquals() { // GH-90000
+    StepContract c1 = new StepContract("step", "in", "out", List.of("cap [GH-90000]"), Map.of("k", "v"));
+    StepContract c2 = new StepContract("step", "in", "out", List.of("cap [GH-90000]"), Map.of("k", "v"));
+    StepContract c3 = new StepContract("other", "in", "out", List.of("cap [GH-90000]"), Map.of("k", "v"));
 
-    assertThat(c1).isEqualTo(c2);
-    assertThat(c1).isNotEqualTo(c3);
+    assertThat(c1).isEqualTo(c2); // GH-90000
+    assertThat(c1).isNotEqualTo(c3); // GH-90000
   }
 
   @Test
-  @DisplayName("should handle empty collections")
-  void shouldHandleEmptyCollections() {
-    StepContract contract = new StepContract(
-        "step", "in", "out", List.of(), Map.of()
+  @DisplayName("should handle empty collections [GH-90000]")
+  void shouldHandleEmptyCollections() { // GH-90000
+    StepContract contract = new StepContract( // GH-90000
+        "step", "in", "out", List.of(), Map.of() // GH-90000
     );
 
-    assertThat(contract.requiredCapabilities()).isEmpty();
-    assertThat(contract.metadata()).isEmpty();
-    assertThat(contract.capabilities()).isEmpty();
+    assertThat(contract.requiredCapabilities()).isEmpty(); // GH-90000
+    assertThat(contract.metadata()).isEmpty(); // GH-90000
+    assertThat(contract.capabilities()).isEmpty(); // GH-90000
   }
 }

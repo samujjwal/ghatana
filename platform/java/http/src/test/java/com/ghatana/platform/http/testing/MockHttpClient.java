@@ -27,132 +27,132 @@ import java.util.function.Function;
  * - Performance Tests - Eliminate network variability
  *
  * <p><b>Mock Client Features</b><br>
- * - <b>Request Stubbing</b>: Map (method, path) → response
- * - <b>Dynamic Responses</b>: Function-based responses (access request data)
- * - <b>Default Response</b>: Fallback for unmatched requests (default 404)
+ * - <b>Request Stubbing</b>: Map (method, path) → response // GH-90000
+ * - <b>Dynamic Responses</b>: Function-based responses (access request data) // GH-90000
+ * - <b>Default Response</b>: Fallback for unmatched requests (default 404) // GH-90000
  * - <b>Stub Management</b>: Add, remove, clear stubs dynamically
  * - <b>Builder Pattern</b>: Fluent API for stub configuration
- * - <b>In-Memory</b>: No network I/O (instant responses)
- * - <b>Thread-Safe</b>: Safe for concurrent access (after build)
+ * - <b>In-Memory</b>: No network I/O (instant responses) // GH-90000
+ * - <b>Thread-Safe</b>: Safe for concurrent access (after build) // GH-90000
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * // 1. Basic stubbing (static responses)
- * MockHttpClient client = MockHttpClient.builder()
- *     .stub(HttpMethod.GET, "/users/123", request ->
- *         HttpResponse.ok200()
- *             .withHeader("Content-Type", "application/json")
- *             .withBody("{\"id\":123,\"name\":\"John Doe\"}".getBytes())
- *             .build()
+ * // 1. Basic stubbing (static responses) // GH-90000
+ * MockHttpClient client = MockHttpClient.builder() // GH-90000
+ *     .stub(HttpMethod.GET, "/users/123", request -> // GH-90000
+ *         HttpResponse.ok200() // GH-90000
+ *             .withHeader("Content-Type", "application/json") // GH-90000
+ *             .withBody("{\"id\":123,\"name\":\"John Doe\"}".getBytes()) // GH-90000
+ *             .build() // GH-90000
  *     )
- *     .stub(HttpMethod.POST, "/users", request ->
- *         HttpResponse.ofCode(201)
- *             .withJson("{\"id\":124,\"name\":\"Jane Doe\"}")
- *             .build()
+ *     .stub(HttpMethod.POST, "/users", request -> // GH-90000
+ *         HttpResponse.ofCode(201) // GH-90000
+ *             .withJson("{\"id\":124,\"name\":\"Jane Doe\"}") // GH-90000
+ *             .build() // GH-90000
  *     )
- *     .build();
+ *     .build(); // GH-90000
  *
- * HttpResponse response = client.execute(HttpRequest.get("/users/123"));
- * assertEquals(200, response.getCode());
+ * HttpResponse response = client.execute(HttpRequest.get("/users/123 [GH-90000]"));
+ * assertEquals(200, response.getCode()); // GH-90000
  *
- * // 2. Dynamic responses (based on request)
- * MockHttpClient client = MockHttpClient.builder()
- *     .stub(HttpMethod.GET, "/users/:id", request -> {
- *         String id = extractId(request.getPath());
+ * // 2. Dynamic responses (based on request) // GH-90000
+ * MockHttpClient client = MockHttpClient.builder() // GH-90000
+ *     .stub(HttpMethod.GET, "/users/:id", request -> { // GH-90000
+ *         String id = extractId(request.getPath()); // GH-90000
  *
- *         if ("123".equals(id)) {
- *             return HttpResponse.ok200()
- *                 .withJson("{\"id\":123,\"name\":\"John\"}")
- *                 .build();
+ *         if ("123".equals(id)) { // GH-90000
+ *             return HttpResponse.ok200() // GH-90000
+ *                 .withJson("{\"id\":123,\"name\":\"John\"}") // GH-90000
+ *                 .build(); // GH-90000
  *         } else {
- *             return HttpResponse.ofCode(404)
- *                 .withJson("{\"error\":\"User not found\"}")
- *                 .build();
+ *             return HttpResponse.ofCode(404) // GH-90000
+ *                 .withJson("{\"error\":\"User not found\"}") // GH-90000
+ *                 .build(); // GH-90000
  *         }
  *     })
- *     .build();
+ *     .build(); // GH-90000
  *
  * // 3. Custom default response
- * MockHttpClient client = MockHttpClient.builder()
- *     .stub(HttpMethod.GET, "/api/data", request ->
- *         HttpResponse.ok200().withJson("{\"data\":[]}")
+ * MockHttpClient client = MockHttpClient.builder() // GH-90000
+ *     .stub(HttpMethod.GET, "/api/data", request -> // GH-90000
+ *         HttpResponse.ok200().withJson("{\"data\":[]}") // GH-90000
  *     )
- *     .defaultResponse(
- *         HttpResponse.ofCode(503)
- *             .withJson("{\"error\":\"Service unavailable\"}")
- *             .build()
+ *     .defaultResponse( // GH-90000
+ *         HttpResponse.ofCode(503) // GH-90000
+ *             .withJson("{\"error\":\"Service unavailable\"}") // GH-90000
+ *             .build() // GH-90000
  *     )
- *     .build();
+ *     .build(); // GH-90000
  *
- * HttpResponse response = client.execute(HttpRequest.get("/unknown"));
- * assertEquals(503, response.getCode());
+ * HttpResponse response = client.execute(HttpRequest.get("/unknown [GH-90000]"));
+ * assertEquals(503, response.getCode()); // GH-90000
  *
  * // 4. Test error handling
- * MockHttpClient client = MockHttpClient.builder()
- *     .stub(HttpMethod.GET, "/api/data", request ->
- *         HttpResponse.ofCode(500)
- *             .withJson("{\"error\":\"Internal server error\"}")
- *             .build()
+ * MockHttpClient client = MockHttpClient.builder() // GH-90000
+ *     .stub(HttpMethod.GET, "/api/data", request -> // GH-90000
+ *         HttpResponse.ofCode(500) // GH-90000
+ *             .withJson("{\"error\":\"Internal server error\"}") // GH-90000
+ *             .build() // GH-90000
  *     )
- *     .build();
+ *     .build(); // GH-90000
  *
  * try {
- *     myService.fetchData(client);
- *     fail("Expected exception");
- * } catch (ServiceException e) {
- *     assertEquals("Internal server error", e.getMessage());
+ *     myService.fetchData(client); // GH-90000
+ *     fail("Expected exception [GH-90000]");
+ * } catch (ServiceException e) { // GH-90000
+ *     assertEquals("Internal server error", e.getMessage()); // GH-90000
  * }
  *
  * // 5. Multiple stubs with different methods
- * MockHttpClient client = MockHttpClient.builder()
- *     .stub(HttpMethod.GET, "/users", request ->
- *         HttpResponse.ok200().withJson("[{\"id\":1},{\"id\":2}]")
+ * MockHttpClient client = MockHttpClient.builder() // GH-90000
+ *     .stub(HttpMethod.GET, "/users", request -> // GH-90000
+ *         HttpResponse.ok200().withJson("[{\"id\":1},{\"id\":2}]") // GH-90000
  *     )
- *     .stub(HttpMethod.POST, "/users", request ->
- *         HttpResponse.ofCode(201).withJson("{\"id\":3}")
+ *     .stub(HttpMethod.POST, "/users", request -> // GH-90000
+ *         HttpResponse.ofCode(201).withJson("{\"id\":3}") // GH-90000
  *     )
- *     .stub(HttpMethod.PUT, "/users/1", request ->
- *         HttpResponse.ok200().withJson("{\"id\":1,\"updated\":true}")
+ *     .stub(HttpMethod.PUT, "/users/1", request -> // GH-90000
+ *         HttpResponse.ok200().withJson("{\"id\":1,\"updated\":true}") // GH-90000
  *     )
- *     .stub(HttpMethod.DELETE, "/users/1", request ->
- *         HttpResponse.ofCode(204).build()
+ *     .stub(HttpMethod.DELETE, "/users/1", request -> // GH-90000
+ *         HttpResponse.ofCode(204).build() // GH-90000
  *     )
- *     .build();
+ *     .build(); // GH-90000
  *
  * // 6. Request-based conditional responses
- * MockHttpClient client = MockHttpClient.builder()
- *     .stub(HttpMethod.GET, "/api/search", request -> {
- *         String query = request.getQueryParameter("q");
+ * MockHttpClient client = MockHttpClient.builder() // GH-90000
+ *     .stub(HttpMethod.GET, "/api/search", request -> { // GH-90000
+ *         String query = request.getQueryParameter("q [GH-90000]");
  *
- *         if (query == null || query.isEmpty()) {
- *             return HttpResponse.ofCode(400)
- *                 .withJson("{\"error\":\"Missing query parameter\"}")
- *                 .build();
+ *         if (query == null || query.isEmpty()) { // GH-90000
+ *             return HttpResponse.ofCode(400) // GH-90000
+ *                 .withJson("{\"error\":\"Missing query parameter\"}") // GH-90000
+ *                 .build(); // GH-90000
  *         }
  *
- *         return HttpResponse.ok200()
- *             .withJson("{\"results\":[],\"query\":\"" + query + "\"}")
- *             .build();
+ *         return HttpResponse.ok200() // GH-90000
+ *             .withJson("{\"results\":[],\"query\":\"" + query + "\"}") // GH-90000
+ *             .build(); // GH-90000
  *     })
- *     .build();
+ *     .build(); // GH-90000
  *
  * // 7. Dynamic stub management
- * MockHttpClient client = MockHttpClient.builder().build();
+ * MockHttpClient client = MockHttpClient.builder().build(); // GH-90000
  *
  * // Add stub at runtime
- * client.addStub(HttpMethod.GET, "/health", request ->
- *     HttpResponse.ok200().withJson("{\"status\":\"healthy\"}")
+ * client.addStub(HttpMethod.GET, "/health", request -> // GH-90000
+ *     HttpResponse.ok200().withJson("{\"status\":\"healthy\"}") // GH-90000
  * );
  *
  * // Test
- * HttpResponse response = client.execute(HttpRequest.get("/health"));
- * assertEquals(200, response.getCode());
+ * HttpResponse response = client.execute(HttpRequest.get("/health [GH-90000]"));
+ * assertEquals(200, response.getCode()); // GH-90000
  *
  * // Remove stub
- * client.removeStub(HttpMethod.GET, "/health");
+ * client.removeStub(HttpMethod.GET, "/health"); // GH-90000
  *
  * // Clear all stubs
- * client.clearStubs();
+ * client.clearStubs(); // GH-90000
  * }</pre>
  *
  * <p><b>Stub Key Format</b><br>
@@ -169,7 +169,7 @@ import java.util.function.Function;
  * 2. Create stub key: method + ":" + path
  * 3. Look up stub in map
  * 4. If found: Execute stub function with request
- * 5. If not found: Return default response (404)
+ * 5. If not found: Return default response (404) // GH-90000
  * </pre>
  *
  * <p><b>Default Response</b><br>
@@ -178,53 +178,53 @@ import java.util.function.Function;
  * Body: "Mock: No stub found"
  *
  * Can be overridden with custom response:
- * .defaultResponse(HttpResponse.ofCode(503).withJson("..."))
+ * .defaultResponse(HttpResponse.ofCode(503).withJson("... [GH-90000]"))
  * </pre>
  *
  * <p><b>Response Functions</b><br>
  * Functions can access request properties:
  * <pre>{@code
- * .stub(HttpMethod.POST, "/api/data", request -> {
+ * .stub(HttpMethod.POST, "/api/data", request -> { // GH-90000
  *     // Access method
- *     HttpMethod method = request.getMethod();
+ *     HttpMethod method = request.getMethod(); // GH-90000
  *
  *     // Access headers
- *     String authHeader = request.getHeader("Authorization");
+ *     String authHeader = request.getHeader("Authorization [GH-90000]");
  *
  *     // Access query parameters
- *     String filter = request.getQueryParameter("filter");
+ *     String filter = request.getQueryParameter("filter [GH-90000]");
  *
  *     // Access body
- *     byte[] body = request.getBody().asArray();
+ *     byte[] body = request.getBody().asArray(); // GH-90000
  *
  *     // Build dynamic response
- *     return HttpResponse.ok200()
- *         .withJson(createResponse(body, filter))
- *         .build();
+ *     return HttpResponse.ok200() // GH-90000
+ *         .withJson(createResponse(body, filter)) // GH-90000
+ *         .build(); // GH-90000
  * })
  * }</pre>
  *
  * <p><b>Common Patterns</b><br>
  * <pre>{@code
  * // Success/error based on request data
- * .stub(HttpMethod.POST, "/api/validate", request -> {
- *     String json = new String(request.getBody().asArray());
- *     boolean valid = validateJson(json);
+ * .stub(HttpMethod.POST, "/api/validate", request -> { // GH-90000
+ *     String json = new String(request.getBody().asArray()); // GH-90000
+ *     boolean valid = validateJson(json); // GH-90000
  *
  *     return valid
- *         ? HttpResponse.ok200().withJson("{\"valid\":true}")
- *         : HttpResponse.ofCode(400).withJson("{\"valid\":false}");
+ *         ? HttpResponse.ok200().withJson("{\"valid\":true}") // GH-90000
+ *         : HttpResponse.ofCode(400).withJson("{\"valid\":false}"); // GH-90000
  * })
  *
  * // Simulate slow responses
- * .stub(HttpMethod.GET, "/slow", request -> {
- *     Thread.sleep(5000);  // 5 second delay
- *     return HttpResponse.ok200().withJson("{\"data\":\"slow\"}");
+ * .stub(HttpMethod.GET, "/slow", request -> { // GH-90000
+ *     Thread.sleep(5000);  // 5 second delay // GH-90000
+ *     return HttpResponse.ok200().withJson("{\"data\":\"slow\"}"); // GH-90000
  * })
  *
  * // Simulate network errors
- * .stub(HttpMethod.GET, "/error", request -> {
- *     throw new IOException("Connection refused");
+ * .stub(HttpMethod.GET, "/error", request -> { // GH-90000
+ *     throw new IOException("Connection refused [GH-90000]");
  * })
  * }</pre>
  *
@@ -233,22 +233,22 @@ import java.util.function.Function;
  * - Define stubs in @BeforeEach for test isolation
  * - Use dynamic responses for request-based logic
  * - Override default response for consistent error handling
- * - Clear stubs between tests (or create new client)
- * - Keep stub functions simple (avoid complex logic)
+ * - Clear stubs between tests (or create new client) // GH-90000
+ * - Keep stub functions simple (avoid complex logic) // GH-90000
  * - Test both success and error cases
  * - Use MockHttpClient for unit tests, HttpServerTestRunner for integration tests
  *
  * <p><b>Limitations</b><br>
- * - No path parameter matching (exact path match only)
+ * - No path parameter matching (exact path match only) // GH-90000
  * - No wildcard/regex path matching
  * - No request history tracking
  * - No verification of stub invocations
  * - For advanced mocking, consider Mockito + real HTTP client
  *
  * <p><b>Thread Safety</b><br>
- * Builder is NOT thread-safe (configure from single thread).
- * Built MockHttpClient IS thread-safe (stubs map is concurrent).
- * Safe to use with parallel tests after build().
+ * Builder is NOT thread-safe (configure from single thread). // GH-90000
+ * Built MockHttpClient IS thread-safe (stubs map is concurrent). // GH-90000
+ * Safe to use with parallel tests after build(). // GH-90000
  *
  * @see HttpServerTestRunner
  * @see HttpTestUtils
@@ -266,9 +266,9 @@ public class MockHttpClient {
     private final Map<String, Function<HttpRequest, HttpResponse>> stubs;
 
     @Builder.Default
-    private final HttpResponse defaultResponse = HttpResponse.ofCode(404)
-        .withBody("Mock: No stub found".getBytes(StandardCharsets.UTF_8))
-        .build();
+    private final HttpResponse defaultResponse = HttpResponse.ofCode(404) // GH-90000
+        .withBody("Mock: No stub found".getBytes(StandardCharsets.UTF_8)) // GH-90000
+        .build(); // GH-90000
 
     /**
      * Executes a request against the mock client.
@@ -276,12 +276,12 @@ public class MockHttpClient {
      * @param request The HTTP request
      * @return The stubbed or default response
      */
-    public HttpResponse execute(HttpRequest request) {
-        String key = stubKey(request.getMethod(), request.getPath());
-        Function<HttpRequest, HttpResponse> stub = stubs.get(key);
+    public HttpResponse execute(HttpRequest request) { // GH-90000
+        String key = stubKey(request.getMethod(), request.getPath()); // GH-90000
+        Function<HttpRequest, HttpResponse> stub = stubs.get(key); // GH-90000
 
-        if (stub != null) {
-            return stub.apply(request);
+        if (stub != null) { // GH-90000
+            return stub.apply(request); // GH-90000
         }
 
         return defaultResponse;
@@ -294,8 +294,8 @@ public class MockHttpClient {
      * @param path The request path
      * @param responseFunction Function that creates the response
      */
-    public void addStub(HttpMethod method, String path, Function<HttpRequest, HttpResponse> responseFunction) {
-        stubs.put(stubKey(method, path), responseFunction);
+    public void addStub(HttpMethod method, String path, Function<HttpRequest, HttpResponse> responseFunction) { // GH-90000
+        stubs.put(stubKey(method, path), responseFunction); // GH-90000
     }
 
     /**
@@ -304,15 +304,15 @@ public class MockHttpClient {
      * @param method The HTTP method
      * @param path The request path
      */
-    public void removeStub(HttpMethod method, String path) {
-        stubs.remove(stubKey(method, path));
+    public void removeStub(HttpMethod method, String path) { // GH-90000
+        stubs.remove(stubKey(method, path)); // GH-90000
     }
 
     /**
      * Clears all stubs.
      */
-    public void clearStubs() {
-        stubs.clear();
+    public void clearStubs() { // GH-90000
+        stubs.clear(); // GH-90000
     }
 
     /**
@@ -320,12 +320,12 @@ public class MockHttpClient {
      *
      * @return The stub count
      */
-    public int getStubCount() {
-        return stubs.size();
+    public int getStubCount() { // GH-90000
+        return stubs.size(); // GH-90000
     }
 
-    private String stubKey(HttpMethod method, String path) {
-        return method.name() + ":" + path;
+    private String stubKey(HttpMethod method, String path) { // GH-90000
+        return method.name() + ":" + path; // GH-90000
     }
 
     /**
@@ -336,48 +336,48 @@ public class MockHttpClient {
         /**
          * Creates a JSON response stub.
          */
-        public static Function<HttpRequest, HttpResponse> json(String json) {
-            return request -> HttpResponse.ok200()
-                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
+        public static Function<HttpRequest, HttpResponse> json(String json) { // GH-90000
+            return request -> HttpResponse.ok200() // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .withBody(json.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
         }
 
         /**
          * Creates a JSON response stub with custom status.
          */
-        public static Function<HttpRequest, HttpResponse> json(int status, String json) {
-            return request -> HttpResponse.ofCode(status)
-                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
+        public static Function<HttpRequest, HttpResponse> json(int status, String json) { // GH-90000
+            return request -> HttpResponse.ofCode(status) // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .withBody(json.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
         }
 
         /**
          * Creates a text response stub.
          */
-        public static Function<HttpRequest, HttpResponse> text(String text) {
-            return request -> HttpResponse.ok200()
-                .withBody(text.getBytes(StandardCharsets.UTF_8))
-                .build();
+        public static Function<HttpRequest, HttpResponse> text(String text) { // GH-90000
+            return request -> HttpResponse.ok200() // GH-90000
+                .withBody(text.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
         }
 
         /**
          * Creates an error response stub.
          */
-        public static Function<HttpRequest, HttpResponse> error(int status, String message) {
-            return request -> HttpResponse.ofCode(status)
-                .withBody(message.getBytes(StandardCharsets.UTF_8))
-                .build();
+        public static Function<HttpRequest, HttpResponse> error(int status, String message) { // GH-90000
+            return request -> HttpResponse.ofCode(status) // GH-90000
+                .withBody(message.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .build(); // GH-90000
         }
 
         /**
          * Creates a response that echoes the request body.
          */
-        public static Function<HttpRequest, HttpResponse> echo() {
-            return request -> HttpResponse.ok200()
-                .withBody(request.getBody())
-                .build();
+        public static Function<HttpRequest, HttpResponse> echo() { // GH-90000
+            return request -> HttpResponse.ok200() // GH-90000
+                .withBody(request.getBody()) // GH-90000
+                .build(); // GH-90000
         }
     }
 }

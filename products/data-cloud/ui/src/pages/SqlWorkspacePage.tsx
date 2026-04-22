@@ -35,6 +35,7 @@ import {
   Wand2,
   Network,
   AlertTriangle,
+  Terminal,
 } from 'lucide-react';
 import {
   cn,
@@ -43,7 +44,7 @@ import {
   bgStyles,
   buttonStyles,
   inputStyles,
-    tableStyles,
+  tableStyles,
 } from '../lib/theme';
 import {
   SQL_FEDERATED_QUERY_UNAVAILABLE_DETAIL,
@@ -717,7 +718,8 @@ export function SqlWorkspacePage(): React.ReactElement {
   const [expandedSchema, setExpandedSchema] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'schema' | 'saved' | 'history'>('schema');
   const [resultsTab, setResultsTab] = useState<'results' | 'plan' | 'logs'>('results');
-  const [showAIAssist, setShowAIAssist] = useState(false);
+  const [showAIAssist, setShowAIAssist] = useState(true); // UX-001: Question-first — AI assist is primary
+  const [showSQLEditor, setShowSQLEditor] = useState(false); // UX-001: SQL editor is secondary / progressive disclosure
   const [isFederated, setIsFederated] = useState(false); // B13: Federated Trino query toggle
   const [schemas, setSchemas] = useState<SchemaItem[]>([]);
   const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
@@ -753,7 +755,7 @@ export function SqlWorkspacePage(): React.ReactElement {
       }));
       setSchemas(items);
       if (items.length > 0) setExpandedSchema(items[0].name);
-    }).catch(() => {/* schema load is non-critical */});
+    }).catch(() => {/* schema load is non-critical */ });
   }, []);
 
   useEffect(() => {
@@ -780,8 +782,8 @@ export function SqlWorkspacePage(): React.ReactElement {
     try {
       // B13: Route through federated Trino connector when toggle is active
       const result = isFederated
-          ? await executeFederatedQuery(query.trim())
-          : await executeAnalyticsQuery(query.trim());
+        ? await executeFederatedQuery(query.trim())
+        : await executeAnalyticsQuery(query.trim());
       setQueryResult(result);
       setQueryHistory((prev) => [
         {
@@ -832,9 +834,9 @@ export function SqlWorkspacePage(): React.ReactElement {
         <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6')} data-testid="sql-workspace-header">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className={textStyles.h1}>SQL Workspace</h1>
+              <h1 className={textStyles.h1}>Query</h1>
               <p className={textStyles.muted}>
-                Run ad-hoc queries against your datasets with schema-aware assistance
+                Ask a question in plain English, or write SQL directly when you need control
               </p>
             </div>
             <div className="flex gap-2">
@@ -849,7 +851,19 @@ export function SqlWorkspacePage(): React.ReactElement {
                 )}
               >
                 <Sparkles className="h-4 w-4" />
-                AI Assist
+                {showAIAssist ? 'Hide Question' : 'Ask a Question'}
+              </button>
+              <button
+                onClick={() => setShowSQLEditor(!showSQLEditor)}
+                data-testid="sql-editor-toggle"
+                className={cn(
+                  buttonStyles.secondary,
+                  'flex items-center gap-2',
+                  showSQLEditor && 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700'
+                )}
+              >
+                <Terminal className="h-4 w-4" />
+                {showSQLEditor ? 'Hide SQL Editor' : 'Edit SQL'}
               </button>
               {/* B13: Federated Trino query toggle */}
               <button
@@ -938,6 +952,18 @@ export function SqlWorkspacePage(): React.ReactElement {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* UX-001: Question-first layout — AI Assist spans full width when visible */}
+        {showAIAssist && (
+          <div className="mb-6" data-testid="sql-ai-assist-primary">
+            <AIQueryAssist
+              onApply={handleApplyAISql}
+              schemas={schemas}
+              recentActivity={activityData?.activities ?? []}
+              continueWorking={activityData?.continueWorking ?? []}
+            />
           </div>
         )}
 
@@ -1063,43 +1089,35 @@ export function SqlWorkspacePage(): React.ReactElement {
 
           {/* Editor and Results */}
           <div className="lg:col-span-3 space-y-6">
-            {/* AI Assist Panel */}
-            {showAIAssist && (
-              <AIQueryAssist
-                onApply={handleApplyAISql}
-                schemas={schemas}
-                recentActivity={activityData?.activities ?? []}
-                continueWorking={activityData?.continueWorking ?? []}
-              />
-            )}
-
-            {/* SQL Editor */}
-            <div className={cn(cardStyles.base)} data-testid="sql-editor-panel">
-              <div className={cn(cardStyles.header, 'flex items-center justify-between')}>
-                <h3 className={textStyles.h4}>Query Editor</h3>
-                <div className="flex gap-2">
-                  <button className={cn(buttonStyles.ghost, buttonStyles.sm)}>Format</button>
-                  <button className={cn(buttonStyles.ghost, buttonStyles.sm)}>Clear</button>
+            {/* SQL Editor — progressive disclosure, secondary to question-first UX */}
+            {showSQLEditor && (
+              <div className={cn(cardStyles.base)} data-testid="sql-editor-panel">
+                <div className={cn(cardStyles.header, 'flex items-center justify-between')}>
+                  <h3 className={textStyles.h4}>Query Editor</h3>
+                  <div className="flex gap-2">
+                    <button className={cn(buttonStyles.ghost, buttonStyles.sm)}>Format</button>
+                    <button className={cn(buttonStyles.ghost, buttonStyles.sm)}>Clear</button>
+                  </div>
                 </div>
-              </div>
-              <div className="p-4">
-                <textarea
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="-- Write your SQL query here
+                <div className="p-4">
+                  <textarea
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="-- Write your SQL query here
 SELECT * FROM your_table
 LIMIT 100;"
-                  className={cn(
-                    'w-full h-48 font-mono text-sm p-4 rounded-lg resize-y',
-                    'bg-gray-50 dark:bg-gray-900',
-                    'border border-gray-200 dark:border-gray-700',
-                    'text-gray-900 dark:text-white',
-                    'focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                  )}
-                  data-testid="sql-editor"
-                />
+                    className={cn(
+                      'w-full h-48 font-mono text-sm p-4 rounded-lg resize-y',
+                      'bg-gray-50 dark:bg-gray-900',
+                      'border border-gray-200 dark:border-gray-700',
+                      'text-gray-900 dark:text-white',
+                      'focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                    )}
+                    data-testid="sql-editor"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Results */}
             <div className={cn(cardStyles.base)} data-testid="sql-results-panel">
@@ -1161,8 +1179,8 @@ LIMIT 100;"
                       <tr>
                         {queryResult.rows.length > 0
                           ? Object.keys(queryResult.rows[0]).map((col) => (
-                              <th key={col} className={tableStyles.th}>{col}</th>
-                            ))
+                            <th key={col} className={tableStyles.th}>{col}</th>
+                          ))
                           : null}
                       </tr>
                     </thead>

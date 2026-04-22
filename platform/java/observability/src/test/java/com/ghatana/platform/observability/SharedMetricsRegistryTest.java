@@ -20,211 +20,211 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
  * @doc.layer observability
  * @doc.pattern Test
  */
-@DisplayName("SharedMetricsRegistry")
+@DisplayName("SharedMetricsRegistry [GH-90000]")
 class SharedMetricsRegistryTest {
 
-    private SharedMetricsRegistry buildRegistry() {
-        return new SharedMetricsRegistry(new SimpleMeterRegistry(), "aep");
+    private SharedMetricsRegistry buildRegistry() { // GH-90000
+        return new SharedMetricsRegistry(new SimpleMeterRegistry(), "aep"); // GH-90000
     }
 
     // ─── constructor ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null registry throws NullPointerException")
-    void constructor_nullRegistry_throwsNPE() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> new SharedMetricsRegistry(null, "aep"));
+    @DisplayName("null registry throws NullPointerException [GH-90000]")
+    void constructor_nullRegistry_throwsNPE() { // GH-90000
+        assertThatNullPointerException() // GH-90000
+                .isThrownBy(() -> new SharedMetricsRegistry(null, "aep")); // GH-90000
     }
 
     @Test
-    @DisplayName("null product throws NullPointerException")
-    void constructor_nullProduct_throwsNPE() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> new SharedMetricsRegistry(new SimpleMeterRegistry(), null));
+    @DisplayName("null product throws NullPointerException [GH-90000]")
+    void constructor_nullProduct_throwsNPE() { // GH-90000
+        assertThatNullPointerException() // GH-90000
+                .isThrownBy(() -> new SharedMetricsRegistry(new SimpleMeterRegistry(), null)); // GH-90000
     }
 
     @Test
-    @DisplayName("product() returns the configured product name")
-    void product_returnsProduct() {
-        SharedMetricsRegistry reg = new SharedMetricsRegistry(new SimpleMeterRegistry(), "audio-video");
-        assertThat(reg.product()).isEqualTo("audio-video");
+    @DisplayName("product() returns the configured product name [GH-90000]")
+    void product_returnsProduct() { // GH-90000
+        SharedMetricsRegistry reg = new SharedMetricsRegistry(new SimpleMeterRegistry(), "audio-video"); // GH-90000
+        assertThat(reg.product()).isEqualTo("audio-video [GH-90000]");
     }
 
     // ─── counter ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("counter()")
+    @DisplayName("counter() [GH-90000]")
     class CounterTests {
 
         @Test
-        @DisplayName("counter() returns a non-null counter")
-        void counter_returnsCounter() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThat(reg.counter("events.processed")).isNotNull();
+        @DisplayName("counter() returns a non-null counter [GH-90000]")
+        void counter_returnsCounter() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThat(reg.counter("events.processed [GH-90000]")).isNotNull();
         }
 
         @Test
-        @DisplayName("counter() registers metric name in registeredMetrics()")
-        void counter_registeredName() {
-            SharedMetricsRegistry reg = buildRegistry();
-            reg.counter("events.processed");
-            assertThat(reg.registeredMetrics()).contains("events.processed");
+        @DisplayName("counter() registers metric name in registeredMetrics() [GH-90000]")
+        void counter_registeredName() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            reg.counter("events.processed [GH-90000]");
+            assertThat(reg.registeredMetrics()).contains("events.processed [GH-90000]");
         }
 
         @Test
-        @DisplayName("null counter name throws NullPointerException")
-        void counter_nullName_throwsNPE() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThatNullPointerException().isThrownBy(() -> reg.counter(null));
+        @DisplayName("null counter name throws NullPointerException [GH-90000]")
+        void counter_nullName_throwsNPE() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThatNullPointerException().isThrownBy(() -> reg.counter(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("odd-length tags throw IllegalArgumentException")
-        void counter_oddTags_throwsIAE() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThatIllegalArgumentException()
-                    .isThrownBy(() -> reg.counter("metric", "key-only"));
+        @DisplayName("odd-length tags throw IllegalArgumentException [GH-90000]")
+        void counter_oddTags_throwsIAE() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThatIllegalArgumentException() // GH-90000
+                    .isThrownBy(() -> reg.counter("metric", "key-only")); // GH-90000
         }
 
         @Test
-        @DisplayName("increment() increments the counter by 1")
-        void increment_byOne() {
-            SimpleMeterRegistry meterReg = new SimpleMeterRegistry();
-            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep");
-            reg.increment("events.processed");
-            assertThat(meterReg.get("events.processed").counter().count()).isEqualTo(1.0);
+        @DisplayName("increment() increments the counter by 1 [GH-90000]")
+        void increment_byOne() { // GH-90000
+            SimpleMeterRegistry meterReg = new SimpleMeterRegistry(); // GH-90000
+            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep"); // GH-90000
+            reg.increment("events.processed [GH-90000]");
+            assertThat(meterReg.get("events.processed [GH-90000]").counter().count()).isEqualTo(1.0);
         }
 
         @Test
-        @DisplayName("increment(amount) increments by the correct amount")
-        void increment_byAmount() {
-            SimpleMeterRegistry meterReg = new SimpleMeterRegistry();
-            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep");
-            reg.increment("events.processed", 5.0);
-            assertThat(meterReg.get("events.processed").counter().count()).isEqualTo(5.0);
+        @DisplayName("increment(amount) increments by the correct amount [GH-90000]")
+        void increment_byAmount() { // GH-90000
+            SimpleMeterRegistry meterReg = new SimpleMeterRegistry(); // GH-90000
+            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep"); // GH-90000
+            reg.increment("events.processed", 5.0); // GH-90000
+            assertThat(meterReg.get("events.processed [GH-90000]").counter().count()).isEqualTo(5.0);
         }
 
         @Test
-        @DisplayName("negative increment amount throws IllegalArgumentException")
-        void increment_negativeAmount_throwsIAE() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThatIllegalArgumentException()
-                    .isThrownBy(() -> reg.increment("m", -1.0));
+        @DisplayName("negative increment amount throws IllegalArgumentException [GH-90000]")
+        void increment_negativeAmount_throwsIAE() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThatIllegalArgumentException() // GH-90000
+                    .isThrownBy(() -> reg.increment("m", -1.0)); // GH-90000
         }
     }
 
     // ─── timer ────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("timer()")
+    @DisplayName("timer() [GH-90000]")
     class TimerTests {
 
         @Test
-        @DisplayName("timer() returns a non-null timer")
-        void timer_returnsTimer() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThat(reg.timer("pipeline.latency")).isNotNull();
+        @DisplayName("timer() returns a non-null timer [GH-90000]")
+        void timer_returnsTimer() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThat(reg.timer("pipeline.latency [GH-90000]")).isNotNull();
         }
 
         @Test
-        @DisplayName("timer() registers metric name")
-        void timer_registered() {
-            SharedMetricsRegistry reg = buildRegistry();
-            reg.timer("pipeline.latency");
-            assertThat(reg.registeredMetrics()).contains("pipeline.latency");
+        @DisplayName("timer() registers metric name [GH-90000]")
+        void timer_registered() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            reg.timer("pipeline.latency [GH-90000]");
+            assertThat(reg.registeredMetrics()).contains("pipeline.latency [GH-90000]");
         }
 
         @Test
-        @DisplayName("record() records a duration against the timer")
-        void record_duration() {
-            SimpleMeterRegistry meterReg = new SimpleMeterRegistry();
-            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep");
-            reg.record("pipeline.latency", Duration.ofMillis(100));
-            assertThat(meterReg.get("pipeline.latency").timer().count()).isEqualTo(1);
+        @DisplayName("record() records a duration against the timer [GH-90000]")
+        void record_duration() { // GH-90000
+            SimpleMeterRegistry meterReg = new SimpleMeterRegistry(); // GH-90000
+            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep"); // GH-90000
+            reg.record("pipeline.latency", Duration.ofMillis(100)); // GH-90000
+            assertThat(meterReg.get("pipeline.latency [GH-90000]").timer().count()).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("null name throws NullPointerException")
-        void timer_nullName_throwsNPE() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThatNullPointerException().isThrownBy(() -> reg.timer(null));
+        @DisplayName("null name throws NullPointerException [GH-90000]")
+        void timer_nullName_throwsNPE() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThatNullPointerException().isThrownBy(() -> reg.timer(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("null duration throws NullPointerException")
-        void record_nullDuration_throwsNPE() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThatNullPointerException()
-                    .isThrownBy(() -> reg.record("t", null));
+        @DisplayName("null duration throws NullPointerException [GH-90000]")
+        void record_nullDuration_throwsNPE() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThatNullPointerException() // GH-90000
+                    .isThrownBy(() -> reg.record("t", null)); // GH-90000
         }
     }
 
     // ─── gauge ────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("gauge()")
+    @DisplayName("gauge() [GH-90000]")
     class GaugeTests {
 
         @Test
-        @DisplayName("gauge() registers a gauge metric")
-        void gauge_registers() {
-            SharedMetricsRegistry reg = buildRegistry();
-            reg.gauge("queue.depth", () -> 42);
-            assertThat(reg.registeredMetrics()).contains("queue.depth");
+        @DisplayName("gauge() registers a gauge metric [GH-90000]")
+        void gauge_registers() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            reg.gauge("queue.depth", () -> 42); // GH-90000
+            assertThat(reg.registeredMetrics()).contains("queue.depth [GH-90000]");
         }
 
         @Test
-        @DisplayName("gauge() supplier is called at scrape time")
-        void gauge_supplierCalled() {
-            SimpleMeterRegistry meterReg = new SimpleMeterRegistry();
-            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep");
+        @DisplayName("gauge() supplier is called at scrape time [GH-90000]")
+        void gauge_supplierCalled() { // GH-90000
+            SimpleMeterRegistry meterReg = new SimpleMeterRegistry(); // GH-90000
+            SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "aep"); // GH-90000
             int[] counter = {0};
-            reg.gauge("queue.depth", () -> ++counter[0]);
-            double value = meterReg.get("queue.depth").gauge().value();
-            assertThat(value).isGreaterThan(0);
+            reg.gauge("queue.depth", () -> ++counter[0]); // GH-90000
+            double value = meterReg.get("queue.depth [GH-90000]").gauge().value();
+            assertThat(value).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("null name throws NullPointerException")
-        void gauge_nullName_throwsNPE() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThatNullPointerException()
-                    .isThrownBy(() -> reg.gauge(null, () -> 1));
+        @DisplayName("null name throws NullPointerException [GH-90000]")
+        void gauge_nullName_throwsNPE() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThatNullPointerException() // GH-90000
+                    .isThrownBy(() -> reg.gauge(null, () -> 1)); // GH-90000
         }
 
         @Test
-        @DisplayName("null supplier throws NullPointerException")
-        void gauge_nullSupplier_throwsNPE() {
-            SharedMetricsRegistry reg = buildRegistry();
-            assertThatNullPointerException()
-                    .isThrownBy(() -> reg.gauge("metric", null));
+        @DisplayName("null supplier throws NullPointerException [GH-90000]")
+        void gauge_nullSupplier_throwsNPE() { // GH-90000
+            SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+            assertThatNullPointerException() // GH-90000
+                    .isThrownBy(() -> reg.gauge("metric", null)); // GH-90000
         }
     }
 
     // ─── product tag ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("all counters automatically carry the product tag")
-    void counter_hasProductTag() {
-        SimpleMeterRegistry meterReg = new SimpleMeterRegistry();
-        SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "audio-video");
-        reg.increment("events.processed");
+    @DisplayName("all counters automatically carry the product tag [GH-90000]")
+    void counter_hasProductTag() { // GH-90000
+        SimpleMeterRegistry meterReg = new SimpleMeterRegistry(); // GH-90000
+        SharedMetricsRegistry reg = new SharedMetricsRegistry(meterReg, "audio-video"); // GH-90000
+        reg.increment("events.processed [GH-90000]");
 
-        String productTag = meterReg.get("events.processed")
-                .counter()
-                .getId()
-                .getTag("product");
-        assertThat(productTag).isEqualTo("audio-video");
+        String productTag = meterReg.get("events.processed [GH-90000]")
+                .counter() // GH-90000
+                .getId() // GH-90000
+                .getTag("product [GH-90000]");
+        assertThat(productTag).isEqualTo("audio-video [GH-90000]");
     }
 
     // ─── registeredMetrics snapshot ───────────────────────────────────────────
 
     @Test
-    @DisplayName("registeredMetrics() returns an unmodifiable set")
-    void registeredMetrics_unmodifiable() {
-        SharedMetricsRegistry reg = buildRegistry();
-        reg.counter("m1");
-        assertThatExceptionOfType(UnsupportedOperationException.class)
-                .isThrownBy(() -> reg.registeredMetrics().add("injected"));
+    @DisplayName("registeredMetrics() returns an unmodifiable set [GH-90000]")
+    void registeredMetrics_unmodifiable() { // GH-90000
+        SharedMetricsRegistry reg = buildRegistry(); // GH-90000
+        reg.counter("m1 [GH-90000]");
+        assertThatExceptionOfType(UnsupportedOperationException.class) // GH-90000
+                .isThrownBy(() -> reg.registeredMetrics().add("injected [GH-90000]"));
     }
 }

@@ -28,10 +28,10 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link VideoAnalysisService} (AV-009.4).
+ * Unit tests for {@link VideoAnalysisService} (AV-009.4). // GH-90000
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("VideoAnalysisService — AV-009.4")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("VideoAnalysisService — AV-009.4 [GH-90000]")
 class VideoAnalysisServiceTest {
 
     @Mock
@@ -47,122 +47,122 @@ class VideoAnalysisServiceTest {
     private DetectionOptions defaultOptions;
 
     @BeforeEach
-    void setUp() throws IOException {
-        service = VideoAnalysisService.builder()
-                .detector(detector)
-                .frameExtractor(frameExtractor)
-                .iouThreshold(0.5)
-                .build();
-        defaultOptions = DetectionOptions.builder().confidenceThreshold(0.5).build();
+    void setUp() throws IOException { // GH-90000
+        service = VideoAnalysisService.builder() // GH-90000
+                .detector(detector) // GH-90000
+                .frameExtractor(frameExtractor) // GH-90000
+                .iouThreshold(0.5) // GH-90000
+                .build(); // GH-90000
+        defaultOptions = DetectionOptions.builder().confidenceThreshold(0.5).build(); // GH-90000
 
-        lenient().when(detector.isInitialized()).thenReturn(true);
+        lenient().when(detector.isInitialized()).thenReturn(true); // GH-90000
     }
 
     @Test
-    @DisplayName("analyze processes frames and returns result with correct frame count")
-    void analyzeReturnsCorrectFrameCount() throws IOException {
+    @DisplayName("analyze processes frames and returns result with correct frame count [GH-90000]")
+    void analyzeReturnsCorrectFrameCount() throws IOException { // GH-90000
         // Arrange: 3 frames in temp dir
-        Path frame1 = tempDir.resolve("frame_0001.jpg");
-        Path frame2 = tempDir.resolve("frame_0002.jpg");
-        Path frame3 = tempDir.resolve("frame_0003.jpg");
-        Files.write(frame1, new byte[]{0x01});
-        Files.write(frame2, new byte[]{0x02});
-        Files.write(frame3, new byte[]{0x03});
+        Path frame1 = tempDir.resolve("frame_0001.jpg [GH-90000]");
+        Path frame2 = tempDir.resolve("frame_0002.jpg [GH-90000]");
+        Path frame3 = tempDir.resolve("frame_0003.jpg [GH-90000]");
+        Files.write(frame1, new byte[]{0x01}); // GH-90000
+        Files.write(frame2, new byte[]{0x02}); // GH-90000
+        Files.write(frame3, new byte[]{0x03}); // GH-90000
 
-        List<VideoFrameExtractor.ExtractedFrame> frames = List.of(
-                new VideoFrameExtractor.ExtractedFrame(frame1, 0L, 0),
-                new VideoFrameExtractor.ExtractedFrame(frame2, 1000L, 1),
-                new VideoFrameExtractor.ExtractedFrame(frame3, 2000L, 2)
+        List<VideoFrameExtractor.ExtractedFrame> frames = List.of( // GH-90000
+                new VideoFrameExtractor.ExtractedFrame(frame1, 0L, 0), // GH-90000
+                new VideoFrameExtractor.ExtractedFrame(frame2, 1000L, 1), // GH-90000
+                new VideoFrameExtractor.ExtractedFrame(frame3, 2000L, 2) // GH-90000
         );
 
-        Path fakeVideo = tempDir.resolve("test.mp4");
-        Files.write(fakeVideo, new byte[]{0x00});
+        Path fakeVideo = tempDir.resolve("test.mp4 [GH-90000]");
+        Files.write(fakeVideo, new byte[]{0x00}); // GH-90000
 
-        when(frameExtractor.extractFrames(eq(fakeVideo), any(), any())).thenReturn(frames);
-        when(detector.detectObjects(any(), any())).thenReturn(List.of(
-                buildDetection("person", 0.90, 10, 10, 50, 100)
+        when(frameExtractor.extractFrames(eq(fakeVideo), any(), any())).thenReturn(frames); // GH-90000
+        when(detector.detectObjects(any(), any())).thenReturn(List.of( // GH-90000
+                buildDetection("person", 0.90, 10, 10, 50, 100) // GH-90000
         ));
 
-        VideoFrameExtractor.ExtractionConfig config = VideoFrameExtractor.ExtractionConfig.builder()
-                .fps(1).maxFrames(3).build();
+        VideoFrameExtractor.ExtractionConfig config = VideoFrameExtractor.ExtractionConfig.builder() // GH-90000
+                .fps(1).maxFrames(3).build(); // GH-90000
 
         // Act
-        VideoAnalysisResult result = service.analyze(fakeVideo, config, defaultOptions);
+        VideoAnalysisResult result = service.analyze(fakeVideo, config, defaultOptions); // GH-90000
 
         // Assert
-        assertThat(result.framesAnalysed()).isEqualTo(3);
-        assertThat(result.frameDetections()).hasSize(3);
-        assertThat(result.processingTime()).isNotNull();
+        assertThat(result.framesAnalysed()).isEqualTo(3); // GH-90000
+        assertThat(result.frameDetections()).hasSize(3); // GH-90000
+        assertThat(result.processingTime()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("classCounts returns aggregated object class frequencies")
-    void classCountsAggregated() throws IOException {
-        Path frame1 = tempDir.resolve("frame_0001.jpg");
-        Files.write(frame1, new byte[]{0x01});
-        Path fakeVideo = tempDir.resolve("v.mp4");
-        Files.write(fakeVideo, new byte[]{0x00});
+    @DisplayName("classCounts returns aggregated object class frequencies [GH-90000]")
+    void classCountsAggregated() throws IOException { // GH-90000
+        Path frame1 = tempDir.resolve("frame_0001.jpg [GH-90000]");
+        Files.write(frame1, new byte[]{0x01}); // GH-90000
+        Path fakeVideo = tempDir.resolve("v.mp4 [GH-90000]");
+        Files.write(fakeVideo, new byte[]{0x00}); // GH-90000
 
-        when(frameExtractor.extractFrames(any(), any(), any())).thenReturn(List.of(
-                new VideoFrameExtractor.ExtractedFrame(frame1, 0L, 0)
+        when(frameExtractor.extractFrames(any(), any(), any())).thenReturn(List.of( // GH-90000
+                new VideoFrameExtractor.ExtractedFrame(frame1, 0L, 0) // GH-90000
         ));
-        when(detector.detectObjects(any(), any())).thenReturn(List.of(
-                buildDetection("person", 0.9, 0, 0, 50, 100),
-                buildDetection("car", 0.8, 100, 0, 50, 50)
+        when(detector.detectObjects(any(), any())).thenReturn(List.of( // GH-90000
+                buildDetection("person", 0.9, 0, 0, 50, 100), // GH-90000
+                buildDetection("car", 0.8, 100, 0, 50, 50) // GH-90000
         ));
 
-        VideoFrameExtractor.ExtractionConfig config = VideoFrameExtractor.ExtractionConfig.builder().fps(1).build();
-        VideoAnalysisResult result = service.analyze(fakeVideo, config, defaultOptions);
+        VideoFrameExtractor.ExtractionConfig config = VideoFrameExtractor.ExtractionConfig.builder().fps(1).build(); // GH-90000
+        VideoAnalysisResult result = service.analyze(fakeVideo, config, defaultOptions); // GH-90000
 
-        Map<String, Long> counts = result.classCounts();
-        assertThat(counts).containsKey("person");
-        assertThat(counts).containsKey("car");
+        Map<String, Long> counts = result.classCounts(); // GH-90000
+        assertThat(counts).containsKey("person [GH-90000]");
+        assertThat(counts).containsKey("car [GH-90000]");
     }
 
     @Test
-    @DisplayName("analyze with no detections returns result with 0 tracks")
-    void analyzeNoDetections() throws IOException {
-        Path frame1 = tempDir.resolve("frame_0001.jpg");
-        Files.write(frame1, new byte[]{0x01});
-        Path fakeVideo = tempDir.resolve("v.mp4");
-        Files.write(fakeVideo, new byte[]{0x00});
+    @DisplayName("analyze with no detections returns result with 0 tracks [GH-90000]")
+    void analyzeNoDetections() throws IOException { // GH-90000
+        Path frame1 = tempDir.resolve("frame_0001.jpg [GH-90000]");
+        Files.write(frame1, new byte[]{0x01}); // GH-90000
+        Path fakeVideo = tempDir.resolve("v.mp4 [GH-90000]");
+        Files.write(fakeVideo, new byte[]{0x00}); // GH-90000
 
-        when(frameExtractor.extractFrames(any(), any(), any())).thenReturn(List.of(
-                new VideoFrameExtractor.ExtractedFrame(frame1, 0L, 0)
+        when(frameExtractor.extractFrames(any(), any(), any())).thenReturn(List.of( // GH-90000
+                new VideoFrameExtractor.ExtractedFrame(frame1, 0L, 0) // GH-90000
         ));
-        when(detector.detectObjects(any(), any())).thenReturn(List.of());
+        when(detector.detectObjects(any(), any())).thenReturn(List.of()); // GH-90000
 
-        VideoFrameExtractor.ExtractionConfig config = VideoFrameExtractor.ExtractionConfig.builder().fps(1).build();
-        VideoAnalysisResult result = service.analyze(fakeVideo, config, defaultOptions);
+        VideoFrameExtractor.ExtractionConfig config = VideoFrameExtractor.ExtractionConfig.builder().fps(1).build(); // GH-90000
+        VideoAnalysisResult result = service.analyze(fakeVideo, config, defaultOptions); // GH-90000
 
-        assertThat(result.uniqueTracks()).isEqualTo(0);
+        assertThat(result.uniqueTracks()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects null detector")
-    void builderRejectsNullDetector() {
-        assertThatThrownBy(() -> VideoAnalysisService.builder()
-                .frameExtractor(frameExtractor)
-                .build())
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("Builder rejects null detector [GH-90000]")
+    void builderRejectsNullDetector() { // GH-90000
+        assertThatThrownBy(() -> VideoAnalysisService.builder() // GH-90000
+                .frameExtractor(frameExtractor) // GH-90000
+                .build()) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects invalid IoU threshold")
-    void builderRejectsInvalidIou() {
-        assertThatThrownBy(() -> VideoAnalysisService.builder().iouThreshold(1.5))
-                .isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("Builder rejects invalid IoU threshold [GH-90000]")
+    void builderRejectsInvalidIou() { // GH-90000
+        assertThatThrownBy(() -> VideoAnalysisService.builder().iouThreshold(1.5)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
 
-    private DetectedObject buildDetection(String className, double confidence,
+    private DetectedObject buildDetection(String className, double confidence, // GH-90000
                                            double x, double y, double w, double h) {
-        BoundingBox bbox = BoundingBox.builder().x(x).y(y).width(w).height(h).build();
-        return DetectedObject.builder()
-                .className(className)
-                .confidence(confidence)
-                .boundingBox(bbox)
-                .build();
+        BoundingBox bbox = BoundingBox.builder().x(x).y(y).width(w).height(h).build(); // GH-90000
+        return DetectedObject.builder() // GH-90000
+                .className(className) // GH-90000
+                .confidence(confidence) // GH-90000
+                .boundingBox(bbox) // GH-90000
+                .build(); // GH-90000
     }
 }

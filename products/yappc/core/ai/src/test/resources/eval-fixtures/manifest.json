@@ -1,0 +1,14 @@
+{
+  "suite": "yappc-ai-requirements-baseline",
+  "version": "1.0.0",
+  "owner": "products/yappc/core/ai",
+  "updatedAt": "2026-04-22T00:00:00Z",
+  "thresholds": {
+    "minPassRate": 0.93,
+    "maxHallucinationRate": 0.02
+  },
+  "caseFiles": [
+    "cases/requirements-suggestions.jsonl"
+  ]
+}
+

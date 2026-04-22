@@ -36,15 +36,15 @@ public abstract class AbstractLanguageTest extends EventloopTestBase {
     protected ExecutorService executorService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() { // GH-90000
         // Create a basic configuration
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of("java", "python"),
-                        List.of("schemas"),
-                        new PolyfixConfig.Budgets(3, 20),
-                        new PolyfixConfig.Policies(true, true, true, false),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of("java", "python"), // GH-90000
+                        List.of("schemas [GH-90000]"),
+                        new PolyfixConfig.Budgets(3, 20), // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 "node",
                                 "eslint",
                                 "tsc",
@@ -59,25 +59,25 @@ public abstract class AbstractLanguageTest extends EventloopTestBase {
                                 "semgrep"));
 
         // Initialize executor service
-        executorService = Executors.newSingleThreadExecutor();
+        executorService = Executors.newSingleThreadExecutor(); // GH-90000
 
         // Create project context
         projectContext =
-                new PolyfixProjectContext(
+                new PolyfixProjectContext( // GH-90000
                         tempDir, // root
                         config, // config
-                        List.of(), // languages - will be added by concrete test classes
+                        List.of(), // languages - will be added by concrete test classes // GH-90000
                         executorService, // exec
-                        LogManager.getLogger(getClass()) // log
+                        LogManager.getLogger(getClass()) // log // GH-90000
                         );
     }
 
     @AfterEach
-    void tearDown() throws InterruptedException {
-        if (executorService != null) {
-            executorService.shutdown();
-            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
+    void tearDown() throws InterruptedException { // GH-90000
+        if (executorService != null) { // GH-90000
+            executorService.shutdown(); // GH-90000
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) { // GH-90000
+                executorService.shutdownNow(); // GH-90000
             }
         }
     }
@@ -85,21 +85,21 @@ public abstract class AbstractLanguageTest extends EventloopTestBase {
     /**
      * Copies a test resource file to the test directory.
      *
-     * @param resourcePath Path to the resource file (relative to src/test/resources)
+     * @param resourcePath Path to the resource file (relative to src/test/resources) // GH-90000
      * @return The path to the copied file in the test directory
      * @throws IOException if the file cannot be copied
      */
-    protected Path copyTestResource(String resourcePath) throws IOException {
+    protected Path copyTestResource(String resourcePath) throws IOException { // GH-90000
         // Split the resource path and create the source path
-        String[] pathParts = resourcePath.split("/");
-        Path source = Path.of("src", "test", "resources");
-        for (String part : pathParts) {
-            source = source.resolve(part);
+        String[] pathParts = resourcePath.split("/ [GH-90000]");
+        Path source = Path.of("src", "test", "resources"); // GH-90000
+        for (String part : pathParts) { // GH-90000
+            source = source.resolve(part); // GH-90000
         }
 
-        Path target = tempDir.resolve(source.getFileName());
-        Files.copy(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath),
+        Path target = tempDir.resolve(source.getFileName()); // GH-90000
+        Files.copy( // GH-90000
+                Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath), // GH-90000
                 target,
                 StandardCopyOption.REPLACE_EXISTING);
         return target;

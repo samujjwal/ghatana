@@ -22,170 +22,170 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RBAC Integration Tests — enforcement in real scenarios")
-@Tag("integration")
+@DisplayName("RBAC Integration Tests — enforcement in real scenarios [GH-90000]")
+@Tag("integration [GH-90000]")
 class RbacIntegrationTest extends EventloopTestBase {
 
     private InMemoryRolePermissionRegistry registry;
     private SyncAuthorizationService authorizationService;
 
     @BeforeEach
-    void setUp() {
-        registry = new InMemoryRolePermissionRegistry();
-        registry.registerRole("ADMIN",  Set.of("read", "write", "delete", "admin"));
-        registry.registerRole("EDITOR", Set.of("read", "write"));
-        registry.registerRole("VIEWER", Set.of("read"));
+    void setUp() { // GH-90000
+        registry = new InMemoryRolePermissionRegistry(); // GH-90000
+        registry.registerRole("ADMIN",  Set.of("read", "write", "delete", "admin")); // GH-90000
+        registry.registerRole("EDITOR", Set.of("read", "write")); // GH-90000
+        registry.registerRole("VIEWER", Set.of("read [GH-90000]"));
 
-        InMemoryPolicyRepository policyRepository = new InMemoryPolicyRepository();
-        PolicyService policyService = new PolicyService(policyRepository);
+        InMemoryPolicyRepository policyRepository = new InMemoryPolicyRepository(); // GH-90000
+        PolicyService policyService = new PolicyService(policyRepository); // GH-90000
 
-        policyService.createPolicy("admin-write-data", "admin write on data", "ADMIN",  "data", Set.of("write"));
-        policyService.createPolicy("editor-write-data","editor write on data","EDITOR", "data", Set.of("write"));
-        policyService.createPolicy("viewer-read-data", "viewer read on data", "VIEWER", "data", Set.of("read"));
+        policyService.createPolicy("admin-write-data", "admin write on data", "ADMIN",  "data", Set.of("write [GH-90000]"));
+        policyService.createPolicy("editor-write-data","editor write on data","EDITOR", "data", Set.of("write [GH-90000]"));
+        policyService.createPolicy("viewer-read-data", "viewer read on data", "VIEWER", "data", Set.of("read [GH-90000]"));
 
-        authorizationService = new SyncAuthorizationService(registry);
+        authorizationService = new SyncAuthorizationService(registry); // GH-90000
     }
 
     // ── Role assignment and revocation ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("role assignment and revocation")
+    @DisplayName("role assignment and revocation [GH-90000]")
     class RoleAssignmentAndRevocation {
 
         @Test
-        @DisplayName("newly registered role grants requested permissions")
-        void newlyRegisteredRole_grantsRequestedPermissions() {
-            registry.registerRole("BETA_TESTER", Set.of("read", "feature-x"));
+        @DisplayName("newly registered role grants requested permissions [GH-90000]")
+        void newlyRegisteredRole_grantsRequestedPermissions() { // GH-90000
+            registry.registerRole("BETA_TESTER", Set.of("read", "feature-x")); // GH-90000
 
-            assertThat(registry.hasPermission("BETA_TESTER", "read")).isTrue();
-            assertThat(registry.hasPermission("BETA_TESTER", "feature-x")).isTrue();
-            assertThat(registry.hasPermission("BETA_TESTER", "write")).isFalse();
+            assertThat(registry.hasPermission("BETA_TESTER", "read")).isTrue(); // GH-90000
+            assertThat(registry.hasPermission("BETA_TESTER", "feature-x")).isTrue(); // GH-90000
+            assertThat(registry.hasPermission("BETA_TESTER", "write")).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("role revocation (overwrite with empty set) removes all permissions")
-        void roleRevocation_removesAllPermissions() {
-            registry.registerRole("TEMP_ROLE", Set.of("read", "write"));
-            assertThat(registry.hasPermission("TEMP_ROLE", "read")).isTrue();
+        @DisplayName("role revocation (overwrite with empty set) removes all permissions [GH-90000]")
+        void roleRevocation_removesAllPermissions() { // GH-90000
+            registry.registerRole("TEMP_ROLE", Set.of("read", "write")); // GH-90000
+            assertThat(registry.hasPermission("TEMP_ROLE", "read")).isTrue(); // GH-90000
 
             // Revoke by overwriting with empty set
-            registry.registerRole("TEMP_ROLE", Set.of());
-            assertThat(registry.hasPermission("TEMP_ROLE", "read")).isFalse();
-            assertThat(registry.hasPermission("TEMP_ROLE", "write")).isFalse();
+            registry.registerRole("TEMP_ROLE", Set.of()); // GH-90000
+            assertThat(registry.hasPermission("TEMP_ROLE", "read")).isFalse(); // GH-90000
+            assertThat(registry.hasPermission("TEMP_ROLE", "write")).isFalse(); // GH-90000
         }
     }
 
     // ── Permission checks across modules ─────────────────────────────────────
 
     @Nested
-    @DisplayName("permission checks across module resources")
+    @DisplayName("permission checks across module resources [GH-90000]")
     class PermissionChecksAcrossModules {
 
         @Test
-        @DisplayName("ADMIN user can write permission")
-        void admin_canWriteToDataResource() {
-            User adminUser = new User("admin-id", "admin", Set.of("ADMIN"));
-            boolean allowed = authorizationService.hasPermission(adminUser, "write");
-            assertThat(allowed).isTrue();
+        @DisplayName("ADMIN user can write permission [GH-90000]")
+        void admin_canWriteToDataResource() { // GH-90000
+            User adminUser = new User("admin-id", "admin", Set.of("ADMIN [GH-90000]"));
+            boolean allowed = authorizationService.hasPermission(adminUser, "write"); // GH-90000
+            assertThat(allowed).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("VIEWER user cannot write permission")
-        void viewer_cannotWriteToDataResource() {
-            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER"));
-            boolean allowed = authorizationService.hasPermission(viewerUser, "write");
-            assertThat(allowed).isFalse();
+        @DisplayName("VIEWER user cannot write permission [GH-90000]")
+        void viewer_cannotWriteToDataResource() { // GH-90000
+            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER [GH-90000]"));
+            boolean allowed = authorizationService.hasPermission(viewerUser, "write"); // GH-90000
+            assertThat(allowed).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("VIEWER user can read permission")
-        void viewer_canReadDataResource() {
-            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER"));
-            boolean allowed = authorizationService.hasPermission(viewerUser, "read");
-            assertThat(allowed).isTrue();
+        @DisplayName("VIEWER user can read permission [GH-90000]")
+        void viewer_canReadDataResource() { // GH-90000
+            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER [GH-90000]"));
+            boolean allowed = authorizationService.hasPermission(viewerUser, "read"); // GH-90000
+            assertThat(allowed).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("EDITOR user can write permission")
-        void editor_canWriteToDataResource() {
-            User editorUser = new User("editor-id", "editor", Set.of("EDITOR"));
-            boolean allowed = authorizationService.hasPermission(editorUser, "write");
-            assertThat(allowed).isTrue();
+        @DisplayName("EDITOR user can write permission [GH-90000]")
+        void editor_canWriteToDataResource() { // GH-90000
+            User editorUser = new User("editor-id", "editor", Set.of("EDITOR [GH-90000]"));
+            boolean allowed = authorizationService.hasPermission(editorUser, "write"); // GH-90000
+            assertThat(allowed).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("unknown role denied access")
-        void unknownRole_deniedAccessToAnyResource() {
-            User ghostUser = new User("ghost-id", "ghost", Set.of("GHOST"));
-            boolean allowed = authorizationService.hasPermission(ghostUser, "read");
-            assertThat(allowed).isFalse();
+        @DisplayName("unknown role denied access [GH-90000]")
+        void unknownRole_deniedAccessToAnyResource() { // GH-90000
+            User ghostUser = new User("ghost-id", "ghost", Set.of("GHOST [GH-90000]"));
+            boolean allowed = authorizationService.hasPermission(ghostUser, "read"); // GH-90000
+            assertThat(allowed).isFalse(); // GH-90000
         }
     }
 
     // ── Multi-tenancy isolation ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("multi-tenancy role isolation")
+    @DisplayName("multi-tenancy role isolation [GH-90000]")
     class MultiTenancyIsolation {
 
         @Test
-        @DisplayName("tenant A roles do not bleed into tenant B namespace")
-        void tenantARoles_doNotBleedIntoTenantB() {
+        @DisplayName("tenant A roles do not bleed into tenant B namespace [GH-90000]")
+        void tenantARoles_doNotBleedIntoTenantB() { // GH-90000
             // Simulate tenant-scoped registries
-            InMemoryRolePermissionRegistry tenantARegistry = new InMemoryRolePermissionRegistry();
-            InMemoryRolePermissionRegistry tenantBRegistry = new InMemoryRolePermissionRegistry();
+            InMemoryRolePermissionRegistry tenantARegistry = new InMemoryRolePermissionRegistry(); // GH-90000
+            InMemoryRolePermissionRegistry tenantBRegistry = new InMemoryRolePermissionRegistry(); // GH-90000
 
-            tenantARegistry.registerRole("SUPER_ADMIN", Set.of("all"));
-            tenantBRegistry.registerRole("VIEWER",      Set.of("read"));
+            tenantARegistry.registerRole("SUPER_ADMIN", Set.of("all [GH-90000]"));
+            tenantBRegistry.registerRole("VIEWER",      Set.of("read [GH-90000]"));
 
             // Tenant A's SUPER_ADMIN must not appear in tenant B's registry
-            assertThat(tenantBRegistry.getPermissions("SUPER_ADMIN")).isNull();
-            assertThat(tenantARegistry.getPermissions("VIEWER")).isNull();
+            assertThat(tenantBRegistry.getPermissions("SUPER_ADMIN [GH-90000]")).isNull();
+            assertThat(tenantARegistry.getPermissions("VIEWER [GH-90000]")).isNull();
         }
 
         @Test
-        @DisplayName("same role name in different tenants has independent permissions")
-        void sameRoleNameInDifferentTenants_hasIndependentPermissions() {
-            InMemoryRolePermissionRegistry tenantARegistry = new InMemoryRolePermissionRegistry();
-            InMemoryRolePermissionRegistry tenantBRegistry = new InMemoryRolePermissionRegistry();
+        @DisplayName("same role name in different tenants has independent permissions [GH-90000]")
+        void sameRoleNameInDifferentTenants_hasIndependentPermissions() { // GH-90000
+            InMemoryRolePermissionRegistry tenantARegistry = new InMemoryRolePermissionRegistry(); // GH-90000
+            InMemoryRolePermissionRegistry tenantBRegistry = new InMemoryRolePermissionRegistry(); // GH-90000
 
             // Tenant A's MANAGER has broad permissions
-            tenantARegistry.registerRole("MANAGER", Set.of("read", "write", "delete"));
+            tenantARegistry.registerRole("MANAGER", Set.of("read", "write", "delete")); // GH-90000
             // Tenant B's MANAGER is restricted
-            tenantBRegistry.registerRole("MANAGER", Set.of("read"));
+            tenantBRegistry.registerRole("MANAGER", Set.of("read [GH-90000]"));
 
-            assertThat(tenantARegistry.hasPermission("MANAGER", "delete")).isTrue();
-            assertThat(tenantBRegistry.hasPermission("MANAGER", "delete")).isFalse();
+            assertThat(tenantARegistry.hasPermission("MANAGER", "delete")).isTrue(); // GH-90000
+            assertThat(tenantBRegistry.hasPermission("MANAGER", "delete")).isFalse(); // GH-90000
         }
     }
 
     // ── Policy enforcement ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("policy enforcement integration")
+    @DisplayName("policy enforcement integration [GH-90000]")
     class PolicyEnforcement {
 
         @Test
-        @DisplayName("policy that grants permission is enforced correctly")
-        void policy_thatGrantsPermission_isEnforcedCorrectly() {
-            User adminUser = new User("admin-id", "admin", Set.of("ADMIN"));
-            boolean adminCanWrite = authorizationService.hasPermission(adminUser, "write");
-            assertThat(adminCanWrite).isTrue();
+        @DisplayName("policy that grants permission is enforced correctly [GH-90000]")
+        void policy_thatGrantsPermission_isEnforcedCorrectly() { // GH-90000
+            User adminUser = new User("admin-id", "admin", Set.of("ADMIN [GH-90000]"));
+            boolean adminCanWrite = authorizationService.hasPermission(adminUser, "write"); // GH-90000
+            assertThat(adminCanWrite).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("no matching policy denies access by default")
-        void noMatchingPolicy_deniesAccessByDefault() {
-            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER"));
-            boolean allowed = authorizationService.hasPermission(viewerUser, "delete");
-            assertThat(allowed).isFalse();
+        @DisplayName("no matching policy denies access by default [GH-90000]")
+        void noMatchingPolicy_deniesAccessByDefault() { // GH-90000
+            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER [GH-90000]"));
+            boolean allowed = authorizationService.hasPermission(viewerUser, "delete"); // GH-90000
+            assertThat(allowed).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("null user is denied without exception")
-        void nullUser_isDeniedWithoutException() {
-            boolean allowed = authorizationService.hasPermission(null, "read");
-            assertThat(allowed).isFalse();
+        @DisplayName("null user is denied without exception [GH-90000]")
+        void nullUser_isDeniedWithoutException() { // GH-90000
+            boolean allowed = authorizationService.hasPermission(null, "read"); // GH-90000
+            assertThat(allowed).isFalse(); // GH-90000
         }
     }
 }

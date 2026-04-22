@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -24,111 +24,111 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration tests for data product publish, discover, and subscribe endpoints (P4.4.1).
+ * Integration tests for data product publish, discover, and subscribe endpoints (P4.4.1). // GH-90000
  */
-@DisplayName("DataCloudHttpServer – data products API (P4.4.1)")
+@DisplayName("DataCloudHttpServer – data products API (P4.4.1) [GH-90000]")
 class DataCloudHttpServerDataProductTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
 
     @BeforeEach
-    void setUp() throws Exception {
-        mockClient = mock(DataCloudClient.class);
-        port = findFreePort();
+    void setUp() throws Exception { // GH-90000
+        mockClient = mock(DataCloudClient.class); // GH-90000
+        port = findFreePort(); // GH-90000
     }
 
     @Override
-    protected void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port);
-        server.start();
-        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS);
+    protected void startServer() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port); // GH-90000
+        server.start(); // GH-90000
+        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS); // GH-90000
     }
 
     @Test
-    @DisplayName("POST /api/v1/data-products publishes catalog entry with inferred schema")
-    void publishDataProductPersistsDescriptor() throws Exception {
-        DataCloudClient.Entity sample = entity("sample-1", "orders", Map.of("orderId", "o-1", "amount", 42.5, "status", "complete"));
-        DataCloudClient.Entity savedDescriptor = entity("product-1", "dc_data_products", Map.of("name", "Orders Product", "collection", "orders"));
+    @DisplayName("POST /api/v1/data-products publishes catalog entry with inferred schema [GH-90000]")
+    void publishDataProductPersistsDescriptor() throws Exception { // GH-90000
+        DataCloudClient.Entity sample = entity("sample-1", "orders", Map.of("orderId", "o-1", "amount", 42.5, "status", "complete")); // GH-90000
+        DataCloudClient.Entity savedDescriptor = entity("product-1", "dc_data_products", Map.of("name", "Orders Product", "collection", "orders")); // GH-90000
 
-        when(mockClient.query(anyString(), eq("orders"), any())).thenReturn(Promise.of(List.of(sample)));
-        when(mockClient.save(anyString(), eq("dc_data_products"), any())).thenReturn(Promise.of(savedDescriptor));
+        when(mockClient.query(anyString(), eq("orders [GH-90000]"), any())).thenReturn(Promise.of(List.of(sample)));
+        when(mockClient.save(anyString(), eq("dc_data_products [GH-90000]"), any())).thenReturn(Promise.of(savedDescriptor));
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> response = postJson("/api/v1/data-products", Map.of(
+        HttpResponse<String> response = postJson("/api/v1/data-products", Map.of( // GH-90000
             "name", "Orders Product",
             "collection", "orders",
             "description", "Published catalog entry",
-            "sla", Map.of("freshnessSeconds", 600, "completenessTarget", 0.9),
-            "access", Map.of("allowedSubscribers", List.of("tenant-a"))
+            "sla", Map.of("freshnessSeconds", 600, "completenessTarget", 0.9), // GH-90000
+            "access", Map.of("allowedSubscribers", List.of("tenant-a [GH-90000]"))
         ));
 
-        assertStatusCode(response, 200);
-        Map<String, Object> body = parseJsonResponse(response);
-        assertThat(body).containsEntry("productId", "product-1");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> descriptor = (Map<String, Object>) body.get("descriptor");
-        assertThat(descriptor).containsEntry("collection", "orders");
-        assertThat(descriptor).containsEntry("qualityStatus", "HEALTHY");
-        assertThat(descriptor).containsKey("schema");
-        assertThat(descriptor).containsKey("lineage");
+        assertStatusCode(response, 200); // GH-90000
+        Map<String, Object> body = parseJsonResponse(response); // GH-90000
+        assertThat(body).containsEntry("productId", "product-1"); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> descriptor = (Map<String, Object>) body.get("descriptor [GH-90000]");
+        assertThat(descriptor).containsEntry("collection", "orders"); // GH-90000
+        assertThat(descriptor).containsEntry("qualityStatus", "HEALTHY"); // GH-90000
+        assertThat(descriptor).containsKey("schema [GH-90000]");
+        assertThat(descriptor).containsKey("lineage [GH-90000]");
     }
 
     @Test
-    @DisplayName("GET /api/v1/data-products returns enriched quality snapshots")
-    void listDataProductsReturnsEnrichedItems() throws Exception {
-        DataCloudClient.Entity product = entity("product-1", "dc_data_products", Map.of(
+    @DisplayName("GET /api/v1/data-products returns enriched quality snapshots [GH-90000]")
+    void listDataProductsReturnsEnrichedItems() throws Exception { // GH-90000
+        DataCloudClient.Entity product = entity("product-1", "dc_data_products", Map.of( // GH-90000
                 "name", "Orders Product",
                 "collection", "orders",
-                "sla", Map.of("freshnessSeconds", 600, "completenessTarget", 0.9)
+                "sla", Map.of("freshnessSeconds", 600, "completenessTarget", 0.9) // GH-90000
             ));
-        DataCloudClient.Entity sample = entity("sample-1", "orders", Map.of("orderId", "o-1", "amount", 42.5, "status", "complete"));
+        DataCloudClient.Entity sample = entity("sample-1", "orders", Map.of("orderId", "o-1", "amount", 42.5, "status", "complete")); // GH-90000
 
-        when(mockClient.query(anyString(), eq("dc_data_products"), any())).thenReturn(Promise.of(List.of(product)));
-        when(mockClient.query(anyString(), eq("orders"), any())).thenReturn(Promise.of(List.of(sample)));
+        when(mockClient.query(anyString(), eq("dc_data_products [GH-90000]"), any())).thenReturn(Promise.of(List.of(product)));
+        when(mockClient.query(anyString(), eq("orders [GH-90000]"), any())).thenReturn(Promise.of(List.of(sample)));
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/data-products");
+        HttpResponse<String> response = get("/api/v1/data-products [GH-90000]");
 
-        assertStatusCode(response, 200);
-        Map<String, Object> body = parseJsonResponse(response);
-        assertThat(body).containsEntry("count", 1);
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
-        assertThat(items).hasSize(1);
-        assertThat(items.getFirst()).containsEntry("collection", "orders");
-        assertThat(items.getFirst()).containsKey("quality");
+        assertStatusCode(response, 200); // GH-90000
+        Map<String, Object> body = parseJsonResponse(response); // GH-90000
+        assertThat(body).containsEntry("count", 1); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items [GH-90000]");
+        assertThat(items).hasSize(1); // GH-90000
+        assertThat(items.getFirst()).containsEntry("collection", "orders"); // GH-90000
+        assertThat(items.getFirst()).containsKey("quality [GH-90000]");
     }
 
     @Test
-    @DisplayName("POST /api/v1/data-products/:productId/subscribe creates subscription when consumer is allowed")
-    void subscribeCreatesSubscription() throws Exception {
-        DataCloudClient.Entity product = entity("product-1", "dc_data_products", Map.of(
+    @DisplayName("POST /api/v1/data-products/:productId/subscribe creates subscription when consumer is allowed [GH-90000]")
+    void subscribeCreatesSubscription() throws Exception { // GH-90000
+        DataCloudClient.Entity product = entity("product-1", "dc_data_products", Map.of( // GH-90000
                 "collection", "orders",
-                "access", Map.of("allowedSubscribers", List.of("tenant-a"))
+                "access", Map.of("allowedSubscribers", List.of("tenant-a [GH-90000]"))
             ));
-        DataCloudClient.Entity subscription = entity("subscription-1", "dc_data_product_subscriptions", Map.of("productId", "product-1", "consumerId", "tenant-a"));
+        DataCloudClient.Entity subscription = entity("subscription-1", "dc_data_product_subscriptions", Map.of("productId", "product-1", "consumerId", "tenant-a")); // GH-90000
 
-        when(mockClient.findById(anyString(), eq("dc_data_products"), eq("product-1")))
-            .thenReturn(Promise.of(Optional.of(product)));
-        when(mockClient.save(anyString(), eq("dc_data_product_subscriptions"), any()))
-            .thenReturn(Promise.of(subscription));
+        when(mockClient.findById(anyString(), eq("dc_data_products [GH-90000]"), eq("product-1 [GH-90000]")))
+            .thenReturn(Promise.of(Optional.of(product))); // GH-90000
+        when(mockClient.save(anyString(), eq("dc_data_product_subscriptions [GH-90000]"), any()))
+            .thenReturn(Promise.of(subscription)); // GH-90000
 
-        startServer();
+        startServer(); // GH-90000
 
-        HttpResponse<String> response = postJson(
+        HttpResponse<String> response = postJson( // GH-90000
             "/api/v1/data-products/product-1/subscribe",
-            Map.of("consumerId", "tenant-a"));
+            Map.of("consumerId", "tenant-a")); // GH-90000
 
-        assertStatusCode(response, 200);
-        Map<String, Object> body = parseJsonResponse(response);
-        assertThat(body).containsEntry("subscriptionId", "subscription-1");
-        assertThat(body).containsEntry("status", "ACTIVE");
+        assertStatusCode(response, 200); // GH-90000
+        Map<String, Object> body = parseJsonResponse(response); // GH-90000
+        assertThat(body).containsEntry("subscriptionId", "subscription-1"); // GH-90000
+        assertThat(body).containsEntry("status", "ACTIVE"); // GH-90000
     }
 
-    private DataCloudClient.Entity entity(String id, String collection, Map<String, Object> data) {
-        Instant now = Instant.now();
-        return new DataCloudClient.Entity(id, collection, data, now, now, 1L);
+    private DataCloudClient.Entity entity(String id, String collection, Map<String, Object> data) { // GH-90000
+        Instant now = Instant.now(); // GH-90000
+        return new DataCloudClient.Entity(id, collection, data, now, now, 1L); // GH-90000
     }
 }

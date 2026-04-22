@@ -24,9 +24,9 @@ import org.mockito.MockitoAnnotations;
  * Unit tests for {@link TriggerListener}.
  *
  * <p>All Promise-returning methods are executed within a managed ActiveJ Eventloop via
- * {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)}.
+ * {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)}. // GH-90000
  */
-@DisplayName("TriggerListener")
+@DisplayName("TriggerListener [GH-90000]")
 class TriggerListenerTest extends EventloopTestBase {
 
     @Mock
@@ -44,73 +44,73 @@ class TriggerListenerTest extends EventloopTestBase {
     private TriggerListener triggerListener;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        when(metrics.timer(anyString())).thenReturn(timer);
-        when(metrics.counter(anyString())).thenReturn(counter);
-        triggerListener = new TriggerListener(executionQueue, metrics);
+    void setUp() { // GH-90000
+        MockitoAnnotations.openMocks(this); // GH-90000
+        when(metrics.timer(anyString())).thenReturn(timer); // GH-90000
+        when(metrics.counter(anyString())).thenReturn(counter); // GH-90000
+        triggerListener = new TriggerListener(executionQueue, metrics); // GH-90000
     }
 
     @Test
-    @DisplayName("start() marks listener as running; stop() unmarks it")
-    void testStartAndStop() {
-        assertFalse(triggerListener.isRunning());
+    @DisplayName("start() marks listener as running; stop() unmarks it [GH-90000]")
+    void testStartAndStop() { // GH-90000
+        assertFalse(triggerListener.isRunning()); // GH-90000
 
-        runBlocking(() -> triggerListener.start());
-        assertTrue(triggerListener.isRunning());
+        runBlocking(() -> triggerListener.start()); // GH-90000
+        assertTrue(triggerListener.isRunning()); // GH-90000
 
-        runBlocking(() -> triggerListener.stop());
-        assertFalse(triggerListener.isRunning());
+        runBlocking(() -> triggerListener.stop()); // GH-90000
+        assertFalse(triggerListener.isRunning()); // GH-90000
     }
 
     @Test
-    @DisplayName("handlePatternMatch() enqueues with correct idempotency key")
-    void testHandlePatternMatch() {
-        triggerListener.start();
+    @DisplayName("handlePatternMatch() enqueues with correct idempotency key [GH-90000]")
+    void testHandlePatternMatch() { // GH-90000
+        triggerListener.start(); // GH-90000
 
-        when(executionQueue.enqueue(anyString(), anyString(), any(), anyString()))
-                .thenReturn(Promise.of(null));
+        when(executionQueue.enqueue(anyString(), anyString(), any(), anyString())) // GH-90000
+                .thenReturn(Promise.of(null)); // GH-90000
 
         String tenantId = "default-tenant";
         String pipelineId = "test-pipeline";
         String patternMatchId = "pattern-123";
-        Object matchData = new Object();
+        Object matchData = new Object(); // GH-90000
 
-        runPromise(() -> triggerListener.handlePatternMatch(tenantId, pipelineId, patternMatchId, matchData));
+        runPromise(() -> triggerListener.handlePatternMatch(tenantId, pipelineId, patternMatchId, matchData)); // GH-90000
 
         String expectedIdempotencyKey = pipelineId + ":" + patternMatchId;
-        verify(executionQueue).enqueue(tenantId, pipelineId, matchData, expectedIdempotencyKey);
-        verify(metrics).timer("orch.triggers.received");
-        verify(metrics).timer("orch.enqueued");
+        verify(executionQueue).enqueue(tenantId, pipelineId, matchData, expectedIdempotencyKey); // GH-90000
+        verify(metrics).timer("orch.triggers.received [GH-90000]");
+        verify(metrics).timer("orch.enqueued [GH-90000]");
     }
 
     @Test
-    @DisplayName("handlePatternMatch() is a no-op when listener is not running")
-    void testHandlePatternMatchWhenNotRunning() {
-        assertFalse(triggerListener.isRunning());
+    @DisplayName("handlePatternMatch() is a no-op when listener is not running [GH-90000]")
+    void testHandlePatternMatchWhenNotRunning() { // GH-90000
+        assertFalse(triggerListener.isRunning()); // GH-90000
 
-        runPromise(() -> triggerListener.handlePatternMatch("tenant", "pipeline", "match", new Object()));
+        runPromise(() -> triggerListener.handlePatternMatch("tenant", "pipeline", "match", new Object())); // GH-90000
 
-        verify(executionQueue, never()).enqueue(anyString(), anyString(), any(), anyString());
+        verify(executionQueue, never()).enqueue(anyString(), anyString(), any(), anyString()); // GH-90000
     }
 
     @Test
-    @DisplayName("idempotency key is constructed as pipelineId:patternMatchId")
-    void testIdempotencyKeyGeneration() {
-        triggerListener.start();
+    @DisplayName("idempotency key is constructed as pipelineId:patternMatchId [GH-90000]")
+    void testIdempotencyKeyGeneration() { // GH-90000
+        triggerListener.start(); // GH-90000
 
-        when(executionQueue.enqueue(anyString(), anyString(), any(), anyString()))
-                .thenReturn(Promise.of(null));
+        when(executionQueue.enqueue(anyString(), anyString(), any(), anyString())) // GH-90000
+                .thenReturn(Promise.of(null)); // GH-90000
 
         String tenantId = "default-tenant";
         String pipelineId = "my-pipeline";
         String patternMatchId = "match-456";
 
-        runPromise(() -> triggerListener.handlePatternMatch(tenantId, pipelineId, patternMatchId, "data"));
+        runPromise(() -> triggerListener.handlePatternMatch(tenantId, pipelineId, patternMatchId, "data")); // GH-90000
 
         String expectedKey = "my-pipeline:match-456";
-        verify(executionQueue).enqueue(tenantId, pipelineId, "data", expectedKey);
-        verify(metrics).timer("orch.triggers.received");
-        verify(metrics).timer("orch.enqueued");
+        verify(executionQueue).enqueue(tenantId, pipelineId, "data", expectedKey); // GH-90000
+        verify(metrics).timer("orch.triggers.received [GH-90000]");
+        verify(metrics).timer("orch.enqueued [GH-90000]");
     }
 }

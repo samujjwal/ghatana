@@ -119,7 +119,7 @@ describe('SARIFFormatter', () => {
     const output = formatter.format(mockAccessibilityReport);
     const parsed = JSON.parse(output);
     
-    expect(parsed.runs[0].tool.driver.name).toBe('@ghatana/accessibility-audit');
+    expect(parsed.runs[0].tool.driver.name).toBe('@ghatana/accessibility');
     expect(parsed.runs[0].tool.driver.version).toBeDefined();
   });
 });

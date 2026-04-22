@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("GenerationService")
+@DisplayName("GenerationService [GH-90000]")
 class GenerationServiceTest extends EventloopTestBase {
 
     private CompletionService aiService;
@@ -41,135 +41,135 @@ class GenerationServiceTest extends EventloopTestBase {
     private GenerationService service;
 
     @BeforeEach
-    void setUp() {
-        aiService = mock(CompletionService.class);
-        auditLogger = mock(AuditLogger.class);
-        metrics = mock(MetricsCollector.class);
-        when(aiService.complete(any(CompletionRequest.class)))
-                .thenReturn(Promise.of(CompletionResult.builder()
-                        .text("public class Main { }")
-                        .modelUsed("gpt-4")
-                        .build()));
-        when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
-        service = new GenerationServiceImpl(aiService, auditLogger, metrics);
+    void setUp() { // GH-90000
+        aiService = mock(CompletionService.class); // GH-90000
+        auditLogger = mock(AuditLogger.class); // GH-90000
+        metrics = mock(MetricsCollector.class); // GH-90000
+        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
+                .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+                        .text("public class Main { } [GH-90000]")
+                        .modelUsed("gpt-4 [GH-90000]")
+                        .build())); // GH-90000
+        when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete()); // GH-90000
+        service = new GenerationServiceImpl(aiService, auditLogger, metrics); // GH-90000
     }
 
-    private ValidatedSpec specWithoutEntities() {
-        return ValidatedSpec.of(
-                ShapeSpec.builder().id("shape-123").tenantId("tenant-1").build(),
-                LifecycleValidationResult.builder().build());
+    private ValidatedSpec specWithoutEntities() { // GH-90000
+        return ValidatedSpec.of( // GH-90000
+                ShapeSpec.builder().id("shape-123 [GH-90000]").tenantId("tenant-1 [GH-90000]").build(),
+                LifecycleValidationResult.builder().build()); // GH-90000
     }
 
-    private ValidatedSpec specWithEntities(List<EntitySpec> entities) {
-        DomainModel model = DomainModel.builder().entities(entities).build();
-        return ValidatedSpec.of(
-                ShapeSpec.builder().id("shape-456").tenantId("tenant-1").domainModel(model).build(),
-                LifecycleValidationResult.builder().build());
+    private ValidatedSpec specWithEntities(List<EntitySpec> entities) { // GH-90000
+        DomainModel model = DomainModel.builder().entities(entities).build(); // GH-90000
+        return ValidatedSpec.of( // GH-90000
+                ShapeSpec.builder().id("shape-456 [GH-90000]").tenantId("tenant-1 [GH-90000]").domainModel(model).build(),
+                LifecycleValidationResult.builder().build()); // GH-90000
     }
 
     @Test
-    @DisplayName("generate: spec without domainModel → artifacts contain config/docs/pipeline but no entity code")
-    void shouldGenerateArtifacts() {
-        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities()));
+    @DisplayName("generate: spec without domainModel → artifacts contain config/docs/pipeline but no entity code [GH-90000]")
+    void shouldGenerateArtifacts() { // GH-90000
+        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities())); // GH-90000
 
-        assertNotNull(result);
-        assertNotNull(result.id());
-        assertThat(result.specRef()).isEqualTo("shape-123");
-        assertThat(result.artifacts()).isNotNull();
+        assertNotNull(result); // GH-90000
+        assertNotNull(result.id()); // GH-90000
+        assertThat(result.specRef()).isEqualTo("shape-123 [GH-90000]");
+        assertThat(result.artifacts()).isNotNull(); // GH-90000
         // config + docs + ci/cd pipeline — 3 base artifacts
-        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(3);
+        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(3); // GH-90000
 
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class));
-        verify(auditLogger, times(1)).log(any(Map.class));
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); // GH-90000
+        verify(auditLogger, times(1)).log(any(Map.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("generate: spec with entities → entity code generation called per entity")
-    void shouldGenerateEntityCodeForEachEntity() {
-        EntitySpec entity1 = EntitySpec.builder().name("User").description("User entity").build();
-        EntitySpec entity2 = EntitySpec.builder().name("Order").description("Order entity").build();
+    @DisplayName("generate: spec with entities → entity code generation called per entity [GH-90000]")
+    void shouldGenerateEntityCodeForEachEntity() { // GH-90000
+        EntitySpec entity1 = EntitySpec.builder().name("User [GH-90000]").description("User entity [GH-90000]").build();
+        EntitySpec entity2 = EntitySpec.builder().name("Order [GH-90000]").description("Order entity [GH-90000]").build();
 
-        GeneratedArtifacts result = runPromise(() -> service.generate(specWithEntities(List.of(entity1, entity2))));
+        GeneratedArtifacts result = runPromise(() -> service.generate(specWithEntities(List.of(entity1, entity2)))); // GH-90000
 
-        assertNotNull(result);
+        assertNotNull(result); // GH-90000
         // 2 entities + 3 base artifacts = at least 5
-        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(5);
+        assertThat(result.artifacts().size()).isGreaterThanOrEqualTo(5); // GH-90000
         // AI called once per entity + once per base artifact
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class));
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("generate: metrics timer and success counter recorded")
-    void shouldRecordMetricsOnSuccess() {
-        runPromise(() -> service.generate(specWithoutEntities()));
+    @DisplayName("generate: metrics timer and success counter recorded [GH-90000]")
+    void shouldRecordMetricsOnSuccess() { // GH-90000
+        runPromise(() -> service.generate(specWithoutEntities())); // GH-90000
 
-        verify(metrics, atLeastOnce()).recordTimer(eq("yappc.generate.execute"), anyLong(), any(Map.class));
-        verify(metrics, atLeastOnce()).incrementCounter(contains("success"), any(Map.class));
+        verify(metrics, atLeastOnce()).recordTimer(eq("yappc.generate.execute [GH-90000]"), anyLong(), any(Map.class));
+        verify(metrics, atLeastOnce()).incrementCounter(contains("success [GH-90000]"), any(Map.class));
     }
 
     @Test
-    @DisplayName("generate: audit logger called with event details")
-    void shouldAuditGenerateExecution() {
-        runPromise(() -> service.generate(specWithoutEntities()));
+    @DisplayName("generate: audit logger called with event details [GH-90000]")
+    void shouldAuditGenerateExecution() { // GH-90000
+        runPromise(() -> service.generate(specWithoutEntities())); // GH-90000
 
-        verify(auditLogger, times(1)).log(any(Map.class));
+        verify(auditLogger, times(1)).log(any(Map.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("regenerateWithDiff: both old and new artifacts present in diff result")
-    void shouldRegenerateWithDiff() {
-        ValidatedSpec spec = specWithoutEntities();
-        GeneratedArtifacts existing = GeneratedArtifacts.builder()
-                .id("old-123")
-                .specRef("shape-123")
-                .artifacts(List.of())
-                .build();
+    @DisplayName("regenerateWithDiff: both old and new artifacts present in diff result [GH-90000]")
+    void shouldRegenerateWithDiff() { // GH-90000
+        ValidatedSpec spec = specWithoutEntities(); // GH-90000
+        GeneratedArtifacts existing = GeneratedArtifacts.builder() // GH-90000
+                .id("old-123 [GH-90000]")
+                .specRef("shape-123 [GH-90000]")
+                .artifacts(List.of()) // GH-90000
+                .build(); // GH-90000
 
-        DiffResult result = runPromise(() -> service.regenerateWithDiff(spec, existing));
+        DiffResult result = runPromise(() -> service.regenerateWithDiff(spec, existing)); // GH-90000
 
-        assertNotNull(result);
-        assertNotNull(result.newArtifacts());
-        assertNotNull(result.oldArtifacts());
-        assertNotNull(result.diffs());
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class));
+        assertNotNull(result); // GH-90000
+        assertNotNull(result.newArtifacts()); // GH-90000
+        assertNotNull(result.oldArtifacts()); // GH-90000
+        assertNotNull(result.diffs()); // GH-90000
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("regenerateWithDiff: diff metrics and audit recorded")
-    void shouldRecordMetricsOnDiff() {
-        ValidatedSpec spec = specWithoutEntities();
-        GeneratedArtifacts existing = GeneratedArtifacts.builder()
-                .id("old-123").specRef("shape-123").artifacts(List.of()).build();
+    @DisplayName("regenerateWithDiff: diff metrics and audit recorded [GH-90000]")
+    void shouldRecordMetricsOnDiff() { // GH-90000
+        ValidatedSpec spec = specWithoutEntities(); // GH-90000
+        GeneratedArtifacts existing = GeneratedArtifacts.builder() // GH-90000
+                .id("old-123 [GH-90000]").specRef("shape-123 [GH-90000]").artifacts(List.of()).build();
 
-        runPromise(() -> service.regenerateWithDiff(spec, existing));
+        runPromise(() -> service.regenerateWithDiff(spec, existing)); // GH-90000
 
-        verify(metrics, atLeastOnce()).recordTimer(contains("diff"), anyLong(), any(Map.class));
-        verify(auditLogger, atLeast(2)).log(any(Map.class)); // once for generate, once for diff
+        verify(metrics, atLeastOnce()).recordTimer(contains("diff [GH-90000]"), anyLong(), any(Map.class));
+        verify(auditLogger, atLeast(2)).log(any(Map.class)); // once for generate, once for diff // GH-90000
     }
 
     @Test
-    @DisplayName("generate: AI failure propagates and error metric recorded")
-    void shouldHandleGenerationFailure() {
-        when(aiService.complete(any(CompletionRequest.class)))
-                .thenReturn(Promise.ofException(new RuntimeException("Generation failed")));
+    @DisplayName("generate: AI failure propagates and error metric recorded [GH-90000]")
+    void shouldHandleGenerationFailure() { // GH-90000
+        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
+                .thenReturn(Promise.ofException(new RuntimeException("Generation failed [GH-90000]")));
 
         try {
-            GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities()));
+            GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities())); // GH-90000
             // Promises.toList may succeed with remaining artifacts if only some calls fail
-            assertNotNull(result);
-            verify(metrics, atLeastOnce()).recordTimer(anyString(), anyLong(), any(Map.class));
-        } catch (Exception e) {
-            assertThat(e.getMessage()).containsIgnoringCase("generation failed");
-            verify(metrics, atLeastOnce()).incrementCounter(contains("error"), any(Map.class));
+            assertNotNull(result); // GH-90000
+            verify(metrics, atLeastOnce()).recordTimer(anyString(), anyLong(), any(Map.class)); // GH-90000
+        } catch (Exception e) { // GH-90000
+            assertThat(e.getMessage()).containsIgnoringCase("generation failed [GH-90000]");
+            verify(metrics, atLeastOnce()).incrementCounter(contains("error [GH-90000]"), any(Map.class));
         }
     }
 
     @Test
-    @DisplayName("generate: metadata contains validation_passed flag")
-    void shouldIncludeValidationMetadataInArtifacts() {
-        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities()));
+    @DisplayName("generate: metadata contains validation_passed flag [GH-90000]")
+    void shouldIncludeValidationMetadataInArtifacts() { // GH-90000
+        GeneratedArtifacts result = runPromise(() -> service.generate(specWithoutEntities())); // GH-90000
 
-        assertThat(result.metadata()).isNotNull();
-        assertThat(result.metadata()).containsKey("validation_passed");
+        assertThat(result.metadata()).isNotNull(); // GH-90000
+        assertThat(result.metadata()).containsKey("validation_passed [GH-90000]");
     }
 }

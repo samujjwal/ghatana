@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Ops ValidateReleaseStep Tests")
+@DisplayName("Ops ValidateReleaseStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles validate release step test operations
@@ -25,15 +25,15 @@ class ValidateReleaseStepTest extends EventloopTestBase {
   private ValidateReleaseStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new ValidateReleaseStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new ValidateReleaseStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("ops.validaterelease");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("ops.validaterelease [GH-90000]");
   }
 }

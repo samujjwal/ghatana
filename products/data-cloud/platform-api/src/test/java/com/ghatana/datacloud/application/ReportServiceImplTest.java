@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.application;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("ReportServiceImpl Tests")
+@DisplayName("ReportServiceImpl Tests [GH-90000]")
 class ReportServiceImplTest extends EventloopTestBase {
 
     @Mock
@@ -44,266 +44,266 @@ class ReportServiceImplTest extends EventloopTestBase {
     private ReportServiceImpl service;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        service = new ReportServiceImpl(repository, metrics);
+    void setUp() { // GH-90000
+        MockitoAnnotations.openMocks(this); // GH-90000
+        service = new ReportServiceImpl(repository, metrics); // GH-90000
     }
 
     @Nested
-    @DisplayName("Generate Report")
+    @DisplayName("Generate Report [GH-90000]")
     class GenerateReportTests {
 
         @Test
-        @DisplayName("[TEST-005]: generateReport_successfully_creates_report")
-        void generateReportSuccessfully() {
+        @DisplayName("[TEST-005]: generateReport_successfully_creates_report [GH-90000]")
+        void generateReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
-            ReportTemplate template = new ReportTemplate()
-                .withName("Monthly Sales")
-                .withFormat("CSV")
-                .withQuery("SELECT * FROM sales WHERE month = '2024-01'");
+            ReportTemplate template = new ReportTemplate() // GH-90000
+                .withName("Monthly Sales [GH-90000]")
+                .withFormat("CSV [GH-90000]")
+                .withQuery("SELECT * FROM sales WHERE month = '2024-01' [GH-90000]");
 
-            when(repository.save(any(Report.class))).thenAnswer(invocation ->
-                Promise.of(invocation.getArgument(0)));
+            when(repository.save(any(Report.class))).thenAnswer(invocation -> // GH-90000
+                Promise.of(invocation.getArgument(0))); // GH-90000
 
             // When
-            Report result = runPromise(() -> service.generateReport(tenantId, template));
+            Report result = runPromise(() -> service.generateReport(tenantId, template)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getTenantId()).isEqualTo(tenantId);
-            assertThat(result.getName()).isEqualTo("Monthly Sales");
-            assertThat(result.getFormat()).isEqualTo("CSV");
-            assertThat(result.getStatus()).isEqualTo("COMPLETED");
-            verify(metrics).incrementCounter("report.generate.success", "tenant", tenantId, "format", "CSV");
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.getTenantId()).isEqualTo(tenantId); // GH-90000
+            assertThat(result.getName()).isEqualTo("Monthly Sales [GH-90000]");
+            assertThat(result.getFormat()).isEqualTo("CSV [GH-90000]");
+            assertThat(result.getStatus()).isEqualTo("COMPLETED [GH-90000]");
+            verify(metrics).incrementCounter("report.generate.success", "tenant", tenantId, "format", "CSV"); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-005]: generateReport_increments_error_metric_on_failure")
-        void generateReportError() {
+        @DisplayName("[TEST-005]: generateReport_increments_error_metric_on_failure [GH-90000]")
+        void generateReportError() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
-            ReportTemplate template = new ReportTemplate()
-                .withName("Monthly Sales")
-                .withFormat("CSV")
-                .withQuery("SELECT 1");
+            ReportTemplate template = new ReportTemplate() // GH-90000
+                .withName("Monthly Sales [GH-90000]")
+                .withFormat("CSV [GH-90000]")
+                .withQuery("SELECT 1 [GH-90000]");
 
-            when(repository.save(any(Report.class)))
-                .thenReturn(Promise.ofException(new RuntimeException("DB error")));
+            when(repository.save(any(Report.class))) // GH-90000
+                .thenReturn(Promise.ofException(new RuntimeException("DB error [GH-90000]")));
 
             // When
-            clearFatalError();
+            clearFatalError(); // GH-90000
             try {
-                runPromise(() -> service.generateReport(tenantId, template));
-            } catch (Exception e) {
+                runPromise(() -> service.generateReport(tenantId, template)); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Expected
             }
 
             // Then
-            verify(metrics).incrementCounter("report.generate.error", "tenant", tenantId, "error", "RuntimeException");
+            verify(metrics).incrementCounter("report.generate.error", "tenant", tenantId, "error", "RuntimeException"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Get Report")
+    @DisplayName("Get Report [GH-90000]")
     class GetReportTests {
 
         @Test
-        @DisplayName("[TEST-006]: getReport_returns_report_when_found")
-        void getReportFound() {
+        @DisplayName("[TEST-006]: getReport_returns_report_when_found [GH-90000]")
+        void getReportFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
 
-            Report report = new Report()
-                .withId(reportId)
-                .withTenantId(tenantId)
-                .withName("Monthly Sales")
-                .withFormat("CSV")
-                .withStatus("COMPLETED");
+            Report report = new Report() // GH-90000
+                .withId(reportId) // GH-90000
+                .withTenantId(tenantId) // GH-90000
+                .withName("Monthly Sales [GH-90000]")
+                .withFormat("CSV [GH-90000]")
+                .withStatus("COMPLETED [GH-90000]");
 
-            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report));
+            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report)); // GH-90000
 
             // When
-            Report result = runPromise(() -> service.getReport(tenantId, reportId));
+            Report result = runPromise(() -> service.getReport(tenantId, reportId)); // GH-90000
 
             // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getId()).isEqualTo(reportId);
-            verify(metrics).incrementCounter("report.get.success", "tenant", tenantId);
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.getId()).isEqualTo(reportId); // GH-90000
+            verify(metrics).incrementCounter("report.get.success", "tenant", tenantId); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-006]: getReport_increments_not_found_when_missing")
-        void getReportNotFound() {
+        @DisplayName("[TEST-006]: getReport_increments_not_found_when_missing [GH-90000]")
+        void getReportNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
 
-            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(null));
+            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(null)); // GH-90000
 
             // When
-            Report result = runPromise(() -> service.getReport(tenantId, reportId));
+            Report result = runPromise(() -> service.getReport(tenantId, reportId)); // GH-90000
 
             // Then
-            assertThat(result).isNull();
-            verify(metrics).incrementCounter("report.get.not_found", "tenant", tenantId);
+            assertThat(result).isNull(); // GH-90000
+            verify(metrics).incrementCounter("report.get.not_found", "tenant", tenantId); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("List Reports")
+    @DisplayName("List Reports [GH-90000]")
     class ListReportsTests {
 
         @Test
-        @DisplayName("[TEST-007]: listReports_returns_all_tenant_reports")
-        void listReports() {
+        @DisplayName("[TEST-007]: listReports_returns_all_tenant_reports [GH-90000]")
+        void listReports() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
 
-            List<Report> reports = List.of(
-                new Report().withId("r1").withTenantId(tenantId).withName("Report 1").withFormat("CSV"),
-                new Report().withId("r2").withTenantId(tenantId).withName("Report 2").withFormat("PDF")
+            List<Report> reports = List.of( // GH-90000
+                new Report().withId("r1 [GH-90000]").withTenantId(tenantId).withName("Report 1 [GH-90000]").withFormat("CSV [GH-90000]"),
+                new Report().withId("r2 [GH-90000]").withTenantId(tenantId).withName("Report 2 [GH-90000]").withFormat("PDF [GH-90000]")
             );
 
-            when(repository.findAllByTenant(tenantId)).thenReturn(Promise.of(reports));
+            when(repository.findAllByTenant(tenantId)).thenReturn(Promise.of(reports)); // GH-90000
 
             // When
-            List<Report> result = runPromise(() -> service.listReports(tenantId));
+            List<Report> result = runPromise(() -> service.listReports(tenantId)); // GH-90000
 
             // Then
-            assertThat(result).hasSize(2);
-            verify(metrics).increment("report.list.count", 2, Map.of("tenant", tenantId));
+            assertThat(result).hasSize(2); // GH-90000
+            verify(metrics).increment("report.list.count", 2, Map.of("tenant", tenantId)); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Update Report")
+    @DisplayName("Update Report [GH-90000]")
     class UpdateReportTests {
 
         @Test
-        @DisplayName("[TEST-008]: updateReport_successfully_updates")
-        void updateReportSuccessfully() {
+        @DisplayName("[TEST-008]: updateReport_successfully_updates [GH-90000]")
+        void updateReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
-            Map<String, String> updates = Map.of("name", "Updated Name");
+            Map<String, String> updates = Map.of("name", "Updated Name"); // GH-90000
 
-            Report existing = new Report()
-                .withId(reportId)
-                .withTenantId(tenantId)
-                .withName("Original Name")
-                .withFormat("CSV")
-                .withStatus("COMPLETED")
-                .withCreatedAt(System.currentTimeMillis())
-                .withCreatedBy("system");
+            Report existing = new Report() // GH-90000
+                .withId(reportId) // GH-90000
+                .withTenantId(tenantId) // GH-90000
+                .withName("Original Name [GH-90000]")
+                .withFormat("CSV [GH-90000]")
+                .withStatus("COMPLETED [GH-90000]")
+                .withCreatedAt(System.currentTimeMillis()) // GH-90000
+                .withCreatedBy("system [GH-90000]");
 
-            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(existing));
-            when(repository.save(any(Report.class))).thenAnswer(invocation ->
-                Promise.of(invocation.getArgument(0)));
+            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(existing)); // GH-90000
+            when(repository.save(any(Report.class))).thenAnswer(invocation -> // GH-90000
+                Promise.of(invocation.getArgument(0))); // GH-90000
 
             // When
-            Report result = runPromise(() -> service.updateReport(tenantId, reportId, updates));
+            Report result = runPromise(() -> service.updateReport(tenantId, reportId, updates)); // GH-90000
 
             // Then
-            assertThat(result.getName()).isEqualTo("Updated Name");
-            assertThat(result.getFormat()).isEqualTo("CSV");
-            verify(metrics).incrementCounter("report.update.success", "tenant", tenantId);
+            assertThat(result.getName()).isEqualTo("Updated Name [GH-90000]");
+            assertThat(result.getFormat()).isEqualTo("CSV [GH-90000]");
+            verify(metrics).incrementCounter("report.update.success", "tenant", tenantId); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-008]: updateReport_throws_when_not_found")
-        void updateReportNotFound() {
+        @DisplayName("[TEST-008]: updateReport_throws_when_not_found [GH-90000]")
+        void updateReportNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
-            Map<String, String> updates = Map.of("name", "Updated");
+            Map<String, String> updates = Map.of("name", "Updated"); // GH-90000
 
-            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(null));
+            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(null)); // GH-90000
 
             // When
-            clearFatalError();
+            clearFatalError(); // GH-90000
             try {
-                runPromise(() -> service.updateReport(tenantId, reportId, updates));
-            } catch (Exception e) {
+                runPromise(() -> service.updateReport(tenantId, reportId, updates)); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Expected
             }
 
             // Then
-            verify(metrics).incrementCounter("report.update.error", "tenant", tenantId, "error", "IllegalArgumentException");
+            verify(metrics).incrementCounter("report.update.error", "tenant", tenantId, "error", "IllegalArgumentException"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Delete Report")
+    @DisplayName("Delete Report [GH-90000]")
     class DeleteReportTests {
 
         @Test
-        @DisplayName("[TEST-009]: deleteReport_successfully_deletes")
-        void deleteReportSuccessfully() {
+        @DisplayName("[TEST-009]: deleteReport_successfully_deletes [GH-90000]")
+        void deleteReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
 
-            when(repository.delete(tenantId, reportId)).thenReturn(Promise.of(null));
+            when(repository.delete(tenantId, reportId)).thenReturn(Promise.of(null)); // GH-90000
 
             // When
-            runPromise(() -> service.deleteReport(tenantId, reportId));
+            runPromise(() -> service.deleteReport(tenantId, reportId)); // GH-90000
 
             // Then
-            verify(repository).delete(tenantId, reportId);
-            verify(metrics).incrementCounter("report.delete.success", "tenant", tenantId);
+            verify(repository).delete(tenantId, reportId); // GH-90000
+            verify(metrics).incrementCounter("report.delete.success", "tenant", tenantId); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Download Report")
+    @DisplayName("Download Report [GH-90000]")
     class DownloadReportTests {
 
         @Test
-        @DisplayName("[TEST-010]: downloadReport_returns_binary_data")
-        void downloadReportSuccessfully() {
+        @DisplayName("[TEST-010]: downloadReport_returns_binary_data [GH-90000]")
+        void downloadReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
             String format = "csv";
 
-            Report report = new Report()
-                .withId(reportId)
-                .withTenantId(tenantId)
-                .withName("Sales Report")
-                .withFormat(format);
+            Report report = new Report() // GH-90000
+                .withId(reportId) // GH-90000
+                .withTenantId(tenantId) // GH-90000
+                .withName("Sales Report [GH-90000]")
+                .withFormat(format); // GH-90000
 
-            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report));
+            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report)); // GH-90000
 
             // When
-            byte[] result = runPromise(() -> service.downloadReport(tenantId, reportId, format));
+            byte[] result = runPromise(() -> service.downloadReport(tenantId, reportId, format)); // GH-90000
 
             // Then
-            assertThat(result).isNotEmpty();
-            verify(metrics).incrementCounter("report.download.success", "tenant", tenantId, "format", "csv");
+            assertThat(result).isNotEmpty(); // GH-90000
+            verify(metrics).incrementCounter("report.download.success", "tenant", tenantId, "format", "csv"); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-010]: downloadReport_throws_when_not_found")
-        void downloadReportNotFound() {
+        @DisplayName("[TEST-010]: downloadReport_throws_when_not_found [GH-90000]")
+        void downloadReportNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
             String format = "csv";
 
-            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(null));
+            when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(null)); // GH-90000
 
             // When
-            clearFatalError();
+            clearFatalError(); // GH-90000
             try {
-                runPromise(() -> service.downloadReport(tenantId, reportId, format));
-            } catch (Exception e) {
+                runPromise(() -> service.downloadReport(tenantId, reportId, format)); // GH-90000
+            } catch (Exception e) { // GH-90000
                 // Expected
             }
 
             // Then
-            verify(metrics).incrementCounter("report.download.error", "tenant", tenantId, "error", "IllegalArgumentException");
+            verify(metrics).incrementCounter("report.download.error", "tenant", tenantId, "error", "IllegalArgumentException"); // GH-90000
         }
     }
 }

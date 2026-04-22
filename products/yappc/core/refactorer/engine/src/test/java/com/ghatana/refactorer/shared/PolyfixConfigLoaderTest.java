@@ -46,91 +46,91 @@ class PolyfixConfigLoaderTest {
     private static final String PRETTIER = "prettier";
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() throws IOException { // GH-90000
         // Copy test config to temp directory
-        configFile = tempDir.resolve("polyfix.json");
-        Files.copy(getClass().getResourceAsStream("/test-configs/valid-config.json"), configFile);
+        configFile = tempDir.resolve("polyfix.json [GH-90000]");
+        Files.copy(getClass().getResourceAsStream("/test-configs/valid-config.json [GH-90000]"), configFile);
     }
 
     @Test
-    void load_shouldLoadValidConfig() throws Exception {
+    void load_shouldLoadValidConfig() throws Exception { // GH-90000
         // When
-        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, null);
+        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, null); // GH-90000
 
         // Then
-        assertNotNull(config);
-        assertIterableEquals(List.of(JAVA, "typescript", "python"), config.languages());
-        assertIterableEquals(List.of(SCHEMAS, "custom-schemas"), config.schemaPaths());
-        assertEquals(5, config.budgets().maxPasses());
-        assertEquals(10, config.budgets().maxEditsPerFile());
-        assertFalse(config.policies().tsAllowTemporaryAny());
-        assertTrue(config.policies().pythonAddMissingImports());
-        assertTrue(config.policies().bashEnforceStrictMode());
-        assertFalse(config.policies().jsonAutofillRequiredDefaults());
-        assertEquals("/usr/local/bin/node", config.tools().node());
-        assertEquals(ESLINT, config.tools().eslint());
-        assertEquals(TSC, config.tools().tsc());
-        assertEquals(PRETTIER, config.tools().prettier());
-        assertEquals(RUFF, config.tools().ruff());
-        assertEquals(BLACK, config.tools().black());
-        assertEquals(MYPY, config.tools().mypy());
-        assertEquals(SHELLCHECK, config.tools().shellcheck());
-        assertEquals(SHFMT, config.tools().shfmt());
-        assertEquals(CARGO, config.tools().cargo());
-        assertEquals(RUSTFMT, config.tools().rustfmt());
-        assertEquals(SEMGREP, config.tools().semgrep());
+        assertNotNull(config); // GH-90000
+        assertIterableEquals(List.of(JAVA, "typescript", "python"), config.languages()); // GH-90000
+        assertIterableEquals(List.of(SCHEMAS, "custom-schemas"), config.schemaPaths()); // GH-90000
+        assertEquals(5, config.budgets().maxPasses()); // GH-90000
+        assertEquals(10, config.budgets().maxEditsPerFile()); // GH-90000
+        assertFalse(config.policies().tsAllowTemporaryAny()); // GH-90000
+        assertTrue(config.policies().pythonAddMissingImports()); // GH-90000
+        assertTrue(config.policies().bashEnforceStrictMode()); // GH-90000
+        assertFalse(config.policies().jsonAutofillRequiredDefaults()); // GH-90000
+        assertEquals("/usr/local/bin/node", config.tools().node()); // GH-90000
+        assertEquals(ESLINT, config.tools().eslint()); // GH-90000
+        assertEquals(TSC, config.tools().tsc()); // GH-90000
+        assertEquals(PRETTIER, config.tools().prettier()); // GH-90000
+        assertEquals(RUFF, config.tools().ruff()); // GH-90000
+        assertEquals(BLACK, config.tools().black()); // GH-90000
+        assertEquals(MYPY, config.tools().mypy()); // GH-90000
+        assertEquals(SHELLCHECK, config.tools().shellcheck()); // GH-90000
+        assertEquals(SHFMT, config.tools().shfmt()); // GH-90000
+        assertEquals(CARGO, config.tools().cargo()); // GH-90000
+        assertEquals(RUSTFMT, config.tools().rustfmt()); // GH-90000
+        assertEquals(SEMGREP, config.tools().semgrep()); // GH-90000
     }
 
     @Test
-    void load_shouldUseDefaultsWhenNoConfigFile() throws Exception {
+    void load_shouldUseDefaultsWhenNoConfigFile() throws Exception { // GH-90000
         // Given
-        Files.deleteIfExists(configFile);
+        Files.deleteIfExists(configFile); // GH-90000
 
         // When
-        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, null);
+        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, null); // GH-90000
 
         // Then
-        assertNotNull(config);
-        assertFalse(config.languages().isEmpty());
-        assertTrue(config.budgets().maxPasses() > 0);
+        assertNotNull(config); // GH-90000
+        assertFalse(config.languages().isEmpty()); // GH-90000
+        assertTrue(config.budgets().maxPasses() > 0); // GH-90000
     }
 
     @Test
-    void load_shouldApplyOverrides() throws Exception {
+    void load_shouldApplyOverrides() throws Exception { // GH-90000
         // Given
         Map<String, String> overrides =
-                Map.of(
+                Map.of( // GH-90000
                         "budgets.maxPasses", "10",
                         "policies.tsAllowTemporaryAny", "false",
                         "tools.node", "/custom/path/to/node");
 
         // When
-        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, overrides);
+        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, overrides); // GH-90000
 
         // Then
-        assertEquals(10, config.budgets().maxPasses());
-        assertFalse(config.policies().tsAllowTemporaryAny());
-        assertEquals("/custom/path/to/node", config.tools().node());
+        assertEquals(10, config.budgets().maxPasses()); // GH-90000
+        assertFalse(config.policies().tsAllowTemporaryAny()); // GH-90000
+        assertEquals("/custom/path/to/node", config.tools().node()); // GH-90000
     }
 
     @Test
-    void load_shouldThrowOnInvalidConfig() throws Exception {
+    void load_shouldThrowOnInvalidConfig() throws Exception { // GH-90000
         // Given
-        Files.writeString(configFile, "{ \"invalid\": \"config\" }");
+        Files.writeString(configFile, "{ \"invalid\": \"config\" }"); // GH-90000
 
         // When / Then
         Exception exception =
-                assertThrows(IOException.class, () -> PolyfixConfigLoader.load(tempDir, null));
-        assertNotNull(exception);
-        assertTrue(
-                exception.getMessage().contains("Invalid configuration format")
-                        || exception.getCause()
+                assertThrows(IOException.class, () -> PolyfixConfigLoader.load(tempDir, null)); // GH-90000
+        assertNotNull(exception); // GH-90000
+        assertTrue( // GH-90000
+                exception.getMessage().contains("Invalid configuration format [GH-90000]")
+                        || exception.getCause() // GH-90000
                                 instanceof
                                 com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException);
     }
 
     @Test
-    void load_shouldValidateLanguageSupport() throws Exception {
+    void load_shouldValidateLanguageSupport() throws Exception { // GH-90000
         // Given
         String invalidConfig =
                 "{ \"languages\": [\"unsupported-lang\"], \"budgets\": {\"maxPasses\": 1,"
@@ -142,50 +142,50 @@ class PolyfixConfigLoaderTest {
                         + "\"mypy\":\"mypy\",\"shellcheck\":\"shellcheck\",\"shfmt\":\"shfmt\","
                         + "\"cargo\":\"cargo\",\"rustfmt\":\"rustfmt\",\"semgrep\":\"semgrep\"}}";
 
-        Files.writeString(configFile, invalidConfig);
+        Files.writeString(configFile, invalidConfig); // GH-90000
 
         // When / Then
         Exception exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.load(tempDir, null));
-        assertNotNull(exception);
-        assertTrue(exception.getMessage().contains("Unsupported language"));
+                        () -> PolyfixConfigLoader.load(tempDir, null)); // GH-90000
+        assertNotNull(exception); // GH-90000
+        assertTrue(exception.getMessage().contains("Unsupported language [GH-90000]"));
     }
 
     @Test
-    void load_shouldHandleInvalidJson() throws Exception {
+    void load_shouldHandleInvalidJson() throws Exception { // GH-90000
         // Given
-        Files.writeString(configFile, "{ invalid json }");
+        Files.writeString(configFile, "{ invalid json }"); // GH-90000
 
         // When / Then
-        assertThrows(IOException.class, () -> PolyfixConfigLoader.load(tempDir, null));
+        assertThrows(IOException.class, () -> PolyfixConfigLoader.load(tempDir, null)); // GH-90000
     }
 
     @Test
-    void load_shouldHandleMissingConfigFile() throws Exception {
+    void load_shouldHandleMissingConfigFile() throws Exception { // GH-90000
         // Given
-        Files.deleteIfExists(configFile);
+        Files.deleteIfExists(configFile); // GH-90000
 
         // When
-        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, null);
+        PolyfixConfig config = PolyfixConfigLoader.load(tempDir, null); // GH-90000
 
         // Then - should use defaults
-        assertNotNull(config);
-        assertFalse(config.languages().isEmpty());
-        assertTrue(config.budgets().maxPasses() > 0);
+        assertNotNull(config); // GH-90000
+        assertFalse(config.languages().isEmpty()); // GH-90000
+        assertTrue(config.budgets().maxPasses() > 0); // GH-90000
     }
 
     @Test
-    void validateConfig_shouldThrowOnNullLanguages() {
+    void validateConfig_shouldThrowOnNullLanguages() { // GH-90000
         // Given
         PolyfixConfig config =
-                new PolyfixConfig(
+                new PolyfixConfig( // GH-90000
                         null, // languages is null
-                        List.of(SCHEMAS),
-                        new PolyfixConfig.Budgets(1, 1),
-                        new PolyfixConfig.Policies(true, true, true, false),
-                        new PolyfixConfig.Tools(
+                        List.of(SCHEMAS), // GH-90000
+                        new PolyfixConfig.Budgets(1, 1), // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 NODE,
                                 ESLINT,
                                 TSC,
@@ -201,22 +201,22 @@ class PolyfixConfigLoaderTest {
 
         // When / Then
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.validateConfig(config));
-        assertTrue(exception.getMessage().contains("languages cannot be null"));
+                        () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
+        assertTrue(exception.getMessage().contains("languages cannot be null [GH-90000]"));
     }
 
     @Test
-    void validateConfig_shouldThrowOnNullBudgets() {
+    void validateConfig_shouldThrowOnNullBudgets() { // GH-90000
         // Given
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of(JAVA),
-                        List.of(SCHEMAS),
+                new PolyfixConfig( // GH-90000
+                        List.of(JAVA), // GH-90000
+                        List.of(SCHEMAS), // GH-90000
                         null, // budgets is null
-                        new PolyfixConfig.Policies(true, true, true, false),
-                        new PolyfixConfig.Tools(
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 NODE,
                                 ESLINT,
                                 TSC,
@@ -232,22 +232,22 @@ class PolyfixConfigLoaderTest {
 
         // When / Then
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.validateConfig(config));
-        assertTrue(exception.getMessage().contains("budgets cannot be null"));
+                        () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
+        assertTrue(exception.getMessage().contains("budgets cannot be null [GH-90000]"));
     }
 
     @Test
-    void validateConfig_shouldThrowOnNullPolicies() {
+    void validateConfig_shouldThrowOnNullPolicies() { // GH-90000
         // Given
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of(JAVA),
-                        List.of(SCHEMAS),
-                        new PolyfixConfig.Budgets(1, 1),
+                new PolyfixConfig( // GH-90000
+                        List.of(JAVA), // GH-90000
+                        List.of(SCHEMAS), // GH-90000
+                        new PolyfixConfig.Budgets(1, 1), // GH-90000
                         null, // policies is null
-                        new PolyfixConfig.Tools(
+                        new PolyfixConfig.Tools( // GH-90000
                                 NODE,
                                 ESLINT,
                                 TSC,
@@ -263,42 +263,42 @@ class PolyfixConfigLoaderTest {
 
         // When / Then
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.validateConfig(config));
-        assertTrue(exception.getMessage().contains("policies cannot be null"));
+                        () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
+        assertTrue(exception.getMessage().contains("policies cannot be null [GH-90000]"));
     }
 
     @Test
-    void validateConfig_shouldThrowOnNullTools() {
+    void validateConfig_shouldThrowOnNullTools() { // GH-90000
         // Given
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of(JAVA),
-                        List.of(SCHEMAS),
-                        new PolyfixConfig.Budgets(1, 1),
-                        new PolyfixConfig.Policies(true, true, true, false),
+                new PolyfixConfig( // GH-90000
+                        List.of(JAVA), // GH-90000
+                        List.of(SCHEMAS), // GH-90000
+                        new PolyfixConfig.Budgets(1, 1), // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
                         null // tools is null
                         );
 
         // When / Then
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.validateConfig(config));
-        assertTrue(exception.getMessage().contains("tools cannot be null"));
+                        () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
+        assertTrue(exception.getMessage().contains("tools cannot be null [GH-90000]"));
     }
 
     @Test
-    void validateConfig_shouldThrowOnInvalidMaxPasses() {
+    void validateConfig_shouldThrowOnInvalidMaxPasses() { // GH-90000
         // Given
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of(JAVA),
-                        List.of(SCHEMAS),
-                        new PolyfixConfig.Budgets(0, 1), // maxPasses < 1
-                        new PolyfixConfig.Policies(true, true, true, false),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of(JAVA), // GH-90000
+                        List.of(SCHEMAS), // GH-90000
+                        new PolyfixConfig.Budgets(0, 1), // maxPasses < 1 // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 NODE,
                                 ESLINT,
                                 TSC,
@@ -314,22 +314,22 @@ class PolyfixConfigLoaderTest {
 
         // When / Then
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.validateConfig(config));
-        assertTrue(exception.getMessage().contains("maxPasses must be at least 1"));
+                        () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
+        assertTrue(exception.getMessage().contains("maxPasses must be at least 1 [GH-90000]"));
     }
 
     @Test
-    void validateConfig_shouldThrowOnInvalidMaxEditsPerFile() {
+    void validateConfig_shouldThrowOnInvalidMaxEditsPerFile() { // GH-90000
         // Given
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of(JAVA),
-                        List.of(SCHEMAS),
-                        new PolyfixConfig.Budgets(1, -1), // maxEditsPerFile < 0
-                        new PolyfixConfig.Policies(true, true, true, false),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of(JAVA), // GH-90000
+                        List.of(SCHEMAS), // GH-90000
+                        new PolyfixConfig.Budgets(1, -1), // maxEditsPerFile < 0 // GH-90000
+                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 NODE,
                                 ESLINT,
                                 TSC,
@@ -345,9 +345,9 @@ class PolyfixConfigLoaderTest {
 
         // When / Then
         IllegalArgumentException exception =
-                assertThrows(
+                assertThrows( // GH-90000
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.validateConfig(config));
-        assertTrue(exception.getMessage().contains("maxEditsPerFile cannot be negative"));
+                        () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
+        assertTrue(exception.getMessage().contains("maxEditsPerFile cannot be negative [GH-90000]"));
     }
 }

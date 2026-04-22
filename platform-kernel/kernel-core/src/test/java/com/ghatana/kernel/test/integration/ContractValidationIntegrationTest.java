@@ -22,59 +22,59 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("Contract Validation Integration Tests")
+@DisplayName("Contract Validation Integration Tests [GH-90000]")
 class ContractValidationIntegrationTest {
 
     private ContractValidationGate validationGate;
 
     @BeforeEach
-    void setUp() {
-        validationGate = new ContractValidationGate();
+    void setUp() { // GH-90000
+        validationGate = new ContractValidationGate(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate API contract successfully")
-    void testValidateAPIContract() {
+    @DisplayName("Should validate API contract successfully [GH-90000]")
+    void testValidateAPIContract() { // GH-90000
         // Use concrete ApiContract type
-        ApiContract contract = ApiContract.builder("api.user.login", "User Login API", "1.0.0")
-            .metadata(Map.of(
+        ApiContract contract = ApiContract.builder("api.user.login", "User Login API", "1.0.0") // GH-90000
+            .metadata(Map.of( // GH-90000
                 "http_methods", "POST",
                 "path", "/api/v1/login",
                 "authentication", "oauth2"
             ))
-            .build();
+            .build(); // GH-90000
 
         // Just validate that the contract is created properly
-        assertNotNull(contract);
-        assertEquals("api.user.login", contract.getContractId());
-        assertEquals(KernelContract.ContractFamily.API, contract.getFamily());
+        assertNotNull(contract); // GH-90000
+        assertEquals("api.user.login", contract.getContractId()); // GH-90000
+        assertEquals(KernelContract.ContractFamily.API, contract.getFamily()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate Autonomy contract successfully")
-    void testValidateAutonomyContract() {
-        AutonomyContract contract = AutonomyContract.builder("autonomy.fraud.detection", "Fraud Detection Agent", "1.0.0")
-            .metadata(Map.of(
+    @DisplayName("Should validate Autonomy contract successfully [GH-90000]")
+    void testValidateAutonomyContract() { // GH-90000
+        AutonomyContract contract = AutonomyContract.builder("autonomy.fraud.detection", "Fraud Detection Agent", "1.0.0") // GH-90000
+            .metadata(Map.of( // GH-90000
                 "agent_type", "fraud_detection",
                 "autonomy_level", "MEDIUM"
             ))
-            .build();
+            .build(); // GH-90000
 
-        assertNotNull(contract);
-        assertEquals("autonomy.fraud.detection", contract.getContractId());
-        assertEquals(KernelContract.ContractFamily.AUTONOMY, contract.getFamily());
+        assertNotNull(contract); // GH-90000
+        assertEquals("autonomy.fraud.detection", contract.getContractId()); // GH-90000
+        assertEquals(KernelContract.ContractFamily.AUTONOMY, contract.getFamily()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should test AutonomousContractValidator")
-    void testAutonomousContractValidator() {
-        AutonomyContract contract = AutonomyContract.builder("autonomy.test", "Test Autonomy", "1.0.0")
-            .metadata(Map.of())
-            .build();
+    @DisplayName("Should test AutonomousContractValidator [GH-90000]")
+    void testAutonomousContractValidator() { // GH-90000
+        AutonomyContract contract = AutonomyContract.builder("autonomy.test", "Test Autonomy", "1.0.0") // GH-90000
+            .metadata(Map.of()) // GH-90000
+            .build(); // GH-90000
 
-        AutonomousContractValidator validator = new AutonomousContractValidator();
-        ContractValidator.ValidationResult result = validator.validate(contract);
+        AutonomousContractValidator validator = new AutonomousContractValidator(); // GH-90000
+        ContractValidator.ValidationResult result = validator.validate(contract); // GH-90000
 
-        assertTrue(result.valid());
+        assertTrue(result.valid()); // GH-90000
     }
 }

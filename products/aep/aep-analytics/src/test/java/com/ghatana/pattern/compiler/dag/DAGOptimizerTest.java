@@ -14,68 +14,68 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("DAGOptimizer Tests")
+@DisplayName("DAGOptimizer Tests [GH-90000]")
 class DAGOptimizerTest {
 
     @Test
-    @DisplayName("optimize prunes nodes unreachable from root")
-    void optimizePrunesNodesUnreachableFromRoot() throws PatternValidationException {
-        DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry());
-        OperatorDAG dag = OperatorDAG.builder()
-                .nodes(new ArrayList<>(List.of(
-                        node("root", "SEQ"),
-                        node("child", "FILTER"),
-                        node("orphan", "SELECT"))))
-                .edges(new ArrayList<>(List.of(
-                        edge("root", "child"))))
-                .rootNodeId("root")
-                .metadata(Map.of())
-                .build();
+    @DisplayName("optimize prunes nodes unreachable from root [GH-90000]")
+    void optimizePrunesNodesUnreachableFromRoot() throws PatternValidationException { // GH-90000
+        DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry()); // GH-90000
+        OperatorDAG dag = OperatorDAG.builder() // GH-90000
+                .nodes(new ArrayList<>(List.of( // GH-90000
+                        node("root", "SEQ"), // GH-90000
+                        node("child", "FILTER"), // GH-90000
+                        node("orphan", "SELECT")))) // GH-90000
+                .edges(new ArrayList<>(List.of( // GH-90000
+                        edge("root", "child")))) // GH-90000
+                .rootNodeId("root [GH-90000]")
+                .metadata(Map.of()) // GH-90000
+                .build(); // GH-90000
 
-        optimizer.optimize(dag);
+        optimizer.optimize(dag); // GH-90000
 
-        assertEquals(2, dag.getNodes().size());
-        assertEquals(1, dag.getEdges().size());
-        assertTrue(dag.getNodes().stream().noneMatch(node -> "orphan".equals(node.getId())));
+        assertEquals(2, dag.getNodes().size()); // GH-90000
+        assertEquals(1, dag.getEdges().size()); // GH-90000
+        assertTrue(dag.getNodes().stream().noneMatch(node -> "orphan".equals(node.getId()))); // GH-90000
     }
 
     @Test
-    @DisplayName("optimize tolerates empty graph structures")
-    void optimizeToleratesEmptyGraphStructures() throws PatternValidationException {
-        DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry());
-        OperatorDAG dag = OperatorDAG.builder()
-                .nodes(new ArrayList<>())
-                .edges(new ArrayList<>())
-                .rootNodeId(null)
-                .metadata(Map.of())
-                .build();
+    @DisplayName("optimize tolerates empty graph structures [GH-90000]")
+    void optimizeToleratesEmptyGraphStructures() throws PatternValidationException { // GH-90000
+        DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry()); // GH-90000
+        OperatorDAG dag = OperatorDAG.builder() // GH-90000
+                .nodes(new ArrayList<>()) // GH-90000
+                .edges(new ArrayList<>()) // GH-90000
+                .rootNodeId(null) // GH-90000
+                .metadata(Map.of()) // GH-90000
+                .build(); // GH-90000
 
-        optimizer.optimize(dag);
+        optimizer.optimize(dag); // GH-90000
 
-        assertEquals(0, dag.getNodes().size());
-        assertEquals(0, dag.getEdges().size());
+        assertEquals(0, dag.getNodes().size()); // GH-90000
+        assertEquals(0, dag.getEdges().size()); // GH-90000
     }
 
     @Test
-    @DisplayName("optimize rejects null DAG")
-    void optimizeRejectsNullDag() {
-        DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry());
+    @DisplayName("optimize rejects null DAG [GH-90000]")
+    void optimizeRejectsNullDag() { // GH-90000
+        DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry()); // GH-90000
 
-        PatternValidationException exception = assertThrows(PatternValidationException.class,
-                () -> optimizer.optimize(null));
+        PatternValidationException exception = assertThrows(PatternValidationException.class, // GH-90000
+                () -> optimizer.optimize(null)); // GH-90000
 
-        assertTrue(exception.getMessage().contains("DAG cannot be null"));
+        assertTrue(exception.getMessage().contains("DAG cannot be null [GH-90000]"));
     }
 
-    private static OperatorDAG.OperatorNode node(String id, String type) {
-        return OperatorDAG.OperatorNode.builder().id(id).type(type).metadata(Map.of()).build();
+    private static OperatorDAG.OperatorNode node(String id, String type) { // GH-90000
+        return OperatorDAG.OperatorNode.builder().id(id).type(type).metadata(Map.of()).build(); // GH-90000
     }
 
-    private static OperatorDAG.OperatorEdge edge(String from, String to) {
-        return OperatorDAG.OperatorEdge.builder()
-                .fromNodeId(from)
-                .toNodeId(to)
-                .metadata(Map.of())
-                .build();
+    private static OperatorDAG.OperatorEdge edge(String from, String to) { // GH-90000
+        return OperatorDAG.OperatorEdge.builder() // GH-90000
+                .fromNodeId(from) // GH-90000
+                .toNodeId(to) // GH-90000
+                .metadata(Map.of()) // GH-90000
+                .build(); // GH-90000
     }
 }

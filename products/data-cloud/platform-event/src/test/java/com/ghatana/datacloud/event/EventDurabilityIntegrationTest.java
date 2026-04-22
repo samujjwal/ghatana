@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.event;
@@ -20,7 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Integration tests for event durability CDC capture end-to-end (D006).
+ * Integration tests for event durability CDC capture end-to-end (D006). // GH-90000
  *
  * <p>Validates durability guarantees, checkpoint management, and CDC consistency.
  *
@@ -29,9 +29,9 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Integration Test
  */
-@ExtendWith(MockitoExtension.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@DisplayName("EventDurability – CDC Capture End-to-End (D006)")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@TestInstance(TestInstance.Lifecycle.PER_CLASS) // GH-90000
+@DisplayName("EventDurability – CDC Capture End-to-End (D006) [GH-90000]")
 class EventDurabilityIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -45,83 +45,83 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: write_with_leader_ack_achieves_durability")
-    void writeWithLeaderAckAchievesDurability() {
-        EventDurabilityService.Event event = new EventDurabilityService.Event(
+    @DisplayName("[D006]: write_with_leader_ack_achieves_durability [GH-90000]")
+    void writeWithLeaderAckAchievesDurability() { // GH-90000
+        EventDurabilityService.Event event = new EventDurabilityService.Event( // GH-90000
             "evt-001", "test.event", "tenant-alpha",
-            "{\"data\":\"test\"}".getBytes(), System.currentTimeMillis()
+            "{\"data\":\"test\"}".getBytes(), System.currentTimeMillis() // GH-90000
         );
 
         EventDurabilityService.DurabilityResult result =
-            new EventDurabilityService.DurabilityResult(
+            new EventDurabilityService.DurabilityResult( // GH-90000
                 "evt-001", 1,
                 EventDurabilityService.DurabilityLevel.LEADER_ACK,
                 10, 0, true
             );
 
-        when(durabilityService.writeWithDurability(any(), eq(EventDurabilityService.DurabilityLevel.LEADER_ACK)))
-            .thenReturn(Promise.of(result));
+        when(durabilityService.writeWithDurability(any(), eq(EventDurabilityService.DurabilityLevel.LEADER_ACK))) // GH-90000
+            .thenReturn(Promise.of(result)); // GH-90000
 
-        EventDurabilityService.DurabilityResult actual = runPromise(() ->
-            durabilityService.writeWithDurability(event, EventDurabilityService.DurabilityLevel.LEADER_ACK)
+        EventDurabilityService.DurabilityResult actual = runPromise(() -> // GH-90000
+            durabilityService.writeWithDurability(event, EventDurabilityService.DurabilityLevel.LEADER_ACK) // GH-90000
         );
 
-        assertThat(actual.successful()).isTrue();
-        assertThat(actual.achievedLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.LEADER_ACK);
+        assertThat(actual.successful()).isTrue(); // GH-90000
+        assertThat(actual.achievedLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.LEADER_ACK); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: write_with_majority_ack_replicates_to_quorum")
-    void writeWithMajorityAckReplicatesToQuorum() {
-        EventDurabilityService.Event event = new EventDurabilityService.Event(
+    @DisplayName("[D006]: write_with_majority_ack_replicates_to_quorum [GH-90000]")
+    void writeWithMajorityAckReplicatesToQuorum() { // GH-90000
+        EventDurabilityService.Event event = new EventDurabilityService.Event( // GH-90000
             "evt-002", "test.event", "tenant-alpha",
-            "{\"data\":\"test\"}".getBytes(), System.currentTimeMillis()
+            "{\"data\":\"test\"}".getBytes(), System.currentTimeMillis() // GH-90000
         );
 
         EventDurabilityService.DurabilityResult result =
-            new EventDurabilityService.DurabilityResult(
+            new EventDurabilityService.DurabilityResult( // GH-90000
                 "evt-002", 2,
                 EventDurabilityService.DurabilityLevel.MAJORITY_ACK,
                 15, 25, true
             );
 
-        when(durabilityService.writeWithDurability(any(), eq(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)))
-            .thenReturn(Promise.of(result));
+        when(durabilityService.writeWithDurability(any(), eq(EventDurabilityService.DurabilityLevel.MAJORITY_ACK))) // GH-90000
+            .thenReturn(Promise.of(result)); // GH-90000
 
-        EventDurabilityService.DurabilityResult actual = runPromise(() ->
-            durabilityService.writeWithDurability(event, EventDurabilityService.DurabilityLevel.MAJORITY_ACK)
+        EventDurabilityService.DurabilityResult actual = runPromise(() -> // GH-90000
+            durabilityService.writeWithDurability(event, EventDurabilityService.DurabilityLevel.MAJORITY_ACK) // GH-90000
         );
 
-        assertThat(actual.successful()).isTrue();
-        assertThat(actual.achievedLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK);
-        assertThat(actual.replicationLatencyMs()).isGreaterThan(0);
+        assertThat(actual.successful()).isTrue(); // GH-90000
+        assertThat(actual.achievedLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK); // GH-90000
+        assertThat(actual.replicationLatencyMs()).isGreaterThan(0); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: write_with_fsync_ack_persists_to_disk")
-    void writeWithFsyncAckPersistsToDisk() {
-        EventDurabilityService.Event event = new EventDurabilityService.Event(
+    @DisplayName("[D006]: write_with_fsync_ack_persists_to_disk [GH-90000]")
+    void writeWithFsyncAckPersistsToDisk() { // GH-90000
+        EventDurabilityService.Event event = new EventDurabilityService.Event( // GH-90000
             "evt-003", "test.event", "tenant-alpha",
-            "{\"data\":\"test\"}".getBytes(), System.currentTimeMillis()
+            "{\"data\":\"test\"}".getBytes(), System.currentTimeMillis() // GH-90000
         );
 
         EventDurabilityService.DurabilityResult result =
-            new EventDurabilityService.DurabilityResult(
+            new EventDurabilityService.DurabilityResult( // GH-90000
                 "evt-003", 3,
                 EventDurabilityService.DurabilityLevel.FSYNC_ACK,
                 50, 30, true
             );
 
-        when(durabilityService.writeWithDurability(any(), eq(EventDurabilityService.DurabilityLevel.FSYNC_ACK)))
-            .thenReturn(Promise.of(result));
+        when(durabilityService.writeWithDurability(any(), eq(EventDurabilityService.DurabilityLevel.FSYNC_ACK))) // GH-90000
+            .thenReturn(Promise.of(result)); // GH-90000
 
-        EventDurabilityService.DurabilityResult actual = runPromise(() ->
-            durabilityService.writeWithDurability(event, EventDurabilityService.DurabilityLevel.FSYNC_ACK)
+        EventDurabilityService.DurabilityResult actual = runPromise(() -> // GH-90000
+            durabilityService.writeWithDurability(event, EventDurabilityService.DurabilityLevel.FSYNC_ACK) // GH-90000
         );
 
-        assertThat(actual.successful()).isTrue();
-        assertThat(actual.achievedLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.FSYNC_ACK);
-        assertThat(actual.fsyncLatencyMs()).isGreaterThan(0);
+        assertThat(actual.successful()).isTrue(); // GH-90000
+        assertThat(actual.achievedLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.FSYNC_ACK); // GH-90000
+        assertThat(actual.fsyncLatencyMs()).isGreaterThan(0); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -129,57 +129,57 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: save_checkpoint_persists_offset")
-    void saveCheckpointPersistsOffset() {
+    @DisplayName("[D006]: save_checkpoint_persists_offset [GH-90000]")
+    void saveCheckpointPersistsOffset() { // GH-90000
         String consumerId = "consumer-001";
         int partition = 0;
         long offset = 100;
 
-        when(checkpointRepository.saveCheckpoint(consumerId, partition, offset))
-            .thenReturn(Promise.of((Void) null));
+        when(checkpointRepository.saveCheckpoint(consumerId, partition, offset)) // GH-90000
+            .thenReturn(Promise.of((Void) null)); // GH-90000
 
-        runPromise(() -> checkpointRepository.saveCheckpoint(consumerId, partition, offset));
+        runPromise(() -> checkpointRepository.saveCheckpoint(consumerId, partition, offset)); // GH-90000
 
-        verify(checkpointRepository).saveCheckpoint(consumerId, partition, offset);
+        verify(checkpointRepository).saveCheckpoint(consumerId, partition, offset); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: get_checkpoint_returns_saved_offset")
-    void getCheckpointReturnsSavedOffset() {
+    @DisplayName("[D006]: get_checkpoint_returns_saved_offset [GH-90000]")
+    void getCheckpointReturnsSavedOffset() { // GH-90000
         String consumerId = "consumer-001";
         int partition = 0;
         long expectedOffset = 100;
 
-        when(checkpointRepository.getCheckpoint(consumerId, partition))
-            .thenReturn(Promise.of(java.util.Optional.of(expectedOffset)));
+        when(checkpointRepository.getCheckpoint(consumerId, partition)) // GH-90000
+            .thenReturn(Promise.of(java.util.Optional.of(expectedOffset))); // GH-90000
 
-        java.util.Optional<Long> actual = runPromise(() ->
-            checkpointRepository.getCheckpoint(consumerId, partition)
+        java.util.Optional<Long> actual = runPromise(() -> // GH-90000
+            checkpointRepository.getCheckpoint(consumerId, partition) // GH-90000
         );
 
-        assertThat(actual).isPresent();
-        assertThat(actual.get()).isEqualTo(expectedOffset);
+        assertThat(actual).isPresent(); // GH-90000
+        assertThat(actual.get()).isEqualTo(expectedOffset); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: get_all_checkpoints_returns_all_partitions")
-    void getAllCheckpointsReturnsAllPartitions() {
+    @DisplayName("[D006]: get_all_checkpoints_returns_all_partitions [GH-90000]")
+    void getAllCheckpointsReturnsAllPartitions() { // GH-90000
         String consumerId = "consumer-001";
-        List<EventCheckpointRepository.Checkpoint> checkpoints = List.of(
-            new EventCheckpointRepository.Checkpoint(consumerId, 0, 100, System.currentTimeMillis(), ""),
-            new EventCheckpointRepository.Checkpoint(consumerId, 1, 150, System.currentTimeMillis(), ""),
-            new EventCheckpointRepository.Checkpoint(consumerId, 2, 200, System.currentTimeMillis(), "")
+        List<EventCheckpointRepository.Checkpoint> checkpoints = List.of( // GH-90000
+            new EventCheckpointRepository.Checkpoint(consumerId, 0, 100, System.currentTimeMillis(), ""), // GH-90000
+            new EventCheckpointRepository.Checkpoint(consumerId, 1, 150, System.currentTimeMillis(), ""), // GH-90000
+            new EventCheckpointRepository.Checkpoint(consumerId, 2, 200, System.currentTimeMillis(), "") // GH-90000
         );
 
-        when(checkpointRepository.getAllCheckpoints(consumerId))
-            .thenReturn(Promise.of(checkpoints));
+        when(checkpointRepository.getAllCheckpoints(consumerId)) // GH-90000
+            .thenReturn(Promise.of(checkpoints)); // GH-90000
 
-        List<EventCheckpointRepository.Checkpoint> actual = runPromise(() ->
-            checkpointRepository.getAllCheckpoints(consumerId)
+        List<EventCheckpointRepository.Checkpoint> actual = runPromise(() -> // GH-90000
+            checkpointRepository.getAllCheckpoints(consumerId) // GH-90000
         );
 
-        assertThat(actual).hasSize(3);
-        assertThat(actual).allMatch(c -> consumerId.equals(c.consumerId()));
+        assertThat(actual).hasSize(3); // GH-90000
+        assertThat(actual).allMatch(c -> consumerId.equals(c.consumerId())); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -187,45 +187,45 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: consumer_lag_calculated_correctly")
-    void consumerLagCalculatedCorrectly() {
+    @DisplayName("[D006]: consumer_lag_calculated_correctly [GH-90000]")
+    void consumerLagCalculatedCorrectly() { // GH-90000
         String consumerId = "consumer-001";
-        List<EventCheckpointRepository.PartitionLag> lags = List.of(
-            EventCheckpointRepository.PartitionLag.of(0, 1000, 800),
-            EventCheckpointRepository.PartitionLag.of(1, 1000, 950),
-            EventCheckpointRepository.PartitionLag.of(2, 1000, 1000)
+        List<EventCheckpointRepository.PartitionLag> lags = List.of( // GH-90000
+            EventCheckpointRepository.PartitionLag.of(0, 1000, 800), // GH-90000
+            EventCheckpointRepository.PartitionLag.of(1, 1000, 950), // GH-90000
+            EventCheckpointRepository.PartitionLag.of(2, 1000, 1000) // GH-90000
         );
 
-        when(checkpointRepository.getConsumerLag(consumerId))
-            .thenReturn(Promise.of(lags));
+        when(checkpointRepository.getConsumerLag(consumerId)) // GH-90000
+            .thenReturn(Promise.of(lags)); // GH-90000
 
-        List<EventCheckpointRepository.PartitionLag> actual = runPromise(() ->
-            checkpointRepository.getConsumerLag(consumerId)
+        List<EventCheckpointRepository.PartitionLag> actual = runPromise(() -> // GH-90000
+            checkpointRepository.getConsumerLag(consumerId) // GH-90000
         );
 
-        assertThat(actual.get(0).lag()).isEqualTo(200); // 1000 - 800
-        assertThat(actual.get(1).lag()).isEqualTo(50);  // 1000 - 950
-        assertThat(actual.get(2).lag()).isZero(); // 1000 - 1000
+        assertThat(actual.get(0).lag()).isEqualTo(200); // 1000 - 800 // GH-90000
+        assertThat(actual.get(1).lag()).isEqualTo(50);  // 1000 - 950 // GH-90000
+        assertThat(actual.get(2).lag()).isZero(); // 1000 - 1000 // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: caught_up_partition_has_zero_lag")
-    void caughtUpPartitionHasZeroLag() {
+    @DisplayName("[D006]: caught_up_partition_has_zero_lag [GH-90000]")
+    void caughtUpPartitionHasZeroLag() { // GH-90000
         EventCheckpointRepository.PartitionLag lag =
-            EventCheckpointRepository.PartitionLag.of(0, 1000, 1000);
+            EventCheckpointRepository.PartitionLag.of(0, 1000, 1000); // GH-90000
 
-        assertThat(lag.lag()).isZero();
-        assertThat(lag.isCaughtUp()).isTrue();
+        assertThat(lag.lag()).isZero(); // GH-90000
+        assertThat(lag.isCaughtUp()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: behind_partition_has_positive_lag")
-    void behindPartitionHasPositiveLag() {
+    @DisplayName("[D006]: behind_partition_has_positive_lag [GH-90000]")
+    void behindPartitionHasPositiveLag() { // GH-90000
         EventCheckpointRepository.PartitionLag lag =
-            EventCheckpointRepository.PartitionLag.of(0, 1000, 800);
+            EventCheckpointRepository.PartitionLag.of(0, 1000, 800); // GH-90000
 
-        assertThat(lag.lag()).isEqualTo(200);
-        assertThat(lag.isCaughtUp()).isFalse();
+        assertThat(lag.lag()).isEqualTo(200); // GH-90000
+        assertThat(lag.isCaughtUp()).isFalse(); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -233,62 +233,62 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: durability_status_shows_replica_count")
-    void durabilityStatusShowsReplicaCount() {
+    @DisplayName("[D006]: durability_status_shows_replica_count [GH-90000]")
+    void durabilityStatusShowsReplicaCount() { // GH-90000
         String eventId = "evt-001";
 
         EventDurabilityService.DurabilityStatus status =
-            new EventDurabilityService.DurabilityStatus(
+            new EventDurabilityService.DurabilityStatus( // GH-90000
                 eventId,
                 EventDurabilityService.DurabilityLevel.MAJORITY_ACK,
                 3, // current replicas
                 2, // required
                 false,
-                List.of("consumer-1", "consumer-2")
+                List.of("consumer-1", "consumer-2") // GH-90000
             );
 
-        when(durabilityService.getDurabilityStatus(eventId))
-            .thenReturn(Promise.of(status));
+        when(durabilityService.getDurabilityStatus(eventId)) // GH-90000
+            .thenReturn(Promise.of(status)); // GH-90000
 
-        EventDurabilityService.DurabilityStatus actual = runPromise(() ->
-            durabilityService.getDurabilityStatus(eventId)
+        EventDurabilityService.DurabilityStatus actual = runPromise(() -> // GH-90000
+            durabilityService.getDurabilityStatus(eventId) // GH-90000
         );
 
-        assertThat(actual.replicaCount()).isEqualTo(3);
-        assertThat(actual.requiredReplicaCount()).isEqualTo(2);
-        assertThat(actual.currentLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK);
+        assertThat(actual.replicaCount()).isEqualTo(3); // GH-90000
+        assertThat(actual.requiredReplicaCount()).isEqualTo(2); // GH-90000
+        assertThat(actual.currentLevel()).isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: fully_durable_when_fsynced_and_replicated")
-    void fullyDurableWhenFsyncedAndReplicated() {
+    @DisplayName("[D006]: fully_durable_when_fsynced_and_replicated [GH-90000]")
+    void fullyDurableWhenFsyncedAndReplicated() { // GH-90000
         EventDurabilityService.DurabilityStatus status =
-            new EventDurabilityService.DurabilityStatus(
+            new EventDurabilityService.DurabilityStatus( // GH-90000
                 "evt-001",
                 EventDurabilityService.DurabilityLevel.ALL_ACK,
                 3, // replicas >= required
                 2,
                 true, // fsynced
-                List.of()
+                List.of() // GH-90000
             );
 
-        assertThat(status.isFullyDurable()).isTrue();
+        assertThat(status.isFullyDurable()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: not_fully_durable_when_not_fsynced")
-    void notFullyDurableWhenNotFsynced() {
+    @DisplayName("[D006]: not_fully_durable_when_not_fsynced [GH-90000]")
+    void notFullyDurableWhenNotFsynced() { // GH-90000
         EventDurabilityService.DurabilityStatus status =
-            new EventDurabilityService.DurabilityStatus(
+            new EventDurabilityService.DurabilityStatus( // GH-90000
                 "evt-001",
                 EventDurabilityService.DurabilityLevel.MAJORITY_ACK,
                 3,
                 2,
                 false, // not fsynced
-                List.of()
+                List.of() // GH-90000
             );
 
-        assertThat(status.isFullyDurable()).isFalse();
+        assertThat(status.isFullyDurable()).isFalse(); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -296,47 +296,47 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: wait_for_durability_returns_true_when_achieved")
-    void waitForDurabilityReturnsTrueWhenAchieved() {
+    @DisplayName("[D006]: wait_for_durability_returns_true_when_achieved [GH-90000]")
+    void waitForDurabilityReturnsTrueWhenAchieved() { // GH-90000
         String eventId = "evt-001";
 
-        when(durabilityService.waitForDurability(
-            eq(eventId),
-            eq(EventDurabilityService.DurabilityLevel.LEADER_ACK),
-            any(Duration.class)
-        )).thenReturn(Promise.of(true));
+        when(durabilityService.waitForDurability( // GH-90000
+            eq(eventId), // GH-90000
+            eq(EventDurabilityService.DurabilityLevel.LEADER_ACK), // GH-90000
+            any(Duration.class) // GH-90000
+        )).thenReturn(Promise.of(true)); // GH-90000
 
-        Boolean result = runPromise(() ->
-            durabilityService.waitForDurability(
+        Boolean result = runPromise(() -> // GH-90000
+            durabilityService.waitForDurability( // GH-90000
                 eventId,
                 EventDurabilityService.DurabilityLevel.LEADER_ACK,
-                Duration.ofSeconds(5)
+                Duration.ofSeconds(5) // GH-90000
             )
         );
 
-        assertThat(result).isTrue();
+        assertThat(result).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("[D006]: wait_for_durability_returns_false_on_timeout")
-    void waitForDurabilityReturnsFalseOnTimeout() {
+    @DisplayName("[D006]: wait_for_durability_returns_false_on_timeout [GH-90000]")
+    void waitForDurabilityReturnsFalseOnTimeout() { // GH-90000
         String eventId = "evt-slow";
 
-        when(durabilityService.waitForDurability(
-            eq(eventId),
-            eq(EventDurabilityService.DurabilityLevel.ALL_ACK),
-            any(Duration.class)
-        )).thenReturn(Promise.of(false));
+        when(durabilityService.waitForDurability( // GH-90000
+            eq(eventId), // GH-90000
+            eq(EventDurabilityService.DurabilityLevel.ALL_ACK), // GH-90000
+            any(Duration.class) // GH-90000
+        )).thenReturn(Promise.of(false)); // GH-90000
 
-        Boolean result = runPromise(() ->
-            durabilityService.waitForDurability(
+        Boolean result = runPromise(() -> // GH-90000
+            durabilityService.waitForDurability( // GH-90000
                 eventId,
                 EventDurabilityService.DurabilityLevel.ALL_ACK,
-                Duration.ofMillis(100)
+                Duration.ofMillis(100) // GH-90000
             )
         );
 
-        assertThat(result).isFalse();
+        assertThat(result).isFalse(); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -344,41 +344,41 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: cdc_event_captured_with_offset")
-    void cdcEventCapturedWithOffset() {
-        Map<String, Object> cdcEvent = buildEvent(
+    @DisplayName("[D006]: cdc_event_captured_with_offset [GH-90000]")
+    void cdcEventCapturedWithOffset() { // GH-90000
+        Map<String, Object> cdcEvent = buildEvent( // GH-90000
             "cdc.entity.created",
             42,
-            Map.of("source", "database", "operation", "INSERT")
+            Map.of("source", "database", "operation", "INSERT") // GH-90000
         );
 
-        assertThat(cdcEvent.get("offset")).isEqualTo(42L);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> payload = (Map<String, Object>) cdcEvent.get("payload");
-        assertThat(payload.get("source")).isEqualTo("database");
-        assertThat(payload.get("operation")).isEqualTo("INSERT");
+        assertThat(cdcEvent.get("offset [GH-90000]")).isEqualTo(42L);
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> payload = (Map<String, Object>) cdcEvent.get("payload [GH-90000]");
+        assertThat(payload.get("source [GH-90000]")).isEqualTo("database [GH-90000]");
+        assertThat(payload.get("operation [GH-90000]")).isEqualTo("INSERT [GH-90000]");
     }
 
     @Test
-    @DisplayName("[D006]: cdc_events_ordered_by_offset")
-    void cdcEventsOrderedByOffset() {
-        List<Map<String, Object>> events = List.of(
-            buildEvent("cdc.event", 3, Map.of()),
-            buildEvent("cdc.event", 1, Map.of()),
-            buildEvent("cdc.event", 2, Map.of())
+    @DisplayName("[D006]: cdc_events_ordered_by_offset [GH-90000]")
+    void cdcEventsOrderedByOffset() { // GH-90000
+        List<Map<String, Object>> events = List.of( // GH-90000
+            buildEvent("cdc.event", 3, Map.of()), // GH-90000
+            buildEvent("cdc.event", 1, Map.of()), // GH-90000
+            buildEvent("cdc.event", 2, Map.of()) // GH-90000
         );
 
-        List<Map<String, Object>> sorted = events.stream()
-            .sorted(java.util.Comparator.comparingLong(e -> (Long) e.get("offset")))
-            .toList();
+        List<Map<String, Object>> sorted = events.stream() // GH-90000
+            .sorted(java.util.Comparator.comparingLong(e -> (Long) e.get("offset [GH-90000]")))
+            .toList(); // GH-90000
 
-        assertThat(sorted.get(0).get("offset")).isEqualTo(1L);
-        assertThat(sorted.get(1).get("offset")).isEqualTo(2L);
-        assertThat(sorted.get(2).get("offset")).isEqualTo(3L);
+        assertThat(sorted.get(0).get("offset [GH-90000]")).isEqualTo(1L);
+        assertThat(sorted.get(1).get("offset [GH-90000]")).isEqualTo(2L);
+        assertThat(sorted.get(2).get("offset [GH-90000]")).isEqualTo(3L);
     }
 
-    private static Map<String, Object> buildEvent(String type, long offset, Map<String, Object> payload) {
-        return Map.of(
+    private static Map<String, Object> buildEvent(String type, long offset, Map<String, Object> payload) { // GH-90000
+        return Map.of( // GH-90000
             "type", type,
             "offset", offset,
             "payload", payload

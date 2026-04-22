@@ -56,6 +56,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.bundles.testing.containers)
 }
 
 tasks.test {

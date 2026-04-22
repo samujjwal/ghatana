@@ -18,176 +18,176 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer   service
  * @doc.pattern Test
  */
-@DisplayName("UserProfile Validation Tests")
+@DisplayName("UserProfile Validation Tests [GH-90000]")
 class ProfileValidationTest extends EventloopTestBase {
 
     // ── Required field enforcement ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("builder throws when userId is null")
-    void builderThrowsWhenUserIdIsNull() {
-        assertThatThrownBy(() ->
-                UserProfile.builder()
-                        .userId(null)
-                        .tenantId("tenant-v")
-                        .email("val@example.com")
-                        .build())
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("builder throws when userId is null [GH-90000]")
+    void builderThrowsWhenUserIdIsNull() { // GH-90000
+        assertThatThrownBy(() -> // GH-90000
+                UserProfile.builder() // GH-90000
+                        .userId(null) // GH-90000
+                        .tenantId("tenant-v [GH-90000]")
+                        .email("val@example.com [GH-90000]")
+                        .build()) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("builder throws when tenantId is null")
-    void builderThrowsWhenTenantIdIsNull() {
-        assertThatThrownBy(() ->
-                UserProfile.builder()
-                        .userId("user-v-001")
-                        .tenantId(null)
-                        .email("val@example.com")
-                        .build())
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("builder throws when tenantId is null [GH-90000]")
+    void builderThrowsWhenTenantIdIsNull() { // GH-90000
+        assertThatThrownBy(() -> // GH-90000
+                UserProfile.builder() // GH-90000
+                        .userId("user-v-001 [GH-90000]")
+                        .tenantId(null) // GH-90000
+                        .email("val@example.com [GH-90000]")
+                        .build()) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("builder throws when email is null")
-    void builderThrowsWhenEmailIsNull() {
-        assertThatThrownBy(() ->
-                UserProfile.builder()
-                        .userId("user-v-001")
-                        .tenantId("tenant-v")
-                        .email(null)
-                        .build())
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("builder throws when email is null [GH-90000]")
+    void builderThrowsWhenEmailIsNull() { // GH-90000
+        assertThatThrownBy(() -> // GH-90000
+                UserProfile.builder() // GH-90000
+                        .userId("user-v-001 [GH-90000]")
+                        .tenantId("tenant-v [GH-90000]")
+                        .email(null) // GH-90000
+                        .build()) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     // ── Default value application ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("displayName defaults to email local-part when not provided")
-    void displayNameDefaultsToEmailLocalPart() {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-002")
-                .tenantId("tenant-v")
-                .email("alice@example.com")
-                .build();
+    @DisplayName("displayName defaults to email local-part when not provided [GH-90000]")
+    void displayNameDefaultsToEmailLocalPart() { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-002 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("alice@example.com [GH-90000]")
+                .build(); // GH-90000
 
         // displayName must not be null/blank — defaults derived from email
-        assertThat(profile.displayName()).isNotNull().isNotBlank();
+        assertThat(profile.displayName()).isNotNull().isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("preferredLanguage defaults to en-US")
-    void preferredLanguageDefaultsToEnUs() {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-003")
-                .tenantId("tenant-v")
-                .email("lang@example.com")
-                .build();
+    @DisplayName("preferredLanguage defaults to en-US [GH-90000]")
+    void preferredLanguageDefaultsToEnUs() { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-003 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("lang@example.com [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(profile.preferredLanguage()).isEqualTo("en-US");
+        assertThat(profile.preferredLanguage()).isEqualTo("en-US [GH-90000]");
     }
 
     @Test
-    @DisplayName("timezone defaults to UTC")
-    void timezoneDefaultsToUtc() {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-004")
-                .tenantId("tenant-v")
-                .email("tz@example.com")
-                .build();
+    @DisplayName("timezone defaults to UTC [GH-90000]")
+    void timezoneDefaultsToUtc() { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-004 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("tz@example.com [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(profile.timezone()).isEqualTo("UTC");
+        assertThat(profile.timezone()).isEqualTo("UTC [GH-90000]");
     }
 
     @Test
-    @DisplayName("theme defaults to system")
-    void themeDefaultsToSystem() {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-005")
-                .tenantId("tenant-v")
-                .email("theme@example.com")
-                .build();
+    @DisplayName("theme defaults to system [GH-90000]")
+    void themeDefaultsToSystem() { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-005 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("theme@example.com [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(profile.theme()).isEqualTo("system");
+        assertThat(profile.theme()).isEqualTo("system [GH-90000]");
     }
 
     // ── Custom value overrides ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("explicitly set displayName overrides email-derived default")
-    void explicitDisplayNameOverridesDefault() {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-006")
-                .tenantId("tenant-v")
-                .email("alice@example.com")
-                .displayName("Alice Wonderland")
-                .build();
+    @DisplayName("explicitly set displayName overrides email-derived default [GH-90000]")
+    void explicitDisplayNameOverridesDefault() { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-006 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("alice@example.com [GH-90000]")
+                .displayName("Alice Wonderland [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(profile.displayName()).isEqualTo("Alice Wonderland");
+        assertThat(profile.displayName()).isEqualTo("Alice Wonderland [GH-90000]");
     }
 
-    @ParameterizedTest(name = "theme={0} is accepted")
-    @ValueSource(strings = {"light", "dark", "system"})
-    @DisplayName("theme accepts light/dark/system values")
-    void themeAcceptsValidValues(String theme) {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-007")
-                .tenantId("tenant-v")
-                .email("theme@example.com")
-                .theme(theme)
-                .build();
+    @ParameterizedTest(name = "theme={0} is accepted") // GH-90000
+    @ValueSource(strings = {"light", "dark", "system"}) // GH-90000
+    @DisplayName("theme accepts light/dark/system values [GH-90000]")
+    void themeAcceptsValidValues(String theme) { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-007 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("theme@example.com [GH-90000]")
+                .theme(theme) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(profile.theme()).isEqualTo(theme);
+        assertThat(profile.theme()).isEqualTo(theme); // GH-90000
     }
 
-    @ParameterizedTest(name = "language={0} is accepted")
-    @ValueSource(strings = {"en-US", "fr-FR", "de-DE", "ja-JP", "zh-CN"})
-    @DisplayName("preferredLanguage stores locale codes correctly")
-    void preferredLanguageStoresLocaleCodes(String lang) {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-008")
-                .tenantId("tenant-v")
-                .email("lang@example.com")
-                .preferredLanguage(lang)
-                .build();
+    @ParameterizedTest(name = "language={0} is accepted") // GH-90000
+    @ValueSource(strings = {"en-US", "fr-FR", "de-DE", "ja-JP", "zh-CN"}) // GH-90000
+    @DisplayName("preferredLanguage stores locale codes correctly [GH-90000]")
+    void preferredLanguageStoresLocaleCodes(String lang) { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-008 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("lang@example.com [GH-90000]")
+                .preferredLanguage(lang) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(profile.preferredLanguage()).isEqualTo(lang);
+        assertThat(profile.preferredLanguage()).isEqualTo(lang); // GH-90000
     }
 
     // ── Immutability via toBuilder ────────────────────────────────────────────
 
     @Test
-    @DisplayName("toBuilder does not mutate the original profile")
-    void toBuilderPreservesOriginalProfile() {
-        UserProfile original = UserProfile.builder()
-                .userId("user-v-009")
-                .tenantId("tenant-v")
-                .email("original@example.com")
-                .displayName("Original")
-                .build();
+    @DisplayName("toBuilder does not mutate the original profile [GH-90000]")
+    void toBuilderPreservesOriginalProfile() { // GH-90000
+        UserProfile original = UserProfile.builder() // GH-90000
+                .userId("user-v-009 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("original@example.com [GH-90000]")
+                .displayName("Original [GH-90000]")
+                .build(); // GH-90000
 
         // Create a modified copy
-        UserProfile modified = original.toBuilder()
-                .displayName("Modified")
-                .build();
+        UserProfile modified = original.toBuilder() // GH-90000
+                .displayName("Modified [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(original.displayName()).isEqualTo("Original");
-        assertThat(modified.displayName()).isEqualTo("Modified");
-        assertThat(original.userId()).isEqualTo(modified.userId());
+        assertThat(original.displayName()).isEqualTo("Original [GH-90000]");
+        assertThat(modified.displayName()).isEqualTo("Modified [GH-90000]");
+        assertThat(original.userId()).isEqualTo(modified.userId()); // GH-90000
     }
 
     @Test
-    @DisplayName("withUpdatedAt returns new profile with updated timestamp, original unchanged")
-    void withUpdatedAtDoesNotMutateOriginal() {
-        UserProfile profile = UserProfile.builder()
-                .userId("user-v-010")
-                .tenantId("tenant-v")
-                .email("ts@example.com")
-                .build();
+    @DisplayName("withUpdatedAt returns new profile with updated timestamp, original unchanged [GH-90000]")
+    void withUpdatedAtDoesNotMutateOriginal() { // GH-90000
+        UserProfile profile = UserProfile.builder() // GH-90000
+                .userId("user-v-010 [GH-90000]")
+                .tenantId("tenant-v [GH-90000]")
+                .email("ts@example.com [GH-90000]")
+                .build(); // GH-90000
 
-        java.time.Instant updatedAt = java.time.Instant.now();
-        UserProfile withTs = profile.withUpdatedAt(updatedAt);
+        java.time.Instant updatedAt = java.time.Instant.now(); // GH-90000
+        UserProfile withTs = profile.withUpdatedAt(updatedAt); // GH-90000
 
-        assertThat(withTs.updatedAt()).isEqualTo(updatedAt);
-        assertThat(withTs.userId()).isEqualTo(profile.userId());
+        assertThat(withTs.updatedAt()).isEqualTo(updatedAt); // GH-90000
+        assertThat(withTs.userId()).isEqualTo(profile.userId()); // GH-90000
     }
 }

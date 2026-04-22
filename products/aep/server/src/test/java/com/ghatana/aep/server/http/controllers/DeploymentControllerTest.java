@@ -29,8 +29,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DeploymentController")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("DeploymentController [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class DeploymentControllerTest extends EventloopTestBase {
 
     @Mock
@@ -39,62 +39,62 @@ class DeploymentControllerTest extends EventloopTestBase {
     private DeploymentController controller;
 
     @BeforeEach
-    void setUp() {
-        controller = new DeploymentController(deploymentAdapter, false);
+    void setUp() { // GH-90000
+        controller = new DeploymentController(deploymentAdapter, false); // GH-90000
     }
 
     @Test
-    @DisplayName("create deployment rejects requests without deployment privileges")
-    void createDeploymentRejectsUnauthorizedPrincipal() {
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/deployments")
-            .withBody(ByteBuf.wrapForReading(validDeploymentJson().getBytes(StandardCharsets.UTF_8)))
-            .build();
+    @DisplayName("create deployment rejects requests without deployment privileges [GH-90000]")
+    void createDeploymentRejectsUnauthorizedPrincipal() { // GH-90000
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/deployments [GH-90000]")
+            .withBody(ByteBuf.wrapForReading(validDeploymentJson().getBytes(StandardCharsets.UTF_8))) // GH-90000
+            .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> controller.handleCreateDeployment(request));
+        HttpResponse response = runPromise(() -> controller.handleCreateDeployment(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(403);
-        verify(deploymentAdapter, never()).handleDeploymentRequest(any());
+        assertThat(response.getCode()).isEqualTo(403); // GH-90000
+        verify(deploymentAdapter, never()).handleDeploymentRequest(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("create deployment rejects invalid deployment payloads even for authorized users")
-    void createDeploymentRejectsInvalidPayload() {
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/deployments")
-            .withBody(ByteBuf.wrapForReading("{\"tenantId\":\"tenant-a\",\"environment\":\"prod\"}".getBytes(StandardCharsets.UTF_8)))
-            .build();
-        request.attach(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT,
-            new AepAuthFilter.JwtPayload("alice", "issuer", 1L, 1L, List.of("admin"), List.of(), "tenant-a"));
+    @DisplayName("create deployment rejects invalid deployment payloads even for authorized users [GH-90000]")
+    void createDeploymentRejectsInvalidPayload() { // GH-90000
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/deployments [GH-90000]")
+            .withBody(ByteBuf.wrapForReading("{\"tenantId\":\"tenant-a\",\"environment\":\"prod\"}".getBytes(StandardCharsets.UTF_8))) // GH-90000
+            .build(); // GH-90000
+        request.attach(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT, // GH-90000
+            new AepAuthFilter.JwtPayload("alice", "issuer", 1L, 1L, List.of("admin [GH-90000]"), List.of(), "tenant-a"));
 
-        HttpResponse response = runPromise(() -> controller.handleCreateDeployment(request));
+        HttpResponse response = runPromise(() -> controller.handleCreateDeployment(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(400);
-        verify(deploymentAdapter, never()).handleDeploymentRequest(any());
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
+        verify(deploymentAdapter, never()).handleDeploymentRequest(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("create deployment accepts authorized valid requests")
-    void createDeploymentAcceptsAuthorizedValidRequest() {
-        when(deploymentAdapter.handleDeploymentRequest(any()))
-            .thenReturn(io.activej.promise.Promise.of(DeploymentResponse.builder()
-                .deploymentId("dep-1")
-                .pipelineId("pipeline-1")
-                .tenantId("tenant-a")
-                .status("DEPLOYED")
-                .build()));
+    @DisplayName("create deployment accepts authorized valid requests [GH-90000]")
+    void createDeploymentAcceptsAuthorizedValidRequest() { // GH-90000
+        when(deploymentAdapter.handleDeploymentRequest(any())) // GH-90000
+            .thenReturn(io.activej.promise.Promise.of(DeploymentResponse.builder() // GH-90000
+                .deploymentId("dep-1 [GH-90000]")
+                .pipelineId("pipeline-1 [GH-90000]")
+                .tenantId("tenant-a [GH-90000]")
+                .status("DEPLOYED [GH-90000]")
+                .build())); // GH-90000
 
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/deployments")
-            .withBody(ByteBuf.wrapForReading(validDeploymentJson().getBytes(StandardCharsets.UTF_8)))
-            .build();
-        request.attach(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT,
-            new AepAuthFilter.JwtPayload("alice", "issuer", 1L, 1L, List.of("deployer"), List.of(), "tenant-a"));
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/deployments [GH-90000]")
+            .withBody(ByteBuf.wrapForReading(validDeploymentJson().getBytes(StandardCharsets.UTF_8))) // GH-90000
+            .build(); // GH-90000
+        request.attach(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT, // GH-90000
+            new AepAuthFilter.JwtPayload("alice", "issuer", 1L, 1L, List.of("deployer [GH-90000]"), List.of(), "tenant-a"));
 
-        HttpResponse response = runPromise(() -> controller.handleCreateDeployment(request));
+        HttpResponse response = runPromise(() -> controller.handleCreateDeployment(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
-        verify(deploymentAdapter).handleDeploymentRequest(any());
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        verify(deploymentAdapter).handleDeploymentRequest(any()); // GH-90000
     }
 
-    private String validDeploymentJson() {
+    private String validDeploymentJson() { // GH-90000
         return "{" +
             "\"pipelineId\":\"pipeline-1\"," +
             "\"tenantId\":\"tenant-a\"," +

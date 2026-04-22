@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.server;
@@ -26,16 +26,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ghatana.aep.server.http.AepHttpServer;
 
 /**
- * Resilience and dev-mode tests for AEP when optional dependencies (DataCloud,
+ * Resilience and dev-mode tests for AEP when optional dependencies (DataCloud, // GH-90000
  * HITL review queue, run ledger) are absent or disabled.
  *
  * <p>Validates the core contract:
  * <ul>
- *   <li>All read endpoints return empty results (never 5xx) when DataCloud is absent</li>
- *   <li>Event ingestion still succeeds (fire-and-forget ledger)</li>
+ *   <li>All read endpoints return empty results (never 5xx) when DataCloud is absent</li> // GH-90000
+ *   <li>Event ingestion still succeeds (fire-and-forget ledger)</li> // GH-90000
  *   <li>Health probe accurately reflects "disabled" vs "healthy" per component</li>
- *   <li>SLO snapshot endpoint always responds (metrics infra is always active)</li>
- *   <li>Batch ingestion degrades gracefully (processes what it can)</li>
+ *   <li>SLO snapshot endpoint always responds (metrics infra is always active)</li> // GH-90000
+ *   <li>Batch ingestion degrades gracefully (processes what it can)</li> // GH-90000
  * </ul>
  *
  * <p>These tests cover the "fixture-backed local developer environment" scenario
@@ -48,229 +48,229 @@ import com.ghatana.aep.server.http.AepHttpServer;
  * @doc.layer product
  * @doc.pattern ResilienceTest
  */
-@DisplayName("AEP Dev-Mode Resilience Tests (no DataCloud)")
+@DisplayName("AEP Dev-Mode Resilience Tests (no DataCloud) [GH-90000]")
 class AepDevModeResilienceTest {
 
     private AepEngine engine;
     private AepHttpServer server;
     private int port;
     private HttpClient http;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     @BeforeEach
-    void setUpServerWithoutDataCloud() throws Exception {
-        // Aep.forTesting() creates an engine with no DataCloud, no external deps.
+    void setUpServerWithoutDataCloud() throws Exception { // GH-90000
+        // Aep.forTesting() creates an engine with no DataCloud, no external deps. // GH-90000
         // This is the canonical "local dev / CI no-services" fixture.
-        engine = Aep.forTesting();
-        port = findFreePort();
-        http = HttpClient.newBuilder().build();
-        server = new AepHttpServer(engine, port);
-        server.start();
-        waitForServerReady(port);
+        engine = Aep.forTesting(); // GH-90000
+        port = findFreePort(); // GH-90000
+        http = HttpClient.newBuilder().build(); // GH-90000
+        server = new AepHttpServer(engine, port); // GH-90000
+        server.start(); // GH-90000
+        waitForServerReady(port); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) server.stop();
-        if (engine != null) engine.close();
+    void tearDown() { // GH-90000
+        if (server != null) server.stop(); // GH-90000
+        if (engine != null) engine.close(); // GH-90000
     }
 
     // ── Event ingestion degrades gracefully ───────────────────────────────────
 
     @Test
-    @DisplayName("POST /api/v1/events succeeds even without DataCloud (fire-and-forget ledger)")
-    void eventIngestionSucceedsWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = postEvent("dev-tenant", "user.created",
-                Map.of("userId", "dev-001"));
+    @DisplayName("POST /api/v1/events succeeds even without DataCloud (fire-and-forget ledger) [GH-90000]")
+    void eventIngestionSucceedsWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = postEvent("dev-tenant", "user.created", // GH-90000
+                Map.of("userId", "dev-001")); // GH-90000
 
         // Must succeed — run ledger is fire-and-forget when DataCloud absent
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
         // Event response shape: { "eventId": ..., "success": true, "detections": 0, ... }
-        assertThat(body).containsKey("eventId");
-        assertThat(body.get("success")).isEqualTo(true);
+        assertThat(body).containsKey("eventId [GH-90000]");
+        assertThat(body.get("success [GH-90000]")).isEqualTo(true);
     }
 
-    // ── Read endpoints return empty collections (not 5xx) ─────────────────────
+    // ── Read endpoints return empty collections (not 5xx) ───────────────────── // GH-90000
 
     @Test
-    @DisplayName("GET /api/v1/runs returns 200 with empty list when DataCloud absent")
-    void runsListEmptyNotErrorWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/runs");
+    @DisplayName("GET /api/v1/runs returns 200 with empty list when DataCloud absent [GH-90000]")
+    void runsListEmptyNotErrorWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/api/v1/runs [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("runs");
-    }
-
-    @Test
-    @DisplayName("GET /api/v1/agents returns 200 with agents list when DataCloud absent")
-    void agentListNotErrorWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/agents");
-
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("agents");
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body).containsKey("runs [GH-90000]");
     }
 
     @Test
-    @DisplayName("GET /api/v1/patterns returns 200 with patterns list when DataCloud absent")
-    void patternListNotErrorWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/patterns");
+    @DisplayName("GET /api/v1/agents returns 200 with agents list when DataCloud absent [GH-90000]")
+    void agentListNotErrorWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/api/v1/agents [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("patterns");
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body).containsKey("agents [GH-90000]");
     }
 
     @Test
-    @DisplayName("GET /api/v1/pipelines returns 200 with pipelines list when DataCloud absent")
-    void pipelineListNotErrorWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/pipelines");
+    @DisplayName("GET /api/v1/patterns returns 200 with patterns list when DataCloud absent [GH-90000]")
+    void patternListNotErrorWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/api/v1/patterns [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("pipelines");
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body).containsKey("patterns [GH-90000]");
     }
 
     @Test
-    @DisplayName("GET /api/v1/hitl/pending: 200 or 501 (not configured) — never 500")
-    void hitlPendingDegradesSafelyWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/hitl/pending");
+    @DisplayName("GET /api/v1/pipelines returns 200 with pipelines list when DataCloud absent [GH-90000]")
+    void pipelineListNotErrorWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/api/v1/pipelines [GH-90000]");
+
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body).containsKey("pipelines [GH-90000]");
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/hitl/pending: 200 or 501 (not configured) — never 500 [GH-90000]")
+    void hitlPendingDegradesSafelyWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/api/v1/hitl/pending [GH-90000]");
 
         // 200 = queue somehow configured; 501 = queue not configured = graceful degradation
         // Both are acceptable; 5xx server crash is NOT acceptable.
-        assertThat(resp.statusCode()).isIn(200, 501, 503);
+        assertThat(resp.statusCode()).isIn(200, 501, 503); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/learning/policies: 200 or 501 (not configured) — never 500")
-    void learningPoliciesNotErrorWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/learning/policies");
+    @DisplayName("GET /api/v1/learning/policies: 200 or 501 (not configured) — never 500 [GH-90000]")
+    void learningPoliciesNotErrorWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/api/v1/learning/policies [GH-90000]");
 
-        assertThat(resp.statusCode()).isIn(200, 501, 503);
+        assertThat(resp.statusCode()).isIn(200, 501, 503); // GH-90000
     }
 
     @Test
-    @DisplayName("GET /api/v1/learning/episodes: 200 or 501 (not configured) — never 500")
-    void learningEpisodesNotErrorWithoutDataCloud() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/learning/episodes");
+    @DisplayName("GET /api/v1/learning/episodes: 200 or 501 (not configured) — never 500 [GH-90000]")
+    void learningEpisodesNotErrorWithoutDataCloud() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/api/v1/learning/episodes [GH-90000]");
 
-        assertThat(resp.statusCode()).isIn(200, 501, 503);
+        assertThat(resp.statusCode()).isIn(200, 501, 503); // GH-90000
     }
 
     // ── Health probe reflects disabled state honestly ─────────────────────────
 
     @Test
-    @DisplayName("GET /health returns status and components even without DataCloud")
-    void healthProbeRespondsWhenDataCloudAbsent() throws Exception {
-        HttpResponse<String> resp = get("/health");
+    @DisplayName("GET /health returns status and components even without DataCloud [GH-90000]")
+    void healthProbeRespondsWhenDataCloudAbsent() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/health [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("status");
-        // Status is either "healthy" (full in-memory mode) or "degraded" (known
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body).containsKey("status [GH-90000]");
+        // Status is either "healthy" (full in-memory mode) or "degraded" (known // GH-90000
         // absent deps) — never an error response
-        assertThat(body.get("status")).isIn("healthy", "degraded");
+        assertThat(body.get("status [GH-90000]")).isIn("healthy", "degraded");
     }
 
     // ── SLO metrics always respond ────────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /metrics/slo returns 200 regardless of DataCloud state")
-    void sloMetricsAlwaysRespond() throws Exception {
-        HttpResponse<String> resp = get("/metrics/slo");
+    @DisplayName("GET /metrics/slo returns 200 regardless of DataCloud state [GH-90000]")
+    void sloMetricsAlwaysRespond() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/metrics/slo [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("runCounts");
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body).containsKey("runCounts [GH-90000]");
     }
 
     // ── Batch ingestion works without DataCloud ───────────────────────────────
 
     @Test
-    @DisplayName("POST /api/v1/events/batch succeeds without DataCloud")
-    void batchIngestionSucceedsWithoutDataCloud() throws Exception {
-        String batch = mapper.writeValueAsString(Map.of(
-            "events", java.util.List.of(
-                Map.of("tenantId", "dev-t", "type", "a", "payload", Map.of()),
-                Map.of("tenantId", "dev-t", "type", "b", "payload", Map.of())
+    @DisplayName("POST /api/v1/events/batch succeeds without DataCloud [GH-90000]")
+    void batchIngestionSucceedsWithoutDataCloud() throws Exception { // GH-90000
+        String batch = mapper.writeValueAsString(Map.of( // GH-90000
+            "events", java.util.List.of( // GH-90000
+                Map.of("tenantId", "dev-t", "type", "a", "payload", Map.of()), // GH-90000
+                Map.of("tenantId", "dev-t", "type", "b", "payload", Map.of()) // GH-90000
             )
         ));
 
-        HttpResponse<String> resp = post("/api/v1/events/batch", batch);
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+        HttpResponse<String> resp = post("/api/v1/events/batch", batch); // GH-90000
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
         // Batch response shape: { "total": ..., "successCount": ..., "events": [...], ... }
-        assertThat(body).containsKey("total");
+        assertThat(body).containsKey("total [GH-90000]");
     }
 
     // ── Metrics endpoint still works ──────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /metrics returns 200 regardless of DataCloud state")
-    void metricsEndpointAlwaysResponds() throws Exception {
-        HttpResponse<String> resp = get("/metrics");
+    @DisplayName("GET /metrics returns 200 regardless of DataCloud state [GH-90000]")
+    void metricsEndpointAlwaysResponds() throws Exception { // GH-90000
+        HttpResponse<String> resp = get("/metrics [GH-90000]");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("service");
+        assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        assertThat(body).containsKey("service [GH-90000]");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private HttpResponse<String> postEvent(
+    private HttpResponse<String> postEvent( // GH-90000
             String tenantId, String type, Map<String, Object> payload) throws Exception {
-        String body = mapper.writeValueAsString(Map.of(
+        String body = mapper.writeValueAsString(Map.of( // GH-90000
             "tenantId", tenantId,
             "type", type,
             "payload", payload
         ));
-        return post("/api/v1/events", body);
+        return post("/api/v1/events", body); // GH-90000
     }
 
-    private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .build();
-        return http.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> get(String path) throws Exception { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+            .GET() // GH-90000
+            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+            .build(); // GH-90000
+        return http.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .header("Content-Type", "application/json")
-            .build();
-        return http.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+            .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+            .header("Content-Type", "application/json") // GH-90000
+            .build(); // GH-90000
+        return http.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private static int findFreePort() throws IOException {
-        try (ServerSocket ss = new ServerSocket(0)) {
-            return ss.getLocalPort();
+    private static int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
+            return ss.getLocalPort(); // GH-90000
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception {
-        long deadline = System.currentTimeMillis() + 5_000;
-        while (System.currentTimeMillis() < deadline) {
+    private static void waitForServerReady(int port) throws Exception { // GH-90000
+        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
+        while (System.currentTimeMillis() < deadline) { // GH-90000
             try {
-                new Socket("127.0.0.1", port).close();
+                new Socket("127.0.0.1", port).close(); // GH-90000
                 return;
-            } catch (IOException ignored) {
-                Thread.sleep(50);
+            } catch (IOException ignored) { // GH-90000
+                Thread.sleep(50); // GH-90000
             }
         }
-        throw new AssertionError("Server did not start on port " + port + " within 5 s");
+        throw new AssertionError("Server did not start on port " + port + " within 5 s"); // GH-90000
     }
 }

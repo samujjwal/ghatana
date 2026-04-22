@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.event.common;
@@ -17,17 +17,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link TailOptions} and its builder.
  */
-@DisplayName("TailOptions")
+@DisplayName("TailOptions [GH-90000]")
 class TailOptionsTest {
 
     @Nested
-    @DisplayName("StartMode enum")
+    @DisplayName("StartMode enum [GH-90000]")
     class StartModeEnum {
 
         @Test
-        void allValuesPresent() {
-            TailOptions.StartMode[] modes = TailOptions.StartMode.values();
-            assertThat(modes).containsExactlyInAnyOrder(
+        void allValuesPresent() { // GH-90000
+            TailOptions.StartMode[] modes = TailOptions.StartMode.values(); // GH-90000
+            assertThat(modes).containsExactlyInAnyOrder( // GH-90000
                     TailOptions.StartMode.FROM_OFFSET,
                     TailOptions.StartMode.FROM_TIME,
                     TailOptions.StartMode.FROM_LATEST,
@@ -37,177 +37,177 @@ class TailOptionsTest {
         }
 
         @Test
-        void valueOfByName() {
-            assertThat(TailOptions.StartMode.valueOf("FROM_OFFSET"))
-                    .isSameAs(TailOptions.StartMode.FROM_OFFSET);
+        void valueOfByName() { // GH-90000
+            assertThat(TailOptions.StartMode.valueOf("FROM_OFFSET [GH-90000]"))
+                    .isSameAs(TailOptions.StartMode.FROM_OFFSET); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("factory methods")
+    @DisplayName("factory methods [GH-90000]")
     class FactoryMethods {
 
         @Test
-        void fromLatestFactory() {
-            TailOptions opts = TailOptions.fromLatest();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_LATEST);
-            assertThat(opts.startOffset()).isEmpty();
-            assertThat(opts.startTime()).isEmpty();
+        void fromLatestFactory() { // GH-90000
+            TailOptions opts = TailOptions.fromLatest(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_LATEST); // GH-90000
+            assertThat(opts.startOffset()).isEmpty(); // GH-90000
+            assertThat(opts.startTime()).isEmpty(); // GH-90000
         }
 
         @Test
-        void fromEarliestFactory() {
-            TailOptions opts = TailOptions.fromEarliest();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_EARLIEST);
+        void fromEarliestFactory() { // GH-90000
+            TailOptions opts = TailOptions.fromEarliest(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_EARLIEST); // GH-90000
         }
 
         @Test
-        void fromOffsetFactory() {
-            Offset off = Offset.of(42);
-            TailOptions opts = TailOptions.fromOffset(off);
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_OFFSET);
-            assertThat(opts.startOffset()).contains(off);
+        void fromOffsetFactory() { // GH-90000
+            Offset off = Offset.of(42); // GH-90000
+            TailOptions opts = TailOptions.fromOffset(off); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_OFFSET); // GH-90000
+            assertThat(opts.startOffset()).contains(off); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("builder")
+    @DisplayName("builder [GH-90000]")
     class BuilderTest {
 
         @Test
-        void defaults() {
-            TailOptions opts = TailOptions.builder().build();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_LATEST);
-            assertThat(opts.batchSize()).isEqualTo(100);
-            assertThat(opts.pollTimeout()).isEqualTo(Duration.ofSeconds(1));
-            assertThat(opts.consumerGroup()).isEmpty();
-            assertThat(opts.autoCommit()).isFalse();
-            assertThat(opts.autoCommitInterval()).isEqualTo(Duration.ofSeconds(5));
+        void defaults() { // GH-90000
+            TailOptions opts = TailOptions.builder().build(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_LATEST); // GH-90000
+            assertThat(opts.batchSize()).isEqualTo(100); // GH-90000
+            assertThat(opts.pollTimeout()).isEqualTo(Duration.ofSeconds(1)); // GH-90000
+            assertThat(opts.consumerGroup()).isEmpty(); // GH-90000
+            assertThat(opts.autoCommit()).isFalse(); // GH-90000
+            assertThat(opts.autoCommitInterval()).isEqualTo(Duration.ofSeconds(5)); // GH-90000
         }
 
         @Test
-        void fromOffsetBuilder() {
-            Offset off = Offset.of(7);
-            TailOptions opts = TailOptions.builder().fromOffset(off).build();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_OFFSET);
-            assertThat(opts.startOffset()).contains(off);
+        void fromOffsetBuilder() { // GH-90000
+            Offset off = Offset.of(7); // GH-90000
+            TailOptions opts = TailOptions.builder().fromOffset(off).build(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_OFFSET); // GH-90000
+            assertThat(opts.startOffset()).contains(off); // GH-90000
         }
 
         @Test
-        void fromOffsetBuilderNullThrows() {
-            assertThatThrownBy(() -> TailOptions.builder().fromOffset(null))
-                    .isInstanceOf(NullPointerException.class);
+        void fromOffsetBuilderNullThrows() { // GH-90000
+            assertThatThrownBy(() -> TailOptions.builder().fromOffset(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void fromTimeBuilder() {
-            Instant t = Instant.now();
-            TailOptions opts = TailOptions.builder().fromTime(t).build();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_TIME);
-            assertThat(opts.startTime()).contains(t);
+        void fromTimeBuilder() { // GH-90000
+            Instant t = Instant.now(); // GH-90000
+            TailOptions opts = TailOptions.builder().fromTime(t).build(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_TIME); // GH-90000
+            assertThat(opts.startTime()).contains(t); // GH-90000
         }
 
         @Test
-        void fromTimeBuilderNullThrows() {
-            assertThatThrownBy(() -> TailOptions.builder().fromTime(null))
-                    .isInstanceOf(NullPointerException.class);
+        void fromTimeBuilderNullThrows() { // GH-90000
+            assertThatThrownBy(() -> TailOptions.builder().fromTime(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void fromLatestBuilder() {
-            TailOptions opts = TailOptions.builder().fromLatest().build();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_LATEST);
+        void fromLatestBuilder() { // GH-90000
+            TailOptions opts = TailOptions.builder().fromLatest().build(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_LATEST); // GH-90000
         }
 
         @Test
-        void fromEarliestBuilder() {
-            TailOptions opts = TailOptions.builder().fromEarliest().build();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_EARLIEST);
+        void fromEarliestBuilder() { // GH-90000
+            TailOptions opts = TailOptions.builder().fromEarliest().build(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_EARLIEST); // GH-90000
         }
 
         @Test
-        void fromCommittedWithGroup() {
-            TailOptions opts = TailOptions.builder()
-                    .fromCommitted()
-                    .consumerGroup("my-group")
-                    .build();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_COMMITTED);
-            assertThat(opts.consumerGroup()).contains("my-group");
+        void fromCommittedWithGroup() { // GH-90000
+            TailOptions opts = TailOptions.builder() // GH-90000
+                    .fromCommitted() // GH-90000
+                    .consumerGroup("my-group [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_COMMITTED); // GH-90000
+            assertThat(opts.consumerGroup()).contains("my-group [GH-90000]");
         }
 
         @Test
-        void fromCommittedWithoutGroupThrows() {
-            assertThatThrownBy(() -> TailOptions.builder().fromCommitted().build())
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("consumerGroup");
+        void fromCommittedWithoutGroupThrows() { // GH-90000
+            assertThatThrownBy(() -> TailOptions.builder().fromCommitted().build()) // GH-90000
+                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .hasMessageContaining("consumerGroup [GH-90000]");
         }
 
         @Test
-        void consumerGroupAutoSwitchesToFromCommitted() {
+        void consumerGroupAutoSwitchesToFromCommitted() { // GH-90000
             // Setting consumerGroup when in FROM_LATEST switches mode to FROM_COMMITTED
-            TailOptions opts = TailOptions.builder()
-                    .fromLatest()
-                    .consumerGroup("grp")
-                    .build();
-            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_COMMITTED);
+            TailOptions opts = TailOptions.builder() // GH-90000
+                    .fromLatest() // GH-90000
+                    .consumerGroup("grp [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_COMMITTED); // GH-90000
         }
 
         @Test
-        void batchSizeSet() {
-            TailOptions opts = TailOptions.builder().batchSize(500).build();
-            assertThat(opts.batchSize()).isEqualTo(500);
+        void batchSizeSet() { // GH-90000
+            TailOptions opts = TailOptions.builder().batchSize(500).build(); // GH-90000
+            assertThat(opts.batchSize()).isEqualTo(500); // GH-90000
         }
 
         @Test
-        void batchSizeZeroThrows() {
-            assertThatThrownBy(() -> TailOptions.builder().batchSize(0))
-                    .isInstanceOf(IllegalArgumentException.class);
+        void batchSizeZeroThrows() { // GH-90000
+            assertThatThrownBy(() -> TailOptions.builder().batchSize(0)) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        void batchSizeNegativeThrows() {
-            assertThatThrownBy(() -> TailOptions.builder().batchSize(-1))
-                    .isInstanceOf(IllegalArgumentException.class);
+        void batchSizeNegativeThrows() { // GH-90000
+            assertThatThrownBy(() -> TailOptions.builder().batchSize(-1)) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        void pollTimeoutSet() {
-            Duration d = Duration.ofMillis(500);
-            TailOptions opts = TailOptions.builder().pollTimeout(d).build();
-            assertThat(opts.pollTimeout()).isEqualTo(d);
+        void pollTimeoutSet() { // GH-90000
+            Duration d = Duration.ofMillis(500); // GH-90000
+            TailOptions opts = TailOptions.builder().pollTimeout(d).build(); // GH-90000
+            assertThat(opts.pollTimeout()).isEqualTo(d); // GH-90000
         }
 
         @Test
-        void pollTimeoutNullThrows() {
-            assertThatThrownBy(() -> TailOptions.builder().pollTimeout(null))
-                    .isInstanceOf(NullPointerException.class);
+        void pollTimeoutNullThrows() { // GH-90000
+            assertThatThrownBy(() -> TailOptions.builder().pollTimeout(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        void autoCommitEnabled() {
-            TailOptions opts = TailOptions.builder().autoCommit(true).build();
-            assertThat(opts.autoCommit()).isTrue();
+        void autoCommitEnabled() { // GH-90000
+            TailOptions opts = TailOptions.builder().autoCommit(true).build(); // GH-90000
+            assertThat(opts.autoCommit()).isTrue(); // GH-90000
         }
 
         @Test
-        void autoCommitIntervalSet() {
-            Duration d = Duration.ofSeconds(10);
-            TailOptions opts = TailOptions.builder().autoCommitInterval(d).build();
-            assertThat(opts.autoCommitInterval()).isEqualTo(d);
+        void autoCommitIntervalSet() { // GH-90000
+            Duration d = Duration.ofSeconds(10); // GH-90000
+            TailOptions opts = TailOptions.builder().autoCommitInterval(d).build(); // GH-90000
+            assertThat(opts.autoCommitInterval()).isEqualTo(d); // GH-90000
         }
 
         @Test
-        void autoCommitIntervalNullThrows() {
-            assertThatThrownBy(() -> TailOptions.builder().autoCommitInterval(null))
-                    .isInstanceOf(NullPointerException.class);
+        void autoCommitIntervalNullThrows() { // GH-90000
+            assertThatThrownBy(() -> TailOptions.builder().autoCommitInterval(null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("toString() includes key fields")
-    void toStringContainsFields() {
-        TailOptions opts = TailOptions.builder().batchSize(50).build();
-        String s = opts.toString();
-        assertThat(s).contains("FROM_LATEST").contains("50");
+    @DisplayName("toString() includes key fields [GH-90000]")
+    void toStringContainsFields() { // GH-90000
+        TailOptions opts = TailOptions.builder().batchSize(50).build(); // GH-90000
+        String s = opts.toString(); // GH-90000
+        assertThat(s).contains("FROM_LATEST [GH-90000]").contains("50 [GH-90000]");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. All rights reserved.
+ * Copyright (c) 2026 Ghatana Inc. All rights reserved. // GH-90000
  */
 package com.ghatana.datacloud.analytics.export;
 
@@ -30,10 +30,10 @@ import static org.mockito.Mockito.*;
  *
  * <p>Fully isolated from any database — the {@link EntityRepository} is mocked.
  * Extends {@link EventloopTestBase} so that ActiveJ Promises are driven correctly
- * inside {@code runPromise()}.
+ * inside {@code runPromise()}. // GH-90000
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("EntityExportService Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("EntityExportService Tests [GH-90000]")
 class EntityExportServiceTest extends EventloopTestBase {
 
     private static final String TENANT     = "tenant-exports";
@@ -45,11 +45,11 @@ class EntityExportServiceTest extends EventloopTestBase {
     private EntityExportService service;
 
     @BeforeEach
-    void setUp() {
-        service = new EntityExportService(
+    void setUp() { // GH-90000
+        service = new EntityExportService( // GH-90000
                 repository,
-                new ObjectMapper(),
-                Executors.newVirtualThreadPerTaskExecutor());
+                new ObjectMapper(), // GH-90000
+                Executors.newVirtualThreadPerTaskExecutor()); // GH-90000
     }
 
     // =========================================================================
@@ -57,261 +57,261 @@ class EntityExportServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Constructor validation")
+    @DisplayName("Constructor validation [GH-90000]")
     class ConstructorTests {
 
         @Test
-        @DisplayName("null entityRepository throws NullPointerException")
-        void nullRepositoryFails() {
-            assertThatThrownBy(() ->
-                    new EntityExportService(null, new ObjectMapper()))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("entityRepository");
+        @DisplayName("null entityRepository throws NullPointerException [GH-90000]")
+        void nullRepositoryFails() { // GH-90000
+            assertThatThrownBy(() -> // GH-90000
+                    new EntityExportService(null, new ObjectMapper())) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("entityRepository [GH-90000]");
         }
 
         @Test
-        @DisplayName("null objectMapper throws NullPointerException")
-        void nullObjectMapperFails() {
-            assertThatThrownBy(() ->
-                    new EntityExportService(repository, null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("objectMapper");
+        @DisplayName("null objectMapper throws NullPointerException [GH-90000]")
+        void nullObjectMapperFails() { // GH-90000
+            assertThatThrownBy(() -> // GH-90000
+                    new EntityExportService(repository, null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("objectMapper [GH-90000]");
         }
 
         @Test
-        @DisplayName("null executor throws NullPointerException")
-        void nullExecutorFails() {
-            assertThatThrownBy(() ->
-                    new EntityExportService(repository, new ObjectMapper(), null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("executor");
+        @DisplayName("null executor throws NullPointerException [GH-90000]")
+        void nullExecutorFails() { // GH-90000
+            assertThatThrownBy(() -> // GH-90000
+                    new EntityExportService(repository, new ObjectMapper(), null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("executor [GH-90000]");
         }
 
         @Test
-        @DisplayName("null tenantId in exportCsv throws NullPointerException")
-        void nullTenantInCsvFails() {
-            assertThatThrownBy(() ->
-                    runPromise(() -> service.exportCsv(null, COLLECTION, Map.of(), 100)))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("tenantId");
+        @DisplayName("null tenantId in exportCsv throws NullPointerException [GH-90000]")
+        void nullTenantInCsvFails() { // GH-90000
+            assertThatThrownBy(() -> // GH-90000
+                    runPromise(() -> service.exportCsv(null, COLLECTION, Map.of(), 100))) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("tenantId [GH-90000]");
         }
 
         @Test
-        @DisplayName("null collectionName in exportNdjson throws NullPointerException")
-        void nullCollectionInNdjsonFails() {
-            assertThatThrownBy(() ->
-                    runPromise(() -> service.exportNdjson(TENANT, null, Map.of(), 100)))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("collectionName");
+        @DisplayName("null collectionName in exportNdjson throws NullPointerException [GH-90000]")
+        void nullCollectionInNdjsonFails() { // GH-90000
+            assertThatThrownBy(() -> // GH-90000
+                    runPromise(() -> service.exportNdjson(TENANT, null, Map.of(), 100))) // GH-90000
+                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .hasMessageContaining("collectionName [GH-90000]");
         }
     }
 
     // =========================================================================
-    // exportCsv() — empty collection
+    // exportCsv() — empty collection // GH-90000
     // =========================================================================
 
     @Nested
-    @DisplayName("exportCsv() — empty collection")
+    @DisplayName("exportCsv() — empty collection [GH-90000]")
     class CsvEmptyTests {
 
         @Test
-        @DisplayName("returns empty string for an empty collection")
-        void emptyCollectionReturnsEmptyString() {
-            stubEmpty();
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100));
-            assertThat(csv).isEmpty();
+        @DisplayName("returns empty string for an empty collection [GH-90000]")
+        void emptyCollectionReturnsEmptyString() { // GH-90000
+            stubEmpty(); // GH-90000
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            assertThat(csv).isEmpty(); // GH-90000
         }
     }
 
     // =========================================================================
-    // exportCsv() — header and data rows
+    // exportCsv() — header and data rows // GH-90000
     // =========================================================================
 
     @Nested
-    @DisplayName("exportCsv() — header and data rows")
+    @DisplayName("exportCsv() — header and data rows [GH-90000]")
     class CsvRowTests {
 
         @Test
-        @DisplayName("CSV has header row with metadata + sorted data fields")
-        void csvHeaderContainsMetadataAndDataFields() {
-            Entity e = entityWith(Map.of("amount", 99.9, "status", "PAID"));
-            stub(List.of(e));
+        @DisplayName("CSV has header row with metadata + sorted data fields [GH-90000]")
+        void csvHeaderContainsMetadataAndDataFields() { // GH-90000
+            Entity e = entityWith(Map.of("amount", 99.9, "status", "PAID")); // GH-90000
+            stub(List.of(e)); // GH-90000
 
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100));
-            String[] lines = csv.split("\r\n");
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            String[] lines = csv.split("\r\n [GH-90000]");
 
-            assertThat(lines[0]).startsWith("id,tenantId,collectionName,createdAt");
-            assertThat(lines[0]).contains("amount");
-            assertThat(lines[0]).contains("status");
+            assertThat(lines[0]).startsWith("id,tenantId,collectionName,createdAt [GH-90000]");
+            assertThat(lines[0]).contains("amount [GH-90000]");
+            assertThat(lines[0]).contains("status [GH-90000]");
         }
 
         @Test
-        @DisplayName("data fields appear in sorted order in the header")
-        void dataFieldsSortedInHeader() {
-            Entity e = entityWith(Map.of("zzz", 1, "aaa", 2, "mmm", 3));
-            stub(List.of(e));
+        @DisplayName("data fields appear in sorted order in the header [GH-90000]")
+        void dataFieldsSortedInHeader() { // GH-90000
+            Entity e = entityWith(Map.of("zzz", 1, "aaa", 2, "mmm", 3)); // GH-90000
+            stub(List.of(e)); // GH-90000
 
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100));
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
             // Header line
-            String header = csv.split("\r\n")[0];
-            int aaa = header.indexOf("aaa");
-            int mmm = header.indexOf("mmm");
-            int zzz = header.indexOf("zzz");
-            assertThat(aaa).isLessThan(mmm);
-            assertThat(mmm).isLessThan(zzz);
+            String header = csv.split("\r\n [GH-90000]")[0];
+            int aaa = header.indexOf("aaa [GH-90000]");
+            int mmm = header.indexOf("mmm [GH-90000]");
+            int zzz = header.indexOf("zzz [GH-90000]");
+            assertThat(aaa).isLessThan(mmm); // GH-90000
+            assertThat(mmm).isLessThan(zzz); // GH-90000
         }
 
         @Test
-        @DisplayName("data row contains correct values")
-        void csvDataRowContainsValues() {
-            UUID id = UUID.randomUUID();
-            Entity e = entityWithId(id, Map.of("amount", 250.0, "status", "PENDING"));
-            stub(List.of(e));
+        @DisplayName("data row contains correct values [GH-90000]")
+        void csvDataRowContainsValues() { // GH-90000
+            UUID id = UUID.randomUUID(); // GH-90000
+            Entity e = entityWithId(id, Map.of("amount", 250.0, "status", "PENDING")); // GH-90000
+            stub(List.of(e)); // GH-90000
 
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100));
-            String[] lines = csv.split("\r\n");
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            String[] lines = csv.split("\r\n [GH-90000]");
 
-            assertThat(lines).hasSize(2); // header + one data row
-            assertThat(lines[1]).contains(id.toString());
-            assertThat(lines[1]).contains(TENANT);
-            assertThat(lines[1]).contains(COLLECTION);
-            assertThat(lines[1]).contains("250.0");
-            assertThat(lines[1]).contains("PENDING");
+            assertThat(lines).hasSize(2); // header + one data row // GH-90000
+            assertThat(lines[1]).contains(id.toString()); // GH-90000
+            assertThat(lines[1]).contains(TENANT); // GH-90000
+            assertThat(lines[1]).contains(COLLECTION); // GH-90000
+            assertThat(lines[1]).contains("250.0 [GH-90000]");
+            assertThat(lines[1]).contains("PENDING [GH-90000]");
         }
 
         @Test
-        @DisplayName("missing field in an entity row is rendered as empty string")
-        void missingFieldsAreEmptyInCsv() {
-            Entity e1 = entityWith(Map.of("field1", "A", "field2", "B"));
-            Entity e2 = entityWith(Map.of("field1", "C")); // field2 missing
-            stub(List.of(e1, e2));
+        @DisplayName("missing field in an entity row is rendered as empty string [GH-90000]")
+        void missingFieldsAreEmptyInCsv() { // GH-90000
+            Entity e1 = entityWith(Map.of("field1", "A", "field2", "B")); // GH-90000
+            Entity e2 = entityWith(Map.of("field1", "C")); // field2 missing // GH-90000
+            stub(List.of(e1, e2)); // GH-90000
 
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100));
-            String[] lines = csv.split("\r\n");
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            String[] lines = csv.split("\r\n [GH-90000]");
 
-            assertThat(lines).hasSize(3); // header + 2 rows
+            assertThat(lines).hasSize(3); // header + 2 rows // GH-90000
             // Row for e2 should have an empty value where field2 would be
-            assertThat(lines[2]).contains("C");
-            // field2 value is empty (two consecutive commas around it)
-            assertThat(lines[2]).matches(".*,C,.*");
+            assertThat(lines[2]).contains("C [GH-90000]");
+            // field2 value is empty (two consecutive commas around it) // GH-90000
+            assertThat(lines[2]).matches(".*,C,.* [GH-90000]");
         }
 
         @Test
-        @DisplayName("entity with null data map produces metadata-only row")
-        void nullDataProducesMetadataOnlyRow() {
-            Entity e = new Entity();
-            e.setId(UUID.randomUUID());
-            e.setTenantId(TENANT);
-            e.setCollectionName(COLLECTION);
-            e.setData(null);
-            stub(List.of(e));
+        @DisplayName("entity with null data map produces metadata-only row [GH-90000]")
+        void nullDataProducesMetadataOnlyRow() { // GH-90000
+            Entity e = new Entity(); // GH-90000
+            e.setId(UUID.randomUUID()); // GH-90000
+            e.setTenantId(TENANT); // GH-90000
+            e.setCollectionName(COLLECTION); // GH-90000
+            e.setData(null); // GH-90000
+            stub(List.of(e)); // GH-90000
 
             // Should not throw; data fields are empty
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100));
-            assertThat(csv).isNotEmpty(); // header + one row
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            assertThat(csv).isNotEmpty(); // header + one row // GH-90000
         }
 
         @Test
-        @DisplayName("multiple entities are all exported in CSV")
-        void multipleEntitiesExported() {
-            List<Entity> entities = List.of(
-                    entityWith(Map.of("x", 1)),
-                    entityWith(Map.of("x", 2)),
-                    entityWith(Map.of("x", 3)));
-            stub(entities);
+        @DisplayName("multiple entities are all exported in CSV [GH-90000]")
+        void multipleEntitiesExported() { // GH-90000
+            List<Entity> entities = List.of( // GH-90000
+                    entityWith(Map.of("x", 1)), // GH-90000
+                    entityWith(Map.of("x", 2)), // GH-90000
+                    entityWith(Map.of("x", 3))); // GH-90000
+            stub(entities); // GH-90000
 
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100));
-            String[] lines = csv.split("\r\n");
-            assertThat(lines).hasSize(4); // header + 3 rows
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            String[] lines = csv.split("\r\n [GH-90000]");
+            assertThat(lines).hasSize(4); // header + 3 rows // GH-90000
         }
     }
 
     // =========================================================================
-    // exportNdjson()
+    // exportNdjson() // GH-90000
     // =========================================================================
 
     @Nested
-    @DisplayName("exportNdjson()")
+    @DisplayName("exportNdjson() [GH-90000]")
     class NdjsonTests {
 
         @Test
-        @DisplayName("returns empty string for an empty collection")
-        void emptyCollectionReturnsEmptyString() {
-            stubEmpty();
-            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100));
-            assertThat(ndjson).isEmpty();
+        @DisplayName("returns empty string for an empty collection [GH-90000]")
+        void emptyCollectionReturnsEmptyString() { // GH-90000
+            stubEmpty(); // GH-90000
+            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            assertThat(ndjson).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("each entity produces one JSON line")
-        void eachEntityIsOneLine() {
-            UUID id = UUID.randomUUID();
-            Entity e = entityWithId(id, Map.of("price", 42.0, "currency", "USD"));
-            stub(List.of(e));
+        @DisplayName("each entity produces one JSON line [GH-90000]")
+        void eachEntityIsOneLine() { // GH-90000
+            UUID id = UUID.randomUUID(); // GH-90000
+            Entity e = entityWithId(id, Map.of("price", 42.0, "currency", "USD")); // GH-90000
+            stub(List.of(e)); // GH-90000
 
-            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100));
-            String[] lines = ndjson.split("\n");
+            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            String[] lines = ndjson.split("\n [GH-90000]");
 
-            assertThat(lines).hasSize(1);
-            assertThat(lines[0]).startsWith("{");
-            assertThat(lines[0]).contains(id.toString());
-            assertThat(lines[0]).contains("42.0");
-            assertThat(lines[0]).contains("USD");
+            assertThat(lines).hasSize(1); // GH-90000
+            assertThat(lines[0]).startsWith("{ [GH-90000]");
+            assertThat(lines[0]).contains(id.toString()); // GH-90000
+            assertThat(lines[0]).contains("42.0 [GH-90000]");
+            assertThat(lines[0]).contains("USD [GH-90000]");
         }
 
         @Test
-        @DisplayName("NDJSON includes standard metadata fields")
-        void ndjsonIncludesMetadata() {
-            Entity e = entityWith(Map.of("k", "v"));
-            stub(List.of(e));
+        @DisplayName("NDJSON includes standard metadata fields [GH-90000]")
+        void ndjsonIncludesMetadata() { // GH-90000
+            Entity e = entityWith(Map.of("k", "v")); // GH-90000
+            stub(List.of(e)); // GH-90000
 
-            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100));
+            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
 
-            assertThat(ndjson).contains("\"tenantId\"");
-            assertThat(ndjson).contains("\"collectionName\"");
-            assertThat(ndjson).contains("\"createdAt\"");
-            assertThat(ndjson).contains("\"id\"");
+            assertThat(ndjson).contains("\"tenantId\""); // GH-90000
+            assertThat(ndjson).contains("\"collectionName\""); // GH-90000
+            assertThat(ndjson).contains("\"createdAt\""); // GH-90000
+            assertThat(ndjson).contains("\"id\""); // GH-90000
         }
 
         @Test
-        @DisplayName("data fields are merged at the top level of the JSON object")
-        void dataFieldsMergedAtTopLevel() {
-            Entity e = entityWith(Map.of("myField", "myValue"));
-            stub(List.of(e));
+        @DisplayName("data fields are merged at the top level of the JSON object [GH-90000]")
+        void dataFieldsMergedAtTopLevel() { // GH-90000
+            Entity e = entityWith(Map.of("myField", "myValue")); // GH-90000
+            stub(List.of(e)); // GH-90000
 
-            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100));
+            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
 
             // field appears at top level, NOT nested inside a "data" object
-            assertThat(ndjson).contains("\"myField\"");
+            assertThat(ndjson).contains("\"myField\""); // GH-90000
         }
 
         @Test
-        @DisplayName("multiple entities produce one line each with trailing newline")
-        void multipleEntitiesProduceMultipleLines() {
-            List<Entity> entities = List.of(
-                    entityWith(Map.of("n", 1)),
-                    entityWith(Map.of("n", 2)),
-                    entityWith(Map.of("n", 3)));
-            stub(entities);
+        @DisplayName("multiple entities produce one line each with trailing newline [GH-90000]")
+        void multipleEntitiesProduceMultipleLines() { // GH-90000
+            List<Entity> entities = List.of( // GH-90000
+                    entityWith(Map.of("n", 1)), // GH-90000
+                    entityWith(Map.of("n", 2)), // GH-90000
+                    entityWith(Map.of("n", 3))); // GH-90000
+            stub(entities); // GH-90000
 
-            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100));
-            long lineCount = ndjson.chars().filter(c -> c == '\n').count();
-            assertThat(lineCount).isEqualTo(3);
+            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            long lineCount = ndjson.chars().filter(c -> c == '\n').count(); // GH-90000
+            assertThat(lineCount).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("each line is valid parseable JSON")
-        void eachLineIsParseable() throws Exception {
-            List<Entity> entities = List.of(
-                    entityWith(Map.of("a", 1)),
-                    entityWith(Map.of("b", "two")));
-            stub(entities);
+        @DisplayName("each line is valid parseable JSON [GH-90000]")
+        void eachLineIsParseable() throws Exception { // GH-90000
+            List<Entity> entities = List.of( // GH-90000
+                    entityWith(Map.of("a", 1)), // GH-90000
+                    entityWith(Map.of("b", "two"))); // GH-90000
+            stub(entities); // GH-90000
 
-            ObjectMapper mapper = new ObjectMapper();
-            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100));
-            for (String line : ndjson.split("\n")) {
+            ObjectMapper mapper = new ObjectMapper(); // GH-90000
+            String ndjson = runPromise(() -> service.exportNdjson(TENANT, COLLECTION, Map.of(), 100)); // GH-90000
+            for (String line : ndjson.split("\n [GH-90000]")) {
                 // Should not throw
-                assertThatCode(() -> mapper.readTree(line)).doesNotThrowAnyException();
+                assertThatCode(() -> mapper.readTree(line)).doesNotThrowAnyException(); // GH-90000
             }
         }
     }
@@ -321,99 +321,99 @@ class EntityExportServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Pagination — fetchAll")
+    @DisplayName("Pagination — fetchAll [GH-90000]")
     class PaginationTests {
 
         @Test
-        @DisplayName("limit=0 is treated as HARD_LIMIT")
-        void limitZeroUsesHardLimit() {
-            stubEmpty();
+        @DisplayName("limit=0 is treated as HARD_LIMIT [GH-90000]")
+        void limitZeroUsesHardLimit() { // GH-90000
+            stubEmpty(); // GH-90000
             // Should not throw, and should issue at least one repository call
-            runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 0));
-            verify(repository, atLeastOnce())
-                    .findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt());
+            runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 0)); // GH-90000
+            verify(repository, atLeastOnce()) // GH-90000
+                    .findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()); // GH-90000
         }
 
         @Test
-        @DisplayName("limit greater than HARD_LIMIT is capped to HARD_LIMIT")
-        void limitAboveHardLimitIsCapped() {
-            stubEmpty();
-            runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), Integer.MAX_VALUE));
+        @DisplayName("limit greater than HARD_LIMIT is capped to HARD_LIMIT [GH-90000]")
+        void limitAboveHardLimitIsCapped() { // GH-90000
+            stubEmpty(); // GH-90000
+            runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), Integer.MAX_VALUE)); // GH-90000
             // If limit was clamped, the first page call should have limit <= HARD_LIMIT
-            verify(repository, atLeastOnce())
-                    .findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(),
-                            intThat(l -> l <= EntityExportService.HARD_LIMIT));
+            verify(repository, atLeastOnce()) // GH-90000
+                    .findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), // GH-90000
+                            intThat(l -> l <= EntityExportService.HARD_LIMIT)); // GH-90000
         }
 
         @Test
-        @DisplayName("stops paging when page returns fewer entities than PAGE_SIZE")
-        void stopsWhenLastPageIsPartial() {
-            // First call returns PAGE_SIZE entities (full page -> continues)
-            List<Entity> fullPage = buildEntities(EntityExportService.PAGE_SIZE, "v", 1.0);
-            // Second call returns 3 entities (partial page -> stop)
-            List<Entity> partial = buildEntities(3, "v", 99.0);
+        @DisplayName("stops paging when page returns fewer entities than PAGE_SIZE [GH-90000]")
+        void stopsWhenLastPageIsPartial() { // GH-90000
+            // First call returns PAGE_SIZE entities (full page -> continues) // GH-90000
+            List<Entity> fullPage = buildEntities(EntityExportService.PAGE_SIZE, "v", 1.0); // GH-90000
+            // Second call returns 3 entities (partial page -> stop) // GH-90000
+            List<Entity> partial = buildEntities(3, "v", 99.0); // GH-90000
 
-                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
-                    .thenReturn(Promise.of(fullPage))
-                    .thenReturn(Promise.of(partial));
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
+                    .thenReturn(Promise.of(fullPage)) // GH-90000
+                    .thenReturn(Promise.of(partial)); // GH-90000
 
-            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(),
+            String csv = runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), // GH-90000
                     EntityExportService.PAGE_SIZE * 10));
 
             // header + fullPage + partial = 1 + 500 + 3 = 504 lines
-            long lineCount = csv.lines().count();
-            assertThat(lineCount).isEqualTo(1 + EntityExportService.PAGE_SIZE + 3);
+            long lineCount = csv.lines().count(); // GH-90000
+            assertThat(lineCount).isEqualTo(1 + EntityExportService.PAGE_SIZE + 3); // GH-90000
         }
     }
 
     // =========================================================================
-    // csvEscape() — RFC 4180 compliance
+    // csvEscape() — RFC 4180 compliance // GH-90000
     // =========================================================================
 
     @Nested
-    @DisplayName("csvEscape() — RFC 4180 compliance")
+    @DisplayName("csvEscape() — RFC 4180 compliance [GH-90000]")
     class CsvEscapeTests {
 
         @Test
-        @DisplayName("plain value passes through unchanged")
-        void plainValueIsUnchanged() {
-            assertThat(csvEscape("hello")).isEqualTo("hello");
+        @DisplayName("plain value passes through unchanged [GH-90000]")
+        void plainValueIsUnchanged() { // GH-90000
+            assertThat(csvEscape("hello [GH-90000]")).isEqualTo("hello [GH-90000]");
         }
 
         @Test
-        @DisplayName("empty string returns empty string")
-        void emptyStringReturnsEmpty() {
-            assertThat(csvEscape("")).isEmpty();
+        @DisplayName("empty string returns empty string [GH-90000]")
+        void emptyStringReturnsEmpty() { // GH-90000
+            assertThat(csvEscape(" [GH-90000]")).isEmpty();
         }
 
         @Test
-        @DisplayName("null returns empty string")
-        void nullReturnsEmpty() {
-            assertThat(csvEscape(null)).isEmpty();
+        @DisplayName("null returns empty string [GH-90000]")
+        void nullReturnsEmpty() { // GH-90000
+            assertThat(csvEscape(null)).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("value containing comma is wrapped in double-quotes")
-        void commaValueIsQuoted() {
-            assertThat(csvEscape("a,b")).isEqualTo("\"a,b\"");
+        @DisplayName("value containing comma is wrapped in double-quotes [GH-90000]")
+        void commaValueIsQuoted() { // GH-90000
+            assertThat(csvEscape("a,b [GH-90000]")).isEqualTo("\"a,b\"");
         }
 
         @Test
-        @DisplayName("value containing double-quote has quotes doubled and is wrapped")
-        void quoteValueIsDoubled() {
-            assertThat(csvEscape("say \"hello\"")).isEqualTo("\"say \"\"hello\"\"\"");
+        @DisplayName("value containing double-quote has quotes doubled and is wrapped [GH-90000]")
+        void quoteValueIsDoubled() { // GH-90000
+            assertThat(csvEscape("say \"hello\"")).isEqualTo("\"say \"\"hello\"\"\""); // GH-90000
         }
 
         @Test
-        @DisplayName("value containing newline is wrapped in double-quotes")
-        void newlineValueIsQuoted() {
-            assertThat(csvEscape("line1\nline2")).isEqualTo("\"line1\nline2\"");
+        @DisplayName("value containing newline is wrapped in double-quotes [GH-90000]")
+        void newlineValueIsQuoted() { // GH-90000
+            assertThat(csvEscape("line1\nline2 [GH-90000]")).isEqualTo("\"line1\nline2\"");
         }
 
         @Test
-        @DisplayName("value containing carriage-return is wrapped in double-quotes")
-        void carriageReturnValueIsQuoted() {
-            assertThat(csvEscape("line1\rline2")).isEqualTo("\"line1\rline2\"");
+        @DisplayName("value containing carriage-return is wrapped in double-quotes [GH-90000]")
+        void carriageReturnValueIsQuoted() { // GH-90000
+            assertThat(csvEscape("line1\rline2 [GH-90000]")).isEqualTo("\"line1\rline2\"");
         }
     }
 
@@ -421,36 +421,36 @@ class EntityExportServiceTest extends EventloopTestBase {
     // Helpers
     // =========================================================================
 
-    private void stub(List<Entity> entities) {
-        when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
-                .thenReturn(Promise.of(entities))
-                .thenReturn(Promise.of(Collections.emptyList())); // second page = empty
+    private void stub(List<Entity> entities) { // GH-90000
+        when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
+                .thenReturn(Promise.of(entities)) // GH-90000
+                .thenReturn(Promise.of(Collections.emptyList())); // second page = empty // GH-90000
     }
 
-    private void stubEmpty() {
-        when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
-                .thenReturn(Promise.of(Collections.emptyList()));
+    private void stubEmpty() { // GH-90000
+        when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
+                .thenReturn(Promise.of(Collections.emptyList())); // GH-90000
     }
 
-    private static Entity entityWith(Map<String, Object> data) {
-        return entityWithId(UUID.randomUUID(), data);
+    private static Entity entityWith(Map<String, Object> data) { // GH-90000
+        return entityWithId(UUID.randomUUID(), data); // GH-90000
     }
 
-    private static Entity entityWithId(UUID id, Map<String, Object> data) {
-        Entity entity = new Entity();
-        entity.setId(id);
-        entity.setTenantId(TENANT);
-        entity.setCollectionName(COLLECTION);
-        entity.setCreatedAt(Instant.now());
-        entity.setData(new HashMap<>(data));
+    private static Entity entityWithId(UUID id, Map<String, Object> data) { // GH-90000
+        Entity entity = new Entity(); // GH-90000
+        entity.setId(id); // GH-90000
+        entity.setTenantId(TENANT); // GH-90000
+        entity.setCollectionName(COLLECTION); // GH-90000
+        entity.setCreatedAt(Instant.now()); // GH-90000
+        entity.setData(new HashMap<>(data)); // GH-90000
         return entity;
     }
 
     /** Builds {@code count} entities, each with {@code field = baseValue + index}. */
-    private static List<Entity> buildEntities(int count, String field, double baseValue) {
-        List<Entity> result = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) {
-            result.add(entityWith(Map.of(field, baseValue + i)));
+    private static List<Entity> buildEntities(int count, String field, double baseValue) { // GH-90000
+        List<Entity> result = new ArrayList<>(count); // GH-90000
+        for (int i = 0; i < count; i++) { // GH-90000
+            result.add(entityWith(Map.of(field, baseValue + i))); // GH-90000
         }
         return result;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * YAPPC Lifecycle Service
  */
 package com.ghatana.yappc.services.lifecycle.operators;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.lenient;
 /**
  * Unit tests for the YAPPC agent-orchestration-v1 pipeline operators.
  *
- * <p>All async tests use {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)}
+ * <p>All async tests use {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)} // GH-90000
  * to execute promises on the managed ActiveJ Eventloop without blocking.
  *
  * @doc.type class
@@ -32,47 +32,47 @@ import static org.mockito.Mockito.lenient;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("YAPPC Agent Orchestration Operators")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("YAPPC Agent Orchestration Operators [GH-90000]")
 class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
 
     // ─── shared helpers ───────────────────────────────────────────────────────
 
-    private static Event buildDispatchRequestedEvent(
+    private static Event buildDispatchRequestedEvent( // GH-90000
             String agentId, String fromStage, String toStage, String tenantId) {
-        return GEvent.builder()
-                .typeTenantVersion(tenantId, AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED, "v1")
-                .addPayload("eventId",   "evt-test-001")
-                .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED)
-                .addPayload("agentId",   agentId)
-                .addPayload("fromStage", fromStage)
-                .addPayload("toStage",   toStage)
-                .addPayload("tenantId",  tenantId)
-                .build();
+        return GEvent.builder() // GH-90000
+                .typeTenantVersion(tenantId, AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED, "v1") // GH-90000
+                .addPayload("eventId",   "evt-test-001") // GH-90000
+                .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED) // GH-90000
+                .addPayload("agentId",   agentId) // GH-90000
+                .addPayload("fromStage", fromStage) // GH-90000
+                .addPayload("toStage",   toStage) // GH-90000
+                .addPayload("tenantId",  tenantId) // GH-90000
+                .build(); // GH-90000
     }
 
-    private static Event buildDispatchValidatedEvent(
+    private static Event buildDispatchValidatedEvent( // GH-90000
             String agentId, String fromStage, String toStage,
             String tenantId, String correlationId) {
-        return GEvent.builder()
-                .typeTenantVersion(tenantId, AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED, "v1")
-                .addPayload("agentId",       agentId)
-                .addPayload("fromStage",     fromStage)
-                .addPayload("toStage",       toStage)
-                .addPayload("tenantId",      tenantId)
-                .addPayload("correlationId", correlationId)
-                .build();
+        return GEvent.builder() // GH-90000
+                .typeTenantVersion(tenantId, AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED, "v1") // GH-90000
+                .addPayload("agentId",       agentId) // GH-90000
+                .addPayload("fromStage",     fromStage) // GH-90000
+                .addPayload("toStage",       toStage) // GH-90000
+                .addPayload("tenantId",      tenantId) // GH-90000
+                .addPayload("correlationId", correlationId) // GH-90000
+                .build(); // GH-90000
     }
 
-    private static Event buildResultProducedEvent(
+    private static Event buildResultProducedEvent( // GH-90000
             String agentId, String tenantId, String correlationId, String status) {
-        return GEvent.builder()
-                .typeTenantVersion(tenantId, AgentExecutorOperator.EVENT_RESULT_PRODUCED, "v1")
-                .addPayload("agentId",       agentId)
-                .addPayload("status",        status)
-                .addPayload("tenantId",      tenantId)
-                .addPayload("correlationId", correlationId)
-                .build();
+        return GEvent.builder() // GH-90000
+                .typeTenantVersion(tenantId, AgentExecutorOperator.EVENT_RESULT_PRODUCED, "v1") // GH-90000
+                .addPayload("agentId",       agentId) // GH-90000
+                .addPayload("status",        status) // GH-90000
+                .addPayload("tenantId",      tenantId) // GH-90000
+                .addPayload("correlationId", correlationId) // GH-90000
+                .build(); // GH-90000
     }
 
     // =========================================================================
@@ -80,94 +80,94 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentDispatchValidatorOperator")
+    @DisplayName("AgentDispatchValidatorOperator [GH-90000]")
     class AgentDispatchValidatorTests {
 
         private AgentDispatchValidatorOperator operator;
 
         @BeforeEach
-        void setUp() {
-            operator = new AgentDispatchValidatorOperator();
+        void setUp() { // GH-90000
+            operator = new AgentDispatchValidatorOperator(); // GH-90000
         }
 
         @Test
-        @DisplayName("should emit agent.dispatch.validated for valid dispatch event")
-        void shouldValidateCompleteDispatchEvent() {
+        @DisplayName("should emit agent.dispatch.validated for valid dispatch event [GH-90000]")
+        void shouldValidateCompleteDispatchEvent() { // GH-90000
             // GIVEN
-            Event event = buildDispatchRequestedEvent("agent-1", "planning", "execution", "tenant-1");
+            Event event = buildDispatchRequestedEvent("agent-1", "planning", "execution", "tenant-1"); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutputEvents()).hasSize(1);
-            Event out = result.getOutputEvents().get(0);
-            assertThat(out.getType()).isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED);
-            assertThat(out.getPayload("agentId")).isEqualTo("agent-1");
-            assertThat(out.getPayload("fromStage")).isEqualTo("planning");
-            assertThat(out.getPayload("toStage")).isEqualTo("execution");
-            assertThat(out.getPayload("originalEventType"))
-                    .isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED);
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
+            Event out = result.getOutputEvents().get(0); // GH-90000
+            assertThat(out.getType()).isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED); // GH-90000
+            assertThat(out.getPayload("agentId [GH-90000]")).isEqualTo("agent-1 [GH-90000]");
+            assertThat(out.getPayload("fromStage [GH-90000]")).isEqualTo("planning [GH-90000]");
+            assertThat(out.getPayload("toStage [GH-90000]")).isEqualTo("execution [GH-90000]");
+            assertThat(out.getPayload("originalEventType [GH-90000]"))
+                    .isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED); // GH-90000
         }
 
         @Test
-        @DisplayName("should fail when agentId is missing")
-        void shouldFailWhenAgentIdMissing() {
+        @DisplayName("should fail when agentId is missing [GH-90000]")
+        void shouldFailWhenAgentIdMissing() { // GH-90000
             // GIVEN — build event without agentId
-            Event event = GEvent.builder()
-                    .typeTenantVersion("tenant-1", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED, "v1")
-                    .addPayload("eventId",   "evt-bad")
-                    .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED)
-                    .addPayload("fromStage", "planning")
-                    .addPayload("toStage",   "execution")
-                    .build();
+            Event event = GEvent.builder() // GH-90000
+                    .typeTenantVersion("tenant-1", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED, "v1") // GH-90000
+                    .addPayload("eventId",   "evt-bad") // GH-90000
+                    .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED) // GH-90000
+                    .addPayload("fromStage", "planning") // GH-90000
+                    .addPayload("toStage",   "execution") // GH-90000
+                    .build(); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getErrorMessage()).contains("VALIDATION_FAILED");
-            assertThat(result.getErrorMessage()).contains("agentId");
+            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.getErrorMessage()).contains("VALIDATION_FAILED [GH-90000]");
+            assertThat(result.getErrorMessage()).contains("agentId [GH-90000]");
         }
 
         @Test
-        @DisplayName("should fail when fromStage is blank")
-        void shouldFailWhenFromStageIsBlank() {
+        @DisplayName("should fail when fromStage is blank [GH-90000]")
+        void shouldFailWhenFromStageIsBlank() { // GH-90000
             // GIVEN
-            Event event = GEvent.builder()
-                    .typeTenantVersion("tenant-1", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED, "v1")
-                    .addPayload("eventId",   "evt-bad")
-                    .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED)
-                    .addPayload("agentId",   "agent-2")
-                    .addPayload("fromStage", "")
-                    .addPayload("toStage",   "execution")
-                    .build();
+            Event event = GEvent.builder() // GH-90000
+                    .typeTenantVersion("tenant-1", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED, "v1") // GH-90000
+                    .addPayload("eventId",   "evt-bad") // GH-90000
+                    .addPayload("eventType", AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED) // GH-90000
+                    .addPayload("agentId",   "agent-2") // GH-90000
+                    .addPayload("fromStage", "") // GH-90000
+                    .addPayload("toStage",   "execution") // GH-90000
+                    .build(); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getErrorMessage()).contains("fromStage");
+            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.getErrorMessage()).contains("fromStage [GH-90000]");
         }
 
         @Test
-        @DisplayName("should fail when all required fields are missing")
-        void shouldReportAllMissingFields() {
+        @DisplayName("should fail when all required fields are missing [GH-90000]")
+        void shouldReportAllMissingFields() { // GH-90000
             // GIVEN — event with no payload at all
-            Event event = GEvent.builder()
-                    .type(AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED)
-                    .build();
+            Event event = GEvent.builder() // GH-90000
+                    .type(AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED) // GH-90000
+                    .build(); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getErrorMessage())
-                    .contains("eventId", "agentId", "fromStage", "toStage");
+            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.getErrorMessage()) // GH-90000
+                    .contains("eventId", "agentId", "fromStage", "toStage"); // GH-90000
         }
     }
 
@@ -176,53 +176,53 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("BackpressureOperator")
+    @DisplayName("BackpressureOperator [GH-90000]")
     class BackpressureOperatorTests {
 
         private BackpressureOperator operator;
 
         @BeforeEach
-        void setUp() {
-            operator = new BackpressureOperator();
+        void setUp() { // GH-90000
+            operator = new BackpressureOperator(); // GH-90000
         }
 
         @Test
-        @DisplayName("should pass a single event through the buffer")
-        void shouldPassEventThrough() {
+        @DisplayName("should pass a single event through the buffer [GH-90000]")
+        void shouldPassEventThrough() { // GH-90000
             // GIVEN
-            Event event = buildDispatchRequestedEvent("agent-1", "plan", "exec", "tenant-1");
+            Event event = buildDispatchRequestedEvent("agent-1", "plan", "exec", "tenant-1"); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutputEvents()).hasSize(1);
-            assertThat(result.getOutputEvents().get(0).getType())
-                    .isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED);
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
+            assertThat(result.getOutputEvents().get(0).getType()) // GH-90000
+                    .isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED); // GH-90000
         }
 
         @Test
-        @DisplayName("should maintain correct buffer size after processing")
-        void shouldMaintainBufferSizeCorrectly() {
+        @DisplayName("should maintain correct buffer size after processing [GH-90000]")
+        void shouldMaintainBufferSizeCorrectly() { // GH-90000
             // GIVEN — two events offered
-            Event evt1 = buildDispatchRequestedEvent("agent-1", "plan", "exec", "tenant-1");
-            Event evt2 = buildDispatchRequestedEvent("agent-2", "plan", "exec", "tenant-1");
+            Event evt1 = buildDispatchRequestedEvent("agent-1", "plan", "exec", "tenant-1"); // GH-90000
+            Event evt2 = buildDispatchRequestedEvent("agent-2", "plan", "exec", "tenant-1"); // GH-90000
 
-            // WHEN — process each one (first drains immediately)
-            runPromise(() -> operator.process(evt1));
+            // WHEN — process each one (first drains immediately) // GH-90000
+            runPromise(() -> operator.process(evt1)); // GH-90000
             // After first: buffer was offered evt1, then drained -> size=0
             // Offer evt2 then drain
-            runPromise(() -> operator.process(evt2));
+            runPromise(() -> operator.process(evt2)); // GH-90000
 
             // THEN — buffer should be empty after each synchronized drain
-            assertThat(operator.bufferSize()).isEqualTo(0);
+            assertThat(operator.bufferSize()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("should be created with default buffer size constant")
-        void shouldHaveCorrectDefaultBufferSize() {
-            assertThat(BackpressureOperator.DEFAULT_BUFFER_SIZE).isEqualTo(2048);
+        @DisplayName("should be created with default buffer size constant [GH-90000]")
+        void shouldHaveCorrectDefaultBufferSize() { // GH-90000
+            assertThat(BackpressureOperator.DEFAULT_BUFFER_SIZE).isEqualTo(2048); // GH-90000
         }
     }
 
@@ -231,7 +231,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentExecutorOperator")
+    @DisplayName("AgentExecutorOperator [GH-90000]")
     class AgentExecutorOperatorTests {
 
         @Mock
@@ -240,49 +240,49 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         private AgentExecutorOperator operator;
 
         @BeforeEach
-        void setUp() {
-            // Use lenient stubbing: isInitialized() is only called in some test cases
-            // (tests that reach past the agentId-null guard don't need the stub)
-            lenient().when(yappcAgentSystem.isInitialized()).thenReturn(false);
-            operator = new AgentExecutorOperator(yappcAgentSystem);
+        void setUp() { // GH-90000
+            // Use lenient stubbing: isInitialized() is only called in some test cases // GH-90000
+            // (tests that reach past the agentId-null guard don't need the stub) // GH-90000
+            lenient().when(yappcAgentSystem.isInitialized()).thenReturn(false); // GH-90000
+            operator = new AgentExecutorOperator(yappcAgentSystem); // GH-90000
         }
 
         @Test
-        @DisplayName("should emit agent.result.produced with status=error when agent system is not yet initialized")
-        void shouldEmitResultProducedEvent() {
+        @DisplayName("should emit agent.result.produced with status=error when agent system is not yet initialized [GH-90000]")
+        void shouldEmitResultProducedEvent() { // GH-90000
             // GIVEN — operator with an uninitialized YappcAgentSystem
-            Event event = buildDispatchValidatedEvent("agent-1", "plan", "exec", "tenant-1", "corr-001");
+            Event event = buildDispatchValidatedEvent("agent-1", "plan", "exec", "tenant-1", "corr-001"); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
-            // THEN — OperatorResult is a success (carries the result event),
+            // THEN — OperatorResult is a success (carries the result event), // GH-90000
             // but the result event payload has status=error because the agent system is not initialized.
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutputEvents()).hasSize(1);
-            Event out = result.getOutputEvents().get(0);
-            assertThat(out.getType()).isEqualTo(AgentExecutorOperator.EVENT_RESULT_PRODUCED);
-            assertThat(out.getPayload("status")).isEqualTo("error");
-            assertThat(out.getPayload("agentId")).isEqualTo("agent-1");
-            assertThat(out.getPayload("correlationId")).isEqualTo("corr-001");
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
+            Event out = result.getOutputEvents().get(0); // GH-90000
+            assertThat(out.getType()).isEqualTo(AgentExecutorOperator.EVENT_RESULT_PRODUCED); // GH-90000
+            assertThat(out.getPayload("status [GH-90000]")).isEqualTo("error [GH-90000]");
+            assertThat(out.getPayload("agentId [GH-90000]")).isEqualTo("agent-1 [GH-90000]");
+            assertThat(out.getPayload("correlationId [GH-90000]")).isEqualTo("corr-001 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should fail when agentId is missing from dispatch event")
-        void shouldFailWhenAgentIdMissing() {
+        @DisplayName("should fail when agentId is missing from dispatch event [GH-90000]")
+        void shouldFailWhenAgentIdMissing() { // GH-90000
             // GIVEN — validated event without agentId
-            Event event = GEvent.builder()
-                    .typeTenantVersion("tenant-1", AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED, "v1")
-                    .addPayload("fromStage", "plan")
-                    .addPayload("toStage",   "exec")
-                    .build();
+            Event event = GEvent.builder() // GH-90000
+                    .typeTenantVersion("tenant-1", AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED, "v1") // GH-90000
+                    .addPayload("fromStage", "plan") // GH-90000
+                    .addPayload("toStage",   "exec") // GH-90000
+                    .build(); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getErrorMessage()).contains("agentId");
+            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.getErrorMessage()).contains("agentId [GH-90000]");
         }
     }
 
@@ -291,68 +291,68 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("ResultAggregatorOperator")
+    @DisplayName("ResultAggregatorOperator [GH-90000]")
     class ResultAggregatorOperatorTests {
 
         private ResultAggregatorOperator operator;
 
         @BeforeEach
-        void setUp() {
+        void setUp() { // GH-90000
             // Default threshold = 1 → emit immediately on first result
-            operator = new ResultAggregatorOperator();
+            operator = new ResultAggregatorOperator(); // GH-90000
         }
 
         @Test
-        @DisplayName("should emit workflow.step.completed immediately when threshold=1")
-        void shouldEmitStepCompletedImmediately() {
+        @DisplayName("should emit workflow.step.completed immediately when threshold=1 [GH-90000]")
+        void shouldEmitStepCompletedImmediately() { // GH-90000
             // GIVEN
-            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success");
+            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success"); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutputEvents()).hasSize(1);
-            Event out = result.getOutputEvents().get(0);
-            assertThat(out.getType()).isEqualTo(ResultAggregatorOperator.EVENT_STEP_COMPLETED);
-            assertThat(out.getPayload("correlationId")).isEqualTo("corr-001");
-            assertThat(out.getPayload("resultCount")).isEqualTo(1);
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
+            Event out = result.getOutputEvents().get(0); // GH-90000
+            assertThat(out.getType()).isEqualTo(ResultAggregatorOperator.EVENT_STEP_COMPLETED); // GH-90000
+            assertThat(out.getPayload("correlationId [GH-90000]")).isEqualTo("corr-001 [GH-90000]");
+            assertThat(out.getPayload("resultCount [GH-90000]")).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("should clear bucket after emitting step.completed")
-        void shouldClearBucketAfterEmit() {
+        @DisplayName("should clear bucket after emitting step.completed [GH-90000]")
+        void shouldClearBucketAfterEmit() { // GH-90000
             // GIVEN
-            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-002", "success");
+            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-002", "success"); // GH-90000
 
             // WHEN
-            runPromise(() -> operator.process(event));
+            runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN — bucket for corr-002 should be gone
-            assertThat(operator.activeBucketCount()).isEqualTo(0);
+            assertThat(operator.activeBucketCount()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("should accumulate results until threshold is met with threshold=2")
-        void shouldAccumulateUntilThreshold() {
+        @DisplayName("should accumulate results until threshold is met with threshold=2 [GH-90000]")
+        void shouldAccumulateUntilThreshold() { // GH-90000
             // GIVEN
-            operator = new ResultAggregatorOperator(2);
-            Event first  = buildResultProducedEvent("agent-1", "tenant-1", "corr-003", "success");
-            Event second = buildResultProducedEvent("agent-2", "tenant-1", "corr-003", "success");
+            operator = new ResultAggregatorOperator(2); // GH-90000
+            Event first  = buildResultProducedEvent("agent-1", "tenant-1", "corr-003", "success"); // GH-90000
+            Event second = buildResultProducedEvent("agent-2", "tenant-1", "corr-003", "success"); // GH-90000
 
             // WHEN — first result: below threshold → no output
-            OperatorResult r1 = runPromise(() -> operator.process(first));
-            assertThat(r1.getOutputEvents()).isEmpty();
-            assertThat(operator.activeBucketCount()).isEqualTo(1);
+            OperatorResult r1 = runPromise(() -> operator.process(first)); // GH-90000
+            assertThat(r1.getOutputEvents()).isEmpty(); // GH-90000
+            assertThat(operator.activeBucketCount()).isEqualTo(1); // GH-90000
 
             // WHEN — second result: meets threshold → emit
-            OperatorResult r2 = runPromise(() -> operator.process(second));
-            assertThat(r2.isSuccess()).isTrue();
-            assertThat(r2.getOutputEvents()).hasSize(1);
-            assertThat(r2.getOutputEvents().get(0).getType())
-                    .isEqualTo(ResultAggregatorOperator.EVENT_STEP_COMPLETED);
-            assertThat(operator.activeBucketCount()).isEqualTo(0);
+            OperatorResult r2 = runPromise(() -> operator.process(second)); // GH-90000
+            assertThat(r2.isSuccess()).isTrue(); // GH-90000
+            assertThat(r2.getOutputEvents()).hasSize(1); // GH-90000
+            assertThat(r2.getOutputEvents().get(0).getType()) // GH-90000
+                    .isEqualTo(ResultAggregatorOperator.EVENT_STEP_COMPLETED); // GH-90000
+            assertThat(operator.activeBucketCount()).isEqualTo(0); // GH-90000
         }
     }
 
@@ -361,53 +361,53 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("MetricsCollectorOperator")
+    @DisplayName("MetricsCollectorOperator [GH-90000]")
     class MetricsCollectorOperatorTests {
 
         private MetricsCollectorOperator operator;
 
         @BeforeEach
-        void setUp() {
-            operator = new MetricsCollectorOperator();
+        void setUp() { // GH-90000
+            operator = new MetricsCollectorOperator(); // GH-90000
         }
 
         @Test
-        @DisplayName("should emit agent.metrics.updated for each result event")
-        void shouldEmitMetricsUpdatedEvent() {
+        @DisplayName("should emit agent.metrics.updated for each result event [GH-90000]")
+        void shouldEmitMetricsUpdatedEvent() { // GH-90000
             // GIVEN
-            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success");
+            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success"); // GH-90000
 
             // WHEN
-            OperatorResult result = runPromise(() -> operator.process(event));
+            OperatorResult result = runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutputEvents()).hasSize(1);
-            Event out = result.getOutputEvents().get(0);
-            assertThat(out.getType()).isEqualTo(MetricsCollectorOperator.EVENT_METRICS_UPDATED);
-            assertThat(out.getPayload("agentId")).isEqualTo("agent-1");
-            assertThat(out.getPayload("status")).isEqualTo("success");
-            assertThat(out.getPayload("agent_executions_total")).isEqualTo(1L);
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
+            Event out = result.getOutputEvents().get(0); // GH-90000
+            assertThat(out.getType()).isEqualTo(MetricsCollectorOperator.EVENT_METRICS_UPDATED); // GH-90000
+            assertThat(out.getPayload("agentId [GH-90000]")).isEqualTo("agent-1 [GH-90000]");
+            assertThat(out.getPayload("status [GH-90000]")).isEqualTo("success [GH-90000]");
+            assertThat(out.getPayload("agent_executions_total [GH-90000]")).isEqualTo(1L);
         }
 
         @Test
-        @DisplayName("should increment totalExecutions counter on each call")
-        void shouldIncrementExecutionCounter() {
+        @DisplayName("should increment totalExecutions counter on each call [GH-90000]")
+        void shouldIncrementExecutionCounter() { // GH-90000
             // GIVEN
-            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success");
+            Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success"); // GH-90000
 
             // WHEN — two calls
-            runPromise(() -> operator.process(event));
-            runPromise(() -> operator.process(event));
+            runPromise(() -> operator.process(event)); // GH-90000
+            runPromise(() -> operator.process(event)); // GH-90000
 
             // THEN
-            assertThat(operator.getTotalExecutions()).isEqualTo(2L);
+            assertThat(operator.getTotalExecutions()).isEqualTo(2L); // GH-90000
         }
 
         @Test
-        @DisplayName("should start with zero total executions")
-        void shouldStartAtZero() {
-            assertThat(operator.getTotalExecutions()).isEqualTo(0L);
+        @DisplayName("should start with zero total executions [GH-90000]")
+        void shouldStartAtZero() { // GH-90000
+            assertThat(operator.getTotalExecutions()).isEqualTo(0L); // GH-90000
         }
     }
 }

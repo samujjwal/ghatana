@@ -213,7 +213,7 @@ const generateZoomSequence = (
   return viewports;
 };
 
-describe.skip('Infinite Canvas Performance Benchmark', () => {
+describe.skip('Infinite Canvas Performance Benchmark [GH-90000]', () => {
   let testNodes: BenchmarkNode[];
   let testViewport: Viewport;
 

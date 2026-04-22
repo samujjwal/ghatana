@@ -10,231 +10,231 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("AutoRollbackTrigger Tests")
+@DisplayName("AutoRollbackTrigger Tests [GH-90000]")
 class AutoRollbackTriggerTest extends EventloopTestBase {
 
   @Test
-  @DisplayName("startMonitoring schedules checkpoints and cancelAll cancels them")
-  void startMonitoringSchedulesCheckpointsAndCancelAllCancelsThem() {
-    RecordingScheduler scheduler = new RecordingScheduler();
+  @DisplayName("startMonitoring schedules checkpoints and cancelAll cancels them [GH-90000]")
+  void startMonitoringSchedulesCheckpointsAndCancelAllCancelsThem() { // GH-90000
+    RecordingScheduler scheduler = new RecordingScheduler(); // GH-90000
     AutoRollbackTrigger trigger =
-        trigger(metrics(0.01, 120, 0.99), new RecordingRollbackExecutor(), scheduler, new RecordingDecisionPublisher(), new RecordingFailureReporter());
+        trigger(metrics(0.01, 120, 0.99), new RecordingRollbackExecutor(), scheduler, new RecordingDecisionPublisher(), new RecordingFailureReporter()); // GH-90000
 
     AutoRollbackTrigger.MonitoringPlan plan =
-        trigger.startMonitoring("deploy-1", new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0"));
+        trigger.startMonitoring("deploy-1", new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0")); // GH-90000
 
-    assertThat(plan.deploymentId()).isEqualTo("deploy-1");
-    assertThat(plan.scheduledChecks()).hasSize(5);
-    assertThat(scheduler.delays)
-        .containsExactly(
-            Duration.ofMinutes(5),
-            Duration.ofMinutes(10),
-            Duration.ofMinutes(20),
-            Duration.ofMinutes(30),
-            Duration.ofMinutes(60));
+    assertThat(plan.deploymentId()).isEqualTo("deploy-1 [GH-90000]");
+    assertThat(plan.scheduledChecks()).hasSize(5); // GH-90000
+    assertThat(scheduler.delays) // GH-90000
+        .containsExactly( // GH-90000
+            Duration.ofMinutes(5), // GH-90000
+            Duration.ofMinutes(10), // GH-90000
+            Duration.ofMinutes(20), // GH-90000
+            Duration.ofMinutes(30), // GH-90000
+            Duration.ofMinutes(60)); // GH-90000
 
-    plan.cancelAll();
+    plan.cancelAll(); // GH-90000
 
-    assertThat(scheduler.cancelledCount).isEqualTo(5);
+    assertThat(scheduler.cancelledCount).isEqualTo(5); // GH-90000
   }
 
   @Test
-  @DisplayName("evaluateCheckpoint rolls back on error rate increase")
-  void evaluateCheckpointRollsBackOnErrorRateIncrease() {
-    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor();
-    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher();
+  @DisplayName("evaluateCheckpoint rolls back on error rate increase [GH-90000]")
+  void evaluateCheckpointRollsBackOnErrorRateIncrease() { // GH-90000
+    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor(); // GH-90000
+    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); // GH-90000
     AutoRollbackTrigger trigger =
-        trigger(metrics(0.08, 120, 0.99), rollbackExecutor, new RecordingScheduler(), publisher, new RecordingFailureReporter());
+        trigger(metrics(0.08, 120, 0.99), rollbackExecutor, new RecordingScheduler(), publisher, new RecordingFailureReporter()); // GH-90000
 
     AutoRollbackTrigger.RollbackDecision decision =
-        runPromise(
-            () ->
-                trigger.evaluateCheckpoint(
+        runPromise( // GH-90000
+            () -> // GH-90000
+                trigger.evaluateCheckpoint( // GH-90000
                     "deploy-2",
-                    new AutoRollbackTrigger.DeploymentBaseline(0.02, 120, 0.99, "v1.0.0"),
-                    Duration.ofMinutes(5)));
+                    new AutoRollbackTrigger.DeploymentBaseline(0.02, 120, 0.99, "v1.0.0"), // GH-90000
+                    Duration.ofMinutes(5))); // GH-90000
 
-    assertThat(decision.rollbackTriggered()).isTrue();
-    assertThat(rollbackExecutor.actions).containsExactly("deploy-2:v1.0.0");
-    assertThat(publisher.decisions).containsExactly(decision);
+    assertThat(decision.rollbackTriggered()).isTrue(); // GH-90000
+    assertThat(rollbackExecutor.actions).containsExactly("deploy-2:v1.0.0 [GH-90000]");
+    assertThat(publisher.decisions).containsExactly(decision); // GH-90000
   }
 
   @Test
-  @DisplayName("evaluateCheckpoint rolls back on latency increase")
-  void evaluateCheckpointRollsBackOnLatencyIncrease() {
-    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor();
+  @DisplayName("evaluateCheckpoint rolls back on latency increase [GH-90000]")
+  void evaluateCheckpointRollsBackOnLatencyIncrease() { // GH-90000
+    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor(); // GH-90000
     AutoRollbackTrigger trigger =
-        trigger(metrics(0.01, 900, 0.99), rollbackExecutor, new RecordingScheduler(), new RecordingDecisionPublisher(), new RecordingFailureReporter());
+        trigger(metrics(0.01, 900, 0.99), rollbackExecutor, new RecordingScheduler(), new RecordingDecisionPublisher(), new RecordingFailureReporter()); // GH-90000
 
     AutoRollbackTrigger.RollbackDecision decision =
-        runPromise(
-            () ->
-                trigger.evaluateCheckpoint(
+        runPromise( // GH-90000
+            () -> // GH-90000
+                trigger.evaluateCheckpoint( // GH-90000
                     "deploy-3",
-                    new AutoRollbackTrigger.DeploymentBaseline(0.01, 200, 0.99, "v1.0.0"),
-                    Duration.ofMinutes(10)));
+                    new AutoRollbackTrigger.DeploymentBaseline(0.01, 200, 0.99, "v1.0.0"), // GH-90000
+                    Duration.ofMinutes(10))); // GH-90000
 
-    assertThat(decision.rollbackTriggered()).isTrue();
-    assertThat(decision.reason()).contains("P99 latency increased");
-    assertThat(rollbackExecutor.actions).containsExactly("deploy-3:v1.0.0");
+    assertThat(decision.rollbackTriggered()).isTrue(); // GH-90000
+    assertThat(decision.reason()).contains("P99 latency increased [GH-90000]");
+    assertThat(rollbackExecutor.actions).containsExactly("deploy-3:v1.0.0 [GH-90000]");
   }
 
   @Test
-  @DisplayName("evaluateCheckpoint rolls back on availability drop")
-  void evaluateCheckpointRollsBackOnAvailabilityDrop() {
-    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor();
+  @DisplayName("evaluateCheckpoint rolls back on availability drop [GH-90000]")
+  void evaluateCheckpointRollsBackOnAvailabilityDrop() { // GH-90000
+    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor(); // GH-90000
     AutoRollbackTrigger trigger =
-        trigger(metrics(0.01, 120, 0.9), rollbackExecutor, new RecordingScheduler(), new RecordingDecisionPublisher(), new RecordingFailureReporter());
+        trigger(metrics(0.01, 120, 0.9), rollbackExecutor, new RecordingScheduler(), new RecordingDecisionPublisher(), new RecordingFailureReporter()); // GH-90000
 
     AutoRollbackTrigger.RollbackDecision decision =
-        runPromise(
-            () ->
-                trigger.evaluateCheckpoint(
+        runPromise( // GH-90000
+            () -> // GH-90000
+                trigger.evaluateCheckpoint( // GH-90000
                     "deploy-4",
-                    new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0"),
-                    Duration.ofMinutes(20)));
+                    new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0"), // GH-90000
+                    Duration.ofMinutes(20))); // GH-90000
 
-    assertThat(decision.rollbackTriggered()).isTrue();
-    assertThat(decision.reason()).contains("Availability dropped");
-    assertThat(rollbackExecutor.actions).containsExactly("deploy-4:v1.0.0");
+    assertThat(decision.rollbackTriggered()).isTrue(); // GH-90000
+    assertThat(decision.reason()).contains("Availability dropped [GH-90000]");
+    assertThat(rollbackExecutor.actions).containsExactly("deploy-4:v1.0.0 [GH-90000]");
   }
 
   @Test
-  @DisplayName("evaluateCheckpoint publishes stable decision when thresholds are not breached")
-  void evaluateCheckpointPublishesStableDecisionWhenThresholdsAreNotBreached() {
-    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor();
-    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher();
+  @DisplayName("evaluateCheckpoint publishes stable decision when thresholds are not breached [GH-90000]")
+  void evaluateCheckpointPublishesStableDecisionWhenThresholdsAreNotBreached() { // GH-90000
+    RecordingRollbackExecutor rollbackExecutor = new RecordingRollbackExecutor(); // GH-90000
+    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); // GH-90000
     AutoRollbackTrigger trigger =
-        trigger(metrics(0.015, 180, 0.98), rollbackExecutor, new RecordingScheduler(), publisher, new RecordingFailureReporter());
+        trigger(metrics(0.015, 180, 0.98), rollbackExecutor, new RecordingScheduler(), publisher, new RecordingFailureReporter()); // GH-90000
 
     AutoRollbackTrigger.RollbackDecision decision =
-        runPromise(
-            () ->
-                trigger.evaluateCheckpoint(
+        runPromise( // GH-90000
+            () -> // GH-90000
+                trigger.evaluateCheckpoint( // GH-90000
                     "deploy-5",
-                    new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0"),
-                    Duration.ofMinutes(30)));
+                    new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0"), // GH-90000
+                    Duration.ofMinutes(30))); // GH-90000
 
-    assertThat(decision.rollbackTriggered()).isFalse();
-    assertThat(rollbackExecutor.actions).isEmpty();
-    assertThat(publisher.decisions).containsExactly(decision);
+    assertThat(decision.rollbackTriggered()).isFalse(); // GH-90000
+    assertThat(rollbackExecutor.actions).isEmpty(); // GH-90000
+    assertThat(publisher.decisions).containsExactly(decision); // GH-90000
   }
 
   @Test
-  @DisplayName("startMonitoring reports async checkpoint failures")
-  void startMonitoringReportsAsyncCheckpointFailures() {
-    RecordingScheduler scheduler = new RecordingScheduler();
-    RecordingFailureReporter failureReporter = new RecordingFailureReporter();
+  @DisplayName("startMonitoring reports async checkpoint failures [GH-90000]")
+  void startMonitoringReportsAsyncCheckpointFailures() { // GH-90000
+    RecordingScheduler scheduler = new RecordingScheduler(); // GH-90000
+    RecordingFailureReporter failureReporter = new RecordingFailureReporter(); // GH-90000
     AutoRollbackTrigger trigger =
-        new AutoRollbackTrigger(
-            deploymentId -> Promise.ofException(new IllegalStateException("metrics unavailable")),
-            new RecordingRollbackExecutor(),
+        new AutoRollbackTrigger( // GH-90000
+            deploymentId -> Promise.ofException(new IllegalStateException("metrics unavailable [GH-90000]")),
+            new RecordingRollbackExecutor(), // GH-90000
             scheduler,
-            new RecordingDecisionPublisher(),
+            new RecordingDecisionPublisher(), // GH-90000
             failureReporter,
-            List.of(Duration.ofMinutes(5)));
+            List.of(Duration.ofMinutes(5))); // GH-90000
 
-    trigger.startMonitoring("deploy-6", new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0"));
-    scheduler.tasks.getFirst().run();
+    trigger.startMonitoring("deploy-6", new AutoRollbackTrigger.DeploymentBaseline(0.01, 120, 0.99, "v1.0.0")); // GH-90000
+    scheduler.tasks.getFirst().run(); // GH-90000
 
-    assertThat(failureReporter.failures).hasSize(1);
-    assertThat(failureReporter.failures.getFirst()).contains("deploy-6:metrics unavailable");
+    assertThat(failureReporter.failures).hasSize(1); // GH-90000
+    assertThat(failureReporter.failures.getFirst()).contains("deploy-6:metrics unavailable [GH-90000]");
   }
 
   @Test
-  @DisplayName("auto rollback records normalize invalid values")
-  void recordsNormalizeInvalidValues() {
+  @DisplayName("auto rollback records normalize invalid values [GH-90000]")
+  void recordsNormalizeInvalidValues() { // GH-90000
     AutoRollbackTrigger.DeploymentBaseline baseline =
-        new AutoRollbackTrigger.DeploymentBaseline(-1.0, -5, 2.0, null);
+        new AutoRollbackTrigger.DeploymentBaseline(-1.0, -5, 2.0, null); // GH-90000
     AutoRollbackTrigger.DeploymentMetrics metrics =
-        new AutoRollbackTrigger.DeploymentMetrics(-1.0, -8, 2.0);
+        new AutoRollbackTrigger.DeploymentMetrics(-1.0, -8, 2.0); // GH-90000
     AutoRollbackTrigger.RollbackDecision decision =
-        new AutoRollbackTrigger.RollbackDecision(true, null, null);
+        new AutoRollbackTrigger.RollbackDecision(true, null, null); // GH-90000
     AutoRollbackTrigger.ScheduledCheck scheduledCheck =
-        new AutoRollbackTrigger.ScheduledCheck(null, null);
-    AutoRollbackTrigger.MonitoringPlan plan = new AutoRollbackTrigger.MonitoringPlan(null, null);
+        new AutoRollbackTrigger.ScheduledCheck(null, null); // GH-90000
+    AutoRollbackTrigger.MonitoringPlan plan = new AutoRollbackTrigger.MonitoringPlan(null, null); // GH-90000
 
-    assertThat(baseline.errorRate()).isZero();
-    assertThat(baseline.latencyP99Millis()).isZero();
-    assertThat(baseline.availability()).isEqualTo(1.0);
-    assertThat(baseline.rollbackVersion()).isEqualTo("previous-stable");
+    assertThat(baseline.errorRate()).isZero(); // GH-90000
+    assertThat(baseline.latencyP99Millis()).isZero(); // GH-90000
+    assertThat(baseline.availability()).isEqualTo(1.0); // GH-90000
+    assertThat(baseline.rollbackVersion()).isEqualTo("previous-stable [GH-90000]");
 
-    assertThat(metrics.errorRate()).isZero();
-    assertThat(metrics.latencyP99Millis()).isZero();
-    assertThat(metrics.availability()).isEqualTo(1.0);
+    assertThat(metrics.errorRate()).isZero(); // GH-90000
+    assertThat(metrics.latencyP99Millis()).isZero(); // GH-90000
+    assertThat(metrics.availability()).isEqualTo(1.0); // GH-90000
 
-    assertThat(decision.reason()).isEmpty();
-    assertThat(decision.elapsed()).isEqualTo(Duration.ZERO);
-    assertThat(scheduledCheck.delay()).isEqualTo(Duration.ZERO);
-    scheduledCheck.cancellation().cancel();
-    assertThat(plan.deploymentId()).isEqualTo("unknown-deployment");
-    assertThat(plan.scheduledChecks()).isEmpty();
+    assertThat(decision.reason()).isEmpty(); // GH-90000
+    assertThat(decision.elapsed()).isEqualTo(Duration.ZERO); // GH-90000
+    assertThat(scheduledCheck.delay()).isEqualTo(Duration.ZERO); // GH-90000
+    scheduledCheck.cancellation().cancel(); // GH-90000
+    assertThat(plan.deploymentId()).isEqualTo("unknown-deployment [GH-90000]");
+    assertThat(plan.scheduledChecks()).isEmpty(); // GH-90000
   }
 
-  private AutoRollbackTrigger trigger(
+  private AutoRollbackTrigger trigger( // GH-90000
       AutoRollbackTrigger.DeploymentMetrics metrics,
       RecordingRollbackExecutor rollbackExecutor,
       RecordingScheduler scheduler,
       RecordingDecisionPublisher decisionPublisher,
       RecordingFailureReporter failureReporter) {
-    return new AutoRollbackTrigger(
-        deploymentId -> Promise.of(metrics),
+    return new AutoRollbackTrigger( // GH-90000
+        deploymentId -> Promise.of(metrics), // GH-90000
         rollbackExecutor,
         scheduler,
         decisionPublisher,
         failureReporter);
   }
 
-  private AutoRollbackTrigger.DeploymentMetrics metrics(
+  private AutoRollbackTrigger.DeploymentMetrics metrics( // GH-90000
       double errorRate, long latencyP99Millis, double availability) {
-    return new AutoRollbackTrigger.DeploymentMetrics(errorRate, latencyP99Millis, availability);
+    return new AutoRollbackTrigger.DeploymentMetrics(errorRate, latencyP99Millis, availability); // GH-90000
   }
 
   private static final class RecordingRollbackExecutor
       implements AutoRollbackTrigger.RollbackExecutor {
-    private final List<String> actions = new ArrayList<>();
+    private final List<String> actions = new ArrayList<>(); // GH-90000
 
     @Override
-    public Promise<Void> rollback(String deploymentId, String rollbackVersion, String reason) {
-      actions.add(deploymentId + ":" + rollbackVersion);
-      return Promise.complete();
+    public Promise<Void> rollback(String deploymentId, String rollbackVersion, String reason) { // GH-90000
+      actions.add(deploymentId + ":" + rollbackVersion); // GH-90000
+      return Promise.complete(); // GH-90000
     }
   }
 
   private static final class RecordingScheduler implements AutoRollbackTrigger.Scheduler {
-    private final List<Duration> delays = new ArrayList<>();
-    private final List<Runnable> tasks = new ArrayList<>();
+    private final List<Duration> delays = new ArrayList<>(); // GH-90000
+    private final List<Runnable> tasks = new ArrayList<>(); // GH-90000
     private int cancelledCount;
 
     @Override
-    public AutoRollbackTrigger.Cancellation schedule(Duration delay, Runnable task) {
-      delays.add(delay);
-      tasks.add(task);
-      return () -> cancelledCount++;
+    public AutoRollbackTrigger.Cancellation schedule(Duration delay, Runnable task) { // GH-90000
+      delays.add(delay); // GH-90000
+      tasks.add(task); // GH-90000
+      return () -> cancelledCount++; // GH-90000
     }
   }
 
   private static final class RecordingDecisionPublisher
       implements AutoRollbackTrigger.DecisionPublisher {
-    private final List<AutoRollbackTrigger.RollbackDecision> decisions = new ArrayList<>();
+    private final List<AutoRollbackTrigger.RollbackDecision> decisions = new ArrayList<>(); // GH-90000
 
     @Override
-    public Promise<Void> publish(
+    public Promise<Void> publish( // GH-90000
         String deploymentId,
         AutoRollbackTrigger.RollbackDecision decision,
         AutoRollbackTrigger.DeploymentMetrics currentMetrics) {
-      decisions.add(decision);
-      return Promise.complete();
+      decisions.add(decision); // GH-90000
+      return Promise.complete(); // GH-90000
     }
   }
 
   private static final class RecordingFailureReporter
       implements AutoRollbackTrigger.FailureReporter {
-    private final List<String> failures = new ArrayList<>();
+    private final List<String> failures = new ArrayList<>(); // GH-90000
 
     @Override
-    public void report(String deploymentId, Throwable error) {
-      failures.add(deploymentId + ":" + error.getMessage());
+    public void report(String deploymentId, Throwable error) { // GH-90000
+      failures.add(deploymentId + ":" + error.getMessage()); // GH-90000
     }
   }
 }

@@ -21,117 +21,117 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern TestClass
  */
-@DisplayName("InMemoryCacheAdapter Tests")
+@DisplayName("InMemoryCacheAdapter Tests [GH-90000]")
 class InMemoryCacheAdapterTest extends EventloopTestBase {
 
     private InMemoryCacheAdapter<String, String> cache;
 
     @BeforeEach
-    void setUp() {
-        cache = new InMemoryCacheAdapter<>(1_000, Duration.ofMinutes(5));
+    void setUp() { // GH-90000
+        cache = new InMemoryCacheAdapter<>(1_000, Duration.ofMinutes(5)); // GH-90000
     }
 
     @Test
-    @DisplayName("get returns empty for absent key")
-    void getReturnsEmptyForAbsentKey() {
-        Optional<String> result = runPromise(() -> cache.get("missing"));
-        assertThat(result).isEmpty();
+    @DisplayName("get returns empty for absent key [GH-90000]")
+    void getReturnsEmptyForAbsentKey() { // GH-90000
+        Optional<String> result = runPromise(() -> cache.get("missing [GH-90000]"));
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("put and get round-trip succeeds")
-    void putAndGetRoundTripSucceeds() {
-        runPromise(() -> cache.put("key1", "value1"));
-        Optional<String> result = runPromise(() -> cache.get("key1"));
-        assertThat(result).contains("value1");
+    @DisplayName("put and get round-trip succeeds [GH-90000]")
+    void putAndGetRoundTripSucceeds() { // GH-90000
+        runPromise(() -> cache.put("key1", "value1")); // GH-90000
+        Optional<String> result = runPromise(() -> cache.get("key1 [GH-90000]"));
+        assertThat(result).contains("value1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("invalidate removes key")
-    void invalidateRemovesKey() {
-        runPromise(() -> cache.put("key2", "value2"));
-        runPromise(() -> cache.invalidate("key2"));
-        Optional<String> result = runPromise(() -> cache.get("key2"));
-        assertThat(result).isEmpty();
+    @DisplayName("invalidate removes key [GH-90000]")
+    void invalidateRemovesKey() { // GH-90000
+        runPromise(() -> cache.put("key2", "value2")); // GH-90000
+        runPromise(() -> cache.invalidate("key2 [GH-90000]"));
+        Optional<String> result = runPromise(() -> cache.get("key2 [GH-90000]"));
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("invalidateAll removes all keys")
-    void invalidateAllRemovesAllKeys() {
-        runPromise(() -> cache.put("k1", "v1"));
-        runPromise(() -> cache.put("k2", "v2"));
-        runPromise(() -> cache.invalidateAll());
-        assertThat(runPromise(() -> cache.get("k1"))).isEmpty();
-        assertThat(runPromise(() -> cache.get("k2"))).isEmpty();
+    @DisplayName("invalidateAll removes all keys [GH-90000]")
+    void invalidateAllRemovesAllKeys() { // GH-90000
+        runPromise(() -> cache.put("k1", "v1")); // GH-90000
+        runPromise(() -> cache.put("k2", "v2")); // GH-90000
+        runPromise(() -> cache.invalidateAll()); // GH-90000
+        assertThat(runPromise(() -> cache.get("k1 [GH-90000]"))).isEmpty();
+        assertThat(runPromise(() -> cache.get("k2 [GH-90000]"))).isEmpty();
     }
 
     @Test
-    @DisplayName("getOrLoad invokes loader on miss")
-    void getOrLoadInvokesLoaderOnMiss() {
-        AtomicInteger loadCount = new AtomicInteger(0);
-        String value = runPromise(() -> cache.getOrLoad("key", k -> {
-            loadCount.incrementAndGet();
-            return Promise.of("loaded");
+    @DisplayName("getOrLoad invokes loader on miss [GH-90000]")
+    void getOrLoadInvokesLoaderOnMiss() { // GH-90000
+        AtomicInteger loadCount = new AtomicInteger(0); // GH-90000
+        String value = runPromise(() -> cache.getOrLoad("key", k -> { // GH-90000
+            loadCount.incrementAndGet(); // GH-90000
+            return Promise.of("loaded [GH-90000]");
         }));
-        assertThat(value).isEqualTo("loaded");
-        assertThat(loadCount.get()).isEqualTo(1);
+        assertThat(value).isEqualTo("loaded [GH-90000]");
+        assertThat(loadCount.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("getOrLoad does not invoke loader on hit")
-    void getOrLoadDoesNotInvokeLoaderOnHit() {
-        runPromise(() -> cache.put("key", "cached"));
-        AtomicInteger loadCount = new AtomicInteger(0);
-        String value = runPromise(() -> cache.getOrLoad("key", k -> {
-            loadCount.incrementAndGet();
-            return Promise.of("loaded");
+    @DisplayName("getOrLoad does not invoke loader on hit [GH-90000]")
+    void getOrLoadDoesNotInvokeLoaderOnHit() { // GH-90000
+        runPromise(() -> cache.put("key", "cached")); // GH-90000
+        AtomicInteger loadCount = new AtomicInteger(0); // GH-90000
+        String value = runPromise(() -> cache.getOrLoad("key", k -> { // GH-90000
+            loadCount.incrementAndGet(); // GH-90000
+            return Promise.of("loaded [GH-90000]");
         }));
-        assertThat(value).isEqualTo("cached");
-        assertThat(loadCount.get()).isEqualTo(0);
+        assertThat(value).isEqualTo("cached [GH-90000]");
+        assertThat(loadCount.get()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("isHealthy returns true")
-    void isHealthyReturnsTrue() {
-        assertThat(cache.isHealthy()).isTrue();
+    @DisplayName("isHealthy returns true [GH-90000]")
+    void isHealthyReturnsTrue() { // GH-90000
+        assertThat(cache.isHealthy()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects non-positive maximumSize")
-    void constructorRejectsNonPositiveMaxSize() {
-        assertThatThrownBy(() -> new InMemoryCacheAdapter<>(0, Duration.ofMinutes(1)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("maximumSize");
+    @DisplayName("constructor rejects non-positive maximumSize [GH-90000]")
+    void constructorRejectsNonPositiveMaxSize() { // GH-90000
+        assertThatThrownBy(() -> new InMemoryCacheAdapter<>(0, Duration.ofMinutes(1))) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("maximumSize [GH-90000]");
     }
 
     @Test
-    @DisplayName("constructor rejects zero TTL")
-    void constructorRejectsZeroTtl() {
-        assertThatThrownBy(() -> new InMemoryCacheAdapter<>(100, Duration.ZERO))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("defaultTtl");
+    @DisplayName("constructor rejects zero TTL [GH-90000]")
+    void constructorRejectsZeroTtl() { // GH-90000
+        assertThatThrownBy(() -> new InMemoryCacheAdapter<>(100, Duration.ZERO)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("defaultTtl [GH-90000]");
     }
 
     @Test
-    @DisplayName("constructor rejects negative TTL")
-    void constructorRejectsNegativeTtl() {
-        assertThatThrownBy(() -> new InMemoryCacheAdapter<>(100, Duration.ofSeconds(-1)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("defaultTtl");
+    @DisplayName("constructor rejects negative TTL [GH-90000]")
+    void constructorRejectsNegativeTtl() { // GH-90000
+        assertThatThrownBy(() -> new InMemoryCacheAdapter<>(100, Duration.ofSeconds(-1))) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("defaultTtl [GH-90000]");
     }
 
     @Test
-    @DisplayName("put with explicit TTL stores value")
-    void putWithExplicitTtlStoresValue() {
-        runPromise(() -> cache.put("k", "v", Duration.ofMinutes(1)));
-        assertThat(runPromise(() -> cache.get("k"))).contains("v");
+    @DisplayName("put with explicit TTL stores value [GH-90000]")
+    void putWithExplicitTtlStoresValue() { // GH-90000
+        runPromise(() -> cache.put("k", "v", Duration.ofMinutes(1))); // GH-90000
+        assertThat(runPromise(() -> cache.get("k [GH-90000]"))).contains("v [GH-90000]");
     }
 
     @Test
-    @DisplayName("second put overwrites first")
-    void secondPutOverwritesFirst() {
-        runPromise(() -> cache.put("k", "first"));
-        runPromise(() -> cache.put("k", "second"));
-        assertThat(runPromise(() -> cache.get("k"))).contains("second");
+    @DisplayName("second put overwrites first [GH-90000]")
+    void secondPutOverwritesFirst() { // GH-90000
+        runPromise(() -> cache.put("k", "first")); // GH-90000
+        runPromise(() -> cache.put("k", "second")); // GH-90000
+        assertThat(runPromise(() -> cache.get("k [GH-90000]"))).contains("second [GH-90000]");
     }
 }

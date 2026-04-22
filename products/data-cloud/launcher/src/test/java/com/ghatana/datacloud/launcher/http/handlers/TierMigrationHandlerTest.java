@@ -23,8 +23,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TierMigrationHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("TierMigrationHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class TierMigrationHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -45,20 +45,20 @@ class TierMigrationHandlerTest extends EventloopTestBase {
     private TierMigrationHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new TierMigrationHandler(http, tierMigrationScheduler, archiveMigrationScheduler);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new TierMigrationHandler(http, tierMigrationScheduler, archiveMigrationScheduler); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("migration rejects missing tenant before scheduler access")
-    void migrationRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("migration rejects missing tenant before scheduler access [GH-90000]")
+    void migrationRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleMigrateCollection(request));
+        HttpResponse response = runPromise(() -> handler.handleMigrateCollection(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(tierMigrationScheduler, never()).triggerMigration("default", "default");
-        verify(archiveMigrationScheduler, never()).runMigrationCycle();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(tierMigrationScheduler, never()).triggerMigration("default", "default"); // GH-90000
+        verify(archiveMigrationScheduler, never()).runMigrationCycle(); // GH-90000
     }
 }

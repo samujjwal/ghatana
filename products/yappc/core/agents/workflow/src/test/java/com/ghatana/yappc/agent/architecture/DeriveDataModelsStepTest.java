@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Architecture DeriveDataModelsStep Tests")
+@DisplayName("Architecture DeriveDataModelsStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles derive data models step test operations
@@ -32,51 +32,51 @@ class DeriveDataModelsStepTest extends EventloopTestBase {
   private DeriveDataModelsStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new DeriveDataModelsStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new DeriveDataModelsStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("architecture.derivedatamodels");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("architecture.derivedatamodels [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should derive data models from architecture")
-  void shouldDeriveDataModels() {
+  @DisplayName("Should derive data models from architecture [GH-90000]")
+  void shouldDeriveDataModels() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("architectureId", "arch-001");
-    context.put(
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("architectureId", "arch-001"); // GH-90000
+    context.put( // GH-90000
         "functionalRequirements",
-        List.of("User management", "Product catalog", "Order processing"));
-    context.put("entities", List.of(Map.of("name", "User"), Map.of("name", "Product")));
+        List.of("User management", "Product catalog", "Order processing")); // GH-90000
+    context.put("entities", List.of(Map.of("name", "User"), Map.of("name", "Product"))); // GH-90000
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
+    assertThat(result).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should fail when architectureId is missing")
-  void shouldFailWhenArchitectureIdMissing() {
+  @DisplayName("Should fail when architectureId is missing [GH-90000]")
+  void shouldFailWhenArchitectureIdMissing() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("functionalRequirements", List.of("Some requirement"));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("functionalRequirements", List.of("Some requirement [GH-90000]"));
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("architectureId");
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("architectureId [GH-90000]");
   }
 }

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing GenerateTestsStep Tests")
+@DisplayName("Testing GenerateTestsStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles generate tests step test operations
@@ -34,63 +34,63 @@ class GenerateTestsStepTest extends EventloopTestBase {
   private GenerateTestsStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new GenerateTestsStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new GenerateTestsStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should generate test cases from test plan")
-  void shouldGenerateTestCases() {
+  @DisplayName("Should generate test cases from test plan [GH-90000]")
+  void shouldGenerateTestCases() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("testPlanId", "plan-001");
-    context.put("tenantId", "tenant-abc");
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("testPlanId", "plan-001"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // GH-90000
 
     Map<String, Object> mockTestPlan =
-        Map.of(
+        Map.of( // GH-90000
             "testPlanId", "plan-001",
             "requirementsBaselineId", "req-001",
             "implementationBaselineId", "impl-001");
 
     Map<String, Object> mockReqBaseline =
-        Map.of(
+        Map.of( // GH-90000
             "baselineId",
             "req-001",
             "content",
-            Map.of(
+            Map.of( // GH-90000
                 "requirements",
-                List.of(
-                    Map.of("id", "req1", "category", "FUNCTIONAL", "description", "User login"))));
+                List.of( // GH-90000
+                    Map.of("id", "req1", "category", "FUNCTIONAL", "description", "User login")))); // GH-90000
 
-    when(dbClient.query(eq("test_plans"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(mockTestPlan)));
-    when(dbClient.query(eq("requirements_published"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(mockReqBaseline)));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.query(eq("test_plans [GH-90000]"), any(), anyInt()))
+        .thenReturn(Promise.of(List.of(mockTestPlan))); // GH-90000
+    when(dbClient.query(eq("requirements_published [GH-90000]"), any(), anyInt()))
+        .thenReturn(Promise.of(List.of(mockReqBaseline))); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("status")).isEqualTo("COMPLETED");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should fail when testPlanId is missing")
-  void shouldFailWhenTestPlanIdMissing() {
+  @DisplayName("Should fail when testPlanId is missing [GH-90000]")
+  void shouldFailWhenTestPlanIdMissing() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("tenantId", "tenant-abc");
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("testPlan");
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("testPlan [GH-90000]");
   }
 }

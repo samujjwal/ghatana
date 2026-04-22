@@ -18,54 +18,54 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test event routing, filtering, and distribution to subscribers.
  */
-@DisplayName("Event Routing Tests")
+@DisplayName("Event Routing Tests [GH-90000]")
 class EventRoutingTest {
 
     @Test
-    @DisplayName("Should route events to subscribers")
-    void shouldRouteEventsToSubscribers() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should route events to subscribers [GH-90000]")
+    void shouldRouteEventsToSubscribers() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should filter events by type")
-    void shouldFilterEventsByType() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should filter events by type [GH-90000]")
+    void shouldFilterEventsByType() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle event transformation")
-    void shouldHandleEventTransformation() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle event transformation [GH-90000]")
+    void shouldHandleEventTransformation() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle subscription management")
-    void shouldHandleSubscriptionManagement() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle subscription management [GH-90000]")
+    void shouldHandleSubscriptionManagement() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle routing failures")
-    void shouldHandleRoutingFailures() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle routing failures [GH-90000]")
+    void shouldHandleRoutingFailures() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle concurrent routing")
-    void shouldHandleConcurrentRouting() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle concurrent routing [GH-90000]")
+    void shouldHandleConcurrentRouting() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 }

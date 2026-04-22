@@ -18,87 +18,87 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("RequirementsConsistencyChecker Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("RequirementsConsistencyChecker Tests [GH-90000]")
 class RequirementsConsistencyCheckerTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("analyze returns deterministic findings for placeholders and duplicate requirements")
-  void analyzeReturnsDeterministicFindingsForPlaceholdersAndDuplicateRequirements() {
-    RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService);
+  @DisplayName("analyze returns deterministic findings for placeholders and duplicate requirements [GH-90000]")
+  void analyzeReturnsDeterministicFindingsForPlaceholdersAndDuplicateRequirements() { // GH-90000
+    RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService); // GH-90000
 
     List<AIInsight> insights =
-        runPromise(
-            () ->
-                checker.analyze(
-                    new RequirementChangedEvent(
+        runPromise( // GH-90000
+            () -> // GH-90000
+                checker.analyze( // GH-90000
+                    new RequirementChangedEvent( // GH-90000
                         "tenant-a",
                         "project-a",
                         "REQ-1",
                         "TBD offline edits",
                         "TBD offline edits",
-                        List.of("tbd offline edits"))));
+                        List.of("tbd offline edits [GH-90000]"))));
 
-    assertThat(insights).hasSize(3);
-    assertThat(insights).extracting(AIInsight::title)
-        .containsExactlyInAnyOrder(
+    assertThat(insights).hasSize(3); // GH-90000
+    assertThat(insights).extracting(AIInsight::title) // GH-90000
+        .containsExactlyInAnyOrder( // GH-90000
             "Requirement lacks implementation detail",
             "Requirement contains placeholders",
             "Potential duplicate requirement");
-    verifyNoInteractions(aiService);
+    verifyNoInteractions(aiService); // GH-90000
   }
 
   @Test
-  @DisplayName("analyze parses structured AI findings when deterministic checks are clean")
-  void analyzeParsesStructuredAiFindingsWhenDeterministicChecksAreClean() {
-    when(aiService.reason(anyString(), anyMap()))
-        .thenReturn(
-            Promise.of(
+  @DisplayName("analyze parses structured AI findings when deterministic checks are clean [GH-90000]")
+  void analyzeParsesStructuredAiFindingsWhenDeterministicChecksAreClean() { // GH-90000
+    when(aiService.reason(anyString(), anyMap())) // GH-90000
+        .thenReturn( // GH-90000
+            Promise.of( // GH-90000
                 "[{\"severity\":\"warning\",\"title\":\"Missing acceptance criteria\",\"description\":\"No acceptance criteria linked\",\"suggestion\":\"Add measurable acceptance criteria\",\"confidence\":\"0.87\"}]"));
 
-    RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService);
+    RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService); // GH-90000
     List<AIInsight> insights =
-        runPromise(
-            () ->
-                checker.analyze(
-                    new RequirementChangedEvent(
+        runPromise( // GH-90000
+            () -> // GH-90000
+                checker.analyze( // GH-90000
+                    new RequirementChangedEvent( // GH-90000
                         "tenant-a",
                         "project-a",
                         "REQ-2",
                         "Offline editing support",
                         "The platform must support offline editing with eventual synchronization and measurable recovery acceptance criteria for mobile and web sessions.",
-                        List.of("Sync recovery requirement"))));
+                        List.of("Sync recovery requirement [GH-90000]"))));
 
-    assertThat(insights).singleElement().satisfies(insight -> {
-      assertThat(insight.type()).isEqualTo(AIInsight.InsightType.REQUIREMENT);
-      assertThat(insight.title()).isEqualTo("Missing acceptance criteria");
-      assertThat(insight.confidence()).isEqualTo(0.87);
+    assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
+      assertThat(insight.type()).isEqualTo(AIInsight.InsightType.REQUIREMENT); // GH-90000
+      assertThat(insight.title()).isEqualTo("Missing acceptance criteria [GH-90000]");
+      assertThat(insight.confidence()).isEqualTo(0.87); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("analyze falls back to manual review insight for malformed AI response")
-  void analyzeFallsBackToManualReviewInsightForMalformedAiResponse() {
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
+  @DisplayName("analyze falls back to manual review insight for malformed AI response [GH-90000]")
+  void analyzeFallsBackToManualReviewInsightForMalformedAiResponse() { // GH-90000
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json [GH-90000]"));
 
-    RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService);
+    RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService); // GH-90000
     List<AIInsight> insights =
-        runPromise(
-            () ->
-                checker.analyze(
-                    new RequirementChangedEvent(
+        runPromise( // GH-90000
+            () -> // GH-90000
+                checker.analyze( // GH-90000
+                    new RequirementChangedEvent( // GH-90000
                         "tenant-a",
                         "project-a",
                         "REQ-3",
                         "Clear requirement",
                         "The platform must provide operator-visible audit trails for generated changes, including actor identity, timestamps, policy checks, and rollback steps.",
-                        List.of("Security audit requirement"))));
+                        List.of("Security audit requirement [GH-90000]"))));
 
-    assertThat(insights).singleElement().satisfies(insight -> {
-      assertThat(insight.title()).isEqualTo("Manual requirement review recommended");
-      assertThat(insight.description()).isEqualTo("not-json");
+    assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
+      assertThat(insight.title()).isEqualTo("Manual requirement review recommended [GH-90000]");
+      assertThat(insight.description()).isEqualTo("not-json [GH-90000]");
     });
   }
 }

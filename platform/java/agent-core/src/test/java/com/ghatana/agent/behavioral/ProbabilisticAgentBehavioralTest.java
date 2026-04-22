@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  */
 
 package com.ghatana.agent.behavioral;
@@ -30,8 +30,8 @@ import static org.mockito.Mockito.*;
  * Focus: Actual ML processing correctness, confidence calibration, fallback chains,
  * and probabilistic reasoning patterns.
  */
-@DisplayName("ProbabilisticAgent Behavioral Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("ProbabilisticAgent Behavioral Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class ProbabilisticAgentBehavioralTest {
 
     @Mock
@@ -50,15 +50,15 @@ class ProbabilisticAgentBehavioralTest {
     private ProbabilisticAgent agent;
 
     @BeforeEach
-    void setUp() {
-        agentContext = AgentContext.builder()
-                .turnId("turn-1")
-                .agentId("prob-agent")
-                .tenantId("tenant-1")
-                .memoryStore(memoryStore)
-                .build();
+    void setUp() { // GH-90000
+        agentContext = AgentContext.builder() // GH-90000
+                .turnId("turn-1 [GH-90000]")
+                .agentId("prob-agent [GH-90000]")
+                .tenantId("tenant-1 [GH-90000]")
+                .memoryStore(memoryStore) // GH-90000
+                .build(); // GH-90000
 
-        agent = new ProbabilisticAgent("prob-agent", primaryModel);
+        agent = new ProbabilisticAgent("prob-agent", primaryModel); // GH-90000
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -66,127 +66,127 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Processing Logic")
+    @DisplayName("Processing Logic [GH-90000]")
     class ProcessingTests {
 
         @Test
-        @DisplayName("Agent invokes model inference for input")
-        void modelInvocation() {
-            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class-A"), 0.82, "v1", 0L);
+        @DisplayName("Agent invokes model inference for input [GH-90000]")
+        void modelInvocation() { // GH-90000
+            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class-A"), 0.82, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("feature1", 1.5, "feature2", 2.3);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("feature1", 1.5, "feature2", 2.3); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result).isNotNull();
-            assertThat(result.isSuccess()).isTrue();
-            verify(primaryModel, times(1)).infer(input);
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            verify(primaryModel, times(1)).infer(input); // GH-90000
         }
 
         @Test
-        @DisplayName("Agent produces output from model prediction")
-        void predictionOutput() {
-            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("label", "positive", "probability", 0.88), 0.88, "v2", 0L);
+        @DisplayName("Agent produces output from model prediction [GH-90000]")
+        void predictionOutput() { // GH-90000
+            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("label", "positive", "probability", 0.88), 0.88, "v2", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v2")
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v2 [GH-90000]")
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("text", "great product");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("text", "great product"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.getOutput()).isNotNull();
+            assertThat(result.getOutput()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Agent handles model timeout gracefully with fallback")
-        void modelTimeoutFallback() {
+        @DisplayName("Agent handles model timeout gracefully with fallback [GH-90000]")
+        void modelTimeoutFallback() { // GH-90000
             // Primary model times out
-            when(primaryModel.infer(anyMap()))
-                    .thenReturn(Promise.ofException(new TimeoutException("Model timeout")));
+            when(primaryModel.infer(anyMap())) // GH-90000
+                    .thenReturn(Promise.ofException(new TimeoutException("Model timeout [GH-90000]")));
 
-            ModelInference.InferenceResult fallbackResult = new ModelInference.InferenceResult(Map.of("prediction", "fallback-output"), 0.5, "fallback-v1", 0L);
+            ModelInference.InferenceResult fallbackResult = new ModelInference.InferenceResult(Map.of("prediction", "fallback-output"), 0.5, "fallback-v1", 0L); // GH-90000
 
-            when(fallbackModel.infer(anyMap())).thenReturn(Promise.of(fallbackResult));
+            when(fallbackModel.infer(anyMap())).thenReturn(Promise.of(fallbackResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            agent.setFallbackModels(List.of(fallbackModel));
+            agent.setFallbackModels(List.of(fallbackModel)); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            // Should still produce result (via fallback or error handling)
-            assertThat(result).isNotNull();
+            // Should still produce result (via fallback or error handling) // GH-90000
+            assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Agent handles model error gracefully")
-        void modelErrorHandling() {
-            when(primaryModel.infer(anyMap()))
-                    .thenReturn(Promise.ofException(new RuntimeException("Model error")));
+        @DisplayName("Agent handles model error gracefully [GH-90000]")
+        void modelErrorHandling() { // GH-90000
+            when(primaryModel.infer(anyMap())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("Model error [GH-90000]")));
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("data", "test");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("data", "test"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
             // Should fail gracefully
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Batch inference processes multiple inputs")
-        void batchInference() {
-            ModelInference.InferenceResult result1 = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.75, "v1", 0L);
-            ModelInference.InferenceResult result2 = new ModelInference.InferenceResult(Map.of("prediction", "B"), 0.82, "v1", 0L);
+        @DisplayName("Batch inference processes multiple inputs [GH-90000]")
+        void batchInference() { // GH-90000
+            ModelInference.InferenceResult result1 = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.75, "v1", 0L); // GH-90000
+            ModelInference.InferenceResult result2 = new ModelInference.InferenceResult(Map.of("prediction", "B"), 0.82, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap()))
-                    .thenReturn(Promise.of(result1))
-                    .thenReturn(Promise.of(result2));
+            when(primaryModel.infer(anyMap())) // GH-90000
+                    .thenReturn(Promise.of(result1)) // GH-90000
+                    .thenReturn(Promise.of(result2)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            List<Map<String, Object>> inputs = List.of(
-                    Map.of("x", 1),
-                    Map.of("x", 2)
+            List<Map<String, Object>> inputs = List.of( // GH-90000
+                    Map.of("x", 1), // GH-90000
+                    Map.of("x", 2) // GH-90000
             );
 
-            for (Map<String, Object> input : inputs) {
-                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
-                assertThat(result.isSuccess()).isTrue();
+            for (Map<String, Object> input : inputs) { // GH-90000
+                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+                assertThat(result.isSuccess()).isTrue(); // GH-90000
             }
         }
     }
@@ -196,130 +196,130 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence Scoring")
+    @DisplayName("Confidence Scoring [GH-90000]")
     class ConfidenceScoringTests {
 
         @Test
-        @DisplayName("Confidence scores are in valid range [0.0, 1.0]")
-        void confidenceRangeValidation() {
-            for (double score = 0.0; score <= 1.0; score += 0.1) {
-                ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class"), score, "v1", 0L);
+        @DisplayName("Confidence scores are in valid range [0.0, 1.0] [GH-90000]")
+        void confidenceRangeValidation() { // GH-90000
+            for (double score = 0.0; score <= 1.0; score += 0.1) { // GH-90000
+                ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class"), score, "v1", 0L); // GH-90000
 
-                when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult));
+                when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult)); // GH-90000
 
-                ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                        .subtype(ProbabilisticSubtype.ML_MODEL)
-                        .modelVersion("v1")
-                        .build();
+                ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                        .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                        .modelVersion("v1 [GH-90000]")
+                        .build(); // GH-90000
 
-                runPromise(() -> agent.initialize(config));
+                runPromise(() -> agent.initialize(config)); // GH-90000
 
-                Map<String, Object> input = Map.of("x", score);
-                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+                Map<String, Object> input = Map.of("x", score); // GH-90000
+                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-                assertThat(result.getConfidence())
-                        .isGreaterThanOrEqualTo(0.0)
-                        .isLessThanOrEqualTo(1.0);
+                assertThat(result.getConfidence()) // GH-90000
+                        .isGreaterThanOrEqualTo(0.0) // GH-90000
+                        .isLessThanOrEqualTo(1.0); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("High-confidence cases have confidence > 0.7")
-        void highConfidenceDetection() {
-            ModelInference.InferenceResult highConfResult = new ModelInference.InferenceResult(Map.of("prediction", "confident-class"), 0.92, "v1", 0L);
+        @DisplayName("High-confidence cases have confidence > 0.7 [GH-90000]")
+        void highConfidenceDetection() { // GH-90000
+            ModelInference.InferenceResult highConfResult = new ModelInference.InferenceResult(Map.of("prediction", "confident-class"), 0.92, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(highConfResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(highConfResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            agent.setFallbackModels(List.of(fallbackModel));
+            agent.setFallbackModels(List.of(fallbackModel)); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("data", "good");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("data", "good"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.getConfidence()).isGreaterThan(0.7);
-            assertThat(result.meetsConfidence(0.7)).isTrue();
+            assertThat(result.getConfidence()).isGreaterThan(0.7); // GH-90000
+            assertThat(result.meetsConfidence(0.7)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("Low-confidence cases have confidence < 0.3")
-        void lowConfidenceDetection() {
-            ModelInference.InferenceResult lowConfResult = new ModelInference.InferenceResult(Map.of("prediction", "uncertain-class"), 0.25, "v1", 0L);
+        @DisplayName("Low-confidence cases have confidence < 0.3 [GH-90000]")
+        void lowConfidenceDetection() { // GH-90000
+            ModelInference.InferenceResult lowConfResult = new ModelInference.InferenceResult(Map.of("prediction", "uncertain-class"), 0.25, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(lowConfResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(lowConfResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            agent.setFallbackModels(List.of(fallbackModel));
+            agent.setFallbackModels(List.of(fallbackModel)); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("data", "ambiguous");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("data", "ambiguous"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.getConfidence()).isLessThan(0.3);
+            assertThat(result.getConfidence()).isLessThan(0.3); // GH-90000
         }
 
         @Test
-        @DisplayName("Confidence calibration adjusts raw scores")
-        void confidenceCalibration() {
+        @DisplayName("Confidence calibration adjusts raw scores [GH-90000]")
+        void confidenceCalibration() { // GH-90000
             double rawScore = 0.7;
             double calibratedScore = 0.75;  // Slightly adjusted
 
-            ModelInference.InferenceResult rawResult = new ModelInference.InferenceResult(Map.of("prediction", "class"), rawScore, "v1", 0L);
+            ModelInference.InferenceResult rawResult = new ModelInference.InferenceResult(Map.of("prediction", "class"), rawScore, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(rawResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(rawResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
             // Confidence should be in valid range
-            assertThat(result.getConfidence())
-                    .isGreaterThanOrEqualTo(0.0)
-                    .isLessThanOrEqualTo(1.0);
+            assertThat(result.getConfidence()) // GH-90000
+                    .isGreaterThanOrEqualTo(0.0) // GH-90000
+                    .isLessThanOrEqualTo(1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("Multiple predictions show varying confidence levels")
-        void varyingConfidenceLevels() {
+        @DisplayName("Multiple predictions show varying confidence levels [GH-90000]")
+        void varyingConfidenceLevels() { // GH-90000
             double[] scores = {0.15, 0.45, 0.75, 0.95};
 
-            for (double score : scores) {
-                ModelInference.InferenceResult result = new ModelInference.InferenceResult(Map.of("prediction", "class-" + score), score, "v1", 0L);
+            for (double score : scores) { // GH-90000
+                ModelInference.InferenceResult result = new ModelInference.InferenceResult(Map.of("prediction", "class-" + score), score, "v1", 0L); // GH-90000
 
-                when(primaryModel.infer(anyMap())).thenReturn(Promise.of(result));
+                when(primaryModel.infer(anyMap())).thenReturn(Promise.of(result)); // GH-90000
 
-                ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                        .subtype(ProbabilisticSubtype.ML_MODEL)
-                        .modelVersion("v1")
-                        .build();
+                ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                        .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                        .modelVersion("v1 [GH-90000]")
+                        .build(); // GH-90000
 
-                runPromise(() -> agent.initialize(config));
+                runPromise(() -> agent.initialize(config)); // GH-90000
 
-                Map<String, Object> input = Map.of("score", score);
-                AgentResult<?> agentResult = runPromise(() -> agent.process(agentContext, input));
+                Map<String, Object> input = Map.of("score", score); // GH-90000
+                AgentResult<?> agentResult = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
                 // All confidences should be in valid range
-                assertThat(agentResult.getConfidence())
-                        .isBetween(0.0, 1.0);
+                assertThat(agentResult.getConfidence()) // GH-90000
+                        .isBetween(0.0, 1.0); // GH-90000
             }
         }
     }
@@ -329,76 +329,76 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Generation")
+    @DisplayName("Explanation Generation [GH-90000]")
     class ExplanationTests {
 
         @Test
-        @DisplayName("Explanation is non-empty for results")
-        void explanationNonEmpty() {
-            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "positive"), 0.85, "sentiment-v2", 0L);
+        @DisplayName("Explanation is non-empty for results [GH-90000]")
+        void explanationNonEmpty() { // GH-90000
+            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "positive"), 0.85, "sentiment-v2", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("sentiment-v2")
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("sentiment-v2 [GH-90000]")
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("text", "excellent service");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("text", "excellent service"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.getExplanation())
-                    .isNotNull()
-                    .isNotBlank();
+            assertThat(result.getExplanation()) // GH-90000
+                    .isNotNull() // GH-90000
+                    .isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("Explanation mentions confidence level")
-        void explanationMentionsConfidence() {
-            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class-A"), 0.87, "v1", 0L);
+        @DisplayName("Explanation mentions confidence level [GH-90000]")
+        void explanationMentionsConfidence() { // GH-90000
+            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class-A"), 0.87, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .build(); // GH-90000
 
-            agent.setFallbackModels(List.of(fallbackModel));
+            agent.setFallbackModels(List.of(fallbackModel)); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("features", "test");
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("features", "test"); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            String explanation = result.getExplanation();
-            assertThat(explanation)
-                    .isNotNull()
-                    .isNotBlank();
+            String explanation = result.getExplanation(); // GH-90000
+            assertThat(explanation) // GH-90000
+                    .isNotNull() // GH-90000
+                    .isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("Explanation references prediction")
-        void explanationReferencesPrediction() {
-            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "ANOMALY_DETECTED"), 0.91, "anomaly-v3", 0L);
+        @DisplayName("Explanation references prediction [GH-90000]")
+        void explanationReferencesPrediction() { // GH-90000
+            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "ANOMALY_DETECTED"), 0.91, "anomaly-v3", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("anomaly-v3")
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("anomaly-v3 [GH-90000]")
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("values", new double[]{10, 100, 200});
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("values", new double[]{10, 100, 200}); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            String explanation = result.getExplanation();
-            assertThat(explanation)
-                    .isNotNull();
+            String explanation = result.getExplanation(); // GH-90000
+            assertThat(explanation) // GH-90000
+                    .isNotNull(); // GH-90000
         }
     }
 
@@ -407,56 +407,56 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Fallback Chain Logic")
+    @DisplayName("Fallback Chain Logic [GH-90000]")
     class FallbackChainTests {
 
         @Test
-        @DisplayName("Primary model success produces result without fallback")
-        void primaryModelSuccess() {
-            ModelInference.InferenceResult primaryResult = new ModelInference.InferenceResult(Map.of("prediction", "primary-output"), 0.88, "v1", 0L);
+        @DisplayName("Primary model success produces result without fallback [GH-90000]")
+        void primaryModelSuccess() { // GH-90000
+            ModelInference.InferenceResult primaryResult = new ModelInference.InferenceResult(Map.of("prediction", "primary-output"), 0.88, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(primaryResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(primaryResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(result.isSuccess()).isTrue();
-            verify(primaryModel, times(1)).infer(anyMap());
-            verify(fallbackModel, never()).infer(anyMap());
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            verify(primaryModel, times(1)).infer(anyMap()); // GH-90000
+            verify(fallbackModel, never()).infer(anyMap()); // GH-90000
         }
 
         @Test
-        @DisplayName("Fallback invoked when primary model fails")
-        void fallbackOnPrimaryFailure() {
-            when(primaryModel.infer(anyMap()))
-                    .thenReturn(Promise.ofException(new RuntimeException("Primary failed")));
+        @DisplayName("Fallback invoked when primary model fails [GH-90000]")
+        void fallbackOnPrimaryFailure() { // GH-90000
+            when(primaryModel.infer(anyMap())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("Primary failed [GH-90000]")));
 
-            ModelInference.InferenceResult fallbackResult = new ModelInference.InferenceResult(Map.of("prediction", "fallback-output"), 0.60, "fallback-v1", 0L);
+            ModelInference.InferenceResult fallbackResult = new ModelInference.InferenceResult(Map.of("prediction", "fallback-output"), 0.60, "fallback-v1", 0L); // GH-90000
 
-            when(fallbackModel.infer(anyMap())).thenReturn(Promise.of(fallbackResult));
+            when(fallbackModel.infer(anyMap())).thenReturn(Promise.of(fallbackResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            agent.setFallbackModels(List.of(fallbackModel));
+            agent.setFallbackModels(List.of(fallbackModel)); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("x", 1);
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("x", 1); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
             // Should still produce result
-            assertThat(result).isNotNull();
+            assertThat(result).isNotNull(); // GH-90000
         }
     }
 
@@ -465,69 +465,69 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Model Versioning")
+    @DisplayName("Model Versioning [GH-90000]")
     class ModelVersioningTests {
 
         @Test
-        @DisplayName("Agent tracks model version in result")
-        void modelVersionTracking() {
+        @DisplayName("Agent tracks model version in result [GH-90000]")
+        void modelVersionTracking() { // GH-90000
             String modelVersion = "sentiment-classifier-v2.1.0";
 
-            ModelInference.InferenceResult result = new ModelInference.InferenceResult(Map.of("prediction", "positive"), 0.84, modelVersion, 0L);
+            ModelInference.InferenceResult result = new ModelInference.InferenceResult(Map.of("prediction", "positive"), 0.84, modelVersion, 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(result));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(result)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion(modelVersion)
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion(modelVersion) // GH-90000
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
-            Map<String, Object> input = Map.of("text", "great");
-            AgentResult<?> agentResult = runPromise(() -> agent.process(agentContext, input));
+            Map<String, Object> input = Map.of("text", "great"); // GH-90000
+            AgentResult<?> agentResult = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(agentResult.getMetrics()).containsKey("modelVersion");
+            assertThat(agentResult.getMetrics()).containsKey("modelVersion [GH-90000]");
         }
 
         @Test
-        @DisplayName("Different model versions produce consistent predictions")
-        void modelVersionConsistency() {
-            ModelInference.InferenceResult v1Result = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.75, "v1", 0L);
+        @DisplayName("Different model versions produce consistent predictions [GH-90000]")
+        void modelVersionConsistency() { // GH-90000
+            ModelInference.InferenceResult v1Result = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.75, "v1", 0L); // GH-90000
 
-            ModelInference.InferenceResult v2Result = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.78, "v2", 0L);
+            ModelInference.InferenceResult v2Result = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.78, "v2", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap()))
-                    .thenReturn(Promise.of(v1Result))
-                    .thenReturn(Promise.of(v2Result));
+            when(primaryModel.infer(anyMap())) // GH-90000
+                    .thenReturn(Promise.of(v1Result)) // GH-90000
+                    .thenReturn(Promise.of(v2Result)); // GH-90000
 
-            Map<String, Object> input = Map.of("data", "test");
+            Map<String, Object> input = Map.of("data", "test"); // GH-90000
 
             // Test with v1
-            ProbabilisticAgentConfig configV1 = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig configV1 = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(configV1));
-            AgentResult<?> resultV1 = runPromise(() -> agent.process(agentContext, input));
+            runPromise(() -> agent.initialize(configV1)); // GH-90000
+            AgentResult<?> resultV1 = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
             // Test with v2
-            ProbabilisticAgent agentV2 = new ProbabilisticAgent("prob-agent-v2", primaryModel);
-            ProbabilisticAgentConfig configV2 = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v2")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgent agentV2 = new ProbabilisticAgent("prob-agent-v2", primaryModel); // GH-90000
+            ProbabilisticAgentConfig configV2 = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v2 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agentV2.initialize(configV2));
-            AgentResult<?> resultV2 = runPromise(() -> agentV2.process(agentContext, input));
+            runPromise(() -> agentV2.initialize(configV2)); // GH-90000
+            AgentResult<?> resultV2 = runPromise(() -> agentV2.process(agentContext, input)); // GH-90000
 
             // Both should produce results
-            assertThat(resultV1.isSuccess()).isTrue();
-            assertThat(resultV2.isSuccess()).isTrue();
+            assertThat(resultV1.isSuccess()).isTrue(); // GH-90000
+            assertThat(resultV2.isSuccess()).isTrue(); // GH-90000
         }
     }
 
@@ -536,38 +536,38 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Performance")
+    @DisplayName("Performance [GH-90000]")
     class PerformanceTests {
 
         @Test
-        @DisplayName("High throughput inference")
-        void highThroughputInference() {
-            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "result"), 0.75, "v1", 0L);
+        @DisplayName("High throughput inference [GH-90000]")
+        void highThroughputInference() { // GH-90000
+            ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "result"), 0.75, "v1", 0L); // GH-90000
 
-            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult));
+            when(primaryModel.infer(anyMap())).thenReturn(Promise.of(inferenceResult)); // GH-90000
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
-                    .subtype(ProbabilisticSubtype.ML_MODEL)
-                    .modelVersion("v1")
-                    .confidenceThreshold(0.5)
-                    .build();
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+                    .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
+                    .modelVersion("v1 [GH-90000]")
+                    .confidenceThreshold(0.5) // GH-90000
+                    .build(); // GH-90000
 
-            runPromise(() -> agent.initialize(config));
+            runPromise(() -> agent.initialize(config)); // GH-90000
 
             int iterations = 100;
-            Instant start = Instant.now();
+            Instant start = Instant.now(); // GH-90000
 
-            for (int i = 0; i < iterations; i++) {
-                Map<String, Object> input = Map.of("iteration", i);
-                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
-                assertThat(result.isSuccess()).isTrue();
+            for (int i = 0; i < iterations; i++) { // GH-90000
+                Map<String, Object> input = Map.of("iteration", i); // GH-90000
+                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+                assertThat(result.isSuccess()).isTrue(); // GH-90000
             }
 
-            Instant end = Instant.now();
-            Duration totalTime = Duration.between(start, end);
+            Instant end = Instant.now(); // GH-90000
+            Duration totalTime = Duration.between(start, end); // GH-90000
 
             // Should complete reasonably quickly
-            assertThat(totalTime).isLessThan(Duration.ofSeconds(10));
+            assertThat(totalTime).isLessThan(Duration.ofSeconds(10)); // GH-90000
         }
     }
 
@@ -575,19 +575,19 @@ class ProbabilisticAgentBehavioralTest {
     // Helper Methods
     // ═══════════════════════════════════════════════════════════════════════════
 
-    private <T> T runPromise(java.util.function.Supplier<Promise<T>> supplier) {
-        var result = new Object() { T value; };
-        var error = new Object() { Exception ex; };
+    private <T> T runPromise(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
+        var result = new Object() { T value; }; // GH-90000
+        var error = new Object() { Exception ex; }; // GH-90000
 
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
-        eventloop.post(() -> supplier.get()
-                .whenResult(v -> result.value = v)
-                .whenException(e -> error.ex = (Exception) e));
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
+        eventloop.post(() -> supplier.get() // GH-90000
+                .whenResult(v -> result.value = v) // GH-90000
+                .whenException(e -> error.ex = (Exception) e)); // GH-90000
 
-        eventloop.run();
+        eventloop.run(); // GH-90000
 
-        if (error.ex != null) {
-            throw new RuntimeException(error.ex);
+        if (error.ex != null) { // GH-90000
+            throw new RuntimeException(error.ex); // GH-90000
         }
 
         return result.value;

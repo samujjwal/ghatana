@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.server.http;
@@ -27,145 +27,145 @@ import java.util.Map;
 class CorrelationIdPropagationTest {
 
     @Test
-    void shouldExtractCorrelationIdFromHeader() {
+    void shouldExtractCorrelationIdFromHeader() { // GH-90000
         String correlationId = "req-abc-123-xyz";
         
-        HttpRequest request = mockHttpRequestWithCorrelationId(correlationId);
-        String extractedId = extractCorrelationId(request);
+        HttpRequest request = mockHttpRequestWithCorrelationId(correlationId); // GH-90000
+        String extractedId = extractCorrelationId(request); // GH-90000
         
-        assertEquals(correlationId, extractedId, 
+        assertEquals(correlationId, extractedId,  // GH-90000
             "Correlation ID should be extracted from X-Correlation-ID header");
     }
 
     @Test
-    void shouldGenerateCorrelationIdIfNotProvided() {
-        HttpRequest request = mockHttpRequestWithoutCorrelationId();
-        String extractedId = extractCorrelationId(request);
+    void shouldGenerateCorrelationIdIfNotProvided() { // GH-90000
+        HttpRequest request = mockHttpRequestWithoutCorrelationId(); // GH-90000
+        String extractedId = extractCorrelationId(request); // GH-90000
         
-        assertNotNull(extractedId, 
+        assertNotNull(extractedId,  // GH-90000
             "Correlation ID should be generated if not provided in header");
-        assertFalse(extractedId.isEmpty(), 
+        assertFalse(extractedId.isEmpty(),  // GH-90000
             "Generated correlation ID should not be empty");
     }
 
     @Test
-    void shouldSetCorrelationIdInMDC() {
+    void shouldSetCorrelationIdInMDC() { // GH-90000
         String correlationId = "req-xyz-789-abc";
         
         // Clear MDC before test
-        MDC.clear();
+        MDC.clear(); // GH-90000
         
-        setCorrelationIdInMDC(correlationId);
+        setCorrelationIdInMDC(correlationId); // GH-90000
         
-        String mdcValue = MDC.get("correlationId");
-        assertEquals(correlationId, mdcValue, 
+        String mdcValue = MDC.get("correlationId [GH-90000]");
+        assertEquals(correlationId, mdcValue,  // GH-90000
             "Correlation ID should be set in MDC");
         
         // Cleanup
-        MDC.clear();
+        MDC.clear(); // GH-90000
     }
 
     @Test
-    void shouldPropagateCorrelationIdThroughRequestProcessing() {
+    void shouldPropagateCorrelationIdThroughRequestProcessing() { // GH-90000
         String correlationId = "req-propagate-123";
         
-        HttpRequest request = mockHttpRequestWithCorrelationId(correlationId);
-        String extractedId = extractCorrelationId(request);
-        setCorrelationIdInMDC(extractedId);
+        HttpRequest request = mockHttpRequestWithCorrelationId(correlationId); // GH-90000
+        String extractedId = extractCorrelationId(request); // GH-90000
+        setCorrelationIdInMDC(extractedId); // GH-90000
         
         // Simulate request processing
-        String mdcValue = MDC.get("correlationId");
+        String mdcValue = MDC.get("correlationId [GH-90000]");
         
-        assertEquals(correlationId, mdcValue, 
+        assertEquals(correlationId, mdcValue,  // GH-90000
             "Correlation ID should be available in MDC during request processing");
         
         // Cleanup
-        MDC.clear();
+        MDC.clear(); // GH-90000
     }
 
     @Test
-    void shouldClearCorrelationIdFromMDCAfterRequest() {
+    void shouldClearCorrelationIdFromMDCAfterRequest() { // GH-90000
         String correlationId = "req-clear-456";
         
-        MDC.clear();
-        setCorrelationIdInMDC(correlationId);
+        MDC.clear(); // GH-90000
+        setCorrelationIdInMDC(correlationId); // GH-90000
         
-        assertNotNull(MDC.get("correlationId"), 
+        assertNotNull(MDC.get("correlationId [GH-90000]"), 
             "Correlation ID should be set in MDC");
         
-        clearCorrelationIdFromMDC();
+        clearCorrelationIdFromMDC(); // GH-90000
         
-        assertNull(MDC.get("correlationId"), 
+        assertNull(MDC.get("correlationId [GH-90000]"), 
             "Correlation ID should be cleared from MDC after request");
     }
 
     @Test
-    void shouldHandleEmptyCorrelationIdHeader() {
-        HttpRequest request = mockHttpRequestWithCorrelationId("");
-        String extractedId = extractCorrelationId(request);
+    void shouldHandleEmptyCorrelationIdHeader() { // GH-90000
+        HttpRequest request = mockHttpRequestWithCorrelationId(" [GH-90000]");
+        String extractedId = extractCorrelationId(request); // GH-90000
         
-        assertNotNull(extractedId, 
+        assertNotNull(extractedId,  // GH-90000
             "Should generate correlation ID when header is empty");
-        assertFalse(extractedId.isEmpty(), 
+        assertFalse(extractedId.isEmpty(),  // GH-90000
             "Generated correlation ID should not be empty");
     }
 
     @Test
-    void shouldHandleNullCorrelationIdHeader() {
-        HttpRequest request = mockHttpRequestWithCorrelationId(null);
-        String extractedId = extractCorrelationId(request);
+    void shouldHandleNullCorrelationIdHeader() { // GH-90000
+        HttpRequest request = mockHttpRequestWithCorrelationId(null); // GH-90000
+        String extractedId = extractCorrelationId(request); // GH-90000
         
-        assertNotNull(extractedId, 
+        assertNotNull(extractedId,  // GH-90000
             "Should generate correlation ID when header is null");
     }
 
     @Test
-    void shouldPreserveCorrelationIdAcrossAsyncOperations() {
+    void shouldPreserveCorrelationIdAcrossAsyncOperations() { // GH-90000
         String correlationId = "req-async-789";
         
-        MDC.clear();
-        setCorrelationIdInMDC(correlationId);
+        MDC.clear(); // GH-90000
+        setCorrelationIdInMDC(correlationId); // GH-90000
         
         // Simulate async operation that should preserve MDC
-        String mdcValueBeforeAsync = MDC.get("correlationId");
+        String mdcValueBeforeAsync = MDC.get("correlationId [GH-90000]");
         
         // In real test, this would verify async context propagation
         // For now, we verify MDC is set
-        assertEquals(correlationId, mdcValueBeforeAsync, 
+        assertEquals(correlationId, mdcValueBeforeAsync,  // GH-90000
             "Correlation ID should be available before async operation");
         
-        MDC.clear();
+        MDC.clear(); // GH-90000
     }
 
     // Helper methods to simulate the behavior
     // In a real integration test, these would interact with the actual AepHttpServer
     
-    private HttpRequest mockHttpRequestWithCorrelationId(String correlationId) {
-        HttpRequest mock = mock(HttpRequest.class);
-        when(mock.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(correlationId);
+    private HttpRequest mockHttpRequestWithCorrelationId(String correlationId) { // GH-90000
+        HttpRequest mock = mock(HttpRequest.class); // GH-90000
+        when(mock.getHeader(HttpHeaders.of("X-Correlation-ID [GH-90000]"))).thenReturn(correlationId);
         return mock;
     }
 
-    private HttpRequest mockHttpRequestWithoutCorrelationId() {
-        HttpRequest mock = mock(HttpRequest.class);
-        when(mock.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(null);
+    private HttpRequest mockHttpRequestWithoutCorrelationId() { // GH-90000
+        HttpRequest mock = mock(HttpRequest.class); // GH-90000
+        when(mock.getHeader(HttpHeaders.of("X-Correlation-ID [GH-90000]"))).thenReturn(null);
         return mock;
     }
 
-    private String extractCorrelationId(HttpRequest request) {
-        String header = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
-        if (header != null && !header.isEmpty()) {
+    private String extractCorrelationId(HttpRequest request) { // GH-90000
+        String header = request.getHeader(HttpHeaders.of("X-Correlation-ID [GH-90000]"));
+        if (header != null && !header.isEmpty()) { // GH-90000
             return header;
         }
         // Generate correlation ID if not present
-        return java.util.UUID.randomUUID().toString();
+        return java.util.UUID.randomUUID().toString(); // GH-90000
     }
 
-    private void setCorrelationIdInMDC(String correlationId) {
-        MDC.put("correlationId", correlationId);
+    private void setCorrelationIdInMDC(String correlationId) { // GH-90000
+        MDC.put("correlationId", correlationId); // GH-90000
     }
 
-    private void clearCorrelationIdFromMDC() {
-        MDC.remove("correlationId");
+    private void clearCorrelationIdFromMDC() { // GH-90000
+        MDC.remove("correlationId [GH-90000]");
     }
 }

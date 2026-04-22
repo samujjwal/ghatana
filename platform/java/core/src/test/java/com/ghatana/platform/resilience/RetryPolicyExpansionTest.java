@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.resilience;
@@ -25,182 +25,182 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RetryPolicy - Phase 3 Expansion")
+@DisplayName("RetryPolicy - Phase 3 Expansion [GH-90000]")
 class RetryPolicyExpansionTest extends EventloopTestBase {
 
     // ============================================
-    // MAX RETRY ENFORCEMENT (2 tests)
+    // MAX RETRY ENFORCEMENT (2 tests) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Max Retry Enforcement")
+    @DisplayName("Max Retry Enforcement [GH-90000]")
     class MaxRetryTests {
 
         @Test
-        @DisplayName("Respects max retry limit and stops retrying")
-        void maxRetryLimit() {
-            AtomicInteger attempts = new AtomicInteger(0);
-            RetryPolicy policy = RetryPolicy.builder()
-                    .maxRetries(2)
-                    .initialDelay(Duration.ofMillis(1))
-                    .build();
+        @DisplayName("Respects max retry limit and stops retrying [GH-90000]")
+        void maxRetryLimit() { // GH-90000
+            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+            RetryPolicy policy = RetryPolicy.builder() // GH-90000
+                    .maxRetries(2) // GH-90000
+                    .initialDelay(Duration.ofMillis(1)) // GH-90000
+                    .build(); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> {
-                attempts.incrementAndGet();
-                return Promise.ofException(new RuntimeException("always-fail"));
-            }))).isInstanceOf(RuntimeException.class);
+            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
+                attempts.incrementAndGet(); // GH-90000
+                return Promise.ofException(new RuntimeException("always-fail [GH-90000]"));
+            }))).isInstanceOf(RuntimeException.class); // GH-90000
 
             // 1 initial + 2 retries = 3 total attempts
-            assertThat(attempts.get()).isEqualTo(3);
+            assertThat(attempts.get()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("Zero retries means only initial attempt")
-        void zeroRetries() {
-            AtomicInteger attempts = new AtomicInteger(0);
-            RetryPolicy policy = RetryPolicy.builder()
-                    .maxRetries(0)
-                    .build();
+        @DisplayName("Zero retries means only initial attempt [GH-90000]")
+        void zeroRetries() { // GH-90000
+            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+            RetryPolicy policy = RetryPolicy.builder() // GH-90000
+                    .maxRetries(0) // GH-90000
+                    .build(); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> {
-                attempts.incrementAndGet();
-                return Promise.ofException(new RuntimeException("fail"));
-            }))).isInstanceOf(RuntimeException.class);
+            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
+                attempts.incrementAndGet(); // GH-90000
+                return Promise.ofException(new RuntimeException("fail [GH-90000]"));
+            }))).isInstanceOf(RuntimeException.class); // GH-90000
 
-            assertThat(attempts.get()).isEqualTo(1); // Only initial attempt
+            assertThat(attempts.get()).isEqualTo(1); // Only initial attempt // GH-90000
         }
     }
 
     // ============================================
-    // RETRY PREDICATES AND FILTERING (2 tests)
+    // RETRY PREDICATES AND FILTERING (2 tests) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Retry Predicates and Filtering")
+    @DisplayName("Retry Predicates and Filtering [GH-90000]")
     class RetryPredicateTests {
 
         @Test
-        @DisplayName("Retries only when predicate returns true")
-        void selectiveRetryPredicate() {
-            AtomicInteger attempts = new AtomicInteger(0);
-            RetryPolicy policy = RetryPolicy.builder()
-                    .maxRetries(3)
-                    .initialDelay(Duration.ofMillis(1))
-                    .retryIf(e -> e instanceof IllegalStateException)
-                    .build();
+        @DisplayName("Retries only when predicate returns true [GH-90000]")
+        void selectiveRetryPredicate() { // GH-90000
+            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+            RetryPolicy policy = RetryPolicy.builder() // GH-90000
+                    .maxRetries(3) // GH-90000
+                    .initialDelay(Duration.ofMillis(1)) // GH-90000
+                    .retryIf(e -> e instanceof IllegalStateException) // GH-90000
+                    .build(); // GH-90000
 
-            String result = runPromise(() -> policy.execute(eventloop(), () -> {
-                int attempt = attempts.incrementAndGet();
-                if (attempt < 3) {
-                    return Promise.ofException(new IllegalStateException("retry-me-" + attempt));
+            String result = runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
+                int attempt = attempts.incrementAndGet(); // GH-90000
+                if (attempt < 3) { // GH-90000
+                    return Promise.ofException(new IllegalStateException("retry-me-" + attempt)); // GH-90000
                 }
-                return Promise.of("success");
+                return Promise.of("success [GH-90000]");
             }));
 
-            assertThat(result).isEqualTo("success");
-            assertThat(attempts.get()).isEqualTo(3);
+            assertThat(result).isEqualTo("success [GH-90000]");
+            assertThat(attempts.get()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("Non-matching exceptions fail immediately without retry")
-        void nonMatchingExceptionFails() {
-            AtomicInteger attempts = new AtomicInteger(0);
-            RetryPolicy policy = RetryPolicy.builder()
-                    .maxRetries(3)
-                    .initialDelay(Duration.ofMillis(1))
-                    .retryIf(e -> e instanceof IllegalStateException)
-                    .build();
+        @DisplayName("Non-matching exceptions fail immediately without retry [GH-90000]")
+        void nonMatchingExceptionFails() { // GH-90000
+            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+            RetryPolicy policy = RetryPolicy.builder() // GH-90000
+                    .maxRetries(3) // GH-90000
+                    .initialDelay(Duration.ofMillis(1)) // GH-90000
+                    .retryIf(e -> e instanceof IllegalStateException) // GH-90000
+                    .build(); // GH-90000
 
-            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> {
-                attempts.incrementAndGet();
-                return Promise.ofException(new IllegalArgumentException("non-retryable"));
-            }))).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
+                attempts.incrementAndGet(); // GH-90000
+                return Promise.ofException(new IllegalArgumentException("non-retryable [GH-90000]"));
+            }))).isInstanceOf(IllegalArgumentException.class); // GH-90000
 
-            assertThat(attempts.get()).isEqualTo(1); // No retries
+            assertThat(attempts.get()).isEqualTo(1); // No retries // GH-90000
         }
     }
 
     // ============================================
-    // DELAY AND BACKOFF BEHAVIOR (2 tests)
+    // DELAY AND BACKOFF BEHAVIOR (2 tests) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Delay and Backoff Behavior")
+    @DisplayName("Delay and Backoff Behavior [GH-90000]")
     class DelayTests {
 
         @Test
-        @DisplayName("Initial delay is applied between retries")
-        void initialDelayApplied() {
-            AtomicInteger attempts = new AtomicInteger(0);
-            long startTime = System.currentTimeMillis();
+        @DisplayName("Initial delay is applied between retries [GH-90000]")
+        void initialDelayApplied() { // GH-90000
+            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+            long startTime = System.currentTimeMillis(); // GH-90000
 
-            RetryPolicy policy = RetryPolicy.builder()
-                    .maxRetries(2)
-                    .initialDelay(Duration.ofMillis(50))
-                    .build();
+            RetryPolicy policy = RetryPolicy.builder() // GH-90000
+                    .maxRetries(2) // GH-90000
+                    .initialDelay(Duration.ofMillis(50)) // GH-90000
+                    .build(); // GH-90000
 
-            String result = runPromise(() -> policy.execute(eventloop(), () -> {
-                int attempt = attempts.incrementAndGet();
-                if (attempt < 2) {
-                    return Promise.ofException(new RuntimeException("fail-" + attempt));
+            String result = runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
+                int attempt = attempts.incrementAndGet(); // GH-90000
+                if (attempt < 2) { // GH-90000
+                    return Promise.ofException(new RuntimeException("fail-" + attempt)); // GH-90000
                 }
-                return Promise.of("delayed-success");
+                return Promise.of("delayed-success [GH-90000]");
             }));
 
-            long elapsed = System.currentTimeMillis() - startTime;
-            assertThat(result).isEqualTo("delayed-success");
-            // Should have taken at least some delay time (accounting for execution variance)
-            assertThat(attempts.get()).isEqualTo(2);
+            long elapsed = System.currentTimeMillis() - startTime; // GH-90000
+            assertThat(result).isEqualTo("delayed-success [GH-90000]");
+            // Should have taken at least some delay time (accounting for execution variance) // GH-90000
+            assertThat(attempts.get()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("Successful operation returns immediately without delay")
-        void successNoDelay() {
-            RetryPolicy policy = RetryPolicy.builder()
-                    .maxRetries(3)
-                    .initialDelay(Duration.ofMillis(500))
-                    .build();
+        @DisplayName("Successful operation returns immediately without delay [GH-90000]")
+        void successNoDelay() { // GH-90000
+            RetryPolicy policy = RetryPolicy.builder() // GH-90000
+                    .maxRetries(3) // GH-90000
+                    .initialDelay(Duration.ofMillis(500)) // GH-90000
+                    .build(); // GH-90000
 
-            long startTime = System.currentTimeMillis();
-            String result = runPromise(() -> policy.execute(eventloop(), () -> Promise.of("immediate")));
-            long elapsed = System.currentTimeMillis() - startTime;
+            long startTime = System.currentTimeMillis(); // GH-90000
+            String result = runPromise(() -> policy.execute(eventloop(), () -> Promise.of("immediate [GH-90000]")));
+            long elapsed = System.currentTimeMillis() - startTime; // GH-90000
 
-            assertThat(result).isEqualTo("immediate");
+            assertThat(result).isEqualTo("immediate [GH-90000]");
             // Should complete quickly without waiting for retry delay
-            assertThat(elapsed).isLessThan(200);
+            assertThat(elapsed).isLessThan(200); // GH-90000
         }
     }
 
     // ============================================
-    // MULTIPLE EXCEPTION TYPES (1 test)
+    // MULTIPLE EXCEPTION TYPES (1 test) // GH-90000
     // ============================================
 
     @Nested
-    @DisplayName("Multiple Exception Handling")
+    @DisplayName("Multiple Exception Handling [GH-90000]")
     class MultiExceptionTests {
 
         @Test
-        @DisplayName("Complex predicate handles multiple exception types")
-        void complexExceptionPredicate() {
-            AtomicInteger attempts = new AtomicInteger(0);
-            RetryPolicy policy = RetryPolicy.builder()
-                    .maxRetries(2)
-                    .initialDelay(Duration.ofMillis(1))
-                    .retryIf(e -> e instanceof RuntimeException || e instanceof IllegalStateException)
-                    .build();
+        @DisplayName("Complex predicate handles multiple exception types [GH-90000]")
+        void complexExceptionPredicate() { // GH-90000
+            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+            RetryPolicy policy = RetryPolicy.builder() // GH-90000
+                    .maxRetries(2) // GH-90000
+                    .initialDelay(Duration.ofMillis(1)) // GH-90000
+                    .retryIf(e -> e instanceof RuntimeException || e instanceof IllegalStateException) // GH-90000
+                    .build(); // GH-90000
 
-            String result = runPromise(() -> policy.execute(eventloop(), () -> {
-                int attempt = attempts.incrementAndGet();
-                if (attempt == 1) {
-                    return Promise.ofException(new RuntimeException("runtime-error"));
-                } else if (attempt == 2) {
-                    return Promise.ofException(new IllegalStateException("state-error"));
+            String result = runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
+                int attempt = attempts.incrementAndGet(); // GH-90000
+                if (attempt == 1) { // GH-90000
+                    return Promise.ofException(new RuntimeException("runtime-error [GH-90000]"));
+                } else if (attempt == 2) { // GH-90000
+                    return Promise.ofException(new IllegalStateException("state-error [GH-90000]"));
                 }
-                return Promise.of("got-through");
+                return Promise.of("got-through [GH-90000]");
             }));
 
-            assertThat(result).isEqualTo("got-through");
-            assertThat(attempts.get()).isEqualTo(3);
+            assertThat(result).isEqualTo("got-through [GH-90000]");
+            assertThat(attempts.get()).isEqualTo(3); // GH-90000
         }
     }
 }

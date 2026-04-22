@@ -29,8 +29,8 @@ import static org.mockito.Mockito.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("StandardAuditTrailPlugin Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("StandardAuditTrailPlugin Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class StandardAuditTrailPluginTest extends EventloopTestBase {
 
     @Mock
@@ -39,108 +39,108 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
     private StandardAuditTrailPlugin auditPlugin;
 
     @BeforeEach
-    void setUp() {
-        auditPlugin = new StandardAuditTrailPlugin();
+    void setUp() { // GH-90000
+        auditPlugin = new StandardAuditTrailPlugin(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Plugin Lifecycle Tests")
+    @DisplayName("Plugin Lifecycle Tests [GH-90000]")
     class LifecycleTests {
 
         @Test
-        @DisplayName("Should initialize plugin with correct state")
-        void testInitialize() {
+        @DisplayName("Should initialize plugin with correct state [GH-90000]")
+        void testInitialize() { // GH-90000
             // Given: Fresh plugin instance
-            assertThat(auditPlugin.getState()).isEqualTo(PluginState.UNLOADED);
+            assertThat(auditPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
 
             // When: Initialize plugin
-            Promise<Void> result = auditPlugin.initialize(mockContext);
-            runPromise(() -> result);
+            Promise<Void> result = auditPlugin.initialize(mockContext); // GH-90000
+            runPromise(() -> result); // GH-90000
 
             // Then: Plugin should be initialized
-            assertThat(auditPlugin.getState()).isEqualTo(PluginState.INITIALIZED);
+            assertThat(auditPlugin.getState()).isEqualTo(PluginState.INITIALIZED); // GH-90000
         }
 
         @Test
-        @DisplayName("Should start plugin and transition state")
-        void testStart() {
+        @DisplayName("Should start plugin and transition state [GH-90000]")
+        void testStart() { // GH-90000
             // Given: Initialized plugin
-            runPromise(() -> auditPlugin.initialize(mockContext));
+            runPromise(() -> auditPlugin.initialize(mockContext)); // GH-90000
 
             // When: Start plugin
-            Promise<Void> result = auditPlugin.start();
-            runPromise(() -> result);
+            Promise<Void> result = auditPlugin.start(); // GH-90000
+            runPromise(() -> result); // GH-90000
 
             // Then: Plugin should be started
-            assertThat(auditPlugin.getState()).isEqualTo(PluginState.STARTED);
+            assertThat(auditPlugin.getState()).isEqualTo(PluginState.STARTED); // GH-90000
         }
 
         @Test
-        @DisplayName("Should stop plugin and transition state")
-        void testStop() {
+        @DisplayName("Should stop plugin and transition state [GH-90000]")
+        void testStop() { // GH-90000
             // Given: Started plugin
-            runPromise(() -> auditPlugin.initialize(mockContext)
-                    .then(v -> auditPlugin.start()));
+            runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
+                    .then(v -> auditPlugin.start())); // GH-90000
 
             // When: Stop plugin
-            Promise<Void> result = auditPlugin.stop();
-            runPromise(() -> result);
+            Promise<Void> result = auditPlugin.stop(); // GH-90000
+            runPromise(() -> result); // GH-90000
 
             // Then: Plugin should be stopped
-            assertThat(auditPlugin.getState()).isEqualTo(PluginState.STOPPED);
+            assertThat(auditPlugin.getState()).isEqualTo(PluginState.STOPPED); // GH-90000
         }
 
         @Test
-        @DisplayName("Should shutdown plugin and clean resources")
-        void testShutdown() {
+        @DisplayName("Should shutdown plugin and clean resources [GH-90000]")
+        void testShutdown() { // GH-90000
             // Given: Started plugin with audit entries
-            runPromise(() -> auditPlugin.initialize(mockContext)
-                    .then(v -> auditPlugin.start())
-                    .then(v -> auditPlugin.logEvent("entity1", "READ", new HashMap<>())));
+            runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
+                    .then(v -> auditPlugin.start()) // GH-90000
+                    .then(v -> auditPlugin.logEvent("entity1", "READ", new HashMap<>()))); // GH-90000
 
             // When: Shutdown plugin
-            Promise<Void> result = auditPlugin.shutdown();
-            runPromise(() -> result);
+            Promise<Void> result = auditPlugin.shutdown(); // GH-90000
+            runPromise(() -> result); // GH-90000
 
             // Then: Plugin should be unloaded
-            assertThat(auditPlugin.getState()).isEqualTo(PluginState.UNLOADED);
+            assertThat(auditPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
 
             // And: Trails should be cleared
             Promise<List<AuditTrailPlugin.AuditEntry>> emptyTrail =
-                    auditPlugin.getTrail("entity1");
-            List<AuditTrailPlugin.AuditEntry> result2 = runPromise(() -> emptyTrail);
-            assertThat(result2).isEmpty();
+                    auditPlugin.getTrail("entity1 [GH-90000]");
+            List<AuditTrailPlugin.AuditEntry> result2 = runPromise(() -> emptyTrail); // GH-90000
+            assertThat(result2).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should return correct metadata")
-        void testMetadata() {
+        @DisplayName("Should return correct metadata [GH-90000]")
+        void testMetadata() { // GH-90000
             // When: Get metadata
-            var metadata = auditPlugin.metadata();
+            var metadata = auditPlugin.metadata(); // GH-90000
 
             // Then: Metadata should be complete
-            assertThat(metadata.id()).isEqualTo("audit-trail-plugin");
-            assertThat(metadata.name()).isEqualTo("Audit Trail Plugin");
-            assertThat(metadata.version()).isEqualTo("1.0.0");
-            assertThat(metadata.description()).contains("audit trail");
+            assertThat(metadata.id()).isEqualTo("audit-trail-plugin [GH-90000]");
+            assertThat(metadata.name()).isEqualTo("Audit Trail Plugin [GH-90000]");
+            assertThat(metadata.version()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(metadata.description()).contains("audit trail [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Audit Event Logging Tests")
+    @DisplayName("Audit Event Logging Tests [GH-90000]")
     class EventLoggingTests {
 
         @BeforeEach
-        void setUp() {
-            runPromise(() -> auditPlugin.initialize(mockContext)
-                    .then(v -> auditPlugin.start()));
+        void setUp() { // GH-90000
+            runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
+                    .then(v -> auditPlugin.start())); // GH-90000
         }
 
         @Test
-        @DisplayName("Should log single audit event")
-        void testLogEvent_Single() {
+        @DisplayName("Should log single audit event [GH-90000]")
+        void testLogEvent_Single() { // GH-90000
             // Given: Plugin ready
-            Map<String, Object> details = Map.of(
+            Map<String, Object> details = Map.of( // GH-90000
                     "operation", "CREATE",
                     "resourceType", "Document",
                     "resourceId", "doc123"
@@ -148,411 +148,411 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
 
             // When: Log event
             Promise<AuditTrailPlugin.AuditEntry> result =
-                    auditPlugin.logEvent("entity1", "CREATE", details);
-            AuditTrailPlugin.AuditEntry entry = runPromise(() -> result);
+                    auditPlugin.logEvent("entity1", "CREATE", details); // GH-90000
+            AuditTrailPlugin.AuditEntry entry = runPromise(() -> result); // GH-90000
 
             // Then: Entry should be created with correct data
-            assertThat(entry.entityId()).isEqualTo("entity1");
-            assertThat(entry.action()).isEqualTo("CREATE");
-            assertThat(entry.details()).containsAllEntriesOf(details);
-            assertThat(entry.entryId()).isNotNull();
-            assertThat(entry.hash()).isNotNull();
-            assertThat(entry.previousHash()).isEqualTo("0"); // First entry
-            assertThat(entry.timestamp()).isNotNull();
-            assertThat(entry.actorId()).isEqualTo("system"); // Default actor
+            assertThat(entry.entityId()).isEqualTo("entity1 [GH-90000]");
+            assertThat(entry.action()).isEqualTo("CREATE [GH-90000]");
+            assertThat(entry.details()).containsAllEntriesOf(details); // GH-90000
+            assertThat(entry.entryId()).isNotNull(); // GH-90000
+            assertThat(entry.hash()).isNotNull(); // GH-90000
+            assertThat(entry.previousHash()).isEqualTo("0 [GH-90000]"); // First entry
+            assertThat(entry.timestamp()).isNotNull(); // GH-90000
+            assertThat(entry.actorId()).isEqualTo("system [GH-90000]"); // Default actor
         }
 
         @Test
-        @DisplayName("Should log event with custom actor")
-        void testLogEvent_WithCustomActor() {
+        @DisplayName("Should log event with custom actor [GH-90000]")
+        void testLogEvent_WithCustomActor() { // GH-90000
             // Given: Event details with custom actor
-            Map<String, Object> details = Map.of(
+            Map<String, Object> details = Map.of( // GH-90000
                     "actorId", "user123",
                     "operation", "DELETE"
             );
 
             // When: Log event
             Promise<AuditTrailPlugin.AuditEntry> result =
-                    auditPlugin.logEvent("entity2", "DELETE", details);
-            AuditTrailPlugin.AuditEntry entry = runPromise(() -> result);
+                    auditPlugin.logEvent("entity2", "DELETE", details); // GH-90000
+            AuditTrailPlugin.AuditEntry entry = runPromise(() -> result); // GH-90000
 
             // Then: Should use provided actor ID
-            assertThat(entry.actorId()).isEqualTo("user123");
+            assertThat(entry.actorId()).isEqualTo("user123 [GH-90000]");
         }
 
         @Test
-        @DisplayName("Should maintain hash chain across multiple events")
-        void testLogEvent_HashChain() {
+        @DisplayName("Should maintain hash chain across multiple events [GH-90000]")
+        void testLogEvent_HashChain() { // GH-90000
             // Given: Entity ID
             String entityId = "entity3";
 
             // When: Log multiple events
-            AuditTrailPlugin.AuditEntry entry1 = runPromise(() ->
-                    auditPlugin.logEvent(entityId, "CREATE", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry1 = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entityId, "CREATE", new HashMap<>())); // GH-90000
 
-            AuditTrailPlugin.AuditEntry entry2 = runPromise(() ->
-                    auditPlugin.logEvent(entityId, "UPDATE", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry2 = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entityId, "UPDATE", new HashMap<>())); // GH-90000
 
-            AuditTrailPlugin.AuditEntry entry3 = runPromise(() ->
-                    auditPlugin.logEvent(entityId, "DELETE", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry3 = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entityId, "DELETE", new HashMap<>())); // GH-90000
 
             // Then: Hash chain should be maintained
-            assertThat(entry1.previousHash()).isEqualTo("0");
-            assertThat(entry2.previousHash()).isEqualTo(entry1.hash());
-            assertThat(entry3.previousHash()).isEqualTo(entry2.hash());
+            assertThat(entry1.previousHash()).isEqualTo("0 [GH-90000]");
+            assertThat(entry2.previousHash()).isEqualTo(entry1.hash()); // GH-90000
+            assertThat(entry3.previousHash()).isEqualTo(entry2.hash()); // GH-90000
 
             // And: All hashes should be unique
-            assertThat(entry1.hash())
-                    .isNotEqualTo(entry2.hash())
-                    .isNotEqualTo(entry3.hash());
+            assertThat(entry1.hash()) // GH-90000
+                    .isNotEqualTo(entry2.hash()) // GH-90000
+                    .isNotEqualTo(entry3.hash()); // GH-90000
         }
 
         @Test
-        @DisplayName("Should maintain separate trails for different entities")
-        void testLogEvent_SeparateEntities() {
+        @DisplayName("Should maintain separate trails for different entities [GH-90000]")
+        void testLogEvent_SeparateEntities() { // GH-90000
             // Given: Multiple entities
             String entity1 = "user123";
             String entity2 = "document456";
 
             // When: Log events for different entities
-            AuditTrailPlugin.AuditEntry entry1a = runPromise(() ->
-                    auditPlugin.logEvent(entity1, "LOGIN", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry1a = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entity1, "LOGIN", new HashMap<>())); // GH-90000
 
-            AuditTrailPlugin.AuditEntry entry2a = runPromise(() ->
-                    auditPlugin.logEvent(entity2, "CREATE", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry2a = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entity2, "CREATE", new HashMap<>())); // GH-90000
 
-            AuditTrailPlugin.AuditEntry entry1b = runPromise(() ->
-                    auditPlugin.logEvent(entity1, "LOGOUT", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry1b = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entity1, "LOGOUT", new HashMap<>())); // GH-90000
 
             // Then: Each entity should have separate trail
             Promise<List<AuditTrailPlugin.AuditEntry>> trail1 =
-                    auditPlugin.getTrail(entity1);
+                    auditPlugin.getTrail(entity1); // GH-90000
             Promise<List<AuditTrailPlugin.AuditEntry>> trail2 =
-                    auditPlugin.getTrail(entity2);
+                    auditPlugin.getTrail(entity2); // GH-90000
 
-            List<AuditTrailPlugin.AuditEntry> result1 = runPromise(() -> trail1);
-            List<AuditTrailPlugin.AuditEntry> result2 = runPromise(() -> trail2);
+            List<AuditTrailPlugin.AuditEntry> result1 = runPromise(() -> trail1); // GH-90000
+            List<AuditTrailPlugin.AuditEntry> result2 = runPromise(() -> trail2); // GH-90000
 
-            assertThat(result1).hasSize(2);
-            assertThat(result2).hasSize(1);
-            assertThat(result1.get(1).previousHash()).isEqualTo(result1.get(0).hash());
-            assertThat(result2.get(0).previousHash()).isEqualTo("0");
+            assertThat(result1).hasSize(2); // GH-90000
+            assertThat(result2).hasSize(1); // GH-90000
+            assertThat(result1.get(1).previousHash()).isEqualTo(result1.get(0).hash()); // GH-90000
+            assertThat(result2.get(0).previousHash()).isEqualTo("0 [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Audit Trail Retrieval Tests")
+    @DisplayName("Audit Trail Retrieval Tests [GH-90000]")
     class TrailRetrievalTests {
 
         @BeforeEach
-        void setUp() {
-            runPromise(() -> auditPlugin.initialize(mockContext)
-                    .then(v -> auditPlugin.start()));
+        void setUp() { // GH-90000
+            runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
+                    .then(v -> auditPlugin.start())); // GH-90000
         }
 
         @Test
-        @DisplayName("Should retrieve empty trail for non-existent entity")
-        void testGetTrail_Empty() {
+        @DisplayName("Should retrieve empty trail for non-existent entity [GH-90000]")
+        void testGetTrail_Empty() { // GH-90000
             // When: Get trail for non-existent entity
             Promise<List<AuditTrailPlugin.AuditEntry>> result =
-                    auditPlugin.getTrail("nonexistent");
-            List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> result);
+                    auditPlugin.getTrail("nonexistent [GH-90000]");
+            List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> result); // GH-90000
 
             // Then: Should return empty list
-            assertThat(trail).isEmpty();
+            assertThat(trail).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should retrieve full audit trail")
-        void testGetTrail_FullTrail() {
+        @DisplayName("Should retrieve full audit trail [GH-90000]")
+        void testGetTrail_FullTrail() { // GH-90000
             // Given: Multiple events logged
             String entityId = "user789";
-            runPromise(() -> auditPlugin.logEvent(entityId, "CREATE", new HashMap<>()));
-            runPromise(() -> auditPlugin.logEvent(entityId, "UPDATE", Map.of("field", "name")));
-            runPromise(() -> auditPlugin.logEvent(entityId, "DELETE", new HashMap<>()));
+            runPromise(() -> auditPlugin.logEvent(entityId, "CREATE", new HashMap<>())); // GH-90000
+            runPromise(() -> auditPlugin.logEvent(entityId, "UPDATE", Map.of("field", "name"))); // GH-90000
+            runPromise(() -> auditPlugin.logEvent(entityId, "DELETE", new HashMap<>())); // GH-90000
 
             // When: Get trail
             Promise<List<AuditTrailPlugin.AuditEntry>> result =
-                    auditPlugin.getTrail(entityId);
-            List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> result);
+                    auditPlugin.getTrail(entityId); // GH-90000
+            List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> result); // GH-90000
 
             // Then: Should return all events in order
-            assertThat(trail).hasSize(3);
-            assertThat(trail.get(0).action()).isEqualTo("CREATE");
-            assertThat(trail.get(1).action()).isEqualTo("UPDATE");
-            assertThat(trail.get(2).action()).isEqualTo("DELETE");
+            assertThat(trail).hasSize(3); // GH-90000
+            assertThat(trail.get(0).action()).isEqualTo("CREATE [GH-90000]");
+            assertThat(trail.get(1).action()).isEqualTo("UPDATE [GH-90000]");
+            assertThat(trail.get(2).action()).isEqualTo("DELETE [GH-90000]");
         }
 
         @Test
-        @DisplayName("Should not modify original trail when retrieving")
-        void testGetTrail_ImmutableResult() {
+        @DisplayName("Should not modify original trail when retrieving [GH-90000]")
+        void testGetTrail_ImmutableResult() { // GH-90000
             // Given: Logged event
             String entityId = "doc123";
-            runPromise(() -> auditPlugin.logEvent(entityId, "CREATE", new HashMap<>()));
+            runPromise(() -> auditPlugin.logEvent(entityId, "CREATE", new HashMap<>())); // GH-90000
 
             // When: Get trail twice
             Promise<List<AuditTrailPlugin.AuditEntry>> result1 =
-                    auditPlugin.getTrail(entityId);
-            List<AuditTrailPlugin.AuditEntry> trail1 = runPromise(() -> result1);
+                    auditPlugin.getTrail(entityId); // GH-90000
+            List<AuditTrailPlugin.AuditEntry> trail1 = runPromise(() -> result1); // GH-90000
 
             // And: Modify returned list
-            trail1.clear();
+            trail1.clear(); // GH-90000
 
             // And: Get trail again
             Promise<List<AuditTrailPlugin.AuditEntry>> result2 =
-                    auditPlugin.getTrail(entityId);
-            List<AuditTrailPlugin.AuditEntry> trail2 = runPromise(() -> result2);
+                    auditPlugin.getTrail(entityId); // GH-90000
+            List<AuditTrailPlugin.AuditEntry> trail2 = runPromise(() -> result2); // GH-90000
 
             // Then: Original trail should be unaffected
-            assertThat(trail2).hasSize(1);
+            assertThat(trail2).hasSize(1); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Integrity Verification Tests")
+    @DisplayName("Integrity Verification Tests [GH-90000]")
     class IntegrityVerificationTests {
 
         @BeforeEach
-        void setUp() {
-            runPromise(() -> auditPlugin.initialize(mockContext)
-                    .then(v -> auditPlugin.start()));
+        void setUp() { // GH-90000
+            runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
+                    .then(v -> auditPlugin.start())); // GH-90000
         }
 
         @Test
-        @DisplayName("Should verify empty trail as valid")
-        void testVerifyIntegrity_Empty() {
+        @DisplayName("Should verify empty trail as valid [GH-90000]")
+        void testVerifyIntegrity_Empty() { // GH-90000
             // When: Verify empty trail
             Promise<AuditTrailPlugin.VerificationResult> result =
-                    auditPlugin.verifyIntegrity("empty_entity");
-            AuditTrailPlugin.VerificationResult verification = runPromise(() -> result);
+                    auditPlugin.verifyIntegrity("empty_entity [GH-90000]");
+            AuditTrailPlugin.VerificationResult verification = runPromise(() -> result); // GH-90000
 
             // Then: Should be valid
-            assertThat(verification.valid()).isTrue();
-            assertThat(verification.entryCount()).isZero();
-            assertThat(verification.violations()).isEmpty();
+            assertThat(verification.valid()).isTrue(); // GH-90000
+            assertThat(verification.entryCount()).isZero(); // GH-90000
+            assertThat(verification.violations()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should verify valid trail")
-        void testVerifyIntegrity_Valid() {
+        @DisplayName("Should verify valid trail [GH-90000]")
+        void testVerifyIntegrity_Valid() { // GH-90000
             // Given: Multiple logged events
             String entityId = "entity_verify";
-            runPromise(() -> auditPlugin.logEvent(entityId, "CREATE", new HashMap<>())
-                    .then(v -> auditPlugin.logEvent(entityId, "UPDATE", new HashMap<>()))
-                    .then(v -> auditPlugin.logEvent(entityId, "READ", new HashMap<>())));
+            runPromise(() -> auditPlugin.logEvent(entityId, "CREATE", new HashMap<>()) // GH-90000
+                    .then(v -> auditPlugin.logEvent(entityId, "UPDATE", new HashMap<>())) // GH-90000
+                    .then(v -> auditPlugin.logEvent(entityId, "READ", new HashMap<>()))); // GH-90000
 
             // When: Verify integrity
             Promise<AuditTrailPlugin.VerificationResult> result =
-                    auditPlugin.verifyIntegrity(entityId);
-            AuditTrailPlugin.VerificationResult verification = runPromise(() -> result);
+                    auditPlugin.verifyIntegrity(entityId); // GH-90000
+            AuditTrailPlugin.VerificationResult verification = runPromise(() -> result); // GH-90000
 
             // Then: Trail should be valid
-            assertThat(verification.valid()).isTrue();
-            assertThat(verification.entryCount()).isEqualTo(3);
-            assertThat(verification.violations()).isEmpty();
-            assertThat(verification.entityId()).isEqualTo(entityId);
-            assertThat(verification.verifiedAt()).isNotNull();
+            assertThat(verification.valid()).isTrue(); // GH-90000
+            assertThat(verification.entryCount()).isEqualTo(3); // GH-90000
+            assertThat(verification.violations()).isEmpty(); // GH-90000
+            assertThat(verification.entityId()).isEqualTo(entityId); // GH-90000
+            assertThat(verification.verifiedAt()).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Export Tests")
+    @DisplayName("Export Tests [GH-90000]")
     class ExportTests {
 
         @BeforeEach
-        void setUp() {
-            runPromise(() -> auditPlugin.initialize(mockContext)
-                    .then(v -> auditPlugin.start())
-                    .then(v -> auditPlugin.logEvent("entity_export", "CREATE",
-                            Map.of("details", "test")))
-                    .then(v -> auditPlugin.logEvent("entity_export", "UPDATE",
-                            Map.of("field", "updated"))));
+        void setUp() { // GH-90000
+            runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
+                    .then(v -> auditPlugin.start()) // GH-90000
+                    .then(v -> auditPlugin.logEvent("entity_export", "CREATE", // GH-90000
+                            Map.of("details", "test"))) // GH-90000
+                    .then(v -> auditPlugin.logEvent("entity_export", "UPDATE", // GH-90000
+                            Map.of("field", "updated")))); // GH-90000
         }
 
         @Test
-        @DisplayName("Should export trail to JSON format")
-        void testExportTrail_JSON() throws IOException {
+        @DisplayName("Should export trail to JSON format [GH-90000]")
+        void testExportTrail_JSON() throws IOException { // GH-90000
             // Given: Audit trail
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
 
             // When: Export to JSON
-            Promise<Void> result = auditPlugin.exportTrail("entity_export",
+            Promise<Void> result = auditPlugin.exportTrail("entity_export", // GH-90000
                     AuditTrailPlugin.ExportFormat.JSON, output);
-            runPromise(() -> result);
+            runPromise(() -> result); // GH-90000
 
             // Then: Should produce valid JSON
-            String json = output.toString(StandardCharsets.UTF_8);
-            assertThat(json)
-                    .contains("[")
-                    .contains("]")
-                    .contains("\"entryId\"")
-                    .contains("\"entityId\"")
-                    .contains("\"action\"")
-                    .contains("\"CREATE\"")
-                    .contains("\"UPDATE\"");
+            String json = output.toString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(json) // GH-90000
+                    .contains("[ [GH-90000]")
+                    .contains("] [GH-90000]")
+                    .contains("\"entryId\"") // GH-90000
+                    .contains("\"entityId\"") // GH-90000
+                    .contains("\"action\"") // GH-90000
+                    .contains("\"CREATE\"") // GH-90000
+                    .contains("\"UPDATE\""); // GH-90000
         }
 
         @Test
-        @DisplayName("Should export trail to CSV format")
-        void testExportTrail_CSV() throws IOException {
+        @DisplayName("Should export trail to CSV format [GH-90000]")
+        void testExportTrail_CSV() throws IOException { // GH-90000
             // Given: Audit trail
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
 
             // When: Export to CSV
-            Promise<Void> result = auditPlugin.exportTrail("entity_export",
+            Promise<Void> result = auditPlugin.exportTrail("entity_export", // GH-90000
                     AuditTrailPlugin.ExportFormat.CSV, output);
-            runPromise(() -> result);
+            runPromise(() -> result); // GH-90000
 
             // Then: Should produce valid CSV
-            String csv = output.toString(StandardCharsets.UTF_8);
-            assertThat(csv)
-                    .containsPattern("entryId,entityId,action,.*")
-                    .contains("CREATE")
-                    .contains("UPDATE");
+            String csv = output.toString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(csv) // GH-90000
+                    .containsPattern("entryId,entityId,action,.* [GH-90000]")
+                    .contains("CREATE [GH-90000]")
+                    .contains("UPDATE [GH-90000]");
         }
 
         @Test
-        @DisplayName("Should export trail to XML format")
-        void testExportTrail_XML() throws IOException {
+        @DisplayName("Should export trail to XML format [GH-90000]")
+        void testExportTrail_XML() throws IOException { // GH-90000
             // Given: Audit trail
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
 
             // When: Export to XML
-            Promise<Void> result = auditPlugin.exportTrail("entity_export",
+            Promise<Void> result = auditPlugin.exportTrail("entity_export", // GH-90000
                     AuditTrailPlugin.ExportFormat.XML, output);
-            runPromise(() -> result);
+            runPromise(() -> result); // GH-90000
 
             // Then: Should produce valid XML
-            String xml = output.toString(StandardCharsets.UTF_8);
-            assertThat(xml)
-                    .contains("<?xml version=\"1.0\"")
-                    .contains("<auditTrail>")
-                    .contains("</auditTrail>")
-                    .contains("<entityId>entity_export</entityId>")
-                    .contains("<action>CREATE</action>")
-                    .contains("<action>UPDATE</action>");
+            String xml = output.toString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(xml) // GH-90000
+                    .contains("<?xml version=\"1.0\"") // GH-90000
+                    .contains("<auditTrail> [GH-90000]")
+                    .contains("</auditTrail> [GH-90000]")
+                    .contains("<entityId>entity_export</entityId> [GH-90000]")
+                    .contains("<action>CREATE</action> [GH-90000]")
+                    .contains("<action>UPDATE</action> [GH-90000]");
         }
 
         @Test
-        @DisplayName("Should fail gracefully on unsupported format")
-        void testExportTrail_UnsupportedFormat() {
+        @DisplayName("Should fail gracefully on unsupported format [GH-90000]")
+        void testExportTrail_UnsupportedFormat() { // GH-90000
             // Given: Audit trail
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
 
-            // When: Try to export to PDF (unsupported)
-            Promise<Void> result = auditPlugin.exportTrail("entity_export",
+            // When: Try to export to PDF (unsupported) // GH-90000
+            Promise<Void> result = auditPlugin.exportTrail("entity_export", // GH-90000
                     AuditTrailPlugin.ExportFormat.PDF, output);
 
             // Then: Should handle gracefully
-            assertThatThrownBy(() -> runPromise(() -> result))
-                    .isInstanceOf(UnsupportedOperationException.class)
-                    .hasMessageContaining("PDF export");
+            assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class) // GH-90000
+                    .hasMessageContaining("PDF export [GH-90000]");
         }
 
         @Test
-        @DisplayName("Should export empty trail")
-        void testExportTrail_Empty() throws IOException {
+        @DisplayName("Should export empty trail [GH-90000]")
+        void testExportTrail_Empty() throws IOException { // GH-90000
             // Given: No events for entity
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
 
             // When: Export empty trail
-            Promise<Void> result = auditPlugin.exportTrail("nonexistent",
+            Promise<Void> result = auditPlugin.exportTrail("nonexistent", // GH-90000
                     AuditTrailPlugin.ExportFormat.JSON, output);
-            runPromise(() -> result);
+            runPromise(() -> result); // GH-90000
 
             // Then: Should produce valid but empty output
-            String json = output.toString(StandardCharsets.UTF_8);
-            assertThat(json)
-                    .contains("[")
-                    .contains("]");
+            String json = output.toString(StandardCharsets.UTF_8); // GH-90000
+            assertThat(json) // GH-90000
+                    .contains("[ [GH-90000]")
+                    .contains("] [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Edge Cases and Error Handling")
+    @DisplayName("Edge Cases and Error Handling [GH-90000]")
     class EdgeCasesTests {
 
         @BeforeEach
-        void setUp() {
-            runPromise(() -> auditPlugin.initialize(mockContext)
-                    .then(v -> auditPlugin.start()));
+        void setUp() { // GH-90000
+            runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
+                    .then(v -> auditPlugin.start())); // GH-90000
         }
 
         @Test
-        @DisplayName("Should handle null details map")
-        void testLogEvent_NullDetails() {
+        @DisplayName("Should handle null details map [GH-90000]")
+        void testLogEvent_NullDetails() { // GH-90000
             // When: Log event with null details
-            // Then: Should handle gracefully (implementation uses getOrDefault)
-            assertThatNoException().isThrownBy(() -> {
+            // Then: Should handle gracefully (implementation uses getOrDefault) // GH-90000
+            assertThatNoException().isThrownBy(() -> { // GH-90000
                 Promise<AuditTrailPlugin.AuditEntry> result =
-                        auditPlugin.logEvent("entity", "ACTION", new HashMap<>());
-                AuditTrailPlugin.AuditEntry entry = runPromise(() -> result);
-                assertThat(entry).isNotNull();
+                        auditPlugin.logEvent("entity", "ACTION", new HashMap<>()); // GH-90000
+                AuditTrailPlugin.AuditEntry entry = runPromise(() -> result); // GH-90000
+                assertThat(entry).isNotNull(); // GH-90000
             });
         }
 
         @Test
-        @DisplayName("Should handle special characters in action")
-        void testLogEvent_SpecialCharacters() {
+        @DisplayName("Should handle special characters in action [GH-90000]")
+        void testLogEvent_SpecialCharacters() { // GH-90000
             // When: Log event with special characters
             String specialAction = "DELETE_WITH_CASCADE!@#$%";
             Promise<AuditTrailPlugin.AuditEntry> result =
-                    auditPlugin.logEvent("entity", specialAction, new HashMap<>());
-            AuditTrailPlugin.AuditEntry entry = runPromise(() -> result);
+                    auditPlugin.logEvent("entity", specialAction, new HashMap<>()); // GH-90000
+            AuditTrailPlugin.AuditEntry entry = runPromise(() -> result); // GH-90000
 
             // Then: Should store correctly
-            assertThat(entry.action()).isEqualTo(specialAction);
+            assertThat(entry.action()).isEqualTo(specialAction); // GH-90000
         }
 
         @Test
-        @DisplayName("Should handle large number of events")
-        void testLogEvent_ManyEvents() {
+        @DisplayName("Should handle large number of events [GH-90000]")
+        void testLogEvent_ManyEvents() { // GH-90000
             // Given: Log many events
             String entityId = "heavy_entity";
             int eventCount = 1000;
 
             // When: Log many events
-            for (int i = 0; i < eventCount; i++) {
+            for (int i = 0; i < eventCount; i++) { // GH-90000
                 final int index = i;
-                runPromise(() ->
-                        auditPlugin.logEvent(entityId, "ACTION_" + index, new HashMap<>()));
+                runPromise(() -> // GH-90000
+                        auditPlugin.logEvent(entityId, "ACTION_" + index, new HashMap<>())); // GH-90000
             }
 
             // And: Retrieve trail
             Promise<List<AuditTrailPlugin.AuditEntry>> result =
-                    auditPlugin.getTrail(entityId);
-            List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> result);
+                    auditPlugin.getTrail(entityId); // GH-90000
+            List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> result); // GH-90000
 
             // Then: Should have all events
-            assertThat(trail).hasSize(eventCount);
+            assertThat(trail).hasSize(eventCount); // GH-90000
 
             // And: Hash chain should be intact
-            for (int i = 0; i < trail.size() - 1; i++) {
-                assertThat(trail.get(i + 1).previousHash())
-                        .isEqualTo(trail.get(i).hash());
+            for (int i = 0; i < trail.size() - 1; i++) { // GH-90000
+                assertThat(trail.get(i + 1).previousHash()) // GH-90000
+                        .isEqualTo(trail.get(i).hash()); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("Should handle concurrent events for same entity")
-        void testLogEvent_ConcurrentSameEntity() {
+        @DisplayName("Should handle concurrent events for same entity [GH-90000]")
+        void testLogEvent_ConcurrentSameEntity() { // GH-90000
             // Given: Concurrent event logging
             String entityId = "concurrent_entity";
 
-            // When: Log events (sequentially in test but in list)
-            AuditTrailPlugin.AuditEntry entry1 = runPromise(() ->
-                    auditPlugin.logEvent(entityId, "EVENT1", new HashMap<>()));
+            // When: Log events (sequentially in test but in list) // GH-90000
+            AuditTrailPlugin.AuditEntry entry1 = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entityId, "EVENT1", new HashMap<>())); // GH-90000
 
-            AuditTrailPlugin.AuditEntry entry2 = runPromise(() ->
-                    auditPlugin.logEvent(entityId, "EVENT2", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry2 = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entityId, "EVENT2", new HashMap<>())); // GH-90000
 
-            AuditTrailPlugin.AuditEntry entry3 = runPromise(() ->
-                    auditPlugin.logEvent(entityId, "EVENT3", new HashMap<>()));
+            AuditTrailPlugin.AuditEntry entry3 = runPromise(() -> // GH-90000
+                    auditPlugin.logEvent(entityId, "EVENT3", new HashMap<>())); // GH-90000
 
             // Then: All should be recorded with proper hash chain
-            assertThat(entry1.previousHash()).isEqualTo("0");
-            assertThat(entry2.previousHash()).isEqualTo(entry1.hash());
-            assertThat(entry3.previousHash()).isEqualTo(entry2.hash());
+            assertThat(entry1.previousHash()).isEqualTo("0 [GH-90000]");
+            assertThat(entry2.previousHash()).isEqualTo(entry1.hash()); // GH-90000
+            assertThat(entry3.previousHash()).isEqualTo(entry2.hash()); // GH-90000
         }
     }
 }

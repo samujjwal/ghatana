@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.plugin;
@@ -23,285 +23,285 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for plugin registry lifecycle (PF001).
+ * Tests for plugin registry lifecycle (PF001). // GH-90000
  *
  * @doc.type class
  * @doc.purpose Plugin lifecycle tests
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("PluginRegistry – Plugin Lifecycle (PF001)")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("PluginRegistry – Plugin Lifecycle (PF001) [GH-90000]")
 class PluginRegistryTest extends EventloopTestBase {
 
     @Mock
     private PluginRegistry pluginRegistry;
 
     @Nested
-    @DisplayName("Registration")
+    @DisplayName("Registration [GH-90000]")
     class RegistrationTests {
 
         @Test
-        @DisplayName("[PF001]: register_creates_new_plugin")
-        void registerCreatesNewPlugin() {
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata(
+        @DisplayName("[PF001]: register_creates_new_plugin [GH-90000]")
+        void registerCreatesNewPlugin() { // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
                 "new-plugin", "New Plugin", "A new plugin", "1.0.0",
                 "tenant-alpha", PluginRegistry.PluginType.CUSTOM,
                 PluginRegistry.PluginStatus.REGISTERED,
-                List.of("onInit", "onData"), List.of(), Map.of(),
-                Instant.now(), null, "user-001"
+                List.of("onInit", "onData"), List.of(), Map.of(), // GH-90000
+                Instant.now(), null, "user-001" // GH-90000
             );
 
-            when(pluginRegistry.register(any()))
-                .thenReturn(Promise.of(plugin));
+            when(pluginRegistry.register(any())) // GH-90000
+                .thenReturn(Promise.of(plugin)); // GH-90000
 
-            PluginRegistry.PluginMetadata result = runPromise(() -> pluginRegistry.register(plugin));
+            PluginRegistry.PluginMetadata result = runPromise(() -> pluginRegistry.register(plugin)); // GH-90000
 
-            assertThat(result.id()).isEqualTo("new-plugin");
-            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.REGISTERED);
+            assertThat(result.id()).isEqualTo("new-plugin [GH-90000]");
+            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.REGISTERED); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: unregister_removes_plugin")
-        void unregisterRemovesPlugin() {
+        @DisplayName("[PF001]: unregister_removes_plugin [GH-90000]")
+        void unregisterRemovesPlugin() { // GH-90000
             String pluginId = "plugin-to-remove";
 
-            when(pluginRegistry.unregister(pluginId))
-                .thenReturn(Promise.of((Void) null));
+            when(pluginRegistry.unregister(pluginId)) // GH-90000
+                .thenReturn(Promise.of((Void) null)); // GH-90000
 
-            runPromise(() -> pluginRegistry.unregister(pluginId));
+            runPromise(() -> pluginRegistry.unregister(pluginId)); // GH-90000
 
-            verify(pluginRegistry).unregister(pluginId);
+            verify(pluginRegistry).unregister(pluginId); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: get_plugin_returns_existing")
-        void getPluginReturnsExisting() {
+        @DisplayName("[PF001]: get_plugin_returns_existing [GH-90000]")
+        void getPluginReturnsExisting() { // GH-90000
             String pluginId = "existing-plugin";
-            PluginRegistry.PluginMetadata plugin = createPlugin(pluginId, PluginRegistry.PluginStatus.ACTIVE);
+            PluginRegistry.PluginMetadata plugin = createPlugin(pluginId, PluginRegistry.PluginStatus.ACTIVE); // GH-90000
 
-            when(pluginRegistry.getPlugin(pluginId))
-                .thenReturn(Promise.of(Optional.of(plugin)));
+            when(pluginRegistry.getPlugin(pluginId)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(plugin))); // GH-90000
 
-            Optional<PluginRegistry.PluginMetadata> result = runPromise(() -> pluginRegistry.getPlugin(pluginId));
+            Optional<PluginRegistry.PluginMetadata> result = runPromise(() -> pluginRegistry.getPlugin(pluginId)); // GH-90000
 
-            assertThat(result).isPresent();
-            assertThat(result.get().id()).isEqualTo(pluginId);
+            assertThat(result).isPresent(); // GH-90000
+            assertThat(result.get().id()).isEqualTo(pluginId); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Activation")
+    @DisplayName("Activation [GH-90000]")
     class ActivationTests {
 
         @Test
-        @DisplayName("[PF001]: activate_enables_plugin")
-        void activateEnablesPlugin() {
+        @DisplayName("[PF001]: activate_enables_plugin [GH-90000]")
+        void activateEnablesPlugin() { // GH-90000
             String pluginId = "inactive-plugin";
-            PluginRegistry.PluginMetadata activated = createPlugin(pluginId, PluginRegistry.PluginStatus.ACTIVE);
+            PluginRegistry.PluginMetadata activated = createPlugin(pluginId, PluginRegistry.PluginStatus.ACTIVE); // GH-90000
 
-            when(pluginRegistry.activate(pluginId))
-                .thenReturn(Promise.of(activated));
+            when(pluginRegistry.activate(pluginId)) // GH-90000
+                .thenReturn(Promise.of(activated)); // GH-90000
 
-            PluginRegistry.PluginMetadata result = runPromise(() -> pluginRegistry.activate(pluginId));
+            PluginRegistry.PluginMetadata result = runPromise(() -> pluginRegistry.activate(pluginId)); // GH-90000
 
-            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.ACTIVE);
-            assertThat(result.isActive()).isTrue();
+            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.ACTIVE); // GH-90000
+            assertThat(result.isActive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: deactivate_disables_plugin")
-        void deactivateDisablesPlugin() {
+        @DisplayName("[PF001]: deactivate_disables_plugin [GH-90000]")
+        void deactivateDisablesPlugin() { // GH-90000
             String pluginId = "active-plugin";
-            PluginRegistry.PluginMetadata deactivated = createPlugin(pluginId, PluginRegistry.PluginStatus.INACTIVE);
+            PluginRegistry.PluginMetadata deactivated = createPlugin(pluginId, PluginRegistry.PluginStatus.INACTIVE); // GH-90000
 
-            when(pluginRegistry.deactivate(pluginId))
-                .thenReturn(Promise.of(deactivated));
+            when(pluginRegistry.deactivate(pluginId)) // GH-90000
+                .thenReturn(Promise.of(deactivated)); // GH-90000
 
-            PluginRegistry.PluginMetadata result = runPromise(() -> pluginRegistry.deactivate(pluginId));
+            PluginRegistry.PluginMetadata result = runPromise(() -> pluginRegistry.deactivate(pluginId)); // GH-90000
 
-            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.INACTIVE);
-            assertThat(result.isActive()).isFalse();
+            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.INACTIVE); // GH-90000
+            assertThat(result.isActive()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Listing")
+    @DisplayName("Listing [GH-90000]")
     class ListingTests {
 
         @Test
-        @DisplayName("[PF001]: list_plugins_returns_all_for_tenant")
-        void listPluginsReturnsAllForTenant() {
+        @DisplayName("[PF001]: list_plugins_returns_all_for_tenant [GH-90000]")
+        void listPluginsReturnsAllForTenant() { // GH-90000
             String tenantId = "tenant-alpha";
 
-            List<PluginRegistry.PluginMetadata> plugins = List.of(
-                createPlugin("p1", PluginRegistry.PluginStatus.ACTIVE),
-                createPlugin("p2", PluginRegistry.PluginStatus.INACTIVE),
-                createPlugin("p3", PluginRegistry.PluginStatus.REGISTERED)
+            List<PluginRegistry.PluginMetadata> plugins = List.of( // GH-90000
+                createPlugin("p1", PluginRegistry.PluginStatus.ACTIVE), // GH-90000
+                createPlugin("p2", PluginRegistry.PluginStatus.INACTIVE), // GH-90000
+                createPlugin("p3", PluginRegistry.PluginStatus.REGISTERED) // GH-90000
             );
 
-            when(pluginRegistry.listPlugins(tenantId, null))
-                .thenReturn(Promise.of(plugins));
+            when(pluginRegistry.listPlugins(tenantId, null)) // GH-90000
+                .thenReturn(Promise.of(plugins)); // GH-90000
 
-            List<PluginRegistry.PluginMetadata> result = runPromise(() ->
-                pluginRegistry.listPlugins(tenantId, null)
+            List<PluginRegistry.PluginMetadata> result = runPromise(() -> // GH-90000
+                pluginRegistry.listPlugins(tenantId, null) // GH-90000
             );
 
-            assertThat(result).hasSize(3);
+            assertThat(result).hasSize(3); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: list_plugins_filters_by_status")
-        void listPluginsFiltersByStatus() {
+        @DisplayName("[PF001]: list_plugins_filters_by_status [GH-90000]")
+        void listPluginsFiltersByStatus() { // GH-90000
             String tenantId = "tenant-alpha";
 
-            List<PluginRegistry.PluginMetadata> activePlugins = List.of(
-                createPlugin("p1", PluginRegistry.PluginStatus.ACTIVE),
-                createPlugin("p2", PluginRegistry.PluginStatus.ACTIVE)
+            List<PluginRegistry.PluginMetadata> activePlugins = List.of( // GH-90000
+                createPlugin("p1", PluginRegistry.PluginStatus.ACTIVE), // GH-90000
+                createPlugin("p2", PluginRegistry.PluginStatus.ACTIVE) // GH-90000
             );
 
-            when(pluginRegistry.listPlugins(tenantId, PluginRegistry.PluginStatus.ACTIVE))
-                .thenReturn(Promise.of(activePlugins));
+            when(pluginRegistry.listPlugins(tenantId, PluginRegistry.PluginStatus.ACTIVE)) // GH-90000
+                .thenReturn(Promise.of(activePlugins)); // GH-90000
 
-            List<PluginRegistry.PluginMetadata> result = runPromise(() ->
-                pluginRegistry.listPlugins(tenantId, PluginRegistry.PluginStatus.ACTIVE)
+            List<PluginRegistry.PluginMetadata> result = runPromise(() -> // GH-90000
+                pluginRegistry.listPlugins(tenantId, PluginRegistry.PluginStatus.ACTIVE) // GH-90000
             );
 
-            assertThat(result).hasSize(2);
-            assertThat(result).allMatch(p -> p.status() == PluginRegistry.PluginStatus.ACTIVE);
+            assertThat(result).hasSize(2); // GH-90000
+            assertThat(result).allMatch(p -> p.status() == PluginRegistry.PluginStatus.ACTIVE); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Hooks")
+    @DisplayName("Hooks [GH-90000]")
     class HooksTests {
 
         @Test
-        @DisplayName("[PF001]: execute_hook_runs_plugin_hook")
-        void executeHookRunsPluginHook() {
+        @DisplayName("[PF001]: execute_hook_runs_plugin_hook [GH-90000]")
+        void executeHookRunsPluginHook() { // GH-90000
             String pluginId = "plugin-with-hooks";
             String hookName = "onData";
-            Map<String, Object> context = Map.of("data", "test");
+            Map<String, Object> context = Map.of("data", "test"); // GH-90000
 
-            PluginRegistry.HookResult hookResult = new PluginRegistry.HookResult(
+            PluginRegistry.HookResult hookResult = new PluginRegistry.HookResult( // GH-90000
                 pluginId, hookName, true, "processed", null, 100
             );
 
-            when(pluginRegistry.executeHook(pluginId, hookName, context))
-                .thenReturn(Promise.of(hookResult));
+            when(pluginRegistry.executeHook(pluginId, hookName, context)) // GH-90000
+                .thenReturn(Promise.of(hookResult)); // GH-90000
 
-            PluginRegistry.HookResult result = runPromise(() ->
-                pluginRegistry.executeHook(pluginId, hookName, context)
+            PluginRegistry.HookResult result = runPromise(() -> // GH-90000
+                pluginRegistry.executeHook(pluginId, hookName, context) // GH-90000
             );
 
-            assertThat(result.success()).isTrue();
-            assertThat(result.pluginId()).isEqualTo(pluginId);
-            assertThat(result.hookName()).isEqualTo(hookName);
+            assertThat(result.success()).isTrue(); // GH-90000
+            assertThat(result.pluginId()).isEqualTo(pluginId); // GH-90000
+            assertThat(result.hookName()).isEqualTo(hookName); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: plugin_has_hook_checks_correctly")
-        void pluginHasHookChecksCorrectly() {
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata(
+        @DisplayName("[PF001]: plugin_has_hook_checks_correctly [GH-90000]")
+        void pluginHasHookChecksCorrectly() { // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
                 "hooked-plugin", "Hooked", "", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.ACTIVE,
-                List.of("onInit", "onData", "onClose"), List.of(), Map.of(),
-                Instant.now(), Instant.now(), "user"
+                List.of("onInit", "onData", "onClose"), List.of(), Map.of(), // GH-90000
+                Instant.now(), Instant.now(), "user" // GH-90000
             );
 
-            assertThat(plugin.hasHook("onData")).isTrue();
-            assertThat(plugin.hasHook("onMissing")).isFalse();
+            assertThat(plugin.hasHook("onData [GH-90000]")).isTrue();
+            assertThat(plugin.hasHook("onMissing [GH-90000]")).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("Health")
+    @DisplayName("Health [GH-90000]")
     class HealthTests {
 
         @Test
-        @DisplayName("[PF001]: get_health_returns_plugin_status")
-        void getHealthReturnsPluginStatus() {
+        @DisplayName("[PF001]: get_health_returns_plugin_status [GH-90000]")
+        void getHealthReturnsPluginStatus() { // GH-90000
             String pluginId = "healthy-plugin";
 
-            PluginRegistry.PluginHealth health = new PluginRegistry.PluginHealth(
-                pluginId, true, "RUNNING", System.currentTimeMillis(),
-                "Plugin is healthy", List.of()
+            PluginRegistry.PluginHealth health = new PluginRegistry.PluginHealth( // GH-90000
+                pluginId, true, "RUNNING", System.currentTimeMillis(), // GH-90000
+                "Plugin is healthy", List.of() // GH-90000
             );
 
-            when(pluginRegistry.getHealth(pluginId))
-                .thenReturn(Promise.of(health));
+            when(pluginRegistry.getHealth(pluginId)) // GH-90000
+                .thenReturn(Promise.of(health)); // GH-90000
 
-            PluginRegistry.PluginHealth result = runPromise(() -> pluginRegistry.getHealth(pluginId));
+            PluginRegistry.PluginHealth result = runPromise(() -> pluginRegistry.getHealth(pluginId)); // GH-90000
 
-            assertThat(result.healthy()).isTrue();
-            assertThat(result.pluginId()).isEqualTo(pluginId);
+            assertThat(result.healthy()).isTrue(); // GH-90000
+            assertThat(result.pluginId()).isEqualTo(pluginId); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: get_health_reports_issues")
-        void getHealthReportsIssues() {
+        @DisplayName("[PF001]: get_health_reports_issues [GH-90000]")
+        void getHealthReportsIssues() { // GH-90000
             String pluginId = "unhealthy-plugin";
 
-            PluginRegistry.PluginHealth health = new PluginRegistry.PluginHealth(
-                pluginId, false, "ERROR", System.currentTimeMillis(),
-                "Connection failed", List.of("Database unreachable", "Timeout")
+            PluginRegistry.PluginHealth health = new PluginRegistry.PluginHealth( // GH-90000
+                pluginId, false, "ERROR", System.currentTimeMillis(), // GH-90000
+                "Connection failed", List.of("Database unreachable", "Timeout") // GH-90000
             );
 
-            when(pluginRegistry.getHealth(pluginId))
-                .thenReturn(Promise.of(health));
+            when(pluginRegistry.getHealth(pluginId)) // GH-90000
+                .thenReturn(Promise.of(health)); // GH-90000
 
-            PluginRegistry.PluginHealth result = runPromise(() -> pluginRegistry.getHealth(pluginId));
+            PluginRegistry.PluginHealth result = runPromise(() -> pluginRegistry.getHealth(pluginId)); // GH-90000
 
-            assertThat(result.healthy()).isFalse();
-            assertThat(result.issues()).hasSize(2);
+            assertThat(result.healthy()).isFalse(); // GH-90000
+            assertThat(result.issues()).hasSize(2); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Configuration")
+    @DisplayName("Configuration [GH-90000]")
     class ConfigurationTests {
 
         @Test
-        @DisplayName("[PF001]: get_configuration_returns_config")
-        void getConfigurationReturnsConfig() {
+        @DisplayName("[PF001]: get_configuration_returns_config [GH-90000]")
+        void getConfigurationReturnsConfig() { // GH-90000
             String pluginId = "configured-plugin";
-            Map<String, Object> config = Map.of(
+            Map<String, Object> config = Map.of( // GH-90000
                 "endpoint", "https://api.example.com",
                 "timeout", 30,
                 "retries", 3
             );
 
-            when(pluginRegistry.getConfiguration(pluginId))
-                .thenReturn(Promise.of(config));
+            when(pluginRegistry.getConfiguration(pluginId)) // GH-90000
+                .thenReturn(Promise.of(config)); // GH-90000
 
-            Map<String, Object> result = runPromise(() -> pluginRegistry.getConfiguration(pluginId));
+            Map<String, Object> result = runPromise(() -> pluginRegistry.getConfiguration(pluginId)); // GH-90000
 
-            assertThat(result).containsKeys("endpoint", "timeout", "retries");
+            assertThat(result).containsKeys("endpoint", "timeout", "retries"); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: update_configuration_changes_config")
-        void updateConfigurationChangesConfig() {
+        @DisplayName("[PF001]: update_configuration_changes_config [GH-90000]")
+        void updateConfigurationChangesConfig() { // GH-90000
             String pluginId = "configurable-plugin";
-            Map<String, Object> newConfig = Map.of("timeout", 60);
+            Map<String, Object> newConfig = Map.of("timeout", 60); // GH-90000
 
-            when(pluginRegistry.updateConfiguration(pluginId, newConfig))
-                .thenReturn(Promise.of(newConfig));
+            when(pluginRegistry.updateConfiguration(pluginId, newConfig)) // GH-90000
+                .thenReturn(Promise.of(newConfig)); // GH-90000
 
-            Map<String, Object> result = runPromise(() ->
-                pluginRegistry.updateConfiguration(pluginId, newConfig)
+            Map<String, Object> result = runPromise(() -> // GH-90000
+                pluginRegistry.updateConfiguration(pluginId, newConfig) // GH-90000
             );
 
-            assertThat(result.get("timeout")).isEqualTo(60);
+            assertThat(result.get("timeout [GH-90000]")).isEqualTo(60);
         }
     }
 
-    private PluginRegistry.PluginMetadata createPlugin(String id, PluginRegistry.PluginStatus status) {
-        return new PluginRegistry.PluginMetadata(
+    private PluginRegistry.PluginMetadata createPlugin(String id, PluginRegistry.PluginStatus status) { // GH-90000
+        return new PluginRegistry.PluginMetadata( // GH-90000
             id, id, "", "1.0", "tenant-alpha",
             PluginRegistry.PluginType.CUSTOM, status,
-            List.of(), List.of(), Map.of(),
-            Instant.now(), status == PluginRegistry.PluginStatus.ACTIVE ? Instant.now() : null,
+            List.of(), List.of(), Map.of(), // GH-90000
+            Instant.now(), status == PluginRegistry.PluginStatus.ACTIVE ? Instant.now() : null, // GH-90000
             "user"
         );
     }

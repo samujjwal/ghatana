@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Ghatana Inc.
+ * Copyright (c) 2024 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.orchestrator.executor.mock;
@@ -18,20 +18,20 @@ import io.activej.promise.Promise;
  */
 public class MockAgentEventEmitter extends AgentEventEmitter {
 
-    public MockAgentEventEmitter() {
-        super(new MockEventLogClient(), "test-tenant");
+    public MockAgentEventEmitter() { // GH-90000
+        super(new MockEventLogClient(), "test-tenant"); // GH-90000
     }
 
     @Override
-    public Promise<Void> emitStepResult(AgentStepResult result) {
+    public Promise<Void> emitStepResult(AgentStepResult result) { // GH-90000
         // Mock implementation - just return completed promise
-        return Promise.complete();
+        return Promise.complete(); // GH-90000
     }
 
     private static class MockEventLogClient implements EventLogClient {
         @Override
-        public Promise<Void> publishEvent(String tenantId, Object event) {
-            return Promise.complete();
+        public Promise<Void> publishEvent(String tenantId, Object event) { // GH-90000
+            return Promise.complete(); // GH-90000
         }
     }
 }

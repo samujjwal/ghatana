@@ -44,317 +44,317 @@ class MockPythonRenameRefactoringTest {
     private static final String NEW_NAME = "new_name";
 
     @BeforeEach
-    void setUp() throws IOException {
-        refactoring = new MockPythonRenameRefactoring();
-        testFile = tempDir.resolve("test_rename.py");
-        executor = Executors.newSingleThreadExecutor();
+    void setUp() throws IOException { // GH-90000
+        refactoring = new MockPythonRenameRefactoring(); // GH-90000
+        testFile = tempDir.resolve("test_rename.py [GH-90000]");
+        executor = Executors.newSingleThreadExecutor(); // GH-90000
 
         // Create a minimal PolyfixConfig for testing
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of("java", "python", "typescript"),
-                        List.of(),
-                        new PolyfixConfig.Budgets(10, 100),
-                        new PolyfixConfig.Policies(false, true, true, false),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of("java", "python", "typescript"), // GH-90000
+                        List.of(), // GH-90000
+                        new PolyfixConfig.Budgets(10, 100), // GH-90000
+                        new PolyfixConfig.Policies(false, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 "node", "", "", "", "", "", "", "", "", "", "", ""));
 
-        projectContext = new PolyfixProjectContext(tempDir, config, List.of(), executor, null);
+        projectContext = new PolyfixProjectContext(tempDir, config, List.of(), executor, null); // GH-90000
 
         // Create a simple Python file for testing
         String testCode =
                 """
                 class MyClass:
-                    def old_method(self):
+                    def old_method(self): // GH-90000
                         return "Hello"
 
-                    def another_method(self):
-                        return self.old_method()
+                    def another_method(self): // GH-90000
+                        return self.old_method() // GH-90000
 
-                def function_to_rename():
+                def function_to_rename(): // GH-90000
                     return 42
 
                 if __name__ == "__main__":
-                    obj = MyClass()
-                    print(obj.old_method())
-                    print(function_to_rename())
+                    obj = MyClass() // GH-90000
+                    print(obj.old_method()) // GH-90000
+                    print(function_to_rename()) // GH-90000
                 """;
 
-        Files.writeString(testFile, testCode);
+        Files.writeString(testFile, testCode); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (executor != null) {
-            executor.shutdownNow();
+    void tearDown() { // GH-90000
+        if (executor != null) { // GH-90000
+            executor.shutdownNow(); // GH-90000
         }
     }
 
     @Test
-    void shouldRenameMethod() {
+    void shouldRenameMethod() { // GH-90000
         // Given
-        var context = createContext(testFile, "METHOD", "old_method", "new_method");
+        var context = createContext(testFile, "METHOD", "old_method", "new_method"); // GH-90000
 
         // When
-        var result = refactoring.apply(context);
+        var result = refactoring.apply(context); // GH-90000
 
         // Then
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getModifiedFiles()).contains(testFile);
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.getModifiedFiles()).contains(testFile); // GH-90000
 
         // Verify the content was actually changed
-        String content = readFileContent(testFile);
-        assertThat(content).contains("def new_method");
-        assertThat(content).contains("return self.new_method()");
-        assertThat(content).contains("print(obj.new_method())");
+        String content = readFileContent(testFile); // GH-90000
+        assertThat(content).contains("def new_method [GH-90000]");
+        assertThat(content).contains("return self.new_method() [GH-90000]");
+        assertThat(content).contains("print(obj.new_method()) [GH-90000]");
     }
 
     @Test
-    void shouldRenameFunction() {
+    void shouldRenameFunction() { // GH-90000
         // Given
-        var context = createContext(testFile, FUNCTION, "function_to_rename", "renamed_function");
+        var context = createContext(testFile, FUNCTION, "function_to_rename", "renamed_function"); // GH-90000
 
         // When
-        var result = refactoring.apply(context);
+        var result = refactoring.apply(context); // GH-90000
 
         // Then
-        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
 
         // Verify the content was actually changed
-        String content = readFileContent(testFile);
-        assertThat(content).contains("def renamed_function():");
-        assertThat(content).contains("print(renamed_function())");
+        String content = readFileContent(testFile); // GH-90000
+        assertThat(content).contains("def renamed_function(): [GH-90000]");
+        assertThat(content).contains("print(renamed_function()) [GH-90000]");
     }
 
     @Test
-    void shouldNotRenameIfElementNotFound() {
+    void shouldNotRenameIfElementNotFound() { // GH-90000
         // Given
-        var context = createContext(testFile, FUNCTION, "non_existent_function", NEW_NAME);
+        var context = createContext(testFile, FUNCTION, "non_existent_function", NEW_NAME); // GH-90000
 
         // When
-        var result = refactoring.apply(context);
+        var result = refactoring.apply(context); // GH-90000
 
         // Then
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getChangeCount()).isEqualTo(0);
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.getChangeCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    void shouldCheckIfCanBeApplied() {
+    void shouldCheckIfCanBeApplied() { // GH-90000
         // Valid Python file
-        var validContext = createContext(testFile, FUNCTION, "some_name", NEW_NAME);
+        var validContext = createContext(testFile, FUNCTION, "some_name", NEW_NAME); // GH-90000
 
-        assertThat(refactoring.canApply(validContext)).isTrue();
+        assertThat(refactoring.canApply(validContext)).isTrue(); // GH-90000
 
         // Non-existent file
         var invalidFileContext =
-                createContext(Path.of("non_existent.py"), FUNCTION, "some_name", NEW_NAME);
+                createContext(Path.of("non_existent.py [GH-90000]"), FUNCTION, "some_name", NEW_NAME);
 
-        assertThat(refactoring.canApply(invalidFileContext)).isFalse();
+        assertThat(refactoring.canApply(invalidFileContext)).isFalse(); // GH-90000
 
         // Non-Python file
-        var nonPythonFile = tempDir.resolve("not_python.txt");
+        var nonPythonFile = tempDir.resolve("not_python.txt [GH-90000]");
         try {
-            Files.writeString(nonPythonFile, "Not a Python file");
+            Files.writeString(nonPythonFile, "Not a Python file"); // GH-90000
 
             var nonPythonContext =
-                    createContext(nonPythonFile, FUNCTION, "some_name", NEW_NAME);
+                    createContext(nonPythonFile, FUNCTION, "some_name", NEW_NAME); // GH-90000
 
-            assertThat(refactoring.canApply(nonPythonContext)).isFalse();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create test file", e);
+            assertThat(refactoring.canApply(nonPythonContext)).isFalse(); // GH-90000
+        } catch (IOException e) { // GH-90000
+            throw new RuntimeException("Failed to create test file", e); // GH-90000
         }
     }
 
     @Test
-    void shouldHandleIOExceptionWhenReadingFile() throws IOException {
+    void shouldHandleIOExceptionWhenReadingFile() throws IOException { // GH-90000
         // Create a mock file that will throw an IOException when read
-        Path mockFile = mock(Path.class);
-        when(mockFile.toString()).thenReturn("/non/existent/file.py");
+        Path mockFile = mock(Path.class); // GH-90000
+        when(mockFile.toString()).thenReturn("/non/existent/file.py [GH-90000]");
 
         // Mock Files.readString to throw IOException
-        try (var mockedFiles = mockStatic(Files.class)) {
+        try (var mockedFiles = mockStatic(Files.class)) { // GH-90000
             mockedFiles
-                    .when(() -> Files.readString(mockFile))
-                    .thenThrow(new IOException("Failed to read file"));
+                    .when(() -> Files.readString(mockFile)) // GH-90000
+                    .thenThrow(new IOException("Failed to read file [GH-90000]"));
 
             // Create a context with the mock file
-            var context = createContext(mockFile, FUNCTION, "some_function", "new_function");
+            var context = createContext(mockFile, FUNCTION, "some_function", "new_function"); // GH-90000
 
             // When
-            var result = refactoring.apply(context);
+            var result = refactoring.apply(context); // GH-90000
 
             // Then
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.getErrorMessage())
-                    .as("Error message should indicate file read failure")
-                    .contains("Source file does not exist");
+            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.getErrorMessage()) // GH-90000
+                    .as("Error message should indicate file read failure [GH-90000]")
+                    .contains("Source file does not exist [GH-90000]");
         }
     }
 
     @Test
-    void shouldHandleInvalidElementType() {
+    void shouldHandleInvalidElementType() { // GH-90000
         // Given
-        var context = createContext(testFile, "INVALID_TYPE", "old_name", "new_name");
+        var context = createContext(testFile, "INVALID_TYPE", "old_name", "new_name"); // GH-90000
 
         // When
-        var result = refactoring.apply(context);
+        var result = refactoring.apply(context); // GH-90000
 
         // Then
         // Should not throw an exception, but should return a result with no changes
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getChangeCount()).isEqualTo(0);
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.getChangeCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    void shouldHandleEmptyFile() throws IOException {
+    void shouldHandleEmptyFile() throws IOException { // GH-90000
         // Create an empty file
-        Path emptyFile = tempDir.resolve("empty.py");
-        Files.writeString(emptyFile, "");
+        Path emptyFile = tempDir.resolve("empty.py [GH-90000]");
+        Files.writeString(emptyFile, ""); // GH-90000
 
         // Given
-        var context = createContext(emptyFile, FUNCTION, "some_function", "new_function");
+        var context = createContext(emptyFile, FUNCTION, "some_function", "new_function"); // GH-90000
 
         // When
-        var result = refactoring.apply(context);
+        var result = refactoring.apply(context); // GH-90000
 
         // Then
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getChangeCount()).isEqualTo(0);
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.getChangeCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    void shouldHandleNullNewName() {
+    void shouldHandleNullNewName() { // GH-90000
         // Given
         var context =
-                new RenameRefactoring.Context() {
+                new RenameRefactoring.Context() { // GH-90000
                     @Override
-                    public String getOldName() {
+                    public String getOldName() { // GH-90000
                         return "old_function";
                     }
 
                     @Override
-                    public String getNewName() {
+                    public String getNewName() { // GH-90000
                         return null; // Null new name
                     }
 
                     @Override
-                    public String getElementType() {
+                    public String getElementType() { // GH-90000
                         return FUNCTION;
                     }
 
                     @Override
-                    public String getSourceFile() {
-                        return testFile.toString();
+                    public String getSourceFile() { // GH-90000
+                        return testFile.toString(); // GH-90000
                     }
 
                     @Override
-                    public int getLineNumber() {
+                    public int getLineNumber() { // GH-90000
                         return 0;
                     }
 
                     @Override
-                    public int getColumnNumber() {
+                    public int getColumnNumber() { // GH-90000
                         return 0;
                     }
 
                     @Override
-                    public PolyfixProjectContext getPolyfixProjectContext() {
+                    public PolyfixProjectContext getPolyfixProjectContext() { // GH-90000
                         return projectContext;
                     }
 
                     @Override
-                    public Path getProjectRoot() {
-                        return projectContext.getProjectRoot();
+                    public Path getProjectRoot() { // GH-90000
+                        return projectContext.getProjectRoot(); // GH-90000
                     }
 
                     @Override
-                    public Set<Path> getAffectedFiles() {
-                        return Set.of(testFile);
+                    public Set<Path> getAffectedFiles() { // GH-90000
+                        return Set.of(testFile); // GH-90000
                     }
 
                     @Override
-                    public boolean isDryRun() {
+                    public boolean isDryRun() { // GH-90000
                         return false;
                     }
 
                     @Override
-                    public boolean isInteractive() {
+                    public boolean isInteractive() { // GH-90000
                         return false;
                     }
                 };
 
         // When
-        var result = refactoring.apply(context);
+        var result = refactoring.apply(context); // GH-90000
 
         // Then
-        assertThat(result.isSuccess()).isFalse();
-        assertThat(result.getErrorMessage()).contains("New name cannot be null");
+        assertThat(result.isSuccess()).isFalse(); // GH-90000
+        assertThat(result.getErrorMessage()).contains("New name cannot be null [GH-90000]");
     }
 
-    private String readFileContent(Path file) {
+    private String readFileContent(Path file) { // GH-90000
         try {
-            return Files.readString(file);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read test file", e);
+            return Files.readString(file); // GH-90000
+        } catch (IOException e) { // GH-90000
+            throw new RuntimeException("Failed to read test file", e); // GH-90000
         }
     }
 
-    private RenameRefactoring.Context createContext(
+    private RenameRefactoring.Context createContext( // GH-90000
             Path sourceFile, String elementType, String oldName, String newName) {
-        return new RenameRefactoring.Context() {
+        return new RenameRefactoring.Context() { // GH-90000
             @Override
-            public String getOldName() {
+            public String getOldName() { // GH-90000
                 return oldName;
             }
 
             @Override
-            public String getNewName() {
+            public String getNewName() { // GH-90000
                 return newName;
             }
 
             @Override
-            public String getElementType() {
+            public String getElementType() { // GH-90000
                 return elementType;
             }
 
             @Override
-            public String getSourceFile() {
-                return sourceFile.toString();
+            public String getSourceFile() { // GH-90000
+                return sourceFile.toString(); // GH-90000
             }
 
             @Override
-            public int getLineNumber() {
+            public int getLineNumber() { // GH-90000
                 return 0;
             }
 
             @Override
-            public int getColumnNumber() {
+            public int getColumnNumber() { // GH-90000
                 return 0;
             }
 
             @Override
-            public PolyfixProjectContext getPolyfixProjectContext() {
+            public PolyfixProjectContext getPolyfixProjectContext() { // GH-90000
                 return projectContext;
             }
 
             @Override
-            public Path getProjectRoot() {
-                return projectContext.getProjectRoot();
+            public Path getProjectRoot() { // GH-90000
+                return projectContext.getProjectRoot(); // GH-90000
             }
 
             @Override
-            public Set<Path> getAffectedFiles() {
-                return Set.of(sourceFile);
+            public Set<Path> getAffectedFiles() { // GH-90000
+                return Set.of(sourceFile); // GH-90000
             }
 
             @Override
-            public boolean isDryRun() {
+            public boolean isDryRun() { // GH-90000
                 return false;
             }
 
             @Override
-            public boolean isInteractive() {
+            public boolean isInteractive() { // GH-90000
                 return false;
             }
         };

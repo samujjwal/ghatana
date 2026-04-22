@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing PerformanceTestsStep Tests")
+@DisplayName("Testing PerformanceTestsStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles performance tests step test operations
@@ -33,61 +33,61 @@ class PerformanceTestsStepTest extends EventloopTestBase {
   private PerformanceTestsStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new PerformanceTestsStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new PerformanceTestsStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("testing.performancetests");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("testing.performancetests [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should execute performance tests and validate NFRs")
-  void shouldExecutePerformanceTests() {
+  @DisplayName("Should execute performance tests and validate NFRs [GH-90000]")
+  void shouldExecutePerformanceTests() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("tenantId", "tenant-abc");
-    context.put("testPlanId", "plan-001");
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // GH-90000
+    context.put("testPlanId", "plan-001"); // GH-90000
 
     Map<String, Object> mockTestPlan =
-        Map.of(
+        Map.of( // GH-90000
             "testPlanId",
             "plan-001",
             "nfrTargets",
-            Map.of(
+            Map.of( // GH-90000
                 "latencyP95", 200.0,
                 "latencyP99", 500.0,
                 "throughput", 1000.0,
                 "availability", 99.9));
 
-    when(dbClient.query(anyString(), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(mockTestPlan)));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.query(anyString(), any(), anyInt())) // GH-90000
+        .thenReturn(Promise.of(List.of(mockTestPlan))); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
+    assertThat(result).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should fail when tenantId is missing")
-  void shouldFailWhenTenantIdMissing() {
+  @DisplayName("Should fail when tenantId is missing [GH-90000]")
+  void shouldFailWhenTenantIdMissing() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("testPlanId", "plan-001");
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("testPlanId", "plan-001"); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("tenantId");
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("tenantId [GH-90000]");
   }
 }

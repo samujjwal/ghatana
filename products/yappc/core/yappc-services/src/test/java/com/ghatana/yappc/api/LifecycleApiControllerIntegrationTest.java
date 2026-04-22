@@ -52,35 +52,35 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Integration Test
  */
-@DisplayName("LifecycleApiController integration")
+@DisplayName("LifecycleApiController integration [GH-90000]")
 class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
 
     private LifecycleApiController controller;
 
     @BeforeEach
-    void setUp() {
-        MetricsCollector metrics = MetricsCollector.create();
-        AuditLogger auditLogger = AuditLogger.noop();
+    void setUp() { // GH-90000
+        MetricsCollector metrics = MetricsCollector.create(); // GH-90000
+        AuditLogger auditLogger = AuditLogger.noop(); // GH-90000
 
-        CompletionService completionService = new DeterministicCompletionService(metrics);
-        PolicyEngine policyEngine = new InMemoryAllowPolicyEngine();
+        CompletionService completionService = new DeterministicCompletionService(metrics); // GH-90000
+        PolicyEngine policyEngine = new InMemoryAllowPolicyEngine(); // GH-90000
 
-        IntentService intentService = new IntentServiceImpl(completionService, auditLogger, metrics);
-        ShapeService shapeService = new ShapeServiceImpl(completionService, auditLogger, metrics);
-        ValidationService validationService = new ValidationServiceImpl(policyEngine, auditLogger, metrics);
-        GenerationService generationService = new GenerationServiceImpl(completionService, auditLogger, metrics);
-        CiCdPort ciCdPort = new NoOpCiCdAdapter();
-        RunService runService = new RunServiceImpl(auditLogger, metrics, ciCdPort);
-        ObserveService observeService = new ObserveServiceImpl(metrics, auditLogger);
-        LearningService learningService = new LearningServiceImpl(completionService, auditLogger, metrics);
-        EvolutionService evolutionService = new EvolutionServiceImpl(completionService, auditLogger, metrics);
+        IntentService intentService = new IntentServiceImpl(completionService, auditLogger, metrics); // GH-90000
+        ShapeService shapeService = new ShapeServiceImpl(completionService, auditLogger, metrics); // GH-90000
+        ValidationService validationService = new ValidationServiceImpl(policyEngine, auditLogger, metrics); // GH-90000
+        GenerationService generationService = new GenerationServiceImpl(completionService, auditLogger, metrics); // GH-90000
+        CiCdPort ciCdPort = new NoOpCiCdAdapter(); // GH-90000
+        RunService runService = new RunServiceImpl(auditLogger, metrics, ciCdPort); // GH-90000
+        ObserveService observeService = new ObserveServiceImpl(metrics, auditLogger); // GH-90000
+        LearningService learningService = new LearningServiceImpl(completionService, auditLogger, metrics); // GH-90000
+        EvolutionService evolutionService = new EvolutionServiceImpl(completionService, auditLogger, metrics); // GH-90000
 
-        Eventloop testEventloop = Eventloop.builder().build();
-        HttpClient testHttpClient = HttpClient.create(
+        Eventloop testEventloop = Eventloop.builder().build(); // GH-90000
+        HttpClient testHttpClient = HttpClient.create( // GH-90000
           testEventloop,
-          DnsClient.builder(testEventloop, InetAddress.getLoopbackAddress()).build());
+          DnsClient.builder(testEventloop, InetAddress.getLoopbackAddress()).build()); // GH-90000
 
-        controller = new LifecycleApiController(
+        controller = new LifecycleApiController( // GH-90000
                 intentService,
                 shapeService,
                 validationService,
@@ -94,80 +94,80 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("executes full lifecycle successfully with concrete services")
-    void executesFullLifecycleSuccessfullyWithConcreteServices() throws Exception {
-        String requestJson = JsonMapper.toJson(new LifecycleRequest(
-                IntentInput.of("Build a resilient order processing API with observability"),
+    @DisplayName("executes full lifecycle successfully with concrete services [GH-90000]")
+    void executesFullLifecycleSuccessfullyWithConcreteServices() throws Exception { // GH-90000
+        String requestJson = JsonMapper.toJson(new LifecycleRequest( // GH-90000
+                IntentInput.of("Build a resilient order processing API with observability [GH-90000]"),
                 "staging"));
 
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
-                .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8)))
-                .build();
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute [GH-90000]")
+                .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request));
+        HttpResponse response = runPromise(() -> controller.executeFullLifecycle(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getCode()).isEqualTo(200); // GH-90000
 
-        String body = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(body).contains("\"status\" : \"SUCCESS\"");
-        assertThat(body).contains("\"intent\"");
-        assertThat(body).contains("\"shape\"");
-        assertThat(body).contains("\"validation\"");
-        assertThat(body).contains("\"artifacts\"");
-        assertThat(body).contains("\"run\"");
-        assertThat(body).contains("\"observation\"");
-        assertThat(body).contains("\"insights\"");
-        assertThat(body).contains("\"evolution\"");
+        String body = response.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+        assertThat(body).contains("\"status\" : \"SUCCESS\""); // GH-90000
+        assertThat(body).contains("\"intent\""); // GH-90000
+        assertThat(body).contains("\"shape\""); // GH-90000
+        assertThat(body).contains("\"validation\""); // GH-90000
+        assertThat(body).contains("\"artifacts\""); // GH-90000
+        assertThat(body).contains("\"run\""); // GH-90000
+        assertThat(body).contains("\"observation\""); // GH-90000
+        assertThat(body).contains("\"insights\""); // GH-90000
+        assertThat(body).contains("\"evolution\""); // GH-90000
     }
 
-    private record LifecycleRequest(IntentInput intentInput, String environment) {
+    private record LifecycleRequest(IntentInput intentInput, String environment) { // GH-90000
     }
 
     private static final class DeterministicCompletionService implements CompletionService {
         private final MetricsCollector metricsCollector;
         private final LLMConfiguration config;
 
-        private DeterministicCompletionService(MetricsCollector metricsCollector) {
+        private DeterministicCompletionService(MetricsCollector metricsCollector) { // GH-90000
             this.metricsCollector = metricsCollector;
-            this.config = LLMConfiguration.builder()
-                    .apiKey("test-key")
-                    .modelName("deterministic-test-model")
-                    .build();
+            this.config = LLMConfiguration.builder() // GH-90000
+                    .apiKey("test-key [GH-90000]")
+                    .modelName("deterministic-test-model [GH-90000]")
+                    .build(); // GH-90000
         }
 
         @Override
-        public Promise<CompletionResult> complete(CompletionRequest request) {
-            return Promise.of(CompletionResult.of(respond(request.getPrompt())));
+        public Promise<CompletionResult> complete(CompletionRequest request) { // GH-90000
+            return Promise.of(CompletionResult.of(respond(request.getPrompt()))); // GH-90000
         }
 
         @Override
-        public Promise<List<CompletionResult>> completeBatch(List<CompletionRequest> requests) {
-            List<CompletionResult> results = requests.stream()
-                    .map(req -> CompletionResult.of(respond(req.getPrompt())))
-                    .toList();
-            return Promise.of(results);
+        public Promise<List<CompletionResult>> completeBatch(List<CompletionRequest> requests) { // GH-90000
+            List<CompletionResult> results = requests.stream() // GH-90000
+                    .map(req -> CompletionResult.of(respond(req.getPrompt()))) // GH-90000
+                    .toList(); // GH-90000
+            return Promise.of(results); // GH-90000
         }
 
         @Override
-        public LLMConfiguration getConfig() {
+        public LLMConfiguration getConfig() { // GH-90000
             return config;
         }
 
         @Override
-        public MetricsCollector getMetricsCollector() {
+        public MetricsCollector getMetricsCollector() { // GH-90000
             return metricsCollector;
         }
 
         @Override
-        public String getProviderName() {
+        public String getProviderName() { // GH-90000
             return "deterministic-integration";
         }
 
-        private String respond(String prompt) {
-            if (prompt == null) {
+        private String respond(String prompt) { // GH-90000
+            if (prompt == null) { // GH-90000
                 return "";
             }
-            if (prompt.contains("product planning expert")) {
+            if (prompt.contains("product planning expert [GH-90000]")) {
                 return """
                     {
                       "productName": "Order Processing API",
@@ -184,7 +184,7 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
                     }
                     """;
             }
-            if (prompt.contains("software architect")) {
+            if (prompt.contains("software architect [GH-90000]")) {
                 return """
                     {
                       "architecture": {"name": "microservices", "description": "Service-per-domain architecture"},
@@ -210,14 +210,14 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
                     }
                     """;
             }
-            if (prompt.contains("Analyze the following system observations")) {
+            if (prompt.contains("Analyze the following system observations [GH-90000]")) {
                 return """
                     Pattern: Stable throughput under normal load
                     Anomaly: Medium latency spike during deployment windows
                     Recommendation: Prioritize deployment canary checks
                     """;
             }
-            if (prompt.contains("Create an evolution plan")) {
+            if (prompt.contains("Create an evolution plan [GH-90000]")) {
                 return """
                     Task: Refactor deployment orchestration to add canary policy checks
                     Task: Add telemetry guardrails for runtime latency regression
@@ -230,13 +230,13 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
     private static final class InMemoryAllowPolicyEngine implements PolicyEngine {
 
         @Override
-        public Promise<Boolean> evaluate(String policyName, Map<String, Object> context) {
-            return Promise.of(true);
+        public Promise<Boolean> evaluate(String policyName, Map<String, Object> context) { // GH-90000
+            return Promise.of(true); // GH-90000
         }
 
         @Override
-        public Promise<Boolean> policyExists(String policyName) {
-            return Promise.of(true);
+        public Promise<Boolean> policyExists(String policyName) { // GH-90000
+            return Promise.of(true); // GH-90000
         }
     }
 }

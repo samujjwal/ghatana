@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SemanticSearchService Tests")
+@DisplayName("SemanticSearchService Tests [GH-90000]")
 class SemanticSearchServiceTest extends EventloopTestBase {
 
     private VectorStore vectorStore;
@@ -34,210 +34,210 @@ class SemanticSearchServiceTest extends EventloopTestBase {
     private SemanticSearchService service;
 
     @BeforeEach
-    void setUp() {
-        vectorStore = mock(VectorStore.class);
-        embeddingService = mock(EmbeddingService.class);
-        service = new SemanticSearchService(vectorStore, embeddingService);
+    void setUp() { // GH-90000
+        vectorStore = mock(VectorStore.class); // GH-90000
+        embeddingService = mock(EmbeddingService.class); // GH-90000
+        service = new SemanticSearchService(vectorStore, embeddingService); // GH-90000
     }
 
     @Nested
-    @DisplayName("Semantic Search")
+    @DisplayName("Semantic Search [GH-90000]")
     class SemanticSearchTests {
 
         @Test
-        @DisplayName("should search with embedding generation")
-        void shouldSearchWithEmbeddingGeneration() {
+        @DisplayName("should search with embedding generation [GH-90000]")
+        void shouldSearchWithEmbeddingGeneration() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
-            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding);
-            when(embeddingService.createEmbedding(anyString()))
-                    .thenReturn(Promise.of(embeddingResult));
+            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding); // GH-90000
+            when(embeddingService.createEmbedding(anyString())) // GH-90000
+                    .thenReturn(Promise.of(embeddingResult)); // GH-90000
 
-            VectorSearchResult searchResult = new VectorSearchResult(
-                    "doc-1", "Document content", embedding, 0.95, 0, Map.of("source", "test.md")
+            VectorSearchResult searchResult = new VectorSearchResult( // GH-90000
+                    "doc-1", "Document content", embedding, 0.95, 0, Map.of("source", "test.md") // GH-90000
             );
-            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap()))
-                    .thenReturn(Promise.of(List.of(searchResult)));
+            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap())) // GH-90000
+                    .thenReturn(Promise.of(List.of(searchResult))); // GH-90000
 
             SemanticSearchService.SemanticSearchRequest request =
-                    new SemanticSearchService.SemanticSearchRequest(
+                    new SemanticSearchService.SemanticSearchRequest( // GH-90000
                             "test query", 10, 0.7, null
                     );
 
             // WHEN
-            SemanticSearchService.SemanticSearchResult result = runPromise(
-                    () -> service.search(request)
+            SemanticSearchService.SemanticSearchResult result = runPromise( // GH-90000
+                    () -> service.search(request) // GH-90000
             );
 
             // THEN
-            assertThat(result).isNotNull();
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.hits()).hasSize(1);
-            assertThat(result.hits().get(0).id()).isEqualTo("doc-1");
-            assertThat(result.hits().get(0).score()).isEqualTo(0.95);
-            verify(embeddingService).createEmbedding("test query");
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.hits()).hasSize(1); // GH-90000
+            assertThat(result.hits().get(0).id()).isEqualTo("doc-1 [GH-90000]");
+            assertThat(result.hits().get(0).score()).isEqualTo(0.95); // GH-90000
+            verify(embeddingService).createEmbedding("test query [GH-90000]");
         }
 
         @Test
-        @DisplayName("should return empty results on search failure")
-        void shouldReturnEmptyOnFailure() {
+        @DisplayName("should return empty results on search failure [GH-90000]")
+        void shouldReturnEmptyOnFailure() { // GH-90000
             // GIVEN
-            when(embeddingService.createEmbedding(anyString()))
-                    .thenReturn(Promise.ofException(new RuntimeException("Embedding error")));
+            when(embeddingService.createEmbedding(anyString())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("Embedding error [GH-90000]")));
 
             SemanticSearchService.SemanticSearchRequest request =
-                    SemanticSearchService.SemanticSearchRequest.of("failing query");
+                    SemanticSearchService.SemanticSearchRequest.of("failing query [GH-90000]");
 
             // WHEN
-            SemanticSearchService.SemanticSearchResult result = runPromise(
-                    () -> service.search(request)
+            SemanticSearchService.SemanticSearchResult result = runPromise( // GH-90000
+                    () -> service.search(request) // GH-90000
             );
 
             // THEN
-            assertThat(result).isNotNull();
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.error()).isNotNull();
-            assertThat(result.hits()).isEmpty();
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.error()).isNotNull(); // GH-90000
+            assertThat(result.hits()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Hybrid Search")
+    @DisplayName("Hybrid Search [GH-90000]")
     class HybridSearchTests {
 
         @Test
-        @DisplayName("should combine semantic and keyword search")
-        void shouldCombineKeywordAndSemanticSearch() {
+        @DisplayName("should combine semantic and keyword search [GH-90000]")
+        void shouldCombineKeywordAndSemanticSearch() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
-            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding);
-            when(embeddingService.createEmbedding(anyString()))
-                    .thenReturn(Promise.of(embeddingResult));
+            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding); // GH-90000
+            when(embeddingService.createEmbedding(anyString())) // GH-90000
+                    .thenReturn(Promise.of(embeddingResult)); // GH-90000
 
-            VectorSearchResult semanticResult = new VectorSearchResult(
-                    "doc-1", "Semantic match content with keyword", embedding, 0.8, 0, Map.of()
+            VectorSearchResult semanticResult = new VectorSearchResult( // GH-90000
+                    "doc-1", "Semantic match content with keyword", embedding, 0.8, 0, Map.of() // GH-90000
             );
-            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap()))
-                    .thenReturn(Promise.of(List.of(semanticResult)));
+            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap())) // GH-90000
+                    .thenReturn(Promise.of(List.of(semanticResult))); // GH-90000
 
             SemanticSearchService.HybridSearchRequest request =
-                    new SemanticSearchService.HybridSearchRequest(
+                    new SemanticSearchService.HybridSearchRequest( // GH-90000
                             "test query", 10, 0.7, null,
-                            List.of("keyword"), 0.5
+                            List.of("keyword [GH-90000]"), 0.5
                     );
 
             // WHEN
-            SemanticSearchService.SemanticSearchResult result = runPromise(
-                    () -> service.hybridSearch(request)
+            SemanticSearchService.SemanticSearchResult result = runPromise( // GH-90000
+                    () -> service.hybridSearch(request) // GH-90000
             );
 
             // THEN
-            assertThat(result.hits()).isNotEmpty();
+            assertThat(result.hits()).isNotEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Indexing Operations")
+    @DisplayName("Indexing Operations [GH-90000]")
     class IndexingTests {
 
         @Test
-        @DisplayName("should index document with embeddings")
-        void shouldIndexDocumentWithEmbeddings() {
+        @DisplayName("should index document with embeddings [GH-90000]")
+        void shouldIndexDocumentWithEmbeddings() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
-            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding);
-            when(embeddingService.createEmbedding(anyString()))
-                    .thenReturn(Promise.of(embeddingResult));
-            when(vectorStore.store(anyString(), anyString(), any(float[].class), anyMap()))
-                    .thenReturn(Promise.of(null));
+            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding); // GH-90000
+            when(embeddingService.createEmbedding(anyString())) // GH-90000
+                    .thenReturn(Promise.of(embeddingResult)); // GH-90000
+            when(vectorStore.store(anyString(), anyString(), any(float[].class), anyMap())) // GH-90000
+                    .thenReturn(Promise.of(null)); // GH-90000
 
             SemanticSearchService.IndexRequest request =
-                    new SemanticSearchService.IndexRequest(
-                            "doc-1", "Test document content", Map.of("source", "test.md")
+                    new SemanticSearchService.IndexRequest( // GH-90000
+                            "doc-1", "Test document content", Map.of("source", "test.md") // GH-90000
                     );
 
             // WHEN
-            SemanticSearchService.IndexResult result = runPromise(
-                    () -> service.index(request)
+            SemanticSearchService.IndexResult result = runPromise( // GH-90000
+                    () -> service.index(request) // GH-90000
             );
 
             // THEN
-            assertThat(result.success()).isTrue();
-            assertThat(result.id()).isEqualTo("doc-1");
-            assertThat(result.vectorDimension()).isEqualTo(3);
-            verify(embeddingService).createEmbedding("Test document content");
-            verify(vectorStore).store(eq("doc-1"), eq("Test document content"), any(float[].class), anyMap());
+            assertThat(result.success()).isTrue(); // GH-90000
+            assertThat(result.id()).isEqualTo("doc-1 [GH-90000]");
+            assertThat(result.vectorDimension()).isEqualTo(3); // GH-90000
+            verify(embeddingService).createEmbedding("Test document content [GH-90000]");
+            verify(vectorStore).store(eq("doc-1 [GH-90000]"), eq("Test document content [GH-90000]"), any(float[].class), anyMap());
         }
 
         @Test
-        @DisplayName("should batch index multiple documents")
-        void shouldBatchIndexMultipleDocuments() {
+        @DisplayName("should batch index multiple documents [GH-90000]")
+        void shouldBatchIndexMultipleDocuments() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
-            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding);
-            when(embeddingService.createEmbeddings(anyList()))
-                    .thenReturn(Promise.of(List.of(embeddingResult, embeddingResult, embeddingResult)));
-            when(vectorStore.store(anyString(), anyString(), any(float[].class), anyMap()))
-                    .thenReturn(Promise.of(null));
+            EmbeddingResult embeddingResult = EmbeddingResult.of(embedding); // GH-90000
+            when(embeddingService.createEmbeddings(anyList())) // GH-90000
+                    .thenReturn(Promise.of(List.of(embeddingResult, embeddingResult, embeddingResult))); // GH-90000
+            when(vectorStore.store(anyString(), anyString(), any(float[].class), anyMap())) // GH-90000
+                    .thenReturn(Promise.of(null)); // GH-90000
 
-            List<SemanticSearchService.IndexRequest> requests = List.of(
-                    new SemanticSearchService.IndexRequest("doc-1", "Content 1", Map.of()),
-                    new SemanticSearchService.IndexRequest("doc-2", "Content 2", Map.of()),
-                    new SemanticSearchService.IndexRequest("doc-3", "Content 3", Map.of())
+            List<SemanticSearchService.IndexRequest> requests = List.of( // GH-90000
+                    new SemanticSearchService.IndexRequest("doc-1", "Content 1", Map.of()), // GH-90000
+                    new SemanticSearchService.IndexRequest("doc-2", "Content 2", Map.of()), // GH-90000
+                    new SemanticSearchService.IndexRequest("doc-3", "Content 3", Map.of()) // GH-90000
             );
 
             // WHEN
-            List<SemanticSearchService.IndexResult> results = runPromise(
-                    () -> service.batchIndex(requests)
+            List<SemanticSearchService.IndexResult> results = runPromise( // GH-90000
+                    () -> service.batchIndex(requests) // GH-90000
             );
 
             // THEN
-            assertThat(results).hasSize(3);
-            assertThat(results).allMatch(SemanticSearchService.IndexResult::success);
+            assertThat(results).hasSize(3); // GH-90000
+            assertThat(results).allMatch(SemanticSearchService.IndexResult::success); // GH-90000
         }
 
         @Test
-        @DisplayName("should delete document from index")
-        void shouldDeleteDocumentFromIndex() {
+        @DisplayName("should delete document from index [GH-90000]")
+        void shouldDeleteDocumentFromIndex() { // GH-90000
             // GIVEN
-            when(vectorStore.delete(anyString()))
-                    .thenReturn(Promise.of(null));
+            when(vectorStore.delete(anyString())) // GH-90000
+                    .thenReturn(Promise.of(null)); // GH-90000
 
             // WHEN
-            boolean result = runPromise(
-                    () -> service.delete("doc-1")
+            boolean result = runPromise( // GH-90000
+                    () -> service.delete("doc-1 [GH-90000]")
             );
 
             // THEN
-            assertThat(result).isTrue();
-            verify(vectorStore).delete("doc-1");
+            assertThat(result).isTrue(); // GH-90000
+            verify(vectorStore).delete("doc-1 [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Find Similar")
+    @DisplayName("Find Similar [GH-90000]")
     class FindSimilarTests {
 
         @Test
-        @DisplayName("should find similar documents excluding self")
-        void shouldFindSimilarDocuments() {
+        @DisplayName("should find similar documents excluding self [GH-90000]")
+        void shouldFindSimilarDocuments() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
-            List<VectorSearchResult> similarDocs = List.of(
-                    new VectorSearchResult("similar-1", "Similar content", embedding, 0.9, 0, Map.of()),
-                    new VectorSearchResult("ref-doc", "Reference content", embedding, 1.0, 0, Map.of())
+            List<VectorSearchResult> similarDocs = List.of( // GH-90000
+                    new VectorSearchResult("similar-1", "Similar content", embedding, 0.9, 0, Map.of()), // GH-90000
+                    new VectorSearchResult("ref-doc", "Reference content", embedding, 1.0, 0, Map.of()) // GH-90000
             );
-            when(vectorStore.searchById(anyString(), anyInt(), anyDouble()))
-                    .thenReturn(Promise.of(similarDocs));
+            when(vectorStore.searchById(anyString(), anyInt(), anyDouble())) // GH-90000
+                    .thenReturn(Promise.of(similarDocs)); // GH-90000
 
             // WHEN
-            List<SemanticSearchService.SearchHit> result = runPromise(
-                    () -> service.findSimilar("ref-doc", 10, 0.7)
+            List<SemanticSearchService.SearchHit> result = runPromise( // GH-90000
+                    () -> service.findSimilar("ref-doc", 10, 0.7) // GH-90000
             );
 
             // THEN
-            assertThat(result).hasSize(1); // Excludes the reference document
-            assertThat(result.get(0).id()).isEqualTo("similar-1");
+            assertThat(result).hasSize(1); // Excludes the reference document // GH-90000
+            assertThat(result.get(0).id()).isEqualTo("similar-1 [GH-90000]");
         }
     }
 }

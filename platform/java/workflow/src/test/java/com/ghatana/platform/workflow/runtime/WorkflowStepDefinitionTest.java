@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.workflow.runtime;
@@ -11,102 +11,102 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("WorkflowStepDefinition Tests")
+@DisplayName("WorkflowStepDefinition Tests [GH-90000]")
 class WorkflowStepDefinitionTest {
 
     @Test
-    void shouldCreateActionStep() {
-        WorkflowStepDefinition step = WorkflowStepDefinition.action("s1", "Validate", "validate-op");
+    void shouldCreateActionStep() { // GH-90000
+        WorkflowStepDefinition step = WorkflowStepDefinition.action("s1", "Validate", "validate-op"); // GH-90000
 
-        assertThat(step.stepId()).isEqualTo("s1");
-        assertThat(step.name()).isEqualTo("Validate");
-        assertThat(step.kind()).isEqualTo(WorkflowStepKind.ACTION);
-        assertThat(step.operatorId()).isEqualTo("validate-op");
-        assertThat(step.maxRetries()).isZero();
-        assertThat(step.config()).isEmpty();
+        assertThat(step.stepId()).isEqualTo("s1 [GH-90000]");
+        assertThat(step.name()).isEqualTo("Validate [GH-90000]");
+        assertThat(step.kind()).isEqualTo(WorkflowStepKind.ACTION); // GH-90000
+        assertThat(step.operatorId()).isEqualTo("validate-op [GH-90000]");
+        assertThat(step.maxRetries()).isZero(); // GH-90000
+        assertThat(step.config()).isEmpty(); // GH-90000
     }
 
     @Test
-    void shouldCreateDecisionStep() {
-        WorkflowStepDefinition step = WorkflowStepDefinition.decision(
+    void shouldCreateDecisionStep() { // GH-90000
+        WorkflowStepDefinition step = WorkflowStepDefinition.decision( // GH-90000
             "s2", "Check Amount", "ctx.amount > 1000", "step-high", "step-low");
 
-        assertThat(step.kind()).isEqualTo(WorkflowStepKind.DECISION);
-        assertThat(step.celCondition()).isEqualTo("ctx.amount > 1000");
-        assertThat(step.nextStepOnTrue()).isEqualTo("step-high");
-        assertThat(step.nextStepOnFalse()).isEqualTo("step-low");
+        assertThat(step.kind()).isEqualTo(WorkflowStepKind.DECISION); // GH-90000
+        assertThat(step.celCondition()).isEqualTo("ctx.amount > 1000 [GH-90000]");
+        assertThat(step.nextStepOnTrue()).isEqualTo("step-high [GH-90000]");
+        assertThat(step.nextStepOnFalse()).isEqualTo("step-low [GH-90000]");
     }
 
     @Test
-    void shouldCreateWaitStep() {
-        WorkflowStepDefinition step = WorkflowStepDefinition.wait(
-            "s3", "Await Approval", Duration.ofHours(24));
+    void shouldCreateWaitStep() { // GH-90000
+        WorkflowStepDefinition step = WorkflowStepDefinition.wait( // GH-90000
+            "s3", "Await Approval", Duration.ofHours(24)); // GH-90000
 
-        assertThat(step.kind()).isEqualTo(WorkflowStepKind.WAIT);
-        assertThat(step.timeout()).isEqualTo(Duration.ofHours(24));
+        assertThat(step.kind()).isEqualTo(WorkflowStepKind.WAIT); // GH-90000
+        assertThat(step.timeout()).isEqualTo(Duration.ofHours(24)); // GH-90000
     }
 
     @Test
-    void shouldCreateSubWorkflowStep() {
-        WorkflowStepDefinition step = WorkflowStepDefinition.subWorkflow(
+    void shouldCreateSubWorkflowStep() { // GH-90000
+        WorkflowStepDefinition step = WorkflowStepDefinition.subWorkflow( // GH-90000
             "s4", "Run Sub", "sub-wf-1");
 
-        assertThat(step.kind()).isEqualTo(WorkflowStepKind.SUB_WORKFLOW);
-        assertThat(step.subWorkflowId()).isEqualTo("sub-wf-1");
+        assertThat(step.kind()).isEqualTo(WorkflowStepKind.SUB_WORKFLOW); // GH-90000
+        assertThat(step.subWorkflowId()).isEqualTo("sub-wf-1 [GH-90000]");
     }
 
     @Test
-    void shouldApplyRetries() {
-        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op");
-        WorkflowStepDefinition withRetries = base.withRetries(5, Duration.ofSeconds(2));
+    void shouldApplyRetries() { // GH-90000
+        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op"); // GH-90000
+        WorkflowStepDefinition withRetries = base.withRetries(5, Duration.ofSeconds(2)); // GH-90000
 
-        assertThat(withRetries.maxRetries()).isEqualTo(5);
-        assertThat(withRetries.retryBackoff()).isEqualTo(Duration.ofSeconds(2));
-        assertThat(withRetries.stepId()).isEqualTo("s1");
+        assertThat(withRetries.maxRetries()).isEqualTo(5); // GH-90000
+        assertThat(withRetries.retryBackoff()).isEqualTo(Duration.ofSeconds(2)); // GH-90000
+        assertThat(withRetries.stepId()).isEqualTo("s1 [GH-90000]");
     }
 
     @Test
-    void shouldApplyTimeout() {
-        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op");
-        WorkflowStepDefinition withTimeout = base.withTimeout(Duration.ofMinutes(3));
+    void shouldApplyTimeout() { // GH-90000
+        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op"); // GH-90000
+        WorkflowStepDefinition withTimeout = base.withTimeout(Duration.ofMinutes(3)); // GH-90000
 
-        assertThat(withTimeout.timeout()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(withTimeout.timeout()).isEqualTo(Duration.ofMinutes(3)); // GH-90000
     }
 
     @Test
-    void shouldApplyCompensation() {
-        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op");
-        WorkflowStepDefinition withComp = base.withCompensation("comp-step");
+    void shouldApplyCompensation() { // GH-90000
+        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op"); // GH-90000
+        WorkflowStepDefinition withComp = base.withCompensation("comp-step [GH-90000]");
 
-        assertThat(withComp.compensationStepId()).isEqualTo("comp-step");
+        assertThat(withComp.compensationStepId()).isEqualTo("comp-step [GH-90000]");
     }
 
     @Test
-    void shouldApplyNextStep() {
-        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op");
-        WorkflowStepDefinition withNext = base.withNextStep("s2");
+    void shouldApplyNextStep() { // GH-90000
+        WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op"); // GH-90000
+        WorkflowStepDefinition withNext = base.withNextStep("s2 [GH-90000]");
 
-        assertThat(withNext.nextStep()).isEqualTo("s2");
+        assertThat(withNext.nextStep()).isEqualTo("s2 [GH-90000]");
     }
 
     @Test
-    void shouldRejectNullStepId() {
-        assertThatThrownBy(() -> WorkflowStepDefinition.action(null, "n", "op"))
-            .isInstanceOf(NullPointerException.class);
+    void shouldRejectNullStepId() { // GH-90000
+        assertThatThrownBy(() -> WorkflowStepDefinition.action(null, "n", "op")) // GH-90000
+            .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    void shouldCreateDefensiveCopyOfConfig() {
-        var mutableConfig = new java.util.HashMap<String, Object>();
-        mutableConfig.put("k", "v");
+    void shouldCreateDefensiveCopyOfConfig() { // GH-90000
+        var mutableConfig = new java.util.HashMap<String, Object>(); // GH-90000
+        mutableConfig.put("k", "v"); // GH-90000
 
-        WorkflowStepDefinition step = new WorkflowStepDefinition(
+        WorkflowStepDefinition step = new WorkflowStepDefinition( // GH-90000
             "s1", "n", WorkflowStepKind.ACTION,
             "op", null, null, null, null, null,
             0, null, null, null, mutableConfig);
 
         // Modifying original shouldn't affect step
-        mutableConfig.put("k2", "v2");
-        assertThat(step.config()).doesNotContainKey("k2");
+        mutableConfig.put("k2", "v2"); // GH-90000
+        assertThat(step.config()).doesNotContainKey("k2 [GH-90000]");
     }
 }

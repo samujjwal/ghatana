@@ -20,14 +20,14 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AgentLogicProviderRegistry — Provider Resolution")
+@DisplayName("AgentLogicProviderRegistry — Provider Resolution [GH-90000]")
 class AgentLogicProviderRegistryTest {
 
     private AgentLogicProviderRegistry registry;
 
     @BeforeEach
-    void setUp() {
-        registry = AgentLogicProviderRegistry.create();
+    void setUp() { // GH-90000
+        registry = AgentLogicProviderRegistry.create(); // GH-90000
     }
 
     // ── Stub Helpers ─────────────────────────────────────────────────────
@@ -39,177 +39,177 @@ class AgentLogicProviderRegistryTest {
         private final int prio;
         private final boolean enabled;
 
-        StubProvider(String id, Set<String> supportedRefs, int priority, boolean enabled) {
+        StubProvider(String id, Set<String> supportedRefs, int priority, boolean enabled) { // GH-90000
             this.id = id;
             this.supportedRefs = supportedRefs;
             this.prio = priority;
             this.enabled = enabled;
         }
 
-        StubProvider(String id, Set<String> supportedRefs) {
-            this(id, supportedRefs, 1000, true);
+        StubProvider(String id, Set<String> supportedRefs) { // GH-90000
+            this(id, supportedRefs, 1000, true); // GH-90000
         }
 
-        @Override public String getProviderId() { return id; }
-        @Override public String getProviderName() { return id + " provider"; }
-        @Override public Set<String> getSupportedRefs() { return supportedRefs; }
-        @Override public int priority() { return prio; }
-        @Override public boolean isEnabled() { return enabled; }
+        @Override public String getProviderId() { return id; } // GH-90000
+        @Override public String getProviderName() { return id + " provider"; } // GH-90000
+        @Override public Set<String> getSupportedRefs() { return supportedRefs; } // GH-90000
+        @Override public int priority() { return prio; } // GH-90000
+        @Override public boolean isEnabled() { return enabled; } // GH-90000
 
         @Override
-        public TypedAgent<?, ?> createAgent(String implementationRef, AgentConfig config) {
+        public TypedAgent<?, ?> createAgent(String implementationRef, AgentConfig config) { // GH-90000
             // Return null — we only test resolution, not agent creation
             return null;
         }
     }
 
-    private static AgentConfig dummyConfig() {
-        return AgentConfig.builder()
-                .agentId("test-agent")
-                .type(AgentType.DETERMINISTIC)
-                .implementationRef("stub:test-agent")
-                .build();
+    private static AgentConfig dummyConfig() { // GH-90000
+        return AgentConfig.builder() // GH-90000
+                .agentId("test-agent [GH-90000]")
+                .type(AgentType.DETERMINISTIC) // GH-90000
+                .implementationRef("stub:test-agent [GH-90000]")
+                .build(); // GH-90000
     }
 
     // ── Tests ────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("resolve()")
+    @DisplayName("resolve() [GH-90000]")
     class Resolve {
 
         @Test
-        @DisplayName("resolves by provider-id prefix (fast path)")
-        void resolvesByPrefix() {
-            var provider = new StubProvider("yappc-java", Set.of());
-            registry.register(provider);
+        @DisplayName("resolves by provider-id prefix (fast path) [GH-90000]")
+        void resolvesByPrefix() { // GH-90000
+            var provider = new StubProvider("yappc-java", Set.of()); // GH-90000
+            registry.register(provider); // GH-90000
 
-            var result = registry.resolve("yappc-java:agent.java-expert");
-            assertThat(result).isPresent();
-            assertThat(result.get().getProviderId()).isEqualTo("yappc-java");
+            var result = registry.resolve("yappc-java:agent.java-expert [GH-90000]");
+            assertThat(result).isPresent(); // GH-90000
+            assertThat(result.get().getProviderId()).isEqualTo("yappc-java [GH-90000]");
         }
 
         @Test
-        @DisplayName("resolves by supported-ref set (slow path)")
-        void resolvesBySupportedRefSet() {
-            var provider = new StubProvider("custom", Set.of("my-special-agent"));
-            registry.register(provider);
+        @DisplayName("resolves by supported-ref set (slow path) [GH-90000]")
+        void resolvesBySupportedRefSet() { // GH-90000
+            var provider = new StubProvider("custom", Set.of("my-special-agent [GH-90000]"));
+            registry.register(provider); // GH-90000
 
-            var result = registry.resolve("my-special-agent");
-            assertThat(result).isPresent();
-            assertThat(result.get().getProviderId()).isEqualTo("custom");
+            var result = registry.resolve("my-special-agent [GH-90000]");
+            assertThat(result).isPresent(); // GH-90000
+            assertThat(result.get().getProviderId()).isEqualTo("custom [GH-90000]");
         }
 
         @Test
-        @DisplayName("returns empty for unknown ref")
-        void returnsEmptyForUnknownRef() {
-            var provider = new StubProvider("known-provider", Set.of("known-ref"));
-            registry.register(provider);
+        @DisplayName("returns empty for unknown ref [GH-90000]")
+        void returnsEmptyForUnknownRef() { // GH-90000
+            var provider = new StubProvider("known-provider", Set.of("known-ref [GH-90000]"));
+            registry.register(provider); // GH-90000
 
-            assertThat(registry.resolve("unknown-provider:agent")).isEmpty();
+            assertThat(registry.resolve("unknown-provider:agent [GH-90000]")).isEmpty();
         }
 
         @Test
-        @DisplayName("returns empty for null ref")
-        void returnsEmptyForNull() {
-            assertThat(registry.resolve(null)).isEmpty();
+        @DisplayName("returns empty for null ref [GH-90000]")
+        void returnsEmptyForNull() { // GH-90000
+            assertThat(registry.resolve(null)).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty for blank ref")
-        void returnsEmptyForBlank() {
-            assertThat(registry.resolve("  ")).isEmpty();
+        @DisplayName("returns empty for blank ref [GH-90000]")
+        void returnsEmptyForBlank() { // GH-90000
+            assertThat(registry.resolve("   [GH-90000]")).isEmpty();
         }
 
         @Test
-        @DisplayName("selects lower-priority provider when multiple match")
-        void selectsLowerPriorityProvider() {
-            var lowPrio = new StubProvider("aep", Set.of("shared-agent"), 100, true);
-            var highPrio = new StubProvider("aep-premium", Set.of("shared-agent"), 500, true);
-            registry.register(lowPrio);
-            registry.register(highPrio);
+        @DisplayName("selects lower-priority provider when multiple match [GH-90000]")
+        void selectsLowerPriorityProvider() { // GH-90000
+            var lowPrio = new StubProvider("aep", Set.of("shared-agent [GH-90000]"), 100, true);
+            var highPrio = new StubProvider("aep-premium", Set.of("shared-agent [GH-90000]"), 500, true);
+            registry.register(lowPrio); // GH-90000
+            registry.register(highPrio); // GH-90000
 
             // "shared-agent" has no colon prefix → slow path, both match
-            var result = registry.resolve("shared-agent");
-            assertThat(result).isPresent();
-            assertThat(result.get().getProviderId()).isEqualTo("aep"); // priority 100 < 500
+            var result = registry.resolve("shared-agent [GH-90000]");
+            assertThat(result).isPresent(); // GH-90000
+            assertThat(result.get().getProviderId()).isEqualTo("aep [GH-90000]"); // priority 100 < 500
         }
     }
 
     @Nested
-    @DisplayName("register()")
+    @DisplayName("register() [GH-90000]")
     class Register {
 
         @Test
-        @DisplayName("replaces same-id provider when priority is lower")
-        void replacesWhenLowerPriority() {
-            var original = new StubProvider("test", Set.of(), 500, true);
-            var replacement = new StubProvider("test", Set.of(), 100, true);
-            registry.register(original);
-            registry.register(replacement);
+        @DisplayName("replaces same-id provider when priority is lower [GH-90000]")
+        void replacesWhenLowerPriority() { // GH-90000
+            var original = new StubProvider("test", Set.of(), 500, true); // GH-90000
+            var replacement = new StubProvider("test", Set.of(), 100, true); // GH-90000
+            registry.register(original); // GH-90000
+            registry.register(replacement); // GH-90000
 
-            assertThat(registry.getProviderIds()).containsExactly("test");
+            assertThat(registry.getProviderIds()).containsExactly("test [GH-90000]");
             // Replacement should win
-            var resolved = registry.resolve("test:any-agent");
-            assertThat(resolved).isPresent();
-            assertThat(resolved.get().priority()).isEqualTo(100);
+            var resolved = registry.resolve("test:any-agent [GH-90000]");
+            assertThat(resolved).isPresent(); // GH-90000
+            assertThat(resolved.get().priority()).isEqualTo(100); // GH-90000
         }
 
         @Test
-        @DisplayName("keeps existing provider when same-id has higher priority")
-        void keepsWhenHigherPriority() {
-            var original = new StubProvider("test", Set.of(), 100, true);
-            var incoming = new StubProvider("test", Set.of(), 500, true);
-            registry.register(original);
-            registry.register(incoming);
+        @DisplayName("keeps existing provider when same-id has higher priority [GH-90000]")
+        void keepsWhenHigherPriority() { // GH-90000
+            var original = new StubProvider("test", Set.of(), 100, true); // GH-90000
+            var incoming = new StubProvider("test", Set.of(), 500, true); // GH-90000
+            registry.register(original); // GH-90000
+            registry.register(incoming); // GH-90000
 
-            var resolved = registry.resolve("test:any-agent");
-            assertThat(resolved).isPresent();
-            assertThat(resolved.get().priority()).isEqualTo(100);
+            var resolved = registry.resolve("test:any-agent [GH-90000]");
+            assertThat(resolved).isPresent(); // GH-90000
+            assertThat(resolved.get().priority()).isEqualTo(100); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("createAgent()")
+    @DisplayName("createAgent() [GH-90000]")
     class CreateAgent {
 
         @Test
-        @DisplayName("throws for unresolvable ref")
-        void throwsForUnresolvableRef() {
-            assertThatIllegalArgumentException()
-                    .isThrownBy(() -> registry.createAgent("nonexistent:agent", dummyConfig()))
-                    .withMessageContaining("No AgentLogicProvider found");
+        @DisplayName("throws for unresolvable ref [GH-90000]")
+        void throwsForUnresolvableRef() { // GH-90000
+            assertThatIllegalArgumentException() // GH-90000
+                    .isThrownBy(() -> registry.createAgent("nonexistent:agent", dummyConfig())) // GH-90000
+                    .withMessageContaining("No AgentLogicProvider found [GH-90000]");
         }
 
         @Test
-        @DisplayName("delegates to resolved provider")
-        void delegatesToProvider() {
-            var provider = new StubProvider("stub", Set.of());
-            registry.register(provider);
+        @DisplayName("delegates to resolved provider [GH-90000]")
+        void delegatesToProvider() { // GH-90000
+            var provider = new StubProvider("stub", Set.of()); // GH-90000
+            registry.register(provider); // GH-90000
 
             // StubProvider.createAgent returns null — just verify no exception
-            var agent = registry.createAgent("stub:test-agent", dummyConfig());
-            assertThat(agent).isNull();
+            var agent = registry.createAgent("stub:test-agent", dummyConfig()); // GH-90000
+            assertThat(agent).isNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("getProviderIds()")
+    @DisplayName("getProviderIds() [GH-90000]")
     class GetProviderIds {
 
         @Test
-        @DisplayName("returns empty set for empty registry")
-        void emptyRegistry() {
-            assertThat(registry.getProviderIds()).isEmpty();
+        @DisplayName("returns empty set for empty registry [GH-90000]")
+        void emptyRegistry() { // GH-90000
+            assertThat(registry.getProviderIds()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns all registered provider IDs")
-        void returnsAllIds() {
-            registry.register(new StubProvider("alpha", Set.of()));
-            registry.register(new StubProvider("beta", Set.of()));
-            registry.register(new StubProvider("gamma", Set.of()));
+        @DisplayName("returns all registered provider IDs [GH-90000]")
+        void returnsAllIds() { // GH-90000
+            registry.register(new StubProvider("alpha", Set.of())); // GH-90000
+            registry.register(new StubProvider("beta", Set.of())); // GH-90000
+            registry.register(new StubProvider("gamma", Set.of())); // GH-90000
 
-            assertThat(registry.getProviderIds()).containsExactlyInAnyOrder("alpha", "beta", "gamma");
+            assertThat(registry.getProviderIds()).containsExactlyInAnyOrder("alpha", "beta", "gamma"); // GH-90000
         }
     }
 }

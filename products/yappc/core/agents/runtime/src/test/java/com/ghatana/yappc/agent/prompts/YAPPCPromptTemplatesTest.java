@@ -15,41 +15,41 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("YAPPCPromptTemplates Tests")
+@DisplayName("YAPPCPromptTemplates Tests [GH-90000]")
 class YAPPCPromptTemplatesTest {
 
   @Test
-  @DisplayName("should resolve implementation alias to a valid template")
-  void shouldResolveImplementationAlias() {
-    AgentPromptTemplate template = YAPPCPromptTemplates.get("implementation.implement");
+  @DisplayName("should resolve implementation alias to a valid template [GH-90000]")
+  void shouldResolveImplementationAlias() { // GH-90000
+    AgentPromptTemplate template = YAPPCPromptTemplates.get("implementation.implement [GH-90000]");
 
-    assertThat(template.getAgentName()).isEqualTo("DetailedImplementSpecialistAgent");
-    assertThat(template.getTaskTemplate()).contains("{{unitName}}", "{{specification}}");
+    assertThat(template.getAgentName()).isEqualTo("DetailedImplementSpecialistAgent [GH-90000]");
+    assertThat(template.getTaskTemplate()).contains("{{unitName}}", "{{specification}}"); // GH-90000
   }
 
   @Test
-  @DisplayName("should render context values into prompt output")
-  void shouldRenderContextValuesIntoPrompt() {
-    AgentPromptTemplate template = YAPPCPromptTemplates.get("architecture.intake");
+  @DisplayName("should render context values into prompt output [GH-90000]")
+  void shouldRenderContextValuesIntoPrompt() { // GH-90000
+    AgentPromptTemplate template = YAPPCPromptTemplates.get("architecture.intake [GH-90000]");
 
     String rendered =
-        template.render(
-            Map.of(
+        template.render( // GH-90000
+            Map.of( // GH-90000
                 "requirements", "Build a secure audit service",
                 "functionalRequirements", "record events",
                 "nonFunctionalRequirements", "durability",
                 "constraints", "Java 21"));
 
-    assertThat(rendered).contains("Build a secure audit service");
-    assertThat(rendered).contains("# Output Format");
-    assertThat(rendered).contains("requirements intake and validation");
+    assertThat(rendered).contains("Build a secure audit service [GH-90000]");
+    assertThat(rendered).contains("# Output Format [GH-90000]");
+    assertThat(rendered).contains("requirements intake and validation [GH-90000]");
   }
 
   @Test
-  @DisplayName("should reject unknown step ids")
-  void shouldRejectUnknownStepIds() {
-    assertThatThrownBy(() -> YAPPCPromptTemplates.get("unknown.step"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("No prompt template");
+  @DisplayName("should reject unknown step ids [GH-90000]")
+  void shouldRejectUnknownStepIds() { // GH-90000
+    assertThatThrownBy(() -> YAPPCPromptTemplates.get("unknown.step [GH-90000]"))
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("No prompt template [GH-90000]");
   }
 }

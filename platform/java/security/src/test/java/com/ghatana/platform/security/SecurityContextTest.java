@@ -18,250 +18,250 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("SecurityContext.Default")
+@DisplayName("SecurityContext.Default [GH-90000]")
 class SecurityContextTest {
 
     @Nested
-    @DisplayName("authenticated context")
+    @DisplayName("authenticated context [GH-90000]")
     class AuthenticatedContext {
 
-        private final SecurityContext ctx = new SecurityContext.Default(
+        private final SecurityContext ctx = new SecurityContext.Default( // GH-90000
                 "user-123", "tenant-456",
-                Set.of("ADMIN", "READER"),
-                Set.of("event:read:all", "event:write:all")
+                Set.of("ADMIN", "READER"), // GH-90000
+                Set.of("event:read:all", "event:write:all") // GH-90000
         );
 
         @Test
-        @DisplayName("should return user ID")
-        void shouldReturnUserId() {
-            assertThat(ctx.getUserId()).contains("user-123");
+        @DisplayName("should return user ID [GH-90000]")
+        void shouldReturnUserId() { // GH-90000
+            assertThat(ctx.getUserId()).contains("user-123 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should return tenant ID")
-        void shouldReturnTenantId() {
-            assertThat(ctx.getTenantId()).contains("tenant-456");
+        @DisplayName("should return tenant ID [GH-90000]")
+        void shouldReturnTenantId() { // GH-90000
+            assertThat(ctx.getTenantId()).contains("tenant-456 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should return roles as immutable set")
-        void shouldReturnRoles() {
-            assertThat(ctx.getRoles()).containsExactlyInAnyOrder("ADMIN", "READER");
+        @DisplayName("should return roles as immutable set [GH-90000]")
+        void shouldReturnRoles() { // GH-90000
+            assertThat(ctx.getRoles()).containsExactlyInAnyOrder("ADMIN", "READER"); // GH-90000
         }
 
         @Test
-        @DisplayName("should return permissions as immutable set")
-        void shouldReturnPermissions() {
-            assertThat(ctx.getPermissions()).containsExactlyInAnyOrder("event:read:all", "event:write:all");
+        @DisplayName("should return permissions as immutable set [GH-90000]")
+        void shouldReturnPermissions() { // GH-90000
+            assertThat(ctx.getPermissions()).containsExactlyInAnyOrder("event:read:all", "event:write:all"); // GH-90000
         }
 
         @Test
-        @DisplayName("should be authenticated")
-        void shouldBeAuthenticated() {
-            assertThat(ctx.isAuthenticated()).isTrue();
+        @DisplayName("should be authenticated [GH-90000]")
+        void shouldBeAuthenticated() { // GH-90000
+            assertThat(ctx.isAuthenticated()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("unauthenticated context")
+    @DisplayName("unauthenticated context [GH-90000]")
     class UnauthenticatedContext {
 
-        private final SecurityContext ctx = new SecurityContext.Default(
+        private final SecurityContext ctx = new SecurityContext.Default( // GH-90000
                 null, null, null, null
         );
 
         @Test
-        @DisplayName("should return empty user ID")
-        void shouldReturnEmptyUserId() {
-            assertThat(ctx.getUserId()).isEmpty();
+        @DisplayName("should return empty user ID [GH-90000]")
+        void shouldReturnEmptyUserId() { // GH-90000
+            assertThat(ctx.getUserId()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return empty tenant ID")
-        void shouldReturnEmptyTenantId() {
-            assertThat(ctx.getTenantId()).isEmpty();
+        @DisplayName("should return empty tenant ID [GH-90000]")
+        void shouldReturnEmptyTenantId() { // GH-90000
+            assertThat(ctx.getTenantId()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return empty roles")
-        void shouldReturnEmptyRoles() {
-            assertThat(ctx.getRoles()).isEmpty();
+        @DisplayName("should return empty roles [GH-90000]")
+        void shouldReturnEmptyRoles() { // GH-90000
+            assertThat(ctx.getRoles()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return empty permissions")
-        void shouldReturnEmptyPermissions() {
-            assertThat(ctx.getPermissions()).isEmpty();
+        @DisplayName("should return empty permissions [GH-90000]")
+        void shouldReturnEmptyPermissions() { // GH-90000
+            assertThat(ctx.getPermissions()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should not be authenticated")
-        void shouldNotBeAuthenticated() {
-            assertThat(ctx.isAuthenticated()).isFalse();
+        @DisplayName("should not be authenticated [GH-90000]")
+        void shouldNotBeAuthenticated() { // GH-90000
+            assertThat(ctx.isAuthenticated()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("partial context")
+    @DisplayName("partial context [GH-90000]")
     class PartialContext {
 
         @Test
-        @DisplayName("should handle user with no tenant")
-        void shouldHandleNoTenant() {
-            SecurityContext ctx = new SecurityContext.Default("user-1", null, Set.of("READER"), Set.of());
+        @DisplayName("should handle user with no tenant [GH-90000]")
+        void shouldHandleNoTenant() { // GH-90000
+            SecurityContext ctx = new SecurityContext.Default("user-1", null, Set.of("READER [GH-90000]"), Set.of());
 
-            assertThat(ctx.getUserId()).contains("user-1");
-            assertThat(ctx.getTenantId()).isEmpty();
-            assertThat(ctx.isAuthenticated()).isTrue();
+            assertThat(ctx.getUserId()).contains("user-1 [GH-90000]");
+            assertThat(ctx.getTenantId()).isEmpty(); // GH-90000
+            assertThat(ctx.isAuthenticated()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle tenant with no user")
-        void shouldHandleTenantNoUser() {
-            SecurityContext ctx = new SecurityContext.Default(null, "tenant-1", Set.of(), Set.of());
+        @DisplayName("should handle tenant with no user [GH-90000]")
+        void shouldHandleTenantNoUser() { // GH-90000
+            SecurityContext ctx = new SecurityContext.Default(null, "tenant-1", Set.of(), Set.of()); // GH-90000
 
-            assertThat(ctx.getUserId()).isEmpty();
-            assertThat(ctx.getTenantId()).contains("tenant-1");
-            assertThat(ctx.isAuthenticated()).isFalse();
+            assertThat(ctx.getUserId()).isEmpty(); // GH-90000
+            assertThat(ctx.getTenantId()).contains("tenant-1 [GH-90000]");
+            assertThat(ctx.isAuthenticated()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("using test fixtures and mock factory")
+    @DisplayName("using test fixtures and mock factory [GH-90000]")
     class FixtureAndMockFactoryTests {
 
         @Test
-        @DisplayName("should create admin context with fixture")
-        void createAdminContextWithFixture() {
-            SecurityContext context = SecurityTestFixture.securityContext()
-                .admin()
-                .build();
+        @DisplayName("should create admin context with fixture [GH-90000]")
+        void createAdminContextWithFixture() { // GH-90000
+            SecurityContext context = SecurityTestFixture.securityContext() // GH-90000
+                .admin() // GH-90000
+                .build(); // GH-90000
 
-            assertThat(context.isAuthenticated()).isTrue();
-            assertThat(context.getRoles()).containsExactly("ADMIN");
-            assertThat(context.getPermissions()).containsExactlyInAnyOrder("read", "write", "delete", "admin");
+            assertThat(context.isAuthenticated()).isTrue(); // GH-90000
+            assertThat(context.getRoles()).containsExactly("ADMIN [GH-90000]");
+            assertThat(context.getPermissions()).containsExactlyInAnyOrder("read", "write", "delete", "admin"); // GH-90000
         }
 
         @Test
-        @DisplayName("should create viewer context with fixture preset")
-        void createViewerContextWithFixture() {
-            SecurityContext context = SecurityTestFixture.securityContext()
-                .viewer()
-                .build();
+        @DisplayName("should create viewer context with fixture preset [GH-90000]")
+        void createViewerContextWithFixture() { // GH-90000
+            SecurityContext context = SecurityTestFixture.securityContext() // GH-90000
+                .viewer() // GH-90000
+                .build(); // GH-90000
 
-            assertThat(context.isAuthenticated()).isTrue();
-            assertThat(context.getRoles()).containsExactly("VIEWER");
-            assertThat(context.getPermissions()).containsExactly("read");
+            assertThat(context.isAuthenticated()).isTrue(); // GH-90000
+            assertThat(context.getRoles()).containsExactly("VIEWER [GH-90000]");
+            assertThat(context.getPermissions()).containsExactly("read [GH-90000]");
         }
 
         @Test
-        @DisplayName("should create admin context via mock factory")
-        void createAdminContextViaMockFactory() {
-            SecurityContext context = SecurityMockFactory.adminContext();
+        @DisplayName("should create admin context via mock factory [GH-90000]")
+        void createAdminContextViaMockFactory() { // GH-90000
+            SecurityContext context = SecurityMockFactory.adminContext(); // GH-90000
 
-            assertThat(context.isAuthenticated()).isTrue();
-            assertThat(context.getRoles()).containsExactly("ADMIN");
-            assertThat(context.getPermissions()).containsExactlyInAnyOrder("read", "write", "delete", "admin");
+            assertThat(context.isAuthenticated()).isTrue(); // GH-90000
+            assertThat(context.getRoles()).containsExactly("ADMIN [GH-90000]");
+            assertThat(context.getPermissions()).containsExactlyInAnyOrder("read", "write", "delete", "admin"); // GH-90000
         }
 
         @Test
-        @DisplayName("should create user context via mock factory")
-        void createUserContextViaMockFactory() {
-            SecurityContext context = SecurityMockFactory.userContext();
+        @DisplayName("should create user context via mock factory [GH-90000]")
+        void createUserContextViaMockFactory() { // GH-90000
+            SecurityContext context = SecurityMockFactory.userContext(); // GH-90000
 
-            assertThat(context.isAuthenticated()).isTrue();
-            assertThat(context.getRoles()).containsExactly("USER");
-            assertThat(context.getPermissions()).containsExactly("read");
+            assertThat(context.isAuthenticated()).isTrue(); // GH-90000
+            assertThat(context.getRoles()).containsExactly("USER [GH-90000]");
+            assertThat(context.getPermissions()).containsExactly("read [GH-90000]");
         }
 
         @Test
-        @DisplayName("should create unauthenticated context via mock factory")
-        void createUnauthenticatedContextViaMockFactory() {
-            SecurityContext context = SecurityMockFactory.unauthenticatedContext();
+        @DisplayName("should create unauthenticated context via mock factory [GH-90000]")
+        void createUnauthenticatedContextViaMockFactory() { // GH-90000
+            SecurityContext context = SecurityMockFactory.unauthenticatedContext(); // GH-90000
 
-            assertThat(context.isAuthenticated()).isFalse();
-            assertThat(context.getUserId()).isEmpty();
-            assertThat(context.getRoles()).isEmpty();
-            assertThat(context.getPermissions()).isEmpty();
+            assertThat(context.isAuthenticated()).isFalse(); // GH-90000
+            assertThat(context.getUserId()).isEmpty(); // GH-90000
+            assertThat(context.getRoles()).isEmpty(); // GH-90000
+            assertThat(context.getPermissions()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("fluent builder patterns")
+    @DisplayName("fluent builder patterns [GH-90000]")
     class FluentBuilderTests {
 
         @Test
-        @DisplayName("should build custom role set")
-        void buildCustomRoleSet() {
-            SecurityContext context = SecurityTestFixture.securityContext()
-                .userId("editor-1")
-                .roles("EDITOR", "CONTRIBUTOR")
-                .permissions("read", "write", "comment")
-                .build();
+        @DisplayName("should build custom role set [GH-90000]")
+        void buildCustomRoleSet() { // GH-90000
+            SecurityContext context = SecurityTestFixture.securityContext() // GH-90000
+                .userId("editor-1 [GH-90000]")
+                .roles("EDITOR", "CONTRIBUTOR") // GH-90000
+                .permissions("read", "write", "comment") // GH-90000
+                .build(); // GH-90000
 
-            assertThat(context.getUserId()).hasValue("editor-1");
-            assertThat(context.getRoles()).containsExactlyInAnyOrder("EDITOR", "CONTRIBUTOR");
-            assertThat(context.getPermissions()).containsExactlyInAnyOrder("read", "write", "comment");
+            assertThat(context.getUserId()).hasValue("editor-1 [GH-90000]");
+            assertThat(context.getRoles()).containsExactlyInAnyOrder("EDITOR", "CONTRIBUTOR"); // GH-90000
+            assertThat(context.getPermissions()).containsExactlyInAnyOrder("read", "write", "comment"); // GH-90000
         }
 
         @Test
-        @DisplayName("should override tenant in builder")
-        void overrideTenantInBuilder() {
-            SecurityContext context = SecurityTestFixture.securityContext()
-                .tenantId("custom-tenant")
-                .build();
+        @DisplayName("should override tenant in builder [GH-90000]")
+        void overrideTenantInBuilder() { // GH-90000
+            SecurityContext context = SecurityTestFixture.securityContext() // GH-90000
+                .tenantId("custom-tenant [GH-90000]")
+                .build(); // GH-90000
 
-            assertThat(context.getTenantId()).hasValue("custom-tenant");
+            assertThat(context.getTenantId()).hasValue("custom-tenant [GH-90000]");
         }
 
         @Test
-        @DisplayName("should build with multiple roles")
-        void buildWithMultipleRoles() {
-            SecurityContext context = SecurityTestFixture.securityContext()
-                .roles("ADMIN", "AUDITOR", "OPERATOR")
-                .build();
+        @DisplayName("should build with multiple roles [GH-90000]")
+        void buildWithMultipleRoles() { // GH-90000
+            SecurityContext context = SecurityTestFixture.securityContext() // GH-90000
+                .roles("ADMIN", "AUDITOR", "OPERATOR") // GH-90000
+                .build(); // GH-90000
 
-            Set<String> roles = context.getRoles();
+            Set<String> roles = context.getRoles(); // GH-90000
 
-            assertThat(roles).containsExactlyInAnyOrder("ADMIN", "AUDITOR", "OPERATOR");
+            assertThat(roles).containsExactlyInAnyOrder("ADMIN", "AUDITOR", "OPERATOR"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("immutability guarantees")
+    @DisplayName("immutability guarantees [GH-90000]")
     class ImmutabilityTests {
 
         @Test
-        @DisplayName("should return immutable role set")
-        void roleSetIsImmutable() {
-            SecurityContext ctx = new SecurityContext.Default(
+        @DisplayName("should return immutable role set [GH-90000]")
+        void roleSetIsImmutable() { // GH-90000
+            SecurityContext ctx = new SecurityContext.Default( // GH-90000
                 "user-1", "tenant-1",
-                Set.of("ADMIN", "USER"),
-                Set.of("read", "write")
+                Set.of("ADMIN", "USER"), // GH-90000
+                Set.of("read", "write") // GH-90000
             );
 
-            Set<String> roles1 = ctx.getRoles();
-            Set<String> roles2 = ctx.getRoles();
+            Set<String> roles1 = ctx.getRoles(); // GH-90000
+            Set<String> roles2 = ctx.getRoles(); // GH-90000
 
             // Should be equal but potentially different instances
-            assertThat(roles1).isEqualTo(roles2);
-            assertThat(roles1).containsExactlyInAnyOrder("ADMIN", "USER");
+            assertThat(roles1).isEqualTo(roles2); // GH-90000
+            assertThat(roles1).containsExactlyInAnyOrder("ADMIN", "USER"); // GH-90000
         }
 
         @Test
-        @DisplayName("should return immutable permission set")
-        void permissionSetIsImmutable() {
-            SecurityContext ctx = new SecurityContext.Default(
+        @DisplayName("should return immutable permission set [GH-90000]")
+        void permissionSetIsImmutable() { // GH-90000
+            SecurityContext ctx = new SecurityContext.Default( // GH-90000
                 "user-1", "tenant-1",
-                Set.of("ADMIN"),
-                Set.of("read", "write", "delete")
+                Set.of("ADMIN [GH-90000]"),
+                Set.of("read", "write", "delete") // GH-90000
             );
 
-            Set<String> perms1 = ctx.getPermissions();
-            Set<String> perms2 = ctx.getPermissions();
+            Set<String> perms1 = ctx.getPermissions(); // GH-90000
+            Set<String> perms2 = ctx.getPermissions(); // GH-90000
 
-            assertThat(perms1).isEqualTo(perms2);
-            assertThat(perms1).containsExactlyInAnyOrder("read", "write", "delete");
+            assertThat(perms1).isEqualTo(perms2); // GH-90000
+            assertThat(perms1).containsExactlyInAnyOrder("read", "write", "delete"); // GH-90000
         }
     }
 }

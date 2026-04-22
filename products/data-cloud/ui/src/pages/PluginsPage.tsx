@@ -19,21 +19,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import {
   Package,
-  Search,
-  Filter,
   RefreshCw,
-  Shield,
-  AlertCircle,
   CheckCircle,
-  Activity,
+  AlertCircle,
 } from 'lucide-react';
-import { cn, buttonStyles, inputStyles, textStyles, bgStyles } from '../lib/theme';
+import { SearchFilterBar } from '../components/common/SearchFilterBar';
+import { LoadingState, EmptyState, ErrorState, NotFoundState } from '../components/common/AsyncStates';
+import { cn, buttonStyles, textStyles, bgStyles } from '../lib/theme';
 import {
-  PLUGIN_DELIVERY_BOUNDARY_CONTINUATION,
-  PLUGIN_DELIVERY_BOUNDARY_DETAIL,
   PLUGINS_EMPTY_STATE_DETAIL,
   PLUGINS_INVENTORY_HEADER_DETAIL,
-  PLUGINS_CATALOG_BOUNDARY_DETAIL,
 } from '../lib/runtime-boundaries';
 import { PluginCard } from '../components/plugins/PluginCard';
 import {
@@ -95,8 +90,6 @@ export function PluginsPage(): React.ReactElement {
 
   const tabs = [
     { id: 'installed' as const, label: 'Installed', icon: <Package className="h-4 w-4" /> },
-    { id: 'catalog' as const, label: 'Catalog Boundary', icon: <Shield className="h-4 w-4" /> },
-    { id: 'delivery' as const, label: 'Deployment', icon: <RefreshCw className="h-4 w-4" /> },
   ];
 
   // Filter installed plugins
@@ -133,7 +126,7 @@ export function PluginsPage(): React.ReactElement {
   };
 
   return (
-    <div className={cn('min-h-screen', bgStyles.page)} data-testid="plugins-page">
+    <main className={cn('min-h-screen', bgStyles.page)} data-testid="plugins-page" aria-label="Plugins">
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="px-6 py-4">
@@ -150,6 +143,7 @@ export function PluginsPage(): React.ReactElement {
               }}
               className={cn(buttonStyles.ghost, 'px-3 py-2')}
               title="Refresh bundled plugin status"
+              aria-label="Refresh bundled plugin status"
             >
               <RefreshCw className="h-5 w-5" />
             </button>
@@ -222,55 +216,44 @@ export function PluginsPage(): React.ReactElement {
       {/* Filters */}
       {activeTab === 'installed' && (
         <div className="px-6 py-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search plugins..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                data-testid="plugins-search-input"
-                className={cn(inputStyles.base, 'pl-10')}
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value as PluginCategory | 'all')}
-                data-testid="plugins-category-filter"
-                className={cn(inputStyles.base, 'w-48')}
-              >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status Filter (Installed tab only) */}
-            {activeTab === 'installed' && (
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                  data-testid="plugins-status-filter"
-                  className={cn(inputStyles.base, 'w-40')}
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="error">Error</option>
-                </select>
-              </div>
-            )}
-          </div>
+          <SearchFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search plugins..."
+            filters={[
+              {
+                id: 'plugins-category-filter',
+                label: 'Category',
+                value: categoryFilter,
+                options: categories.map((cat) => ({ value: cat.value, label: cat.label })),
+                onChange: (v) => setCategoryFilter(v as PluginCategory | 'all'),
+              },
+              ...(activeTab === 'installed'
+                ? [
+                  {
+                    id: 'plugins-status-filter',
+                    label: 'Status',
+                    value: statusFilter,
+                    options: [
+                      { value: 'all', label: 'All Status' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' },
+                      { value: 'error', label: 'Error' },
+                    ],
+                    onChange: (v: string) => setStatusFilter(v as typeof statusFilter),
+                  },
+                ]
+                : []),
+            ]}
+            hasActiveFilters={
+              searchQuery.length > 0 || categoryFilter !== 'all' || statusFilter !== 'all'
+            }
+            onClear={() => {
+              setSearchQuery('');
+              setCategoryFilter('all');
+              setStatusFilter('all');
+            }}
+          />
         </div>
       )}
 
@@ -298,44 +281,30 @@ export function PluginsPage(): React.ReactElement {
                 )}
               </div>
             )}
-            
+
             {loadingInstalled ? (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
+              <LoadingState message="Loading plugins..." />
             ) : installedError ? (
-              <div className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">
-                  Failed to load installed plugins
-                </p>
-              </div>
+              <ErrorState
+                title="Failed to load plugins"
+                message="There was an error loading the installed plugins. Please try again."
+                onRetry={() => queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] })}
+              />
             ) : installedPlugins.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className={cn(textStyles.h3, 'mb-2')}>No plugins installed</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  {PLUGINS_EMPTY_STATE_DETAIL}
-                </p>
-              </div>
+              <EmptyState
+                title="No plugins installed"
+                description={PLUGINS_EMPTY_STATE_DETAIL}
+                icon={<Package className="h-12 w-12 text-gray-400 mb-4" />}
+              />
             ) : filteredInstalledPlugins.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className={cn(textStyles.h3, 'mb-2')}>No plugins found</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Try adjusting your filters or search query
-                </p>
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setCategoryFilter('all');
-                    setStatusFilter('all');
-                  }}
-                  className={cn(buttonStyles.secondary, 'px-4 py-2')}
-                >
-                  Clear Filters
-                </button>
-              </div>
+              <NotFoundState
+                query={searchQuery}
+                onClear={() => {
+                  setSearchQuery('');
+                  setCategoryFilter('all');
+                  setStatusFilter('all');
+                }}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-testid="plugins-installed-grid">
                 {filteredInstalledPlugins.map((plugin) => (
@@ -352,36 +321,7 @@ export function PluginsPage(): React.ReactElement {
             )}
           </div>
         )}
-
-        {activeTab === 'catalog' && (
-          <div className="max-w-3xl mx-auto rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-100" data-testid="plugins-catalog-boundary">
-            <div className="flex items-start gap-3">
-              <Shield className="mt-0.5 h-5 w-5 flex-shrink-0" />
-              <div>
-                <h3 className={cn(textStyles.h3, 'mb-2')}>Bundled Plugin Boundary</h3>
-                <p className="text-sm leading-6">
-                  {PLUGINS_CATALOG_BOUNDARY_DETAIL}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'delivery' && (
-          <div className="max-w-3xl mx-auto rounded-xl border border-blue-200 bg-blue-50 p-6 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100" data-testid="plugins-delivery-guidance">
-            <div className="flex items-start gap-3">
-              <RefreshCw className="mt-0.5 h-5 w-5 flex-shrink-0" />
-              <div>
-                <h3 className={cn(textStyles.h3, 'mb-2')}>How Plugin Changes Ship</h3>
-                <p className="text-sm leading-6">
-                  {PLUGIN_DELIVERY_BOUNDARY_DETAIL}
-                  {PLUGIN_DELIVERY_BOUNDARY_CONTINUATION}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+    </main>
   );
 }

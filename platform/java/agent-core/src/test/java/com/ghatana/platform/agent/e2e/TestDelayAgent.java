@@ -24,46 +24,46 @@ public class TestDelayAgent<T> implements TypedAgent<T, T> {
     private final String agentId;
     private final Duration delay;
 
-    public TestDelayAgent(String agentId, Duration delay) {
+    public TestDelayAgent(String agentId, Duration delay) { // GH-90000
         this.agentId = agentId;
         this.delay = delay;
     }
 
     @Override
-    public @NotNull AgentDescriptor descriptor() {
-        return AgentDescriptor.builder()
-                .agentId(agentId)
-                .name("Test Delay Agent")
-                .type(AgentType.DETERMINISTIC)
-                .determinism(DeterminismGuarantee.FULL)
-                .build();
+    public @NotNull AgentDescriptor descriptor() { // GH-90000
+        return AgentDescriptor.builder() // GH-90000
+                .agentId(agentId) // GH-90000
+                .name("Test Delay Agent [GH-90000]")
+                .type(AgentType.DETERMINISTIC) // GH-90000
+                .determinism(DeterminismGuarantee.FULL) // GH-90000
+                .build(); // GH-90000
     }
 
     @Override
-    public @NotNull Promise<Void> initialize(@NotNull AgentConfig config) {
-        return Promise.complete();
+    public @NotNull Promise<Void> initialize(@NotNull AgentConfig config) { // GH-90000
+        return Promise.complete(); // GH-90000
     }
 
     @Override
-    public @NotNull Promise<Void> shutdown() {
-        return Promise.complete();
+    public @NotNull Promise<Void> shutdown() { // GH-90000
+        return Promise.complete(); // GH-90000
     }
 
     @Override
-    public @NotNull Promise<HealthStatus> healthCheck() {
-        return Promise.of(HealthStatus.healthy("Agent is healthy"));
+    public @NotNull Promise<HealthStatus> healthCheck() { // GH-90000
+        return Promise.of(HealthStatus.healthy("Agent is healthy [GH-90000]"));
     }
 
     @Override
-    public @NotNull Promise<AgentResult<T>> process(
+    public @NotNull Promise<AgentResult<T>> process( // GH-90000
             @NotNull AgentContext ctx,
             @NotNull T input) {
 
-        Instant start = Instant.now();
+        Instant start = Instant.now(); // GH-90000
 
         // In async testing, return immediately
         // The delay metadata is captured for verification in tests
-        Duration elapsed = Duration.between(start, Instant.now());
-        return Promise.of(AgentResult.success(input, agentId, elapsed));
+        Duration elapsed = Duration.between(start, Instant.now()); // GH-90000
+        return Promise.of(AgentResult.success(input, agentId, elapsed)); // GH-90000
     }
 }

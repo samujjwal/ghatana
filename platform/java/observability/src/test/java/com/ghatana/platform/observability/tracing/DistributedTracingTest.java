@@ -19,65 +19,65 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests distributed tracing setup, span creation, propagation,
  * and export functionality for the platform observability module.
  */
-@DisplayName("Distributed Tracing Tests")
+@DisplayName("Distributed Tracing Tests [GH-90000]")
 class DistributedTracingTest {
 
     @Test
-    @DisplayName("Should create and export spans")
-    void shouldCreateAndExportSpans() {
-        TracingManager manager = TracingManager.createForTesting("test-service", "1.0.0");
-        TracingProvider provider = manager.getProvider("test-provider");
+    @DisplayName("Should create and export spans [GH-90000]")
+    void shouldCreateAndExportSpans() { // GH-90000
+        TracingManager manager = TracingManager.createForTesting("test-service", "1.0.0"); // GH-90000
+        TracingProvider provider = manager.getProvider("test-provider [GH-90000]");
 
-        assertThat(provider).isNotNull();
-        assertThat(manager.getProviders()).hasSize(1);
+        assertThat(provider).isNotNull(); // GH-90000
+        assertThat(manager.getProviders()).hasSize(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should propagate trace context across service boundaries")
-    void shouldPropagateTraceContextAcrossServiceBoundaries() {
-        TracingManager manager = TracingManager.createDefault("test-service", "1.0.0", "http://localhost:4317");
+    @DisplayName("Should propagate trace context across service boundaries [GH-90000]")
+    void shouldPropagateTraceContextAcrossServiceBoundaries() { // GH-90000
+        TracingManager manager = TracingManager.createDefault("test-service", "1.0.0", "http://localhost:4317"); // GH-90000
 
-        TracingProvider provider1 = manager.getProvider("service-1");
-        TracingProvider provider2 = manager.getProvider("service-2");
+        TracingProvider provider1 = manager.getProvider("service-1 [GH-90000]");
+        TracingProvider provider2 = manager.getProvider("service-2 [GH-90000]");
 
-        assertThat(provider1).isNotNull();
-        assertThat(provider2).isNotNull();
-        assertThat(manager.getProviders()).hasSize(2);
+        assertThat(provider1).isNotNull(); // GH-90000
+        assertThat(provider2).isNotNull(); // GH-90000
+        assertThat(manager.getProviders()).hasSize(2); // GH-90000
     }
 
     @Test
-    @DisplayName("Should maintain span hierarchy")
-    void shouldMaintainSpanHierarchy() {
-        TracingManager manager = TracingManager.createForTesting("test-service", "1.0.0");
-        TracingProvider provider = manager.getProvider("parent-provider");
+    @DisplayName("Should maintain span hierarchy [GH-90000]")
+    void shouldMaintainSpanHierarchy() { // GH-90000
+        TracingManager manager = TracingManager.createForTesting("test-service", "1.0.0"); // GH-90000
+        TracingProvider provider = manager.getProvider("parent-provider [GH-90000]");
 
-        assertThat(provider).isNotNull();
+        assertThat(provider).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle span baggage propagation")
-    void shouldHandleSpanBaggagePropagation() {
-        TracingManager manager = TracingManager.createForTesting("test-service", "1.0.0");
-        TracingProvider provider = manager.getProvider("baggage-provider");
+    @DisplayName("Should handle span baggage propagation [GH-90000]")
+    void shouldHandleSpanBaggagePropagation() { // GH-90000
+        TracingManager manager = TracingManager.createForTesting("test-service", "1.0.0"); // GH-90000
+        TracingProvider provider = manager.getProvider("baggage-provider [GH-90000]");
 
-        assertThat(provider).isNotNull();
+        assertThat(provider).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should sample traces according to sampling strategy")
-    void shouldSampleTracesAccordingToSamplingStrategy() {
-        TracingManager manager = TracingManager.createDefault("test-service", "1.0.0");
+    @DisplayName("Should sample traces according to sampling strategy [GH-90000]")
+    void shouldSampleTracesAccordingToSamplingStrategy() { // GH-90000
+        TracingManager manager = TracingManager.createDefault("test-service", "1.0.0"); // GH-90000
 
-        assertThat(manager).isNotNull();
+        assertThat(manager).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle span export failures gracefully")
-    void shouldHandleSpanExportFailuresGracefully() {
-        TracingManager manager = TracingManager.createNoOp();
-        TracingProvider provider = manager.getProvider("no-op-provider");
+    @DisplayName("Should handle span export failures gracefully [GH-90000]")
+    void shouldHandleSpanExportFailuresGracefully() { // GH-90000
+        TracingManager manager = TracingManager.createNoOp(); // GH-90000
+        TracingProvider provider = manager.getProvider("no-op-provider [GH-90000]");
 
-        assertThat(provider).isNotNull();
-        assertThat(manager.getProviders()).hasSize(1);
+        assertThat(provider).isNotNull(); // GH-90000
+        assertThat(manager.getProviders()).hasSize(1); // GH-90000
     }
 }

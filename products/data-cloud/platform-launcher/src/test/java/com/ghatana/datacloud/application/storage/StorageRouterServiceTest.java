@@ -22,8 +22,8 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@MockitoSettings(strictness = Strictness.LENIENT)
-@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT) // GH-90000
+@ExtendWith(MockitoExtension.class) // GH-90000
 class StorageRouterServiceTest extends EventloopTestBase {
 
     @Mock
@@ -41,177 +41,177 @@ class StorageRouterServiceTest extends EventloopTestBase {
     static final String FALLBACK_BACKEND = "postgres-replica";
 
     @BeforeEach
-    void setUp() {
-        doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
-        router = new StorageRouterService(repository, metrics, Duration.ofSeconds(10));
+    void setUp() { // GH-90000
+        doNothing().when(metrics).incrementCounter(anyString(), any(String[].class)); // GH-90000
+        router = new StorageRouterService(repository, metrics, Duration.ofSeconds(10)); // GH-90000
     }
 
     // ── happy path ───────────────────────────────────────────────────────────
 
     @Test
-    void resolveBackendFor_returnsTarget_whenProfileExists() {
-        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of());
-        when(repository.findByTenantAndName(TENANT, COLLECTION))
-                .thenReturn(Promise.of(Optional.of(profile)));
+    void resolveBackendFor_returnsTarget_whenProfileExists() { // GH-90000
+        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of()); // GH-90000
+        when(repository.findByTenantAndName(TENANT, COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(profile))); // GH-90000
 
-        RoutingTarget target = resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY));
+        RoutingTarget target = resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY)); // GH-90000
 
-        assertThat(target.getPrimaryBackendId()).isEqualTo(PRIMARY_BACKEND);
-        assertThat(target.getQuery()).isEqualTo(QUERY);
+        assertThat(target.getPrimaryBackendId()).isEqualTo(PRIMARY_BACKEND); // GH-90000
+        assertThat(target.getQuery()).isEqualTo(QUERY); // GH-90000
     }
 
     @Test
-    void resolveBackendFor_includesFallbackBackends() {
-        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of(FALLBACK_BACKEND));
-        when(repository.findByTenantAndName(TENANT, COLLECTION))
-                .thenReturn(Promise.of(Optional.of(profile)));
+    void resolveBackendFor_includesFallbackBackends() { // GH-90000
+        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of(FALLBACK_BACKEND)); // GH-90000
+        when(repository.findByTenantAndName(TENANT, COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(profile))); // GH-90000
 
-        RoutingTarget target = resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY));
+        RoutingTarget target = resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY)); // GH-90000
 
-        assertThat(target.getFallbackBackendIds()).containsExactly(FALLBACK_BACKEND);
+        assertThat(target.getFallbackBackendIds()).containsExactly(FALLBACK_BACKEND); // GH-90000
     }
 
     // ── caching ──────────────────────────────────────────────────────────────
 
     @Test
-    void resolveBackendFor_cachesResult_secondCallSkipsRepository() {
-        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of());
-        when(repository.findByTenantAndName(TENANT, COLLECTION))
-                .thenReturn(Promise.of(Optional.of(profile)));
+    void resolveBackendFor_cachesResult_secondCallSkipsRepository() { // GH-90000
+        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of()); // GH-90000
+        when(repository.findByTenantAndName(TENANT, COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(profile))); // GH-90000
 
-        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY));
-        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY));
+        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY)); // GH-90000
+        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY)); // GH-90000
 
         // Repository should only be called once; second call served from cache
-        verify(repository, times(1)).findByTenantAndName(TENANT, COLLECTION);
+        verify(repository, times(1)).findByTenantAndName(TENANT, COLLECTION); // GH-90000
     }
 
     @Test
-    void resolveBackendFor_expiredCache_refetchesFromRepository() throws InterruptedException {
+    void resolveBackendFor_expiredCache_refetchesFromRepository() throws InterruptedException { // GH-90000
         // Use very short TTL
-        router = new StorageRouterService(repository, metrics, Duration.ofMillis(50));
-        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of());
-        when(repository.findByTenantAndName(TENANT, COLLECTION))
-                .thenReturn(Promise.of(Optional.of(profile)));
+        router = new StorageRouterService(repository, metrics, Duration.ofMillis(50)); // GH-90000
+        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of()); // GH-90000
+        when(repository.findByTenantAndName(TENANT, COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(profile))); // GH-90000
 
-        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY));
-        Thread.sleep(100); // wait for cache to expire
-        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY));
+        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY)); // GH-90000
+        Thread.sleep(100); // wait for cache to expire // GH-90000
+        resolve(router.resolveBackendFor(TENANT, COLLECTION, QUERY)); // GH-90000
 
-        verify(repository, times(2)).findByTenantAndName(TENANT, COLLECTION);
+        verify(repository, times(2)).findByTenantAndName(TENANT, COLLECTION); // GH-90000
     }
 
     // ── tenant isolation ─────────────────────────────────────────────────────
 
     @Test
-    void resolveBackendFor_tenantMismatch_throwsException() {
-        CollectionStorageProfile profile = profile("different-tenant", PRIMARY_BACKEND, List.of());
-        when(repository.findByTenantAndName(TENANT, COLLECTION))
-                .thenReturn(Promise.of(Optional.of(profile)));
+    void resolveBackendFor_tenantMismatch_throwsException() { // GH-90000
+        CollectionStorageProfile profile = profile("different-tenant", PRIMARY_BACKEND, List.of()); // GH-90000
+        when(repository.findByTenantAndName(TENANT, COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(profile))); // GH-90000
 
-        Promise<RoutingTarget> result = router.resolveBackendFor(TENANT, COLLECTION, QUERY);
+        Promise<RoutingTarget> result = router.resolveBackendFor(TENANT, COLLECTION, QUERY); // GH-90000
 
-        assertThatThrownBy(() -> resolve(result)).isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> resolve(result)).isInstanceOf(Exception.class); // GH-90000
     }
 
     @Test
-    void resolveBackendFor_differentTenants_separateCacheEntries() {
-        CollectionStorageProfile p1 = profile("tenant-A", "backend-A", List.of());
-        CollectionStorageProfile p2 = profile("tenant-B", "backend-B", List.of());
-        when(repository.findByTenantAndName("tenant-A", COLLECTION))
-                .thenReturn(Promise.of(Optional.of(p1)));
-        when(repository.findByTenantAndName("tenant-B", COLLECTION))
-                .thenReturn(Promise.of(Optional.of(p2)));
+    void resolveBackendFor_differentTenants_separateCacheEntries() { // GH-90000
+        CollectionStorageProfile p1 = profile("tenant-A", "backend-A", List.of()); // GH-90000
+        CollectionStorageProfile p2 = profile("tenant-B", "backend-B", List.of()); // GH-90000
+        when(repository.findByTenantAndName("tenant-A", COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(p1))); // GH-90000
+        when(repository.findByTenantAndName("tenant-B", COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(p2))); // GH-90000
 
-        RoutingTarget t1 = resolve(router.resolveBackendFor("tenant-A", COLLECTION, QUERY));
-        RoutingTarget t2 = resolve(router.resolveBackendFor("tenant-B", COLLECTION, QUERY));
+        RoutingTarget t1 = resolve(router.resolveBackendFor("tenant-A", COLLECTION, QUERY)); // GH-90000
+        RoutingTarget t2 = resolve(router.resolveBackendFor("tenant-B", COLLECTION, QUERY)); // GH-90000
 
-        assertThat(t1.getPrimaryBackendId()).isEqualTo("backend-A");
-        assertThat(t2.getPrimaryBackendId()).isEqualTo("backend-B");
+        assertThat(t1.getPrimaryBackendId()).isEqualTo("backend-A [GH-90000]");
+        assertThat(t2.getPrimaryBackendId()).isEqualTo("backend-B [GH-90000]");
     }
 
     // ── validation ───────────────────────────────────────────────────────────
 
     @Test
-    void resolveBackendFor_nullTenantId_throwsException() {
-        Promise<RoutingTarget> p = router.resolveBackendFor(null, COLLECTION, QUERY);
-        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class);
+    void resolveBackendFor_nullTenantId_throwsException() { // GH-90000
+        Promise<RoutingTarget> p = router.resolveBackendFor(null, COLLECTION, QUERY); // GH-90000
+        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class); // GH-90000
     }
 
     @Test
-    void resolveBackendFor_blankTenantId_throwsException() {
-        Promise<RoutingTarget> p = router.resolveBackendFor("  ", COLLECTION, QUERY);
-        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class);
+    void resolveBackendFor_blankTenantId_throwsException() { // GH-90000
+        Promise<RoutingTarget> p = router.resolveBackendFor("  ", COLLECTION, QUERY); // GH-90000
+        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class); // GH-90000
     }
 
     @Test
-    void resolveBackendFor_nullCollectionName_throwsException() {
-        Promise<RoutingTarget> p = router.resolveBackendFor(TENANT, null, QUERY);
-        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class);
+    void resolveBackendFor_nullCollectionName_throwsException() { // GH-90000
+        Promise<RoutingTarget> p = router.resolveBackendFor(TENANT, null, QUERY); // GH-90000
+        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class); // GH-90000
     }
 
     @Test
-    void resolveBackendFor_nullQuery_throwsException() {
-        Promise<RoutingTarget> p = router.resolveBackendFor(TENANT, COLLECTION, null);
-        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class);
+    void resolveBackendFor_nullQuery_throwsException() { // GH-90000
+        Promise<RoutingTarget> p = router.resolveBackendFor(TENANT, COLLECTION, null); // GH-90000
+        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class); // GH-90000
     }
 
     // ── profile not found ────────────────────────────────────────────────────
 
     @Test
-    void resolveBackendFor_noProfile_throwsResourceNotFoundException() {
-        when(repository.findByTenantAndName(TENANT, COLLECTION))
-                .thenReturn(Promise.of(Optional.empty()));
+    void resolveBackendFor_noProfile_throwsResourceNotFoundException() { // GH-90000
+        when(repository.findByTenantAndName(TENANT, COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
-        Promise<RoutingTarget> p = router.resolveBackendFor(TENANT, COLLECTION, QUERY);
-        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class);
+        Promise<RoutingTarget> p = router.resolveBackendFor(TENANT, COLLECTION, QUERY); // GH-90000
+        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class); // GH-90000
     }
 
     // ── getAllBackendsFor ─────────────────────────────────────────────────────
 
     @Test
-    void getAllBackendsFor_returnsPrimaryAndFallbacks() {
-        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of(FALLBACK_BACKEND));
-        when(repository.findByTenantAndName(TENANT, COLLECTION))
-                .thenReturn(Promise.of(Optional.of(profile)));
+    void getAllBackendsFor_returnsPrimaryAndFallbacks() { // GH-90000
+        CollectionStorageProfile profile = profile(TENANT, PRIMARY_BACKEND, List.of(FALLBACK_BACKEND)); // GH-90000
+        when(repository.findByTenantAndName(TENANT, COLLECTION)) // GH-90000
+                .thenReturn(Promise.of(Optional.of(profile))); // GH-90000
 
-        List<String> backends = resolve(router.getAllBackendsFor(TENANT, COLLECTION));
+        List<String> backends = resolve(router.getAllBackendsFor(TENANT, COLLECTION)); // GH-90000
 
-        assertThat(backends).contains(PRIMARY_BACKEND, FALLBACK_BACKEND);
+        assertThat(backends).contains(PRIMARY_BACKEND, FALLBACK_BACKEND); // GH-90000
     }
 
     @Test
-    void getAllBackendsFor_blankTenantId_throwsException() {
-        Promise<List<String>> p = router.getAllBackendsFor("", COLLECTION);
-        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class);
+    void getAllBackendsFor_blankTenantId_throwsException() { // GH-90000
+        Promise<List<String>> p = router.getAllBackendsFor("", COLLECTION); // GH-90000
+        assertThatThrownBy(() -> resolve(p)).isInstanceOf(Exception.class); // GH-90000
     }
 
     // ── constructor ──────────────────────────────────────────────────────────
 
     @Test
-    void constructor_nullRepository_throwsNPE() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> new StorageRouterService(null, metrics, Duration.ofSeconds(10)));
+    void constructor_nullRepository_throwsNPE() { // GH-90000
+        assertThatNullPointerException() // GH-90000
+                .isThrownBy(() -> new StorageRouterService(null, metrics, Duration.ofSeconds(10))); // GH-90000
     }
 
     @Test
-    void constructor_nullMetrics_throwsNPE() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> new StorageRouterService(repository, null, Duration.ofSeconds(10)));
+    void constructor_nullMetrics_throwsNPE() { // GH-90000
+        assertThatNullPointerException() // GH-90000
+                .isThrownBy(() -> new StorageRouterService(repository, null, Duration.ofSeconds(10))); // GH-90000
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private CollectionStorageProfile profile(String tenantId, String primaryBackend, List<String> fallbacks) {
-        CollectionStorageProfile p = mock(CollectionStorageProfile.class);
-        when(p.getTenantId()).thenReturn(tenantId);
-        when(p.getPrimaryBackendId()).thenReturn(primaryBackend);
-        when(p.getFallbackBackendIds()).thenReturn(fallbacks);
-        when(p.hasFailoverSupport()).thenReturn(!fallbacks.isEmpty());
+    private CollectionStorageProfile profile(String tenantId, String primaryBackend, List<String> fallbacks) { // GH-90000
+        CollectionStorageProfile p = mock(CollectionStorageProfile.class); // GH-90000
+        when(p.getTenantId()).thenReturn(tenantId); // GH-90000
+        when(p.getPrimaryBackendId()).thenReturn(primaryBackend); // GH-90000
+        when(p.getFallbackBackendIds()).thenReturn(fallbacks); // GH-90000
+        when(p.hasFailoverSupport()).thenReturn(!fallbacks.isEmpty()); // GH-90000
         return p;
     }
 
-    private <T> T resolve(Promise<T> promise) {
-        return runPromise(() -> promise);
+    private <T> T resolve(Promise<T> promise) { // GH-90000
+        return runPromise(() -> promise); // GH-90000
     }
 }

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  *
- * Task 5.6 — Tests for embedded storage backends (RocksDB, SQLite, H2).
+ * Task 5.6 — Tests for embedded storage backends (RocksDB, SQLite, H2). // GH-90000
  */
 package com.ghatana.datacloud.embedded;
 
@@ -18,351 +18,351 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * Contract tests verifying all three embedded storage backends:
- * RocksDB (LSM-tree), SQLite (embedded SQL), H2 (pure Java SQL).
+ * RocksDB (LSM-tree), SQLite (embedded SQL), H2 (pure Java SQL). // GH-90000
  *
  * <p>Also tests the shared {@link RecordCodec} serialization layer.
  */
-@DisplayName("Embedded Storage Backends")
+@DisplayName("Embedded Storage Backends [GH-90000]")
 class EmbeddedStorageBackendTest extends EventloopTestBase {
 
     @TempDir
     Path tempDir;
 
     // Shared no-op event stream for tests
-    private static final EmbeddedEventStream NO_OP_EVENTS = new EmbeddedEventStream() {
+    private static final EmbeddedEventStream NO_OP_EVENTS = new EmbeddedEventStream() { // GH-90000
         @Override
-        public void subscribe(EmbeddedEventStream.ChangeListener listener) {}
+        public void subscribe(EmbeddedEventStream.ChangeListener listener) {} // GH-90000
 
         @Override
-        public void unsubscribe(EmbeddedEventStream.ChangeListener listener) {}
+        public void unsubscribe(EmbeddedEventStream.ChangeListener listener) {} // GH-90000
     };
 
-    private static Record testRecord(String id, String tenant, String collection,
+    private static Record testRecord(String id, String tenant, String collection, // GH-90000
                                       Record.RecordType type, Map<String, Object> data) {
-        return new RecordCodec.StoredRecord(
-                UUID.fromString(id), tenant, collection, type, data
+        return new RecordCodec.StoredRecord( // GH-90000
+                UUID.fromString(id), tenant, collection, type, data // GH-90000
         );
     }
 
-    private static Record sampleEntity() {
-        return testRecord(
+    private static Record sampleEntity() { // GH-90000
+        return testRecord( // GH-90000
                 "00000000-0000-0000-0000-000000000001",
                 "tenant-1", "users", Record.RecordType.ENTITY,
-                Map.of("name", "Alice", "age", 30)
+                Map.of("name", "Alice", "age", 30) // GH-90000
         );
     }
 
-    private static Record sampleEvent() {
-        return testRecord(
+    private static Record sampleEvent() { // GH-90000
+        return testRecord( // GH-90000
                 "00000000-0000-0000-0000-000000000002",
                 "tenant-1", "clicks", Record.RecordType.EVENT,
-                Map.of("action", "click", "target", "button-1")
+                Map.of("action", "click", "target", "button-1") // GH-90000
         );
     }
 
     // ─────────────────── RecordCodec ───────────────────
 
     @Nested
-    @DisplayName("RecordCodec")
+    @DisplayName("RecordCodec [GH-90000]")
     class RecordCodecTests {
 
         @Test
-        @DisplayName("round-trip serialization preserves all fields")
-        void roundTrip() {
-            Record original = sampleEntity();
-            byte[] bytes = RecordCodec.serialize(original);
-            Record restored = RecordCodec.deserialize(bytes);
+        @DisplayName("round-trip serialization preserves all fields [GH-90000]")
+        void roundTrip() { // GH-90000
+            Record original = sampleEntity(); // GH-90000
+            byte[] bytes = RecordCodec.serialize(original); // GH-90000
+            Record restored = RecordCodec.deserialize(bytes); // GH-90000
 
-            assertThat(restored.id()).isEqualTo(original.id());
-            assertThat(restored.tenantId()).isEqualTo(original.tenantId());
-            assertThat(restored.collectionName()).isEqualTo(original.collectionName());
-            assertThat(restored.recordType()).isEqualTo(original.recordType());
-            assertThat(restored.data()).isEqualTo(original.data());
+            assertThat(restored.id()).isEqualTo(original.id()); // GH-90000
+            assertThat(restored.tenantId()).isEqualTo(original.tenantId()); // GH-90000
+            assertThat(restored.collectionName()).isEqualTo(original.collectionName()); // GH-90000
+            assertThat(restored.recordType()).isEqualTo(original.recordType()); // GH-90000
+            assertThat(restored.data()).isEqualTo(original.data()); // GH-90000
         }
 
         @Test
-        @DisplayName("empty data map round-trips")
-        void emptyData() {
-            Record rec = testRecord(
+        @DisplayName("empty data map round-trips [GH-90000]")
+        void emptyData() { // GH-90000
+            Record rec = testRecord( // GH-90000
                     "00000000-0000-0000-0000-000000000003",
-                    "t", "c", Record.RecordType.TIMESERIES, Map.of()
+                    "t", "c", Record.RecordType.TIMESERIES, Map.of() // GH-90000
             );
-            Record restored = RecordCodec.deserialize(RecordCodec.serialize(rec));
-            assertThat(restored.data()).isEmpty();
+            Record restored = RecordCodec.deserialize(RecordCodec.serialize(rec)); // GH-90000
+            assertThat(restored.data()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("all record types round-trip")
-        void allRecordTypes() {
-            for (Record.RecordType type : Record.RecordType.values()) {
-                Record rec = testRecord(
-                        UUID.randomUUID().toString(),
-                        "t", "c", type, Map.of("x", "y")
+        @DisplayName("all record types round-trip [GH-90000]")
+        void allRecordTypes() { // GH-90000
+            for (Record.RecordType type : Record.RecordType.values()) { // GH-90000
+                Record rec = testRecord( // GH-90000
+                        UUID.randomUUID().toString(), // GH-90000
+                        "t", "c", type, Map.of("x", "y") // GH-90000
                 );
-                Record restored = RecordCodec.deserialize(RecordCodec.serialize(rec));
-                assertThat(restored.recordType()).isEqualTo(type);
+                Record restored = RecordCodec.deserialize(RecordCodec.serialize(rec)); // GH-90000
+                assertThat(restored.recordType()).isEqualTo(type); // GH-90000
             }
         }
     }
 
-    // ─────────────────── H2Store (pure Java — most portable) ───────────────────
+    // ─────────────────── H2Store (pure Java — most portable) ─────────────────── // GH-90000
 
     @Nested
-    @DisplayName("H2Store")
+    @DisplayName("H2Store [GH-90000]")
     class H2StoreTests {
 
         private H2Store store;
 
         @BeforeEach
-        void setUp() {
-            store = new H2Store(
-                    tempDir.resolve("h2test-" + java.util.UUID.randomUUID()),
+        void setUp() { // GH-90000
+            store = new H2Store( // GH-90000
+                    tempDir.resolve("h2test-" + java.util.UUID.randomUUID()), // GH-90000
                     NO_OP_EVENTS,
-                    H2Store.H2Config.inMemory()
+                    H2Store.H2Config.inMemory() // GH-90000
             );
         }
 
         @AfterEach
-        void tearDown() {
-            store.close();
+        void tearDown() { // GH-90000
+            store.close(); // GH-90000
         }
 
         @Test
-        @DisplayName("put and get round-trip")
-        void putAndGet() {
-            Record entity = sampleEntity();
-            runPromise(() -> store.put("key-1", entity));
+        @DisplayName("put and get round-trip [GH-90000]")
+        void putAndGet() { // GH-90000
+            Record entity = sampleEntity(); // GH-90000
+            runPromise(() -> store.put("key-1", entity)); // GH-90000
 
-            Optional<Record> found = runPromise(() -> store.get("key-1"));
-            assertThat(found).isPresent();
-            assertThat(found.get().id()).isEqualTo(entity.id());
-            assertThat(found.get().tenantId()).isEqualTo("tenant-1");
-            assertThat(found.get().data()).containsEntry("name", "Alice");
+            Optional<Record> found = runPromise(() -> store.get("key-1 [GH-90000]"));
+            assertThat(found).isPresent(); // GH-90000
+            assertThat(found.get().id()).isEqualTo(entity.id()); // GH-90000
+            assertThat(found.get().tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(found.get().data()).containsEntry("name", "Alice"); // GH-90000
         }
 
         @Test
-        @DisplayName("get returns empty for missing key")
-        void getMissing() {
-            assertThat(runPromise(() -> store.get("missing"))).isEmpty();
+        @DisplayName("get returns empty for missing key [GH-90000]")
+        void getMissing() { // GH-90000
+            assertThat(runPromise(() -> store.get("missing [GH-90000]"))).isEmpty();
         }
 
         @Test
-        @DisplayName("put overwrites existing key")
-        void putOverwrite() {
-            runPromise(() -> store.put("key-1", sampleEntity()));
-            runPromise(() -> store.put("key-1", sampleEvent()));
+        @DisplayName("put overwrites existing key [GH-90000]")
+        void putOverwrite() { // GH-90000
+            runPromise(() -> store.put("key-1", sampleEntity())); // GH-90000
+            runPromise(() -> store.put("key-1", sampleEvent())); // GH-90000
 
-            Record found = runPromise(() -> store.get("key-1")).orElseThrow();
-            assertThat(found.collectionName()).isEqualTo("clicks");
+            Record found = runPromise(() -> store.get("key-1 [GH-90000]")).orElseThrow();
+            assertThat(found.collectionName()).isEqualTo("clicks [GH-90000]");
         }
 
         @Test
-        @DisplayName("delete returns true for existing key")
-        void deleteExisting() {
-            runPromise(() -> store.put("key-1", sampleEntity()));
-            assertThat(runPromise(() -> store.delete("key-1"))).isTrue();
-            assertThat(runPromise(() -> store.get("key-1"))).isEmpty();
+        @DisplayName("delete returns true for existing key [GH-90000]")
+        void deleteExisting() { // GH-90000
+            runPromise(() -> store.put("key-1", sampleEntity())); // GH-90000
+            assertThat(runPromise(() -> store.delete("key-1 [GH-90000]"))).isTrue();
+            assertThat(runPromise(() -> store.get("key-1 [GH-90000]"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete returns false for missing key")
-        void deleteMissing() {
-            assertThat(runPromise(() -> store.delete("missing"))).isFalse();
+        @DisplayName("delete returns false for missing key [GH-90000]")
+        void deleteMissing() { // GH-90000
+            assertThat(runPromise(() -> store.delete("missing [GH-90000]"))).isFalse();
         }
 
         @Test
-        @DisplayName("exists checks correctly")
-        void existsCheck() {
-            assertThat(runPromise(() -> store.exists("key-1"))).isFalse();
-            runPromise(() -> store.put("key-1", sampleEntity()));
-            assertThat(runPromise(() -> store.exists("key-1"))).isTrue();
+        @DisplayName("exists checks correctly [GH-90000]")
+        void existsCheck() { // GH-90000
+            assertThat(runPromise(() -> store.exists("key-1 [GH-90000]"))).isFalse();
+            runPromise(() -> store.put("key-1", sampleEntity())); // GH-90000
+            assertThat(runPromise(() -> store.exists("key-1 [GH-90000]"))).isTrue();
         }
 
         @Test
-        @DisplayName("count tracks records")
-        void countTracks() {
-            assertThat(runPromise(() -> store.count())).isZero();
-            runPromise(() -> store.put("k1", sampleEntity()));
-            runPromise(() -> store.put("k2", sampleEvent()));
-            assertThat(runPromise(() -> store.count())).isEqualTo(2);
+        @DisplayName("count tracks records [GH-90000]")
+        void countTracks() { // GH-90000
+            assertThat(runPromise(() -> store.count())).isZero(); // GH-90000
+            runPromise(() -> store.put("k1", sampleEntity())); // GH-90000
+            runPromise(() -> store.put("k2", sampleEvent())); // GH-90000
+            assertThat(runPromise(() -> store.count())).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("clear removes all records")
-        void clearAll() {
-            runPromise(() -> store.put("k1", sampleEntity()));
-            runPromise(() -> store.put("k2", sampleEvent()));
-            runPromise(() -> store.clear());
-            assertThat(runPromise(() -> store.count())).isZero();
+        @DisplayName("clear removes all records [GH-90000]")
+        void clearAll() { // GH-90000
+            runPromise(() -> store.put("k1", sampleEntity())); // GH-90000
+            runPromise(() -> store.put("k2", sampleEvent())); // GH-90000
+            runPromise(() -> store.clear()); // GH-90000
+            assertThat(runPromise(() -> store.count())).isZero(); // GH-90000
         }
     }
 
     // ─────────────────── RocksDBStore ───────────────────
 
     @Nested
-    @DisplayName("RocksDBStore")
+    @DisplayName("RocksDBStore [GH-90000]")
     class RocksDBStoreTests {
 
         private RocksDBStore store;
 
         @BeforeEach
-        void setUp() {
-            store = new RocksDBStore(
-                    tempDir.resolve("rocksdb-test"),
+        void setUp() { // GH-90000
+            store = new RocksDBStore( // GH-90000
+                    tempDir.resolve("rocksdb-test [GH-90000]"),
                     NO_OP_EVENTS,
-                    RocksDBStore.RocksDBConfig.defaults()
+                    RocksDBStore.RocksDBConfig.defaults() // GH-90000
             );
         }
 
         @AfterEach
-        void tearDown() {
-            store.close();
+        void tearDown() { // GH-90000
+            store.close(); // GH-90000
         }
 
         @Test
-        @DisplayName("put and get round-trip")
-        void putAndGet() {
-            runPromise(() -> store.put("r-1", sampleEntity()));
-            Optional<Record> found = runPromise(() -> store.get("r-1"));
-            assertThat(found).isPresent();
-            assertThat(found.get().id()).isEqualTo(sampleEntity().id());
+        @DisplayName("put and get round-trip [GH-90000]")
+        void putAndGet() { // GH-90000
+            runPromise(() -> store.put("r-1", sampleEntity())); // GH-90000
+            Optional<Record> found = runPromise(() -> store.get("r-1 [GH-90000]"));
+            assertThat(found).isPresent(); // GH-90000
+            assertThat(found.get().id()).isEqualTo(sampleEntity().id()); // GH-90000
         }
 
         @Test
-        @DisplayName("get returns empty for missing key")
-        void getMissing() {
-            assertThat(runPromise(() -> store.get("absent"))).isEmpty();
+        @DisplayName("get returns empty for missing key [GH-90000]")
+        void getMissing() { // GH-90000
+            assertThat(runPromise(() -> store.get("absent [GH-90000]"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete removes record")
-        void deleteRemoves() {
-            runPromise(() -> store.put("r-1", sampleEntity()));
-            assertThat(runPromise(() -> store.delete("r-1"))).isTrue();
-            assertThat(runPromise(() -> store.get("r-1"))).isEmpty();
+        @DisplayName("delete removes record [GH-90000]")
+        void deleteRemoves() { // GH-90000
+            runPromise(() -> store.put("r-1", sampleEntity())); // GH-90000
+            assertThat(runPromise(() -> store.delete("r-1 [GH-90000]"))).isTrue();
+            assertThat(runPromise(() -> store.get("r-1 [GH-90000]"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete returns false for missing")
-        void deleteFalse() {
-            assertThat(runPromise(() -> store.delete("absent"))).isFalse();
+        @DisplayName("delete returns false for missing [GH-90000]")
+        void deleteFalse() { // GH-90000
+            assertThat(runPromise(() -> store.delete("absent [GH-90000]"))).isFalse();
         }
 
         @Test
-        @DisplayName("exists checks correctly")
-        void existsCheck() {
-            assertThat(runPromise(() -> store.exists("r-1"))).isFalse();
-            runPromise(() -> store.put("r-1", sampleEntity()));
-            assertThat(runPromise(() -> store.exists("r-1"))).isTrue();
+        @DisplayName("exists checks correctly [GH-90000]")
+        void existsCheck() { // GH-90000
+            assertThat(runPromise(() -> store.exists("r-1 [GH-90000]"))).isFalse();
+            runPromise(() -> store.put("r-1", sampleEntity())); // GH-90000
+            assertThat(runPromise(() -> store.exists("r-1 [GH-90000]"))).isTrue();
         }
 
         @Test
-        @DisplayName("count and clear")
-        void countAndClear() {
-            runPromise(() -> store.put("a", sampleEntity()));
-            runPromise(() -> store.put("b", sampleEvent()));
-            assertThat(runPromise(() -> store.count())).isEqualTo(2);
-            runPromise(() -> store.clear());
-            assertThat(runPromise(() -> store.count())).isZero();
+        @DisplayName("count and clear [GH-90000]")
+        void countAndClear() { // GH-90000
+            runPromise(() -> store.put("a", sampleEntity())); // GH-90000
+            runPromise(() -> store.put("b", sampleEvent())); // GH-90000
+            assertThat(runPromise(() -> store.count())).isEqualTo(2); // GH-90000
+            runPromise(() -> store.clear()); // GH-90000
+            assertThat(runPromise(() -> store.count())).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("operations throw after close")
-        void throwsAfterClose() {
-            store.close();
-            assertThatThrownBy(() -> store.put("k", sampleEntity()))
-                    .isInstanceOf(IllegalStateException.class);
+        @DisplayName("operations throw after close [GH-90000]")
+        void throwsAfterClose() { // GH-90000
+            store.close(); // GH-90000
+            assertThatThrownBy(() -> store.put("k", sampleEntity())) // GH-90000
+                    .isInstanceOf(IllegalStateException.class); // GH-90000
         }
     }
 
     // ─────────────────── SQLiteStore ───────────────────
 
     @Nested
-    @DisplayName("SQLiteStore")
+    @DisplayName("SQLiteStore [GH-90000]")
     class SQLiteStoreTests {
 
         private SQLiteStore store;
 
         @BeforeEach
-        void setUp() {
-            store = new SQLiteStore(
-                    tempDir.resolve("sqlite-test.db"),
+        void setUp() { // GH-90000
+            store = new SQLiteStore( // GH-90000
+                    tempDir.resolve("sqlite-test.db [GH-90000]"),
                     NO_OP_EVENTS,
-                    SQLiteStore.SQLiteConfig.defaults()
+                    SQLiteStore.SQLiteConfig.defaults() // GH-90000
             );
         }
 
         @AfterEach
-        void tearDown() {
-            store.close();
+        void tearDown() { // GH-90000
+            store.close(); // GH-90000
         }
 
         @Test
-        @DisplayName("put and get round-trip")
-        void putAndGet() {
-            runPromise(() -> store.put("s-1", sampleEntity()));
-            Optional<Record> found = runPromise(() -> store.get("s-1"));
-            assertThat(found).isPresent();
-            assertThat(found.get().id()).isEqualTo(sampleEntity().id());
-            assertThat(found.get().data()).containsEntry("name", "Alice");
+        @DisplayName("put and get round-trip [GH-90000]")
+        void putAndGet() { // GH-90000
+            runPromise(() -> store.put("s-1", sampleEntity())); // GH-90000
+            Optional<Record> found = runPromise(() -> store.get("s-1 [GH-90000]"));
+            assertThat(found).isPresent(); // GH-90000
+            assertThat(found.get().id()).isEqualTo(sampleEntity().id()); // GH-90000
+            assertThat(found.get().data()).containsEntry("name", "Alice"); // GH-90000
         }
 
         @Test
-        @DisplayName("get returns empty for missing key")
-        void getMissing() {
-            assertThat(runPromise(() -> store.get("absent"))).isEmpty();
+        @DisplayName("get returns empty for missing key [GH-90000]")
+        void getMissing() { // GH-90000
+            assertThat(runPromise(() -> store.get("absent [GH-90000]"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete removes record")
-        void deleteRemoves() {
-            runPromise(() -> store.put("s-1", sampleEntity()));
-            assertThat(runPromise(() -> store.delete("s-1"))).isTrue();
-            assertThat(runPromise(() -> store.get("s-1"))).isEmpty();
+        @DisplayName("delete removes record [GH-90000]")
+        void deleteRemoves() { // GH-90000
+            runPromise(() -> store.put("s-1", sampleEntity())); // GH-90000
+            assertThat(runPromise(() -> store.delete("s-1 [GH-90000]"))).isTrue();
+            assertThat(runPromise(() -> store.get("s-1 [GH-90000]"))).isEmpty();
         }
 
         @Test
-        @DisplayName("exists, count, clear")
-        void existsCountClear() {
-            assertThat(runPromise(() -> store.exists("s-1"))).isFalse();
-            runPromise(() -> store.put("s-1", sampleEntity()));
-            runPromise(() -> store.put("s-2", sampleEvent()));
-            assertThat(runPromise(() -> store.exists("s-1"))).isTrue();
-            assertThat(runPromise(() -> store.count())).isEqualTo(2);
-            runPromise(() -> store.clear());
-            assertThat(runPromise(() -> store.count())).isZero();
+        @DisplayName("exists, count, clear [GH-90000]")
+        void existsCountClear() { // GH-90000
+            assertThat(runPromise(() -> store.exists("s-1 [GH-90000]"))).isFalse();
+            runPromise(() -> store.put("s-1", sampleEntity())); // GH-90000
+            runPromise(() -> store.put("s-2", sampleEvent())); // GH-90000
+            assertThat(runPromise(() -> store.exists("s-1 [GH-90000]"))).isTrue();
+            assertThat(runPromise(() -> store.count())).isEqualTo(2); // GH-90000
+            runPromise(() -> store.clear()); // GH-90000
+            assertThat(runPromise(() -> store.count())).isZero(); // GH-90000
         }
     }
 
     // ─────────────────── Config Presets ───────────────────
 
     @Nested
-    @DisplayName("Configuration Presets")
+    @DisplayName("Configuration Presets [GH-90000]")
     class ConfigTests {
 
         @Test
-        @DisplayName("RocksDB config presets are valid")
-        void rocksDbConfigs() {
-            assertThat(RocksDBStore.RocksDBConfig.defaults().writeBufferSize()).isPositive();
-            assertThat(RocksDBStore.RocksDBConfig.highThroughput().maxWriteBufferNumber()).isEqualTo(5);
-            assertThat(RocksDBStore.RocksDBConfig.lowMemory().enableCompression()).isFalse();
+        @DisplayName("RocksDB config presets are valid [GH-90000]")
+        void rocksDbConfigs() { // GH-90000
+            assertThat(RocksDBStore.RocksDBConfig.defaults().writeBufferSize()).isPositive(); // GH-90000
+            assertThat(RocksDBStore.RocksDBConfig.highThroughput().maxWriteBufferNumber()).isEqualTo(5); // GH-90000
+            assertThat(RocksDBStore.RocksDBConfig.lowMemory().enableCompression()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("SQLite config presets are valid")
-        void sqliteConfigs() {
-            assertThat(SQLiteStore.SQLiteConfig.defaults().enableWAL()).isTrue();
-            assertThat(SQLiteStore.SQLiteConfig.highPerformance().cacheSize()).isEqualTo(10000);
-            assertThat(SQLiteStore.SQLiteConfig.lowMemory().enableWAL()).isFalse();
+        @DisplayName("SQLite config presets are valid [GH-90000]")
+        void sqliteConfigs() { // GH-90000
+            assertThat(SQLiteStore.SQLiteConfig.defaults().enableWAL()).isTrue(); // GH-90000
+            assertThat(SQLiteStore.SQLiteConfig.highPerformance().cacheSize()).isEqualTo(10000); // GH-90000
+            assertThat(SQLiteStore.SQLiteConfig.lowMemory().enableWAL()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("H2 config presets are valid")
-        void h2Configs() {
-            assertThat(H2Store.H2Config.defaults().mode()).isEqualTo("EMBEDDED");
-            assertThat(H2Store.H2Config.inMemory().mode()).isEqualTo("MEMORY");
-            assertThat(H2Store.H2Config.highPerformance().cacheSize()).isEqualTo(65536);
-            assertThat(H2Store.H2Config.lowMemory().compress()).isTrue();
+        @DisplayName("H2 config presets are valid [GH-90000]")
+        void h2Configs() { // GH-90000
+            assertThat(H2Store.H2Config.defaults().mode()).isEqualTo("EMBEDDED [GH-90000]");
+            assertThat(H2Store.H2Config.inMemory().mode()).isEqualTo("MEMORY [GH-90000]");
+            assertThat(H2Store.H2Config.highPerformance().cacheSize()).isEqualTo(65536); // GH-90000
+            assertThat(H2Store.H2Config.lowMemory().compress()).isTrue(); // GH-90000
         }
     }
 }

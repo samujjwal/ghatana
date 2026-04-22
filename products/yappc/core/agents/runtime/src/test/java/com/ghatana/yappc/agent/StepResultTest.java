@@ -17,121 +17,121 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("StepResult Tests")
+@DisplayName("StepResult Tests [GH-90000]")
 class StepResultTest {
 
   @Test
-  @DisplayName("success factory should create successful result")
-  void successFactoryShouldCreateSuccessfulResult() {
+  @DisplayName("success factory should create successful result [GH-90000]")
+  void successFactoryShouldCreateSuccessfulResult() { // GH-90000
     String output = "result";
-    Map<String, Object> metadata = Map.of("key", "value");
-    Instant start = Instant.now();
-    Instant end = start.plusMillis(100);
+    Map<String, Object> metadata = Map.of("key", "value"); // GH-90000
+    Instant start = Instant.now(); // GH-90000
+    Instant end = start.plusMillis(100); // GH-90000
 
-    StepResult<String> result = StepResult.success(output, metadata, start, end);
+    StepResult<String> result = StepResult.success(output, metadata, start, end); // GH-90000
 
-    assertThat(result.status()).isEqualTo(StepResult.Status.SUCCESS);
-    assertThat(result.output()).isEqualTo(output);
-    assertThat(result.success()).isTrue();
-    assertThat(result.isSuccess()).isTrue();
-    assertThat(result.errors()).isEmpty();
-    assertThat(result.warnings()).isEmpty();
+    assertThat(result.status()).isEqualTo(StepResult.Status.SUCCESS); // GH-90000
+    assertThat(result.output()).isEqualTo(output); // GH-90000
+    assertThat(result.success()).isTrue(); // GH-90000
+    assertThat(result.isSuccess()).isTrue(); // GH-90000
+    assertThat(result.errors()).isEmpty(); // GH-90000
+    assertThat(result.warnings()).isEmpty(); // GH-90000
   }
 
   @Test
-  @DisplayName("failed factory should create failed result")
-  void failedFactoryShouldCreateFailedResult() {
-    List<String> errors = List.of("error1", "error2");
-    Map<String, Object> metadata = Map.of();
-    Instant start = Instant.now();
-    Instant end = start.plusMillis(100);
+  @DisplayName("failed factory should create failed result [GH-90000]")
+  void failedFactoryShouldCreateFailedResult() { // GH-90000
+    List<String> errors = List.of("error1", "error2"); // GH-90000
+    Map<String, Object> metadata = Map.of(); // GH-90000
+    Instant start = Instant.now(); // GH-90000
+    Instant end = start.plusMillis(100); // GH-90000
 
-    StepResult<String> result = StepResult.failed(errors, metadata, start, end);
+    StepResult<String> result = StepResult.failed(errors, metadata, start, end); // GH-90000
 
-    assertThat(result.status()).isEqualTo(StepResult.Status.FAILED);
-    assertThat(result.output()).isNull();
-    assertThat(result.success()).isFalse();
-    assertThat(result.isSuccess()).isFalse();
-    assertThat(result.errors()).containsExactlyElementsOf(errors);
+    assertThat(result.status()).isEqualTo(StepResult.Status.FAILED); // GH-90000
+    assertThat(result.output()).isNull(); // GH-90000
+    assertThat(result.success()).isFalse(); // GH-90000
+    assertThat(result.isSuccess()).isFalse(); // GH-90000
+    assertThat(result.errors()).containsExactlyElementsOf(errors); // GH-90000
   }
 
   @Test
-  @DisplayName("waitingReview factory should create waiting result")
-  void waitingReviewFactoryShouldCreateWaitingResult() {
+  @DisplayName("waitingReview factory should create waiting result [GH-90000]")
+  void waitingReviewFactoryShouldCreateWaitingResult() { // GH-90000
     String output = "partial result";
-    Map<String, Object> metadata = Map.of();
-    Instant start = Instant.now();
-    Instant end = start.plusMillis(100);
+    Map<String, Object> metadata = Map.of(); // GH-90000
+    Instant start = Instant.now(); // GH-90000
+    Instant end = start.plusMillis(100); // GH-90000
 
-    StepResult<String> result = StepResult.waitingReview(output, metadata, start, end);
+    StepResult<String> result = StepResult.waitingReview(output, metadata, start, end); // GH-90000
 
-    assertThat(result.status()).isEqualTo(StepResult.Status.WAITING_REVIEW);
-    assertThat(result.output()).isEqualTo(output);
-    assertThat(result.success()).isFalse();
-    assertThat(result.errors()).isEmpty();
+    assertThat(result.status()).isEqualTo(StepResult.Status.WAITING_REVIEW); // GH-90000
+    assertThat(result.output()).isEqualTo(output); // GH-90000
+    assertThat(result.success()).isFalse(); // GH-90000
+    assertThat(result.errors()).isEmpty(); // GH-90000
   }
 
   @Test
-  @DisplayName("metrics should return metadata or empty map")
-  void metricsShouldReturnMetadata() {
-    Map<String, Object> metadata = Map.of("key", "value");
-    Instant now = Instant.now();
+  @DisplayName("metrics should return metadata or empty map [GH-90000]")
+  void metricsShouldReturnMetadata() { // GH-90000
+    Map<String, Object> metadata = Map.of("key", "value"); // GH-90000
+    Instant now = Instant.now(); // GH-90000
 
-    StepResult<String> result = StepResult.success("output", metadata, now, now);
+    StepResult<String> result = StepResult.success("output", metadata, now, now); // GH-90000
 
-    assertThat(result.metrics()).isEqualTo(metadata);
+    assertThat(result.metrics()).isEqualTo(metadata); // GH-90000
   }
 
   @Test
-  @DisplayName("metrics should return empty map when metadata is null")
-  void metricsShouldReturnEmptyMapWhenNull() {
-    Instant now = Instant.now();
-    StepResult<String> result = new StepResult<>(
-        StepResult.Status.SUCCESS, "output", List.of(), List.of(), null, now, now);
+  @DisplayName("metrics should return empty map when metadata is null [GH-90000]")
+  void metricsShouldReturnEmptyMapWhenNull() { // GH-90000
+    Instant now = Instant.now(); // GH-90000
+    StepResult<String> result = new StepResult<>( // GH-90000
+        StepResult.Status.SUCCESS, "output", List.of(), List.of(), null, now, now); // GH-90000
 
-    assertThat(result.metrics()).isEmpty();
+    assertThat(result.metrics()).isEmpty(); // GH-90000
   }
 
   @Test
-  @DisplayName("durationMs should calculate correct duration")
-  void durationMsShouldCalculateCorrectDuration() {
-    Instant start = Instant.now();
-    Instant end = start.plusMillis(150);
-    StepResult<String> result = StepResult.success("output", Map.of(), start, end);
+  @DisplayName("durationMs should calculate correct duration [GH-90000]")
+  void durationMsShouldCalculateCorrectDuration() { // GH-90000
+    Instant start = Instant.now(); // GH-90000
+    Instant end = start.plusMillis(150); // GH-90000
+    StepResult<String> result = StepResult.success("output", Map.of(), start, end); // GH-90000
 
-    assertThat(result.durationMs()).isEqualTo(150L);
+    assertThat(result.durationMs()).isEqualTo(150L); // GH-90000
   }
 
   @Test
-  @DisplayName("durationMs should return zero when timestamps are null")
-  void durationMsShouldReturnZeroWhenNull() {
-    StepResult<String> result = StepResult.success("output", Map.of(), null, null);
+  @DisplayName("durationMs should return zero when timestamps are null [GH-90000]")
+  void durationMsShouldReturnZeroWhenNull() { // GH-90000
+    StepResult<String> result = StepResult.success("output", Map.of(), null, null); // GH-90000
 
-    assertThat(result.durationMs()).isZero();
+    assertThat(result.durationMs()).isZero(); // GH-90000
   }
 
   @Test
-  @DisplayName("durationMs should return zero when start is null")
-  void durationMsShouldReturnZeroWhenStartNull() {
-    Instant end = Instant.now();
-    StepResult<String> result = StepResult.success("output", Map.of(), null, end);
+  @DisplayName("durationMs should return zero when start is null [GH-90000]")
+  void durationMsShouldReturnZeroWhenStartNull() { // GH-90000
+    Instant end = Instant.now(); // GH-90000
+    StepResult<String> result = StepResult.success("output", Map.of(), null, end); // GH-90000
 
-    assertThat(result.durationMs()).isZero();
+    assertThat(result.durationMs()).isZero(); // GH-90000
   }
 
   @Test
-  @DisplayName("durationMs should return zero when end is null")
-  void durationMsShouldReturnZeroWhenEndNull() {
-    Instant start = Instant.now();
-    StepResult<String> result = StepResult.success("output", Map.of(), start, null);
+  @DisplayName("durationMs should return zero when end is null [GH-90000]")
+  void durationMsShouldReturnZeroWhenEndNull() { // GH-90000
+    Instant start = Instant.now(); // GH-90000
+    StepResult<String> result = StepResult.success("output", Map.of(), start, null); // GH-90000
 
-    assertThat(result.durationMs()).isZero();
+    assertThat(result.durationMs()).isZero(); // GH-90000
   }
 
   @Test
-  @DisplayName("status enum should have all required values")
-  void statusEnumShouldHaveAllValues() {
-    assertThat(StepResult.Status.values())
-        .containsExactly(StepResult.Status.SUCCESS, StepResult.Status.FAILED, StepResult.Status.WAITING_REVIEW);
+  @DisplayName("status enum should have all required values [GH-90000]")
+  void statusEnumShouldHaveAllValues() { // GH-90000
+    assertThat(StepResult.Status.values()) // GH-90000
+        .containsExactly(StepResult.Status.SUCCESS, StepResult.Status.FAILED, StepResult.Status.WAITING_REVIEW); // GH-90000
   }
 }

@@ -30,6 +30,9 @@ jobs:
       - name: Check deprecated package usage
         run: ./scripts/check-deprecated-ui.sh
 
+      - name: Check test authenticity rules
+        run: ./scripts/check-test-authenticity.sh
+
       - name: Check package dependency policy
         run: node scripts/check-architecture-compliance.js
 

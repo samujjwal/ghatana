@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.pipeline.registry.model;
@@ -20,200 +20,200 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Pipeline Registry – Model Lifecycle Tests")
+@DisplayName("Pipeline Registry – Model Lifecycle Tests [GH-90000]")
 class RegistryModelLifecycleTest {
 
-    private static final TenantId TENANT = TenantId.of("test-tenant");
+    private static final TenantId TENANT = TenantId.of("test-tenant [GH-90000]");
 
     // =========================================================================
     // PipelineRegistration
     // =========================================================================
 
     @Nested
-    @DisplayName("PipelineRegistration")
+    @DisplayName("PipelineRegistration [GH-90000]")
     class PipelineRegistrationTests {
 
         @Test
-        @DisplayName("create() produces a pipeline with correct name and tenant")
-        void createProducesCorrectFields() {
-            PipelineRegistration pipeline = PipelineRegistration.create("My Pipeline", TENANT);
+        @DisplayName("create() produces a pipeline with correct name and tenant [GH-90000]")
+        void createProducesCorrectFields() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.create("My Pipeline", TENANT); // GH-90000
 
-            assertThat(pipeline.getName()).isEqualTo("My Pipeline");
-            assertThat(pipeline.getTenantId()).isEqualTo(TENANT);
-            assertThat(pipeline.isActive()).isTrue();
-            assertThat(pipeline.getCreatedAt()).isNotNull();
-            assertThat(pipeline.getUpdatedAt()).isNotNull();
+            assertThat(pipeline.getName()).isEqualTo("My Pipeline [GH-90000]");
+            assertThat(pipeline.getTenantId()).isEqualTo(TENANT); // GH-90000
+            assertThat(pipeline.isActive()).isTrue(); // GH-90000
+            assertThat(pipeline.getCreatedAt()).isNotNull(); // GH-90000
+            assertThat(pipeline.getUpdatedAt()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("withId() sets only the id")
-        void withIdSetsId() {
-            PipelineRegistration pipeline = PipelineRegistration.withId("p-123");
+        @DisplayName("withId() sets only the id [GH-90000]")
+        void withIdSetsId() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.withId("p-123 [GH-90000]");
 
-            assertThat(pipeline.getId()).isEqualTo("p-123");
-            assertThat(pipeline.getName()).isNull();
+            assertThat(pipeline.getId()).isEqualTo("p-123 [GH-90000]");
+            assertThat(pipeline.getName()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("builder sets all fields correctly")
-        void builderSetsAllFields() {
-            PipelineRegistration pipeline = PipelineRegistration.builder()
-                    .id("p-456")
-                    .name("Builder Pipeline")
-                    .tenantId(TENANT)
-                    .description("A description")
-                    .version(2)
-                    .active(false)
-                    .config("{\"key\":\"value\"}")
-                    .updatedBy("alice")
-                    .build();
+        @DisplayName("builder sets all fields correctly [GH-90000]")
+        void builderSetsAllFields() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.builder() // GH-90000
+                    .id("p-456 [GH-90000]")
+                    .name("Builder Pipeline [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .description("A description [GH-90000]")
+                    .version(2) // GH-90000
+                    .active(false) // GH-90000
+                    .config("{\"key\":\"value\"}") // GH-90000
+                    .updatedBy("alice [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(pipeline.getId()).isEqualTo("p-456");
-            assertThat(pipeline.getName()).isEqualTo("Builder Pipeline");
-            assertThat(pipeline.getDescription()).isEqualTo("A description");
-            assertThat(pipeline.getVersion()).isEqualTo(2);
-            assertThat(pipeline.isActive()).isFalse();
-            assertThat(pipeline.getConfig()).isEqualTo("{\"key\":\"value\"}");
-            assertThat(pipeline.getUpdatedBy()).isEqualTo("alice");
+            assertThat(pipeline.getId()).isEqualTo("p-456 [GH-90000]");
+            assertThat(pipeline.getName()).isEqualTo("Builder Pipeline [GH-90000]");
+            assertThat(pipeline.getDescription()).isEqualTo("A description [GH-90000]");
+            assertThat(pipeline.getVersion()).isEqualTo(2); // GH-90000
+            assertThat(pipeline.isActive()).isFalse(); // GH-90000
+            assertThat(pipeline.getConfig()).isEqualTo("{\"key\":\"value\"}"); // GH-90000
+            assertThat(pipeline.getUpdatedBy()).isEqualTo("alice [GH-90000]");
         }
 
         @Test
-        @DisplayName("builder defaults: stages and metadata are empty lists/maps")
-        void builderDefaults() {
-            PipelineRegistration pipeline = PipelineRegistration.builder()
-                    .name("P")
-                    .tenantId(TENANT)
-                    .updatedBy("user")
-                    .build();
+        @DisplayName("builder defaults: stages and metadata are empty lists/maps [GH-90000]")
+        void builderDefaults() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.builder() // GH-90000
+                    .name("P [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .updatedBy("user [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(pipeline.getStages()).isEmpty();
-            assertThat(pipeline.getMetadata()).isEmpty();
-            assertThat(pipeline.getTags()).isEmpty();
-            assertThat(pipeline.getVersionStatus()).isEqualTo(PipelineVersionStatus.DRAFT);
+            assertThat(pipeline.getStages()).isEmpty(); // GH-90000
+            assertThat(pipeline.getMetadata()).isEmpty(); // GH-90000
+            assertThat(pipeline.getTags()).isEmpty(); // GH-90000
+            assertThat(pipeline.getVersionStatus()).isEqualTo(PipelineVersionStatus.DRAFT); // GH-90000
         }
 
         @Test
-        @DisplayName("newVersion() increments version and resets to DRAFT")
-        void newVersionIncrements() {
-            PipelineRegistration original = PipelineRegistration.builder()
-                    .id("p-1")
-                    .name("Pipeline")
-                    .tenantId(TENANT)
-                    .version(3)
-                    .updatedBy("user")
-                    .versionStatus(PipelineVersionStatus.PUBLISHED)
-                    .versionLabel("v3.0.0")
-                    .build();
+        @DisplayName("newVersion() increments version and resets to DRAFT [GH-90000]")
+        void newVersionIncrements() { // GH-90000
+            PipelineRegistration original = PipelineRegistration.builder() // GH-90000
+                    .id("p-1 [GH-90000]")
+                    .name("Pipeline [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .version(3) // GH-90000
+                    .updatedBy("user [GH-90000]")
+                    .versionStatus(PipelineVersionStatus.PUBLISHED) // GH-90000
+                    .versionLabel("v3.0.0 [GH-90000]")
+                    .build(); // GH-90000
 
-            PipelineRegistration next = original.newVersion();
+            PipelineRegistration next = original.newVersion(); // GH-90000
 
-            assertThat(next.getVersion()).isEqualTo(4);
-            assertThat(next.getVersionStatus()).isEqualTo(PipelineVersionStatus.DRAFT);
-            assertThat(next.getVersionLabel()).isNull();
-            assertThat(next.isActive()).isTrue();
+            assertThat(next.getVersion()).isEqualTo(4); // GH-90000
+            assertThat(next.getVersionStatus()).isEqualTo(PipelineVersionStatus.DRAFT); // GH-90000
+            assertThat(next.getVersionLabel()).isNull(); // GH-90000
+            assertThat(next.isActive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("newVersion() copies tenant, name, and description")
-        void newVersionCopiesFields() {
-            PipelineRegistration original = PipelineRegistration.builder()
-                    .name("My Pipeline")
-                    .tenantId(TENANT)
-                    .description("Desc")
-                    .version(1)
-                    .updatedBy("user")
-                    .build();
+        @DisplayName("newVersion() copies tenant, name, and description [GH-90000]")
+        void newVersionCopiesFields() { // GH-90000
+            PipelineRegistration original = PipelineRegistration.builder() // GH-90000
+                    .name("My Pipeline [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .description("Desc [GH-90000]")
+                    .version(1) // GH-90000
+                    .updatedBy("user [GH-90000]")
+                    .build(); // GH-90000
 
-            PipelineRegistration next = original.newVersion();
+            PipelineRegistration next = original.newVersion(); // GH-90000
 
-            assertThat(next.getName()).isEqualTo("My Pipeline");
-            assertThat(next.getTenantId()).isEqualTo(TENANT);
-            assertThat(next.getDescription()).isEqualTo("Desc");
+            assertThat(next.getName()).isEqualTo("My Pipeline [GH-90000]");
+            assertThat(next.getTenantId()).isEqualTo(TENANT); // GH-90000
+            assertThat(next.getDescription()).isEqualTo("Desc [GH-90000]");
         }
 
         @Test
-        @DisplayName("hasStructuredConfig() is false when structuredConfig is null")
-        void hasStructuredConfigFalseWhenNull() {
-            PipelineRegistration pipeline = PipelineRegistration.builder()
-                    .name("P")
-                    .tenantId(TENANT)
-                    .updatedBy("u")
-                    .build();
+        @DisplayName("hasStructuredConfig() is false when structuredConfig is null [GH-90000]")
+        void hasStructuredConfigFalseWhenNull() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.builder() // GH-90000
+                    .name("P [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .updatedBy("u [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(pipeline.hasStructuredConfig()).isFalse();
+            assertThat(pipeline.hasStructuredConfig()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("hasStages() is false when stages are empty")
-        void hasStagesFalseWhenEmpty() {
-            PipelineRegistration pipeline = PipelineRegistration.builder()
-                    .name("P")
-                    .tenantId(TENANT)
-                    .updatedBy("u")
-                    .build();
+        @DisplayName("hasStages() is false when stages are empty [GH-90000]")
+        void hasStagesFalseWhenEmpty() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.builder() // GH-90000
+                    .name("P [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .updatedBy("u [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(pipeline.hasStages()).isFalse();
+            assertThat(pipeline.hasStages()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("getEffectiveConfig() returns legacy config when structuredConfig absent")
-        void effectiveConfigIsLegacyWhenStructuredAbsent() {
-            PipelineRegistration pipeline = PipelineRegistration.builder()
-                    .name("P")
-                    .tenantId(TENANT)
-                    .updatedBy("u")
-                    .config("{\"mode\":\"batch\"}")
-                    .build();
+        @DisplayName("getEffectiveConfig() returns legacy config when structuredConfig absent [GH-90000]")
+        void effectiveConfigIsLegacyWhenStructuredAbsent() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.builder() // GH-90000
+                    .name("P [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .updatedBy("u [GH-90000]")
+                    .config("{\"mode\":\"batch\"}") // GH-90000
+                    .build(); // GH-90000
 
-            assertThat(pipeline.getEffectiveConfig()).isEqualTo("{\"mode\":\"batch\"}");
+            assertThat(pipeline.getEffectiveConfig()).isEqualTo("{\"mode\":\"batch\"}"); // GH-90000
         }
 
         @Test
-        @DisplayName("addStage() appends a stage")
-        void addStageAppends() {
-            PipelineRegistration pipeline = PipelineRegistration.create("P", TENANT);
-            PipelineStage stage = PipelineStage.builder().name("stage-1").build();
+        @DisplayName("addStage() appends a stage [GH-90000]")
+        void addStageAppends() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.create("P", TENANT); // GH-90000
+            PipelineStage stage = PipelineStage.builder().name("stage-1 [GH-90000]").build();
 
-            pipeline.addStage(stage);
+            pipeline.addStage(stage); // GH-90000
 
-            assertThat(pipeline.hasStages()).isTrue();
-            assertThat(pipeline.getStages()).hasSize(1);
-            assertThat(pipeline.getStages().get(0).getName()).isEqualTo("stage-1");
+            assertThat(pipeline.hasStages()).isTrue(); // GH-90000
+            assertThat(pipeline.getStages()).hasSize(1); // GH-90000
+            assertThat(pipeline.getStages().get(0).getName()).isEqualTo("stage-1 [GH-90000]");
         }
 
         @Test
-        @DisplayName("addMetadata() adds key-value entry")
-        void addMetadataEntry() {
-            PipelineRegistration pipeline = PipelineRegistration.create("P", TENANT);
+        @DisplayName("addMetadata() adds key-value entry [GH-90000]")
+        void addMetadataEntry() { // GH-90000
+            PipelineRegistration pipeline = PipelineRegistration.create("P", TENANT); // GH-90000
 
-            pipeline.addMetadata("owner", "team-a");
+            pipeline.addMetadata("owner", "team-a"); // GH-90000
 
-            assertThat(pipeline.getMetadata()).containsEntry("owner", "team-a");
+            assertThat(pipeline.getMetadata()).containsEntry("owner", "team-a"); // GH-90000
         }
 
         @Test
-        @DisplayName("updateFrom() copies description and tags from update")
-        void updateFromCopiesFields() {
-            PipelineRegistration base = PipelineRegistration.builder()
-                    .name("Base")
-                    .tenantId(TENANT)
-                    .description("Old description")
-                    .updatedBy("original")
-                    .build();
+        @DisplayName("updateFrom() copies description and tags from update [GH-90000]")
+        void updateFromCopiesFields() { // GH-90000
+            PipelineRegistration base = PipelineRegistration.builder() // GH-90000
+                    .name("Base [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .description("Old description [GH-90000]")
+                    .updatedBy("original [GH-90000]")
+                    .build(); // GH-90000
 
-            PipelineRegistration update = PipelineRegistration.builder()
-                    .name("Base")
-                    .tenantId(TENANT)
-                    .description("New description")
-                    .updatedBy("editor")
-                    .active(false)
-                    .build();
+            PipelineRegistration update = PipelineRegistration.builder() // GH-90000
+                    .name("Base [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .description("New description [GH-90000]")
+                    .updatedBy("editor [GH-90000]")
+                    .active(false) // GH-90000
+                    .build(); // GH-90000
 
-            base.updateFrom(update);
+            base.updateFrom(update); // GH-90000
 
-            assertThat(base.getDescription()).isEqualTo("New description");
-            assertThat(base.getUpdatedBy()).isEqualTo("editor");
-            assertThat(base.isActive()).isFalse();
+            assertThat(base.getDescription()).isEqualTo("New description [GH-90000]");
+            assertThat(base.getUpdatedBy()).isEqualTo("editor [GH-90000]");
+            assertThat(base.isActive()).isFalse(); // GH-90000
         }
     }
 
@@ -222,121 +222,121 @@ class RegistryModelLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Pattern")
+    @DisplayName("Pattern [GH-90000]")
     class PatternTests {
 
         @Test
-        @DisplayName("create() sets name, tenant, specification, and DRAFT status")
-        void createSetsFields() {
-            Pattern pattern = Pattern.create("fraud_pattern", TENANT, "SEQ(login_failed, transaction)");
+        @DisplayName("create() sets name, tenant, specification, and DRAFT status [GH-90000]")
+        void createSetsFields() { // GH-90000
+            Pattern pattern = Pattern.create("fraud_pattern", TENANT, "SEQ(login_failed, transaction)"); // GH-90000
 
-            assertThat(pattern.getName()).isEqualTo("fraud_pattern");
-            assertThat(pattern.getTenantId()).isEqualTo(TENANT);
-            assertThat(pattern.getSpecification()).isEqualTo("SEQ(login_failed, transaction)");
-            assertThat(pattern.getVersion()).isEqualTo(1);
-            assertThat(pattern.getStatus()).isEqualTo("DRAFT");
-            assertThat(pattern.getCreatedAt()).isNotNull();
+            assertThat(pattern.getName()).isEqualTo("fraud_pattern [GH-90000]");
+            assertThat(pattern.getTenantId()).isEqualTo(TENANT); // GH-90000
+            assertThat(pattern.getSpecification()).isEqualTo("SEQ(login_failed, transaction) [GH-90000]");
+            assertThat(pattern.getVersion()).isEqualTo(1); // GH-90000
+            assertThat(pattern.getStatus()).isEqualTo("DRAFT [GH-90000]");
+            assertThat(pattern.getCreatedAt()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("withId() sets only the id field")
-        void withIdSetsId() {
-            Pattern pattern = Pattern.withId("pat-000");
+        @DisplayName("withId() sets only the id field [GH-90000]")
+        void withIdSetsId() { // GH-90000
+            Pattern pattern = Pattern.withId("pat-000 [GH-90000]");
 
-            assertThat(pattern.getId()).isEqualTo("pat-000");
-            assertThat(pattern.getName()).isNull();
+            assertThat(pattern.getId()).isEqualTo("pat-000 [GH-90000]");
+            assertThat(pattern.getName()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("builder defaults: status is DRAFT and confidence is 0")
-        void builderDefaults() {
-            Pattern pattern = Pattern.builder()
-                    .name("p")
-                    .tenantId(TENANT)
-                    .specification("SEQ(A)")
-                    .build();
+        @DisplayName("builder defaults: status is DRAFT and confidence is 0 [GH-90000]")
+        void builderDefaults() { // GH-90000
+            Pattern pattern = Pattern.builder() // GH-90000
+                    .name("p [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .specification("SEQ(A) [GH-90000]")
+                    .build(); // GH-90000
 
-            assertThat(pattern.getStatus()).isEqualTo("DRAFT");
-            assertThat(pattern.getConfidence()).isEqualTo(0);
-            assertThat(pattern.getTags()).isEmpty();
+            assertThat(pattern.getStatus()).isEqualTo("DRAFT [GH-90000]");
+            assertThat(pattern.getConfidence()).isEqualTo(0); // GH-90000
+            assertThat(pattern.getTags()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("withCompiledPlan() sets status to COMPILED and clamps confidence 0-100")
-        void withCompiledPlanClampsConfidence() {
-            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)");
+        @DisplayName("withCompiledPlan() sets status to COMPILED and clamps confidence 0-100 [GH-90000]")
+        void withCompiledPlanClampsConfidence() { // GH-90000
+            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)"); // GH-90000
 
-            pattern.withCompiledPlan("binary-plan-data", 150); // > 100 → clamped to 100
+            pattern.withCompiledPlan("binary-plan-data", 150); // > 100 → clamped to 100 // GH-90000
 
-            assertThat(pattern.getStatus()).isEqualTo("COMPILED");
-            assertThat(pattern.getDetectionPlan()).isEqualTo("binary-plan-data");
-            assertThat(pattern.getConfidence()).isEqualTo(100);
+            assertThat(pattern.getStatus()).isEqualTo("COMPILED [GH-90000]");
+            assertThat(pattern.getDetectionPlan()).isEqualTo("binary-plan-data [GH-90000]");
+            assertThat(pattern.getConfidence()).isEqualTo(100); // GH-90000
         }
 
         @Test
-        @DisplayName("withCompiledPlan() clamps negative confidence to 0")
-        void withCompiledPlanClampsNegative() {
-            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)");
+        @DisplayName("withCompiledPlan() clamps negative confidence to 0 [GH-90000]")
+        void withCompiledPlanClampsNegative() { // GH-90000
+            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)"); // GH-90000
 
-            pattern.withCompiledPlan("plan", -50);
+            pattern.withCompiledPlan("plan", -50); // GH-90000
 
-            assertThat(pattern.getConfidence()).isEqualTo(0);
+            assertThat(pattern.getConfidence()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("activate() sets status to ACTIVE")
-        void activateSetsActive() {
-            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)");
-            pattern.withCompiledPlan("plan", 90);
+        @DisplayName("activate() sets status to ACTIVE [GH-90000]")
+        void activateSetsActive() { // GH-90000
+            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)"); // GH-90000
+            pattern.withCompiledPlan("plan", 90); // GH-90000
 
-            pattern.activate();
+            pattern.activate(); // GH-90000
 
-            assertThat(pattern.getStatus()).isEqualTo("ACTIVE");
+            assertThat(pattern.getStatus()).isEqualTo("ACTIVE [GH-90000]");
         }
 
         @Test
-        @DisplayName("deactivate() sets status to INACTIVE")
-        void deactivateSetsInactive() {
-            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)");
-            pattern.activate();
+        @DisplayName("deactivate() sets status to INACTIVE [GH-90000]")
+        void deactivateSetsInactive() { // GH-90000
+            Pattern pattern = Pattern.create("p", TENANT, "SEQ(A)"); // GH-90000
+            pattern.activate(); // GH-90000
 
-            pattern.deactivate();
+            pattern.deactivate(); // GH-90000
 
-            assertThat(pattern.getStatus()).isEqualTo("INACTIVE");
+            assertThat(pattern.getStatus()).isEqualTo("INACTIVE [GH-90000]");
         }
 
         @Test
-        @DisplayName("newVersion() increments version and resets to DRAFT")
-        void newVersionIncrementsVersion() {
-            Pattern original = Pattern.create("p", TENANT, "SEQ(A)");
-            original.setVersion(3);
-            original.withCompiledPlan("plan", 80);
-            original.activate();
+        @DisplayName("newVersion() increments version and resets to DRAFT [GH-90000]")
+        void newVersionIncrementsVersion() { // GH-90000
+            Pattern original = Pattern.create("p", TENANT, "SEQ(A)"); // GH-90000
+            original.setVersion(3); // GH-90000
+            original.withCompiledPlan("plan", 80); // GH-90000
+            original.activate(); // GH-90000
 
-            Pattern next = original.newVersion();
+            Pattern next = original.newVersion(); // GH-90000
 
-            assertThat(next.getVersion()).isEqualTo(4);
-            assertThat(next.getStatus()).isEqualTo("DRAFT");
+            assertThat(next.getVersion()).isEqualTo(4); // GH-90000
+            assertThat(next.getStatus()).isEqualTo("DRAFT [GH-90000]");
         }
 
         @Test
-        @DisplayName("newVersion() copies name, tenant, specification from original")
-        void newVersionCopiesFields() {
-            Pattern original = Pattern.builder()
-                    .name("complex_pattern")
-                    .tenantId(TENANT)
-                    .specification("SEQ(A,B,C)")
-                    .description("Detects ABC sequence")
-                    .version(2)
-                    .status("ACTIVE")
-                    .build();
+        @DisplayName("newVersion() copies name, tenant, specification from original [GH-90000]")
+        void newVersionCopiesFields() { // GH-90000
+            Pattern original = Pattern.builder() // GH-90000
+                    .name("complex_pattern [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .specification("SEQ(A,B,C) [GH-90000]")
+                    .description("Detects ABC sequence [GH-90000]")
+                    .version(2) // GH-90000
+                    .status("ACTIVE [GH-90000]")
+                    .build(); // GH-90000
 
-            Pattern next = original.newVersion();
+            Pattern next = original.newVersion(); // GH-90000
 
-            assertThat(next.getName()).isEqualTo("complex_pattern");
-            assertThat(next.getTenantId()).isEqualTo(TENANT);
-            assertThat(next.getSpecification()).isEqualTo("SEQ(A,B,C)");
-            assertThat(next.getDescription()).isEqualTo("Detects ABC sequence");
+            assertThat(next.getName()).isEqualTo("complex_pattern [GH-90000]");
+            assertThat(next.getTenantId()).isEqualTo(TENANT); // GH-90000
+            assertThat(next.getSpecification()).isEqualTo("SEQ(A,B,C) [GH-90000]");
+            assertThat(next.getDescription()).isEqualTo("Detects ABC sequence [GH-90000]");
         }
     }
 }

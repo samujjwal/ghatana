@@ -26,8 +26,8 @@ import org.junit.jupiter.api.io.TempDir;
  *
  * <p>Example: {@code ./gradlew test -Dtest.typescript.enabled=true}
  */
-@EnabledIfSystemProperty(named = "test.typescript.enabled", matches = "true")
-@Tag("integration")
+@EnabledIfSystemProperty(named = "test.typescript.enabled", matches = "true") // GH-90000
+@Tag("integration [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles type script rename refactoring test operations
@@ -48,17 +48,17 @@ class TypeScriptRenameRefactoringTest {
     private static final String TEST_FAILED = "Test failed: ";
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() throws IOException { // GH-90000
         // Skip setup if TypeScript is not available
-        isTypeScriptAvailable = TypeScriptRenameRefactoring.isSupported();
-        if (!isTypeScriptAvailable) {
+        isTypeScriptAvailable = TypeScriptRenameRefactoring.isSupported(); // GH-90000
+        if (!isTypeScriptAvailable) { // GH-90000
             return;
         }
 
-        refactoring = new TypeScriptRenameRefactoring();
-        testFile = tempDir.resolve("test_rename.ts");
-        executor = Executors.newSingleThreadExecutor();
-        projectContext = new PolyfixProjectContext(tempDir, null, List.of(), executor, null);
+        refactoring = new TypeScriptRenameRefactoring(); // GH-90000
+        testFile = tempDir.resolve("test_rename.ts [GH-90000]");
+        executor = Executors.newSingleThreadExecutor(); // GH-90000
+        projectContext = new PolyfixProjectContext(tempDir, null, List.of(), executor, null); // GH-90000
 
         // Create a simple TypeScript file for testing
         String testCode =
@@ -66,260 +66,260 @@ class TypeScriptRenameRefactoringTest {
                 class MyClass {
                     private oldProperty: string;
 
-                    constructor(value: string) {
+                    constructor(value: string) { // GH-90000
                         this.oldProperty = value;
                     }
 
-                    oldMethod(): string {
+                    oldMethod(): string { // GH-90000
                         return this.oldProperty;
                     }
 
-                    anotherMethod(): string {
-                        return this.oldMethod();
+                    anotherMethod(): string { // GH-90000
+                        return this.oldMethod(); // GH-90000
                     }
                 }
 
-                function functionToRename(param: string): string {
-                    return param.toUpperCase();
+                function functionToRename(param: string): string { // GH-90000
+                    return param.toUpperCase(); // GH-90000
                 }
 
-                const obj = new MyClass("test");
-                console.log(obj.oldMethod());
-                console.log(functionToRename("hello"));
+                const obj = new MyClass("test [GH-90000]");
+                console.log(obj.oldMethod()); // GH-90000
+                console.log(functionToRename("hello [GH-90000]"));
                 """;
 
-        Files.writeString(testFile, testCode);
+        Files.writeString(testFile, testCode); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (executor != null) {
-            executor.shutdownNow();
+    void tearDown() { // GH-90000
+        if (executor != null) { // GH-90000
+            executor.shutdownNow(); // GH-90000
         }
     }
 
     @Test
-    void shouldRenameMethod() {
-        if (!isTypeScriptAvailable) {
+    void shouldRenameMethod() { // GH-90000
+        if (!isTypeScriptAvailable) { // GH-90000
             return; // Skip test if TypeScript is not available
         }
 
         try {
             // Given
-            var context = createContext(testFile, "method", "oldMethod", "newMethod");
+            var context = createContext(testFile, "method", "oldMethod", "newMethod"); // GH-90000
 
             // When
-            var result = refactoring.apply(context);
+            var result = refactoring.apply(context); // GH-90000
 
             // Then
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getModifiedFiles()).contains(testFile);
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getModifiedFiles()).contains(testFile); // GH-90000
 
             // Verify the content was actually changed
-            String content = readFileContent(testFile);
-            assertThat(content).contains("newMethod(): string {");
-            assertThat(content).contains("return this.newMethod()");
-            assertThat(content).contains("console.log(obj.newMethod())");
-        } catch (Exception e) {
-            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
+            String content = readFileContent(testFile); // GH-90000
+            assertThat(content).contains("newMethod(): string { [GH-90000]");
+            assertThat(content).contains("return this.newMethod() [GH-90000]");
+            assertThat(content).contains("console.log(obj.newMethod()) [GH-90000]");
+        } catch (Exception e) { // GH-90000
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
     }
 
     @Test
-    void shouldRenameFunction() {
-        if (!isTypeScriptAvailable) {
+    void shouldRenameFunction() { // GH-90000
+        if (!isTypeScriptAvailable) { // GH-90000
             return; // Skip test if TypeScript is not available
         }
 
         try {
             // Given
             var context =
-                    createContext(testFile, "function", "functionToRename", "renamedFunction");
+                    createContext(testFile, "function", "functionToRename", "renamedFunction"); // GH-90000
 
             // When
-            var result = refactoring.apply(context);
+            var result = refactoring.apply(context); // GH-90000
 
             // Then
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
 
             // Verify the content was actually changed
-            String content = readFileContent(testFile);
-            assertThat(content).contains("function renamedFunction(param: string): string");
-            assertThat(content).contains("console.log(renamedFunction(\"hello\"));");
-        } catch (Exception e) {
-            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
+            String content = readFileContent(testFile); // GH-90000
+            assertThat(content).contains("function renamedFunction(param: string): string [GH-90000]");
+            assertThat(content).contains("console.log(renamedFunction(\"hello\"));"); // GH-90000
+        } catch (Exception e) { // GH-90000
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
     }
 
     @Test
-    void shouldRenameProperty() {
-        if (!isTypeScriptAvailable) {
+    void shouldRenameProperty() { // GH-90000
+        if (!isTypeScriptAvailable) { // GH-90000
             return; // Skip test if TypeScript is not available
         }
 
         try {
             // Given
-            var context = createContext(testFile, "property", "oldProperty", "newProperty");
+            var context = createContext(testFile, "property", "oldProperty", "newProperty"); // GH-90000
 
             // When
-            var result = refactoring.apply(context);
+            var result = refactoring.apply(context); // GH-90000
 
             // Then
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
 
             // Verify the content was actually changed
-            String content = readFileContent(testFile);
-            assertThat(content).contains("private newProperty: string;");
-            assertThat(content).contains("this.newProperty = value;");
-            assertThat(content).contains("return this.newProperty;");
-        } catch (Exception e) {
-            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
+            String content = readFileContent(testFile); // GH-90000
+            assertThat(content).contains("private newProperty: string; [GH-90000]");
+            assertThat(content).contains("this.newProperty = value; [GH-90000]");
+            assertThat(content).contains("return this.newProperty; [GH-90000]");
+        } catch (Exception e) { // GH-90000
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
     }
 
     @Test
-    void shouldNotRenameIfElementNotFound() {
-        if (!isTypeScriptAvailable) {
+    void shouldNotRenameIfElementNotFound() { // GH-90000
+        if (!isTypeScriptAvailable) { // GH-90000
             return; // Skip test if TypeScript is not available
         }
 
         try {
             // Given
-            var context = createContext(testFile, FUNCTION, "nonExistentFunction", NEW_NAME);
+            var context = createContext(testFile, FUNCTION, "nonExistentFunction", NEW_NAME); // GH-90000
 
             // When
-            var result = refactoring.apply(context);
+            var result = refactoring.apply(context); // GH-90000
 
             // Then
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
             // The real implementation might return success with no changes or fail with a message
-            if (result.getChangeSummary() != null) {
-                assertThat(result.getChangeSummary())
-                        .containsAnyOf("No changes were made", "not found");
+            if (result.getChangeSummary() != null) { // GH-90000
+                assertThat(result.getChangeSummary()) // GH-90000
+                        .containsAnyOf("No changes were made", "not found"); // GH-90000
             }
-        } catch (Exception e) {
-            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
+        } catch (Exception e) { // GH-90000
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
     }
 
     @Test
-    void shouldValidateNewName() {
-        if (!isTypeScriptAvailable) {
+    void shouldValidateNewName() { // GH-90000
+        if (!isTypeScriptAvailable) { // GH-90000
             return; // Skip test if TypeScript is not available
         }
 
         try {
             // Test valid names
-            assertThat(refactoring.isNewNameValid("validName")).isTrue();
-            assertThat(refactoring.isNewNameValid("validName123")).isTrue();
-            assertThat(refactoring.isNewNameValid("_privateName")).isTrue();
-            assertThat(refactoring.isNewNameValid("$name")).isTrue();
+            assertThat(refactoring.isNewNameValid("validName [GH-90000]")).isTrue();
+            assertThat(refactoring.isNewNameValid("validName123 [GH-90000]")).isTrue();
+            assertThat(refactoring.isNewNameValid("_privateName [GH-90000]")).isTrue();
+            assertThat(refactoring.isNewNameValid("$name [GH-90000]")).isTrue();
 
             // Test invalid names
-            assertThat(refactoring.isNewNameValid(null)).isFalse();
-            assertThat(refactoring.isNewNameValid("")).isFalse();
-            assertThat(refactoring.isNewNameValid("123invalid")).isFalse();
-            assertThat(refactoring.isNewNameValid("invalid-name")).isFalse();
-            assertThat(refactoring.isNewNameValid("invalid.name")).isFalse();
-        } catch (Exception e) {
-            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
+            assertThat(refactoring.isNewNameValid(null)).isFalse(); // GH-90000
+            assertThat(refactoring.isNewNameValid(" [GH-90000]")).isFalse();
+            assertThat(refactoring.isNewNameValid("123invalid [GH-90000]")).isFalse();
+            assertThat(refactoring.isNewNameValid("invalid-name [GH-90000]")).isFalse();
+            assertThat(refactoring.isNewNameValid("invalid.name [GH-90000]")).isFalse();
+        } catch (Exception e) { // GH-90000
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
     }
 
     @Test
-    void shouldCheckIfCanBeApplied() {
-        if (!isTypeScriptAvailable) {
+    void shouldCheckIfCanBeApplied() { // GH-90000
+        if (!isTypeScriptAvailable) { // GH-90000
             return; // Skip test if TypeScript is not available
         }
 
         try {
             // Valid TypeScript file
-            var validContext = createContext(testFile, FUNCTION, "someName", NEW_NAME);
-            assertThat(refactoring.canApply(validContext)).isTrue();
+            var validContext = createContext(testFile, FUNCTION, "someName", NEW_NAME); // GH-90000
+            assertThat(refactoring.canApply(validContext)).isTrue(); // GH-90000
 
             // Non-existent file
             var invalidFileContext =
-                    createContext(
-                            tempDir.resolve("non_existent.ts"), FUNCTION, "someName", NEW_NAME);
-            assertThat(refactoring.canApply(invalidFileContext)).isFalse();
+                    createContext( // GH-90000
+                            tempDir.resolve("non_existent.ts [GH-90000]"), FUNCTION, "someName", NEW_NAME);
+            assertThat(refactoring.canApply(invalidFileContext)).isFalse(); // GH-90000
 
             // Non-TypeScript file
-            var nonTsFile = tempDir.resolve("not_typescript.txt");
+            var nonTsFile = tempDir.resolve("not_typescript.txt [GH-90000]");
             try {
-                Files.writeString(nonTsFile, "Not a TypeScript file");
-                var nonTsContext = createContext(nonTsFile, FUNCTION, "someName", NEW_NAME);
-                assertThat(refactoring.canApply(nonTsContext)).isFalse();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to create test file", e);
+                Files.writeString(nonTsFile, "Not a TypeScript file"); // GH-90000
+                var nonTsContext = createContext(nonTsFile, FUNCTION, "someName", NEW_NAME); // GH-90000
+                assertThat(refactoring.canApply(nonTsContext)).isFalse(); // GH-90000
+            } catch (IOException e) { // GH-90000
+                throw new RuntimeException("Failed to create test file", e); // GH-90000
             }
-        } catch (Exception e) {
-            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
+        } catch (Exception e) { // GH-90000
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
     }
 
-    private String readFileContent(Path file) {
+    private String readFileContent(Path file) { // GH-90000
         try {
-            return Files.readString(file);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read test file", e);
+            return Files.readString(file); // GH-90000
+        } catch (IOException e) { // GH-90000
+            throw new RuntimeException("Failed to read test file", e); // GH-90000
         }
     }
 
-    private Context createContext(
+    private Context createContext( // GH-90000
             Path sourceFile, String elementType, String oldName, String newName) {
-        return new Context() {
+        return new Context() { // GH-90000
             @Override
-            public String getOldName() {
+            public String getOldName() { // GH-90000
                 return oldName;
             }
 
             @Override
-            public String getNewName() {
+            public String getNewName() { // GH-90000
                 return newName;
             }
 
             @Override
-            public String getElementType() {
+            public String getElementType() { // GH-90000
                 return elementType;
             }
 
             @Override
-            public String getSourceFile() {
-                return sourceFile.toString();
+            public String getSourceFile() { // GH-90000
+                return sourceFile.toString(); // GH-90000
             }
 
             @Override
-            public int getLineNumber() {
+            public int getLineNumber() { // GH-90000
                 return 0;
             }
 
             @Override
-            public int getColumnNumber() {
+            public int getColumnNumber() { // GH-90000
                 return 0;
             }
 
             @Override
-            public PolyfixProjectContext getPolyfixProjectContext() {
+            public PolyfixProjectContext getPolyfixProjectContext() { // GH-90000
                 return projectContext;
             }
 
             @Override
-            public Path getProjectRoot() {
-                return projectContext.getProjectRoot();
+            public Path getProjectRoot() { // GH-90000
+                return projectContext.getProjectRoot(); // GH-90000
             }
 
             @Override
-            public Set<Path> getAffectedFiles() {
-                return Set.of(sourceFile);
+            public Set<Path> getAffectedFiles() { // GH-90000
+                return Set.of(sourceFile); // GH-90000
             }
 
             @Override
-            public boolean isDryRun() {
+            public boolean isDryRun() { // GH-90000
                 return false;
             }
 
             @Override
-            public boolean isInteractive() {
+            public boolean isInteractive() { // GH-90000
                 return false;
             }
         };
@@ -337,7 +337,7 @@ class TypeScriptRenameRefactoringTest {
         private final String sourceFile;
         private final PolyfixProjectContext projectContext;
 
-        public RenameContextTestImpl(
+        public RenameContextTestImpl( // GH-90000
                 String oldName,
                 String newName,
                 String elementType,
@@ -351,57 +351,57 @@ class TypeScriptRenameRefactoringTest {
         }
 
         @Override
-        public String getOldName() {
+        public String getOldName() { // GH-90000
             return oldName;
         }
 
         @Override
-        public String getNewName() {
+        public String getNewName() { // GH-90000
             return newName;
         }
 
         @Override
-        public String getElementType() {
+        public String getElementType() { // GH-90000
             return elementType;
         }
 
         @Override
-        public String getSourceFile() {
+        public String getSourceFile() { // GH-90000
             return sourceFile;
         }
 
         @Override
-        public int getLineNumber() {
+        public int getLineNumber() { // GH-90000
             return 0;
         }
 
         @Override
-        public int getColumnNumber() {
+        public int getColumnNumber() { // GH-90000
             return 0;
         }
 
         @Override
-        public PolyfixProjectContext getPolyfixProjectContext() {
+        public PolyfixProjectContext getPolyfixProjectContext() { // GH-90000
             return projectContext;
         }
 
         @Override
-        public Path getProjectRoot() {
-            return projectContext.getProjectRoot();
+        public Path getProjectRoot() { // GH-90000
+            return projectContext.getProjectRoot(); // GH-90000
         }
 
         @Override
-        public Set<Path> getAffectedFiles() {
-            return Set.of(Path.of(sourceFile));
+        public Set<Path> getAffectedFiles() { // GH-90000
+            return Set.of(Path.of(sourceFile)); // GH-90000
         }
 
         @Override
-        public boolean isDryRun() {
+        public boolean isDryRun() { // GH-90000
             return false;
         }
 
         @Override
-        public boolean isInteractive() {
+        public boolean isInteractive() { // GH-90000
             return false;
         }
     }

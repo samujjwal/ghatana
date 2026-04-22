@@ -37,20 +37,20 @@ class LanguageServiceTest extends EventloopTestBase {
     // Test implementation of LanguageService
     private static class LanguageServiceTestImpl implements LanguageService {
         @Override
-        public String id() {
+        public String id() { // GH-90000
             return TEST;
         }
 
         @Override
-        public boolean supports(Path file) {
-            return file.toString().endsWith(".txt");
+        public boolean supports(Path file) { // GH-90000
+            return file.toString().endsWith(".txt [GH-90000]");
         }
 
         @Override
-        public Promise<List<UnifiedDiagnostic>> diagnose(PolyfixProjectContext ctx, List<Path> files) {
-            List<UnifiedDiagnostic> diagnostics = new ArrayList<>();
-            diagnostics.add(
-                    new UnifiedDiagnostic(
+        public Promise<List<UnifiedDiagnostic>> diagnose(PolyfixProjectContext ctx, List<Path> files) { // GH-90000
+            List<UnifiedDiagnostic> diagnostics = new ArrayList<>(); // GH-90000
+            diagnostics.add( // GH-90000
+                    new UnifiedDiagnostic( // GH-90000
                             TEST,
                             TEST_RULE,
                             "Test diagnostic",
@@ -58,49 +58,49 @@ class LanguageServiceTest extends EventloopTestBase {
                             1,
                             1,
                             Severity.ERROR,
-                            Map.of("test-key", "test-value")));
-            return Promise.of(diagnostics);
+                            Map.of("test-key", "test-value"))); // GH-90000
+            return Promise.of(diagnostics); // GH-90000
         }
 
         @Override
-        public List<String> getSupportedFileExtensions() {
-            List<String> extensions = new ArrayList<>();
-            extensions.add(".txt");
+        public List<String> getSupportedFileExtensions() { // GH-90000
+            List<String> extensions = new ArrayList<>(); // GH-90000
+            extensions.add(".txt [GH-90000]");
             return extensions;
         }
     }
 
     @Test
-    void id_shouldReturnServiceId() {
+    void id_shouldReturnServiceId() { // GH-90000
         // Given
-        LanguageService service = new LanguageServiceTestImpl();
+        LanguageService service = new LanguageServiceTestImpl(); // GH-90000
 
         // When
-        String id = service.id();
+        String id = service.id(); // GH-90000
 
         // Then
-        assertEquals(TEST, id);
+        assertEquals(TEST, id); // GH-90000
     }
 
     @Test
-    void supports_shouldCheckFileExtension() {
+    void supports_shouldCheckFileExtension() { // GH-90000
         // Given
-        LanguageService service = new LanguageServiceTestImpl();
-        Path supportedFile = Path.of(TEST_TXT);
-        Path unsupportedFile = Path.of("test.test");
+        LanguageService service = new LanguageServiceTestImpl(); // GH-90000
+        Path supportedFile = Path.of(TEST_TXT); // GH-90000
+        Path unsupportedFile = Path.of("test.test [GH-90000]");
 
         // When / Then
-        assertTrue(service.supports(supportedFile));
-        assertFalse(service.supports(unsupportedFile));
+        assertTrue(service.supports(supportedFile)); // GH-90000
+        assertFalse(service.supports(unsupportedFile)); // GH-90000
     }
 
     @Test
-    void diagnose_shouldReturnDiagnostics() {
+    void diagnose_shouldReturnDiagnostics() { // GH-90000
         // Given
-        LanguageService service = new LanguageServiceTestImpl();
+        LanguageService service = new LanguageServiceTestImpl(); // GH-90000
         PolyfixProjectContext context =
-                new PolyfixProjectContext(
-                        Path.of("."),
+                new PolyfixProjectContext( // GH-90000
+                        Path.of(". [GH-90000]"),
                         null, // config
                         null, // languages
                         null, // executor
@@ -109,29 +109,29 @@ class LanguageServiceTest extends EventloopTestBase {
 
         // When
         List<UnifiedDiagnostic> diagnostics =
-                runPromise(() -> service.diagnose(context, List.of(Path.of(TEST_TXT))));
+                runPromise(() -> service.diagnose(context, List.of(Path.of(TEST_TXT)))); // GH-90000
 
         // Then
-        assertNotNull(diagnostics);
-        assertFalse(diagnostics.isEmpty());
-        UnifiedDiagnostic diagnostic = diagnostics.get(0);
-        assertEquals(TEST, diagnostic.tool());
-        assertEquals(TEST_RULE, diagnostic.ruleId());
-        assertEquals("Test diagnostic", diagnostic.message());
-        assertEquals(TEST_TXT, diagnostic.file());
-        assertEquals(1, diagnostic.line());
-        assertEquals(1, diagnostic.column());
-        assertEquals(Severity.ERROR, diagnostic.severity());
-        assertEquals("test-value", diagnostic.metadata().get("test-key"));
+        assertNotNull(diagnostics); // GH-90000
+        assertFalse(diagnostics.isEmpty()); // GH-90000
+        UnifiedDiagnostic diagnostic = diagnostics.get(0); // GH-90000
+        assertEquals(TEST, diagnostic.tool()); // GH-90000
+        assertEquals(TEST_RULE, diagnostic.ruleId()); // GH-90000
+        assertEquals("Test diagnostic", diagnostic.message()); // GH-90000
+        assertEquals(TEST_TXT, diagnostic.file()); // GH-90000
+        assertEquals(1, diagnostic.line()); // GH-90000
+        assertEquals(1, diagnostic.column()); // GH-90000
+        assertEquals(Severity.ERROR, diagnostic.severity()); // GH-90000
+        assertEquals("test-value", diagnostic.metadata().get("test-key [GH-90000]"));
     }
 
     @Test
-    void planFixes_shouldReturnEmptyListByDefault() {
+    void planFixes_shouldReturnEmptyListByDefault() { // GH-90000
         // Given
-        LanguageService service = new LanguageServiceTestImpl();
+        LanguageService service = new LanguageServiceTestImpl(); // GH-90000
         PolyfixProjectContext context =
-                new PolyfixProjectContext(
-                        Path.of("."),
+                new PolyfixProjectContext( // GH-90000
+                        Path.of(". [GH-90000]"),
                         null, // config
                         null, // languages
                         null, // executor
@@ -139,7 +139,7 @@ class LanguageServiceTest extends EventloopTestBase {
                         );
 
         UnifiedDiagnostic diagnostic =
-                new UnifiedDiagnostic(
+                new UnifiedDiagnostic( // GH-90000
                         TEST,
                         TEST_RULE,
                         "Test message",
@@ -147,36 +147,36 @@ class LanguageServiceTest extends EventloopTestBase {
                         1,
                         1,
                         Severity.ERROR,
-                        Map.of(TEST, TEST));
+                        Map.of(TEST, TEST)); // GH-90000
 
         // When
-        List<FixAction> fixes = runPromise(() -> service.planFixes(diagnostic, context));
+        List<FixAction> fixes = runPromise(() -> service.planFixes(diagnostic, context)); // GH-90000
 
         // Then - Default implementation should return an empty list
-        assertNotNull(fixes);
-        assertTrue(fixes.isEmpty());
+        assertNotNull(fixes); // GH-90000
+        assertTrue(fixes.isEmpty()); // GH-90000
     }
 
     @Test
-    void getSupportedFileExtensions_shouldReturnExtensions() {
+    void getSupportedFileExtensions_shouldReturnExtensions() { // GH-90000
         // Given
-        LanguageService service = new LanguageServiceTestImpl();
+        LanguageService service = new LanguageServiceTestImpl(); // GH-90000
 
         // When
-        List<String> extensions = service.getSupportedFileExtensions();
+        List<String> extensions = service.getSupportedFileExtensions(); // GH-90000
 
         // Then
-        assertNotNull(extensions);
-        assertFalse(extensions.isEmpty());
-        assertEquals(".txt", extensions.get(0));
+        assertNotNull(extensions); // GH-90000
+        assertFalse(extensions.isEmpty()); // GH-90000
+        assertEquals(".txt", extensions.get(0)); // GH-90000
     }
 
     @Test
-    void planFixes_shouldHandleNullContext() {
+    void planFixes_shouldHandleNullContext() { // GH-90000
         // Given
-        LanguageService service = new LanguageServiceTestImpl();
+        LanguageService service = new LanguageServiceTestImpl(); // GH-90000
         UnifiedDiagnostic diagnostic =
-                new UnifiedDiagnostic(
+                new UnifiedDiagnostic( // GH-90000
                         TEST,
                         TEST_RULE,
                         "Test message",
@@ -184,13 +184,13 @@ class LanguageServiceTest extends EventloopTestBase {
                         1,
                         1,
                         Severity.ERROR,
-                        Map.of(TEST, TEST));
+                        Map.of(TEST, TEST)); // GH-90000
 
         // When
-        List<FixAction> fixes = runPromise(() -> service.planFixes(diagnostic, null));
+        List<FixAction> fixes = runPromise(() -> service.planFixes(diagnostic, null)); // GH-90000
 
         // Then - Default implementation should return an empty list
-        assertNotNull(fixes);
-        assertTrue(fixes.isEmpty());
+        assertNotNull(fixes); // GH-90000
+        assertTrue(fixes.isEmpty()); // GH-90000
     }
 }

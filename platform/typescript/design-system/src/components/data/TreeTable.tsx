@@ -10,7 +10,7 @@
  *   columns={[{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }]}
  * />
  *
- * @package @ghatana/ui
+ * @package @ghatana/design-system
  */
 
 import React, { CSSProperties, ReactNode, useState, FC } from 'react';

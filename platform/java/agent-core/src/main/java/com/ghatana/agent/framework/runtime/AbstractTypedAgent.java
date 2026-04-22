@@ -233,11 +233,14 @@ public abstract class AbstractTypedAgent<I, O> implements TypedAgent<I, O> {
                         ctx.recordMetric("agent.latency.ms", elapsed.toMillis());
                         return enriched;
                     })
-                    .whenException(e -> {
+                    .then(Promise::of, e -> {
+                        Duration elapsed = Duration.between(start, Instant.now());
                         failureCount.incrementAndGet();
                         ctx.recordMetric("agent.failure", 1);
+                        ctx.recordMetric("agent.latency.ms", elapsed.toMillis());
                         log.error("Agent processing error: agent={}, turn={}",
                                 agentId, ctx.getTurnId(), e);
+                        return Promise.of(AgentResult.failure(e, agentId, elapsed));
                     });
         } catch (Exception e) {
             Duration elapsed = Duration.between(start, Instant.now());

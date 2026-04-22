@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -38,21 +38,21 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("VoiceGatewayHandler – Contract Tests (DC-E4)")
+@DisplayName("VoiceGatewayHandler – Contract Tests (DC-E4) [GH-90000]")
 class VoiceGatewayHandlerTest extends EventloopTestBase {
 
     private DataCloudClient mockClient;
     private VoiceGatewayHandler handler;
 
     @BeforeEach
-    void setUp() {
-        mockClient = mock(DataCloudClient.class);
-        handler = new VoiceGatewayHandler(
+    void setUp() { // GH-90000
+        mockClient = mock(DataCloudClient.class); // GH-90000
+        handler = new VoiceGatewayHandler( // GH-90000
             mockClient,
             null,
             null,
-            new ObjectMapper(),
-            new HttpHandlerSupport(new ObjectMapper(), "*", "GET,POST", "Content-Type,X-Tenant-Id"),
+            new ObjectMapper(), // GH-90000
+            new HttpHandlerSupport(new ObjectMapper(), "*", "GET,POST", "Content-Type,X-Tenant-Id"), // GH-90000
             Runnable::run,
             NopVoiceSttAdapter.INSTANCE,
             NopVoiceTtsAdapter.INSTANCE
@@ -60,93 +60,93 @@ class VoiceGatewayHandlerTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Intent catalog")
+    @DisplayName("Intent catalog [GH-90000]")
     class CatalogTests {
 
         @Test
-        @DisplayName("catalog exposes registered intents for voice UI discovery")
-        void catalogExposesRegisteredIntents() {
-            assertThat(VoiceIntentCatalog.ALL).hasSizeGreaterThanOrEqualTo(20);
-            assertThat(VoiceIntentCatalog.ALL)
-                .extracting(VoiceIntentCatalog.VoiceIntent::name)
-                .contains("query_entities", "list_pipelines", "query_events");
+        @DisplayName("catalog exposes registered intents for voice UI discovery [GH-90000]")
+        void catalogExposesRegisteredIntents() { // GH-90000
+            assertThat(VoiceIntentCatalog.ALL).hasSizeGreaterThanOrEqualTo(20); // GH-90000
+            assertThat(VoiceIntentCatalog.ALL) // GH-90000
+                .extracting(VoiceIntentCatalog.VoiceIntent::name) // GH-90000
+                .contains("query_entities", "list_pipelines", "query_events"); // GH-90000
         }
 
         @Test
-        @DisplayName("exact intent name resolves directly from the catalog")
-        void exactIntentNameResolvesDirectly() {
-            assertThat(VoiceIntentCatalog.findByName("query_entities"))
-                .isPresent()
-                .get()
-                .extracting(VoiceIntentCatalog.VoiceIntent::pathTemplate)
-                .isEqualTo("/api/v1/entities/:collection");
+        @DisplayName("exact intent name resolves directly from the catalog [GH-90000]")
+        void exactIntentNameResolvesDirectly() { // GH-90000
+            assertThat(VoiceIntentCatalog.findByName("query_entities [GH-90000]"))
+                .isPresent() // GH-90000
+                .get() // GH-90000
+                .extracting(VoiceIntentCatalog.VoiceIntent::pathTemplate) // GH-90000
+                .isEqualTo("/api/v1/entities/:collection [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Intent classification")
+    @DisplayName("Intent classification [GH-90000]")
     class ClassificationTests {
 
         @Test
-        @DisplayName("heuristic classification prefers the strongest pipeline match")
-        void heuristicClassificationPrefersStrongestMatch() {
-            assertThat(VoiceIntentCatalog.findCandidates("show me the pipeline status for daily etl"))
-                .isNotEmpty()
-                .first()
-                .extracting(VoiceIntentCatalog.VoiceIntent::name)
-                .isEqualTo("get_pipeline_status");
+        @DisplayName("heuristic classification prefers the strongest pipeline match [GH-90000]")
+        void heuristicClassificationPrefersStrongestMatch() { // GH-90000
+            assertThat(VoiceIntentCatalog.findCandidates("show me the pipeline status for daily etl [GH-90000]"))
+                .isNotEmpty() // GH-90000
+                .first() // GH-90000
+                .extracting(VoiceIntentCatalog.VoiceIntent::name) // GH-90000
+                .isEqualTo("get_pipeline_status [GH-90000]");
         }
 
         @Test
-        @DisplayName("unknown utterances do not match any catalog intent")
-        void unknownUtterancesDoNotMatchCatalogIntent() {
-            assertThat(VoiceIntentCatalog.findCandidates("xyzzy frobulate the wumpus")).isEmpty();
+        @DisplayName("unknown utterances do not match any catalog intent [GH-90000]")
+        void unknownUtterancesDoNotMatchCatalogIntent() { // GH-90000
+            assertThat(VoiceIntentCatalog.findCandidates("xyzzy frobulate the wumpus [GH-90000]")).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("Execution payload")
+    @DisplayName("Execution payload [GH-90000]")
     class ExecutionPayloadTests {
 
         @Test
-        @DisplayName("exact list_pipelines execution returns a resolved action payload")
-        void listPipelinesExecutionReturnsResolvedActionPayload() {
-            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload(
-                VoiceIntentCatalog.findByName("list_pipelines").orElseThrow(),
-                Map.of(),
+        @DisplayName("exact list_pipelines execution returns a resolved action payload [GH-90000]")
+        void listPipelinesExecutionReturnsResolvedActionPayload() { // GH-90000
+            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( // GH-90000
+                VoiceIntentCatalog.findByName("list_pipelines [GH-90000]").orElseThrow(),
+                Map.of(), // GH-90000
                 TestConstants.TENANT_DEFAULT,
                 "en"));
 
-            assertThat(payload.get("executed")).isEqualTo(true);
-            assertThat(payload.get("intentName")).isEqualTo("list_pipelines");
-            assertThat(payload.get("resolvedPath")).isEqualTo("/api/v1/pipelines");
+            assertThat(payload.get("executed [GH-90000]")).isEqualTo(true);
+            assertThat(payload.get("intentName [GH-90000]")).isEqualTo("list_pipelines [GH-90000]");
+            assertThat(payload.get("resolvedPath [GH-90000]")).isEqualTo("/api/v1/pipelines [GH-90000]");
         }
 
         @Test
-        @DisplayName("query_entities execution returns real entity results from the data client")
-        @SuppressWarnings("unchecked")
-        void queryEntitiesExecutionReturnsRealEntityResults() {
-            when(mockClient.query(eq(TestConstants.TENANT_DEFAULT), eq("orders"), any(DataCloudClient.Query.class)))
-                .thenReturn(Promise.of(List.of(
-                    new DataCloudClient.Entity(
+        @DisplayName("query_entities execution returns real entity results from the data client [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void queryEntitiesExecutionReturnsRealEntityResults() { // GH-90000
+            when(mockClient.query(eq(TestConstants.TENANT_DEFAULT), eq("orders [GH-90000]"), any(DataCloudClient.Query.class)))
+                .thenReturn(Promise.of(List.of( // GH-90000
+                    new DataCloudClient.Entity( // GH-90000
                         "order-1",
                         "orders",
-                        Map.of("status", "open"),
-                        Instant.parse("2026-04-17T00:00:00Z"),
-                        Instant.parse("2026-04-17T00:00:00Z"),
+                        Map.of("status", "open"), // GH-90000
+                        Instant.parse("2026-04-17T00:00:00Z [GH-90000]"),
+                        Instant.parse("2026-04-17T00:00:00Z [GH-90000]"),
                         1L
                     )
                 )));
 
-            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload(
-                VoiceIntentCatalog.findByName("query_entities").orElseThrow(),
-                Map.of("collection", "orders", "limit", "10"),
+            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( // GH-90000
+                VoiceIntentCatalog.findByName("query_entities [GH-90000]").orElseThrow(),
+                Map.of("collection", "orders", "limit", "10"), // GH-90000
                 TestConstants.TENANT_DEFAULT,
                 "en"));
 
-            Map<String, Object> result = (Map<String, Object>) payload.get("result");
-            assertThat(payload.get("speechSummary")).isEqualTo("Found 1 entities in orders.");
-            assertThat(result.get("entityCount")).isEqualTo(1);
+            Map<String, Object> result = (Map<String, Object>) payload.get("result [GH-90000]");
+            assertThat(payload.get("speechSummary [GH-90000]")).isEqualTo("Found 1 entities in orders. [GH-90000]");
+            assertThat(result.get("entityCount [GH-90000]")).isEqualTo(1);
         }
     }
 }

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  * - Equality and hash code
  * - Builder methods for creating modified copies
  */
-@DisplayName("AISuggestion Tests")
+@DisplayName("AISuggestion Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles ai suggestion test operations
@@ -26,10 +26,10 @@ import org.junit.jupiter.api.Test;
 class AISuggestionTest {
 
   @Test
-  @DisplayName("Should create valid suggestion with all parameters")
-  void shouldCreateValidSuggestion() {
+  @DisplayName("Should create valid suggestion with all parameters [GH-90000]")
+  void shouldCreateValidSuggestion() { // GH-90000
     AISuggestion suggestion =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Add OAuth2 authentication",
             Persona.DEVELOPER,
@@ -39,19 +39,19 @@ class AISuggestionTest {
             "user-456",
             null);
 
-    assertThat(suggestion.requirementId()).isEqualTo("req-123");
-    assertThat(suggestion.suggestionText()).isEqualTo("Add OAuth2 authentication");
-    assertThat(suggestion.persona()).isEqualTo(Persona.DEVELOPER);
-    assertThat(suggestion.relevanceScore()).isEqualTo(0.85f);
-    assertThat(suggestion.priorityScore()).isEqualTo(0.75f);
-    assertThat(suggestion.status()).isEqualTo(SuggestionStatus.PENDING);
+    assertThat(suggestion.requirementId()).isEqualTo("req-123 [GH-90000]");
+    assertThat(suggestion.suggestionText()).isEqualTo("Add OAuth2 authentication [GH-90000]");
+    assertThat(suggestion.persona()).isEqualTo(Persona.DEVELOPER); // GH-90000
+    assertThat(suggestion.relevanceScore()).isEqualTo(0.85f); // GH-90000
+    assertThat(suggestion.priorityScore()).isEqualTo(0.75f); // GH-90000
+    assertThat(suggestion.status()).isEqualTo(SuggestionStatus.PENDING); // GH-90000
   }
 
   @Test
-  @DisplayName("Should calculate rank score as average of relevance and priority")
-  void shouldCalculateRankScore() {
+  @DisplayName("Should calculate rank score as average of relevance and priority [GH-90000]")
+  void shouldCalculateRankScore() { // GH-90000
     AISuggestion suggestion =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Text",
             Persona.PRODUCT_MANAGER,
@@ -61,15 +61,15 @@ class AISuggestionTest {
             null,
             null);
 
-    assertThat(suggestion.rankScore()).isCloseTo(0.7f, within(0.001f));
+    assertThat(suggestion.rankScore()).isCloseTo(0.7f, within(0.001f)); // GH-90000
   }
 
   @Test
-  @DisplayName("Should throw NullPointerException when requirement ID is null")
-  void shouldThrowWhenRequirementIdNull() {
-    assertThatThrownBy(
-            () ->
-                new AISuggestion(
+  @DisplayName("Should throw NullPointerException when requirement ID is null [GH-90000]")
+  void shouldThrowWhenRequirementIdNull() { // GH-90000
+    assertThatThrownBy( // GH-90000
+            () -> // GH-90000
+                new AISuggestion( // GH-90000
                     null,
                     "Text",
                     Persona.QA,
@@ -78,16 +78,16 @@ class AISuggestionTest {
                     SuggestionStatus.PENDING,
                     "user",
                     null))
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("requirementId cannot be null");
+        .isInstanceOf(NullPointerException.class) // GH-90000
+        .hasMessage("requirementId cannot be null [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should throw IllegalArgumentException when suggestion text is empty")
-  void shouldThrowWhenTextEmpty() {
-    assertThatThrownBy(
-            () ->
-                new AISuggestion(
+  @DisplayName("Should throw IllegalArgumentException when suggestion text is empty [GH-90000]")
+  void shouldThrowWhenTextEmpty() { // GH-90000
+    assertThatThrownBy( // GH-90000
+            () -> // GH-90000
+                new AISuggestion( // GH-90000
                     "req-123",
                     "   ",
                     Persona.UX_DESIGNER,
@@ -96,16 +96,16 @@ class AISuggestionTest {
                     SuggestionStatus.PENDING,
                     "user",
                     null))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("cannot be empty");
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("cannot be empty [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should throw IllegalArgumentException when relevance score > 1.0")
-  void shouldThrowWhenRelevanceTooHigh() {
-    assertThatThrownBy(
-            () ->
-                new AISuggestion(
+  @DisplayName("Should throw IllegalArgumentException when relevance score > 1.0 [GH-90000]")
+  void shouldThrowWhenRelevanceTooHigh() { // GH-90000
+    assertThatThrownBy( // GH-90000
+            () -> // GH-90000
+                new AISuggestion( // GH-90000
                     "req-123",
                     "Text",
                     Persona.ARCHITECT,
@@ -114,16 +114,16 @@ class AISuggestionTest {
                     SuggestionStatus.PENDING,
                     "user",
                     null))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("relevanceScore");
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("relevanceScore [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should throw IllegalArgumentException when priority score < 0")
-  void shouldThrowWhenPriorityNegative() {
-    assertThatThrownBy(
-            () ->
-                new AISuggestion(
+  @DisplayName("Should throw IllegalArgumentException when priority score < 0 [GH-90000]")
+  void shouldThrowWhenPriorityNegative() { // GH-90000
+    assertThatThrownBy( // GH-90000
+            () -> // GH-90000
+                new AISuggestion( // GH-90000
                     "req-123",
                     "Text",
                     Persona.DEVELOPER,
@@ -132,15 +132,15 @@ class AISuggestionTest {
                     SuggestionStatus.PENDING,
                     "user",
                     null))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("priorityScore");
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("priorityScore [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should create modified copy with new status")
-  void shouldCreateModifiedCopyWithStatus() {
+  @DisplayName("Should create modified copy with new status [GH-90000]")
+  void shouldCreateModifiedCopyWithStatus() { // GH-90000
     AISuggestion original =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Text",
             Persona.DEVELOPER,
@@ -150,18 +150,18 @@ class AISuggestionTest {
             "user",
             null);
 
-    AISuggestion updated = original.withStatus(SuggestionStatus.APPROVED);
+    AISuggestion updated = original.withStatus(SuggestionStatus.APPROVED); // GH-90000
 
-    assertThat(updated.status()).isEqualTo(SuggestionStatus.APPROVED);
-    assertThat(updated.relevanceScore()).isEqualTo(original.relevanceScore());
-    assertThat(original.status()).isEqualTo(SuggestionStatus.PENDING); // Original unchanged
+    assertThat(updated.status()).isEqualTo(SuggestionStatus.APPROVED); // GH-90000
+    assertThat(updated.relevanceScore()).isEqualTo(original.relevanceScore()); // GH-90000
+    assertThat(original.status()).isEqualTo(SuggestionStatus.PENDING); // Original unchanged // GH-90000
   }
 
   @Test
-  @DisplayName("Should create modified copy with updated scores")
-  void shouldCreateModifiedCopyWithScores() {
+  @DisplayName("Should create modified copy with updated scores [GH-90000]")
+  void shouldCreateModifiedCopyWithScores() { // GH-90000
     AISuggestion original =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Text",
             Persona.PRODUCT_MANAGER,
@@ -171,18 +171,18 @@ class AISuggestionTest {
             "user",
             null);
 
-    AISuggestion updated = original.withScores(0.9f, 0.6f);
+    AISuggestion updated = original.withScores(0.9f, 0.6f); // GH-90000
 
-    assertThat(updated.relevanceScore()).isCloseTo(0.9f, within(0.001f));
-    assertThat(updated.priorityScore()).isCloseTo(0.6f, within(0.001f));
-    assertThat(original.relevanceScore()).isCloseTo(0.8f, within(0.001f)); // Original unchanged
+    assertThat(updated.relevanceScore()).isCloseTo(0.9f, within(0.001f)); // GH-90000
+    assertThat(updated.priorityScore()).isCloseTo(0.6f, within(0.001f)); // GH-90000
+    assertThat(original.relevanceScore()).isCloseTo(0.8f, within(0.001f)); // Original unchanged // GH-90000
   }
 
   @Test
-  @DisplayName("Should have feedback link if set")
-  void shouldTrackFeedback() {
+  @DisplayName("Should have feedback link if set [GH-90000]")
+  void shouldTrackFeedback() { // GH-90000
     AISuggestion withoutFeedback =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Text",
             Persona.QA,
@@ -192,19 +192,19 @@ class AISuggestionTest {
             "user",
             null);
 
-    assertThat(withoutFeedback.hasFeedback()).isFalse();
+    assertThat(withoutFeedback.hasFeedback()).isFalse(); // GH-90000
 
-    AISuggestion withFeedback = withoutFeedback.withFeedback(999L);
+    AISuggestion withFeedback = withoutFeedback.withFeedback(999L); // GH-90000
 
-    assertThat(withFeedback.hasFeedback()).isTrue();
-    assertThat(withFeedback.feedbackId()).isEqualTo(999L);
+    assertThat(withFeedback.hasFeedback()).isTrue(); // GH-90000
+    assertThat(withFeedback.feedbackId()).isEqualTo(999L); // GH-90000
   }
 
   @Test
-  @DisplayName("Should be equal when all fields match")
-  void shouldBeEqual() {
+  @DisplayName("Should be equal when all fields match [GH-90000]")
+  void shouldBeEqual() { // GH-90000
     AISuggestion s1 =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Text",
             Persona.DEVELOPER,
@@ -215,7 +215,7 @@ class AISuggestionTest {
             999L);
 
     AISuggestion s2 =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Text",
             Persona.DEVELOPER,
@@ -225,15 +225,15 @@ class AISuggestionTest {
             "user-456",
             999L);
 
-    assertThat(s1).isEqualTo(s2);
-    assertThat(s1.hashCode()).isEqualTo(s2.hashCode());
+    assertThat(s1).isEqualTo(s2); // GH-90000
+    assertThat(s1.hashCode()).isEqualTo(s2.hashCode()); // GH-90000
   }
 
   @Test
-  @DisplayName("Should have informative toString")
-  void shouldHaveInformativeToString() {
+  @DisplayName("Should have informative toString [GH-90000]")
+  void shouldHaveInformativeToString() { // GH-90000
     AISuggestion suggestion =
-        new AISuggestion(
+        new AISuggestion( // GH-90000
             "req-123",
             "Text",
             Persona.ARCHITECT,
@@ -243,8 +243,8 @@ class AISuggestionTest {
             "user",
             null);
 
-    String str = suggestion.toString();
+    String str = suggestion.toString(); // GH-90000
 
-    assertThat(str).contains("req-123").contains("ARCH").contains("PENDING");
+    assertThat(str).contains("req-123 [GH-90000]").contains("ARCH [GH-90000]").contains("PENDING [GH-90000]");
   }
 }

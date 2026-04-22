@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * YAPPC Lifecycle Service — ApprovalStateMachine Tests
  */
 package com.ghatana.yappc.services.lifecycle;
@@ -21,137 +21,137 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("ApprovalStateMachine")
+@DisplayName("ApprovalStateMachine [GH-90000]")
 class ApprovalStateMachineTest {
 
     // ─── assertCanStartReview ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("assertCanStartReview succeeds for PENDING state")
-    void startReviewAllowedFromPending() {
-        ApprovalStateMachine.assertCanStartReview(PENDING, "req-001");
+    @DisplayName("assertCanStartReview succeeds for PENDING state [GH-90000]")
+    void startReviewAllowedFromPending() { // GH-90000
+        ApprovalStateMachine.assertCanStartReview(PENDING, "req-001"); // GH-90000
         // no exception
     }
 
     @Test
-    @DisplayName("assertCanStartReview rejects REVIEWING state")
-    void startReviewRejectedFromReviewing() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(REVIEWING, "req-001"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("req-001");
+    @DisplayName("assertCanStartReview rejects REVIEWING state [GH-90000]")
+    void startReviewRejectedFromReviewing() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(REVIEWING, "req-001")) // GH-90000
+                .isInstanceOf(IllegalStateException.class) // GH-90000
+                .hasMessageContaining("req-001 [GH-90000]");
     }
 
     @Test
-    @DisplayName("assertCanStartReview rejects APPROVED state")
-    void startReviewRejectedFromApproved() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(APPROVED, "req-002"))
-                .isInstanceOf(IllegalStateException.class);
+    @DisplayName("assertCanStartReview rejects APPROVED state [GH-90000]")
+    void startReviewRejectedFromApproved() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(APPROVED, "req-002")) // GH-90000
+                .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("assertCanStartReview rejects REJECTED state")
-    void startReviewRejectedFromRejected() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(REJECTED, "req-003"))
-                .isInstanceOf(IllegalStateException.class);
+    @DisplayName("assertCanStartReview rejects REJECTED state [GH-90000]")
+    void startReviewRejectedFromRejected() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(REJECTED, "req-003")) // GH-90000
+                .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("assertCanStartReview rejects EXPIRED state")
-    void startReviewRejectedFromExpired() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(EXPIRED, "req-004"))
-                .isInstanceOf(IllegalStateException.class);
+    @DisplayName("assertCanStartReview rejects EXPIRED state [GH-90000]")
+    void startReviewRejectedFromExpired() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanStartReview(EXPIRED, "req-004")) // GH-90000
+                .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     // ─── assertCanDecide ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("assertCanDecide succeeds for PENDING state")
-    void decideAllowedFromPending() {
-        ApprovalStateMachine.assertCanDecide(PENDING, "req-001");
+    @DisplayName("assertCanDecide succeeds for PENDING state [GH-90000]")
+    void decideAllowedFromPending() { // GH-90000
+        ApprovalStateMachine.assertCanDecide(PENDING, "req-001"); // GH-90000
         // no exception
     }
 
     @Test
-    @DisplayName("assertCanDecide succeeds for REVIEWING state")
-    void decideAllowedFromReviewing() {
-        ApprovalStateMachine.assertCanDecide(REVIEWING, "req-001");
+    @DisplayName("assertCanDecide succeeds for REVIEWING state [GH-90000]")
+    void decideAllowedFromReviewing() { // GH-90000
+        ApprovalStateMachine.assertCanDecide(REVIEWING, "req-001"); // GH-90000
         // no exception
     }
 
     @Test
-    @DisplayName("assertCanDecide rejects APPROVED state")
-    void decideRejectedFromApproved() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanDecide(APPROVED, "req-002"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("APPROVED");
+    @DisplayName("assertCanDecide rejects APPROVED state [GH-90000]")
+    void decideRejectedFromApproved() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanDecide(APPROVED, "req-002")) // GH-90000
+                .isInstanceOf(IllegalStateException.class) // GH-90000
+                .hasMessageContaining("APPROVED [GH-90000]");
     }
 
     @Test
-    @DisplayName("assertCanDecide rejects REJECTED state")
-    void decideRejectedFromRejected() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanDecide(REJECTED, "req-003"))
-                .isInstanceOf(IllegalStateException.class);
+    @DisplayName("assertCanDecide rejects REJECTED state [GH-90000]")
+    void decideRejectedFromRejected() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanDecide(REJECTED, "req-003")) // GH-90000
+                .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("assertCanDecide rejects EXPIRED state")
-    void decideRejectedFromExpired() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanDecide(EXPIRED, "req-004"))
-                .isInstanceOf(IllegalStateException.class);
+    @DisplayName("assertCanDecide rejects EXPIRED state [GH-90000]")
+    void decideRejectedFromExpired() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanDecide(EXPIRED, "req-004")) // GH-90000
+                .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     // ─── assertCanExpire ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("assertCanExpire succeeds for PENDING state")
-    void expireAllowedFromPending() {
-        ApprovalStateMachine.assertCanExpire(PENDING, "req-001");
+    @DisplayName("assertCanExpire succeeds for PENDING state [GH-90000]")
+    void expireAllowedFromPending() { // GH-90000
+        ApprovalStateMachine.assertCanExpire(PENDING, "req-001"); // GH-90000
     }
 
     @Test
-    @DisplayName("assertCanExpire succeeds for REVIEWING state")
-    void expireAllowedFromReviewing() {
-        ApprovalStateMachine.assertCanExpire(REVIEWING, "req-001");
+    @DisplayName("assertCanExpire succeeds for REVIEWING state [GH-90000]")
+    void expireAllowedFromReviewing() { // GH-90000
+        ApprovalStateMachine.assertCanExpire(REVIEWING, "req-001"); // GH-90000
     }
 
     @Test
-    @DisplayName("assertCanExpire rejects APPROVED state")
-    void expireRejectedFromApproved() {
-        assertThatThrownBy(() -> ApprovalStateMachine.assertCanExpire(APPROVED, "req-002"))
-                .isInstanceOf(IllegalStateException.class);
+    @DisplayName("assertCanExpire rejects APPROVED state [GH-90000]")
+    void expireRejectedFromApproved() { // GH-90000
+        assertThatThrownBy(() -> ApprovalStateMachine.assertCanExpire(APPROVED, "req-002")) // GH-90000
+                .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     // ─── isTerminal ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("isTerminal returns true for APPROVED, REJECTED, EXPIRED")
-    void isTerminalForFinalStates() {
-        assertThat(ApprovalStateMachine.isTerminal(APPROVED)).isTrue();
-        assertThat(ApprovalStateMachine.isTerminal(REJECTED)).isTrue();
-        assertThat(ApprovalStateMachine.isTerminal(EXPIRED)).isTrue();
+    @DisplayName("isTerminal returns true for APPROVED, REJECTED, EXPIRED [GH-90000]")
+    void isTerminalForFinalStates() { // GH-90000
+        assertThat(ApprovalStateMachine.isTerminal(APPROVED)).isTrue(); // GH-90000
+        assertThat(ApprovalStateMachine.isTerminal(REJECTED)).isTrue(); // GH-90000
+        assertThat(ApprovalStateMachine.isTerminal(EXPIRED)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("isTerminal returns false for PENDING and REVIEWING")
-    void isNotTerminalForActiveStates() {
-        assertThat(ApprovalStateMachine.isTerminal(PENDING)).isFalse();
-        assertThat(ApprovalStateMachine.isTerminal(REVIEWING)).isFalse();
+    @DisplayName("isTerminal returns false for PENDING and REVIEWING [GH-90000]")
+    void isNotTerminalForActiveStates() { // GH-90000
+        assertThat(ApprovalStateMachine.isTerminal(PENDING)).isFalse(); // GH-90000
+        assertThat(ApprovalStateMachine.isTerminal(REVIEWING)).isFalse(); // GH-90000
     }
 
     // ─── canDecide ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("canDecide returns true for PENDING and REVIEWING")
-    void canDecideForActiveStates() {
-        assertThat(ApprovalStateMachine.canDecide(PENDING)).isTrue();
-        assertThat(ApprovalStateMachine.canDecide(REVIEWING)).isTrue();
+    @DisplayName("canDecide returns true for PENDING and REVIEWING [GH-90000]")
+    void canDecideForActiveStates() { // GH-90000
+        assertThat(ApprovalStateMachine.canDecide(PENDING)).isTrue(); // GH-90000
+        assertThat(ApprovalStateMachine.canDecide(REVIEWING)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("canDecide returns false for terminal states")
-    void cannotDecideFromTerminalStates() {
-        assertThat(ApprovalStateMachine.canDecide(APPROVED)).isFalse();
-        assertThat(ApprovalStateMachine.canDecide(REJECTED)).isFalse();
-        assertThat(ApprovalStateMachine.canDecide(EXPIRED)).isFalse();
+    @DisplayName("canDecide returns false for terminal states [GH-90000]")
+    void cannotDecideFromTerminalStates() { // GH-90000
+        assertThat(ApprovalStateMachine.canDecide(APPROVED)).isFalse(); // GH-90000
+        assertThat(ApprovalStateMachine.canDecide(REJECTED)).isFalse(); // GH-90000
+        assertThat(ApprovalStateMachine.canDecide(EXPIRED)).isFalse(); // GH-90000
     }
 }

@@ -16,8 +16,8 @@ import { useState } from 'react';
  * ## Usage
  * 
  * ```tsx
- * import { DateRangePicker } from '@ghatana/ui';
- * 
+ * import { DateRangePicker } from '@ghatana/design-system';
+ *
  * function MyComponent() {
  *   const [range, setRange] = useState({ startDate: '', endDate: '' });
  *   

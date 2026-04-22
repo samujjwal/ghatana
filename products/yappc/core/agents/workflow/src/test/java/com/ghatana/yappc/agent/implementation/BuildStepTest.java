@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation BuildStep Tests")
+@DisplayName("Implementation BuildStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles build step test operations
@@ -32,40 +32,40 @@ class BuildStepTest extends EventloopTestBase {
   private BuildStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new BuildStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new BuildStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("implementation.build");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("implementation.build [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should execute CI builds for implementation units")
-  void shouldExecuteBuilds() {
+  @DisplayName("Should execute CI builds for implementation units [GH-90000]")
+  void shouldExecuteBuilds() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("tenantId", "tenant-abc");
-    context.put(
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // GH-90000
+    context.put( // GH-90000
         "progress",
-        List.of(
-            Map.of(
+        List.of( // GH-90000
+            Map.of( // GH-90000
                 "unitId", "unit-001",
                 "name", "UserService",
                 "repo", "services/user",
                 "module", "user-api"),
-            Map.of(
+            Map.of( // GH-90000
                 "unitId", "unit-002",
                 "name", "OrderService",
                 "repo", "services/order",
                 "module", "order-api")));
 
     Map<String, Object> mockUnit =
-        Map.of(
+        Map.of( // GH-90000
             "unitId", "unit-001",
             "tenantId", "tenant-abc",
             "status", "IN_PROGRESS",
@@ -73,16 +73,16 @@ class BuildStepTest extends EventloopTestBase {
             "repo", "services/user",
             "module", "user-api");
 
-    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of(mockUnit)));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of(mockUnit))); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
+    assertThat(result).isNotNull(); // GH-90000
   }
 }

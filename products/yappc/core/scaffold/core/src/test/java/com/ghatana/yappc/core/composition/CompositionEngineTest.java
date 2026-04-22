@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors
+ * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -42,128 +42,128 @@ class CompositionEngineTest {
     private Method evaluateConditionMethod;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() throws Exception { // GH-90000
         // Use mock PackEngine and real HandlebarsTemplateEngine
-        PackEngine mockPackEngine = mock(PackEngine.class);
-        HandlebarsTemplateEngine templateEngine = new HandlebarsTemplateEngine();
+        PackEngine mockPackEngine = mock(PackEngine.class); // GH-90000
+        HandlebarsTemplateEngine templateEngine = new HandlebarsTemplateEngine(); // GH-90000
 
-        engine = new CompositionEngine(mockPackEngine, templateEngine);
+        engine = new CompositionEngine(mockPackEngine, templateEngine); // GH-90000
 
         // Access private method for testing
-        evaluateConditionMethod = CompositionEngine.class.getDeclaredMethod(
+        evaluateConditionMethod = CompositionEngine.class.getDeclaredMethod( // GH-90000
             "evaluateCondition", String.class, Map.class);
-        evaluateConditionMethod.setAccessible(true);
+        evaluateConditionMethod.setAccessible(true); // GH-90000
     }
 
     @Test
-    @DisplayName("Empty condition should evaluate to true")
-    void testEmptyCondition() throws Exception {
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "", Map.of()));
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, null, Map.of()));
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "   ", Map.of()));
+    @DisplayName("Empty condition should evaluate to true [GH-90000]")
+    void testEmptyCondition() throws Exception { // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "", Map.of())); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, null, Map.of())); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "   ", Map.of())); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - boolean true")
-    void testSimpleVariableTrue() throws Exception {
-        Map<String, Object> vars = Map.of("enabled", true);
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "enabled", vars));
+    @DisplayName("Simple variable check - boolean true [GH-90000]")
+    void testSimpleVariableTrue() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("enabled", true); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "enabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - boolean false")
-    void testSimpleVariableFalse() throws Exception {
-        Map<String, Object> vars = Map.of("enabled", false);
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "enabled", vars));
+    @DisplayName("Simple variable check - boolean false [GH-90000]")
+    void testSimpleVariableFalse() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("enabled", false); // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "enabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - string non-empty")
-    void testSimpleVariableStringNonEmpty() throws Exception {
-        Map<String, Object> vars = Map.of("name", "test");
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "name", vars));
+    @DisplayName("Simple variable check - string non-empty [GH-90000]")
+    void testSimpleVariableStringNonEmpty() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("name", "test"); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "name", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - string empty")
-    void testSimpleVariableStringEmpty() throws Exception {
-        Map<String, Object> vars = Map.of("name", "");
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "name", vars));
+    @DisplayName("Simple variable check - string empty [GH-90000]")
+    void testSimpleVariableStringEmpty() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("name", ""); // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "name", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - string 'false'")
-    void testSimpleVariableStringFalse() throws Exception {
-        Map<String, Object> vars = Map.of("flag", "false");
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "flag", vars));
+    @DisplayName("Simple variable check - string 'false' [GH-90000]")
+    void testSimpleVariableStringFalse() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("flag", "false"); // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "flag", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - missing variable")
-    void testSimpleVariableMissing() throws Exception {
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "missing", Map.of()));
+    @DisplayName("Simple variable check - missing variable [GH-90000]")
+    void testSimpleVariableMissing() throws Exception { // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "missing", Map.of())); // GH-90000
     }
 
     @Test
-    @DisplayName("Negation - negate true")
-    void testNegationTrue() throws Exception {
-        Map<String, Object> vars = Map.of("enabled", true);
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "!enabled", vars));
+    @DisplayName("Negation - negate true [GH-90000]")
+    void testNegationTrue() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("enabled", true); // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "!enabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Negation - negate false")
-    void testNegationFalse() throws Exception {
-        Map<String, Object> vars = Map.of("disabled", false);
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "!disabled", vars));
+    @DisplayName("Negation - negate false [GH-90000]")
+    void testNegationFalse() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("disabled", false); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "!disabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Equality check - strings equal")
-    void testEqualityStringsEqual() throws Exception {
-        Map<String, Object> vars = Map.of("env", "prod");
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env == 'prod'", vars));
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env == \"prod\"", vars));
+    @DisplayName("Equality check - strings equal [GH-90000]")
+    void testEqualityStringsEqual() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("env", "prod"); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env == 'prod'", vars)); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env == \"prod\"", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Equality check - strings not equal")
-    void testEqualityStringsNotEqual() throws Exception {
-        Map<String, Object> vars = Map.of("env", "dev");
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "env == 'prod'", vars));
+    @DisplayName("Equality check - strings not equal [GH-90000]")
+    void testEqualityStringsNotEqual() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("env", "dev"); // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "env == 'prod'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Inequality check - strings not equal")
-    void testInequalityStringsNotEqual() throws Exception {
-        Map<String, Object> vars = Map.of("env", "dev");
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env != 'prod'", vars));
+    @DisplayName("Inequality check - strings not equal [GH-90000]")
+    void testInequalityStringsNotEqual() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("env", "dev"); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env != 'prod'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Inequality check - strings equal")
-    void testInequalityStringsEqual() throws Exception {
-        Map<String, Object> vars = Map.of("env", "prod");
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "env != 'prod'", vars));
+    @DisplayName("Inequality check - strings equal [GH-90000]")
+    void testInequalityStringsEqual() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("env", "prod"); // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "env != 'prod'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Equality with whitespace")
-    void testEqualityWithWhitespace() throws Exception {
-        Map<String, Object> vars = Map.of("env", "prod");
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "  env  ==  'prod'  ", vars));
+    @DisplayName("Equality with whitespace [GH-90000]")
+    void testEqualityWithWhitespace() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("env", "prod"); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "  env  ==  'prod'  ", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Complex condition - number as string")
-    void testNumberAsString() throws Exception {
-        Map<String, Object> vars = Map.of("count", 5);
-        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "count == '5'", vars));
+    @DisplayName("Complex condition - number as string [GH-90000]")
+    void testNumberAsString() throws Exception { // GH-90000
+        Map<String, Object> vars = Map.of("count", 5); // GH-90000
+        assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "count == '5'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Null variable in equality check")
-    void testNullVariableEquality() throws Exception {
-        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "missing == 'value'", Map.of()));
+    @DisplayName("Null variable in equality check [GH-90000]")
+    void testNullVariableEquality() throws Exception { // GH-90000
+        assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "missing == 'value'", Map.of())); // GH-90000
     }
 }

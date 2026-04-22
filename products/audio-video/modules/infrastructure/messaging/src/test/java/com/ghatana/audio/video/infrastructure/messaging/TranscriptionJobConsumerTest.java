@@ -25,8 +25,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("TranscriptionJobConsumer Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("TranscriptionJobConsumer Tests [GH-90000]")
 class TranscriptionJobConsumerTest {
 
     @Mock
@@ -36,75 +36,75 @@ class TranscriptionJobConsumerTest {
     private MetricsCollector metricsCollector;
 
     @Test
-    @DisplayName("start fails when job processor is missing")
-    void startFailsWithoutProcessor() {
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector);
+    @DisplayName("start fails when job processor is missing [GH-90000]")
+    void startFailsWithoutProcessor() { // GH-90000
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
 
-        var promise = consumer.start();
+        var promise = consumer.start(); // GH-90000
 
-        assertThat(promise.getException()).isInstanceOf(IllegalStateException.class);
-        assertThat(promise.getException()).hasMessageContaining("Job processor not set");
+        assertThat(promise.getException()).isInstanceOf(IllegalStateException.class); // GH-90000
+        assertThat(promise.getException()).hasMessageContaining("Job processor not set [GH-90000]");
     }
 
     @Test
-    @DisplayName("start and stop delegate lifecycle to strategy")
-    void startAndStopDelegateLifecycle() {
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector);
-        consumer.setJobProcessor(job -> Promise.complete());
+    @DisplayName("start and stop delegate lifecycle to strategy [GH-90000]")
+    void startAndStopDelegateLifecycle() { // GH-90000
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
+        consumer.setJobProcessor(job -> Promise.complete()); // GH-90000
 
-        when(consumerStrategy.start()).thenReturn(Promise.complete());
-        when(consumerStrategy.stop()).thenReturn(Promise.complete());
-        when(consumerStrategy.isRunning()).thenReturn(true, false);
+        when(consumerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
+        when(consumerStrategy.stop()).thenReturn(Promise.complete()); // GH-90000
+        when(consumerStrategy.isRunning()).thenReturn(true, false); // GH-90000
 
-        consumer.start().getResult();
-        assertThat(consumer.isHealthy()).isTrue();
+        consumer.start().getResult(); // GH-90000
+        assertThat(consumer.isHealthy()).isTrue(); // GH-90000
 
-        consumer.stop().getResult();
-        assertThat(consumer.isHealthy()).isFalse();
+        consumer.stop().getResult(); // GH-90000
+        assertThat(consumer.isHealthy()).isFalse(); // GH-90000
 
-        verify(consumerStrategy).start();
-        verify(consumerStrategy).stop();
-        verify(metricsCollector).incrementCounter("av.messaging.consumer.start", "queue", "av.jobs");
-        verify(metricsCollector).incrementCounter("av.messaging.consumer.stop", "queue", "av.jobs");
+        verify(consumerStrategy).start(); // GH-90000
+        verify(consumerStrategy).stop(); // GH-90000
+        verify(metricsCollector).incrementCounter("av.messaging.consumer.start", "queue", "av.jobs"); // GH-90000
+        verify(metricsCollector).incrementCounter("av.messaging.consumer.stop", "queue", "av.jobs"); // GH-90000
     }
 
     @Test
-    @DisplayName("start without processor does not move consumer to STARTED")
-    void startWithoutProcessorDoesNotChangeState() {
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector);
+    @DisplayName("start without processor does not move consumer to STARTED [GH-90000]")
+    void startWithoutProcessorDoesNotChangeState() { // GH-90000
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
 
-        Promise<Void> firstStart = consumer.start();
-        assertThat(firstStart.getException()).isInstanceOf(IllegalStateException.class);
+        Promise<Void> firstStart = consumer.start(); // GH-90000
+        assertThat(firstStart.getException()).isInstanceOf(IllegalStateException.class); // GH-90000
 
-        consumer.setJobProcessor(job -> Promise.complete());
-        when(consumerStrategy.start()).thenReturn(Promise.complete());
+        consumer.setJobProcessor(job -> Promise.complete()); // GH-90000
+        when(consumerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
 
-        consumer.start().getResult();
+        consumer.start().getResult(); // GH-90000
 
-        verify(consumerStrategy).start();
+        verify(consumerStrategy).start(); // GH-90000
     }
 
     @Test
-    @DisplayName("message handler rethrows processor failure for strategy nack/retry")
-    void messageHandlerRethrowsProcessorFailure() {
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector);
-        consumer.setJobProcessor(job -> Promise.ofException(new RuntimeException("simulated failure")));
+    @DisplayName("message handler rethrows processor failure for strategy nack/retry [GH-90000]")
+    void messageHandlerRethrowsProcessorFailure() { // GH-90000
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
+        consumer.setJobProcessor(job -> Promise.ofException(new RuntimeException("simulated failure [GH-90000]")));
 
-        when(consumerStrategy.start()).thenReturn(Promise.complete());
+        when(consumerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
 
-        consumer.start().getResult();
+        consumer.start().getResult(); // GH-90000
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings("unchecked [GH-90000]")
         ArgumentCaptor<Consumer<String>> handlerCaptor =
-            (ArgumentCaptor<Consumer<String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Consumer.class);
-        verify(consumerStrategy).setMessageHandler(handlerCaptor.capture());
+            (ArgumentCaptor<Consumer<String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Consumer.class); // GH-90000
+        verify(consumerStrategy).setMessageHandler(handlerCaptor.capture()); // GH-90000
 
-        String payload = "{\"jobId\":\"" + UUID.randomUUID() +
-            "\",\"tenantId\":\"tenant-1\",\"audioFileId\":\"" + UUID.randomUUID() +
-            "\",\"language\":\"en\",\"modelId\":\"m1\",\"submittedAt\":\"" + Instant.now() + "\"}";
+        String payload = "{\"jobId\":\"" + UUID.randomUUID() + // GH-90000
+            "\",\"tenantId\":\"tenant-1\",\"audioFileId\":\"" + UUID.randomUUID() + // GH-90000
+            "\",\"language\":\"en\",\"modelId\":\"m1\",\"submittedAt\":\"" + Instant.now() + "\"}"; // GH-90000
 
-        assertThatThrownBy(() -> handlerCaptor.getValue().accept(payload))
-            .isInstanceOf(RuntimeException.class)
-            .hasMessageContaining("simulated failure");
+        assertThatThrownBy(() -> handlerCaptor.getValue().accept(payload)) // GH-90000
+            .isInstanceOf(RuntimeException.class) // GH-90000
+            .hasMessageContaining("simulated failure [GH-90000]");
     }
 }

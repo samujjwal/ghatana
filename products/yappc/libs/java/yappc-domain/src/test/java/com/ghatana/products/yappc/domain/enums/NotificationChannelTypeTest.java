@@ -16,20 +16,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("NotificationChannelType Enum Tests")
+@DisplayName("NotificationChannelType Enum Tests [GH-90000]")
 class NotificationChannelTypeTest {
 
     @Nested
-    @DisplayName("Enum Values Tests")
+    @DisplayName("Enum Values Tests [GH-90000]")
     class EnumValuesTests {
 
         @Test
-        @DisplayName("should have all expected notification channel types")
-        void shouldHaveAllExpectedTypes() {
-            NotificationChannelType[] values = NotificationChannelType.values();
+        @DisplayName("should have all expected notification channel types [GH-90000]")
+        void shouldHaveAllExpectedTypes() { // GH-90000
+            NotificationChannelType[] values = NotificationChannelType.values(); // GH-90000
 
-            assertThat(values).hasSize(8);
-            assertThat(values).contains(
+            assertThat(values).hasSize(8); // GH-90000
+            assertThat(values).contains( // GH-90000
                     NotificationChannelType.EMAIL,
                     NotificationChannelType.SLACK,
                     NotificationChannelType.TEAMS,
@@ -42,246 +42,246 @@ class NotificationChannelTypeTest {
         }
 
         @ParameterizedTest
-        @EnumSource(NotificationChannelType.class)
-        @DisplayName("all enum values should have non-null display name")
-        void allValuesShouldHaveDisplayName(NotificationChannelType type) {
-            assertThat(type.getDisplayName()).isNotNull();
-            assertThat(type.getDisplayName()).isNotBlank();
+        @EnumSource(NotificationChannelType.class) // GH-90000
+        @DisplayName("all enum values should have non-null display name [GH-90000]")
+        void allValuesShouldHaveDisplayName(NotificationChannelType type) { // GH-90000
+            assertThat(type.getDisplayName()).isNotNull(); // GH-90000
+            assertThat(type.getDisplayName()).isNotBlank(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Display Name Tests")
+    @DisplayName("Display Name Tests [GH-90000]")
     class DisplayNameTests {
 
         @Test
-        @DisplayName("EMAIL should have display name 'Email'")
-        void emailDisplayName() {
-            assertThat(NotificationChannelType.EMAIL.getDisplayName()).isEqualTo("Email");
+        @DisplayName("EMAIL should have display name 'Email' [GH-90000]")
+        void emailDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.EMAIL.getDisplayName()).isEqualTo("Email [GH-90000]");
         }
 
         @Test
-        @DisplayName("SLACK should have display name 'Slack'")
-        void slackDisplayName() {
-            assertThat(NotificationChannelType.SLACK.getDisplayName()).isEqualTo("Slack");
+        @DisplayName("SLACK should have display name 'Slack' [GH-90000]")
+        void slackDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.SLACK.getDisplayName()).isEqualTo("Slack [GH-90000]");
         }
 
         @Test
-        @DisplayName("TEAMS should have display name 'Microsoft Teams'")
-        void teamsDisplayName() {
-            assertThat(NotificationChannelType.TEAMS.getDisplayName()).isEqualTo("Microsoft Teams");
+        @DisplayName("TEAMS should have display name 'Microsoft Teams' [GH-90000]")
+        void teamsDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.TEAMS.getDisplayName()).isEqualTo("Microsoft Teams [GH-90000]");
         }
 
         @Test
-        @DisplayName("WEBHOOK should have display name 'Webhook'")
-        void webhookDisplayName() {
-            assertThat(NotificationChannelType.WEBHOOK.getDisplayName()).isEqualTo("Webhook");
+        @DisplayName("WEBHOOK should have display name 'Webhook' [GH-90000]")
+        void webhookDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.WEBHOOK.getDisplayName()).isEqualTo("Webhook [GH-90000]");
         }
 
         @Test
-        @DisplayName("PAGERDUTY should have display name 'PagerDuty'")
-        void pagerdutyDisplayName() {
-            assertThat(NotificationChannelType.PAGERDUTY.getDisplayName()).isEqualTo("PagerDuty");
+        @DisplayName("PAGERDUTY should have display name 'PagerDuty' [GH-90000]")
+        void pagerdutyDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.PAGERDUTY.getDisplayName()).isEqualTo("PagerDuty [GH-90000]");
         }
 
         @Test
-        @DisplayName("OPSGENIE should have display name 'Opsgenie'")
-        void opsgenieDisplayName() {
-            assertThat(NotificationChannelType.OPSGENIE.getDisplayName()).isEqualTo("Opsgenie");
+        @DisplayName("OPSGENIE should have display name 'Opsgenie' [GH-90000]")
+        void opsgenieDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.OPSGENIE.getDisplayName()).isEqualTo("Opsgenie [GH-90000]");
         }
 
         @Test
-        @DisplayName("JIRA should have display name 'Jira'")
-        void jiraDisplayName() {
-            assertThat(NotificationChannelType.JIRA.getDisplayName()).isEqualTo("Jira");
+        @DisplayName("JIRA should have display name 'Jira' [GH-90000]")
+        void jiraDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.JIRA.getDisplayName()).isEqualTo("Jira [GH-90000]");
         }
 
         @Test
-        @DisplayName("SMS should have display name 'SMS'")
-        void smsDisplayName() {
-            assertThat(NotificationChannelType.SMS.getDisplayName()).isEqualTo("SMS");
+        @DisplayName("SMS should have display name 'SMS' [GH-90000]")
+        void smsDisplayName() { // GH-90000
+            assertThat(NotificationChannelType.SMS.getDisplayName()).isEqualTo("SMS [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Rich Content Support Tests")
+    @DisplayName("Rich Content Support Tests [GH-90000]")
     class RichContentSupportTests {
 
         @Test
-        @DisplayName("EMAIL should support rich content")
-        void emailSupportsRichContent() {
-            assertThat(NotificationChannelType.EMAIL.supportsRichContent()).isTrue();
+        @DisplayName("EMAIL should support rich content [GH-90000]")
+        void emailSupportsRichContent() { // GH-90000
+            assertThat(NotificationChannelType.EMAIL.supportsRichContent()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("SLACK should support rich content")
-        void slackSupportsRichContent() {
-            assertThat(NotificationChannelType.SLACK.supportsRichContent()).isTrue();
+        @DisplayName("SLACK should support rich content [GH-90000]")
+        void slackSupportsRichContent() { // GH-90000
+            assertThat(NotificationChannelType.SLACK.supportsRichContent()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("TEAMS should support rich content")
-        void teamsSupportsRichContent() {
-            assertThat(NotificationChannelType.TEAMS.supportsRichContent()).isTrue();
+        @DisplayName("TEAMS should support rich content [GH-90000]")
+        void teamsSupportsRichContent() { // GH-90000
+            assertThat(NotificationChannelType.TEAMS.supportsRichContent()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("WEBHOOK should not support rich content")
-        void webhookDoesNotSupportRichContent() {
-            assertThat(NotificationChannelType.WEBHOOK.supportsRichContent()).isFalse();
+        @DisplayName("WEBHOOK should not support rich content [GH-90000]")
+        void webhookDoesNotSupportRichContent() { // GH-90000
+            assertThat(NotificationChannelType.WEBHOOK.supportsRichContent()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("PAGERDUTY should support rich content")
-        void pagerdutySupportsRichContent() {
-            assertThat(NotificationChannelType.PAGERDUTY.supportsRichContent()).isTrue();
+        @DisplayName("PAGERDUTY should support rich content [GH-90000]")
+        void pagerdutySupportsRichContent() { // GH-90000
+            assertThat(NotificationChannelType.PAGERDUTY.supportsRichContent()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("OPSGENIE should support rich content")
-        void opsgenieSupportsRichContent() {
-            assertThat(NotificationChannelType.OPSGENIE.supportsRichContent()).isTrue();
+        @DisplayName("OPSGENIE should support rich content [GH-90000]")
+        void opsgenieSupportsRichContent() { // GH-90000
+            assertThat(NotificationChannelType.OPSGENIE.supportsRichContent()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("JIRA should not support rich content")
-        void jiraDoesNotSupportRichContent() {
-            assertThat(NotificationChannelType.JIRA.supportsRichContent()).isFalse();
+        @DisplayName("JIRA should not support rich content [GH-90000]")
+        void jiraDoesNotSupportRichContent() { // GH-90000
+            assertThat(NotificationChannelType.JIRA.supportsRichContent()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("SMS should support rich content")
-        void smsSupportsRichContent() {
-            assertThat(NotificationChannelType.SMS.supportsRichContent()).isTrue();
+        @DisplayName("SMS should support rich content [GH-90000]")
+        void smsSupportsRichContent() { // GH-90000
+            assertThat(NotificationChannelType.SMS.supportsRichContent()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Incident Management Tests")
+    @DisplayName("Incident Management Tests [GH-90000]")
     class IncidentManagementTests {
 
         @Test
-        @DisplayName("PAGERDUTY should be incident management")
-        void pagerdutyIsIncidentManagement() {
-            assertThat(NotificationChannelType.PAGERDUTY.isIncidentManagement()).isTrue();
+        @DisplayName("PAGERDUTY should be incident management [GH-90000]")
+        void pagerdutyIsIncidentManagement() { // GH-90000
+            assertThat(NotificationChannelType.PAGERDUTY.isIncidentManagement()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("OPSGENIE should be incident management")
-        void opsgenieIsIncidentManagement() {
-            assertThat(NotificationChannelType.OPSGENIE.isIncidentManagement()).isTrue();
+        @DisplayName("OPSGENIE should be incident management [GH-90000]")
+        void opsgenieIsIncidentManagement() { // GH-90000
+            assertThat(NotificationChannelType.OPSGENIE.isIncidentManagement()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("EMAIL should not be incident management")
-        void emailIsNotIncidentManagement() {
-            assertThat(NotificationChannelType.EMAIL.isIncidentManagement()).isFalse();
+        @DisplayName("EMAIL should not be incident management [GH-90000]")
+        void emailIsNotIncidentManagement() { // GH-90000
+            assertThat(NotificationChannelType.EMAIL.isIncidentManagement()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("SLACK should not be incident management")
-        void slackIsNotIncidentManagement() {
-            assertThat(NotificationChannelType.SLACK.isIncidentManagement()).isFalse();
+        @DisplayName("SLACK should not be incident management [GH-90000]")
+        void slackIsNotIncidentManagement() { // GH-90000
+            assertThat(NotificationChannelType.SLACK.isIncidentManagement()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("JIRA should not be incident management")
-        void jiraIsNotIncidentManagement() {
-            assertThat(NotificationChannelType.JIRA.isIncidentManagement()).isFalse();
+        @DisplayName("JIRA should not be incident management [GH-90000]")
+        void jiraIsNotIncidentManagement() { // GH-90000
+            assertThat(NotificationChannelType.JIRA.isIncidentManagement()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Real-Time Messaging Tests")
+    @DisplayName("Real-Time Messaging Tests [GH-90000]")
     class RealTimeMessagingTests {
 
         @Test
-        @DisplayName("SLACK should be real-time messaging")
-        void slackIsRealTimeMessaging() {
-            assertThat(NotificationChannelType.SLACK.isRealTimeMessaging()).isTrue();
+        @DisplayName("SLACK should be real-time messaging [GH-90000]")
+        void slackIsRealTimeMessaging() { // GH-90000
+            assertThat(NotificationChannelType.SLACK.isRealTimeMessaging()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("TEAMS should be real-time messaging")
-        void teamsIsRealTimeMessaging() {
-            assertThat(NotificationChannelType.TEAMS.isRealTimeMessaging()).isTrue();
+        @DisplayName("TEAMS should be real-time messaging [GH-90000]")
+        void teamsIsRealTimeMessaging() { // GH-90000
+            assertThat(NotificationChannelType.TEAMS.isRealTimeMessaging()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("SMS should be real-time messaging")
-        void smsIsRealTimeMessaging() {
-            assertThat(NotificationChannelType.SMS.isRealTimeMessaging()).isTrue();
+        @DisplayName("SMS should be real-time messaging [GH-90000]")
+        void smsIsRealTimeMessaging() { // GH-90000
+            assertThat(NotificationChannelType.SMS.isRealTimeMessaging()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("EMAIL should not be real-time messaging")
-        void emailIsNotRealTimeMessaging() {
-            assertThat(NotificationChannelType.EMAIL.isRealTimeMessaging()).isFalse();
+        @DisplayName("EMAIL should not be real-time messaging [GH-90000]")
+        void emailIsNotRealTimeMessaging() { // GH-90000
+            assertThat(NotificationChannelType.EMAIL.isRealTimeMessaging()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("WEBHOOK should not be real-time messaging")
-        void webhookIsNotRealTimeMessaging() {
-            assertThat(NotificationChannelType.WEBHOOK.isRealTimeMessaging()).isFalse();
+        @DisplayName("WEBHOOK should not be real-time messaging [GH-90000]")
+        void webhookIsNotRealTimeMessaging() { // GH-90000
+            assertThat(NotificationChannelType.WEBHOOK.isRealTimeMessaging()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("PAGERDUTY should not be real-time messaging")
-        void pagerdutyIsNotRealTimeMessaging() {
-            assertThat(NotificationChannelType.PAGERDUTY.isRealTimeMessaging()).isFalse();
+        @DisplayName("PAGERDUTY should not be real-time messaging [GH-90000]")
+        void pagerdutyIsNotRealTimeMessaging() { // GH-90000
+            assertThat(NotificationChannelType.PAGERDUTY.isRealTimeMessaging()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("valueOf Tests")
+    @DisplayName("valueOf Tests [GH-90000]")
     class ValueOfTests {
 
         @Test
-        @DisplayName("valueOf should return correct enum for valid string")
-        void valueOfReturnsCorrectEnum() {
-            assertThat(NotificationChannelType.valueOf("EMAIL")).isEqualTo(NotificationChannelType.EMAIL);
-            assertThat(NotificationChannelType.valueOf("SLACK")).isEqualTo(NotificationChannelType.SLACK);
-            assertThat(NotificationChannelType.valueOf("TEAMS")).isEqualTo(NotificationChannelType.TEAMS);
-            assertThat(NotificationChannelType.valueOf("WEBHOOK")).isEqualTo(NotificationChannelType.WEBHOOK);
-            assertThat(NotificationChannelType.valueOf("PAGERDUTY")).isEqualTo(NotificationChannelType.PAGERDUTY);
-            assertThat(NotificationChannelType.valueOf("OPSGENIE")).isEqualTo(NotificationChannelType.OPSGENIE);
-            assertThat(NotificationChannelType.valueOf("JIRA")).isEqualTo(NotificationChannelType.JIRA);
-            assertThat(NotificationChannelType.valueOf("SMS")).isEqualTo(NotificationChannelType.SMS);
+        @DisplayName("valueOf should return correct enum for valid string [GH-90000]")
+        void valueOfReturnsCorrectEnum() { // GH-90000
+            assertThat(NotificationChannelType.valueOf("EMAIL [GH-90000]")).isEqualTo(NotificationChannelType.EMAIL);
+            assertThat(NotificationChannelType.valueOf("SLACK [GH-90000]")).isEqualTo(NotificationChannelType.SLACK);
+            assertThat(NotificationChannelType.valueOf("TEAMS [GH-90000]")).isEqualTo(NotificationChannelType.TEAMS);
+            assertThat(NotificationChannelType.valueOf("WEBHOOK [GH-90000]")).isEqualTo(NotificationChannelType.WEBHOOK);
+            assertThat(NotificationChannelType.valueOf("PAGERDUTY [GH-90000]")).isEqualTo(NotificationChannelType.PAGERDUTY);
+            assertThat(NotificationChannelType.valueOf("OPSGENIE [GH-90000]")).isEqualTo(NotificationChannelType.OPSGENIE);
+            assertThat(NotificationChannelType.valueOf("JIRA [GH-90000]")).isEqualTo(NotificationChannelType.JIRA);
+            assertThat(NotificationChannelType.valueOf("SMS [GH-90000]")).isEqualTo(NotificationChannelType.SMS);
         }
     }
 
     @Nested
-    @DisplayName("Category Summary Tests")
+    @DisplayName("Category Summary Tests [GH-90000]")
     class CategorySummaryTests {
 
         @Test
-        @DisplayName("should have exactly 2 incident management channels")
-        void shouldHaveTwoIncidentManagementChannels() {
-            long count = java.util.Arrays.stream(NotificationChannelType.values())
-                    .filter(NotificationChannelType::isIncidentManagement)
-                    .count();
+        @DisplayName("should have exactly 2 incident management channels [GH-90000]")
+        void shouldHaveTwoIncidentManagementChannels() { // GH-90000
+            long count = java.util.Arrays.stream(NotificationChannelType.values()) // GH-90000
+                    .filter(NotificationChannelType::isIncidentManagement) // GH-90000
+                    .count(); // GH-90000
 
-            assertThat(count).isEqualTo(2);
+            assertThat(count).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("should have exactly 3 real-time messaging channels")
-        void shouldHaveThreeRealTimeMessagingChannels() {
-            long count = java.util.Arrays.stream(NotificationChannelType.values())
-                    .filter(NotificationChannelType::isRealTimeMessaging)
-                    .count();
+        @DisplayName("should have exactly 3 real-time messaging channels [GH-90000]")
+        void shouldHaveThreeRealTimeMessagingChannels() { // GH-90000
+            long count = java.util.Arrays.stream(NotificationChannelType.values()) // GH-90000
+                    .filter(NotificationChannelType::isRealTimeMessaging) // GH-90000
+                    .count(); // GH-90000
 
-            assertThat(count).isEqualTo(3);
+            assertThat(count).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("should have exactly 6 channels supporting rich content")
-        void shouldHaveSixRichContentChannels() {
-            long count = java.util.Arrays.stream(NotificationChannelType.values())
-                    .filter(NotificationChannelType::supportsRichContent)
-                    .count();
+        @DisplayName("should have exactly 6 channels supporting rich content [GH-90000]")
+        void shouldHaveSixRichContentChannels() { // GH-90000
+            long count = java.util.Arrays.stream(NotificationChannelType.values()) // GH-90000
+                    .filter(NotificationChannelType::supportsRichContent) // GH-90000
+                    .count(); // GH-90000
 
-            assertThat(count).isEqualTo(6);
+            assertThat(count).isEqualTo(6); // GH-90000
         }
     }
 }

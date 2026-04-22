@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.server.integration;
@@ -26,26 +26,26 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration")
-@Testcontainers(disabledWithoutDocker = true)
-@DisplayName("KafkaIntegrationTest")
+@Tag("integration [GH-90000]")
+@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@DisplayName("KafkaIntegrationTest [GH-90000]")
 class KafkaIntegrationTest {
 
     @Container
     private static final KafkaContainer KAFKA =
-        new KafkaContainer(DockerImageName.parse("apache/kafka-native:3.8.0"));
+        new KafkaContainer(DockerImageName.parse("apache/kafka-native:3.8.0 [GH-90000]"));
 
     @Test
-    @DisplayName("can create and list a topic")
-    void canCreateAndListTopic() throws Exception {
-        try (AdminClient adminClient = AdminClient.create(Map.of(
-            "bootstrap.servers", KAFKA.getBootstrapServers()
+    @DisplayName("can create and list a topic [GH-90000]")
+    void canCreateAndListTopic() throws Exception { // GH-90000
+        try (AdminClient adminClient = AdminClient.create(Map.of( // GH-90000
+            "bootstrap.servers", KAFKA.getBootstrapServers() // GH-90000
         ))) {
-            adminClient.createTopics(java.util.List.of(new NewTopic("aep.integration.probe", 1, (short) 1)))
-                .all()
-                .get();
+            adminClient.createTopics(java.util.List.of(new NewTopic("aep.integration.probe", 1, (short) 1))) // GH-90000
+                .all() // GH-90000
+                .get(); // GH-90000
 
-            assertThat(adminClient.listTopics().names().get()).contains("aep.integration.probe");
+            assertThat(adminClient.listTopics().names().get()).contains("aep.integration.probe [GH-90000]");
         }
     }
 }

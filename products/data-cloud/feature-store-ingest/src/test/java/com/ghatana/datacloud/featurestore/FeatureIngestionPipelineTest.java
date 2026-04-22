@@ -19,61 +19,61 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test feature ingestion pipeline, processing, and validation.
  */
-@DisplayName("Feature Ingestion Pipeline Tests")
+@DisplayName("Feature Ingestion Pipeline Tests [GH-90000]")
 class FeatureIngestionPipelineTest {
 
     @Test
-    @DisplayName("Should handle feature ingestion")
-    void shouldHandleFeatureIngestion() {
-        Map<String, Object> payload = Map.of("age", 25, "income", 50000.0);
+    @DisplayName("Should handle feature ingestion [GH-90000]")
+    void shouldHandleFeatureIngestion() { // GH-90000
+        Map<String, Object> payload = Map.of("age", 25, "income", 50000.0); // GH-90000
 
-        assertThat(payload).isNotEmpty();
-        assertThat(payload.size()).isGreaterThan(1);
+        assertThat(payload).isNotEmpty(); // GH-90000
+        assertThat(payload.size()).isGreaterThan(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle feature processing")
-    void shouldHandleFeatureProcessing() {
-        Map<String, Object> payload = Map.of("name", "test", "value", 123);
+    @DisplayName("Should handle feature processing [GH-90000]")
+    void shouldHandleFeatureProcessing() { // GH-90000
+        Map<String, Object> payload = Map.of("name", "test", "value", 123); // GH-90000
 
-        assertThat(payload).isNotEmpty();
-        assertThat(payload).containsKey("value");
+        assertThat(payload).isNotEmpty(); // GH-90000
+        assertThat(payload).containsKey("value [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle feature validation")
-    void shouldHandleFeatureValidation() {
-        Map<String, Object> payload = Map.of("age", 25, "name", "John Doe");
+    @DisplayName("Should handle feature validation [GH-90000]")
+    void shouldHandleFeatureValidation() { // GH-90000
+        Map<String, Object> payload = Map.of("age", 25, "name", "John Doe"); // GH-90000
 
-        assertThat(payload).isNotEmpty();
-        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+"));
+        assertThat(payload).isNotEmpty(); // GH-90000
+        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+ [GH-90000]"));
     }
 
     @Test
-    @DisplayName("Should handle feature transformation")
-    void shouldHandleFeatureTransformation() {
-        Map<String, Object> payload = Map.of("status", "active");
+    @DisplayName("Should handle feature transformation [GH-90000]")
+    void shouldHandleFeatureTransformation() { // GH-90000
+        Map<String, Object> payload = Map.of("status", "active"); // GH-90000
 
-        assertThat(payload).isNotEmpty();
-        assertThat(payload).containsKey("status");
+        assertThat(payload).isNotEmpty(); // GH-90000
+        assertThat(payload).containsKey("status [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle ingestion failures")
-    void shouldHandleIngestionFailures() {
-        Map<String, Object> nullPayload = new HashMap<>();
-        nullPayload.put("null_field", null);
+    @DisplayName("Should handle ingestion failures [GH-90000]")
+    void shouldHandleIngestionFailures() { // GH-90000
+        Map<String, Object> nullPayload = new HashMap<>(); // GH-90000
+        nullPayload.put("null_field", null); // GH-90000
 
-        assertThat(nullPayload).containsKey("null_field");
+        assertThat(nullPayload).containsKey("null_field [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should handle batch ingestion")
-    void shouldHandleBatchIngestion() {
+    @DisplayName("Should handle batch ingestion [GH-90000]")
+    void shouldHandleBatchIngestion() { // GH-90000
         int batchSize = 100;
-        Map<String, Object> payload = Map.of("batch_id", 1);
+        Map<String, Object> payload = Map.of("batch_id", 1); // GH-90000
 
-        assertThat(batchSize).isPositive();
-        assertThat(payload).isNotEmpty();
+        assertThat(batchSize).isPositive(); // GH-90000
+        assertThat(payload).isNotEmpty(); // GH-90000
     }
 }

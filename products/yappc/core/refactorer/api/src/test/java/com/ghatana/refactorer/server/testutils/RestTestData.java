@@ -13,7 +13,7 @@ import java.util.List;
 */
 public final class RestTestData {
 
-    private RestTestData() {}
+    private RestTestData() {} // GH-90000
 
     /**
      * Creates a {@link RestModels.RunRequest} for testing.
@@ -26,7 +26,7 @@ public final class RestTestData {
      * @param dryRun         whether this is a dry run
      * @return a populated {@link RestModels.RunRequest}
      */
-    public static RestModels.RunRequest runRequest(
+    public static RestModels.RunRequest runRequest( // GH-90000
             String repoRoot,
             List<String> includes,
             List<String> languages,
@@ -35,18 +35,18 @@ public final class RestTestData {
             boolean dryRun) {
 
         List<RestModels.Language> languageList =
-                languages.stream().map(RestModels.Language::new).toList();
+                languages.stream().map(RestModels.Language::new).toList(); // GH-90000
 
         RestModels.DiagnoseRequest config =
-                new RestModels.DiagnoseRequest(
+                new RestModels.DiagnoseRequest( // GH-90000
                         repoRoot,
                         includes,
                         languageList,
-                        List.of(),
+                        List.of(), // GH-90000
                         null,
                         formatters,
                         null);
 
-        return new RestModels.RunRequest(config, idempotencyKey, dryRun);
+        return new RestModels.RunRequest(config, idempotencyKey, dryRun); // GH-90000
     }
 }

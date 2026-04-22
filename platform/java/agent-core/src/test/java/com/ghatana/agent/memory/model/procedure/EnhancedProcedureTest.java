@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.agent.memory.model.procedure;
@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer agent-memory
  * @doc.pattern Test
  */
-@DisplayName("EnhancedProcedure - procedural memory item with versioned steps")
+@DisplayName("EnhancedProcedure - procedural memory item with versioned steps [GH-90000]")
 class EnhancedProcedureTest {
 
     private static final String TEST_ID = "proc-001";
@@ -35,72 +35,72 @@ class EnhancedProcedureTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("MemoryItem interface contract")
+    @DisplayName("MemoryItem interface contract [GH-90000]")
     class MemoryItemContractTests {
 
         @Test
-        @DisplayName("EnhancedProcedure implements MemoryItem")
-        void implementsMemoryItem() {
-            EnhancedProcedure p = minimal();
-            assertThat(p).isInstanceOf(MemoryItem.class);
+        @DisplayName("EnhancedProcedure implements MemoryItem [GH-90000]")
+        void implementsMemoryItem() { // GH-90000
+            EnhancedProcedure p = minimal(); // GH-90000
+            assertThat(p).isInstanceOf(MemoryItem.class); // GH-90000
         }
 
         @Test
-        @DisplayName("getId() returns the supplied id")
-        void getId_returnsSuppliedId() {
-            assertThat(minimal().getId()).isEqualTo(TEST_ID);
+        @DisplayName("getId() returns the supplied id [GH-90000]")
+        void getId_returnsSuppliedId() { // GH-90000
+            assertThat(minimal().getId()).isEqualTo(TEST_ID); // GH-90000
         }
 
         @Test
-        @DisplayName("getType() is PROCEDURE by default")
-        void getType_isProcedureByDefault() {
-            assertThat(minimal().getType()).isEqualTo(MemoryItemType.PROCEDURE);
+        @DisplayName("getType() is PROCEDURE by default [GH-90000]")
+        void getType_isProcedureByDefault() { // GH-90000
+            assertThat(minimal().getType()).isEqualTo(MemoryItemType.PROCEDURE); // GH-90000
         }
 
         @Test
-        @DisplayName("getTenantId() defaults to 'default'")
-        void getTenantId_defaultsToDefault() {
-            assertThat(minimal().getTenantId()).isEqualTo("default");
+        @DisplayName("getTenantId() defaults to 'default' [GH-90000]")
+        void getTenantId_defaultsToDefault() { // GH-90000
+            assertThat(minimal().getTenantId()).isEqualTo("default [GH-90000]");
         }
 
         @Test
-        @DisplayName("getClassification() defaults to 'INTERNAL'")
-        void getClassification_defaultsToInternal() {
-            assertThat(minimal().getClassification()).isEqualTo("INTERNAL");
+        @DisplayName("getClassification() defaults to 'INTERNAL' [GH-90000]")
+        void getClassification_defaultsToInternal() { // GH-90000
+            assertThat(minimal().getClassification()).isEqualTo("INTERNAL [GH-90000]");
         }
 
         @Test
-        @DisplayName("getCreatedAt() and getUpdatedAt() are non-null and close to now")
-        void createdAndUpdated_nonNullAndCloseToNow() {
-            Instant before = Instant.now();
-            EnhancedProcedure p = minimal();
-            Instant after = Instant.now();
-            assertThat(p.getCreatedAt()).isBetween(before, after);
-            assertThat(p.getUpdatedAt()).isBetween(before, after);
+        @DisplayName("getCreatedAt() and getUpdatedAt() are non-null and close to now [GH-90000]")
+        void createdAndUpdated_nonNullAndCloseToNow() { // GH-90000
+            Instant before = Instant.now(); // GH-90000
+            EnhancedProcedure p = minimal(); // GH-90000
+            Instant after = Instant.now(); // GH-90000
+            assertThat(p.getCreatedAt()).isBetween(before, after); // GH-90000
+            assertThat(p.getUpdatedAt()).isBetween(before, after); // GH-90000
         }
 
         @Test
-        @DisplayName("getLinks() defaults to empty list")
-        void getLinks_defaultsToEmpty() {
-            assertThat(minimal().getLinks()).isEmpty();
+        @DisplayName("getLinks() defaults to empty list [GH-90000]")
+        void getLinks_defaultsToEmpty() { // GH-90000
+            assertThat(minimal().getLinks()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("getLabels() defaults to empty map")
-        void getLabels_defaultsToEmpty() {
-            assertThat(minimal().getLabels()).isEmpty();
+        @DisplayName("getLabels() defaults to empty map [GH-90000]")
+        void getLabels_defaultsToEmpty() { // GH-90000
+            assertThat(minimal().getLabels()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("getEmbedding() defaults to null")
-        void getEmbedding_defaultsToNull() {
-            assertThat(minimal().getEmbedding()).isNull();
+        @DisplayName("getEmbedding() defaults to null [GH-90000]")
+        void getEmbedding_defaultsToNull() { // GH-90000
+            assertThat(minimal().getEmbedding()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("getSphereId() defaults to null")
-        void getSphereId_defaultsToNull() {
-            assertThat(minimal().getSphereId()).isNull();
+        @DisplayName("getSphereId() defaults to null [GH-90000]")
+        void getSphereId_defaultsToNull() { // GH-90000
+            assertThat(minimal().getSphereId()).isNull(); // GH-90000
         }
     }
 
@@ -109,63 +109,63 @@ class EnhancedProcedureTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Procedure-specific fields")
+    @DisplayName("Procedure-specific fields [GH-90000]")
     class ProcedureSpecificTests {
 
         @Test
-        @DisplayName("Situation and action are stored correctly")
-        void situationAndAction_storedCorrectly() {
-            EnhancedProcedure p = minimal();
-            assertThat(p.getSituation()).isEqualTo(SITUATION);
-            assertThat(p.getAction()).isEqualTo(ACTION);
+        @DisplayName("Situation and action are stored correctly [GH-90000]")
+        void situationAndAction_storedCorrectly() { // GH-90000
+            EnhancedProcedure p = minimal(); // GH-90000
+            assertThat(p.getSituation()).isEqualTo(SITUATION); // GH-90000
+            assertThat(p.getAction()).isEqualTo(ACTION); // GH-90000
         }
 
         @Test
-        @DisplayName("Default useCount is 0")
-        void defaultUseCount_isZero() {
-            assertThat(minimal().getUseCount()).isEqualTo(0);
+        @DisplayName("Default useCount is 0 [GH-90000]")
+        void defaultUseCount_isZero() { // GH-90000
+            assertThat(minimal().getUseCount()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("Default version is 1")
-        void defaultVersion_isOne() {
-            assertThat(minimal().getVersion()).isEqualTo(1);
+        @DisplayName("Default version is 1 [GH-90000]")
+        void defaultVersion_isOne() { // GH-90000
+            assertThat(minimal().getVersion()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("Default successRate is 0.0")
-        void defaultSuccessRate_isZero() {
-            assertThat(minimal().getSuccessRate()).isEqualTo(0.0);
+        @DisplayName("Default successRate is 0.0 [GH-90000]")
+        void defaultSuccessRate_isZero() { // GH-90000
+            assertThat(minimal().getSuccessRate()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("Default steps list is empty")
-        void defaultSteps_isEmpty() {
-            assertThat(minimal().getSteps()).isEmpty();
+        @DisplayName("Default steps list is empty [GH-90000]")
+        void defaultSteps_isEmpty() { // GH-90000
+            assertThat(minimal().getSteps()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Default versionHistory is empty")
-        void defaultVersionHistory_isEmpty() {
-            assertThat(minimal().getVersionHistory()).isEmpty();
+        @DisplayName("Default versionHistory is empty [GH-90000]")
+        void defaultVersionHistory_isEmpty() { // GH-90000
+            assertThat(minimal().getVersionHistory()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Default prerequisites map is empty")
-        void defaultPrerequisites_isEmpty() {
-            assertThat(minimal().getPrerequisites()).isEmpty();
+        @DisplayName("Default prerequisites map is empty [GH-90000]")
+        void defaultPrerequisites_isEmpty() { // GH-90000
+            assertThat(minimal().getPrerequisites()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Default environmentConstraints map is empty")
-        void defaultEnvironmentConstraints_isEmpty() {
-            assertThat(minimal().getEnvironmentConstraints()).isEmpty();
+        @DisplayName("Default environmentConstraints map is empty [GH-90000]")
+        void defaultEnvironmentConstraints_isEmpty() { // GH-90000
+            assertThat(minimal().getEnvironmentConstraints()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Default learnedFromEpisodes is empty")
-        void defaultLearnedFromEpisodes_isEmpty() {
-            assertThat(minimal().getLearnedFromEpisodes()).isEmpty();
+        @DisplayName("Default learnedFromEpisodes is empty [GH-90000]")
+        void defaultLearnedFromEpisodes_isEmpty() { // GH-90000
+            assertThat(minimal().getLearnedFromEpisodes()).isEmpty(); // GH-90000
         }
     }
 
@@ -174,58 +174,58 @@ class EnhancedProcedureTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Enhanced fields — steps and version history")
+    @DisplayName("Enhanced fields — steps and version history [GH-90000]")
     class EnhancedFieldTests {
 
         @Test
-        @DisplayName("Steps are stored and accessible")
-        void steps_storedAndAccessible() {
-            ProcedureStep step = ProcedureStep.builder()
-                    .ordinal(1)
-                    .description("Check connectivity")
-                    .build();
-            EnhancedProcedure p = base().steps(List.of(step)).build();
-            assertThat(p.getSteps()).hasSize(1);
-            assertThat(p.getSteps().get(0).getOrdinal()).isEqualTo(1);
-            assertThat(p.getSteps().get(0).getDescription()).isEqualTo("Check connectivity");
+        @DisplayName("Steps are stored and accessible [GH-90000]")
+        void steps_storedAndAccessible() { // GH-90000
+            ProcedureStep step = ProcedureStep.builder() // GH-90000
+                    .ordinal(1) // GH-90000
+                    .description("Check connectivity [GH-90000]")
+                    .build(); // GH-90000
+            EnhancedProcedure p = base().steps(List.of(step)).build(); // GH-90000
+            assertThat(p.getSteps()).hasSize(1); // GH-90000
+            assertThat(p.getSteps().get(0).getOrdinal()).isEqualTo(1); // GH-90000
+            assertThat(p.getSteps().get(0).getDescription()).isEqualTo("Check connectivity [GH-90000]");
         }
 
         @Test
-        @DisplayName("VersionHistory is stored and accessible")
-        void versionHistory_storedAndAccessible() {
-            ProcedureVersion v = ProcedureVersion.builder()
-                    .version(1)
-                    .steps(List.of())
-                    .successRate(0.95)
-                    .usageCount(42)
-                    .build();
-            EnhancedProcedure p = base().versionHistory(List.of(v)).build();
-            assertThat(p.getVersionHistory()).hasSize(1);
-            assertThat(p.getVersionHistory().get(0).getSuccessRate()).isEqualTo(0.95);
+        @DisplayName("VersionHistory is stored and accessible [GH-90000]")
+        void versionHistory_storedAndAccessible() { // GH-90000
+            ProcedureVersion v = ProcedureVersion.builder() // GH-90000
+                    .version(1) // GH-90000
+                    .steps(List.of()) // GH-90000
+                    .successRate(0.95) // GH-90000
+                    .usageCount(42) // GH-90000
+                    .build(); // GH-90000
+            EnhancedProcedure p = base().versionHistory(List.of(v)).build(); // GH-90000
+            assertThat(p.getVersionHistory()).hasSize(1); // GH-90000
+            assertThat(p.getVersionHistory().get(0).getSuccessRate()).isEqualTo(0.95); // GH-90000
         }
 
         @Test
-        @DisplayName("Prerequisites map stores domain-specific constraints")
-        void prerequisites_storedCorrectly() {
-            Map<String, Object> prereqs = Map.of("retries", 3, "env", "production");
-            EnhancedProcedure p = base().prerequisites(prereqs).build();
-            assertThat(p.getPrerequisites()).containsKey("retries");
-            assertThat(p.getPrerequisites()).containsKey("env");
+        @DisplayName("Prerequisites map stores domain-specific constraints [GH-90000]")
+        void prerequisites_storedCorrectly() { // GH-90000
+            Map<String, Object> prereqs = Map.of("retries", 3, "env", "production"); // GH-90000
+            EnhancedProcedure p = base().prerequisites(prereqs).build(); // GH-90000
+            assertThat(p.getPrerequisites()).containsKey("retries [GH-90000]");
+            assertThat(p.getPrerequisites()).containsKey("env [GH-90000]");
         }
 
         @Test
-        @DisplayName("Custom tenantId is stored correctly")
-        void customTenantId_storedCorrectly() {
-            EnhancedProcedure p = base().tenantId("acme-corp").build();
-            assertThat(p.getTenantId()).isEqualTo("acme-corp");
+        @DisplayName("Custom tenantId is stored correctly [GH-90000]")
+        void customTenantId_storedCorrectly() { // GH-90000
+            EnhancedProcedure p = base().tenantId("acme-corp [GH-90000]").build();
+            assertThat(p.getTenantId()).isEqualTo("acme-corp [GH-90000]");
         }
 
         @Test
-        @DisplayName("Embedding can be set for semantic search")
-        void embedding_storedWhenSet() {
+        @DisplayName("Embedding can be set for semantic search [GH-90000]")
+        void embedding_storedWhenSet() { // GH-90000
             float[] emb = new float[]{0.1f, 0.2f, 0.3f};
-            EnhancedProcedure p = base().embedding(emb).build();
-            assertThat(p.getEmbedding()).isEqualTo(emb);
+            EnhancedProcedure p = base().embedding(emb).build(); // GH-90000
+            assertThat(p.getEmbedding()).isEqualTo(emb); // GH-90000
         }
     }
 
@@ -234,45 +234,45 @@ class EnhancedProcedureTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ProcedureStep - step definition")
+    @DisplayName("ProcedureStep - step definition [GH-90000]")
     class ProcedureStepTests {
 
         @Test
-        @DisplayName("Ordinal and description are stored correctly")
-        void ordinalAndDescription_storedCorrectly() {
-            ProcedureStep step = ProcedureStep.builder()
-                    .ordinal(2)
-                    .description("Restart service")
-                    .build();
-            assertThat(step.getOrdinal()).isEqualTo(2);
-            assertThat(step.getDescription()).isEqualTo("Restart service");
+        @DisplayName("Ordinal and description are stored correctly [GH-90000]")
+        void ordinalAndDescription_storedCorrectly() { // GH-90000
+            ProcedureStep step = ProcedureStep.builder() // GH-90000
+                    .ordinal(2) // GH-90000
+                    .description("Restart service [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(step.getOrdinal()).isEqualTo(2); // GH-90000
+            assertThat(step.getDescription()).isEqualTo("Restart service [GH-90000]");
         }
 
         @Test
-        @DisplayName("Default fallbackStep is 0 (no fallback)")
-        void defaultFallbackStep_isZero() {
-            ProcedureStep step = ProcedureStep.builder().ordinal(1).description("step").build();
-            assertThat(step.getFallbackStep()).isEqualTo(0);
+        @DisplayName("Default fallbackStep is 0 (no fallback) [GH-90000]")
+        void defaultFallbackStep_isZero() { // GH-90000
+            ProcedureStep step = ProcedureStep.builder().ordinal(1).description("step [GH-90000]").build();
+            assertThat(step.getFallbackStep()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("ToolName and expectedOutcome are null by default")
-        void optionalFields_nullByDefault() {
-            ProcedureStep step = ProcedureStep.builder().ordinal(1).description("step").build();
-            assertThat(step.getToolName()).isNull();
-            assertThat(step.getExpectedOutcome()).isNull();
+        @DisplayName("ToolName and expectedOutcome are null by default [GH-90000]")
+        void optionalFields_nullByDefault() { // GH-90000
+            ProcedureStep step = ProcedureStep.builder().ordinal(1).description("step [GH-90000]").build();
+            assertThat(step.getToolName()).isNull(); // GH-90000
+            assertThat(step.getExpectedOutcome()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("ToolName is stored when provided")
-        void toolName_storedWhenProvided() {
-            ProcedureStep step = ProcedureStep.builder()
-                    .ordinal(1).description("Run diagnostic")
-                    .toolName("diagnostic-runner")
-                    .expectedOutcome("Status: OK")
-                    .build();
-            assertThat(step.getToolName()).isEqualTo("diagnostic-runner");
-            assertThat(step.getExpectedOutcome()).isEqualTo("Status: OK");
+        @DisplayName("ToolName is stored when provided [GH-90000]")
+        void toolName_storedWhenProvided() { // GH-90000
+            ProcedureStep step = ProcedureStep.builder() // GH-90000
+                    .ordinal(1).description("Run diagnostic [GH-90000]")
+                    .toolName("diagnostic-runner [GH-90000]")
+                    .expectedOutcome("Status: OK [GH-90000]")
+                    .build(); // GH-90000
+            assertThat(step.getToolName()).isEqualTo("diagnostic-runner [GH-90000]");
+            assertThat(step.getExpectedOutcome()).isEqualTo("Status: OK [GH-90000]");
         }
     }
 
@@ -280,14 +280,14 @@ class EnhancedProcedureTest {
     // Helpers
     // ─────────────────────────────────────────────────────────────
 
-    private static EnhancedProcedure minimal() {
-        return base().build();
+    private static EnhancedProcedure minimal() { // GH-90000
+        return base().build(); // GH-90000
     }
 
-    private static EnhancedProcedure.EnhancedProcedureBuilder base() {
-        return EnhancedProcedure.builder()
-                .id(TEST_ID)
-                .situation(SITUATION)
-                .action(ACTION);
+    private static EnhancedProcedure.EnhancedProcedureBuilder base() { // GH-90000
+        return EnhancedProcedure.builder() // GH-90000
+                .id(TEST_ID) // GH-90000
+                .situation(SITUATION) // GH-90000
+                .action(ACTION); // GH-90000
     }
 }

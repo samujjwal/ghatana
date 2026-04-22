@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Requirements IntakeStep Tests")
+@DisplayName("Requirements IntakeStep Tests [GH-90000]")
 class IntakeStepTest extends EventloopTestBase {
 
   private DatabaseClient dbClient;
@@ -36,77 +36,77 @@ class IntakeStepTest extends EventloopTestBase {
   private IntakeStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new IntakeStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new IntakeStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    String stepId = step.getStepId();
-    assertThat(stepId).isEqualTo("requirements.intake");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    String stepId = step.getStepId(); // GH-90000
+    assertThat(stepId).isEqualTo("requirements.intake [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should construct with non-null dependencies")
-  void shouldConstructWithNonNullDependencies() {
-    assertThat(step).isNotNull();
+  @DisplayName("Should construct with non-null dependencies [GH-90000]")
+  void shouldConstructWithNonNullDependencies() { // GH-90000
+    assertThat(step).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should successfully ingest requirements")
-  void shouldIngestRequirements() {
+  @DisplayName("Should successfully ingest requirements [GH-90000]")
+  void shouldIngestRequirements() { // GH-90000
     // GIVEN
-    Map<String, Object> inputData = new HashMap<>();
-    inputData.put("source", "user-input");
-    inputData.put("content", "User needs authentication feature");
+    Map<String, Object> inputData = new HashMap<>(); // GH-90000
+    inputData.put("source", "user-input"); // GH-90000
+    inputData.put("content", "User needs authentication feature"); // GH-90000
 
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-456", "tenant-123");
-    inputData.forEach(context::put);
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-456", "tenant-123"); // GH-90000
+    inputData.forEach(context::put); // GH-90000
 
-    when(dbClient.insert(eq("requirements_raw"), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(eq("requirements_raw [GH-90000]"), any())).thenReturn(Promise.of((Void) null));
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.getData()).containsKey("requirementId");
-    assertThat(result.getData()).containsEntry("source", "user-input");
-    assertThat(result.getData()).containsEntry("persisted", true);
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.getData()).containsKey("requirementId [GH-90000]");
+    assertThat(result.getData()).containsEntry("source", "user-input"); // GH-90000
+    assertThat(result.getData()).containsEntry("persisted", true); // GH-90000
 
-    verify(dbClient).insert(eq("requirements_raw"), any());
-    verify(eventClient).publish(eq("requirements.ingested"), any());
+    verify(dbClient).insert(eq("requirements_raw [GH-90000]"), any());
+    verify(eventClient).publish(eq("requirements.ingested [GH-90000]"), any());
   }
 
   @Test
-  @DisplayName("Should fail when source is missing")
-  void shouldFailWhenSourceMissing() {
+  @DisplayName("Should fail when source is missing [GH-90000]")
+  void shouldFailWhenSourceMissing() { // GH-90000
     // GIVEN
-    Map<String, Object> inputData = new HashMap<>();
-    inputData.put("content", "Some content without source");
+    Map<String, Object> inputData = new HashMap<>(); // GH-90000
+    inputData.put("content", "Some content without source"); // GH-90000
 
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-456", "tenant-123");
-    inputData.forEach(context::put);
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-456", "tenant-123"); // GH-90000
+    inputData.forEach(context::put); // GH-90000
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Field 'source' is required");
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("Field 'source' is required [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should fail when input data is empty")
-  void shouldFailWhenInputIsEmpty() {
+  @DisplayName("Should fail when input data is empty [GH-90000]")
+  void shouldFailWhenInputIsEmpty() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-456", "tenant-123");
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-456", "tenant-123"); // GH-90000
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Input data is required");
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("Input data is required [GH-90000]");
   }
 }

@@ -11,66 +11,66 @@ import static org.junit.jupiter.api.Assertions.*;
 class AgentIdTest {
 
     @Test
-    void testOf() {
-        AgentId id = AgentId.of("test-agent-id");
+    void testOf() { // GH-90000
+        AgentId id = AgentId.of("test-agent-id [GH-90000]");
 
-        assertEquals("test-agent-id", id.value());
-        assertEquals("test-agent-id", id.raw());
+        assertEquals("test-agent-id", id.value()); // GH-90000
+        assertEquals("test-agent-id", id.raw()); // GH-90000
     }
 
     @Test
-    void testRandom() {
-        AgentId id1 = AgentId.random();
-        AgentId id2 = AgentId.random();
+    void testRandom() { // GH-90000
+        AgentId id1 = AgentId.random(); // GH-90000
+        AgentId id2 = AgentId.random(); // GH-90000
 
-        assertNotNull(id1.value());
-        assertNotNull(id2.value());
-        assertNotEquals(id1.value(), id2.value());
+        assertNotNull(id1.value()); // GH-90000
+        assertNotNull(id2.value()); // GH-90000
+        assertNotEquals(id1.value(), id2.value()); // GH-90000
     }
 
     @Test
-    void testNullValueThrowsException() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new AgentId(null)
+    void testNullValueThrowsException() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+            new AgentId(null) // GH-90000
         );
     }
 
     @Test
-    void testBlankValueThrowsException() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new AgentId("  ")
+    void testBlankValueThrowsException() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+            new AgentId("   [GH-90000]")
         );
     }
 
     @Test
-    void testEmptyValueThrowsException() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new AgentId("")
+    void testEmptyValueThrowsException() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+            new AgentId(" [GH-90000]")
         );
     }
 
     @Test
-    void testEquals() {
-        AgentId id1 = AgentId.of("same-id");
-        AgentId id2 = AgentId.of("same-id");
-        AgentId id3 = AgentId.of("different-id");
+    void testEquals() { // GH-90000
+        AgentId id1 = AgentId.of("same-id [GH-90000]");
+        AgentId id2 = AgentId.of("same-id [GH-90000]");
+        AgentId id3 = AgentId.of("different-id [GH-90000]");
 
-        assertEquals(id1, id2);
-        assertNotEquals(id1, id3);
+        assertEquals(id1, id2); // GH-90000
+        assertNotEquals(id1, id3); // GH-90000
     }
 
     @Test
-    void testHashCode() {
-        AgentId id1 = AgentId.of("same-id");
-        AgentId id2 = AgentId.of("same-id");
+    void testHashCode() { // GH-90000
+        AgentId id1 = AgentId.of("same-id [GH-90000]");
+        AgentId id2 = AgentId.of("same-id [GH-90000]");
 
-        assertEquals(id1.hashCode(), id2.hashCode());
+        assertEquals(id1.hashCode(), id2.hashCode()); // GH-90000
     }
 
     @Test
-    void testToString() {
-        AgentId id = AgentId.of("test-id");
+    void testToString() { // GH-90000
+        AgentId id = AgentId.of("test-id [GH-90000]");
 
-        assertEquals("test-id", id.toString());
+        assertEquals("test-id", id.toString()); // GH-90000
     }
 }

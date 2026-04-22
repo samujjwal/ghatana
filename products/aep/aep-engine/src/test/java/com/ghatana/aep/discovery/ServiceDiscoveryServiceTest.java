@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.discovery;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("ServiceDiscoveryService")
+@DisplayName("ServiceDiscoveryService [GH-90000]")
 class ServiceDiscoveryServiceTest {
 
     private static final String PAYMENT_SERVICE_URL = "PAYMENT_SERVICE_URL";
@@ -33,186 +33,186 @@ class ServiceDiscoveryServiceTest {
     private ServiceDiscoveryService service;
 
     @BeforeEach
-    void setUp() {
-        service = new DefaultServiceDiscoveryService();
+    void setUp() { // GH-90000
+        service = new DefaultServiceDiscoveryService(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        System.clearProperty(PAYMENT_SERVICE_URL);
+    void tearDown() { // GH-90000
+        System.clearProperty(PAYMENT_SERVICE_URL); // GH-90000
     }
 
     @Nested
-    @DisplayName("discoverServices()")
+    @DisplayName("discoverServices() [GH-90000]")
     class DiscoverServicesTests {
 
         @Test
-        @DisplayName("discovers services from environment")
-        void discoversServicesFromEnvironment() {
-            System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080");
+        @DisplayName("discovers services from environment [GH-90000]")
+        void discoversServicesFromEnvironment() { // GH-90000
+            System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080"); // GH-90000
             
-            List<DiscoveredService> services = service.discoverServices("all", Map.of());
+            List<DiscoveredService> services = service.discoverServices("all", Map.of()); // GH-90000
             
-            assertThat(services)
-                .extracting(DiscoveredService::endpoint)
-                .contains("http://localhost:8080");
+            assertThat(services) // GH-90000
+                .extracting(DiscoveredService::endpoint) // GH-90000
+                .contains("http://localhost:8080 [GH-90000]");
         }
 
         @Test
-        @DisplayName("returns empty list when no services found")
-        void returnsEmptyListWhenNoServicesFound() {
-            List<DiscoveredService> services = service.discoverServices("all", Map.of());
+        @DisplayName("returns empty list when no services found [GH-90000]")
+        void returnsEmptyListWhenNoServicesFound() { // GH-90000
+            List<DiscoveredService> services = service.discoverServices("all", Map.of()); // GH-90000
             
-            assertThat(services).isNotNull();
+            assertThat(services).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("registerService()")
+    @DisplayName("registerService() [GH-90000]")
     class RegisterServiceTests {
 
         @Test
-        @DisplayName("registers service when auto-register is true")
-        void registersServiceWhenAutoRegisterIsTrue() {
-            DiscoveredService discoveredService = new DiscoveredService(
+        @DisplayName("registers service when auto-register is true [GH-90000]")
+        void registersServiceWhenAutoRegisterIsTrue() { // GH-90000
+            DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
                 "Test Service",
                 "http",
                 "http://localhost:8080",
-                Map.of(),
+                Map.of(), // GH-90000
                 ServiceHealth.HEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true); // GH-90000
 
-            assertThat(result.registered()).isTrue();
-            assertThat(result.agentId()).isNotNull();
-            assertThat(result.agentId()).startsWith("agent-");
+            assertThat(result.registered()).isTrue(); // GH-90000
+            assertThat(result.agentId()).isNotNull(); // GH-90000
+            assertThat(result.agentId()).startsWith("agent- [GH-90000]");
         }
 
         @Test
-        @DisplayName("skips registration when auto-register is false")
-        void skipsRegistrationWhenAutoRegisterIsFalse() {
-            DiscoveredService discoveredService = new DiscoveredService(
+        @DisplayName("skips registration when auto-register is false [GH-90000]")
+        void skipsRegistrationWhenAutoRegisterIsFalse() { // GH-90000
+            DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
                 "Test Service",
                 "http",
                 "http://localhost:8080",
-                Map.of(),
+                Map.of(), // GH-90000
                 ServiceHealth.HEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, false);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, false); // GH-90000
 
-            assertThat(result.registered()).isFalse();
-            assertThat(result.reason()).isEqualTo("Auto-registration disabled");
+            assertThat(result.registered()).isFalse(); // GH-90000
+            assertThat(result.reason()).isEqualTo("Auto-registration disabled [GH-90000]");
         }
 
         @Test
-        @DisplayName("rejects unhealthy services")
-        void rejectsUnhealthyServices() {
-            DiscoveredService discoveredService = new DiscoveredService(
+        @DisplayName("rejects unhealthy services [GH-90000]")
+        void rejectsUnhealthyServices() { // GH-90000
+            DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
                 "Test Service",
                 "http",
                 "http://localhost:8080",
-                Map.of(),
+                Map.of(), // GH-90000
                 ServiceHealth.UNHEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true); // GH-90000
 
-            assertThat(result.registered()).isFalse();
-            assertThat(result.reason()).isEqualTo("Service is unhealthy");
+            assertThat(result.registered()).isFalse(); // GH-90000
+            assertThat(result.reason()).isEqualTo("Service is unhealthy [GH-90000]");
         }
 
         @Test
-        @DisplayName("adds warning for missing endpoint")
-        void addsWarningForMissingEndpoint() {
-            DiscoveredService discoveredService = new DiscoveredService(
+        @DisplayName("adds warning for missing endpoint [GH-90000]")
+        void addsWarningForMissingEndpoint() { // GH-90000
+            DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
                 "Test Service",
                 "http",
                 "",
-                Map.of(),
+                Map.of(), // GH-90000
                 ServiceHealth.HEALTHY
             );
 
-            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true);
+            ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true); // GH-90000
 
-            assertThat(result.registered()).isTrue();
-            assertThat(result.warnings()).anyMatch(w -> w.contains("No endpoint"));
+            assertThat(result.registered()).isTrue(); // GH-90000
+            assertThat(result.warnings()).anyMatch(w -> w.contains("No endpoint [GH-90000]"));
         }
     }
 
     @Nested
-    @DisplayName("getStats()")
+    @DisplayName("getStats() [GH-90000]")
     class GetStatsTests {
 
         @Test
-        @DisplayName("returns discovery statistics")
-        void returnsDiscoveryStatistics() {
-            System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080");
+        @DisplayName("returns discovery statistics [GH-90000]")
+        void returnsDiscoveryStatistics() { // GH-90000
+            System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080"); // GH-90000
 
-            DiscoveredService discoveredService = new DiscoveredService(
+            DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
                 "Test Service",
                 "http",
                 "http://localhost:8080",
-                Map.of(),
+                Map.of(), // GH-90000
                 ServiceHealth.HEALTHY
             );
 
-            service.discoverServices("all", Map.of());
-            service.registerService(discoveredService, true);
+            service.discoverServices("all", Map.of()); // GH-90000
+            service.registerService(discoveredService, true); // GH-90000
 
-            ServiceDiscoveryService.DiscoveryStats stats = service.getStats();
-            assertThat(stats.totalDiscovered()).isGreaterThan(0);
-            assertThat(stats.totalRegistered()).isGreaterThan(0);
+            ServiceDiscoveryService.DiscoveryStats stats = service.getStats(); // GH-90000
+            assertThat(stats.totalDiscovered()).isGreaterThan(0); // GH-90000
+            assertThat(stats.totalRegistered()).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("calculates registration rate")
-        void calculatesRegistrationRate() {
-            ServiceDiscoveryService.DiscoveryStats stats = service.getStats();
+        @DisplayName("calculates registration rate [GH-90000]")
+        void calculatesRegistrationRate() { // GH-90000
+            ServiceDiscoveryService.DiscoveryStats stats = service.getStats(); // GH-90000
             
-            assertThat(stats.registrationRate()).isBetween(0.0, 1.0);
+            assertThat(stats.registrationRate()).isBetween(0.0, 1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("returns zero stats when no discovery")
-        void returnsZeroStatsWhenNoDiscovery() {
-            ServiceDiscoveryService.DiscoveryStats stats = service.getStats();
+        @DisplayName("returns zero stats when no discovery [GH-90000]")
+        void returnsZeroStatsWhenNoDiscovery() { // GH-90000
+            ServiceDiscoveryService.DiscoveryStats stats = service.getStats(); // GH-90000
             
-            assertThat(stats.totalDiscovered()).isEqualTo(0);
-            assertThat(stats.totalRegistered()).isEqualTo(0);
-            assertThat(stats.totalSkipped()).isEqualTo(0);
-            assertThat(stats.totalFailed()).isEqualTo(0);
+            assertThat(stats.totalDiscovered()).isEqualTo(0); // GH-90000
+            assertThat(stats.totalRegistered()).isEqualTo(0); // GH-90000
+            assertThat(stats.totalSkipped()).isEqualTo(0); // GH-90000
+            assertThat(stats.totalFailed()).isEqualTo(0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("DiscoveredService")
+    @DisplayName("DiscoveredService [GH-90000]")
     class DiscoveredServiceTests {
 
         @Test
-        @DisplayName("service has required fields")
-        void serviceHasRequiredFields() {
-            DiscoveredService service = new DiscoveredService(
+        @DisplayName("service has required fields [GH-90000]")
+        void serviceHasRequiredFields() { // GH-90000
+            DiscoveredService service = new DiscoveredService( // GH-90000
                 "service-1",
                 "Test Service",
                 "http",
                 "http://localhost:8080",
-                Map.of(),
+                Map.of(), // GH-90000
                 ServiceHealth.HEALTHY
             );
 
-            assertThat(service.serviceId()).isNotNull();
-            assertThat(service.serviceName()).isNotNull();
-            assertThat(service.serviceType()).isNotNull();
-            assertThat(service.endpoint()).isNotNull();
-            assertThat(service.metadata()).isNotNull();
-            assertThat(service.health()).isNotNull();
+            assertThat(service.serviceId()).isNotNull(); // GH-90000
+            assertThat(service.serviceName()).isNotNull(); // GH-90000
+            assertThat(service.serviceType()).isNotNull(); // GH-90000
+            assertThat(service.endpoint()).isNotNull(); // GH-90000
+            assertThat(service.metadata()).isNotNull(); // GH-90000
+            assertThat(service.health()).isNotNull(); // GH-90000
         }
     }
 }

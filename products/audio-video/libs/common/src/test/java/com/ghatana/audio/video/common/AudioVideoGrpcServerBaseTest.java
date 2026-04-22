@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.layer product
  * @doc.pattern TestCase
  */
-@DisplayName("AudioVideoGrpcServerBase")
+@DisplayName("AudioVideoGrpcServerBase [GH-90000]")
 class AudioVideoGrpcServerBaseTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -27,19 +27,19 @@ class AudioVideoGrpcServerBaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getPort: returns the configured port")
-    void getPort_returnsConfiguredPort() {
-        TestServer server = new TestServer(0); // 0 = ephemeral port
-        assertThat(server.getPort()).isEqualTo(0);
-        server.close();
+    @DisplayName("getPort: returns the configured port [GH-90000]")
+    void getPort_returnsConfiguredPort() { // GH-90000
+        TestServer server = new TestServer(0); // 0 = ephemeral port // GH-90000
+        assertThat(server.getPort()).isEqualTo(0); // GH-90000
+        server.close(); // GH-90000
     }
 
     @Test
-    @DisplayName("getServiceName: returns the configured service name")
-    void getServiceName_returnsConfiguredName() {
-        TestServer server = new TestServer(0);
-        assertThat(server.getServiceName()).isEqualTo("test-service");
-        server.close();
+    @DisplayName("getServiceName: returns the configured service name [GH-90000]")
+    void getServiceName_returnsConfiguredName() { // GH-90000
+        TestServer server = new TestServer(0); // GH-90000
+        assertThat(server.getServiceName()).isEqualTo("test-service [GH-90000]");
+        server.close(); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -47,34 +47,34 @@ class AudioVideoGrpcServerBaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("start + close: server starts and shuts down cleanly")
-    void start_thenClose_shutsDownCleanly() throws IOException {
-        TestServer server = new TestServer(0);
-        server.start();
+    @DisplayName("start + close: server starts and shuts down cleanly [GH-90000]")
+    void start_thenClose_shutsDownCleanly() throws IOException { // GH-90000
+        TestServer server = new TestServer(0); // GH-90000
+        server.start(); // GH-90000
 
-        assertThat(server.isShutdown()).isFalse();
+        assertThat(server.isShutdown()).isFalse(); // GH-90000
 
-        server.close();
-        assertThat(server.isShutdown()).isTrue();
+        server.close(); // GH-90000
+        assertThat(server.isShutdown()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("close: idempotent — calling twice does not throw")
-    void close_calledTwice_doesNotThrow() throws IOException {
-        TestServer server = new TestServer(0);
-        server.start();
+    @DisplayName("close: idempotent — calling twice does not throw [GH-90000]")
+    void close_calledTwice_doesNotThrow() throws IOException { // GH-90000
+        TestServer server = new TestServer(0); // GH-90000
+        server.start(); // GH-90000
 
-        server.close();
-        assertThatCode(server::close).doesNotThrowAnyException();
+        server.close(); // GH-90000
+        assertThatCode(server::close).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("isShutdown: returns true before start (server not yet running)")
-    void isShutdown_beforeStart_returnsFalse() {
-        TestServer server = new TestServer(0);
+    @DisplayName("isShutdown: returns true before start (server not yet running) [GH-90000]")
+    void isShutdown_beforeStart_returnsFalse() { // GH-90000
+        TestServer server = new TestServer(0); // GH-90000
         // Not started yet — server is built but not running; gRPC still reports "not shut down"
-        // The important thing is close() is safe to call before start()
-        assertThatCode(server::close).doesNotThrowAnyException();
+        // The important thing is close() is safe to call before start() // GH-90000
+        assertThatCode(server::close).doesNotThrowAnyException(); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -89,8 +89,8 @@ class AudioVideoGrpcServerBaseTest {
      */
     private static final class TestServer extends AudioVideoGrpcServerBase {
 
-        TestServer(int port) {
-            super("test-service", port, new NoOpService(), java.util.List.of());
+        TestServer(int port) { // GH-90000
+            super("test-service", port, new NoOpService(), java.util.List.of()); // GH-90000
         }
     }
 
@@ -102,11 +102,11 @@ class AudioVideoGrpcServerBaseTest {
     private static final class NoOpService implements BindableService {
 
         @Override
-        public ServerServiceDefinition bindService() {
-            return ServerServiceDefinition.builder(
-                    ServiceDescriptor.newBuilder("test.NoOpService")
-                            .build())
-                    .build();
+        public ServerServiceDefinition bindService() { // GH-90000
+            return ServerServiceDefinition.builder( // GH-90000
+                    ServiceDescriptor.newBuilder("test.NoOpService [GH-90000]")
+                            .build()) // GH-90000
+                    .build(); // GH-90000
         }
     }
 }

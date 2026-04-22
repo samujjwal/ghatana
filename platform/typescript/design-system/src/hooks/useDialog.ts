@@ -1,5 +1,5 @@
 /**
- * useDialog Hook for @ghatana/ui
+ * useDialog Hook for @ghatana/design-system
  *
  * Unified dialog/modal state management hook.
  * Migrated from yappc/app-creator for shared use across all products.

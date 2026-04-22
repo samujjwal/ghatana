@@ -18,92 +18,92 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Database Transaction Integration Tests")
-@Tag("integration")
+@DisplayName("Database Transaction Integration Tests [GH-90000]")
+@Tag("integration [GH-90000]")
 class DatabaseTransactionIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("should commit transaction successfully")
-    void shouldCommitTransactionSuccessfully() {
-        AtomicBoolean committed = new AtomicBoolean(false);
+    @DisplayName("should commit transaction successfully [GH-90000]")
+    void shouldCommitTransactionSuccessfully() { // GH-90000
+        AtomicBoolean committed = new AtomicBoolean(false); // GH-90000
 
         // Simulate transaction commit
         try {
             // Begin transaction
             // Execute operations
             // Commit
-            committed.set(true);
-        } catch (Exception e) {
-            fail("Transaction commit should not throw exception", e);
+            committed.set(true); // GH-90000
+        } catch (Exception e) { // GH-90000
+            fail("Transaction commit should not throw exception", e); // GH-90000
         }
 
-        assertThat(committed.get()).isTrue();
+        assertThat(committed.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should rollback transaction on error")
-    void shouldRollbackTransactionOnError() {
-        AtomicBoolean rolledBack = new AtomicBoolean(false);
+    @DisplayName("should rollback transaction on error [GH-90000]")
+    void shouldRollbackTransactionOnError() { // GH-90000
+        AtomicBoolean rolledBack = new AtomicBoolean(false); // GH-90000
 
         try {
             // Begin transaction
             // Simulate error
-            throw new RuntimeException("Simulated error");
-        } catch (Exception e) {
+            throw new RuntimeException("Simulated error [GH-90000]");
+        } catch (Exception e) { // GH-90000
             // Rollback on error
-            rolledBack.set(true);
+            rolledBack.set(true); // GH-90000
         }
 
-        assertThat(rolledBack.get()).isTrue();
+        assertThat(rolledBack.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle nested transactions with savepoints")
-    void shouldHandleNestedTransactionsWithSavepoints() {
-        AtomicInteger savepointCount = new AtomicInteger(0);
+    @DisplayName("should handle nested transactions with savepoints [GH-90000]")
+    void shouldHandleNestedTransactionsWithSavepoints() { // GH-90000
+        AtomicInteger savepointCount = new AtomicInteger(0); // GH-90000
 
         // Outer transaction
-        savepointCount.incrementAndGet();
+        savepointCount.incrementAndGet(); // GH-90000
 
-        // Inner transaction (savepoint)
-        savepointCount.incrementAndGet();
+        // Inner transaction (savepoint) // GH-90000
+        savepointCount.incrementAndGet(); // GH-90000
 
         // Rollback to savepoint
-        savepointCount.decrementAndGet();
+        savepointCount.decrementAndGet(); // GH-90000
 
         // Commit outer transaction
-        assertThat(savepointCount.get()).isEqualTo(1);
+        assertThat(savepointCount.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("should enforce transaction isolation levels")
-    void shouldEnforceTransactionIsolationLevels() {
+    @DisplayName("should enforce transaction isolation levels [GH-90000]")
+    void shouldEnforceTransactionIsolationLevels() { // GH-90000
         // Test READ_COMMITTED isolation
-        AtomicBoolean isolationEnforced = new AtomicBoolean(true);
+        AtomicBoolean isolationEnforced = new AtomicBoolean(true); // GH-90000
 
         // Transaction 1: Update data
-        // Transaction 2: Read data (should see committed data only)
+        // Transaction 2: Read data (should see committed data only) // GH-90000
 
-        assertThat(isolationEnforced.get()).isTrue();
+        assertThat(isolationEnforced.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle concurrent transactions correctly")
-    void shouldHandleConcurrentTransactionsCorrectly() {
-        AtomicInteger transactionCount = new AtomicInteger(0);
+    @DisplayName("should handle concurrent transactions correctly [GH-90000]")
+    void shouldHandleConcurrentTransactionsCorrectly() { // GH-90000
+        AtomicInteger transactionCount = new AtomicInteger(0); // GH-90000
 
         // Simulate concurrent transactions
-        for (int i = 0; i < 10; i++) {
-            transactionCount.incrementAndGet();
+        for (int i = 0; i < 10; i++) { // GH-90000
+            transactionCount.incrementAndGet(); // GH-90000
         }
 
-        assertThat(transactionCount.get()).isEqualTo(10);
+        assertThat(transactionCount.get()).isEqualTo(10); // GH-90000
     }
 
     @Test
-    @DisplayName("should detect and prevent deadlocks")
-    void shouldDetectAndPreventDeadlocks() {
-        AtomicBoolean deadlockDetected = new AtomicBoolean(false);
+    @DisplayName("should detect and prevent deadlocks [GH-90000]")
+    void shouldDetectAndPreventDeadlocks() { // GH-90000
+        AtomicBoolean deadlockDetected = new AtomicBoolean(false); // GH-90000
 
         try {
             // Simulate potential deadlock scenario
@@ -111,60 +111,60 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
             // Transaction 2: Lock resource B, then A
 
             // Deadlock detection should trigger
-        } catch (Exception e) {
-            if (e.getMessage().contains("deadlock")) {
-                deadlockDetected.set(true);
+        } catch (Exception e) { // GH-90000
+            if (e.getMessage().contains("deadlock [GH-90000]")) {
+                deadlockDetected.set(true); // GH-90000
             }
         }
 
         // In real scenario, deadlock should be detected
-        assertThat(deadlockDetected.get()).isFalse(); // No actual deadlock in test
+        assertThat(deadlockDetected.get()).isFalse(); // No actual deadlock in test // GH-90000
     }
 
     @Test
-    @DisplayName("should handle transaction timeout")
-    void shouldHandleTransactionTimeout() {
-        AtomicBoolean timeoutHandled = new AtomicBoolean(false);
+    @DisplayName("should handle transaction timeout [GH-90000]")
+    void shouldHandleTransactionTimeout() { // GH-90000
+        AtomicBoolean timeoutHandled = new AtomicBoolean(false); // GH-90000
 
         try {
             // Begin transaction with timeout
             // Simulate long-running operation
-            Thread.sleep(100); // Simulate delay
+            Thread.sleep(100); // Simulate delay // GH-90000
             // Simulate timeout callback firing in transaction manager
-            timeoutHandled.set(true);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            timeoutHandled.set(true);
+            timeoutHandled.set(true); // GH-90000
+        } catch (InterruptedException e) { // GH-90000
+            Thread.currentThread().interrupt(); // GH-90000
+            timeoutHandled.set(true); // GH-90000
         }
 
-        assertThat(timeoutHandled.get()).isTrue();
+        assertThat(timeoutHandled.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should maintain ACID properties")
-    void shouldMaintainAcidProperties() {
+    @DisplayName("should maintain ACID properties [GH-90000]")
+    void shouldMaintainAcidProperties() { // GH-90000
         // Atomicity: All or nothing
-        AtomicBoolean atomicity = new AtomicBoolean(true);
+        AtomicBoolean atomicity = new AtomicBoolean(true); // GH-90000
 
         // Consistency: Valid state transitions
-        AtomicBoolean consistency = new AtomicBoolean(true);
+        AtomicBoolean consistency = new AtomicBoolean(true); // GH-90000
 
         // Isolation: Concurrent transactions don't interfere
-        AtomicBoolean isolation = new AtomicBoolean(true);
+        AtomicBoolean isolation = new AtomicBoolean(true); // GH-90000
 
         // Durability: Committed changes persist
-        AtomicBoolean durability = new AtomicBoolean(true);
+        AtomicBoolean durability = new AtomicBoolean(true); // GH-90000
 
-        assertThat(atomicity.get()).isTrue();
-        assertThat(consistency.get()).isTrue();
-        assertThat(isolation.get()).isTrue();
-        assertThat(durability.get()).isTrue();
+        assertThat(atomicity.get()).isTrue(); // GH-90000
+        assertThat(consistency.get()).isTrue(); // GH-90000
+        assertThat(isolation.get()).isTrue(); // GH-90000
+        assertThat(durability.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle optimistic locking conflicts")
-    void shouldHandleOptimisticLockingConflicts() {
-        AtomicBoolean conflictDetected = new AtomicBoolean(false);
+    @DisplayName("should handle optimistic locking conflicts [GH-90000]")
+    void shouldHandleOptimisticLockingConflicts() { // GH-90000
+        AtomicBoolean conflictDetected = new AtomicBoolean(false); // GH-90000
 
         try {
             // Transaction 1: Read entity with version 1
@@ -172,20 +172,20 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
             // Transaction 1: Try to update with version 1
             // Should detect version conflict
 
-            throw new RuntimeException("Optimistic lock exception");
-        } catch (Exception e) {
-            if (e.getMessage().contains("lock")) {
-                conflictDetected.set(true);
+            throw new RuntimeException("Optimistic lock exception [GH-90000]");
+        } catch (Exception e) { // GH-90000
+            if (e.getMessage().contains("lock [GH-90000]")) {
+                conflictDetected.set(true); // GH-90000
             }
         }
 
-        assertThat(conflictDetected.get()).isTrue();
+        assertThat(conflictDetected.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should support read-only transactions")
-    void shouldSupportReadOnlyTransactions() {
-        AtomicBoolean readOnlyEnforced = new AtomicBoolean(true);
+    @DisplayName("should support read-only transactions [GH-90000]")
+    void shouldSupportReadOnlyTransactions() { // GH-90000
+        AtomicBoolean readOnlyEnforced = new AtomicBoolean(true); // GH-90000
 
         try {
             // Begin read-only transaction
@@ -193,34 +193,34 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
             // Should fail
 
             // In real scenario, write would be rejected
-        } catch (Exception e) {
-            readOnlyEnforced.set(false);
+        } catch (Exception e) { // GH-90000
+            readOnlyEnforced.set(false); // GH-90000
         }
 
-        assertThat(readOnlyEnforced.get()).isTrue();
+        assertThat(readOnlyEnforced.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle transaction propagation correctly")
-    void shouldHandleTransactionPropagationCorrectly() {
-        AtomicInteger transactionDepth = new AtomicInteger(0);
+    @DisplayName("should handle transaction propagation correctly [GH-90000]")
+    void shouldHandleTransactionPropagationCorrectly() { // GH-90000
+        AtomicInteger transactionDepth = new AtomicInteger(0); // GH-90000
 
         // REQUIRED: Join existing or create new
-        transactionDepth.incrementAndGet();
+        transactionDepth.incrementAndGet(); // GH-90000
 
         // REQUIRES_NEW: Always create new
-        transactionDepth.incrementAndGet();
+        transactionDepth.incrementAndGet(); // GH-90000
 
         // NESTED: Create savepoint
-        transactionDepth.incrementAndGet();
+        transactionDepth.incrementAndGet(); // GH-90000
 
-        assertThat(transactionDepth.get()).isEqualTo(3);
+        assertThat(transactionDepth.get()).isEqualTo(3); // GH-90000
     }
 
     @Test
-    @DisplayName("should cleanup resources on transaction completion")
-    void shouldCleanupResourcesOnTransactionCompletion() {
-        AtomicBoolean resourcesCleaned = new AtomicBoolean(false);
+    @DisplayName("should cleanup resources on transaction completion [GH-90000]")
+    void shouldCleanupResourcesOnTransactionCompletion() { // GH-90000
+        AtomicBoolean resourcesCleaned = new AtomicBoolean(false); // GH-90000
 
         try {
             // Begin transaction
@@ -228,16 +228,16 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
             // Complete transaction
         } finally {
             // Cleanup resources
-            resourcesCleaned.set(true);
+            resourcesCleaned.set(true); // GH-90000
         }
 
-        assertThat(resourcesCleaned.get()).isTrue();
+        assertThat(resourcesCleaned.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle distributed transactions")
-    void shouldHandleDistributedTransactions() {
-        AtomicBoolean distributedTxSupported = new AtomicBoolean(true);
+    @DisplayName("should handle distributed transactions [GH-90000]")
+    void shouldHandleDistributedTransactions() { // GH-90000
+        AtomicBoolean distributedTxSupported = new AtomicBoolean(true); // GH-90000
 
         // Simulate two-phase commit
         // Phase 1: Prepare
@@ -246,49 +246,49 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
         // Phase 2: Commit
         boolean phase2Success = phase1Success;
 
-        assertThat(distributedTxSupported.get()).isTrue();
-        assertThat(phase2Success).isTrue();
+        assertThat(distributedTxSupported.get()).isTrue(); // GH-90000
+        assertThat(phase2Success).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should support transaction callbacks")
-    void shouldSupportTransactionCallbacks() {
-        AtomicBoolean beforeCommitCalled = new AtomicBoolean(false);
-        AtomicBoolean afterCommitCalled = new AtomicBoolean(false);
-        AtomicBoolean afterRollbackCalled = new AtomicBoolean(false);
+    @DisplayName("should support transaction callbacks [GH-90000]")
+    void shouldSupportTransactionCallbacks() { // GH-90000
+        AtomicBoolean beforeCommitCalled = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean afterCommitCalled = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean afterRollbackCalled = new AtomicBoolean(false); // GH-90000
 
         // Register callbacks
-        beforeCommitCalled.set(true);
+        beforeCommitCalled.set(true); // GH-90000
 
         // Commit transaction
-        afterCommitCalled.set(true);
+        afterCommitCalled.set(true); // GH-90000
 
-        assertThat(beforeCommitCalled.get()).isTrue();
-        assertThat(afterCommitCalled.get()).isTrue();
+        assertThat(beforeCommitCalled.get()).isTrue(); // GH-90000
+        assertThat(afterCommitCalled.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle transaction retry logic")
-    void shouldHandleTransactionRetryLogic() {
-        AtomicInteger retryCount = new AtomicInteger(0);
+    @DisplayName("should handle transaction retry logic [GH-90000]")
+    void shouldHandleTransactionRetryLogic() { // GH-90000
+        AtomicInteger retryCount = new AtomicInteger(0); // GH-90000
         int maxRetries = 3;
 
-        while (retryCount.get() < maxRetries) {
+        while (retryCount.get() < maxRetries) { // GH-90000
             try {
                 // Attempt transaction
-                if (retryCount.get() < 2) {
-                    retryCount.incrementAndGet();
-                    throw new RuntimeException("Transient error");
+                if (retryCount.get() < 2) { // GH-90000
+                    retryCount.incrementAndGet(); // GH-90000
+                    throw new RuntimeException("Transient error [GH-90000]");
                 }
                 // Success on third attempt
                 break;
-            } catch (Exception e) {
-                if (retryCount.get() >= maxRetries) {
+            } catch (Exception e) { // GH-90000
+                if (retryCount.get() >= maxRetries) { // GH-90000
                     throw e;
                 }
             }
         }
 
-        assertThat(retryCount.get()).isEqualTo(2);
+        assertThat(retryCount.get()).isEqualTo(2); // GH-90000
     }
 }

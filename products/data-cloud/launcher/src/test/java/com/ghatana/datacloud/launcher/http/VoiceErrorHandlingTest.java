@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -43,33 +43,33 @@ import static org.mockito.Mockito.mock;
  * infrastructure-free.
  *
  * @doc.type class
- * @doc.purpose Voice gateway error-handling tests (DC-E4, Gap 003)
+ * @doc.purpose Voice gateway error-handling tests (DC-E4, Gap 003) // GH-90000
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@Timeout(value = 15, unit = TimeUnit.SECONDS)
-@DisplayName("Voice Gateway – Error Handling")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@Timeout(value = 15, unit = TimeUnit.SECONDS) // GH-90000
+@DisplayName("Voice Gateway – Error Handling [GH-90000]")
 class VoiceErrorHandlingTest {
 
     private DataCloudClient mockClient;
     private DataCloudHttpServer server;
     private int port;
-    private final HttpClient httpClient = HttpClient.newBuilder().build();
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newBuilder().build(); // GH-90000
+    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     @BeforeEach
-    void setUp() throws Exception {
-        mockClient = mock(DataCloudClient.class);
-        port       = findFreePort();
-        server     = new DataCloudHttpServer(mockClient, port);
-        server.start();
-        waitForServerReady(port);
+    void setUp() throws Exception { // GH-90000
+        mockClient = mock(DataCloudClient.class); // GH-90000
+        port       = findFreePort(); // GH-90000
+        server     = new DataCloudHttpServer(mockClient, port); // GH-90000
+        server.start(); // GH-90000
+        waitForServerReady(port); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) server.stop();
+    void tearDown() { // GH-90000
+        if (server != null) server.stop(); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -77,45 +77,45 @@ class VoiceErrorHandlingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Utterance validation")
+    @DisplayName("Utterance validation [GH-90000]")
     class UtteranceValidationTests {
 
-        @ParameterizedTest(name = "body=''{0}''")
-        @ValueSource(strings = {"{}", "{\"utterance\":\"\"}", "{\"utterance\":\"   \"}"})
-        @DisplayName("missing or blank utterance → error code MISSING_UTTERANCE with HTTP 400")
-        @SuppressWarnings("unchecked")
-        void blankOrMissingUtterance_returnsMissingUtteranceError(String body) throws Exception {
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+        @ParameterizedTest(name = "body=''{0}''") // GH-90000
+        @ValueSource(strings = {"{}", "{\"utterance\":\"\"}", "{\"utterance\":\"   \"}"}) // GH-90000
+        @DisplayName("missing or blank utterance → error code MISSING_UTTERANCE with HTTP 400 [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void blankOrMissingUtterance_returnsMissingUtteranceError(String body) throws Exception { // GH-90000
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(400); // Client error - bad request
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("error");
-            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
-            assertThat(error.get("code")).isEqualTo("MISSING_UTTERANCE");
+            assertThat(resp.statusCode()).isEqualTo(400); // Client error - bad request // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("error [GH-90000]");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error [GH-90000]");
+            assertThat(error.get("code [GH-90000]")).isEqualTo("MISSING_UTTERANCE [GH-90000]");
         }
 
         @Test
-        @DisplayName("null body → 400 bad request")
-        void nullBody_returns400() throws Exception {
-            HttpResponse<String> resp = postRaw("/api/v1/voice/intent", "");
+        @DisplayName("null body → 400 bad request [GH-90000]")
+        void nullBody_returns400() throws Exception { // GH-90000
+            HttpResponse<String> resp = postRaw("/api/v1/voice/intent", ""); // GH-90000
             // Server should return 4xx for completely empty body
-            assertThat(resp.statusCode()).isGreaterThanOrEqualTo(400);
+            assertThat(resp.statusCode()).isGreaterThanOrEqualTo(400); // GH-90000
         }
 
         @Test
-        @DisplayName("extremely long utterance (>4096 chars) → rejected before LLM call")
-        @SuppressWarnings("unchecked")
-        void tooLongUtterance_returnsError() throws Exception {
-            String longUtterance = "a".repeat(4097);
-            String body = mapper.writeValueAsString(Map.of("utterance", longUtterance));
+        @DisplayName("extremely long utterance (>4096 chars) → rejected before LLM call [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void tooLongUtterance_returnsError() throws Exception { // GH-90000
+            String longUtterance = "a".repeat(4097); // GH-90000
+            String body = mapper.writeValueAsString(Map.of("utterance", longUtterance)); // GH-90000
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(400);
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("error");
-            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
-            assertThat(error.get("code")).isEqualTo("INVALID_UTTERANCE");
+            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("error [GH-90000]");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error [GH-90000]");
+            assertThat(error.get("code [GH-90000]")).isEqualTo("INVALID_UTTERANCE [GH-90000]");
         }
     }
 
@@ -124,72 +124,72 @@ class VoiceErrorHandlingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Intent resolution failures")
+    @DisplayName("Intent resolution failures [GH-90000]")
     class IntentResolutionFailureTests {
 
         @Test
-        @DisplayName("utterance with no matching intent → error code UNKNOWN_INTENT with HTTP 404")
-        @SuppressWarnings("unchecked")
-        void noMatchingIntent_returnsIntentNotFoundError() throws Exception {
+        @DisplayName("utterance with no matching intent → error code UNKNOWN_INTENT with HTTP 404 [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void noMatchingIntent_returnsIntentNotFoundError() throws Exception { // GH-90000
             // This phrase has zero keyword overlap with any registered intent
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "utterance", "play some jazz music and dim the lights"
             ));
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(404); // Not found
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("error");
-            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
-            assertThat(error.get("code")).isEqualTo("UNKNOWN_INTENT");
+            assertThat(resp.statusCode()).isEqualTo(404); // Not found // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("error [GH-90000]");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error [GH-90000]");
+            assertThat(error.get("code [GH-90000]")).isEqualTo("UNKNOWN_INTENT [GH-90000]");
         }
 
         @Test
-        @DisplayName("unknown exact intent name → response indicates unresolved with HTTP 404")
-        @SuppressWarnings("unchecked")
-        void unknownExactIntentName_notExecuted() throws Exception {
-            String body = mapper.writeValueAsString(Map.of(
+        @DisplayName("unknown exact intent name → response indicates unresolved with HTTP 404 [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void unknownExactIntentName_notExecuted() throws Exception { // GH-90000
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "utterance",  "completely_nonexistent_intent_xyz",
-                "parameters", Map.of(),
+                "parameters", Map.of(), // GH-90000
                 "confirm",    true
             ));
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(404); // Not found
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("error");
-            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
-            assertThat(error.get("code")).isEqualTo("UNKNOWN_INTENT");
+            assertThat(resp.statusCode()).isEqualTo(404); // Not found // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("error [GH-90000]");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error [GH-90000]");
+            assertThat(error.get("code [GH-90000]")).isEqualTo("UNKNOWN_INTENT [GH-90000]");
         }
 
         @Test
-        @DisplayName("ambiguous utterance matching multiple intents → confidence below 0.65 or confirmation required")
-        @SuppressWarnings("unchecked")
-        void ambiguousUtterance_lowConfidenceOrConfirmationGate() throws Exception {
-            // "list" matches many intents (list_pipelines, list_entities, list_models, etc.)
-            String body = mapper.writeValueAsString(Map.of(
+        @DisplayName("ambiguous utterance matching multiple intents → confidence below 0.65 or confirmation required [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void ambiguousUtterance_lowConfidenceOrConfirmationGate() throws Exception { // GH-90000
+            // "list" matches many intents (list_pipelines, list_entities, list_models, etc.) // GH-90000
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "utterance", "list"
             ));
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
             // Ambiguous match may return 200 with confirmationRequired or 404 if no match
-            assertThat(resp.statusCode()).isIn(200, 404);
-            Map<String, Object> resBody = parseBody(resp);
-            if (resp.statusCode() == 200 && resBody.containsKey("data")) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> data = (Map<String, Object>) resBody.get("data");
-                if (data != null && data.containsKey("confidence")) {
+            assertThat(resp.statusCode()).isIn(200, 404); // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            if (resp.statusCode() == 200 && resBody.containsKey("data [GH-90000]")) {
+                @SuppressWarnings("unchecked [GH-90000]")
+                Map<String, Object> data = (Map<String, Object>) resBody.get("data [GH-90000]");
+                if (data != null && data.containsKey("confidence [GH-90000]")) {
                     // Ambiguous match → should be reported as low confidence or require confirmation
-                    double confidence = ((Number) data.get("confidence")).doubleValue();
-                    boolean confirmRequired = Boolean.TRUE.equals(data.get("confirmationRequired"));
-                    assertThat(confidence < 0.65 || confirmRequired).isTrue();
+                    double confidence = ((Number) data.get("confidence [GH-90000]")).doubleValue();
+                    boolean confirmRequired = Boolean.TRUE.equals(data.get("confirmationRequired [GH-90000]"));
+                    assertThat(confidence < 0.65 || confirmRequired).isTrue(); // GH-90000
                 }
-            } else if (resp.statusCode() == 404) {
+            } else if (resp.statusCode() == 404) { // GH-90000
                 // Also acceptable if no match found
-                assertThat(resBody).containsKey("error");
+                assertThat(resBody).containsKey("error [GH-90000]");
             }
         }
     }
@@ -199,48 +199,48 @@ class VoiceErrorHandlingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Audio input validation")
+    @DisplayName("Audio input validation [GH-90000]")
     class AudioInputValidationTests {
 
         @Test
-        @DisplayName("audioData with invalid base64 → HTTP 400 with INVALID_AUDIO_DATA")
-        @SuppressWarnings("unchecked")
-        void invalidBase64AudioData_returnsError() throws Exception {
-            String body = mapper.writeValueAsString(Map.of(
+        @DisplayName("audioData with invalid base64 → HTTP 400 with INVALID_AUDIO_DATA [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void invalidBase64AudioData_returnsError() throws Exception { // GH-90000
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "audioData",   "!!! not valid base64 !!!",
                 "audioFormat", "audio/wav"
             ));
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(400);
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("error");
-            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
-            assertThat(error.get("code")).isEqualTo("INVALID_AUDIO_DATA");
+            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("error [GH-90000]");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error [GH-90000]");
+            assertThat(error.get("code [GH-90000]")).isEqualTo("INVALID_AUDIO_DATA [GH-90000]");
         }
 
         @Test
-        @DisplayName("audioData present but no STT provider → graceful STT-unavailable response with HTTP 400")
-        @SuppressWarnings("unchecked")
-        void audioDataWithoutSttProvider_returnsGracefulError() throws Exception {
+        @DisplayName("audioData present but no STT provider → graceful STT-unavailable response with HTTP 400 [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void audioDataWithoutSttProvider_returnsGracefulError() throws Exception { // GH-90000
             // Encode minimal dummy PCM bytes as base64
             byte[] dummyAudio = new byte[]{0x52, 0x49, 0x46, 0x46};  // "RIFF" header
-            String audioBase64 = Base64.getEncoder().encodeToString(dummyAudio);
+            String audioBase64 = Base64.getEncoder().encodeToString(dummyAudio); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "audioData",   audioBase64,
                 "audioFormat", "audio/wav"
             ));
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
             // Without STT provider, handler returns 400 with EMPTY_UTTERANCE error
-            assertThat(resp.statusCode()).isEqualTo(400);
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("error");
-            Map<String, Object> error = (Map<String, Object>) resBody.get("error");
-            assertThat(error.get("code")).isEqualTo("EMPTY_UTTERANCE");
+            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("error [GH-90000]");
+            Map<String, Object> error = (Map<String, Object>) resBody.get("error [GH-90000]");
+            assertThat(error.get("code [GH-90000]")).isEqualTo("EMPTY_UTTERANCE [GH-90000]");
         }
     }
 
@@ -249,47 +249,47 @@ class VoiceErrorHandlingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Classify-only mode")
+    @DisplayName("Classify-only mode [GH-90000]")
     class ClassifyOnlyTests {
 
         @Test
-        @DisplayName("classifyOnly=true → intent classified but not executed")
-        @SuppressWarnings("unchecked")
-        void classifyOnly_intentNotExecuted() throws Exception {
-            String body = mapper.writeValueAsString(Map.of(
+        @DisplayName("classifyOnly=true → intent classified but not executed [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void classifyOnly_intentNotExecuted() throws Exception { // GH-90000
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "utterance",    "list_pipelines",
                 "classifyOnly", true
             ));
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(200);
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("data");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> data = (Map<String, Object>) resBody.get("data");
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("data [GH-90000]");
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> data = (Map<String, Object>) resBody.get("data [GH-90000]");
             // executed must be false in classify-only mode
-            assertThat(data.get("executed")).isEqualTo(false);
-            assertThat(data.get("intentName")).isEqualTo("list_pipelines");
+            assertThat(data.get("executed [GH-90000]")).isEqualTo(false);
+            assertThat(data.get("intentName [GH-90000]")).isEqualTo("list_pipelines [GH-90000]");
         }
 
         @Test
-        @DisplayName("classifyOnly=true with unknown intent → classification reported without error")
-        @SuppressWarnings("unchecked")
-        void classifyOnly_unknownIntent_noExecutionError() throws Exception {
-            String body = mapper.writeValueAsString(Map.of(
+        @DisplayName("classifyOnly=true with unknown intent → classification reported without error [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void classifyOnly_unknownIntent_noExecutionError() throws Exception { // GH-90000
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "utterance",    "do something completely unknown",
                 "classifyOnly", true
             ));
 
-            HttpResponse<String> resp = post("/api/v1/voice/intent", body);
+            HttpResponse<String> resp = post("/api/v1/voice/intent", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(200);
-            Map<String, Object> resBody = parseBody(resp);
-            assertThat(resBody).containsKey("data");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> data = (Map<String, Object>) resBody.get("data");
-            assertThat(data.get("matched")).isEqualTo(false);
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            Map<String, Object> resBody = parseBody(resp); // GH-90000
+            assertThat(resBody).containsKey("data [GH-90000]");
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> data = (Map<String, Object>) resBody.get("data [GH-90000]");
+            assertThat(data.get("matched [GH-90000]")).isEqualTo(false);
         }
     }
 
@@ -298,35 +298,35 @@ class VoiceErrorHandlingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Intent catalog structure")
+    @DisplayName("Intent catalog structure [GH-90000]")
     class IntentCatalogTests {
 
         @Test
-        @DisplayName("every catalog intent has required sensitivity field with valid value")
-        @SuppressWarnings("unchecked")
-        void catalogIntents_haveSensitivityField() throws Exception {
-            HttpResponse<String> resp = get("/api/v1/voice/intents");
+        @DisplayName("every catalog intent has required sensitivity field with valid value [GH-90000]")
+        @SuppressWarnings("unchecked [GH-90000]")
+        void catalogIntents_haveSensitivityField() throws Exception { // GH-90000
+            HttpResponse<String> resp = get("/api/v1/voice/intents [GH-90000]");
 
-            assertThat(resp.statusCode()).isEqualTo(200);
-            Map<String, Object> body = parseBody(resp);
-            Map<String, Object> data = (Map<String, Object>) body.get("data");
-            java.util.List<?> intents = (java.util.List<?>) data.get("intents");
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            Map<String, Object> body = parseBody(resp); // GH-90000
+            Map<String, Object> data = (Map<String, Object>) body.get("data [GH-90000]");
+            java.util.List<?> intents = (java.util.List<?>) data.get("intents [GH-90000]");
 
-            for (Object intentObj : intents) {
-                Map<String, Object> intent = (Map<String, Object>) intentObj;
-                String sensitivity = (String) intent.get("sensitivity");
-                assertThat(sensitivity).isNotBlank();
+            for (Object intentObj : intents) { // GH-90000
+                Map<String, Object> intent = (Map<String, Object>) intentObj; // GH-90000
+                String sensitivity = (String) intent.get("sensitivity [GH-90000]");
+                assertThat(sensitivity).isNotBlank(); // GH-90000
                 // Sensitivity uses EndpointSensitivity enum values: PUBLIC, INTERNAL, SENSITIVE, CRITICAL
-                assertThat(sensitivity).isIn("PUBLIC", "INTERNAL", "SENSITIVE", "CRITICAL");
+                assertThat(sensitivity).isIn("PUBLIC", "INTERNAL", "SENSITIVE", "CRITICAL"); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("GET /api/v1/voice/intents returns HTTP 200 for successful catalog retrieval")
-        void intentsEndpoint_returns200ForSuccess() throws Exception {
-            for (int i = 0; i < 3; i++) {
-                HttpResponse<String> resp = get("/api/v1/voice/intents");
-                assertThat(resp.statusCode()).isEqualTo(200);
+        @DisplayName("GET /api/v1/voice/intents returns HTTP 200 for successful catalog retrieval [GH-90000]")
+        void intentsEndpoint_returns200ForSuccess() throws Exception { // GH-90000
+            for (int i = 0; i < 3; i++) { // GH-90000
+                HttpResponse<String> resp = get("/api/v1/voice/intents [GH-90000]");
+                assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             }
         }
     }
@@ -335,49 +335,49 @@ class VoiceErrorHandlingTest {
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> parseBody(HttpResponse<String> resp) throws Exception {
-        return mapper.readValue(resp.body(), Map.class);
+    @SuppressWarnings("unchecked [GH-90000]")
+    private Map<String, Object> parseBody(HttpResponse<String> resp) throws Exception { // GH-90000
+        return mapper.readValue(resp.body(), Map.class); // GH-90000
     }
 
-    private HttpResponse<String> get(String path) throws Exception {
-        return httpClient.send(
-            HttpRequest.newBuilder().GET()
-                .uri(URI.create("http://127.0.0.1:" + port + path))
-                .build(),
-            HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> get(String path) throws Exception { // GH-90000
+        return httpClient.send( // GH-90000
+            HttpRequest.newBuilder().GET() // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+                .build(), // GH-90000
+            HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private HttpResponse<String> post(String path, String jsonBody) throws Exception {
-        return postRaw(path, jsonBody);
+    private HttpResponse<String> post(String path, String jsonBody) throws Exception { // GH-90000
+        return postRaw(path, jsonBody); // GH-90000
     }
 
-    private HttpResponse<String> postRaw(String path, String body) throws Exception {
-        return httpClient.send(
-            HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .uri(URI.create("http://127.0.0.1:" + port + path))
-                .header("Content-Type", "application/json")
-                .build(),
-            HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> postRaw(String path, String body) throws Exception { // GH-90000
+        return httpClient.send( // GH-90000
+            HttpRequest.newBuilder() // GH-90000
+                .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+                .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+                .header("Content-Type", "application/json") // GH-90000
+                .build(), // GH-90000
+            HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private static int findFreePort() throws IOException {
-        try (ServerSocket ss = new ServerSocket(0)) {
-            return ss.getLocalPort();
+    private static int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
+            return ss.getLocalPort(); // GH-90000
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception {
-        long deadline = System.currentTimeMillis() + 5_000;
-        while (System.currentTimeMillis() < deadline) {
+    private static void waitForServerReady(int port) throws Exception { // GH-90000
+        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
+        while (System.currentTimeMillis() < deadline) { // GH-90000
             try {
-                new Socket("127.0.0.1", port).close();
+                new Socket("127.0.0.1", port).close(); // GH-90000
                 return;
-            } catch (IOException ignored) {
-                Thread.sleep(50);
+            } catch (IOException ignored) { // GH-90000
+                Thread.sleep(50); // GH-90000
             }
         }
-        throw new IllegalStateException("Server did not start on port " + port + " within 5 s");
+        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); // GH-90000
     }
 }

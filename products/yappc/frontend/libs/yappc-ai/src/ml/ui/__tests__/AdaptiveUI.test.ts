@@ -323,15 +323,13 @@ describe('AdaptiveUI', () => {
   describe('Auto-Adaptation', () => {
     it('should start auto-adaptation', () => {
       adaptiveUI.start();
-      // Should not throw
-      expect(true).toBe(true);
+      expect(adaptiveUI.getRules().length).toBeGreaterThan(0);
     });
 
     it('should stop auto-adaptation', () => {
       adaptiveUI.start();
       adaptiveUI.stop();
-      // Should not throw
-      expect(true).toBe(true);
+      expect(adaptiveUI.getRules().length).toBeGreaterThan(0);
     });
 
     it('should apply rules when context changes', () => {

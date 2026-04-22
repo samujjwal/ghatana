@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.sdk.documentation;
@@ -26,281 +26,281 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("SDK Documentation Tests")
-@Tag("documentation")
+@DisplayName("SDK Documentation Tests [GH-90000]")
+@Tag("documentation [GH-90000]")
 class SDKDocumentationTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
 
     @Test
-    @DisplayName("generated Java SDK has complete Javadoc comments")
-    void generatedJavaSdkHasCompleteJavadocComments() throws Exception {
-        String javaSource = Files.readString(generatedRoot()
-            .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
+    @DisplayName("generated Java SDK has complete Javadoc comments [GH-90000]")
+    void generatedJavaSdkHasCompleteJavadocComments() throws Exception { // GH-90000
+        String javaSource = Files.readString(generatedRoot() // GH-90000
+            .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java [GH-90000]"));
         
         // Verify class-level documentation
-        assertThat(javaSource).contains("/**");
-        assertThat(javaSource).contains("* Data Cloud Java SDK");
+        assertThat(javaSource).contains("/** [GH-90000]");
+        assertThat(javaSource).contains("* Data Cloud Java SDK [GH-90000]");
         
         // Verify method documentation for key methods
-        assertThat(javaSource).contains("public Map<String, Object> health()");
-        assertThat(javaSource).contains("/**")
-            .contains("* Health check endpoint")
-            .contains("* @return");
+        assertThat(javaSource).contains("public Map<String, Object> health() [GH-90000]");
+        assertThat(javaSource).contains("/** [GH-90000]")
+            .contains("* Health check endpoint [GH-90000]")
+            .contains("* @return [GH-90000]");
         
-        assertThat(javaSource).contains("createEntity");
-        assertThat(javaSource).contains("/**")
-            .contains("* Create a new entity")
-            .contains("* @param collection")
-            .contains("* @param payload")
-            .contains("* @return");
+        assertThat(javaSource).contains("createEntity [GH-90000]");
+        assertThat(javaSource).contains("/** [GH-90000]")
+            .contains("* Create a new entity [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param payload [GH-90000]")
+            .contains("* @return [GH-90000]");
         
-        assertThat(javaSource).contains("getEntity");
-        assertThat(javaSource).contains("/**")
-            .contains("* Get an entity by ID")
-            .contains("* @param collection")
-            .contains("* @param id")
-            .contains("* @return");
+        assertThat(javaSource).contains("getEntity [GH-90000]");
+        assertThat(javaSource).contains("/** [GH-90000]")
+            .contains("* Get an entity by ID [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param id [GH-90000]")
+            .contains("* @return [GH-90000]");
         
-        assertThat(javaSource).contains("queryEntities");
-        assertThat(javaSource).contains("/**")
-            .contains("* Query entities in a collection")
-            .contains("* @param collection")
-            .contains("* @param limit")
-            .contains("* @return");
+        assertThat(javaSource).contains("queryEntities [GH-90000]");
+        assertThat(javaSource).contains("/** [GH-90000]")
+            .contains("* Query entities in a collection [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param limit [GH-90000]")
+            .contains("* @return [GH-90000]");
         
-        assertThat(javaSource).contains("deleteEntity");
-        assertThat(javaSource).contains("/**")
-            .contains("* Delete an entity by ID")
-            .contains("* @param collection")
-            .contains("* @param id")
-            .contains("* @return");
+        assertThat(javaSource).contains("deleteEntity [GH-90000]");
+        assertThat(javaSource).contains("/** [GH-90000]")
+            .contains("* Delete an entity by ID [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param id [GH-90000]")
+            .contains("* @return [GH-90000]");
     }
 
     @Test
-    @DisplayName("generated TypeScript SDK has complete TSDoc comments")
-    void generatedTypeScriptSdkHasCompleteTSDocComments() throws Exception {
-        String tsSource = Files.readString(generatedRoot().resolve("typescript/src/index.ts"));
+    @DisplayName("generated TypeScript SDK has complete TSDoc comments [GH-90000]")
+    void generatedTypeScriptSdkHasCompleteTSDocComments() throws Exception { // GH-90000
+        String tsSource = Files.readString(generatedRoot().resolve("typescript/src/index.ts [GH-90000]"));
         
         // Verify class-level documentation
-        assertThat(tsSource).contains("/**");
-        assertThat(tsSource).contains("* Data Cloud TypeScript SDK");
+        assertThat(tsSource).contains("/** [GH-90000]");
+        assertThat(tsSource).contains("* Data Cloud TypeScript SDK [GH-90000]");
         
         // Verify method documentation
-        assertThat(tsSource).contains("health()");
-        assertThat(tsSource).contains("/**")
-            .contains("* Health check endpoint")
-            .contains("* @returns");
+        assertThat(tsSource).contains("health() [GH-90000]");
+        assertThat(tsSource).contains("/** [GH-90000]")
+            .contains("* Health check endpoint [GH-90000]")
+            .contains("* @returns [GH-90000]");
         
-        assertThat(tsSource).contains("createEntity");
-        assertThat(tsSource).contains("/**")
-            .contains("* Create a new entity")
-            .contains("* @param collection")
-            .contains("* @param payload")
-            .contains("* @returns");
+        assertThat(tsSource).contains("createEntity [GH-90000]");
+        assertThat(tsSource).contains("/** [GH-90000]")
+            .contains("* Create a new entity [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param payload [GH-90000]")
+            .contains("* @returns [GH-90000]");
         
-        assertThat(tsSource).contains("getEntity");
-        assertThat(tsSource).contains("/**")
-            .contains("* Get an entity by ID")
-            .contains("* @param collection")
-            .contains("* @param id")
-            .contains("* @returns");
+        assertThat(tsSource).contains("getEntity [GH-90000]");
+        assertThat(tsSource).contains("/** [GH-90000]")
+            .contains("* Get an entity by ID [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param id [GH-90000]")
+            .contains("* @returns [GH-90000]");
         
-        assertThat(tsSource).contains("queryEntities");
-        assertThat(tsSource).contains("/**")
-            .contains("* Query entities in a collection")
-            .contains("* @param collection")
-            .contains("* @param limit")
-            .contains("* @returns");
+        assertThat(tsSource).contains("queryEntities [GH-90000]");
+        assertThat(tsSource).contains("/** [GH-90000]")
+            .contains("* Query entities in a collection [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param limit [GH-90000]")
+            .contains("* @returns [GH-90000]");
         
-        assertThat(tsSource).contains("deleteEntity");
-        assertThat(tsSource).contains("/**")
-            .contains("* Delete an entity by ID")
-            .contains("* @param collection")
-            .contains("* @param id")
-            .contains("* @returns");
+        assertThat(tsSource).contains("deleteEntity [GH-90000]");
+        assertThat(tsSource).contains("/** [GH-90000]")
+            .contains("* Delete an entity by ID [GH-90000]")
+            .contains("* @param collection [GH-90000]")
+            .contains("* @param id [GH-90000]")
+            .contains("* @returns [GH-90000]");
     }
 
     @Test
-    @DisplayName("generated Python SDK has complete docstrings")
-    void generatedPythonSdkHasCompleteDocstrings() throws Exception {
-        String pythonSource = Files.readString(generatedRoot().resolve("python/datacloud_sdk/client.py"));
+    @DisplayName("generated Python SDK has complete docstrings [GH-90000]")
+    void generatedPythonSdkHasCompleteDocstrings() throws Exception { // GH-90000
+        String pythonSource = Files.readString(generatedRoot().resolve("python/datacloud_sdk/client.py [GH-90000]"));
         
         // Verify class-level documentation
-        assertThat(pythonSource).contains("\"\"\"");
-        assertThat(pythonSource).contains("Data Cloud Python SDK");
+        assertThat(pythonSource).contains("\"\"\""); // GH-90000
+        assertThat(pythonSource).contains("Data Cloud Python SDK [GH-90000]");
         
         // Verify method documentation
-        assertThat(pythonSource).contains("def health(self)");
-        assertThat(pythonSource).contains("\"\"\"")
-            .contains("Health check endpoint")
-            .contains(":return");
+        assertThat(pythonSource).contains("def health(self) [GH-90000]");
+        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+            .contains("Health check endpoint [GH-90000]")
+            .contains(":return [GH-90000]");
         
-        assertThat(pythonSource).contains("def create_entity");
-        assertThat(pythonSource).contains("\"\"\"")
-            .contains("Create a new entity")
-            .contains(":param collection")
-            .contains(":param payload")
-            .contains(":return");
+        assertThat(pythonSource).contains("def create_entity [GH-90000]");
+        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+            .contains("Create a new entity [GH-90000]")
+            .contains(":param collection [GH-90000]")
+            .contains(":param payload [GH-90000]")
+            .contains(":return [GH-90000]");
         
-        assertThat(pythonSource).contains("def get_entity");
-        assertThat(pythonSource).contains("\"\"\"")
-            .contains("Get an entity by ID")
-            .contains(":param collection")
-            .contains(":param id")
-            .contains(":return");
+        assertThat(pythonSource).contains("def get_entity [GH-90000]");
+        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+            .contains("Get an entity by ID [GH-90000]")
+            .contains(":param collection [GH-90000]")
+            .contains(":param id [GH-90000]")
+            .contains(":return [GH-90000]");
         
-        assertThat(pythonSource).contains("def query_entities");
-        assertThat(pythonSource).contains("\"\"\"")
-            .contains("Query entities in a collection")
-            .contains(":param collection")
-            .contains(":param limit")
-            .contains(":return");
+        assertThat(pythonSource).contains("def query_entities [GH-90000]");
+        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+            .contains("Query entities in a collection [GH-90000]")
+            .contains(":param collection [GH-90000]")
+            .contains(":param limit [GH-90000]")
+            .contains(":return [GH-90000]");
         
-        assertThat(pythonSource).contains("def delete_entity");
-        assertThat(pythonSource).contains("\"\"\"")
-            .contains("Delete an entity by ID")
-            .contains(":param collection")
-            .contains(":param id")
-            .contains(":return");
+        assertThat(pythonSource).contains("def delete_entity [GH-90000]");
+        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+            .contains("Delete an entity by ID [GH-90000]")
+            .contains(":param collection [GH-90000]")
+            .contains(":param id [GH-90000]")
+            .contains(":return [GH-90000]");
     }
 
     @Test
-    @DisplayName("metadata includes documentation for all documented endpoints")
-    void metadataIncludesDocumentationForAllDocumentedEndpoints() throws Exception {
-        Map<String, Object> metadata = objectMapper.readValue(
-            Files.readString(generatedRoot().resolve("metadata.json")),
-            new TypeReference<>() { }
+    @DisplayName("metadata includes documentation for all documented endpoints [GH-90000]")
+    void metadataIncludesDocumentationForAllDocumentedEndpoints() throws Exception { // GH-90000
+        Map<String, Object> metadata = objectMapper.readValue( // GH-90000
+            Files.readString(generatedRoot().resolve("metadata.json [GH-90000]")),
+            new TypeReference<>() { } // GH-90000
         );
         
-        Object documentedPaths = metadata.get("documentedPaths");
-        assertThat(documentedPaths).isInstanceOf(List.class);
+        Object documentedPaths = metadata.get("documentedPaths [GH-90000]");
+        assertThat(documentedPaths).isInstanceOf(List.class); // GH-90000
         
-        List<String> paths = asStringList(documentedPaths);
+        List<String> paths = asStringList(documentedPaths); // GH-90000
         
         // Verify core endpoints are documented
-        assertThat(paths).contains("/health");
-        assertThat(paths).contains("/api/v1/entities/{collection}");
-        assertThat(paths).contains("/api/v1/entities/{collection}/{id}");
+        assertThat(paths).contains("/health [GH-90000]");
+        assertThat(paths).contains("/api/v1/entities/{collection} [GH-90000]");
+        assertThat(paths).contains("/api/v1/entities/{collection}/{id} [GH-90000]");
     }
 
     @Test
-    @DisplayName("metadata includes SDK version and compatibility information")
-    void metadataIncludesSdkVersionAndCompatibilityInformation() throws Exception {
-        Map<String, Object> metadata = objectMapper.readValue(
-            Files.readString(generatedRoot().resolve("metadata.json")),
-            new TypeReference<>() { }
+    @DisplayName("metadata includes SDK version and compatibility information [GH-90000]")
+    void metadataIncludesSdkVersionAndCompatibilityInformation() throws Exception { // GH-90000
+        Map<String, Object> metadata = objectMapper.readValue( // GH-90000
+            Files.readString(generatedRoot().resolve("metadata.json [GH-90000]")),
+            new TypeReference<>() { } // GH-90000
         );
         
-        assertThat(metadata).containsKey("title");
-        assertThat(metadata).containsKey("version");
-        assertThat(metadata).containsKey("generatedAt");
-        assertThat(metadata.get("title")).isEqualTo("Data-Cloud Platform API");
-        assertThat(metadata.get("version")).isInstanceOf(String.class);
-        assertThat(metadata.get("generatedAt")).isInstanceOf(String.class);
+        assertThat(metadata).containsKey("title [GH-90000]");
+        assertThat(metadata).containsKey("version [GH-90000]");
+        assertThat(metadata).containsKey("generatedAt [GH-90000]");
+        assertThat(metadata.get("title [GH-90000]")).isEqualTo("Data-Cloud Platform API [GH-90000]");
+        assertThat(metadata.get("version [GH-90000]")).isInstanceOf(String.class);
+        assertThat(metadata.get("generatedAt [GH-90000]")).isInstanceOf(String.class);
     }
 
     @Test
-    @DisplayName("generated SDKs include README or usage documentation")
-    void generatedSdksIncludeReadmeOrUsageDocumentation() throws Exception {
+    @DisplayName("generated SDKs include README or usage documentation [GH-90000]")
+    void generatedSdksIncludeReadmeOrUsageDocumentation() throws Exception { // GH-90000
         // Check for README files
-        boolean hasJavaReadme = Files.exists(generatedRoot().resolve("java/README.md"));
-        boolean hasTsReadme = Files.exists(generatedRoot().resolve("typescript/README.md"));
-        boolean hasPythonReadme = Files.exists(generatedRoot().resolve("python/README.md"));
+        boolean hasJavaReadme = Files.exists(generatedRoot().resolve("java/README.md [GH-90000]"));
+        boolean hasTsReadme = Files.exists(generatedRoot().resolve("typescript/README.md [GH-90000]"));
+        boolean hasPythonReadme = Files.exists(generatedRoot().resolve("python/README.md [GH-90000]"));
         
         // At least one README should exist
-        assertThat(hasJavaReadme || hasTsReadme || hasPythonReadme).isTrue();
+        assertThat(hasJavaReadme || hasTsReadme || hasPythonReadme).isTrue(); // GH-90000
         
         // If README exists, verify it contains usage examples
-        if (hasJavaReadme) {
-            String javaReadme = Files.readString(generatedRoot().resolve("java/README.md"));
-            assertThat(javaReadme).contains("Usage")
-                .contains("DataCloudJavaSdk")
-                .contains("health()");
+        if (hasJavaReadme) { // GH-90000
+            String javaReadme = Files.readString(generatedRoot().resolve("java/README.md [GH-90000]"));
+            assertThat(javaReadme).contains("Usage [GH-90000]")
+                .contains("DataCloudJavaSdk [GH-90000]")
+                .contains("health() [GH-90000]");
         }
         
-        if (hasTsReadme) {
-            String tsReadme = Files.readString(generatedRoot().resolve("typescript/README.md"));
-            assertThat(tsReadme).contains("Usage")
-                .contains("DataCloudTypeScriptSdk")
-                .contains("health()");
+        if (hasTsReadme) { // GH-90000
+            String tsReadme = Files.readString(generatedRoot().resolve("typescript/README.md [GH-90000]"));
+            assertThat(tsReadme).contains("Usage [GH-90000]")
+                .contains("DataCloudTypeScriptSdk [GH-90000]")
+                .contains("health() [GH-90000]");
         }
         
-        if (hasPythonReadme) {
-            String pythonReadme = Files.readString(generatedRoot().resolve("python/README.md"));
-            assertThat(pythonReadme).contains("Usage")
-                .contains("DataCloudPythonSdk")
-                .contains("health()");
+        if (hasPythonReadme) { // GH-90000
+            String pythonReadme = Files.readString(generatedRoot().resolve("python/README.md [GH-90000]"));
+            assertThat(pythonReadme).contains("Usage [GH-90000]")
+                .contains("DataCloudPythonSdk [GH-90000]")
+                .contains("health() [GH-90000]");
         }
     }
 
     @Test
-    @DisplayName("generated SDKs include example code snippets")
-    void generatedSdksIncludeExampleCodeSnippets() throws Exception {
+    @DisplayName("generated SDKs include example code snippets [GH-90000]")
+    void generatedSdksIncludeExampleCodeSnippets() throws Exception { // GH-90000
         // Check for example files
-        boolean hasJavaExamples = Files.exists(generatedRoot().resolve("java/examples/Example.java"));
-        boolean hasTsExamples = Files.exists(generatedRoot().resolve("typescript/examples/example.ts"));
-        boolean hasPythonExamples = Files.exists(generatedRoot().resolve("python/examples/example.py"));
+        boolean hasJavaExamples = Files.exists(generatedRoot().resolve("java/examples/Example.java [GH-90000]"));
+        boolean hasTsExamples = Files.exists(generatedRoot().resolve("typescript/examples/example.ts [GH-90000]"));
+        boolean hasPythonExamples = Files.exists(generatedRoot().resolve("python/examples/example.py [GH-90000]"));
         
         // At least one example should exist
-        assertThat(hasJavaExamples || hasTsExamples || hasPythonExamples).isTrue();
+        assertThat(hasJavaExamples || hasTsExamples || hasPythonExamples).isTrue(); // GH-90000
         
         // If example exists, verify it demonstrates SDK usage
-        if (hasJavaExamples) {
-            String javaExample = Files.readString(generatedRoot().resolve("java/examples/Example.java"));
-            assertThat(javaExample).contains("DataCloudJavaSdk")
-                .contains(".health()")
-                .contains(".createEntity")
-                .contains(".getEntity");
+        if (hasJavaExamples) { // GH-90000
+            String javaExample = Files.readString(generatedRoot().resolve("java/examples/Example.java [GH-90000]"));
+            assertThat(javaExample).contains("DataCloudJavaSdk [GH-90000]")
+                .contains(".health() [GH-90000]")
+                .contains(".createEntity [GH-90000]")
+                .contains(".getEntity [GH-90000]");
         }
         
-        if (hasTsExamples) {
-            String tsExample = Files.readString(generatedRoot().resolve("typescript/examples/example.ts"));
-            assertThat(tsExample).contains("DataCloudTypeScriptSdk")
-                .contains(".health()")
-                .contains(".createEntity")
-                .contains(".getEntity");
+        if (hasTsExamples) { // GH-90000
+            String tsExample = Files.readString(generatedRoot().resolve("typescript/examples/example.ts [GH-90000]"));
+            assertThat(tsExample).contains("DataCloudTypeScriptSdk [GH-90000]")
+                .contains(".health() [GH-90000]")
+                .contains(".createEntity [GH-90000]")
+                .contains(".getEntity [GH-90000]");
         }
         
-        if (hasPythonExamples) {
-            String pythonExample = Files.readString(generatedRoot().resolve("python/examples/example.py"));
-            assertThat(pythonExample).contains("DataCloudPythonSdk")
-                .contains(".health()")
-                .contains(".create_entity")
-                .contains(".get_entity");
+        if (hasPythonExamples) { // GH-90000
+            String pythonExample = Files.readString(generatedRoot().resolve("python/examples/example.py [GH-90000]"));
+            assertThat(pythonExample).contains("DataCloudPythonSdk [GH-90000]")
+                .contains(".health() [GH-90000]")
+                .contains(".create_entity [GH-90000]")
+                .contains(".get_entity [GH-90000]");
         }
     }
 
     @Test
-    @DisplayName("documentation includes error handling examples")
-    void documentationIncludesErrorHandlingExamples() throws Exception {
-        String javaSource = Files.readString(generatedRoot()
-            .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
+    @DisplayName("documentation includes error handling examples [GH-90000]")
+    void documentationIncludesErrorHandlingExamples() throws Exception { // GH-90000
+        String javaSource = Files.readString(generatedRoot() // GH-90000
+            .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java [GH-90000]"));
         
         // Verify error handling is documented
-        assertThat(javaSource).contains("@throws")
-            .contains("RuntimeException")
-            .contains("IOException");
+        assertThat(javaSource).contains("@throws [GH-90000]")
+            .contains("RuntimeException [GH-90000]")
+            .contains("IOException [GH-90000]");
     }
 
     @Test
-    @DisplayName("documentation includes authentication and tenant information")
-    void documentationIncludesAuthenticationAndTenantInformation() throws Exception {
-        String javaSource = Files.readString(generatedRoot()
-            .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
+    @DisplayName("documentation includes authentication and tenant information [GH-90000]")
+    void documentationIncludesAuthenticationAndTenantInformation() throws Exception { // GH-90000
+        String javaSource = Files.readString(generatedRoot() // GH-90000
+            .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java [GH-90000]"));
         
         // Verify constructor documents authentication parameters
-        assertThat(javaSource).contains("public DataCloudJavaSdk")
-            .contains("baseUrl")
-            .contains("tenantId");
+        assertThat(javaSource).contains("public DataCloudJavaSdk [GH-90000]")
+            .contains("baseUrl [GH-90000]")
+            .contains("tenantId [GH-90000]");
     }
 
-    private Path generatedRoot() {
-        return Path.of(System.getProperty("datacloud.sdk.generatedRoot"));
+    private Path generatedRoot() { // GH-90000
+        return Path.of(System.getProperty("datacloud.sdk.generatedRoot [GH-90000]"));
     }
 
-    @SuppressWarnings("unchecked")
-    private List<String> asStringList(Object value) {
-        return (List<String>) value;
+    @SuppressWarnings("unchecked [GH-90000]")
+    private List<String> asStringList(Object value) { // GH-90000
+        return (List<String>) value; // GH-90000
     }
 }

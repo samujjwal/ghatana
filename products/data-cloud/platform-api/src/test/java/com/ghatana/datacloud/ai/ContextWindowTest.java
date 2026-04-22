@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.ai;
@@ -22,287 +22,287 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for context window management (AI005).
+ * Tests for context window management (AI005). // GH-90000
  *
  * @doc.type class
  * @doc.purpose Context window management tests
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("ContextWindow – Context Management (AI005)")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("ContextWindow – Context Management (AI005) [GH-90000]")
 class ContextWindowTest extends EventloopTestBase {
 
     @Mock
     private ContextWindowManager contextManager;
 
     @Nested
-    @DisplayName("Context Window Retrieval")
+    @DisplayName("Context Window Retrieval [GH-90000]")
     class ContextWindowRetrievalTests {
 
         @Test
-        @DisplayName("[AI005]: get_context_window_returns_window")
-        void getContextWindowReturnsWindow() {
+        @DisplayName("[AI005]: get_context_window_returns_window [GH-90000]")
+        void getContextWindowReturnsWindow() { // GH-90000
             String conversationId = "conv-001";
 
-            List<ContextWindowManager.ContextContent> contents = List.of(
-                new ContextWindowManager.ContextContent(
+            List<ContextWindowManager.ContextContent> contents = List.of( // GH-90000
+                new ContextWindowManager.ContextContent( // GH-90000
                     "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE,
-                    "Hello", 5, 1.0, Instant.now(), Map.of()
+                    "Hello", 5, 1.0, Instant.now(), Map.of() // GH-90000
                 ),
-                new ContextWindowManager.ContextContent(
+                new ContextWindowManager.ContextContent( // GH-90000
                     "c2", ContextWindowManager.ContextContent.ContentType.ASSISTANT_MESSAGE,
-                    "Hi!", 5, 1.0, Instant.now(), Map.of()
+                    "Hi!", 5, 1.0, Instant.now(), Map.of() // GH-90000
                 )
             );
 
-            ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow(
+            ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow( // GH-90000
                 conversationId, contents, 10, 4000, false,
-                Instant.now(), Instant.now()
+                Instant.now(), Instant.now() // GH-90000
             );
 
-            when(contextManager.getContextWindow(conversationId))
-                .thenReturn(Promise.of(window));
+            when(contextManager.getContextWindow(conversationId)) // GH-90000
+                .thenReturn(Promise.of(window)); // GH-90000
 
-            ContextWindowManager.ContextWindow result = runPromise(() ->
-                contextManager.getContextWindow(conversationId)
+            ContextWindowManager.ContextWindow result = runPromise(() -> // GH-90000
+                contextManager.getContextWindow(conversationId) // GH-90000
             );
 
-            assertThat(result.conversationId()).isEqualTo(conversationId);
-            assertThat(result.contents()).hasSize(2);
-            assertThat(result.totalTokens()).isEqualTo(10);
-            assertThat(result.isWithinLimits()).isTrue();
+            assertThat(result.conversationId()).isEqualTo(conversationId); // GH-90000
+            assertThat(result.contents()).hasSize(2); // GH-90000
+            assertThat(result.totalTokens()).isEqualTo(10); // GH-90000
+            assertThat(result.isWithinLimits()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Content Management")
+    @DisplayName("Content Management [GH-90000]")
     class ContentManagementTests {
 
         @Test
-        @DisplayName("[AI005]: add_content_increases_window")
-        void addContentIncreasesWindow() {
+        @DisplayName("[AI005]: add_content_increases_window [GH-90000]")
+        void addContentIncreasesWindow() { // GH-90000
             String conversationId = "conv-001";
-            ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent(
+            ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent( // GH-90000
                 "c3", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE,
-                "New message", 8, 1.0, Instant.now(), Map.of()
+                "New message", 8, 1.0, Instant.now(), Map.of() // GH-90000
             );
 
-            List<ContextWindowManager.ContextContent> contents = List.of(
-                new ContextWindowManager.ContextContent(
-                    "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE, "Hello", 5, 1.0, Instant.now(), Map.of()
+            List<ContextWindowManager.ContextContent> contents = List.of( // GH-90000
+                new ContextWindowManager.ContextContent( // GH-90000
+                    "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE, "Hello", 5, 1.0, Instant.now(), Map.of() // GH-90000
                 ),
                 content
             );
 
-            ContextWindowManager.ContextWindow updated = new ContextWindowManager.ContextWindow(
-                conversationId, contents, 13, 4000, false, Instant.now(), Instant.now()
+            ContextWindowManager.ContextWindow updated = new ContextWindowManager.ContextWindow( // GH-90000
+                conversationId, contents, 13, 4000, false, Instant.now(), Instant.now() // GH-90000
             );
 
-            when(contextManager.addContent(conversationId, content))
-                .thenReturn(Promise.of(updated));
+            when(contextManager.addContent(conversationId, content)) // GH-90000
+                .thenReturn(Promise.of(updated)); // GH-90000
 
-            ContextWindowManager.ContextWindow result = runPromise(() ->
-                contextManager.addContent(conversationId, content)
+            ContextWindowManager.ContextWindow result = runPromise(() -> // GH-90000
+                contextManager.addContent(conversationId, content) // GH-90000
             );
 
-            assertThat(result.totalTokens()).isEqualTo(13);
+            assertThat(result.totalTokens()).isEqualTo(13); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI005]: clear_removes_all_content")
-        void clearRemovesAllContent() {
+        @DisplayName("[AI005]: clear_removes_all_content [GH-90000]")
+        void clearRemovesAllContent() { // GH-90000
             String conversationId = "conv-001";
 
-            when(contextManager.clear(conversationId))
-                .thenReturn(Promise.of((Void) null));
+            when(contextManager.clear(conversationId)) // GH-90000
+                .thenReturn(Promise.of((Void) null)); // GH-90000
 
-            runPromise(() -> contextManager.clear(conversationId));
+            runPromise(() -> contextManager.clear(conversationId)); // GH-90000
 
-            verify(contextManager).clear(conversationId);
+            verify(contextManager).clear(conversationId); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Context Trimming")
+    @DisplayName("Context Trimming [GH-90000]")
     class ContextTrimmingTests {
 
         @Test
-        @DisplayName("[AI005]: trim_to_fit_reduces_tokens")
-        void trimToFitReducesTokens() {
+        @DisplayName("[AI005]: trim_to_fit_reduces_tokens [GH-90000]")
+        void trimToFitReducesTokens() { // GH-90000
             String conversationId = "conv-large";
             int maxTokens = 1000;
 
-            List<ContextWindowManager.ContextContent> trimmedContents = List.of(
-                new ContextWindowManager.ContextContent(
-                    "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE, "Recent", 50, 1.0, Instant.now(), Map.of()
+            List<ContextWindowManager.ContextContent> trimmedContents = List.of( // GH-90000
+                new ContextWindowManager.ContextContent( // GH-90000
+                    "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE, "Recent", 50, 1.0, Instant.now(), Map.of() // GH-90000
                 )
             );
 
-            ContextWindowManager.ContextWindow trimmed = new ContextWindowManager.ContextWindow(
+            ContextWindowManager.ContextWindow trimmed = new ContextWindowManager.ContextWindow( // GH-90000
                 conversationId, trimmedContents, 50, maxTokens, true,
-                Instant.now(), Instant.now()
+                Instant.now(), Instant.now() // GH-90000
             );
 
-            when(contextManager.trimToFit(conversationId, maxTokens))
-                .thenReturn(Promise.of(trimmed));
+            when(contextManager.trimToFit(conversationId, maxTokens)) // GH-90000
+                .thenReturn(Promise.of(trimmed)); // GH-90000
 
-            ContextWindowManager.ContextWindow result = runPromise(() ->
-                contextManager.trimToFit(conversationId, maxTokens)
+            ContextWindowManager.ContextWindow result = runPromise(() -> // GH-90000
+                contextManager.trimToFit(conversationId, maxTokens) // GH-90000
             );
 
-            assertThat(result.totalTokens()).isEqualTo(50);
-            assertThat(result.isTruncated()).isTrue();
-            assertThat(result.isWithinLimits()).isTrue();
+            assertThat(result.totalTokens()).isEqualTo(50); // GH-90000
+            assertThat(result.isTruncated()).isTrue(); // GH-90000
+            assertThat(result.isWithinLimits()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI005]: remaining_tokens_calculated_correctly")
-        void remainingTokensCalculatedCorrectly() {
-            ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow(
-                "conv-001", List.of(), 100, 4000, false, Instant.now(), Instant.now()
+        @DisplayName("[AI005]: remaining_tokens_calculated_correctly [GH-90000]")
+        void remainingTokensCalculatedCorrectly() { // GH-90000
+            ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow( // GH-90000
+                "conv-001", List.of(), 100, 4000, false, Instant.now(), Instant.now() // GH-90000
             );
 
-            assertThat(window.getRemainingTokens()).isEqualTo(3900);
-            assertThat(window.isWithinLimits()).isTrue();
+            assertThat(window.getRemainingTokens()).isEqualTo(3900); // GH-90000
+            assertThat(window.isWithinLimits()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI005]: over_limit_detected")
-        void overLimitDetected() {
-            ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow(
-                "conv-001", List.of(), 4500, 4000, true, Instant.now(), Instant.now()
+        @DisplayName("[AI005]: over_limit_detected [GH-90000]")
+        void overLimitDetected() { // GH-90000
+            ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow( // GH-90000
+                "conv-001", List.of(), 4500, 4000, true, Instant.now(), Instant.now() // GH-90000
             );
 
-            assertThat(window.isWithinLimits()).isFalse();
-            assertThat(window.getRemainingTokens()).isZero();
+            assertThat(window.isWithinLimits()).isFalse(); // GH-90000
+            assertThat(window.getRemainingTokens()).isZero(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Context Summarization")
+    @DisplayName("Context Summarization [GH-90000]")
     class ContextSummarizationTests {
 
         @Test
-        @DisplayName("[AI005]: summarize_compresses_context")
-        void summarizeCompressesContext() {
+        @DisplayName("[AI005]: summarize_compresses_context [GH-90000]")
+        void summarizeCompressesContext() { // GH-90000
             String conversationId = "conv-001";
 
-            ContextWindowManager.ContextSummary summary = new ContextWindowManager.ContextSummary(
+            ContextWindowManager.ContextSummary summary = new ContextWindowManager.ContextSummary( // GH-90000
                 conversationId,
                 "User asked about sales data and received results showing Q1 performance.",
                 500, 100, 0.2,
-                List.of("Sales query", "Q1 results", "Positive growth"),
-                Instant.now()
+                List.of("Sales query", "Q1 results", "Positive growth"), // GH-90000
+                Instant.now() // GH-90000
             );
 
-            when(contextManager.summarize(conversationId))
-                .thenReturn(Promise.of(summary));
+            when(contextManager.summarize(conversationId)) // GH-90000
+                .thenReturn(Promise.of(summary)); // GH-90000
 
-            ContextWindowManager.ContextSummary result = runPromise(() ->
-                contextManager.summarize(conversationId)
+            ContextWindowManager.ContextSummary result = runPromise(() -> // GH-90000
+                contextManager.summarize(conversationId) // GH-90000
             );
 
-            assertThat(result.originalTokens()).isEqualTo(500);
-            assertThat(result.summaryTokens()).isEqualTo(100);
-            assertThat(result.compressionRatio()).isEqualTo(0.2);
-            assertThat(result.keyPoints()).hasSize(3);
+            assertThat(result.originalTokens()).isEqualTo(500); // GH-90000
+            assertThat(result.summaryTokens()).isEqualTo(100); // GH-90000
+            assertThat(result.compressionRatio()).isEqualTo(0.2); // GH-90000
+            assertThat(result.keyPoints()).hasSize(3); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI005]: compression_ratio_calculated")
-        void compressionRatioCalculated() {
-            ContextWindowManager.ContextSummary summary = new ContextWindowManager.ContextSummary(
-                "conv-001", "Summary", 1000, 250, 0.25, List.of(), Instant.now()
+        @DisplayName("[AI005]: compression_ratio_calculated [GH-90000]")
+        void compressionRatioCalculated() { // GH-90000
+            ContextWindowManager.ContextSummary summary = new ContextWindowManager.ContextSummary( // GH-90000
+                "conv-001", "Summary", 1000, 250, 0.25, List.of(), Instant.now() // GH-90000
             );
 
-            assertThat(summary.getCompressionRatio()).isEqualTo(0.25);
+            assertThat(summary.getCompressionRatio()).isEqualTo(0.25); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Token Usage")
+    @DisplayName("Token Usage [GH-90000]")
     class TokenUsageTests {
 
         @Test
-        @DisplayName("[AI005]: get_token_usage_returns_stats")
-        void getTokenUsageReturnsStats() {
+        @DisplayName("[AI005]: get_token_usage_returns_stats [GH-90000]")
+        void getTokenUsageReturnsStats() { // GH-90000
             String conversationId = "conv-001";
 
-            List<ContextWindowManager.UsageByMessage> usageByMessage = List.of(
-                new ContextWindowManager.UsageByMessage("m1", 50, ContextWindowManager.ContentType.USER_MESSAGE, Instant.now()),
-                new ContextWindowManager.UsageByMessage("m2", 100, ContextWindowManager.ContentType.ASSISTANT_MESSAGE, Instant.now())
+            List<ContextWindowManager.UsageByMessage> usageByMessage = List.of( // GH-90000
+                new ContextWindowManager.UsageByMessage("m1", 50, ContextWindowManager.ContentType.USER_MESSAGE, Instant.now()), // GH-90000
+                new ContextWindowManager.UsageByMessage("m2", 100, ContextWindowManager.ContentType.ASSISTANT_MESSAGE, Instant.now()) // GH-90000
             );
 
-            ContextWindowManager.TokenUsage usage = new ContextWindowManager.TokenUsage(
+            ContextWindowManager.TokenUsage usage = new ContextWindowManager.TokenUsage( // GH-90000
                 conversationId, 150, 50, 100, 0, 3850, usageByMessage
             );
 
-            when(contextManager.getTokenUsage(conversationId))
-                .thenReturn(Promise.of(usage));
+            when(contextManager.getTokenUsage(conversationId)) // GH-90000
+                .thenReturn(Promise.of(usage)); // GH-90000
 
-            ContextWindowManager.TokenUsage result = runPromise(() ->
-                contextManager.getTokenUsage(conversationId)
+            ContextWindowManager.TokenUsage result = runPromise(() -> // GH-90000
+                contextManager.getTokenUsage(conversationId) // GH-90000
             );
 
-            assertThat(result.totalTokensUsed()).isEqualTo(150);
-            assertThat(result.userMessageTokens()).isEqualTo(50);
-            assertThat(result.assistantMessageTokens()).isEqualTo(100);
-            assertThat(result.availableTokens()).isEqualTo(3850);
+            assertThat(result.totalTokensUsed()).isEqualTo(150); // GH-90000
+            assertThat(result.userMessageTokens()).isEqualTo(50); // GH-90000
+            assertThat(result.assistantMessageTokens()).isEqualTo(100); // GH-90000
+            assertThat(result.availableTokens()).isEqualTo(3850); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Query Optimization")
+    @DisplayName("Query Optimization [GH-90000]")
     class QueryOptimizationTests {
 
         @Test
-        @DisplayName("[AI005]: optimize_for_query_prioritizes_relevant")
-        void optimizeForQueryPrioritizesRelevant() {
+        @DisplayName("[AI005]: optimize_for_query_prioritizes_relevant [GH-90000]")
+        void optimizeForQueryPrioritizesRelevant() { // GH-90000
             String conversationId = "conv-001";
             String query = "sales data";
 
-            List<ContextWindowManager.ContextContent> optimizedContents = List.of(
-                new ContextWindowManager.ContextContent(
+            List<ContextWindowManager.ContextContent> optimizedContents = List.of( // GH-90000
+                new ContextWindowManager.ContextContent( // GH-90000
                     "c1", ContextWindowManager.ContextContent.ContentType.QUERY_RESULT,
-                    "Sales: $100K", 20, 0.95, Instant.now(), Map.of("topic", "sales")
+                    "Sales: $100K", 20, 0.95, Instant.now(), Map.of("topic", "sales") // GH-90000
                 ),
-                new ContextWindowManager.ContextContent(
+                new ContextWindowManager.ContextContent( // GH-90000
                     "c2", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE,
-                    "Show sales", 10, 0.90, Instant.now(), Map.of()
+                    "Show sales", 10, 0.90, Instant.now(), Map.of() // GH-90000
                 )
             );
 
-            ContextWindowManager.ContextWindow optimized = new ContextWindowManager.ContextWindow(
+            ContextWindowManager.ContextWindow optimized = new ContextWindowManager.ContextWindow( // GH-90000
                 conversationId, optimizedContents, 30, 4000, false,
-                Instant.now(), Instant.now()
+                Instant.now(), Instant.now() // GH-90000
             );
 
-            when(contextManager.optimizeForQuery(conversationId, query))
-                .thenReturn(Promise.of(optimized));
+            when(contextManager.optimizeForQuery(conversationId, query)) // GH-90000
+                .thenReturn(Promise.of(optimized)); // GH-90000
 
-            ContextWindowManager.ContextWindow result = runPromise(() ->
-                contextManager.optimizeForQuery(conversationId, query)
+            ContextWindowManager.ContextWindow result = runPromise(() -> // GH-90000
+                contextManager.optimizeForQuery(conversationId, query) // GH-90000
             );
 
-            assertThat(result.contents()).hasSize(2);
-            assertThat(result.contents().get(0).relevanceScore()).isGreaterThan(0.9);
+            assertThat(result.contents()).hasSize(2); // GH-90000
+            assertThat(result.contents().get(0).relevanceScore()).isGreaterThan(0.9); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Content Types")
+    @DisplayName("Content Types [GH-90000]")
     class ContentTypesTests {
 
         @Test
-        @DisplayName("[AI005]: all_content_types_supported")
-        void allContentTypesSupported() {
-            for (ContextWindowManager.ContextContent.ContentType type : ContextWindowManager.ContextContent.ContentType.values()) {
-                ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent(
-                    "id", type, "content", 10, 1.0, Instant.now(), Map.of()
+        @DisplayName("[AI005]: all_content_types_supported [GH-90000]")
+        void allContentTypesSupported() { // GH-90000
+            for (ContextWindowManager.ContextContent.ContentType type : ContextWindowManager.ContextContent.ContentType.values()) { // GH-90000
+                ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent( // GH-90000
+                    "id", type, "content", 10, 1.0, Instant.now(), Map.of() // GH-90000
                 );
 
-                assertThat(content.type()).isEqualTo(type);
+                assertThat(content.type()).isEqualTo(type); // GH-90000
             }
         }
     }

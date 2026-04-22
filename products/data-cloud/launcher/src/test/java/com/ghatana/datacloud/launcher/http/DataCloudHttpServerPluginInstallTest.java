@@ -24,17 +24,17 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 /**
- * Integration tests for the plugin management HTTP endpoints (B6).
+ * Integration tests for the plugin management HTTP endpoints (B6). // GH-90000
  *
  * <p>Starts a real {@link DataCloudHttpServer} on a random port and issues HTTP requests via the
  * Java standard HttpClient. {@link StoragePluginRegistry} is mocked.
  *
  * @doc.type class
- * @doc.purpose Integration tests for /api/v1/plugins/** HTTP endpoints (B6)
+ * @doc.purpose Integration tests for /api/v1/plugins/** HTTP endpoints (B6) // GH-90000
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Plugin Management Endpoints (B6)")
+@DisplayName("DataCloudHttpServer – Plugin Management Endpoints (B6) [GH-90000]")
 class DataCloudHttpServerPluginInstallTest {
 
     private DataCloudClient mockClient;
@@ -42,151 +42,151 @@ class DataCloudHttpServerPluginInstallTest {
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     @BeforeEach
-    void setUp() throws Exception {
-        mockClient   = mock(DataCloudClient.class);
-        mockMetrics  = mock(MetricsCollector.class);
-        port         = findFreePort();
-        httpClient   = HttpClient.newBuilder().build();
-        lenient().doNothing().when(mockMetrics).incrementCounter(anyString(), anyString(), anyString());
+    void setUp() throws Exception { // GH-90000
+        mockClient   = mock(DataCloudClient.class); // GH-90000
+        mockMetrics  = mock(MetricsCollector.class); // GH-90000
+        port         = findFreePort(); // GH-90000
+        httpClient   = HttpClient.newBuilder().build(); // GH-90000
+        lenient().doNothing().when(mockMetrics).incrementCounter(anyString(), anyString(), anyString()); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) server.stop();
+    void tearDown() { // GH-90000
+        if (server != null) server.stop(); // GH-90000
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────
 
-    private void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-                .withMetricsCollector(mockMetrics);
+    private void startServer() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+                .withMetricsCollector(mockMetrics); // GH-90000
         // The built DataCloudHttpServer instantiates PluginInstallHandler with
-        // StoragePluginRegistry.getInstance() in buildHandlers(). We cannot
-        // inject our mock via the builder since no withPluginRegistry() method exists.
+        // StoragePluginRegistry.getInstance() in buildHandlers(). We cannot // GH-90000
+        // inject our mock via the builder since no withPluginRegistry() method exists. // GH-90000
         // Tests therefore validate routing and basic contracts using the real registry
-        // (which will be empty) and assert on response structure / status codes.
-        server.start();
-        waitForServerReady(port);
+        // (which will be empty) and assert on response structure / status codes. // GH-90000
+        server.start(); // GH-90000
+        waitForServerReady(port); // GH-90000
     }
 
-    private HttpResponse<String> get(String path) throws IOException, InterruptedException {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + path))
-                .header("X-Tenant-Id", "test-tenant")
-                .GET()
-                .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> get(String path) throws IOException, InterruptedException { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+                .uri(URI.create("http://localhost:" + port + path)) // GH-90000
+                .header("X-Tenant-Id", "test-tenant") // GH-90000
+                .GET() // GH-90000
+                .build(); // GH-90000
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private HttpResponse<String> post(String path) throws IOException, InterruptedException {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + path))
-                .header("X-Tenant-Id", "test-tenant")
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> post(String path) throws IOException, InterruptedException { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+                .uri(URI.create("http://localhost:" + port + path)) // GH-90000
+                .header("X-Tenant-Id", "test-tenant") // GH-90000
+                .POST(HttpRequest.BodyPublishers.noBody()) // GH-90000
+                .build(); // GH-90000
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private static int findFreePort() throws IOException {
-        try (ServerSocket s = new ServerSocket(0)) {
-            return s.getLocalPort();
+    private static int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket s = new ServerSocket(0)) { // GH-90000
+            return s.getLocalPort(); // GH-90000
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception {
-        for (int i = 0; i < 50; i++) {
-            try (Socket s = new Socket("localhost", port)) {
+    private static void waitForServerReady(int port) throws Exception { // GH-90000
+        for (int i = 0; i < 50; i++) { // GH-90000
+            try (Socket s = new Socket("localhost", port)) { // GH-90000
                 return;
-            } catch (IOException e) {
-                Thread.sleep(100);
+            } catch (IOException e) { // GH-90000
+                Thread.sleep(100); // GH-90000
             }
         }
-        throw new AssertionError("Server did not start on port " + port);
+        throw new AssertionError("Server did not start on port " + port); // GH-90000
     }
 
     // ─── tests ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/plugins")
+    @DisplayName("GET /api/v1/plugins [GH-90000]")
     class ListPluginsTests {
 
         @Test
-        @DisplayName("returns 200 with plugins array and total count")
-        void listPlugins_returns200WithPluginsArray() throws Exception {
-            startServer();
+        @DisplayName("returns 200 with plugins array and total count [GH-90000]")
+        void listPlugins_returns200WithPluginsArray() throws Exception { // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/plugins");
+            HttpResponse<String> response = get("/api/v1/plugins [GH-90000]");
 
-            assertThat(response.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-            assertThat(body).containsKeys("plugins", "total");
+            assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+            assertThat(body).containsKeys("plugins", "total"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("GET /api/v1/plugins/:id")
+    @DisplayName("GET /api/v1/plugins/:id [GH-90000]")
     class GetPluginTests {
 
         @Test
-        @DisplayName("returns 404 for an unknown plugin id")
-        void getPlugin_unknownId_returns404() throws Exception {
-            startServer();
+        @DisplayName("returns 404 for an unknown plugin id [GH-90000]")
+        void getPlugin_unknownId_returns404() throws Exception { // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/plugins/unknown-plugin-xyz");
+            HttpResponse<String> response = get("/api/v1/plugins/unknown-plugin-xyz [GH-90000]");
 
-            assertThat(response.statusCode()).isEqualTo(404);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-            assertThat(body).containsKey("error");
+            assertThat(response.statusCode()).isEqualTo(404); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+            assertThat(body).containsKey("error [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("POST /api/v1/plugins/:id/enable")
+    @DisplayName("POST /api/v1/plugins/:id/enable [GH-90000]")
     class EnablePluginTests {
 
         @Test
-        @DisplayName("returns 404 for an unknown plugin id")
-        void enablePlugin_unknownId_returns404() throws Exception {
-            startServer();
+        @DisplayName("returns 404 for an unknown plugin id [GH-90000]")
+        void enablePlugin_unknownId_returns404() throws Exception { // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/enable");
+            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/enable [GH-90000]");
 
-            assertThat(response.statusCode()).isEqualTo(404);
+            assertThat(response.statusCode()).isEqualTo(404); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("POST /api/v1/plugins/:id/disable")
+    @DisplayName("POST /api/v1/plugins/:id/disable [GH-90000]")
     class DisablePluginTests {
 
         @Test
-        @DisplayName("returns 404 for an unknown plugin id")
-        void disablePlugin_unknownId_returns404() throws Exception {
-            startServer();
+        @DisplayName("returns 404 for an unknown plugin id [GH-90000]")
+        void disablePlugin_unknownId_returns404() throws Exception { // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/disable");
+            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/disable [GH-90000]");
 
-            assertThat(response.statusCode()).isEqualTo(404);
+            assertThat(response.statusCode()).isEqualTo(404); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("POST /api/v1/plugins/:id/upgrade")
+    @DisplayName("POST /api/v1/plugins/:id/upgrade [GH-90000]")
     class UpgradePluginTests {
 
         @Test
-        @DisplayName("reloads runtime plugins without restarting the launcher")
-        void upgradePlugin_reloadRuntimePlugin() throws Exception {
-            startServer();
+        @DisplayName("reloads runtime plugins without restarting the launcher [GH-90000]")
+        void upgradePlugin_reloadRuntimePlugin() throws Exception { // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/plugins/workflow-execution/upgrade");
+            HttpResponse<String> response = post("/api/v1/plugins/workflow-execution/upgrade [GH-90000]");
 
-            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.incident;
@@ -18,35 +18,35 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer shared-service
  * @doc.pattern Test
  */
-@Tag("unit")
-@DisplayName("IncidentServiceLauncher — unit tests")
+@Tag("unit [GH-90000]")
+@DisplayName("IncidentServiceLauncher — unit tests [GH-90000]")
 class IncidentServiceLauncherTest {
 
     @Test
-    @DisplayName("errorJson creates valid JSON error response")
-    void errorJson_createsValidJsonError() {
-        String json = IncidentServiceLauncher.errorJson(400, "MISSING_TENANT_ID", "tenantId is required");
-        assertThat(json).contains("\"status\":400");
-        assertThat(json).contains("\"code\":\"MISSING_TENANT_ID\"");
-        assertThat(json).contains("\"message\":\"tenantId is required\"");
+    @DisplayName("errorJson creates valid JSON error response [GH-90000]")
+    void errorJson_createsValidJsonError() { // GH-90000
+        String json = IncidentServiceLauncher.errorJson(400, "MISSING_TENANT_ID", "tenantId is required"); // GH-90000
+        assertThat(json).contains("\"status\":400"); // GH-90000
+        assertThat(json).contains("\"code\":\"MISSING_TENANT_ID\""); // GH-90000
+        assertThat(json).contains("\"message\":\"tenantId is required\""); // GH-90000
     }
 
     @Test
-    @DisplayName("errorJson creates valid JSON error with details")
-    void errorJson_createsValidJsonErrorWithDetails() {
-        String json = IncidentServiceLauncher.errorJson(500, "INTERNAL_ERROR", "Failed to activate", "Database connection failed");
-        assertThat(json).contains("\"status\":500");
-        assertThat(json).contains("\"code\":\"INTERNAL_ERROR\"");
-        assertThat(json).contains("\"message\":\"Failed to activate\"");
-        assertThat(json).contains("\"details\":\"Database connection failed\"");
+    @DisplayName("errorJson creates valid JSON error with details [GH-90000]")
+    void errorJson_createsValidJsonErrorWithDetails() { // GH-90000
+        String json = IncidentServiceLauncher.errorJson(500, "INTERNAL_ERROR", "Failed to activate", "Database connection failed"); // GH-90000
+        assertThat(json).contains("\"status\":500"); // GH-90000
+        assertThat(json).contains("\"code\":\"INTERNAL_ERROR\""); // GH-90000
+        assertThat(json).contains("\"message\":\"Failed to activate\""); // GH-90000
+        assertThat(json).contains("\"details\":\"Database connection failed\""); // GH-90000
     }
 
     @Test
-    @DisplayName("errorJson handles special characters in message")
-    void errorJson_handlesSpecialCharacters() {
-        String json = IncidentServiceLauncher.errorJson(400, "INVALID_INPUT", "Field \"name\" contains invalid chars: <>&\"");
-        assertThat(json).contains("\"status\":400");
-        assertThat(json).contains("\"code\":\"INVALID_INPUT\"");
-        assertThat(json).contains("\"message\"");
+    @DisplayName("errorJson handles special characters in message [GH-90000]")
+    void errorJson_handlesSpecialCharacters() { // GH-90000
+        String json = IncidentServiceLauncher.errorJson(400, "INVALID_INPUT", "Field \"name\" contains invalid chars: <>&\""); // GH-90000
+        assertThat(json).contains("\"status\":400"); // GH-90000
+        assertThat(json).contains("\"code\":\"INVALID_INPUT\""); // GH-90000
+        assertThat(json).contains("\"message\""); // GH-90000
     }
 }

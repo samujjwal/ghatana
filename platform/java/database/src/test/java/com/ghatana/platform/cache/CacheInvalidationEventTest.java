@@ -16,54 +16,54 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern TestClass
  */
-@DisplayName("CacheInvalidationEvent Tests")
+@DisplayName("CacheInvalidationEvent Tests [GH-90000]")
 class CacheInvalidationEventTest {
 
     @Test
-    @DisplayName("ofKey creates single-key invalidation event")
-    void ofKeyCreatesSingleKeyEvent() {
-        CacheInvalidationEvent event = CacheInvalidationEvent.ofKey("finance.risk", "trader-1");
-        assertThat(event.namespace()).isEqualTo("finance.risk");
-        assertThat(event.key()).isEqualTo("trader-1");
-        assertThat(event.invalidateAll()).isFalse();
-        assertThat(event.triggeredAt()).isNotNull();
+    @DisplayName("ofKey creates single-key invalidation event [GH-90000]")
+    void ofKeyCreatesSingleKeyEvent() { // GH-90000
+        CacheInvalidationEvent event = CacheInvalidationEvent.ofKey("finance.risk", "trader-1"); // GH-90000
+        assertThat(event.namespace()).isEqualTo("finance.risk [GH-90000]");
+        assertThat(event.key()).isEqualTo("trader-1 [GH-90000]");
+        assertThat(event.invalidateAll()).isFalse(); // GH-90000
+        assertThat(event.triggeredAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("ofNamespace creates full-namespace invalidation event")
-    void ofNamespaceCreatesFullNamespaceEvent() {
-        CacheInvalidationEvent event = CacheInvalidationEvent.ofNamespace("phr.consent");
-        assertThat(event.namespace()).isEqualTo("phr.consent");
-        assertThat(event.key()).isNull();
-        assertThat(event.invalidateAll()).isTrue();
+    @DisplayName("ofNamespace creates full-namespace invalidation event [GH-90000]")
+    void ofNamespaceCreatesFullNamespaceEvent() { // GH-90000
+        CacheInvalidationEvent event = CacheInvalidationEvent.ofNamespace("phr.consent [GH-90000]");
+        assertThat(event.namespace()).isEqualTo("phr.consent [GH-90000]");
+        assertThat(event.key()).isNull(); // GH-90000
+        assertThat(event.invalidateAll()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("EVENT_TYPE constant is stable")
-    void eventTypeConstantIsStable() {
-        assertThat(CacheInvalidationEvent.EVENT_TYPE).isEqualTo("platform.cache.invalidation.v1");
+    @DisplayName("EVENT_TYPE constant is stable [GH-90000]")
+    void eventTypeConstantIsStable() { // GH-90000
+        assertThat(CacheInvalidationEvent.EVENT_TYPE).isEqualTo("platform.cache.invalidation.v1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("constructor rejects null namespace")
-    void constructorRejectsNullNamespace() {
-        assertThatThrownBy(() -> new CacheInvalidationEvent(null, "key", false, Instant.now()))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("constructor rejects null namespace [GH-90000]")
+    void constructorRejectsNullNamespace() { // GH-90000
+        assertThatThrownBy(() -> new CacheInvalidationEvent(null, "key", false, Instant.now())) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null triggeredAt")
-    void constructorRejectsNullTriggeredAt() {
-        assertThatThrownBy(() -> new CacheInvalidationEvent("ns", "key", false, null))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("constructor rejects null triggeredAt [GH-90000]")
+    void constructorRejectsNullTriggeredAt() { // GH-90000
+        assertThatThrownBy(() -> new CacheInvalidationEvent("ns", "key", false, null)) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("triggeredAt is recent for factory methods")
-    void triggeredAtIsRecentForFactoryMethods() {
-        Instant before = Instant.now();
-        CacheInvalidationEvent event = CacheInvalidationEvent.ofKey("ns", "k");
-        Instant after = Instant.now();
-        assertThat(event.triggeredAt()).isBetween(before, after);
+    @DisplayName("triggeredAt is recent for factory methods [GH-90000]")
+    void triggeredAtIsRecentForFactoryMethods() { // GH-90000
+        Instant before = Instant.now(); // GH-90000
+        CacheInvalidationEvent event = CacheInvalidationEvent.ofKey("ns", "k"); // GH-90000
+        Instant after = Instant.now(); // GH-90000
+        assertThat(event.triggeredAt()).isBetween(before, after); // GH-90000
     }
 }

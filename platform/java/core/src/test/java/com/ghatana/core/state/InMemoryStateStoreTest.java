@@ -16,109 +16,109 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("InMemoryStateStore — CRUD, null safety, size tracking")
+@DisplayName("InMemoryStateStore — CRUD, null safety, size tracking [GH-90000]")
 class InMemoryStateStoreTest extends EventloopTestBase {
 
     private InMemoryStateStore<String, String> store;
 
     @BeforeEach
-    void setUp() {
-        store = new InMemoryStateStore<>();
+    void setUp() { // GH-90000
+        store = new InMemoryStateStore<>(); // GH-90000
     }
 
     @Test
-    @DisplayName("get on empty store returns empty Optional")
-    void getOnEmptyStoreReturnsEmpty() {
-        Optional<String> result = runPromise(() -> store.get("missing"));
-        assertThat(result).isEmpty();
+    @DisplayName("get on empty store returns empty Optional [GH-90000]")
+    void getOnEmptyStoreReturnsEmpty() { // GH-90000
+        Optional<String> result = runPromise(() -> store.get("missing [GH-90000]"));
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("put then get returns the stored value")
-    void putThenGetReturnsValue() {
-        store.put("key1", "value1");
-        Optional<String> result = runPromise(() -> store.get("key1"));
-        assertThat(result).hasValue("value1");
+    @DisplayName("put then get returns the stored value [GH-90000]")
+    void putThenGetReturnsValue() { // GH-90000
+        store.put("key1", "value1"); // GH-90000
+        Optional<String> result = runPromise(() -> store.get("key1 [GH-90000]"));
+        assertThat(result).hasValue("value1 [GH-90000]");
     }
 
     @Test
-    @DisplayName("put overrides existing value")
-    void putOverridesExistingValue() {
-        store.put("key1", "first");
-        store.put("key1", "second");
-        Optional<String> result = runPromise(() -> store.get("key1"));
-        assertThat(result).hasValue("second");
+    @DisplayName("put overrides existing value [GH-90000]")
+    void putOverridesExistingValue() { // GH-90000
+        store.put("key1", "first"); // GH-90000
+        store.put("key1", "second"); // GH-90000
+        Optional<String> result = runPromise(() -> store.get("key1 [GH-90000]"));
+        assertThat(result).hasValue("second [GH-90000]");
     }
 
     @Test
-    @DisplayName("remove deletes the entry so subsequent get returns empty")
-    void removeDeletesEntry() {
-        store.put("key1", "value1");
-        store.remove("key1");
-        Optional<String> result = runPromise(() -> store.get("key1"));
-        assertThat(result).isEmpty();
+    @DisplayName("remove deletes the entry so subsequent get returns empty [GH-90000]")
+    void removeDeletesEntry() { // GH-90000
+        store.put("key1", "value1"); // GH-90000
+        store.remove("key1 [GH-90000]");
+        Optional<String> result = runPromise(() -> store.get("key1 [GH-90000]"));
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("remove on non-existent key is a no-op")
-    void removeOnMissingKeyIsNoOp() {
-        assertThatCode(() -> store.remove("ghost")).doesNotThrowAnyException();
+    @DisplayName("remove on non-existent key is a no-op [GH-90000]")
+    void removeOnMissingKeyIsNoOp() { // GH-90000
+        assertThatCode(() -> store.remove("ghost [GH-90000]")).doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("size reflects number of stored entries")
-    void sizeTracksEntryCount() {
-        assertThat(store.size()).isEqualTo(0);
-        store.put("a", "1");
-        store.put("b", "2");
-        assertThat(store.size()).isEqualTo(2);
-        store.remove("a");
-        assertThat(store.size()).isEqualTo(1);
+    @DisplayName("size reflects number of stored entries [GH-90000]")
+    void sizeTracksEntryCount() { // GH-90000
+        assertThat(store.size()).isEqualTo(0); // GH-90000
+        store.put("a", "1"); // GH-90000
+        store.put("b", "2"); // GH-90000
+        assertThat(store.size()).isEqualTo(2); // GH-90000
+        store.remove("a [GH-90000]");
+        assertThat(store.size()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("clear removes all entries")
-    void clearRemovesAllEntries() {
-        store.put("a", "1");
-        store.put("b", "2");
-        store.clear();
-        assertThat(store.size()).isEqualTo(0);
-        assertThat(runPromise(() -> store.get("a"))).isEmpty();
+    @DisplayName("clear removes all entries [GH-90000]")
+    void clearRemovesAllEntries() { // GH-90000
+        store.put("a", "1"); // GH-90000
+        store.put("b", "2"); // GH-90000
+        store.clear(); // GH-90000
+        assertThat(store.size()).isEqualTo(0); // GH-90000
+        assertThat(runPromise(() -> store.get("a [GH-90000]"))).isEmpty();
     }
 
     @Test
-    @DisplayName("put with null key throws NullPointerException")
-    void putWithNullKeyThrows() {
-        assertThatThrownBy(() -> store.put(null, "value"))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("key");
+    @DisplayName("put with null key throws NullPointerException [GH-90000]")
+    void putWithNullKeyThrows() { // GH-90000
+        assertThatThrownBy(() -> store.put(null, "value")) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("key [GH-90000]");
     }
 
     @Test
-    @DisplayName("put with null value stores null and get returns empty Optional")
-    void putWithNullValueStoresNull() {
+    @DisplayName("put with null value stores null and get returns empty Optional [GH-90000]")
+    void putWithNullValueStoresNull() { // GH-90000
         // ConcurrentHashMap does not allow null values - this is expected to throw
-        assertThatThrownBy(() -> store.put("key", null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> store.put("key", null)) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("get returns Promise wrapping Optional, not null")
-    void getReturnsNonNullPromise() {
-        Promise<Optional<String>> promise = store.get("anything");
-        assertThat(promise).isNotNull();
+    @DisplayName("get returns Promise wrapping Optional, not null [GH-90000]")
+    void getReturnsNonNullPromise() { // GH-90000
+        Promise<Optional<String>> promise = store.get("anything [GH-90000]");
+        assertThat(promise).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("multiple independent keys do not interfere")
-    void independentKeysDoNotInterfere() {
-        store.put("x", "10");
-        store.put("y", "20");
+    @DisplayName("multiple independent keys do not interfere [GH-90000]")
+    void independentKeysDoNotInterfere() { // GH-90000
+        store.put("x", "10"); // GH-90000
+        store.put("y", "20"); // GH-90000
 
-        Optional<String> x = runPromise(() -> store.get("x"));
-        Optional<String> y = runPromise(() -> store.get("y"));
+        Optional<String> x = runPromise(() -> store.get("x [GH-90000]"));
+        Optional<String> y = runPromise(() -> store.get("y [GH-90000]"));
 
-        assertThat(x).hasValue("10");
-        assertThat(y).hasValue("20");
+        assertThat(x).hasValue("10 [GH-90000]");
+        assertThat(y).hasValue("20 [GH-90000]");
     }
 }

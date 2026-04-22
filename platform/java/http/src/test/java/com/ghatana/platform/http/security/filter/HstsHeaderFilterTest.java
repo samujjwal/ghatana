@@ -16,98 +16,98 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("HstsHeaderFilter — HSTS header injection and configuration")
+@DisplayName("HstsHeaderFilter — HSTS header injection and configuration [GH-90000]")
 class HstsHeaderFilterTest extends EventloopTestBase {
 
-    private static AsyncServlet okServlet() {
-        return request -> Promise.of(HttpResponse.ok200().build());
+    private static AsyncServlet okServlet() { // GH-90000
+        return request -> Promise.of(HttpResponse.ok200().build()); // GH-90000
     }
 
     @Test
-    @DisplayName("default constructor uses 31536000 second max-age")
-    void defaultConstructorUsesOneYearMaxAge() {
-        HstsHeaderFilter filter = new HstsHeaderFilter();
-        AsyncServlet wrapped = filter.wrap(okServlet());
+    @DisplayName("default constructor uses 31536000 second max-age [GH-90000]")
+    void defaultConstructorUsesOneYearMaxAge() { // GH-90000
+        HstsHeaderFilter filter = new HstsHeaderFilter(); // GH-90000
+        AsyncServlet wrapped = filter.wrap(okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://example.com/").build();
-        HttpResponse response = runPromise(() -> wrapped.serve(request));
+        HttpRequest request = HttpRequest.get("http://example.com/ [GH-90000]").build();
+        HttpResponse response = runPromise(() -> wrapped.serve(request)); // GH-90000
 
-        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security"));
-        assertThat(sts).isNotNull();
-        assertThat(sts).contains("max-age=31536000");
+        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security [GH-90000]"));
+        assertThat(sts).isNotNull(); // GH-90000
+        assertThat(sts).contains("max-age=31536000 [GH-90000]");
     }
 
     @Test
-    @DisplayName("custom max-age appears in HSTS header value")
-    void customMaxAgeAppearsInHeader() {
-        HstsHeaderFilter filter = new HstsHeaderFilter(86400);
-        AsyncServlet wrapped = filter.wrap(okServlet());
+    @DisplayName("custom max-age appears in HSTS header value [GH-90000]")
+    void customMaxAgeAppearsInHeader() { // GH-90000
+        HstsHeaderFilter filter = new HstsHeaderFilter(86400); // GH-90000
+        AsyncServlet wrapped = filter.wrap(okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://example.com/").build();
-        HttpResponse response = runPromise(() -> wrapped.serve(request));
+        HttpRequest request = HttpRequest.get("http://example.com/ [GH-90000]").build();
+        HttpResponse response = runPromise(() -> wrapped.serve(request)); // GH-90000
 
-        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security"));
-        assertThat(sts).contains("max-age=86400");
+        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security [GH-90000]"));
+        assertThat(sts).contains("max-age=86400 [GH-90000]");
     }
 
     @Test
-    @DisplayName("HSTS header includes includeSubDomains directive")
-    void hstsIncludesSubdomainsDirective() {
-        HstsHeaderFilter filter = new HstsHeaderFilter();
-        AsyncServlet wrapped = filter.wrap(okServlet());
+    @DisplayName("HSTS header includes includeSubDomains directive [GH-90000]")
+    void hstsIncludesSubdomainsDirective() { // GH-90000
+        HstsHeaderFilter filter = new HstsHeaderFilter(); // GH-90000
+        AsyncServlet wrapped = filter.wrap(okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://example.com/").build();
-        HttpResponse response = runPromise(() -> wrapped.serve(request));
+        HttpRequest request = HttpRequest.get("http://example.com/ [GH-90000]").build();
+        HttpResponse response = runPromise(() -> wrapped.serve(request)); // GH-90000
 
-        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security"));
-        assertThat(sts).contains("includeSubDomains");
+        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security [GH-90000]"));
+        assertThat(sts).contains("includeSubDomains [GH-90000]");
     }
 
     @Test
-    @DisplayName("HSTS header includes preload directive")
-    void hstsIncludesPreloadDirective() {
-        HstsHeaderFilter filter = new HstsHeaderFilter();
-        AsyncServlet wrapped = filter.wrap(okServlet());
+    @DisplayName("HSTS header includes preload directive [GH-90000]")
+    void hstsIncludesPreloadDirective() { // GH-90000
+        HstsHeaderFilter filter = new HstsHeaderFilter(); // GH-90000
+        AsyncServlet wrapped = filter.wrap(okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://example.com/").build();
-        HttpResponse response = runPromise(() -> wrapped.serve(request));
+        HttpRequest request = HttpRequest.get("http://example.com/ [GH-90000]").build();
+        HttpResponse response = runPromise(() -> wrapped.serve(request)); // GH-90000
 
-        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security"));
-        assertThat(sts).contains("preload");
+        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security [GH-90000]"));
+        assertThat(sts).contains("preload [GH-90000]");
     }
 
     @Test
-    @DisplayName("wrapped servlet preserves original response status code")
-    void preservesOriginalStatusCode() {
-        AsyncServlet servlet = request -> Promise.of(HttpResponse.ofCode(201).build());
-        HstsHeaderFilter filter = new HstsHeaderFilter();
-        AsyncServlet wrapped = filter.wrap(servlet);
+    @DisplayName("wrapped servlet preserves original response status code [GH-90000]")
+    void preservesOriginalStatusCode() { // GH-90000
+        AsyncServlet servlet = request -> Promise.of(HttpResponse.ofCode(201).build()); // GH-90000
+        HstsHeaderFilter filter = new HstsHeaderFilter(); // GH-90000
+        AsyncServlet wrapped = filter.wrap(servlet); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://example.com/").build();
-        HttpResponse response = runPromise(() -> wrapped.serve(request));
+        HttpRequest request = HttpRequest.get("http://example.com/ [GH-90000]").build();
+        HttpResponse response = runPromise(() -> wrapped.serve(request)); // GH-90000
 
-        assertThat(response.getCode()).isEqualTo(201);
-        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security"));
-        assertThat(sts).isNotNull();
+        assertThat(response.getCode()).isEqualTo(201); // GH-90000
+        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security [GH-90000]"));
+        assertThat(sts).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("negative max-age throws IllegalArgumentException")
-    void negativeMaxAgeThrows() {
-        assertThatThrownBy(() -> new HstsHeaderFilter(-1))
-                .isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("negative max-age throws IllegalArgumentException [GH-90000]")
+    void negativeMaxAgeThrows() { // GH-90000
+        assertThatThrownBy(() -> new HstsHeaderFilter(-1)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("zero max-age is allowed (removal mode)")
-    void zeroMaxAgeIsAllowed() {
-        HstsHeaderFilter filter = new HstsHeaderFilter(0);
-        AsyncServlet wrapped = filter.wrap(okServlet());
+    @DisplayName("zero max-age is allowed (removal mode) [GH-90000]")
+    void zeroMaxAgeIsAllowed() { // GH-90000
+        HstsHeaderFilter filter = new HstsHeaderFilter(0); // GH-90000
+        AsyncServlet wrapped = filter.wrap(okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://example.com/").build();
-        HttpResponse response = runPromise(() -> wrapped.serve(request));
+        HttpRequest request = HttpRequest.get("http://example.com/ [GH-90000]").build();
+        HttpResponse response = runPromise(() -> wrapped.serve(request)); // GH-90000
 
-        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security"));
-        assertThat(sts).contains("max-age=0");
+        String sts = response.getHeader(io.activej.http.HttpHeaders.of("Strict-Transport-Security [GH-90000]"));
+        assertThat(sts).contains("max-age=0 [GH-90000]");
     }
 }

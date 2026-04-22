@@ -25,10 +25,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link LineageHandler} (P3.9.1).
+ * Unit tests for {@link LineageHandler} (P3.9.1). // GH-90000
  */
-@DisplayName("LineageHandler — P3.9.1")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("LineageHandler — P3.9.1 [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class LineageHandlerP391Test {
 
     @Mock
@@ -42,249 +42,249 @@ class LineageHandlerP391Test {
 
     private LineageHandler handler;
     private LineageHandler handlerNoPlugin;
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules(); // GH-90000
 
     @BeforeEach
-    void setUp() {
-        handler = new LineageHandler(http, objectMapper, lineagePlugin);
-        handlerNoPlugin = new LineageHandler(http, objectMapper, null);
+    void setUp() { // GH-90000
+        handler = new LineageHandler(http, objectMapper, lineagePlugin); // GH-90000
+        handlerNoPlugin = new LineageHandler(http, objectMapper, null); // GH-90000
 
-        lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant-1");
+        lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant-1 [GH-90000]");
 
-        HttpResponse errorResponse = mock(HttpResponse.class);
-        lenient().when(http.errorResponse(eq(501), any())).thenReturn(errorResponse);
-        lenient().when(http.errorResponse(eq(400), any())).thenReturn(errorResponse);
-        lenient().when(http.errorResponse(eq(500), any())).thenReturn(errorResponse);
+        HttpResponse errorResponse = mock(HttpResponse.class); // GH-90000
+        lenient().when(http.errorResponse(eq(501), any())).thenReturn(errorResponse); // GH-90000
+        lenient().when(http.errorResponse(eq(400), any())).thenReturn(errorResponse); // GH-90000
+        lenient().when(http.errorResponse(eq(500), any())).thenReturn(errorResponse); // GH-90000
     }
 
     @Nested
-    @DisplayName("handleGetLineage() — no plugin wired")
+    @DisplayName("handleGetLineage() — no plugin wired [GH-90000]")
     class NoPluginLineageTests {
 
         @Test
-        @DisplayName("returns 501 when LineagePlugin is null")
-        void returnsNotImplementedWhenNoPlugin() throws Exception {
-            HttpResponse mock501 = mock(HttpResponse.class);
-            when(http.errorResponse(eq(501), any())).thenReturn(mock501);
+        @DisplayName("returns 501 when LineagePlugin is null [GH-90000]")
+        void returnsNotImplementedWhenNoPlugin() throws Exception { // GH-90000
+            HttpResponse mock501 = mock(HttpResponse.class); // GH-90000
+            when(http.errorResponse(eq(501), any())).thenReturn(mock501); // GH-90000
 
-            HttpResponse result = handlerNoPlugin.handleGetLineage(request).getResult();
-            assertThat(result).isSameAs(mock501);
+            HttpResponse result = handlerNoPlugin.handleGetLineage(request).getResult(); // GH-90000
+            assertThat(result).isSameAs(mock501); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("handleGetLineage() — plugin wired")
+    @DisplayName("handleGetLineage() — plugin wired [GH-90000]")
     class WithPluginLineageTests {
 
         @BeforeEach
-        void setUpPlugin() throws Exception {
-            LineagePlugin.LineageGraph graph = LineagePlugin.LineageGraph.builder()
-                    .tenantId("tenant-1")
-                    .upstream(Map.of("orders", Set.of("tenant-1:events")))
-                    .downstream(Map.of("orders", Set.of("tenant-1:analytics")))
-                    .timestamp(java.time.Instant.now())
-                    .build();
+        void setUpPlugin() throws Exception { // GH-90000
+            LineagePlugin.LineageGraph graph = LineagePlugin.LineageGraph.builder() // GH-90000
+                    .tenantId("tenant-1 [GH-90000]")
+                    .upstream(Map.of("orders", Set.of("tenant-1:events [GH-90000]")))
+                    .downstream(Map.of("orders", Set.of("tenant-1:analytics [GH-90000]")))
+                    .timestamp(java.time.Instant.now()) // GH-90000
+                    .build(); // GH-90000
 
-            lenient().when(lineagePlugin.getLineageGraph("tenant-1")).thenReturn(Promise.of(graph));
-            lenient().when(lineagePlugin.getUpstreamLineage(eq("tenant-1"), any()))
-                    .thenReturn(Promise.of(Set.of("events")));
-            lenient().when(lineagePlugin.getDownstreamLineage(eq("tenant-1"), any()))
-                    .thenReturn(Promise.of(Set.of("analytics")));
+            lenient().when(lineagePlugin.getLineageGraph("tenant-1 [GH-90000]")).thenReturn(Promise.of(graph));
+            lenient().when(lineagePlugin.getUpstreamLineage(eq("tenant-1 [GH-90000]"), any()))
+                    .thenReturn(Promise.of(Set.of("events [GH-90000]")));
+            lenient().when(lineagePlugin.getDownstreamLineage(eq("tenant-1 [GH-90000]"), any()))
+                    .thenReturn(Promise.of(Set.of("analytics [GH-90000]")));
 
-            HttpResponse ok = mock(HttpResponse.class);
-            lenient().when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(ok);
+            HttpResponse ok = mock(HttpResponse.class); // GH-90000
+            lenient().when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(ok); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when collection parameter is missing")
-        void returns400WhenCollectionMissing() throws Exception {
-            HttpResponse mock400 = mock(HttpResponse.class);
-            when(request.getPathParameter("collection")).thenReturn(null);
-            when(http.errorResponse(eq(400), any())).thenReturn(mock400);
+        @DisplayName("returns 400 when collection parameter is missing [GH-90000]")
+        void returns400WhenCollectionMissing() throws Exception { // GH-90000
+            HttpResponse mock400 = mock(HttpResponse.class); // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn(null);
+            when(http.errorResponse(eq(400), any())).thenReturn(mock400); // GH-90000
 
-            HttpResponse result = handler.handleGetLineage(request).getResult();
-            assertThat(result).isSameAs(mock400);
+            HttpResponse result = handler.handleGetLineage(request).getResult(); // GH-90000
+            assertThat(result).isSameAs(mock400); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when tenant header is missing")
-        void returns400WhenTenantMissing() throws Exception {
-            HttpResponse mock400 = mock(HttpResponse.class);
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(http.requireTenantIdOrFail(any())).thenReturn(null);
-            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(mock400);
+        @DisplayName("returns 400 when tenant header is missing [GH-90000]")
+        void returns400WhenTenantMissing() throws Exception { // GH-90000
+            HttpResponse mock400 = mock(HttpResponse.class); // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(http.requireTenantIdOrFail(any())).thenReturn(null); // GH-90000
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(mock400); // GH-90000
 
-            HttpResponse result = handler.handleGetLineage(request).getResult();
+            HttpResponse result = handler.handleGetLineage(request).getResult(); // GH-90000
 
-            assertThat(result).isSameAs(mock400);
+            assertThat(result).isSameAs(mock400); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when direction is invalid")
-        void returns400WhenDirectionInvalid() throws Exception {
-            HttpResponse mock400 = mock(HttpResponse.class);
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(request.getQueryParameter("direction")).thenReturn("INVALID");
-            when(http.errorResponse(eq(400), any())).thenReturn(mock400);
+        @DisplayName("returns 400 when direction is invalid [GH-90000]")
+        void returns400WhenDirectionInvalid() throws Exception { // GH-90000
+            HttpResponse mock400 = mock(HttpResponse.class); // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(request.getQueryParameter("direction [GH-90000]")).thenReturn("INVALID [GH-90000]");
+            when(http.errorResponse(eq(400), any())).thenReturn(mock400); // GH-90000
 
-            HttpResponse result = handler.handleGetLineage(request).getResult();
-            assertThat(result).isSameAs(mock400);
+            HttpResponse result = handler.handleGetLineage(request).getResult(); // GH-90000
+            assertThat(result).isSameAs(mock400); // GH-90000
         }
 
         @Test
-        @DisplayName("queries upstream lineage for tenant and collection")
-        void queriesUpstreamLineage() throws Exception {
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(request.getQueryParameter("direction")).thenReturn("UPSTREAM");
+        @DisplayName("queries upstream lineage for tenant and collection [GH-90000]")
+        void queriesUpstreamLineage() throws Exception { // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(request.getQueryParameter("direction [GH-90000]")).thenReturn("UPSTREAM [GH-90000]");
 
-            handler.handleGetLineage(request).getResult();
+            handler.handleGetLineage(request).getResult(); // GH-90000
 
-            verify(lineagePlugin).getUpstreamLineage("tenant-1", "orders");
+            verify(lineagePlugin).getUpstreamLineage("tenant-1", "orders"); // GH-90000
         }
 
         @Test
-        @DisplayName("queries downstream lineage for tenant and collection")
-        void queriesDownstreamLineage() throws Exception {
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(request.getQueryParameter("direction")).thenReturn("DOWNSTREAM");
+        @DisplayName("queries downstream lineage for tenant and collection [GH-90000]")
+        void queriesDownstreamLineage() throws Exception { // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(request.getQueryParameter("direction [GH-90000]")).thenReturn("DOWNSTREAM [GH-90000]");
 
-            handler.handleGetLineage(request).getResult();
+            handler.handleGetLineage(request).getResult(); // GH-90000
 
-            verify(lineagePlugin).getDownstreamLineage("tenant-1", "orders");
+            verify(lineagePlugin).getDownstreamLineage("tenant-1", "orders"); // GH-90000
         }
 
         @Test
-        @DisplayName("uses BOTH direction when direction param is absent")
-        void defaultsToBothDirection() throws Exception {
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(request.getQueryParameter("direction")).thenReturn(null);
+        @DisplayName("uses BOTH direction when direction param is absent [GH-90000]")
+        void defaultsToBothDirection() throws Exception { // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(request.getQueryParameter("direction [GH-90000]")).thenReturn(null);
 
-            handler.handleGetLineage(request).getResult();
+            handler.handleGetLineage(request).getResult(); // GH-90000
 
             // Both upstream and downstream should be queried
-            verify(lineagePlugin).getUpstreamLineage("tenant-1", "orders");
-            verify(lineagePlugin).getDownstreamLineage("tenant-1", "orders");
+            verify(lineagePlugin).getUpstreamLineage("tenant-1", "orders"); // GH-90000
+            verify(lineagePlugin).getDownstreamLineage("tenant-1", "orders"); // GH-90000
         }
 
         @Test
-        @DisplayName("returns JSON response via http.jsonResponse()")
-        void returnsJsonResponse() throws Exception {
-            HttpResponse expected = mock(HttpResponse.class);
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(request.getQueryParameter("direction")).thenReturn("BOTH");
-            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(expected);
+        @DisplayName("returns JSON response via http.jsonResponse() [GH-90000]")
+        void returnsJsonResponse() throws Exception { // GH-90000
+            HttpResponse expected = mock(HttpResponse.class); // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(request.getQueryParameter("direction [GH-90000]")).thenReturn("BOTH [GH-90000]");
+            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(expected); // GH-90000
 
-            HttpResponse result = handler.handleGetLineage(request).getResult();
-            assertThat(result).isSameAs(expected);
+            HttpResponse result = handler.handleGetLineage(request).getResult(); // GH-90000
+            assertThat(result).isSameAs(expected); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("handleGetImpact() — no plugin wired")
+    @DisplayName("handleGetImpact() — no plugin wired [GH-90000]")
     class NoPluginImpactTests {
 
         @Test
-        @DisplayName("returns 501 when LineagePlugin is null")
-        void returnsNotImplementedWhenNoPlugin() throws Exception {
-            HttpResponse mock501 = mock(HttpResponse.class);
-            when(http.errorResponse(eq(501), any())).thenReturn(mock501);
+        @DisplayName("returns 501 when LineagePlugin is null [GH-90000]")
+        void returnsNotImplementedWhenNoPlugin() throws Exception { // GH-90000
+            HttpResponse mock501 = mock(HttpResponse.class); // GH-90000
+            when(http.errorResponse(eq(501), any())).thenReturn(mock501); // GH-90000
 
-            HttpResponse result = handlerNoPlugin.handleGetImpact(request).getResult();
-            assertThat(result).isSameAs(mock501);
+            HttpResponse result = handlerNoPlugin.handleGetImpact(request).getResult(); // GH-90000
+            assertThat(result).isSameAs(mock501); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("handleGetImpact() — plugin wired")
+    @DisplayName("handleGetImpact() — plugin wired [GH-90000]")
     class WithPluginImpactTests {
 
         @Test
-        @DisplayName("returns 400 when collection parameter is missing")
-        void returns400WhenCollectionMissing() throws Exception {
-            HttpResponse mock400 = mock(HttpResponse.class);
-            when(request.getPathParameter("collection")).thenReturn(null);
-            when(http.errorResponse(eq(400), any())).thenReturn(mock400);
+        @DisplayName("returns 400 when collection parameter is missing [GH-90000]")
+        void returns400WhenCollectionMissing() throws Exception { // GH-90000
+            HttpResponse mock400 = mock(HttpResponse.class); // GH-90000
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn(null);
+            when(http.errorResponse(eq(400), any())).thenReturn(mock400); // GH-90000
 
-            HttpResponse result = handler.handleGetImpact(request).getResult();
-            assertThat(result).isSameAs(mock400);
+            HttpResponse result = handler.handleGetImpact(request).getResult(); // GH-90000
+            assertThat(result).isSameAs(mock400); // GH-90000
         }
 
         @Test
-        @DisplayName("calls analyzeImpact on plugin for tenant and collection")
-        void callsAnalyzeImpact() throws Exception {
-            LineagePlugin.ImpactAnalysis analysis = LineagePlugin.ImpactAnalysis.builder()
-                    .collection("orders")
-                    .affectedCollections(Set.of("analytics", "reports"))
-                    .impactLevel("HIGH")
-                    .timestamp(java.time.Instant.now())
-                    .build();
+        @DisplayName("calls analyzeImpact on plugin for tenant and collection [GH-90000]")
+        void callsAnalyzeImpact() throws Exception { // GH-90000
+            LineagePlugin.ImpactAnalysis analysis = LineagePlugin.ImpactAnalysis.builder() // GH-90000
+                    .collection("orders [GH-90000]")
+                    .affectedCollections(Set.of("analytics", "reports")) // GH-90000
+                    .impactLevel("HIGH [GH-90000]")
+                    .timestamp(java.time.Instant.now()) // GH-90000
+                    .build(); // GH-90000
 
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(lineagePlugin.analyzeImpact("tenant-1", "orders")).thenReturn(Promise.of(analysis));
-            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(mock(HttpResponse.class));
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(lineagePlugin.analyzeImpact("tenant-1", "orders")).thenReturn(Promise.of(analysis)); // GH-90000
+            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(mock(HttpResponse.class)); // GH-90000
 
-            handler.handleGetImpact(request).getResult();
-            verify(lineagePlugin).analyzeImpact("tenant-1", "orders");
+            handler.handleGetImpact(request).getResult(); // GH-90000
+            verify(lineagePlugin).analyzeImpact("tenant-1", "orders"); // GH-90000
         }
 
         @Test
-        @DisplayName("returns JSON response with affected collections")
-        void returnsJsonResponseWithAffectedCollections() throws Exception {
-            LineagePlugin.ImpactAnalysis analysis = LineagePlugin.ImpactAnalysis.builder()
-                    .collection("orders")
-                    .affectedCollections(Set.of("reports"))
-                    .impactLevel("MEDIUM")
-                    .timestamp(java.time.Instant.now())
-                    .build();
+        @DisplayName("returns JSON response with affected collections [GH-90000]")
+        void returnsJsonResponseWithAffectedCollections() throws Exception { // GH-90000
+            LineagePlugin.ImpactAnalysis analysis = LineagePlugin.ImpactAnalysis.builder() // GH-90000
+                    .collection("orders [GH-90000]")
+                    .affectedCollections(Set.of("reports [GH-90000]"))
+                    .impactLevel("MEDIUM [GH-90000]")
+                    .timestamp(java.time.Instant.now()) // GH-90000
+                    .build(); // GH-90000
 
-            when(request.getPathParameter("collection")).thenReturn("orders");
-            when(lineagePlugin.analyzeImpact("tenant-1", "orders")).thenReturn(Promise.of(analysis));
+            when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
+            when(lineagePlugin.analyzeImpact("tenant-1", "orders")).thenReturn(Promise.of(analysis)); // GH-90000
 
-            @SuppressWarnings("unchecked")
+            @SuppressWarnings("unchecked [GH-90000]")
             Map<String, Object>[] capturedMap = new Map[1];
-            HttpResponse expected = mock(HttpResponse.class);
-            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenAnswer(inv -> {
-                capturedMap[0] = inv.getArgument(0);
+            HttpResponse expected = mock(HttpResponse.class); // GH-90000
+            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenAnswer(inv -> { // GH-90000
+                capturedMap[0] = inv.getArgument(0); // GH-90000
                 return expected;
             });
 
-            HttpResponse result = handler.handleGetImpact(request).getResult();
-            assertThat(result).isSameAs(expected);
-            assertThat(capturedMap[0]).containsEntry("impactLevel", "MEDIUM");
-            assertThat(capturedMap[0]).containsEntry("affectedCount", 1);
+            HttpResponse result = handler.handleGetImpact(request).getResult(); // GH-90000
+            assertThat(result).isSameAs(expected); // GH-90000
+            assertThat(capturedMap[0]).containsEntry("impactLevel", "MEDIUM"); // GH-90000
+            assertThat(capturedMap[0]).containsEntry("affectedCount", 1); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("recordTransformation()")
+    @DisplayName("recordTransformation() [GH-90000]")
     class RecordTransformationTests {
 
         @Test
-        @DisplayName("delegates to lineagePlugin.recordTransformation")
-        void delegatesToPlugin() throws Exception {
-            when(lineagePlugin.recordTransformation(any(), any(), any(), any(), any()))
-                    .thenReturn(Promise.complete());
+        @DisplayName("delegates to lineagePlugin.recordTransformation [GH-90000]")
+        void delegatesToPlugin() throws Exception { // GH-90000
+            when(lineagePlugin.recordTransformation(any(), any(), any(), any(), any())) // GH-90000
+                    .thenReturn(Promise.complete()); // GH-90000
 
-            handler.recordTransformation("t1", "src", "dst", "API_WRITE", Map.of()).getResult();
-            verify(lineagePlugin).recordTransformation("t1", "src", "dst", "API_WRITE", Map.of());
+            handler.recordTransformation("t1", "src", "dst", "API_WRITE", Map.of()).getResult(); // GH-90000
+            verify(lineagePlugin).recordTransformation("t1", "src", "dst", "API_WRITE", Map.of()); // GH-90000
         }
 
         @Test
-        @DisplayName("completes silently when lineagePlugin is null")
-        void completesWhenNoPlugin() throws Exception {
+        @DisplayName("completes silently when lineagePlugin is null [GH-90000]")
+        void completesWhenNoPlugin() throws Exception { // GH-90000
             // Should not throw
-            handlerNoPlugin.recordTransformation("t1", "src", "dst", "API_WRITE", Map.of()).getResult();
+            handlerNoPlugin.recordTransformation("t1", "src", "dst", "API_WRITE", Map.of()).getResult(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Constants")
+    @DisplayName("Constants [GH-90000]")
     class ConstantsTests {
 
         @Test
-        @DisplayName("DEFAULT_GRAPH_DEPTH is -1 (unlimited)")
-        void defaultGraphDepth() {
-            assertThat(LineageHandler.DEFAULT_GRAPH_DEPTH).isEqualTo(-1);
+        @DisplayName("DEFAULT_GRAPH_DEPTH is -1 (unlimited) [GH-90000]")
+        void defaultGraphDepth() { // GH-90000
+            assertThat(LineageHandler.DEFAULT_GRAPH_DEPTH).isEqualTo(-1); // GH-90000
         }
     }
 }

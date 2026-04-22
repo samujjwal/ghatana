@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * - Cluster membership consensus
  * - RTO and RPO target achievement
  */
-@DisplayName("Failover and Recovery Integration Tests")
+@DisplayName("Failover and Recovery Integration Tests [GH-90000]")
 class FailoverRecoveryIntegrationTest extends EventloopTestBase {
 
     @Mock private FailoverManager failoverManager;
@@ -38,345 +38,345 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
     private AutoCloseable autoCloseable;
 
     @BeforeEach
-    void setUp() {
-        autoCloseable = MockitoAnnotations.openMocks(this);
-        failoverService = new FailoverRecoveryService(
+    void setUp() { // GH-90000
+        autoCloseable = MockitoAnnotations.openMocks(this); // GH-90000
+        failoverService = new FailoverRecoveryService( // GH-90000
                 failoverManager, healthCheckService, recoveryManager, clusterCoordinator);
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        if (autoCloseable != null) {
-            autoCloseable.close();
+    void tearDown() throws Exception { // GH-90000
+        if (autoCloseable != null) { // GH-90000
+            autoCloseable.close(); // GH-90000
         }
     }
 
     // ===== Service Failover Tests =====
     @Nested
-    @DisplayName("Service Failover Scenarios")
+    @DisplayName("Service Failover Scenarios [GH-90000]")
     class FailoverTests {
 
         @Test
-        @DisplayName("should elect leader in healthy cluster")
-        void shouldElectLeader() {
-            List<String> candidates = List.of("node-1", "node-2", "node-3");
+        @DisplayName("should elect leader in healthy cluster [GH-90000]")
+        void shouldElectLeader() { // GH-90000
+            List<String> candidates = List.of("node-1", "node-2", "node-3"); // GH-90000
 
-            String leader = failoverService.electLeader(candidates);
+            String leader = failoverService.electLeader(candidates); // GH-90000
 
-            assertThat(leader).isIn(candidates);
+            assertThat(leader).isIn(candidates); // GH-90000
         }
 
         @Test
-        @DisplayName("should promote replica on primary failure")
-        void shouldPromoteReplica() {
+        @DisplayName("should promote replica on primary failure [GH-90000]")
+        void shouldPromoteReplica() { // GH-90000
             String failedPrimary = "primary-node";
-            List<String> replicas = List.of("replica-1", "replica-2", "replica-3");
+            List<String> replicas = List.of("replica-1", "replica-2", "replica-3"); // GH-90000
 
-            String promoted = failoverService.promoteReplica(failedPrimary, replicas);
+            String promoted = failoverService.promoteReplica(failedPrimary, replicas); // GH-90000
 
-            assertThat(promoted).isIn(replicas);
-            assertThat(promoted).isNotEqualTo(failedPrimary);
+            assertThat(promoted).isIn(replicas); // GH-90000
+            assertThat(promoted).isNotEqualTo(failedPrimary); // GH-90000
         }
 
         @Test
-        @DisplayName("should trigger failover on health check timeout")
-        void shouldTriggerOnTimeout() {
-            HealthCheckResult healthCheck = new HealthCheckResult();
-            healthCheck.setStatus(HealthStatus.TIMEOUT);
+        @DisplayName("should trigger failover on health check timeout [GH-90000]")
+        void shouldTriggerOnTimeout() { // GH-90000
+            HealthCheckResult healthCheck = new HealthCheckResult(); // GH-90000
+            healthCheck.setStatus(HealthStatus.TIMEOUT); // GH-90000
 
-            FailoverEvent event = failoverService.initiateFailover(healthCheck);
+            FailoverEvent event = failoverService.initiateFailover(healthCheck); // GH-90000
 
-            assertThat(event).isNotNull();
-            assertThat(event.isTriggered()).isTrue();
+            assertThat(event).isNotNull(); // GH-90000
+            assertThat(event.isTriggered()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should validate failover prerequisites")
-        void shouldValidatePrerequisites() {
-            FailoverConditions conditions = new FailoverConditions();
-            conditions.setReplicasHealthy(3);
-            conditions.setQuorumReached(true);
+        @DisplayName("should validate failover prerequisites [GH-90000]")
+        void shouldValidatePrerequisites() { // GH-90000
+            FailoverConditions conditions = new FailoverConditions(); // GH-90000
+            conditions.setReplicasHealthy(3); // GH-90000
+            conditions.setQuorumReached(true); // GH-90000
 
-            boolean canFailover = failoverService.canFailover(conditions);
+            boolean canFailover = failoverService.canFailover(conditions); // GH-90000
 
-            assertThat(canFailover).isTrue();
+            assertThat(canFailover).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject failover without quorum")
-        void shouldRejectNoQuorum() {
-            FailoverConditions conditions = new FailoverConditions();
-            conditions.setReplicasHealthy(2);
-            conditions.setQuorumReached(false);
+        @DisplayName("should reject failover without quorum [GH-90000]")
+        void shouldRejectNoQuorum() { // GH-90000
+            FailoverConditions conditions = new FailoverConditions(); // GH-90000
+            conditions.setReplicasHealthy(2); // GH-90000
+            conditions.setQuorumReached(false); // GH-90000
 
-            assertThatThrownBy(() -> failoverService.initiateFailoverWithValidation(conditions))
-                    .isInstanceOf(NoAvailableReplicaException.class);
+            assertThatThrownBy(() -> failoverService.initiateFailoverWithValidation(conditions)) // GH-90000
+                    .isInstanceOf(NoAvailableReplicaException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should prevent cascading failovers")
-        void shouldPreventCascading() {
-            failoverService.recordFailoverAttempt("primary-1");
+        @DisplayName("should prevent cascading failovers [GH-90000]")
+        void shouldPreventCascading() { // GH-90000
+            failoverService.recordFailoverAttempt("primary-1 [GH-90000]");
 
-            boolean allowed = failoverService.allowFailover("primary-1");
+            boolean allowed = failoverService.allowFailover("primary-1 [GH-90000]");
 
-            assertThat(allowed).isFalse(); // Prevent immediate re-failover
+            assertThat(allowed).isFalse(); // Prevent immediate re-failover // GH-90000
         }
 
         @Test
-        @DisplayName("should update route after failover")
-        void shouldUpdateRoute() {
+        @DisplayName("should update route after failover [GH-90000]")
+        void shouldUpdateRoute() { // GH-90000
             String newLeader = "replica-2-promoted";
 
-            failoverService.updateServiceRoute(newLeader);
+            failoverService.updateServiceRoute(newLeader); // GH-90000
 
-            String currentTarget = failoverService.getActiveTarget();
-            assertThat(currentTarget).isEqualTo(newLeader);
+            String currentTarget = failoverService.getActiveTarget(); // GH-90000
+            assertThat(currentTarget).isEqualTo(newLeader); // GH-90000
         }
     }
 
     // ===== Data Recovery Tests =====
     @Nested
-    @DisplayName("Data Recovery After Failures")
+    @DisplayName("Data Recovery After Failures [GH-90000]")
     class DataRecoveryTests {
 
         @Test
-        @DisplayName("should recover from write-ahead log")
-        void shouldRecoverFromWAL() {
-            WriteAheadLog wal = new WriteAheadLog();
-            wal.addEntry(new LogEntry("operation-1", 1));
-            wal.addEntry(new LogEntry("operation-2", 2));
-            wal.addEntry(new LogEntry("operation-3", 3));
+        @DisplayName("should recover from write-ahead log [GH-90000]")
+        void shouldRecoverFromWAL() { // GH-90000
+            WriteAheadLog wal = new WriteAheadLog(); // GH-90000
+            wal.addEntry(new LogEntry("operation-1", 1)); // GH-90000
+            wal.addEntry(new LogEntry("operation-2", 2)); // GH-90000
+            wal.addEntry(new LogEntry("operation-3", 3)); // GH-90000
 
-            RecoveryProgress progress = failoverService.recoverFromWAL(wal);
+            RecoveryProgress progress = failoverService.recoverFromWAL(wal); // GH-90000
 
-            assertThat(progress.getEntriesRecovered()).isEqualTo(3);
+            assertThat(progress.getEntriesRecovered()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("should support point-in-time recovery")
-        void shouldSupportPointInTimeRecovery() {
-            long recoveryTime = System.currentTimeMillis() - 3600000; // 1 hour ago
+        @DisplayName("should support point-in-time recovery [GH-90000]")
+        void shouldSupportPointInTimeRecovery() { // GH-90000
+            long recoveryTime = System.currentTimeMillis() - 3600000; // 1 hour ago // GH-90000
 
-            RecoveryProgress progress = failoverService.recoverToPointInTime(recoveryTime);
+            RecoveryProgress progress = failoverService.recoverToPointInTime(recoveryTime); // GH-90000
 
-            assertThat(progress.isCompleted()).isTrue();
+            assertThat(progress.isCompleted()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should restore from backup")
-        void shouldRestoreFromBackup() {
-            BackupMetadata backup = new BackupMetadata();
-            backup.setTimestamp(System.currentTimeMillis() - 300000);
-            backup.setSize(1000000);
+        @DisplayName("should restore from backup [GH-90000]")
+        void shouldRestoreFromBackup() { // GH-90000
+            BackupMetadata backup = new BackupMetadata(); // GH-90000
+            backup.setTimestamp(System.currentTimeMillis() - 300000); // GH-90000
+            backup.setSize(1000000); // GH-90000
 
-            RecoveryProgress progress = failoverService.restoreFromBackup(backup);
+            RecoveryProgress progress = failoverService.restoreFromBackup(backup); // GH-90000
 
-            assertThat(progress.isCompleted()).isTrue();
+            assertThat(progress.isCompleted()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should perform incremental recovery")
-        void shouldPerformIncremental() {
-            BackupMetadata baseBackup = new BackupMetadata();
-            List<IncrementalBackup> increments = List.of(
-                    new IncrementalBackup(1),
-                    new IncrementalBackup(2),
-                    new IncrementalBackup(3)
+        @DisplayName("should perform incremental recovery [GH-90000]")
+        void shouldPerformIncremental() { // GH-90000
+            BackupMetadata baseBackup = new BackupMetadata(); // GH-90000
+            List<IncrementalBackup> increments = List.of( // GH-90000
+                    new IncrementalBackup(1), // GH-90000
+                    new IncrementalBackup(2), // GH-90000
+                    new IncrementalBackup(3) // GH-90000
             );
 
-            RecoveryProgress progress = failoverService.incrementalRestore(baseBackup, increments);
+            RecoveryProgress progress = failoverService.incrementalRestore(baseBackup, increments); // GH-90000
 
-            assertThat(progress.isCompleted()).isTrue();
+            assertThat(progress.isCompleted()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should validate data consistency after recovery")
-        void shouldValidateConsistency() {
-            failoverService.restoreFromBackup(new BackupMetadata());
+        @DisplayName("should validate data consistency after recovery [GH-90000]")
+        void shouldValidateConsistency() { // GH-90000
+            failoverService.restoreFromBackup(new BackupMetadata()); // GH-90000
 
-            boolean consistent = failoverService.verifyDataConsistency();
+            boolean consistent = failoverService.verifyDataConsistency(); // GH-90000
 
-            assertThat(consistent).isTrue();
+            assertThat(consistent).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should measure recovery time objective")
-        void shouldMeasureRTO() {
-            long recoveryStart = System.currentTimeMillis();
+        @DisplayName("should measure recovery time objective [GH-90000]")
+        void shouldMeasureRTO() { // GH-90000
+            long recoveryStart = System.currentTimeMillis(); // GH-90000
 
-            failoverService.executeFullRecovery();
+            failoverService.executeFullRecovery(); // GH-90000
 
-            long rto = System.currentTimeMillis() - recoveryStart;
+            long rto = System.currentTimeMillis() - recoveryStart; // GH-90000
             long rtoTarget = 300000; // 5 minute target
 
-            assertThat(rto).isLessThan(rtoTarget);
+            assertThat(rto).isLessThan(rtoTarget); // GH-90000
         }
 
         @Test
-        @DisplayName("should achieve recovery point objective")
-        void shouldAchieveRPO() {
-            RecoveryMetrics metrics = failoverService.getRecoveryMetrics();
+        @DisplayName("should achieve recovery point objective [GH-90000]")
+        void shouldAchieveRPO() { // GH-90000
+            RecoveryMetrics metrics = failoverService.getRecoveryMetrics(); // GH-90000
 
-            long dataLoss = metrics.getDataLossWindow();
+            long dataLoss = metrics.getDataLossWindow(); // GH-90000
             long rpoTarget = 60000; // 1 minute target
 
-            assertThat(dataLoss).isLessThan(rpoTarget);
+            assertThat(dataLoss).isLessThan(rpoTarget); // GH-90000
         }
     }
 
     // ===== Cluster Membership Tests =====
     @Nested
-    @DisplayName("Cluster Membership Changes")
+    @DisplayName("Cluster Membership Changes [GH-90000]")
     class ClusterMembershipTests {
 
         @Test
-        @DisplayName("should add new replica node to cluster")
-        void shouldAddNode() {
+        @DisplayName("should add new replica node to cluster [GH-90000]")
+        void shouldAddNode() { // GH-90000
             String newNode = "replica-4";
-            List<String> currentCluster = List.of("primary", "replica-1", "replica-2", "replica-3");
+            List<String> currentCluster = List.of("primary", "replica-1", "replica-2", "replica-3"); // GH-90000
 
-            List<String> updated = failoverService.addNodeToCluster(currentCluster, newNode);
+            List<String> updated = failoverService.addNodeToCluster(currentCluster, newNode); // GH-90000
 
-            assertThat(updated).contains(newNode);
+            assertThat(updated).contains(newNode); // GH-90000
         }
 
         @Test
-        @DisplayName("should remove failed node from cluster")
-        void shouldRemoveNode() {
+        @DisplayName("should remove failed node from cluster [GH-90000]")
+        void shouldRemoveNode() { // GH-90000
             String failedNode = "replica-2";
-            List<String> currentCluster = List.of("primary", "replica-1", "replica-2", "replica-3");
+            List<String> currentCluster = List.of("primary", "replica-1", "replica-2", "replica-3"); // GH-90000
 
-            List<String> updated = failoverService.removeNodeFromCluster(currentCluster, failedNode);
+            List<String> updated = failoverService.removeNodeFromCluster(currentCluster, failedNode); // GH-90000
 
-            assertThat(updated).doesNotContain(failedNode);
-            assertThat(updated).hasSize(3);
+            assertThat(updated).doesNotContain(failedNode); // GH-90000
+            assertThat(updated).hasSize(3); // GH-90000
         }
 
         @Test
-        @DisplayName("should rebalance after membership change")
-        void shouldRebalanceMembers() {
-            failoverService.addNodeToCluster(
-                    List.of("primary", "replica-1"),
+        @DisplayName("should rebalance after membership change [GH-90000]")
+        void shouldRebalanceMembers() { // GH-90000
+            failoverService.addNodeToCluster( // GH-90000
+                    List.of("primary", "replica-1"), // GH-90000
                     "replica-2"
             );
 
-            RebalanceProgress progress = failoverService.rebalanceCluster();
+            RebalanceProgress progress = failoverService.rebalanceCluster(); // GH-90000
 
-            assertThat(progress.isCompleted()).isTrue();
+            assertThat(progress.isCompleted()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should verify quorum after membership change")
-        void shouldVerifyQuorum() {
-            List<String> cluster = List.of("node-1", "node-2", "node-3", "node-4", "node-5");
+        @DisplayName("should verify quorum after membership change [GH-90000]")
+        void shouldVerifyQuorum() { // GH-90000
+            List<String> cluster = List.of("node-1", "node-2", "node-3", "node-4", "node-5"); // GH-90000
 
-            boolean quorumHeld = failoverService.hasQuorum(cluster);
+            boolean quorumHeld = failoverService.hasQuorum(cluster); // GH-90000
 
-            assertThat(quorumHeld).isTrue();
+            assertThat(quorumHeld).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should prevent removing too many nodes simultaneously")
-        void shouldPreventMassRemoval() {
-            List<String> cluster = List.of("node-1", "node-2", "node-3");
+        @DisplayName("should prevent removing too many nodes simultaneously [GH-90000]")
+        void shouldPreventMassRemoval() { // GH-90000
+            List<String> cluster = List.of("node-1", "node-2", "node-3"); // GH-90000
 
-            assertThatThrownBy(() -> failoverService.removeNodeFromCluster(cluster, "node-1")
-                    .removeAll(List.of("node-2", "node-3")))
-                    .isInstanceOf(QuorumLostException.class);
+            assertThatThrownBy(() -> failoverService.removeNodeFromCluster(cluster, "node-1") // GH-90000
+                    .removeAll(List.of("node-2", "node-3"))) // GH-90000
+                    .isInstanceOf(QuorumLostException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should coordinate membership consensus")
-        void shouldCoordinateConsensus() {
-            MembershipChange change = new MembershipChange("add", "new-node");
+        @DisplayName("should coordinate membership consensus [GH-90000]")
+        void shouldCoordinateConsensus() { // GH-90000
+            MembershipChange change = new MembershipChange("add", "new-node"); // GH-90000
 
-            boolean agreed = failoverService.achieveConsensus(change);
+            boolean agreed = failoverService.achieveConsensus(change); // GH-90000
 
-            assertThat(agreed).isTrue();
+            assertThat(agreed).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle partial network partitions during rebalance")
-        void shouldHandlePartitionDuringRebalance() {
-            failoverService.simulateNetworkPartition("node-4");
+        @DisplayName("should handle partial network partitions during rebalance [GH-90000]")
+        void shouldHandlePartitionDuringRebalance() { // GH-90000
+            failoverService.simulateNetworkPartition("node-4 [GH-90000]");
 
-            RebalanceProgress progress = failoverService.rebalanceCluster();
+            RebalanceProgress progress = failoverService.rebalanceCluster(); // GH-90000
 
             // Should still complete despite partition
-            assertThat(progress.isCompleted()).isTrue();
+            assertThat(progress.isCompleted()).isTrue(); // GH-90000
         }
     }
 
     // ===== Recovery Metrics & Objectives Tests =====
     @Nested
-    @DisplayName("Recovery Objectives and Metrics")
+    @DisplayName("Recovery Objectives and Metrics [GH-90000]")
     class RecoveryObjectivesTests {
 
         @Test
-        @DisplayName("should measure actual RTO against target")
-        void shouldMeasureRTO() {
+        @DisplayName("should measure actual RTO against target [GH-90000]")
+        void shouldMeasureRTO() { // GH-90000
             long rtoTarget = 300000; // 5 minutes
 
-            long actualRTO = failoverService.measureActualRTO();
+            long actualRTO = failoverService.measureActualRTO(); // GH-90000
 
-            assertThat(actualRTO).isLessThan(rtoTarget);
+            assertThat(actualRTO).isLessThan(rtoTarget); // GH-90000
         }
 
         @Test
-        @DisplayName("should measure actual RPO against target")
-        void shouldMeasureRPO() {
+        @DisplayName("should measure actual RPO against target [GH-90000]")
+        void shouldMeasureRPO() { // GH-90000
             long rpoTarget = 60000; // 1 minute
 
-            long actualRPO = failoverService.measureActualRPO();
+            long actualRPO = failoverService.measureActualRPO(); // GH-90000
 
-            assertThat(actualRPO).isLessThan(rpoTarget);
+            assertThat(actualRPO).isLessThan(rpoTarget); // GH-90000
         }
 
         @Test
-        @DisplayName("should track recovery performance over time")
-        void shouldTrackPerformance() {
-            for (int i = 0; i < 10; i++) {
-                failoverService.executeFailover();
+        @DisplayName("should track recovery performance over time [GH-90000]")
+        void shouldTrackPerformance() { // GH-90000
+            for (int i = 0; i < 10; i++) { // GH-90000
+                failoverService.executeFailover(); // GH-90000
             }
 
-            List<RecoveryMetrics> history = failoverService.getRecoveryHistory(10);
+            List<RecoveryMetrics> history = failoverService.getRecoveryHistory(10); // GH-90000
 
-            assertThat(history).hasSize(10);
+            assertThat(history).hasSize(10); // GH-90000
         }
 
         @Test
-        @DisplayName("should alert on RTO/RPO breach")
-        void shouldAlertOnBreach() {
-            failoverService.simulateSlowRecovery(500000); // Exceeds 5 min SLA
+        @DisplayName("should alert on RTO/RPO breach [GH-90000]")
+        void shouldAlertOnBreach() { // GH-90000
+            failoverService.simulateSlowRecovery(500000); // Exceeds 5 min SLA // GH-90000
 
-            List<Alert> alerts = failoverService.getRecoveryAlerts();
+            List<Alert> alerts = failoverService.getRecoveryAlerts(); // GH-90000
 
-            assertThat(alerts).isNotEmpty();
-            assertThat(alerts.get(0).getType()).isEqualTo(AlertType.RTO_BREACH);
+            assertThat(alerts).isNotEmpty(); // GH-90000
+            assertThat(alerts.get(0).getType()).isEqualTo(AlertType.RTO_BREACH); // GH-90000
         }
 
         @Test
-        @DisplayName("should verify graceful degradation during recovery")
-        void shouldVerifyDegradation() {
-            failoverService.startRecovery();
+        @DisplayName("should verify graceful degradation during recovery [GH-90000]")
+        void shouldVerifyDegradation() { // GH-90000
+            failoverService.startRecovery(); // GH-90000
 
-            ServiceStatus status = failoverService.getServiceStatus();
+            ServiceStatus status = failoverService.getServiceStatus(); // GH-90000
 
-            assertThat(status.isOperational()).isFalse();
-            assertThat(status.isDegraded()).isTrue();
+            assertThat(status.isOperational()).isFalse(); // GH-90000
+            assertThat(status.isDegraded()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should measure recovery resource consumption")
-        void shouldMeasureResources() {
-            failoverService.executeFullRecovery();
+        @DisplayName("should measure recovery resource consumption [GH-90000]")
+        void shouldMeasureResources() { // GH-90000
+            failoverService.executeFullRecovery(); // GH-90000
 
-            RecoveryResource resources = failoverService.getResourceConsumption();
+            RecoveryResource resources = failoverService.getResourceConsumption(); // GH-90000
 
-            assertThat(resources.getCPUUsagePercent()).isGreaterThan(0);
-            assertThat(resources.getMemoryUsageBytes()).isGreaterThan(0);
-            assertThat(resources.getNetworkBandwidthMbps()).isGreaterThan(0);
+            assertThat(resources.getCPUUsagePercent()).isGreaterThan(0); // GH-90000
+            assertThat(resources.getMemoryUsageBytes()).isGreaterThan(0); // GH-90000
+            assertThat(resources.getNetworkBandwidthMbps()).isGreaterThan(0); // GH-90000
         }
     }
 
@@ -387,110 +387,110 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
     static class RecoveryManager {}
     static class ClusterCoordinator {}
 
-    static class HealthCheckResult { private HealthStatus status; void setStatus(HealthStatus s) { this.status = s; } HealthStatus getStatus() { return status; } }
+    static class HealthCheckResult { private HealthStatus status; void setStatus(HealthStatus s) { this.status = s; } HealthStatus getStatus() { return status; } } // GH-90000
     enum HealthStatus { HEALTHY, TIMEOUT, UNHEALTHY }
-    static class FailoverEvent { boolean isTriggered() { return true; } }
-    static class FailoverConditions { int replicasHealthy; boolean quorumReached; void setReplicasHealthy(int count) { replicasHealthy = count; } void setQuorumReached(boolean q) { quorumReached = q; } }
-    static class WriteAheadLog { private List<LogEntry> entries = new ArrayList<>(); void addEntry(LogEntry e) { entries.add(e); } }
-    static class LogEntry { LogEntry(String op, int seq) {} }
-    static class BackupMetadata { private long timestamp; private long size; void setTimestamp(long ts) { timestamp = ts; } void setSize(long s) { size = s; } }
-    static class IncrementalBackup { IncrementalBackup(int seq) {} }
-    static class RecoveryProgress { boolean isCompleted() { return true; } int getEntriesRecovered() { return 3; } }
-    static class RecoveryMetrics { long getDataLossWindow() { return 30000; } }
-    static class MembershipChange { MembershipChange(String op, String node) {} }
+    static class FailoverEvent { boolean isTriggered() { return true; } } // GH-90000
+    static class FailoverConditions { int replicasHealthy; boolean quorumReached; void setReplicasHealthy(int count) { replicasHealthy = count; } void setQuorumReached(boolean q) { quorumReached = q; } } // GH-90000
+    static class WriteAheadLog { private List<LogEntry> entries = new ArrayList<>(); void addEntry(LogEntry e) { entries.add(e); } } // GH-90000
+    static class LogEntry { LogEntry(String op, int seq) {} } // GH-90000
+    static class BackupMetadata { private long timestamp; private long size; void setTimestamp(long ts) { timestamp = ts; } void setSize(long s) { size = s; } } // GH-90000
+    static class IncrementalBackup { IncrementalBackup(int seq) {} } // GH-90000
+    static class RecoveryProgress { boolean isCompleted() { return true; } int getEntriesRecovered() { return 3; } } // GH-90000
+    static class RecoveryMetrics { long getDataLossWindow() { return 30000; } } // GH-90000
+    static class MembershipChange { MembershipChange(String op, String node) {} } // GH-90000
     enum AlertType { RTO_BREACH, RPO_BREACH }
-    static class Alert { AlertType getType() { return AlertType.RTO_BREACH; } }
-    static class ServiceStatus { boolean isOperational() { return false; } boolean isDegraded() { return true; } }
-    static class RecoveryResource { double getCPUUsagePercent() { return 75.0; } long getMemoryUsageBytes() { return 500000000; } double getNetworkBandwidthMbps() { return 100.0; } }
-    static class RebalanceProgress { boolean isCompleted() { return true; } }
+    static class Alert { AlertType getType() { return AlertType.RTO_BREACH; } } // GH-90000
+    static class ServiceStatus { boolean isOperational() { return false; } boolean isDegraded() { return true; } } // GH-90000
+    static class RecoveryResource { double getCPUUsagePercent() { return 75.0; } long getMemoryUsageBytes() { return 500000000; } double getNetworkBandwidthMbps() { return 100.0; } } // GH-90000
+    static class RebalanceProgress { boolean isCompleted() { return true; } } // GH-90000
 
     // ===== Service Implementation =====
     static class FailoverRecoveryService {
         private String activeTarget = "replica-2-promoted";
-        private final List<String> recordedAttempts = new ArrayList<>();
-        private final List<RecoveryMetrics> failoverHistory = new ArrayList<>();
+        private final List<String> recordedAttempts = new ArrayList<>(); // GH-90000
+        private final List<RecoveryMetrics> failoverHistory = new ArrayList<>(); // GH-90000
         private boolean slowRecoverySimulated = false;
 
-        FailoverRecoveryService(FailoverManager fm, HealthCheckService hcs, RecoveryManager rm, ClusterCoordinator cc) {}
+        FailoverRecoveryService(FailoverManager fm, HealthCheckService hcs, RecoveryManager rm, ClusterCoordinator cc) {} // GH-90000
 
-        String electLeader(List<String> candidates) { return candidates.get(0); }
-        String promoteReplica(String primary, List<String> replicas) { return replicas.get(0); }
-        FailoverEvent initiateFailover(HealthCheckResult health) { return new FailoverEvent(); }
-        boolean canFailover(FailoverConditions conditions) { return true; }
+        String electLeader(List<String> candidates) { return candidates.get(0); } // GH-90000
+        String promoteReplica(String primary, List<String> replicas) { return replicas.get(0); } // GH-90000
+        FailoverEvent initiateFailover(HealthCheckResult health) { return new FailoverEvent(); } // GH-90000
+        boolean canFailover(FailoverConditions conditions) { return true; } // GH-90000
 
-        void initiateFailoverWithValidation(FailoverConditions conditions) {
-            if (!conditions.quorumReached) {
-                throw new NoAvailableReplicaException("Cannot initiate failover without quorum");
+        void initiateFailoverWithValidation(FailoverConditions conditions) { // GH-90000
+            if (!conditions.quorumReached) { // GH-90000
+                throw new NoAvailableReplicaException("Cannot initiate failover without quorum [GH-90000]");
             }
         }
 
-        void recordFailoverAttempt(String node) { recordedAttempts.add(node); }
-        boolean allowFailover(String node) { return false; }
+        void recordFailoverAttempt(String node) { recordedAttempts.add(node); } // GH-90000
+        boolean allowFailover(String node) { return false; } // GH-90000
 
-        void updateServiceRoute(String newLeader) { this.activeTarget = newLeader; }
-        String getActiveTarget() { return activeTarget; }
+        void updateServiceRoute(String newLeader) { this.activeTarget = newLeader; } // GH-90000
+        String getActiveTarget() { return activeTarget; } // GH-90000
 
-        RecoveryProgress recoverFromWAL(WriteAheadLog wal) { return new RecoveryProgress(); }
-        RecoveryProgress recoverToPointInTime(long timestamp) { return new RecoveryProgress(); }
-        RecoveryProgress restoreFromBackup(BackupMetadata backup) { return new RecoveryProgress(); }
-        RecoveryProgress incrementalRestore(BackupMetadata base, List<IncrementalBackup> increments) { return new RecoveryProgress(); }
-        boolean verifyDataConsistency() { return true; }
-        void executeFullRecovery() {}
-        RecoveryMetrics getRecoveryMetrics() { return new RecoveryMetrics(); }
+        RecoveryProgress recoverFromWAL(WriteAheadLog wal) { return new RecoveryProgress(); } // GH-90000
+        RecoveryProgress recoverToPointInTime(long timestamp) { return new RecoveryProgress(); } // GH-90000
+        RecoveryProgress restoreFromBackup(BackupMetadata backup) { return new RecoveryProgress(); } // GH-90000
+        RecoveryProgress incrementalRestore(BackupMetadata base, List<IncrementalBackup> increments) { return new RecoveryProgress(); } // GH-90000
+        boolean verifyDataConsistency() { return true; } // GH-90000
+        void executeFullRecovery() {} // GH-90000
+        RecoveryMetrics getRecoveryMetrics() { return new RecoveryMetrics(); } // GH-90000
 
-        List<String> addNodeToCluster(List<String> cluster, String node) {
-            List<String> updated = new ArrayList<>(cluster);
-            updated.add(node);
+        List<String> addNodeToCluster(List<String> cluster, String node) { // GH-90000
+            List<String> updated = new ArrayList<>(cluster); // GH-90000
+            updated.add(node); // GH-90000
             return updated;
         }
 
-        List<String> removeNodeFromCluster(List<String> cluster, String node) {
-            List<String> updated = new ArrayList<>(cluster);
-            updated.remove(node);
-            // Require at least (cluster.size()+1)/2 + 1 nodes for safe operation
+        List<String> removeNodeFromCluster(List<String> cluster, String node) { // GH-90000
+            List<String> updated = new ArrayList<>(cluster); // GH-90000
+            updated.remove(node); // GH-90000
+            // Require at least (cluster.size()+1)/2 + 1 nodes for safe operation // GH-90000
             // e.g. 3-node cluster needs 3 to allow any further removal; 4-node needs 3
-            int safeMinimum = (cluster.size() + 1) / 2 + 1;
-            if (updated.size() < safeMinimum) {
-                throw new QuorumLostException("Removal would leave cluster unable to tolerate further failures: "
-                        + updated.size() + " remaining, minimum safe is " + safeMinimum);
+            int safeMinimum = (cluster.size() + 1) / 2 + 1; // GH-90000
+            if (updated.size() < safeMinimum) { // GH-90000
+                throw new QuorumLostException("Removal would leave cluster unable to tolerate further failures: " // GH-90000
+                        + updated.size() + " remaining, minimum safe is " + safeMinimum); // GH-90000
             }
             return updated;
         }
 
-        RebalanceProgress rebalanceCluster() { return new RebalanceProgress(); }
-        boolean hasQuorum(List<String> cluster) { return true; }
-        boolean achieveConsensus(MembershipChange change) { return true; }
-        void simulateNetworkPartition(String node) {}
-        long measureActualRTO() { return 250000; }
-        long measureActualRPO() { return 45000; }
+        RebalanceProgress rebalanceCluster() { return new RebalanceProgress(); } // GH-90000
+        boolean hasQuorum(List<String> cluster) { return true; } // GH-90000
+        boolean achieveConsensus(MembershipChange change) { return true; } // GH-90000
+        void simulateNetworkPartition(String node) {} // GH-90000
+        long measureActualRTO() { return 250000; } // GH-90000
+        long measureActualRPO() { return 45000; } // GH-90000
 
-        List<RecoveryMetrics> getRecoveryHistory(int count) {
-            List<RecoveryMetrics> result = new ArrayList<>();
-            for (int i = 0; i < count; i++) {
-                result.add(new RecoveryMetrics());
+        List<RecoveryMetrics> getRecoveryHistory(int count) { // GH-90000
+            List<RecoveryMetrics> result = new ArrayList<>(); // GH-90000
+            for (int i = 0; i < count; i++) { // GH-90000
+                result.add(new RecoveryMetrics()); // GH-90000
             }
             return result;
         }
 
-        void simulateSlowRecovery(long millis) { slowRecoverySimulated = true; }
+        void simulateSlowRecovery(long millis) { slowRecoverySimulated = true; } // GH-90000
 
-        List<Alert> getRecoveryAlerts() {
-            if (slowRecoverySimulated) {
-                return List.of(new Alert());
+        List<Alert> getRecoveryAlerts() { // GH-90000
+            if (slowRecoverySimulated) { // GH-90000
+                return List.of(new Alert()); // GH-90000
             }
-            return List.of();
+            return List.of(); // GH-90000
         }
 
-        void startRecovery() {}
-        ServiceStatus getServiceStatus() { return new ServiceStatus(); }
-        RecoveryResource getResourceConsumption() { return new RecoveryResource(); }
-        void executeFailover() { failoverHistory.add(new RecoveryMetrics()); }
+        void startRecovery() {} // GH-90000
+        ServiceStatus getServiceStatus() { return new ServiceStatus(); } // GH-90000
+        RecoveryResource getResourceConsumption() { return new RecoveryResource(); } // GH-90000
+        void executeFailover() { failoverHistory.add(new RecoveryMetrics()); } // GH-90000
     }
 
     // ===== Custom Exceptions =====
-    static class FailoverException extends RuntimeException { FailoverException(String msg) { super(msg); } }
-    static class RecoveryException extends RuntimeException { RecoveryException(String msg) { super(msg); } }
-    static class DataLossException extends RuntimeException { DataLossException(String msg) { super(msg); } }
-    static class NoAvailableReplicaException extends RuntimeException { NoAvailableReplicaException(String msg) { super(msg); } }
-    static class QuorumLostException extends RuntimeException { QuorumLostException(String msg) { super(msg); } }
+    static class FailoverException extends RuntimeException { FailoverException(String msg) { super(msg); } } // GH-90000
+    static class RecoveryException extends RuntimeException { RecoveryException(String msg) { super(msg); } } // GH-90000
+    static class DataLossException extends RuntimeException { DataLossException(String msg) { super(msg); } } // GH-90000
+    static class NoAvailableReplicaException extends RuntimeException { NoAvailableReplicaException(String msg) { super(msg); } } // GH-90000
+    static class QuorumLostException extends RuntimeException { QuorumLostException(String msg) { super(msg); } } // GH-90000
 }

@@ -23,12 +23,12 @@ import static org.mockito.Mockito.*;
 
 /**
  * @doc.type class
- * @doc.purpose Unit tests for AudioFileService (async service layer per AEP pattern)
+ * @doc.purpose Unit tests for AudioFileService (async service layer per AEP pattern) // GH-90000
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("AudioFileService Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("AudioFileService Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class AudioFileServiceTest extends EventloopTestBase {
 
     @Mock
@@ -37,158 +37,158 @@ class AudioFileServiceTest extends EventloopTestBase {
     private AudioFileService service;
 
     @BeforeEach
-    void setUp() {
-        Eventloop eventloop = Eventloop.create();
-        service = new AudioFileService(repository, eventloop, Executors.newSingleThreadExecutor());
+    void setUp() { // GH-90000
+        Eventloop eventloop = Eventloop.create(); // GH-90000
+        service = new AudioFileService(repository, eventloop, Executors.newSingleThreadExecutor()); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN valid entity WHEN save THEN returns saved entity async")
-    void testSave() {
+    @DisplayName("GIVEN valid entity WHEN save THEN returns saved entity async [GH-90000]")
+    void testSave() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity entity = createTestAudioFile(tenantId);
-        when(repository.save(eq(tenantId), any())).thenReturn(entity);
+        AudioFileEntity entity = createTestAudioFile(tenantId); // GH-90000
+        when(repository.save(eq(tenantId), any())).thenReturn(entity); // GH-90000
 
         // WHEN
-        AudioFileEntity result = runPromise(() -> service.save(tenantId, entity));
+        AudioFileEntity result = runPromise(() -> service.save(tenantId, entity)); // GH-90000
 
         // THEN
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(entity.getId());
-        verify(repository).save(tenantId, entity);
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.getId()).isEqualTo(entity.getId()); // GH-90000
+        verify(repository).save(tenantId, entity); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN existing entity WHEN findById THEN returns entity async")
-    void testFindById() {
+    @DisplayName("GIVEN existing entity WHEN findById THEN returns entity async [GH-90000]")
+    void testFindById() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity entity = createTestAudioFile(tenantId);
-        when(repository.findById(tenantId, entity.getId())).thenReturn(Optional.of(entity));
+        AudioFileEntity entity = createTestAudioFile(tenantId); // GH-90000
+        when(repository.findById(tenantId, entity.getId())).thenReturn(Optional.of(entity)); // GH-90000
 
         // WHEN
-        Optional<AudioFileEntity> result = runPromise(() -> service.findById(tenantId, entity.getId()));
+        Optional<AudioFileEntity> result = runPromise(() -> service.findById(tenantId, entity.getId())); // GH-90000
 
         // THEN
-        assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(entity.getId());
+        assertThat(result).isPresent(); // GH-90000
+        assertThat(result.get().getId()).isEqualTo(entity.getId()); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN non-existent entity WHEN findById THEN returns empty async")
-    void testFindByIdNotFound() {
+    @DisplayName("GIVEN non-existent entity WHEN findById THEN returns empty async [GH-90000]")
+    void testFindByIdNotFound() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        UUID id = UUID.randomUUID();
-        when(repository.findById(tenantId, id)).thenReturn(Optional.empty());
+        UUID id = UUID.randomUUID(); // GH-90000
+        when(repository.findById(tenantId, id)).thenReturn(Optional.empty()); // GH-90000
 
         // WHEN
-        Optional<AudioFileEntity> result = runPromise(() -> service.findById(tenantId, id));
+        Optional<AudioFileEntity> result = runPromise(() -> service.findById(tenantId, id)); // GH-90000
 
         // THEN
-        assertThat(result).isEmpty();
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns list async")
-    void testFindByTenantId() {
+    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns list async [GH-90000]")
+    void testFindByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity entity1 = createTestAudioFile(tenantId);
-        AudioFileEntity entity2 = createTestAudioFile(tenantId);
-        when(repository.findByTenantId(tenantId)).thenReturn(List.of(entity1, entity2));
+        AudioFileEntity entity1 = createTestAudioFile(tenantId); // GH-90000
+        AudioFileEntity entity2 = createTestAudioFile(tenantId); // GH-90000
+        when(repository.findByTenantId(tenantId)).thenReturn(List.of(entity1, entity2)); // GH-90000
 
         // WHEN
-        List<AudioFileEntity> result = runPromise(() -> service.findByTenantId(tenantId));
+        List<AudioFileEntity> result = runPromise(() -> service.findByTenantId(tenantId)); // GH-90000
 
         // THEN
-        assertThat(result).hasSize(2);
+        assertThat(result).hasSize(2); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN entity WHEN softDelete THEN returns true async")
-    void testSoftDelete() {
+    @DisplayName("GIVEN entity WHEN softDelete THEN returns true async [GH-90000]")
+    void testSoftDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        UUID id = UUID.randomUUID();
-        when(repository.softDelete(tenantId, id)).thenReturn(true);
+        UUID id = UUID.randomUUID(); // GH-90000
+        when(repository.softDelete(tenantId, id)).thenReturn(true); // GH-90000
 
         // WHEN
-        Boolean result = runPromise(() -> service.softDelete(tenantId, id));
+        Boolean result = runPromise(() -> service.softDelete(tenantId, id)); // GH-90000
 
         // THEN
-        assertThat(result).isTrue();
-        verify(repository).softDelete(tenantId, id);
+        assertThat(result).isTrue(); // GH-90000
+        verify(repository).softDelete(tenantId, id); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN non-existent entity WHEN softDelete THEN returns false async")
-    void testSoftDeleteNotFound() {
+    @DisplayName("GIVEN non-existent entity WHEN softDelete THEN returns false async [GH-90000]")
+    void testSoftDeleteNotFound() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        UUID id = UUID.randomUUID();
-        when(repository.softDelete(tenantId, id)).thenReturn(false);
+        UUID id = UUID.randomUUID(); // GH-90000
+        when(repository.softDelete(tenantId, id)).thenReturn(false); // GH-90000
 
         // WHEN
-        Boolean result = runPromise(() -> service.softDelete(tenantId, id));
+        Boolean result = runPromise(() -> service.softDelete(tenantId, id)); // GH-90000
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(result).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN entity WHEN hardDelete THEN returns true async")
-    void testHardDelete() {
+    @DisplayName("GIVEN entity WHEN hardDelete THEN returns true async [GH-90000]")
+    void testHardDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        UUID id = UUID.randomUUID();
-        when(repository.hardDelete(tenantId, id)).thenReturn(true);
+        UUID id = UUID.randomUUID(); // GH-90000
+        when(repository.hardDelete(tenantId, id)).thenReturn(true); // GH-90000
 
         // WHEN
-        Boolean result = runPromise(() -> service.hardDelete(tenantId, id));
+        Boolean result = runPromise(() -> service.hardDelete(tenantId, id)); // GH-90000
 
         // THEN
-        assertThat(result).isTrue();
-        verify(repository).hardDelete(tenantId, id);
+        assertThat(result).isTrue(); // GH-90000
+        verify(repository).hardDelete(tenantId, id); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN existing entity WHEN existsById THEN returns true async")
-    void testExistsById() {
+    @DisplayName("GIVEN existing entity WHEN existsById THEN returns true async [GH-90000]")
+    void testExistsById() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        UUID id = UUID.randomUUID();
-        when(repository.existsById(tenantId, id)).thenReturn(true);
+        UUID id = UUID.randomUUID(); // GH-90000
+        when(repository.existsById(tenantId, id)).thenReturn(true); // GH-90000
 
         // WHEN
-        Boolean result = runPromise(() -> service.existsById(tenantId, id));
+        Boolean result = runPromise(() -> service.existsById(tenantId, id)); // GH-90000
 
         // THEN
-        assertThat(result).isTrue();
+        assertThat(result).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN entities WHEN countByTenantId THEN returns count async")
-    void testCountByTenantId() {
+    @DisplayName("GIVEN entities WHEN countByTenantId THEN returns count async [GH-90000]")
+    void testCountByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
-        when(repository.countByTenantId(tenantId)).thenReturn(5L);
+        when(repository.countByTenantId(tenantId)).thenReturn(5L); // GH-90000
 
         // WHEN
-        Long result = runPromise(() -> service.countByTenantId(tenantId));
+        Long result = runPromise(() -> service.countByTenantId(tenantId)); // GH-90000
 
         // THEN
-        assertThat(result).isEqualTo(5L);
+        assertThat(result).isEqualTo(5L); // GH-90000
     }
 
     // Helper methods
 
-    private AudioFileEntity createTestAudioFile(String tenantId) {
-        return new AudioFileEntity(
-            UUID.randomUUID(),
+    private AudioFileEntity createTestAudioFile(String tenantId) { // GH-90000
+        return new AudioFileEntity( // GH-90000
+            UUID.randomUUID(), // GH-90000
             tenantId,
-            UUID.randomUUID(),
+            UUID.randomUUID(), // GH-90000
             "test-audio.mp3",
             "/storage/test.mp3",
             "mp3"

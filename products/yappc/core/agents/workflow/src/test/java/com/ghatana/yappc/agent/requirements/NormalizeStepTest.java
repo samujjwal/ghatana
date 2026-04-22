@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Requirements NormalizeStep Tests")
+@DisplayName("Requirements NormalizeStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles normalize step test operations
@@ -32,52 +32,52 @@ class NormalizeStepTest extends EventloopTestBase {
   private NormalizeStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new NormalizeStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new NormalizeStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("requirements.normalize");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("requirements.normalize [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should normalize requirements from intake")
-  void shouldNormalizeRequirements() {
+  @DisplayName("Should normalize requirements from intake [GH-90000]")
+  void shouldNormalizeRequirements() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("requirementId", "req-001");
-    context.put(
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("requirementId", "req-001"); // GH-90000
+    context.put( // GH-90000
         "requirements",
-        List.of(
-            Map.of("id", "r1", "text", "System must support authentication", "type", "functional"),
-            Map.of("id", "r2", "text", "Response time < 100ms", "type", "non-functional")));
+        List.of( // GH-90000
+            Map.of("id", "r1", "text", "System must support authentication", "type", "functional"), // GH-90000
+            Map.of("id", "r2", "text", "Response time < 100ms", "type", "non-functional"))); // GH-90000
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("requirementId")).isEqualTo("req-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("requirementId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should fail when requirements are missing")
-  void shouldFailWhenRequirementsMissing() {
+  @DisplayName("Should fail when requirements are missing [GH-90000]")
+  void shouldFailWhenRequirementsMissing() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Input data is required");
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .hasMessageContaining("Input data is required [GH-90000]");
   }
 }

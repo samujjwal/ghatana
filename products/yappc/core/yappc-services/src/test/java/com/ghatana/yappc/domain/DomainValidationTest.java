@@ -17,48 +17,48 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DomainValidationTest {
 
     @Test
-    void shouldRejectBlankIntentIdentityAndCoreFields() {
-        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder()
-            .id(" ")
-            .productName("Valid Product")
-            .description("Valid description")
-            .build());
+    void shouldRejectBlankIntentIdentityAndCoreFields() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
+            .id("  [GH-90000]")
+            .productName("Valid Product [GH-90000]")
+            .description("Valid description [GH-90000]")
+            .build()); // GH-90000
 
-        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder()
-            .id("intent-1")
-            .productName(" ")
-            .description("Valid description")
-            .build());
+        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
+            .id("intent-1 [GH-90000]")
+            .productName("  [GH-90000]")
+            .description("Valid description [GH-90000]")
+            .build()); // GH-90000
 
-        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder()
-            .id("intent-1")
-            .productName("Valid Product")
-            .description(" ")
-            .build());
+        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
+            .id("intent-1 [GH-90000]")
+            .productName("Valid Product [GH-90000]")
+            .description("  [GH-90000]")
+            .build()); // GH-90000
     }
 
     @Test
-    void shouldInitializeNullCollectionsToSafeDefaults() {
-        IntentSpec intentSpec = assertDoesNotThrow(() -> IntentSpec.builder()
-            .id("intent-1")
-            .productName("Product")
-            .description("Description")
-            .goals(null)
-            .personas(null)
-            .constraints(null)
-            .metadata(null)
-            .build());
+    void shouldInitializeNullCollectionsToSafeDefaults() { // GH-90000
+        IntentSpec intentSpec = assertDoesNotThrow(() -> IntentSpec.builder() // GH-90000
+            .id("intent-1 [GH-90000]")
+            .productName("Product [GH-90000]")
+            .description("Description [GH-90000]")
+            .goals(null) // GH-90000
+            .personas(null) // GH-90000
+            .constraints(null) // GH-90000
+            .metadata(null) // GH-90000
+            .build()); // GH-90000
 
-        assertEquals(0, intentSpec.goals().size());
-        assertEquals(0, intentSpec.personas().size());
-        assertEquals(0, intentSpec.constraints().size());
-        assertEquals(0, intentSpec.metadata().size());
+        assertEquals(0, intentSpec.goals().size()); // GH-90000
+        assertEquals(0, intentSpec.personas().size()); // GH-90000
+        assertEquals(0, intentSpec.constraints().size()); // GH-90000
+        assertEquals(0, intentSpec.metadata().size()); // GH-90000
     }
 
     @Test
-    void shouldRejectBlankShapeIdentity() {
-        assertThrows(IllegalArgumentException.class, () -> ShapeSpec.builder()
-            .id("\t")
-            .build());
+    void shouldRejectBlankShapeIdentity() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> ShapeSpec.builder() // GH-90000
+            .id("\t [GH-90000]")
+            .build()); // GH-90000
     }
 }

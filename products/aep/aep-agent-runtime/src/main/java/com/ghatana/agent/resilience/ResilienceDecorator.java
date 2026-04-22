@@ -83,6 +83,7 @@ public final class ResilienceDecorator {
                 .circuitBreaker(circuitBreaker)
                 .retryPolicy(retryPolicy)
                 .bulkhead(bulkhead)
+                .timeout(config.getTimeout())
                 .build();
 
         if (healthMonitor != null) {

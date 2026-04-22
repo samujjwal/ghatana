@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.reflex;
@@ -23,250 +23,250 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("DefaultReflexEngine")
+@DisplayName("DefaultReflexEngine [GH-90000]")
 class DefaultReflexEngineTest extends EventloopTestBase {
 
     private DefaultReflexEngine engine;
     private static final String TENANT = "tenant-test";
 
     @BeforeEach
-    void setUp() {
-        engine = new DefaultReflexEngine();
+    void setUp() { // GH-90000
+        engine = new DefaultReflexEngine(); // GH-90000
     }
 
     // ─── Rule Registration ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Rule Registration")
+    @DisplayName("Rule Registration [GH-90000]")
     class RuleRegistrationTests {
 
         @Test
-        @DisplayName("registers a rule and retrieves it")
-        void registersAndRetrievesRule() throws Exception {
-            ReflexRule rule = buildAlertRule("rfx-001", TENANT);
+        @DisplayName("registers a rule and retrieves it [GH-90000]")
+        void registersAndRetrievesRule() throws Exception { // GH-90000
+            ReflexRule rule = buildAlertRule("rfx-001", TENANT); // GH-90000
 
-            ReflexRule registered = runPromise(() -> engine.registerRule(rule));
-            Optional<ReflexRule> fetched = runPromise(() -> engine.getRule("rfx-001", TENANT));
+            ReflexRule registered = runPromise(() -> engine.registerRule(rule)); // GH-90000
+            Optional<ReflexRule> fetched = runPromise(() -> engine.getRule("rfx-001", TENANT)); // GH-90000
 
-            assertThat(registered.getId()).isEqualTo("rfx-001");
-            assertThat(fetched).isPresent();
-            assertThat(fetched.get().getId()).isEqualTo("rfx-001");
+            assertThat(registered.getId()).isEqualTo("rfx-001 [GH-90000]");
+            assertThat(fetched).isPresent(); // GH-90000
+            assertThat(fetched.get().getId()).isEqualTo("rfx-001 [GH-90000]");
         }
 
         @Test
-        @DisplayName("lists all rules for a tenant")
-        void listsRulesForTenant() throws Exception {
-            runPromise(() -> engine.registerRule(buildAlertRule("rfx-a", TENANT)));
-            runPromise(() -> engine.registerRule(buildAlertRule("rfx-b", TENANT)));
-            runPromise(() -> engine.registerRule(buildAlertRule("rfx-c", "other-tenant")));
+        @DisplayName("lists all rules for a tenant [GH-90000]")
+        void listsRulesForTenant() throws Exception { // GH-90000
+            runPromise(() -> engine.registerRule(buildAlertRule("rfx-a", TENANT))); // GH-90000
+            runPromise(() -> engine.registerRule(buildAlertRule("rfx-b", TENANT))); // GH-90000
+            runPromise(() -> engine.registerRule(buildAlertRule("rfx-c", "other-tenant"))); // GH-90000
 
-            List<ReflexRule> rules = runPromise(() -> engine.listRules(TENANT));
-            assertThat(rules).hasSize(2).extracting(ReflexRule::getId)
-                    .containsExactlyInAnyOrder("rfx-a", "rfx-b");
+            List<ReflexRule> rules = runPromise(() -> engine.listRules(TENANT)); // GH-90000
+            assertThat(rules).hasSize(2).extracting(ReflexRule::getId) // GH-90000
+                    .containsExactlyInAnyOrder("rfx-a", "rfx-b"); // GH-90000
         }
 
         @Test
-        @DisplayName("removes a rule by id")
-        void removesRule() throws Exception {
-            runPromise(() -> engine.registerRule(buildAlertRule("to-remove", TENANT)));
-            Boolean removed = runPromise(() -> engine.removeRule("to-remove", TENANT));
+        @DisplayName("removes a rule by id [GH-90000]")
+        void removesRule() throws Exception { // GH-90000
+            runPromise(() -> engine.registerRule(buildAlertRule("to-remove", TENANT))); // GH-90000
+            Boolean removed = runPromise(() -> engine.removeRule("to-remove", TENANT)); // GH-90000
 
-            Optional<ReflexRule> fetched = runPromise(() -> engine.getRule("to-remove", TENANT));
-            assertThat(removed).isTrue();
-            assertThat(fetched).isEmpty();
+            Optional<ReflexRule> fetched = runPromise(() -> engine.getRule("to-remove", TENANT)); // GH-90000
+            assertThat(removed).isTrue(); // GH-90000
+            assertThat(fetched).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("removing non-existent rule returns false")
-        void removingNonExistentRuleReturnsFalse() throws Exception {
-            Boolean result = runPromise(() -> engine.removeRule("ghost", TENANT));
-            assertThat(result).isFalse();
+        @DisplayName("removing non-existent rule returns false [GH-90000]")
+        void removingNonExistentRuleReturnsFalse() throws Exception { // GH-90000
+            Boolean result = runPromise(() -> engine.removeRule("ghost", TENANT)); // GH-90000
+            assertThat(result).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("enables a previously disabled rule")
-        void enablesDisabledRule() throws Exception {
-            ReflexRule disabled = buildAlertRule("rfx-dis", TENANT).toBuilder().enabled(false).build();
-            runPromise(() -> engine.registerRule(disabled));
+        @DisplayName("enables a previously disabled rule [GH-90000]")
+        void enablesDisabledRule() throws Exception { // GH-90000
+            ReflexRule disabled = buildAlertRule("rfx-dis", TENANT).toBuilder().enabled(false).build(); // GH-90000
+            runPromise(() -> engine.registerRule(disabled)); // GH-90000
 
-            ReflexRule enabled = runPromise(() -> engine.enableRule("rfx-dis", TENANT));
-            assertThat(enabled.isEnabled()).isTrue();
+            ReflexRule enabled = runPromise(() -> engine.enableRule("rfx-dis", TENANT)); // GH-90000
+            assertThat(enabled.isEnabled()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("disables a previously enabled rule")
-        void disablesEnabledRule() throws Exception {
-            runPromise(() -> engine.registerRule(buildAlertRule("rfx-en", TENANT)));
+        @DisplayName("disables a previously enabled rule [GH-90000]")
+        void disablesEnabledRule() throws Exception { // GH-90000
+            runPromise(() -> engine.registerRule(buildAlertRule("rfx-en", TENANT))); // GH-90000
 
-            ReflexRule disabled = runPromise(() -> engine.disableRule("rfx-en", TENANT));
-            assertThat(disabled.isEnabled()).isFalse();
+            ReflexRule disabled = runPromise(() -> engine.disableRule("rfx-en", TENANT)); // GH-90000
+            assertThat(disabled.isEnabled()).isFalse(); // GH-90000
         }
     }
 
     // ─── Rule Matching ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Rule Matching")
+    @DisplayName("Rule Matching [GH-90000]")
     class RuleMatchingTests {
 
         @Test
-        @DisplayName("finds matching rules for a pattern trigger")
-        void findsMatchingRulesForPatternTrigger() throws Exception {
-            ReflexRule rule = ReflexRule.builder()
-                    .id("rfx-pattern")
-                    .name("Pattern Rule")
-                    .tenantId(TENANT)
-                    .enabled(true)
-                    .triggerTypes(List.of(ReflexTrigger.TriggerType.PATTERN))
-                    .condition(ReflexRule.Condition.builder()
-                            .patternId("high-error-pattern")
-                            .build())
-                    .action(ReflexRule.Action.alert("critical", "Pattern detected"))
-                    .build();
-            runPromise(() -> engine.registerRule(rule));
+        @DisplayName("finds matching rules for a pattern trigger [GH-90000]")
+        void findsMatchingRulesForPatternTrigger() throws Exception { // GH-90000
+            ReflexRule rule = ReflexRule.builder() // GH-90000
+                    .id("rfx-pattern [GH-90000]")
+                    .name("Pattern Rule [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .enabled(true) // GH-90000
+                    .triggerTypes(List.of(ReflexTrigger.TriggerType.PATTERN)) // GH-90000
+                    .condition(ReflexRule.Condition.builder() // GH-90000
+                            .patternId("high-error-pattern [GH-90000]")
+                            .build()) // GH-90000
+                    .action(ReflexRule.Action.alert("critical", "Pattern detected")) // GH-90000
+                    .build(); // GH-90000
+            runPromise(() -> engine.registerRule(rule)); // GH-90000
 
-            ReflexTrigger trigger = ReflexTrigger.fromPattern("high-error-pattern", 0.9f, TENANT);
-            List<ReflexRule> matches = runPromise(() -> engine.findMatchingRules(trigger));
+            ReflexTrigger trigger = ReflexTrigger.fromPattern("high-error-pattern", 0.9f, TENANT); // GH-90000
+            List<ReflexRule> matches = runPromise(() -> engine.findMatchingRules(trigger)); // GH-90000
 
-            assertThat(matches).extracting(ReflexRule::getId).contains("rfx-pattern");
+            assertThat(matches).extracting(ReflexRule::getId).contains("rfx-pattern [GH-90000]");
         }
 
         @Test
-        @DisplayName("disabled rules are not matched")
-        void disabledRulesAreNotMatched() throws Exception {
-            ReflexRule disabled = ReflexRule.builder()
-                    .id("rfx-disabled")
-                    .name("Disabled Rule")
-                    .tenantId(TENANT)
-                    .enabled(false)
-                    .condition(ReflexRule.Condition.builder()
-                            .patternId("any-pattern")
-                            .build())
-                    .action(ReflexRule.Action.alert("low", "Disabled alert"))
-                    .build();
-            runPromise(() -> engine.registerRule(disabled));
+        @DisplayName("disabled rules are not matched [GH-90000]")
+        void disabledRulesAreNotMatched() throws Exception { // GH-90000
+            ReflexRule disabled = ReflexRule.builder() // GH-90000
+                    .id("rfx-disabled [GH-90000]")
+                    .name("Disabled Rule [GH-90000]")
+                    .tenantId(TENANT) // GH-90000
+                    .enabled(false) // GH-90000
+                    .condition(ReflexRule.Condition.builder() // GH-90000
+                            .patternId("any-pattern [GH-90000]")
+                            .build()) // GH-90000
+                    .action(ReflexRule.Action.alert("low", "Disabled alert")) // GH-90000
+                    .build(); // GH-90000
+            runPromise(() -> engine.registerRule(disabled)); // GH-90000
 
-            ReflexTrigger trigger = ReflexTrigger.fromPattern("any-pattern", 0.9f, TENANT);
-            List<ReflexRule> matches = runPromise(() -> engine.findMatchingRules(trigger));
+            ReflexTrigger trigger = ReflexTrigger.fromPattern("any-pattern", 0.9f, TENANT); // GH-90000
+            List<ReflexRule> matches = runPromise(() -> engine.findMatchingRules(trigger)); // GH-90000
 
-            assertThat(matches).extracting(ReflexRule::getId).doesNotContain("rfx-disabled");
+            assertThat(matches).extracting(ReflexRule::getId).doesNotContain("rfx-disabled [GH-90000]");
         }
 
         @Test
-        @DisplayName("cross-tenant rules are not matched")
-        void crossTenantRulesAreNotMatched() throws Exception {
-            ReflexRule rule = buildAlertRule("rfx-other-tenant", "other-tenant");
-            runPromise(() -> engine.registerRule(rule));
+        @DisplayName("cross-tenant rules are not matched [GH-90000]")
+        void crossTenantRulesAreNotMatched() throws Exception { // GH-90000
+            ReflexRule rule = buildAlertRule("rfx-other-tenant", "other-tenant"); // GH-90000
+            runPromise(() -> engine.registerRule(rule)); // GH-90000
 
-            ReflexTrigger trigger = ReflexTrigger.fromPattern("any-pattern", 1.0f, TENANT);
-            List<ReflexRule> matches = runPromise(() -> engine.findMatchingRules(trigger));
+            ReflexTrigger trigger = ReflexTrigger.fromPattern("any-pattern", 1.0f, TENANT); // GH-90000
+            List<ReflexRule> matches = runPromise(() -> engine.findMatchingRules(trigger)); // GH-90000
 
-            assertThat(matches).extracting(ReflexRule::getId).doesNotContain("rfx-other-tenant");
+            assertThat(matches).extracting(ReflexRule::getId).doesNotContain("rfx-other-tenant [GH-90000]");
         }
     }
 
     // ─── Trigger Processing ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Trigger Processing")
+    @DisplayName("Trigger Processing [GH-90000]")
     class TriggerProcessingTests {
 
         @Test
-        @DisplayName("process returns result when no rules match")
-        void processReturnsResultWithNoMatches() throws Exception {
-            ReflexTrigger trigger = ReflexTrigger.fromPattern("no-such-pattern", 1.0f, TENANT);
-            ReflexEngine.ExecutionResult result = runPromise(() -> engine.process(trigger));
+        @DisplayName("process returns result when no rules match [GH-90000]")
+        void processReturnsResultWithNoMatches() throws Exception { // GH-90000
+            ReflexTrigger trigger = ReflexTrigger.fromPattern("no-such-pattern", 1.0f, TENANT); // GH-90000
+            ReflexEngine.ExecutionResult result = runPromise(() -> engine.process(trigger)); // GH-90000
 
-            assertThat(result).isNotNull();
-            assertThat(result.getMatchedRules()).isEmpty();
+            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result.getMatchedRules()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("process returns batch result for list of triggers")
-        void processBatchHandlesMultipleTriggers() throws Exception {
-            ReflexTrigger t1 = ReflexTrigger.fromPattern("pat-a", 0.8f, TENANT);
-            ReflexTrigger t2 = ReflexTrigger.fromPattern("pat-b", 0.9f, TENANT);
+        @DisplayName("process returns batch result for list of triggers [GH-90000]")
+        void processBatchHandlesMultipleTriggers() throws Exception { // GH-90000
+            ReflexTrigger t1 = ReflexTrigger.fromPattern("pat-a", 0.8f, TENANT); // GH-90000
+            ReflexTrigger t2 = ReflexTrigger.fromPattern("pat-b", 0.9f, TENANT); // GH-90000
 
-            ReflexEngine.BatchResult batchResult = runPromise(() -> engine.processBatch(List.of(t1, t2)));
+            ReflexEngine.BatchResult batchResult = runPromise(() -> engine.processBatch(List.of(t1, t2))); // GH-90000
 
-            assertThat(batchResult).isNotNull();
-            assertThat(batchResult.getTotalProcessed()).isEqualTo(2);
+            assertThat(batchResult).isNotNull(); // GH-90000
+            assertThat(batchResult.getTotalProcessed()).isEqualTo(2); // GH-90000
         }
     }
 
     // ─── Stats ────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Engine Stats")
+    @DisplayName("Engine Stats [GH-90000]")
     class StatsTests {
 
         @Test
-        @DisplayName("getStats returns stats for tenant")
-        void getStatsReturnsTenantStats() throws Exception {
-            ReflexEngine.EngineStats stats = runPromise(() -> engine.getStats(TENANT));
-            assertThat(stats).isNotNull();
-            assertThat(stats.getTotalRules()).isGreaterThanOrEqualTo(0);
+        @DisplayName("getStats returns stats for tenant [GH-90000]")
+        void getStatsReturnsTenantStats() throws Exception { // GH-90000
+            ReflexEngine.EngineStats stats = runPromise(() -> engine.getStats(TENANT)); // GH-90000
+            assertThat(stats).isNotNull(); // GH-90000
+            assertThat(stats.getTotalRules()).isGreaterThanOrEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("clearAll removes all rules for tenant")
-        void clearAllRemovesRulesForTenant() throws Exception {
-            runPromise(() -> engine.registerRule(buildAlertRule("rfx-x", TENANT)));
-            runPromise(() -> engine.registerRule(buildAlertRule("rfx-y", TENANT)));
+        @DisplayName("clearAll removes all rules for tenant [GH-90000]")
+        void clearAllRemovesRulesForTenant() throws Exception { // GH-90000
+            runPromise(() -> engine.registerRule(buildAlertRule("rfx-x", TENANT))); // GH-90000
+            runPromise(() -> engine.registerRule(buildAlertRule("rfx-y", TENANT))); // GH-90000
 
-            runPromise(() -> engine.clearAll(TENANT));
+            runPromise(() -> engine.clearAll(TENANT)); // GH-90000
 
-            List<ReflexRule> remaining = runPromise(() -> engine.listRules(TENANT));
-            assertThat(remaining).isEmpty();
+            List<ReflexRule> remaining = runPromise(() -> engine.listRules(TENANT)); // GH-90000
+            assertThat(remaining).isEmpty(); // GH-90000
         }
     }
 
     // ─── Action Handler Registration ──────────────────────────────────────────
 
     @Nested
-    @DisplayName("Action Handlers")
+    @DisplayName("Action Handlers [GH-90000]")
     class ActionHandlerTests {
 
         @Test
-        @DisplayName("custom handler is registered and retrievable")
-        void customHandlerRegisteredAndRetrievable() {
-            ReflexEngine.ActionHandler handler = (action, trigger, rule) -> io.activej.promise.Promise.of(
-                    ReflexOutcome.success(
-                            rule.getId(),
-                            trigger.getTriggerId(),
+        @DisplayName("custom handler is registered and retrievable [GH-90000]")
+        void customHandlerRegisteredAndRetrievable() { // GH-90000
+            ReflexEngine.ActionHandler handler = (action, trigger, rule) -> io.activej.promise.Promise.of( // GH-90000
+                    ReflexOutcome.success( // GH-90000
+                            rule.getId(), // GH-90000
+                            trigger.getTriggerId(), // GH-90000
                             ReflexRule.ActionType.WEBHOOK,
-                            java.time.Instant.now(),
-                            java.util.Map.of(),
-                            trigger.getTenantId()));
+                            java.time.Instant.now(), // GH-90000
+                            java.util.Map.of(), // GH-90000
+                            trigger.getTenantId())); // GH-90000
 
-            engine.registerActionHandler(ReflexRule.ActionType.WEBHOOK, handler);
+            engine.registerActionHandler(ReflexRule.ActionType.WEBHOOK, handler); // GH-90000
 
             Optional<ReflexEngine.ActionHandler> retrieved =
-                    engine.getActionHandler(ReflexRule.ActionType.WEBHOOK);
-            assertThat(retrieved).isPresent();
+                    engine.getActionHandler(ReflexRule.ActionType.WEBHOOK); // GH-90000
+            assertThat(retrieved).isPresent(); // GH-90000
         }
 
         @Test
-        @DisplayName("alert handler is pre-registered by default")
-        void alertHandlerIsPreregistered() {
+        @DisplayName("alert handler is pre-registered by default [GH-90000]")
+        void alertHandlerIsPreregistered() { // GH-90000
             Optional<ReflexEngine.ActionHandler> handler =
-                    engine.getActionHandler(ReflexRule.ActionType.ALERT);
-            assertThat(handler).isPresent();
+                    engine.getActionHandler(ReflexRule.ActionType.ALERT); // GH-90000
+            assertThat(handler).isPresent(); // GH-90000
         }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    private static ReflexRule buildAlertRule(String id, String tenantId) {
-        return ReflexRule.builder()
-                .id(id)
-                .name("Alert Rule " + id)
-                .tenantId(tenantId)
-                .enabled(true)
-                .condition(ReflexRule.Condition.builder()
-                        .patternId("test-pattern")
-                        .build())
-                .action(ReflexRule.Action.alert("medium", "Test alert"))
-                .build();
+    private static ReflexRule buildAlertRule(String id, String tenantId) { // GH-90000
+        return ReflexRule.builder() // GH-90000
+                .id(id) // GH-90000
+                .name("Alert Rule " + id) // GH-90000
+                .tenantId(tenantId) // GH-90000
+                .enabled(true) // GH-90000
+                .condition(ReflexRule.Condition.builder() // GH-90000
+                        .patternId("test-pattern [GH-90000]")
+                        .build()) // GH-90000
+                .action(ReflexRule.Action.alert("medium", "Test alert")) // GH-90000
+                .build(); // GH-90000
     }
 }

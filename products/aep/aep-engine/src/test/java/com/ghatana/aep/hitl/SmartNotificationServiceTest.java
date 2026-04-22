@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.hitl;
@@ -21,203 +21,203 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("SmartNotificationService")
+@DisplayName("SmartNotificationService [GH-90000]")
 class SmartNotificationServiceTest {
 
     private SmartNotificationService service;
 
     @BeforeEach
-    void setUp() {
-        service = new DefaultSmartNotificationService();
+    void setUp() { // GH-90000
+        service = new DefaultSmartNotificationService(); // GH-90000
     }
 
     @Nested
-    @DisplayName("shouldNotify()")
+    @DisplayName("shouldNotify() [GH-90000]")
     class ShouldNotifyTests {
 
         @Test
-        @DisplayName("notifies for critical priority")
-        void notifiesForCriticalPriority() {
-            SmartNotificationService.NotificationDecision decision = service.shouldNotify(
+        @DisplayName("notifies for critical priority [GH-90000]")
+        void notifiesForCriticalPriority() { // GH-90000
+            SmartNotificationService.NotificationDecision decision = service.shouldNotify( // GH-90000
                 "item-1",
                 SmartNotificationService.Priority.CRITICAL,
-                Map.of("tenantId", "tenant-1")
+                Map.of("tenantId", "tenant-1") // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isTrue();
-            assertThat(decision.channel()).isEqualTo("in-app");
+            assertThat(decision.shouldNotify()).isTrue(); // GH-90000
+            assertThat(decision.channel()).isEqualTo("in-app [GH-90000]");
         }
 
         @Test
-        @DisplayName("notifies for high priority")
-        void notifiesForHighPriority() {
-            SmartNotificationService.NotificationDecision decision = service.shouldNotify(
+        @DisplayName("notifies for high priority [GH-90000]")
+        void notifiesForHighPriority() { // GH-90000
+            SmartNotificationService.NotificationDecision decision = service.shouldNotify( // GH-90000
                 "item-1",
                 SmartNotificationService.Priority.HIGH,
-                Map.of("tenantId", "tenant-1")
+                Map.of("tenantId", "tenant-1") // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isTrue();
+            assertThat(decision.shouldNotify()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("does not notify for info priority")
-        void doesNotNotifyForInfoPriority() {
-            SmartNotificationService.NotificationDecision decision = service.shouldNotify(
+        @DisplayName("does not notify for info priority [GH-90000]")
+        void doesNotNotifyForInfoPriority() { // GH-90000
+            SmartNotificationService.NotificationDecision decision = service.shouldNotify( // GH-90000
                 "item-1",
                 SmartNotificationService.Priority.INFO,
-                Map.of("tenantId", "tenant-1")
+                Map.of("tenantId", "tenant-1") // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isFalse();
-            assertThat(decision.reason()).isEqualTo("priority_disabled");
+            assertThat(decision.shouldNotify()).isFalse(); // GH-90000
+            assertThat(decision.reason()).isEqualTo("priority_disabled [GH-90000]");
         }
 
         @Test
-        @DisplayName("respects confidence threshold")
-        void respectsConfidenceThreshold() {
-            SmartNotificationService.NotificationDecision decision = service.shouldNotify(
+        @DisplayName("respects confidence threshold [GH-90000]")
+        void respectsConfidenceThreshold() { // GH-90000
+            SmartNotificationService.NotificationDecision decision = service.shouldNotify( // GH-90000
                 "item-1",
                 SmartNotificationService.Priority.HIGH,
-                Map.of("tenantId", "tenant-1", "confidence", 0.5)
+                Map.of("tenantId", "tenant-1", "confidence", 0.5) // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isFalse();
-            assertThat(decision.reason()).isEqualTo("low_confidence");
+            assertThat(decision.shouldNotify()).isFalse(); // GH-90000
+            assertThat(decision.reason()).isEqualTo("low_confidence [GH-90000]");
         }
 
         @Test
-        @DisplayName("uses email channel for offline users")
-        void usesEmailChannelForOfflineUsers() {
-            SmartNotificationService.NotificationDecision decision = service.shouldNotify(
+        @DisplayName("uses email channel for offline users [GH-90000]")
+        void usesEmailChannelForOfflineUsers() { // GH-90000
+            SmartNotificationService.NotificationDecision decision = service.shouldNotify( // GH-90000
                 "item-1",
                 SmartNotificationService.Priority.HIGH,
-                Map.of("tenantId", "tenant-1", "userOnline", false)
+                Map.of("tenantId", "tenant-1", "userOnline", false) // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isTrue();
-            assertThat(decision.channel()).isEqualTo("email");
+            assertThat(decision.shouldNotify()).isTrue(); // GH-90000
+            assertThat(decision.channel()).isEqualTo("email [GH-90000]");
         }
 
         @Test
-        @DisplayName("uses preferred channel from context")
-        void usesPreferredChannelFromContext() {
-            SmartNotificationService.NotificationDecision decision = service.shouldNotify(
+        @DisplayName("uses preferred channel from context [GH-90000]")
+        void usesPreferredChannelFromContext() { // GH-90000
+            SmartNotificationService.NotificationDecision decision = service.shouldNotify( // GH-90000
                 "item-1",
                 SmartNotificationService.Priority.MEDIUM,
-                Map.of("tenantId", "tenant-1", "preferredChannel", "sms")
+                Map.of("tenantId", "tenant-1", "preferredChannel", "sms") // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isTrue();
-            assertThat(decision.channel()).isEqualTo("sms");
+            assertThat(decision.shouldNotify()).isTrue(); // GH-90000
+            assertThat(decision.channel()).isEqualTo("sms [GH-90000]");
         }
 
         @Test
-        @DisplayName("rate limits notifications")
-        void rateLimitsNotifications() {
+        @DisplayName("rate limits notifications [GH-90000]")
+        void rateLimitsNotifications() { // GH-90000
             String tenantId = "tenant-1";
             
             // First notification
-            service.shouldNotify("item-1", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId));
+            service.shouldNotify("item-1", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId)); // GH-90000
             
             // Immediate second notification should be rate limited
-            SmartNotificationService.NotificationDecision decision = service.shouldNotify(
+            SmartNotificationService.NotificationDecision decision = service.shouldNotify( // GH-90000
                 "item-2",
                 SmartNotificationService.Priority.HIGH,
-                Map.of("tenantId", tenantId)
+                Map.of("tenantId", tenantId) // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isFalse();
-            assertThat(decision.reason()).isEqualTo("rate_limited");
+            assertThat(decision.shouldNotify()).isFalse(); // GH-90000
+            assertThat(decision.reason()).isEqualTo("rate_limited [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Response Tracking")
+    @DisplayName("Response Tracking [GH-90000]")
     class ResponseTrackingTests {
 
         @Test
-        @DisplayName("records response time")
-        void recordsResponseTime() {
-            service.recordResponseTime("tenant-1-item-1", 5000);
+        @DisplayName("records response time [GH-90000]")
+        void recordsResponseTime() { // GH-90000
+            service.recordResponseTime("tenant-1-item-1", 5000); // GH-90000
             
-            SmartNotificationService.NotificationStats stats = service.getStats("tenant-1");
-            assertThat(stats.averageResponseTimeMs()).isEqualTo(5000.0);
+            SmartNotificationService.NotificationStats stats = service.getStats("tenant-1 [GH-90000]");
+            assertThat(stats.averageResponseTimeMs()).isEqualTo(5000.0); // GH-90000
         }
 
         @Test
-        @DisplayName("records dismissal")
-        void recordsDismissal() {
-            service.recordDismissal("tenant-1-item-1", "not_relevant");
+        @DisplayName("records dismissal [GH-90000]")
+        void recordsDismissal() { // GH-90000
+            service.recordDismissal("tenant-1-item-1", "not_relevant"); // GH-90000
             
-            SmartNotificationService.NotificationStats stats = service.getStats("tenant-1");
-            assertThat(stats.totalDismissed()).isEqualTo(1);
+            SmartNotificationService.NotificationStats stats = service.getStats("tenant-1 [GH-90000]");
+            assertThat(stats.totalDismissed()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("calculates notification rate")
-        void calculatesNotificationRate() {
+        @DisplayName("calculates notification rate [GH-90000]")
+        void calculatesNotificationRate() { // GH-90000
             String tenantId = "tenant-1";
             
-            service.shouldNotify("item-1", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId));
-            service.shouldNotify("item-2", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId));
-            service.recordDismissal("tenant-1-item-1", "ignored");
+            service.shouldNotify("item-1", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId)); // GH-90000
+            service.shouldNotify("item-2", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId)); // GH-90000
+            service.recordDismissal("tenant-1-item-1", "ignored"); // GH-90000
             
-            SmartNotificationService.NotificationStats stats = service.getStats(tenantId);
-            assertThat(stats.notificationRate()).isEqualTo(0.5);
+            SmartNotificationService.NotificationStats stats = service.getStats(tenantId); // GH-90000
+            assertThat(stats.notificationRate()).isEqualTo(0.5); // GH-90000
         }
 
         @Test
-        @DisplayName("handles null tenant in response time")
-        void handlesNullTenantInResponseTime() {
-            service.recordResponseTime("item-1", 5000);
+        @DisplayName("handles null tenant in response time [GH-90000]")
+        void handlesNullTenantInResponseTime() { // GH-90000
+            service.recordResponseTime("item-1", 5000); // GH-90000
             
             // Should not throw
-            SmartNotificationService.NotificationStats stats = service.getStats("default");
-            assertThat(stats.averageResponseTimeMs()).isEqualTo(0.0);
+            SmartNotificationService.NotificationStats stats = service.getStats("default [GH-90000]");
+            assertThat(stats.averageResponseTimeMs()).isEqualTo(0.0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("getStats()")
+    @DisplayName("getStats() [GH-90000]")
     class GetStatsTests {
 
         @Test
-        @DisplayName("returns stats for tenant")
-        void returnsStatsForTenant() {
+        @DisplayName("returns stats for tenant [GH-90000]")
+        void returnsStatsForTenant() { // GH-90000
             String tenantId = "tenant-1";
-            service.shouldNotify("item-1", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId));
+            service.shouldNotify("item-1", SmartNotificationService.Priority.HIGH, Map.of("tenantId", tenantId)); // GH-90000
             
-            SmartNotificationService.NotificationStats stats = service.getStats(tenantId);
-            assertThat(stats.totalSent()).isEqualTo(1);
+            SmartNotificationService.NotificationStats stats = service.getStats(tenantId); // GH-90000
+            assertThat(stats.totalSent()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty stats for unknown tenant")
-        void returnsEmptyStatsForUnknownTenant() {
-            SmartNotificationService.NotificationStats stats = service.getStats("unknown");
+        @DisplayName("returns empty stats for unknown tenant [GH-90000]")
+        void returnsEmptyStatsForUnknownTenant() { // GH-90000
+            SmartNotificationService.NotificationStats stats = service.getStats("unknown [GH-90000]");
             
-            assertThat(stats.totalSent()).isEqualTo(0);
-            assertThat(stats.totalDismissed()).isEqualTo(0);
-            assertThat(stats.totalResponded()).isEqualTo(0);
+            assertThat(stats.totalSent()).isEqualTo(0); // GH-90000
+            assertThat(stats.totalDismissed()).isEqualTo(0); // GH-90000
+            assertThat(stats.totalResponded()).isEqualTo(0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("NotificationDecision")
+    @DisplayName("NotificationDecision [GH-90000]")
     class NotificationDecisionTests {
 
         @Test
-        @DisplayName("decision has required fields")
-        void decisionHasRequiredFields() {
-            SmartNotificationService.NotificationDecision decision = new SmartNotificationService.NotificationDecision(
-                true, "in-app", "reason", Map.of()
+        @DisplayName("decision has required fields [GH-90000]")
+        void decisionHasRequiredFields() { // GH-90000
+            SmartNotificationService.NotificationDecision decision = new SmartNotificationService.NotificationDecision( // GH-90000
+                true, "in-app", "reason", Map.of() // GH-90000
             );
 
-            assertThat(decision.shouldNotify()).isNotNull();
-            assertThat(decision.channel()).isNotNull();
-            assertThat(decision.reason()).isNotNull();
-            assertThat(decision.metadata()).isNotNull();
+            assertThat(decision.shouldNotify()).isNotNull(); // GH-90000
+            assertThat(decision.channel()).isNotNull(); // GH-90000
+            assertThat(decision.reason()).isNotNull(); // GH-90000
+            assertThat(decision.metadata()).isNotNull(); // GH-90000
         }
     }
 }

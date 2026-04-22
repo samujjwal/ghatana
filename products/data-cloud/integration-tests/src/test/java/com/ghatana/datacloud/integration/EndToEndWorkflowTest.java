@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("End-to-End Workflow Integration Tests")
+@DisplayName("End-to-End Workflow Integration Tests [GH-90000]")
 class EndToEndWorkflowTest extends EventloopTestBase {
 
     private static final String TENANT_A = "workflow-tenant-a";
@@ -41,126 +41,126 @@ class EndToEndWorkflowTest extends EventloopTestBase {
     private DataCloudRuntimePluginManager runtimePluginManager;
 
     @BeforeEach
-    void setUp() {
-        config = DataCloudConfig.builder()
-            .profile(DataCloudProfile.SOVEREIGN)
-            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store").toString()))
-            .build();
-        startRuntime();
+    void setUp() { // GH-90000
+        config = DataCloudConfig.builder() // GH-90000
+            .profile(DataCloudProfile.SOVEREIGN) // GH-90000
+            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store [GH-90000]").toString()))
+            .build(); // GH-90000
+        startRuntime(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        stopRuntime();
+    void tearDown() { // GH-90000
+        stopRuntime(); // GH-90000
     }
 
     @Test
-    @DisplayName("workflow execution snapshot and logs survive plugin and client restart")
-    void workflowExecutionSnapshotAndLogsSurvivePluginAndClientRestart() {
-        String pipelineId = "pipeline-" + UUID.randomUUID();
-        savePipeline(TENANT_A, pipelineId, "Orders workflow");
+    @DisplayName("workflow execution snapshot and logs survive plugin and client restart [GH-90000]")
+    void workflowExecutionSnapshotAndLogsSurvivePluginAndClientRestart() { // GH-90000
+        String pipelineId = "pipeline-" + UUID.randomUUID(); // GH-90000
+        savePipeline(TENANT_A, pipelineId, "Orders workflow"); // GH-90000
 
-        WorkflowExecutionCapability.ExecutionSnapshot snapshot = runPromise(() -> workflowExecution().execute(
+        WorkflowExecutionCapability.ExecutionSnapshot snapshot = runPromise(() -> workflowExecution().execute( // GH-90000
             TENANT_A,
             pipelineId,
-            Map.of("collectionId", "orders", "dryRun", false)));
-        Optional<DataCloudClient.Entity> persistedExecution = runPromise(() -> client.findById(
+            Map.of("collectionId", "orders", "dryRun", false))); // GH-90000
+        Optional<DataCloudClient.Entity> persistedExecution = runPromise(() -> client.findById( // GH-90000
             TENANT_A,
             "dc_workflow_executions",
-            snapshot.id()));
-        Optional<DataCloudClient.Entity> persistedLogs = runPromise(() -> client.findById(
+            snapshot.id())); // GH-90000
+        Optional<DataCloudClient.Entity> persistedLogs = runPromise(() -> client.findById( // GH-90000
             TENANT_A,
             "dc_workflow_execution_logs",
-            snapshot.id()));
+            snapshot.id())); // GH-90000
 
-        assertThat(snapshot.status()).isEqualTo("COMPLETED");
-        assertThat(snapshot.nodeStatuses()).hasSize(3);
-        assertThat(persistedExecution).isPresent();
-        assertThat(persistedLogs).isPresent();
+        assertThat(snapshot.status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(snapshot.nodeStatuses()).hasSize(3); // GH-90000
+        assertThat(persistedExecution).isPresent(); // GH-90000
+        assertThat(persistedLogs).isPresent(); // GH-90000
 
-        restartRuntime();
+        restartRuntime(); // GH-90000
 
-        Optional<WorkflowExecutionCapability.ExecutionSnapshot> reloaded = runPromise(() -> workflowExecution().getExecution(
+        Optional<WorkflowExecutionCapability.ExecutionSnapshot> reloaded = runPromise(() -> workflowExecution().getExecution( // GH-90000
             TENANT_A,
-            snapshot.id()));
-        List<WorkflowExecutionCapability.ExecutionSnapshot> executions = runPromise(() -> workflowExecution().listExecutions(
+            snapshot.id())); // GH-90000
+        List<WorkflowExecutionCapability.ExecutionSnapshot> executions = runPromise(() -> workflowExecution().listExecutions( // GH-90000
             TENANT_A,
             pipelineId));
-        List<WorkflowExecutionCapability.ExecutionLogEntry> logs = runPromise(() -> workflowExecution().getExecutionLogs(
+        List<WorkflowExecutionCapability.ExecutionLogEntry> logs = runPromise(() -> workflowExecution().getExecutionLogs( // GH-90000
             TENANT_A,
-            snapshot.id()));
+            snapshot.id())); // GH-90000
 
-        assertThat(reloaded).isPresent();
-        assertThat(reloaded.orElseThrow().status()).isEqualTo("COMPLETED");
-        assertThat(executions).extracting(WorkflowExecutionCapability.ExecutionSnapshot::id).contains(snapshot.id());
-        assertThat(logs)
-            .isNotEmpty()
-            .extracting(WorkflowExecutionCapability.ExecutionLogEntry::message)
-            .contains("Workflow execution started");
+        assertThat(reloaded).isPresent(); // GH-90000
+        assertThat(reloaded.orElseThrow().status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(executions).extracting(WorkflowExecutionCapability.ExecutionSnapshot::id).contains(snapshot.id()); // GH-90000
+        assertThat(logs) // GH-90000
+            .isNotEmpty() // GH-90000
+            .extracting(WorkflowExecutionCapability.ExecutionLogEntry::message) // GH-90000
+            .contains("Workflow execution started [GH-90000]");
     }
 
     @Test
-    @DisplayName("workflow execution records remain tenant scoped")
-    void workflowExecutionRecordsRemainTenantScoped() {
-        String pipelineId = "pipeline-" + UUID.randomUUID();
-        savePipeline(TENANT_A, pipelineId, "Tenant A workflow");
+    @DisplayName("workflow execution records remain tenant scoped [GH-90000]")
+    void workflowExecutionRecordsRemainTenantScoped() { // GH-90000
+        String pipelineId = "pipeline-" + UUID.randomUUID(); // GH-90000
+        savePipeline(TENANT_A, pipelineId, "Tenant A workflow"); // GH-90000
 
-        WorkflowExecutionCapability.ExecutionSnapshot snapshot = runPromise(() -> workflowExecution().execute(
+        WorkflowExecutionCapability.ExecutionSnapshot snapshot = runPromise(() -> workflowExecution().execute( // GH-90000
             TENANT_A,
             pipelineId,
-            Map.of("collectionId", "tenant-a-collection")));
+            Map.of("collectionId", "tenant-a-collection"))); // GH-90000
 
-        Optional<WorkflowExecutionCapability.ExecutionSnapshot> crossTenantRead = runPromise(() -> workflowExecution().getExecution(
+        Optional<WorkflowExecutionCapability.ExecutionSnapshot> crossTenantRead = runPromise(() -> workflowExecution().getExecution( // GH-90000
             TENANT_B,
-            snapshot.id()));
-        List<WorkflowExecutionCapability.ExecutionSnapshot> crossTenantList = runPromise(() -> workflowExecution().listExecutions(
+            snapshot.id())); // GH-90000
+        List<WorkflowExecutionCapability.ExecutionSnapshot> crossTenantList = runPromise(() -> workflowExecution().listExecutions( // GH-90000
             TENANT_B,
             pipelineId));
-        Optional<DataCloudClient.Entity> crossTenantStoreRead = runPromise(() -> client.findById(
+        Optional<DataCloudClient.Entity> crossTenantStoreRead = runPromise(() -> client.findById( // GH-90000
             TENANT_B,
             "dc_workflow_executions",
-            snapshot.id()));
+            snapshot.id())); // GH-90000
 
-        assertThat(crossTenantRead).isEmpty();
-        assertThat(crossTenantList).isEmpty();
-        assertThat(crossTenantStoreRead).isEmpty();
+        assertThat(crossTenantRead).isEmpty(); // GH-90000
+        assertThat(crossTenantList).isEmpty(); // GH-90000
+        assertThat(crossTenantStoreRead).isEmpty(); // GH-90000
     }
 
-    private WorkflowExecutionCapability workflowExecution() {
-        return runtimePluginManager.findCapability(WorkflowExecutionCapability.class)
-            .orElseThrow(() -> new AssertionError("workflow execution capability missing"));
+    private WorkflowExecutionCapability workflowExecution() { // GH-90000
+        return runtimePluginManager.findCapability(WorkflowExecutionCapability.class) // GH-90000
+            .orElseThrow(() -> new AssertionError("workflow execution capability missing [GH-90000]"));
     }
 
-    private void savePipeline(String tenantId, String pipelineId, String workflowName) {
-        runPromise(() -> client.save(tenantId, "dc_pipelines", Map.of(
+    private void savePipeline(String tenantId, String pipelineId, String workflowName) { // GH-90000
+        runPromise(() -> client.save(tenantId, "dc_pipelines", Map.of( // GH-90000
             "id", pipelineId,
             "name", workflowName,
-            "nodes", List.of(
-                Map.of("id", "extract", "type", "EXTRACT", "label", "Extract"),
-                Map.of("id", "validate", "type", "VALIDATE", "label", "Validate"),
-                Map.of("id", "publish", "type", "PUBLISH", "label", "Publish")
+            "nodes", List.of( // GH-90000
+                Map.of("id", "extract", "type", "EXTRACT", "label", "Extract"), // GH-90000
+                Map.of("id", "validate", "type", "VALIDATE", "label", "Validate"), // GH-90000
+                Map.of("id", "publish", "type", "PUBLISH", "label", "Publish") // GH-90000
             )
         )));
     }
 
-    private void restartRuntime() {
-        stopRuntime();
-        startRuntime();
+    private void restartRuntime() { // GH-90000
+        stopRuntime(); // GH-90000
+        startRuntime(); // GH-90000
     }
 
-    private void startRuntime() {
-        client = DataCloud.create(config);
-        runtimePluginManager = new DataCloudRuntimePluginManager();
-        runtimePluginManager.registerWorkflowPlugin(client);
+    private void startRuntime() { // GH-90000
+        client = DataCloud.create(config); // GH-90000
+        runtimePluginManager = new DataCloudRuntimePluginManager(); // GH-90000
+        runtimePluginManager.registerWorkflowPlugin(client); // GH-90000
     }
 
-    private void stopRuntime() {
-        if (runtimePluginManager != null) {
-            runtimePluginManager.close();
+    private void stopRuntime() { // GH-90000
+        if (runtimePluginManager != null) { // GH-90000
+            runtimePluginManager.close(); // GH-90000
             runtimePluginManager = null;
         }
-        if (client != null) {
-            client.close();
+        if (client != null) { // GH-90000
+            client.close(); // GH-90000
             client = null;
         }
     }

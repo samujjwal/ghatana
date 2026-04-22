@@ -13,7 +13,7 @@ import java.util.Map;
 */
 public final class TestJobs {
 
-    private TestJobs() {}
+    private TestJobs() {} // GH-90000
 
     /**
      * Submits a job with the given idempotency key and returns the resulting {@link JobRecord}.
@@ -22,8 +22,8 @@ public final class TestJobs {
      * @param idempotencyKey the idempotency key for the job
      * @return the created {@link JobRecord}
      */
-    public static JobRecord submit(
+    public static JobRecord submit( // GH-90000
             ServerTestHarness.TestJobService jobService, String idempotencyKey) {
-        return jobService.submit(idempotencyKey, Map.of());
+        return jobService.submit(idempotencyKey, Map.of()); // GH-90000
     }
 }

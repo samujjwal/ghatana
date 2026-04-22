@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.aep.eventcloud.store;
@@ -34,8 +34,8 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link EventCloudAgentStore}.
  */
-@DisplayName("EventCloudAgentStore")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("EventCloudAgentStore [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class EventCloudAgentStoreTest extends EventloopTestBase {
 
     private static final String TENANT = "test-tenant";
@@ -53,178 +53,178 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
     private EventCloudAgentStore agentStore;
 
     @BeforeEach
-    void setUp() {
-        agentStore = new EventCloudAgentStore(entityStore);
+    void setUp() { // GH-90000
+        agentStore = new EventCloudAgentStore(entityStore); // GH-90000
     }
 
     @Test
-    void shouldSaveAgent() {
+    void shouldSaveAgent() { // GH-90000
         // GIVEN
-        Entity savedEntity = new Entity(
-            EntityId.of(AGENT_ID), EventCloudAgentStore.COLLECTION,
-            Map.of("id", AGENT_ID, "name", "TestAgent"), null);
-        when(entityStore.save(any(TenantContext.class), any(Entity.class)))
-            .thenReturn(Promise.of(savedEntity));
+        Entity savedEntity = new Entity( // GH-90000
+            EntityId.of(AGENT_ID), EventCloudAgentStore.COLLECTION, // GH-90000
+            Map.of("id", AGENT_ID, "name", "TestAgent"), null); // GH-90000
+        when(entityStore.save(any(TenantContext.class), any(Entity.class))) // GH-90000
+            .thenReturn(Promise.of(savedEntity)); // GH-90000
 
-        Map<String, Object> agentData = Map.of(
+        Map<String, Object> agentData = Map.of( // GH-90000
             "name", "TestAgent",
             "type", "REACTIVE",
             "version", "1.0"
         );
 
         // WHEN
-        Entity result = runPromise(() -> agentStore.save(TENANT, AGENT_ID, agentData));
+        Entity result = runPromise(() -> agentStore.save(TENANT, AGENT_ID, agentData)); // GH-90000
 
         // THEN
-        assertThat(result).isNotNull();
-        verify(entityStore).save(any(TenantContext.class), entityCaptor.capture());
-        Entity captured = entityCaptor.getValue();
-        assertThat(captured.collection()).isEqualTo("aep_agents");
-        assertThat(captured.data().get("id")).isEqualTo(AGENT_ID);
-        assertThat(captured.data().get("name")).isEqualTo("TestAgent");
-        assertThat(captured.data().get("type")).isEqualTo("REACTIVE");
-        assertThat(captured.data().get("status")).isEqualTo("ACTIVE");
+        assertThat(result).isNotNull(); // GH-90000
+        verify(entityStore).save(any(TenantContext.class), entityCaptor.capture()); // GH-90000
+        Entity captured = entityCaptor.getValue(); // GH-90000
+        assertThat(captured.collection()).isEqualTo("aep_agents [GH-90000]");
+        assertThat(captured.data().get("id [GH-90000]")).isEqualTo(AGENT_ID);
+        assertThat(captured.data().get("name [GH-90000]")).isEqualTo("TestAgent [GH-90000]");
+        assertThat(captured.data().get("type [GH-90000]")).isEqualTo("REACTIVE [GH-90000]");
+        assertThat(captured.data().get("status [GH-90000]")).isEqualTo("ACTIVE [GH-90000]");
     }
 
     @Test
-    void shouldFindAgentById() {
+    void shouldFindAgentById() { // GH-90000
         // GIVEN
-        Entity entity = new Entity(
-            EntityId.of(AGENT_ID), EventCloudAgentStore.COLLECTION,
-            Map.of("id", AGENT_ID, "name", "TestAgent"), null);
-        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of(AGENT_ID))))
-            .thenReturn(Promise.of(Optional.of(entity)));
+        Entity entity = new Entity( // GH-90000
+            EntityId.of(AGENT_ID), EventCloudAgentStore.COLLECTION, // GH-90000
+            Map.of("id", AGENT_ID, "name", "TestAgent"), null); // GH-90000
+        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of(AGENT_ID)))) // GH-90000
+            .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
         // WHEN
-        Optional<Entity> result = runPromise(() -> agentStore.findById(TENANT, AGENT_ID));
+        Optional<Entity> result = runPromise(() -> agentStore.findById(TENANT, AGENT_ID)); // GH-90000
 
         // THEN
-        assertThat(result).isPresent();
-        assertThat(result.get().data().get("name")).isEqualTo("TestAgent");
+        assertThat(result).isPresent(); // GH-90000
+        assertThat(result.get().data().get("name [GH-90000]")).isEqualTo("TestAgent [GH-90000]");
     }
 
     @Test
-    void shouldReturnEmptyWhenAgentNotFound() {
+    void shouldReturnEmptyWhenAgentNotFound() { // GH-90000
         // GIVEN
-        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of("nonexistent"))))
-            .thenReturn(Promise.of(Optional.empty()));
+        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of("nonexistent [GH-90000]"))))
+            .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
         // WHEN
-        Optional<Entity> result = runPromise(() -> agentStore.findById(TENANT, "nonexistent"));
+        Optional<Entity> result = runPromise(() -> agentStore.findById(TENANT, "nonexistent")); // GH-90000
 
         // THEN
-        assertThat(result).isEmpty();
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    void shouldListAgents() {
+    void shouldListAgents() { // GH-90000
         // GIVEN
-        var entities = List.of(
-            new Entity(EntityId.of("a1"), EventCloudAgentStore.COLLECTION,
-                Map.of("name", "Agent1"), null),
-            new Entity(EntityId.of("a2"), EventCloudAgentStore.COLLECTION,
-                Map.of("name", "Agent2"), null));
-        QueryResult queryResult = new QueryResult(entities, 2L, false);
-        when(entityStore.query(any(TenantContext.class), any(QuerySpec.class)))
-            .thenReturn(Promise.of(queryResult));
+        var entities = List.of( // GH-90000
+            new Entity(EntityId.of("a1 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+                Map.of("name", "Agent1"), null), // GH-90000
+            new Entity(EntityId.of("a2 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+                Map.of("name", "Agent2"), null)); // GH-90000
+        QueryResult queryResult = new QueryResult(entities, 2L, false); // GH-90000
+        when(entityStore.query(any(TenantContext.class), any(QuerySpec.class))) // GH-90000
+            .thenReturn(Promise.of(queryResult)); // GH-90000
 
         // WHEN
-        List<Entity> result = runPromise(() -> agentStore.listAgents(TENANT, 100));
+        List<Entity> result = runPromise(() -> agentStore.listAgents(TENANT, 100)); // GH-90000
 
         // THEN
-        assertThat(result).hasSize(2);
-        verify(entityStore).query(any(TenantContext.class), queryCaptor.capture());
-        assertThat(queryCaptor.getValue().collection()).isEqualTo("aep_agents");
+        assertThat(result).hasSize(2); // GH-90000
+        verify(entityStore).query(any(TenantContext.class), queryCaptor.capture()); // GH-90000
+        assertThat(queryCaptor.getValue().collection()).isEqualTo("aep_agents [GH-90000]");
     }
 
     @Test
-    void shouldListByType() {
+    void shouldListByType() { // GH-90000
         // GIVEN
-        var entities = List.of(
-            new Entity(EntityId.of("a1"), EventCloudAgentStore.COLLECTION,
-                Map.of("type", "REACTIVE"), null),
-            new Entity(EntityId.of("a2"), EventCloudAgentStore.COLLECTION,
-                Map.of("type", "DELIBERATIVE"), null),
-            new Entity(EntityId.of("a3"), EventCloudAgentStore.COLLECTION,
-                Map.of("type", "REACTIVE"), null));
-        QueryResult queryResult = new QueryResult(entities, 3L, false);
-        when(entityStore.query(any(TenantContext.class), any(QuerySpec.class)))
-            .thenReturn(Promise.of(queryResult));
+        var entities = List.of( // GH-90000
+            new Entity(EntityId.of("a1 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+                Map.of("type", "REACTIVE"), null), // GH-90000
+            new Entity(EntityId.of("a2 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+                Map.of("type", "DELIBERATIVE"), null), // GH-90000
+            new Entity(EntityId.of("a3 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+                Map.of("type", "REACTIVE"), null)); // GH-90000
+        QueryResult queryResult = new QueryResult(entities, 3L, false); // GH-90000
+        when(entityStore.query(any(TenantContext.class), any(QuerySpec.class))) // GH-90000
+            .thenReturn(Promise.of(queryResult)); // GH-90000
 
         // WHEN
-        List<Entity> result = runPromise(() ->
-            agentStore.listByType(TENANT, "REACTIVE", 100));
+        List<Entity> result = runPromise(() -> // GH-90000
+            agentStore.listByType(TENANT, "REACTIVE", 100)); // GH-90000
 
         // THEN
-        assertThat(result).hasSize(2)
-            .allSatisfy(e -> assertThat(e.data().get("type")).isEqualTo("REACTIVE"));
+        assertThat(result).hasSize(2) // GH-90000
+            .allSatisfy(e -> assertThat(e.data().get("type [GH-90000]")).isEqualTo("REACTIVE [GH-90000]"));
     }
 
     @Test
-    void shouldDeleteAgent() {
+    void shouldDeleteAgent() { // GH-90000
         // GIVEN
-        when(entityStore.delete(any(TenantContext.class), eq(EntityId.of(AGENT_ID))))
-            .thenReturn(Promise.of(null));
+        when(entityStore.delete(any(TenantContext.class), eq(EntityId.of(AGENT_ID)))) // GH-90000
+            .thenReturn(Promise.of(null)); // GH-90000
 
         // WHEN
-        runPromise(() -> agentStore.delete(TENANT, AGENT_ID));
+        runPromise(() -> agentStore.delete(TENANT, AGENT_ID)); // GH-90000
 
         // THEN
-        verify(entityStore).delete(any(), eq(EntityId.of(AGENT_ID)));
+        verify(entityStore).delete(any(), eq(EntityId.of(AGENT_ID))); // GH-90000
     }
 
     @Test
-    void shouldCountAgents() {
+    void shouldCountAgents() { // GH-90000
         // GIVEN
-        when(entityStore.count(any(TenantContext.class), any(QuerySpec.class)))
-            .thenReturn(Promise.of(5L));
+        when(entityStore.count(any(TenantContext.class), any(QuerySpec.class))) // GH-90000
+            .thenReturn(Promise.of(5L)); // GH-90000
 
         // WHEN
-        Long count = runPromise(() -> agentStore.count(TENANT));
+        Long count = runPromise(() -> agentStore.count(TENANT)); // GH-90000
 
         // THEN
-        assertThat(count).isEqualTo(5L);
+        assertThat(count).isEqualTo(5L); // GH-90000
     }
 
     @Test
-    void shouldCheckExistence() {
+    void shouldCheckExistence() { // GH-90000
         // GIVEN
-        when(entityStore.exists(any(TenantContext.class), eq(EntityId.of(AGENT_ID))))
-            .thenReturn(Promise.of(true));
+        when(entityStore.exists(any(TenantContext.class), eq(EntityId.of(AGENT_ID)))) // GH-90000
+            .thenReturn(Promise.of(true)); // GH-90000
 
         // WHEN
-        Boolean exists = runPromise(() -> agentStore.exists(TENANT, AGENT_ID));
+        Boolean exists = runPromise(() -> agentStore.exists(TENANT, AGENT_ID)); // GH-90000
 
         // THEN
-        assertThat(exists).isTrue();
+        assertThat(exists).isTrue(); // GH-90000
     }
 
     @Test
-    void shouldSetDefaultStatusOnSave() {
+    void shouldSetDefaultStatusOnSave() { // GH-90000
         // GIVEN
-        when(entityStore.save(any(TenantContext.class), any(Entity.class)))
-            .thenReturn(Promise.of(new Entity(EntityId.of(AGENT_ID), "aep_agents", Map.of(), null)));
+        when(entityStore.save(any(TenantContext.class), any(Entity.class))) // GH-90000
+            .thenReturn(Promise.of(new Entity(EntityId.of(AGENT_ID), "aep_agents", Map.of(), null))); // GH-90000
 
         // WHEN - save without explicit status
-        runPromise(() -> agentStore.save(TENANT, AGENT_ID, Map.of("name", "New")));
+        runPromise(() -> agentStore.save(TENANT, AGENT_ID, Map.of("name", "New"))); // GH-90000
 
         // THEN
-        verify(entityStore).save(any(), entityCaptor.capture());
-        assertThat(entityCaptor.getValue().data().get("status")).isEqualTo("ACTIVE");
+        verify(entityStore).save(any(), entityCaptor.capture()); // GH-90000
+        assertThat(entityCaptor.getValue().data().get("status [GH-90000]")).isEqualTo("ACTIVE [GH-90000]");
     }
 
     @Test
-    void shouldPreserveExplicitStatus() {
+    void shouldPreserveExplicitStatus() { // GH-90000
         // GIVEN
-        when(entityStore.save(any(TenantContext.class), any(Entity.class)))
-            .thenReturn(Promise.of(new Entity(EntityId.of(AGENT_ID), "aep_agents", Map.of(), null)));
+        when(entityStore.save(any(TenantContext.class), any(Entity.class))) // GH-90000
+            .thenReturn(Promise.of(new Entity(EntityId.of(AGENT_ID), "aep_agents", Map.of(), null))); // GH-90000
 
         // WHEN
-        runPromise(() -> agentStore.save(TENANT, AGENT_ID,
-            Map.of("name", "Paused", "status", "PAUSED")));
+        runPromise(() -> agentStore.save(TENANT, AGENT_ID, // GH-90000
+            Map.of("name", "Paused", "status", "PAUSED"))); // GH-90000
 
         // THEN
-        verify(entityStore).save(any(), entityCaptor.capture());
-        assertThat(entityCaptor.getValue().data().get("status")).isEqualTo("PAUSED");
+        verify(entityStore).save(any(), entityCaptor.capture()); // GH-90000
+        assertThat(entityCaptor.getValue().data().get("status [GH-90000]")).isEqualTo("PAUSED [GH-90000]");
     }
 }

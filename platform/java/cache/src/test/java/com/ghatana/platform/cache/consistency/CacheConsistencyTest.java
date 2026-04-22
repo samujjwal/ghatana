@@ -21,29 +21,29 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Cache Consistency Tests")
+@DisplayName("Cache Consistency Tests [GH-90000]")
 class CacheConsistencyTest {
 
     // ── In-memory BackEnd implementation ──────────────────────────────────────
 
     static class InMemoryCacheBackend implements DistributedCacheService.CacheBackend {
-        final Map<String, String> store = new HashMap<>();
+        final Map<String, String> store = new HashMap<>(); // GH-90000
 
-        @Override public String getValue(String key) { return store.get(key); }
-        @Override public void setValue(String key, String value, long ttlSeconds) { store.put(key, value); }
-        @Override public void deleteKey(String key) { store.remove(key); }
-        @Override public int deletePattern(String pattern) {
-            long removed = store.keySet().stream().filter(k -> k.startsWith(pattern.replace("*", "")))
-                    .peek(store::remove).count();
-            return (int) removed;
+        @Override public String getValue(String key) { return store.get(key); } // GH-90000
+        @Override public void setValue(String key, String value, long ttlSeconds) { store.put(key, value); } // GH-90000
+        @Override public void deleteKey(String key) { store.remove(key); } // GH-90000
+        @Override public int deletePattern(String pattern) { // GH-90000
+            long removed = store.keySet().stream().filter(k -> k.startsWith(pattern.replace("*", ""))) // GH-90000
+                    .peek(store::remove).count(); // GH-90000
+            return (int) removed; // GH-90000
         }
-        @Override public long getKeyCount(String pattern) { return store.size(); }
-        @Override public long getCacheSize(String pattern) { return store.size(); }
-        @Override public <T> String serialize(T value) { return value == null ? null : value.toString(); }
-        @SuppressWarnings("unchecked")
-        @Override public <T> T deserialize(String value, Class<T> type) {
-            if (type == String.class) return (T) value;
-            throw new UnsupportedOperationException("Only String type supported in test backend");
+        @Override public long getKeyCount(String pattern) { return store.size(); } // GH-90000
+        @Override public long getCacheSize(String pattern) { return store.size(); } // GH-90000
+        @Override public <T> String serialize(T value) { return value == null ? null : value.toString(); } // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        @Override public <T> T deserialize(String value, Class<T> type) { // GH-90000
+            if (type == String.class) return (T) value; // GH-90000
+            throw new UnsupportedOperationException("Only String type supported in test backend [GH-90000]");
         }
     }
 
@@ -51,130 +51,130 @@ class CacheConsistencyTest {
     private DistributedCacheService cacheService;
 
     @BeforeEach
-    void setUp() {
-        backend = new InMemoryCacheBackend();
-        cacheService = new DistributedCacheService(backend, "tenant-a");
+    void setUp() { // GH-90000
+        backend = new InMemoryCacheBackend(); // GH-90000
+        cacheService = new DistributedCacheService(backend, "tenant-a"); // GH-90000
     }
 
     // ── Read-your-writes ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("read-your-writes consistency")
+    @DisplayName("read-your-writes consistency [GH-90000]")
     class ReadYourWrites {
 
         @Test
-        @DisplayName("value written is immediately readable in the same tenant scope")
-        void valueWritten_isImmediatelyReadable() {
-            cacheService.put("user:123", "Alice", 300L);
+        @DisplayName("value written is immediately readable in the same tenant scope [GH-90000]")
+        void valueWritten_isImmediatelyReadable() { // GH-90000
+            cacheService.put("user:123", "Alice", 300L); // GH-90000
 
-            Optional<String> result = cacheService.get("user:123", String.class);
+            Optional<String> result = cacheService.get("user:123", String.class); // GH-90000
 
-            assertThat(result).isPresent();
-            assertThat(result.get()).isEqualTo("Alice");
+            assertThat(result).isPresent(); // GH-90000
+            assertThat(result.get()).isEqualTo("Alice [GH-90000]");
         }
 
         @Test
-        @DisplayName("updated value overwrites old value")
-        void updatedValue_overwritesOldValue() {
-            cacheService.put("config:mode", "slow", 300L);
-            cacheService.put("config:mode", "fast", 300L);
+        @DisplayName("updated value overwrites old value [GH-90000]")
+        void updatedValue_overwritesOldValue() { // GH-90000
+            cacheService.put("config:mode", "slow", 300L); // GH-90000
+            cacheService.put("config:mode", "fast", 300L); // GH-90000
 
-            Optional<String> result = cacheService.get("config:mode", String.class);
+            Optional<String> result = cacheService.get("config:mode", String.class); // GH-90000
 
-            assertThat(result).isPresent();
-            assertThat(result.get()).isEqualTo("fast");
+            assertThat(result).isPresent(); // GH-90000
+            assertThat(result.get()).isEqualTo("fast [GH-90000]");
         }
     }
 
     // ── Invalidation ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("invalidation")
+    @DisplayName("invalidation [GH-90000]")
     class Invalidation {
 
         @Test
-        @DisplayName("explicit invalidation removes key from cache")
-        void explicitInvalidation_removesKeyFromCache() {
-            cacheService.put("session:xyz", "active", 300L);
-            cacheService.invalidate("session:xyz");
+        @DisplayName("explicit invalidation removes key from cache [GH-90000]")
+        void explicitInvalidation_removesKeyFromCache() { // GH-90000
+            cacheService.put("session:xyz", "active", 300L); // GH-90000
+            cacheService.invalidate("session:xyz [GH-90000]");
 
-            Optional<String> result = cacheService.get("session:xyz", String.class);
+            Optional<String> result = cacheService.get("session:xyz", String.class); // GH-90000
 
-            assertThat(result).isEmpty();
+            assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("invalidating non-existent key is a no-op")
-        void invalidatingNonExistentKey_isNoOp() {
-            cacheService.invalidate("does-not-exist");
+        @DisplayName("invalidating non-existent key is a no-op [GH-90000]")
+        void invalidatingNonExistentKey_isNoOp() { // GH-90000
+            cacheService.invalidate("does-not-exist [GH-90000]");
             // Should not throw
         }
 
         @Test
-        @DisplayName("invalidating one key does not affect another key")
-        void invalidatingOneKey_doesNotAffectAnotherKey() {
-            cacheService.put("key-a", "valueA", 300L);
-            cacheService.put("key-b", "valueB", 300L);
+        @DisplayName("invalidating one key does not affect another key [GH-90000]")
+        void invalidatingOneKey_doesNotAffectAnotherKey() { // GH-90000
+            cacheService.put("key-a", "valueA", 300L); // GH-90000
+            cacheService.put("key-b", "valueB", 300L); // GH-90000
 
-            cacheService.invalidate("key-a");
+            cacheService.invalidate("key-a [GH-90000]");
 
-            assertThat(cacheService.get("key-a", String.class)).isEmpty();
-            assertThat(cacheService.get("key-b", String.class)).isPresent();
+            assertThat(cacheService.get("key-a", String.class)).isEmpty(); // GH-90000
+            assertThat(cacheService.get("key-b", String.class)).isPresent(); // GH-90000
         }
     }
 
     // ── Tenant isolation ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("tenant isolation")
+    @DisplayName("tenant isolation [GH-90000]")
     class TenantIsolation {
 
         @Test
-        @DisplayName("same key in different tenants returns different values")
-        void sameKeyInDifferentTenants_returnsDifferentValues() {
-            InMemoryCacheBackend sharedBackend = new InMemoryCacheBackend();
-            DistributedCacheService tenantACache = new DistributedCacheService(sharedBackend, "tenant-a");
-            DistributedCacheService tenantBCache = new DistributedCacheService(sharedBackend, "tenant-b");
+        @DisplayName("same key in different tenants returns different values [GH-90000]")
+        void sameKeyInDifferentTenants_returnsDifferentValues() { // GH-90000
+            InMemoryCacheBackend sharedBackend = new InMemoryCacheBackend(); // GH-90000
+            DistributedCacheService tenantACache = new DistributedCacheService(sharedBackend, "tenant-a"); // GH-90000
+            DistributedCacheService tenantBCache = new DistributedCacheService(sharedBackend, "tenant-b"); // GH-90000
 
-            tenantACache.put("user-count", "100", 300L);
-            tenantBCache.put("user-count", "999", 300L);
+            tenantACache.put("user-count", "100", 300L); // GH-90000
+            tenantBCache.put("user-count", "999", 300L); // GH-90000
 
-            Optional<String> tenantAResult = tenantACache.get("user-count", String.class);
-            Optional<String> tenantBResult = tenantBCache.get("user-count", String.class);
+            Optional<String> tenantAResult = tenantACache.get("user-count", String.class); // GH-90000
+            Optional<String> tenantBResult = tenantBCache.get("user-count", String.class); // GH-90000
 
-            assertThat(tenantAResult).isPresent();
-            assertThat(tenantBResult).isPresent();
-            assertThat(tenantAResult.get()).isEqualTo("100");
-            assertThat(tenantBResult.get()).isEqualTo("999");
+            assertThat(tenantAResult).isPresent(); // GH-90000
+            assertThat(tenantBResult).isPresent(); // GH-90000
+            assertThat(tenantAResult.get()).isEqualTo("100 [GH-90000]");
+            assertThat(tenantBResult.get()).isEqualTo("999 [GH-90000]");
         }
 
         @Test
-        @DisplayName("tenant A cache does not see tenant B entries")
-        void tenantACacheDoesNotSeeTenantBEntries() {
-            InMemoryCacheBackend sharedBackend = new InMemoryCacheBackend();
-            DistributedCacheService tenantACache = new DistributedCacheService(sharedBackend, "tenant-a");
-            DistributedCacheService tenantBCache = new DistributedCacheService(sharedBackend, "tenant-b");
+        @DisplayName("tenant A cache does not see tenant B entries [GH-90000]")
+        void tenantACacheDoesNotSeeTenantBEntries() { // GH-90000
+            InMemoryCacheBackend sharedBackend = new InMemoryCacheBackend(); // GH-90000
+            DistributedCacheService tenantACache = new DistributedCacheService(sharedBackend, "tenant-a"); // GH-90000
+            DistributedCacheService tenantBCache = new DistributedCacheService(sharedBackend, "tenant-b"); // GH-90000
 
-            tenantBCache.put("secret", "tenant-b-secret", 300L);
+            tenantBCache.put("secret", "tenant-b-secret", 300L); // GH-90000
 
-            Optional<String> tenantAResult = tenantACache.get("secret", String.class);
+            Optional<String> tenantAResult = tenantACache.get("secret", String.class); // GH-90000
 
-            assertThat(tenantAResult).isEmpty();
+            assertThat(tenantAResult).isEmpty(); // GH-90000
         }
     }
 
     // ── Miss handling ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("miss handling")
+    @DisplayName("miss handling [GH-90000]")
     class MissHandling {
 
         @Test
-        @DisplayName("get on empty cache returns empty optional")
-        void getOnEmptyCache_returnsEmptyOptional() {
-            Optional<String> result = cacheService.get("missing-key", String.class);
+        @DisplayName("get on empty cache returns empty optional [GH-90000]")
+        void getOnEmptyCache_returnsEmptyOptional() { // GH-90000
+            Optional<String> result = cacheService.get("missing-key", String.class); // GH-90000
 
-            assertThat(result).isEmpty();
+            assertThat(result).isEmpty(); // GH-90000
         }
     }
 }

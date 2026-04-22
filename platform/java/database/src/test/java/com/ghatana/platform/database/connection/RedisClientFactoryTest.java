@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.database.connection;
@@ -10,67 +10,67 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("RedisClientFactory Tests")
+@DisplayName("RedisClientFactory Tests [GH-90000]")
 class RedisClientFactoryTest {
 
     @AfterEach
-    void tearDown() {
-        RedisClientFactory.closeAll();
+    void tearDown() { // GH-90000
+        RedisClientFactory.closeAll(); // GH-90000
     }
 
     @Test
-    void shouldRejectNullConfig() {
-        assertThatThrownBy(() -> RedisClientFactory.create(null))
-            .isInstanceOf(NullPointerException.class);
+    void shouldRejectNullConfig() { // GH-90000
+        assertThatThrownBy(() -> RedisClientFactory.create(null)) // GH-90000
+            .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    void shouldTrackPoolCount() {
-        assertThat(RedisClientFactory.poolCount()).isZero();
+    void shouldTrackPoolCount() { // GH-90000
+        assertThat(RedisClientFactory.poolCount()).isZero(); // GH-90000
     }
 
     @Test
-    void shouldCloseAll() {
-        RedisClientFactory.closeAll();
-        assertThat(RedisClientFactory.poolCount()).isZero();
+    void shouldCloseAll() { // GH-90000
+        RedisClientFactory.closeAll(); // GH-90000
+        assertThat(RedisClientFactory.poolCount()).isZero(); // GH-90000
     }
 
     @Test
-    void shouldCreateRedisConfigWithDefaults() {
-        RedisConfig config = RedisConfig.localhost();
+    void shouldCreateRedisConfigWithDefaults() { // GH-90000
+        RedisConfig config = RedisConfig.localhost(); // GH-90000
 
-        assertThat(config.host()).isEqualTo("localhost");
-        assertThat(config.port()).isEqualTo(6379);
-        assertThat(config.password()).isNull();
-        assertThat(config.maxTotal()).isEqualTo(8);
+        assertThat(config.host()).isEqualTo("localhost [GH-90000]");
+        assertThat(config.port()).isEqualTo(6379); // GH-90000
+        assertThat(config.password()).isNull(); // GH-90000
+        assertThat(config.maxTotal()).isEqualTo(8); // GH-90000
     }
 
     @Test
-    void shouldCreateRedisConfigWithBuilder() {
-        RedisConfig config = RedisConfig.builder()
-            .host("redis.internal")
-            .port(6380)
-            .password("secret")
-            .maxTotal(16)
-            .maxIdle(8)
-            .build();
+    void shouldCreateRedisConfigWithBuilder() { // GH-90000
+        RedisConfig config = RedisConfig.builder() // GH-90000
+            .host("redis.internal [GH-90000]")
+            .port(6380) // GH-90000
+            .password("secret [GH-90000]")
+            .maxTotal(16) // GH-90000
+            .maxIdle(8) // GH-90000
+            .build(); // GH-90000
 
-        assertThat(config.host()).isEqualTo("redis.internal");
-        assertThat(config.port()).isEqualTo(6380);
-        assertThat(config.password()).isEqualTo("secret");
-        assertThat(config.maxTotal()).isEqualTo(16);
-        assertThat(config.maxIdle()).isEqualTo(8);
+        assertThat(config.host()).isEqualTo("redis.internal [GH-90000]");
+        assertThat(config.port()).isEqualTo(6380); // GH-90000
+        assertThat(config.password()).isEqualTo("secret [GH-90000]");
+        assertThat(config.maxTotal()).isEqualTo(16); // GH-90000
+        assertThat(config.maxIdle()).isEqualTo(8); // GH-90000
     }
 
     @Test
-    void shouldRejectInvalidPort() {
-        assertThatThrownBy(() -> RedisConfig.builder().port(0).build())
-            .isInstanceOf(IllegalArgumentException.class);
+    void shouldRejectInvalidPort() { // GH-90000
+        assertThatThrownBy(() -> RedisConfig.builder().port(0).build()) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    void shouldRejectNegativeMaxTotal() {
-        assertThatThrownBy(() -> RedisConfig.builder().maxTotal(0).build())
-            .isInstanceOf(IllegalArgumentException.class);
+    void shouldRejectNegativeMaxTotal() { // GH-90000
+        assertThatThrownBy(() -> RedisConfig.builder().maxTotal(0).build()) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 }

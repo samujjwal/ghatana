@@ -18,51 +18,51 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("YappcAgentSystem AI Runtime Mode Tests")
+@DisplayName("YappcAgentSystem AI Runtime Mode Tests [GH-90000]")
 class YappcAgentSystemAiRuntimeModeTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("build rejects missing gateway when AI runtime mode is required")
-    void buildRejectsMissingGatewayWhenRequired() {
-        MemoryStore memoryStore = mock(MemoryStore.class);
+    @DisplayName("build rejects missing gateway when AI runtime mode is required [GH-90000]")
+    void buildRejectsMissingGatewayWhenRequired() { // GH-90000
+        MemoryStore memoryStore = mock(MemoryStore.class); // GH-90000
 
-        assertThatThrownBy(() -> YappcAgentSystem.builder()
-            .eventloop(eventloop())
-                .memoryStore(memoryStore)
-                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.REQUIRED)
-                .build())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("aiRuntimeMode=REQUIRED");
+        assertThatThrownBy(() -> YappcAgentSystem.builder() // GH-90000
+            .eventloop(eventloop()) // GH-90000
+                .memoryStore(memoryStore) // GH-90000
+                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.REQUIRED) // GH-90000
+                .build()) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("aiRuntimeMode=REQUIRED [GH-90000]");
     }
 
     @Test
-    @DisplayName("build allows explicit stub mode without gateway")
-    void buildAllowsExplicitStubModeWithoutGateway() {
-        MemoryStore memoryStore = mock(MemoryStore.class);
+    @DisplayName("build allows explicit stub mode without gateway [GH-90000]")
+    void buildAllowsExplicitStubModeWithoutGateway() { // GH-90000
+        MemoryStore memoryStore = mock(MemoryStore.class); // GH-90000
 
-        YappcAgentSystem system = YappcAgentSystem.builder()
-            .eventloop(eventloop())
-                .memoryStore(memoryStore)
-                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.STUB)
-                .build();
+        YappcAgentSystem system = YappcAgentSystem.builder() // GH-90000
+            .eventloop(eventloop()) // GH-90000
+                .memoryStore(memoryStore) // GH-90000
+                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.STUB) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(system.getAiRuntimeMode()).isEqualTo(YappcAgentSystem.AiRuntimeMode.STUB);
-        assertThat(system.isInitialized()).isFalse();
+        assertThat(system.getAiRuntimeMode()).isEqualTo(YappcAgentSystem.AiRuntimeMode.STUB); // GH-90000
+        assertThat(system.isInitialized()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("build allows required mode when gateway is supplied")
-    void buildAllowsRequiredModeWhenGatewaySupplied() {
-        MemoryStore memoryStore = mock(MemoryStore.class);
-        LLMGenerator.LLMGateway llmGateway = mock(LLMGenerator.LLMGateway.class);
+    @DisplayName("build allows required mode when gateway is supplied [GH-90000]")
+    void buildAllowsRequiredModeWhenGatewaySupplied() { // GH-90000
+        MemoryStore memoryStore = mock(MemoryStore.class); // GH-90000
+        LLMGenerator.LLMGateway llmGateway = mock(LLMGenerator.LLMGateway.class); // GH-90000
 
-        YappcAgentSystem system = YappcAgentSystem.builder()
-            .eventloop(eventloop())
-                .memoryStore(memoryStore)
-                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.REQUIRED)
-                .llmGateway(llmGateway)
-                .build();
+        YappcAgentSystem system = YappcAgentSystem.builder() // GH-90000
+            .eventloop(eventloop()) // GH-90000
+                .memoryStore(memoryStore) // GH-90000
+                .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.REQUIRED) // GH-90000
+                .llmGateway(llmGateway) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(system.getAiRuntimeMode()).isEqualTo(YappcAgentSystem.AiRuntimeMode.REQUIRED);
+        assertThat(system.getAiRuntimeMode()).isEqualTo(YappcAgentSystem.AiRuntimeMode.REQUIRED); // GH-90000
     }
 }

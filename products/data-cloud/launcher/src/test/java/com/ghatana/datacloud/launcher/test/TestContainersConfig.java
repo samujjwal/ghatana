@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.test;
@@ -20,27 +20,27 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
  *
  * <p>Provides shared, reusable container instances for:
  * <ul>
- *   <li>PostgreSQL (with pgvector extension for semantic search)</li>
- *   <li>Kafka (for event streaming)</li>
- *   <li>Redis (for caching)</li>
- *   <li>S3 (for object storage via LocalStack)</li>
+ *   <li>PostgreSQL (with pgvector extension for semantic search)</li> // GH-90000
+ *   <li>Kafka (for event streaming)</li> // GH-90000
+ *   <li>Redis (for caching)</li> // GH-90000
+ *   <li>S3 (for object storage via LocalStack)</li> // GH-90000
  * </ul>
  *
- * <p>Containers are started once per test suite (singleton pattern) and reused
+ * <p>Containers are started once per test suite (singleton pattern) and reused // GH-90000
  * across tests to minimize startup overhead.
  *
  * <p><strong>Usage:</strong>
  * <pre>
  * {@code
  * @BeforeAll
- * static void setUp() {
- *     TestContainersConfig.postgres().start();
- *     TestContainersConfig.kafka().start();
+ * static void setUp() { // GH-90000
+ *     TestContainersConfig.postgres().start(); // GH-90000
+ *     TestContainersConfig.kafka().start(); // GH-90000
  * }
  *
  * @AfterAll
- * static void tearDown() {
- *     TestContainersConfig.stopAll();
+ * static void tearDown() { // GH-90000
+ *     TestContainersConfig.stopAll(); // GH-90000
  * }
  * }
  * </pre>
@@ -52,27 +52,27 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
  */
 public final class TestContainersConfig {
 
-    private static final Map<String, GenericContainer<?>> CONTAINERS = new ConcurrentHashMap<>();
+    private static final Map<String, GenericContainer<?>> CONTAINERS = new ConcurrentHashMap<>(); // GH-90000
 
-    private TestContainersConfig() {}
+    private TestContainersConfig() {} // GH-90000
 
     /**
      * Get or create PostgreSQL container with pgvector extension.
      *
      * @return PostgreSQL container instance
      */
-    public static PostgreSQLContainer<?> postgres() {
-        return (PostgreSQLContainer<?>) CONTAINERS.computeIfAbsent("postgres", k -> {
-            PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
-                DockerImageName.parse("pgvector/pgvector:pg16")
-                    .asCompatibleSubstituteFor("postgres")
+    public static PostgreSQLContainer<?> postgres() { // GH-90000
+        return (PostgreSQLContainer<?>) CONTAINERS.computeIfAbsent("postgres", k -> { // GH-90000
+            PostgreSQLContainer<?> container = new PostgreSQLContainer<>( // GH-90000
+                DockerImageName.parse("pgvector/pgvector:pg16 [GH-90000]")
+                    .asCompatibleSubstituteFor("postgres [GH-90000]")
             )
-                .withDatabaseName("datacloud_test")
-                .withUsername("test")
-                .withPassword("test")
-                .withInitScript("db/init_pgvector.sql");
+                .withDatabaseName("datacloud_test [GH-90000]")
+                .withUsername("test [GH-90000]")
+                .withPassword("test [GH-90000]")
+                .withInitScript("db/init_pgvector.sql [GH-90000]");
 
-            container.addExposedPort(5432);
+            container.addExposedPort(5432); // GH-90000
             return container;
         });
     }
@@ -82,12 +82,12 @@ public final class TestContainersConfig {
      *
      * @return Kafka container instance
      */
-    public static KafkaContainer kafka() {
-        return (KafkaContainer) CONTAINERS.computeIfAbsent("kafka", k -> {
-            KafkaContainer container = new KafkaContainer(
-                DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
+    public static KafkaContainer kafka() { // GH-90000
+        return (KafkaContainer) CONTAINERS.computeIfAbsent("kafka", k -> { // GH-90000
+            KafkaContainer container = new KafkaContainer( // GH-90000
+                DockerImageName.parse("confluentinc/cp-kafka:7.5.0 [GH-90000]")
             )
-                .withEmbeddedZookeeper();
+                .withEmbeddedZookeeper(); // GH-90000
 
             return container;
         });
@@ -98,32 +98,32 @@ public final class TestContainersConfig {
      *
      * @return Redis container instance
      */
-    public static GenericContainer<?> redis() {
-        return CONTAINERS.computeIfAbsent("redis", k -> {
-            GenericContainer<?> container = new GenericContainer<>(
-                DockerImageName.parse("redis:7-alpine")
+    public static GenericContainer<?> redis() { // GH-90000
+        return CONTAINERS.computeIfAbsent("redis", k -> { // GH-90000
+            GenericContainer<?> container = new GenericContainer<>( // GH-90000
+                DockerImageName.parse("redis:7-alpine [GH-90000]")
             )
-                .withExposedPorts(6379)
-                .withCommand("redis-server", "--appendonly", "yes");
+                .withExposedPorts(6379) // GH-90000
+                .withCommand("redis-server", "--appendonly", "yes"); // GH-90000
 
             return container;
         });
     }
 
     /**
-     * Get or create S3 (LocalStack) container.
+     * Get or create S3 (LocalStack) container. // GH-90000
      *
      * @return LocalStack container configured for S3
      */
-    public static LocalStackContainer s3() {
-        return (LocalStackContainer) CONTAINERS.computeIfAbsent("s3", k -> {
-            LocalStackContainer container = new LocalStackContainer(
-                DockerImageName.parse("localstack/localstack:2.3")
+    public static LocalStackContainer s3() { // GH-90000
+        return (LocalStackContainer) CONTAINERS.computeIfAbsent("s3", k -> { // GH-90000
+            LocalStackContainer container = new LocalStackContainer( // GH-90000
+                DockerImageName.parse("localstack/localstack:2.3 [GH-90000]")
             )
-                .withServices(S3)
-                .withEnv("AWS_ACCESS_KEY_ID", "test")
-                .withEnv("AWS_SECRET_ACCESS_KEY", "test")
-                .withEnv("AWS_DEFAULT_REGION", "us-east-1");
+                .withServices(S3) // GH-90000
+                .withEnv("AWS_ACCESS_KEY_ID", "test") // GH-90000
+                .withEnv("AWS_SECRET_ACCESS_KEY", "test") // GH-90000
+                .withEnv("AWS_DEFAULT_REGION", "us-east-1"); // GH-90000
 
             return container;
         });
@@ -135,12 +135,12 @@ public final class TestContainersConfig {
      * @return JDBC connection URL
      * @throws IllegalStateException if container not started
      */
-    public static String getPostgresJdbcUrl() {
-        PostgreSQLContainer<?> container = (PostgreSQLContainer<?>) CONTAINERS.get("postgres");
-        if (container == null || !container.isRunning()) {
-            throw new IllegalStateException("PostgreSQL container not started. Call postgres().start() first.");
+    public static String getPostgresJdbcUrl() { // GH-90000
+        PostgreSQLContainer<?> container = (PostgreSQLContainer<?>) CONTAINERS.get("postgres [GH-90000]");
+        if (container == null || !container.isRunning()) { // GH-90000
+            throw new IllegalStateException("PostgreSQL container not started. Call postgres().start() first. [GH-90000]");
         }
-        return container.getJdbcUrl();
+        return container.getJdbcUrl(); // GH-90000
     }
 
     /**
@@ -149,26 +149,26 @@ public final class TestContainersConfig {
      * @return Kafka bootstrap servers string
      * @throws IllegalStateException if container not started
      */
-    public static String getKafkaBootstrapServers() {
-        KafkaContainer container = (KafkaContainer) CONTAINERS.get("kafka");
-        if (container == null || !container.isRunning()) {
-            throw new IllegalStateException("Kafka container not started. Call kafka().start() first.");
+    public static String getKafkaBootstrapServers() { // GH-90000
+        KafkaContainer container = (KafkaContainer) CONTAINERS.get("kafka [GH-90000]");
+        if (container == null || !container.isRunning()) { // GH-90000
+            throw new IllegalStateException("Kafka container not started. Call kafka().start() first. [GH-90000]");
         }
-        return container.getBootstrapServers();
+        return container.getBootstrapServers(); // GH-90000
     }
 
     /**
      * Get Redis connection URL.
      *
-     * @return Redis connection string (host:port)
+     * @return Redis connection string (host:port) // GH-90000
      * @throws IllegalStateException if container not started
      */
-    public static String getRedisUrl() {
-        GenericContainer<?> container = CONTAINERS.get("redis");
-        if (container == null || !container.isRunning()) {
-            throw new IllegalStateException("Redis container not started. Call redis().start() first.");
+    public static String getRedisUrl() { // GH-90000
+        GenericContainer<?> container = CONTAINERS.get("redis [GH-90000]");
+        if (container == null || !container.isRunning()) { // GH-90000
+            throw new IllegalStateException("Redis container not started. Call redis().start() first. [GH-90000]");
         }
-        return container.getHost() + ":" + container.getMappedPort(6379);
+        return container.getHost() + ":" + container.getMappedPort(6379); // GH-90000
     }
 
     /**
@@ -177,12 +177,12 @@ public final class TestContainersConfig {
      * @return S3 endpoint URL
      * @throws IllegalStateException if container not started
      */
-    public static String getS3EndpointUrl() {
-        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3");
-        if (container == null || !container.isRunning()) {
-            throw new IllegalStateException("S3 container not started. Call s3().start() first.");
+    public static String getS3EndpointUrl() { // GH-90000
+        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3 [GH-90000]");
+        if (container == null || !container.isRunning()) { // GH-90000
+            throw new IllegalStateException("S3 container not started. Call s3().start() first. [GH-90000]");
         }
-        return container.getEndpointOverride(S3).toString();
+        return container.getEndpointOverride(S3).toString(); // GH-90000
     }
 
     /**
@@ -190,7 +190,7 @@ public final class TestContainersConfig {
      *
      * @return S3 region
      */
-    public static String getS3Region() {
+    public static String getS3Region() { // GH-90000
         return "us-east-1";
     }
 
@@ -199,7 +199,7 @@ public final class TestContainersConfig {
      *
      * @return access key
      */
-    public static String getS3AccessKey() {
+    public static String getS3AccessKey() { // GH-90000
         return "test";
     }
 
@@ -208,7 +208,7 @@ public final class TestContainersConfig {
      *
      * @return secret key
      */
-    public static String getS3SecretKey() {
+    public static String getS3SecretKey() { // GH-90000
         return "test";
     }
 
@@ -218,18 +218,18 @@ public final class TestContainersConfig {
      * @param bucketName name of bucket to create
      * @throws IllegalStateException if container not started
      */
-    public static void createS3Bucket(String bucketName) {
-        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3");
-        if (container == null || !container.isRunning()) {
-            throw new IllegalStateException("S3 container not started. Call s3().start() first.");
+    public static void createS3Bucket(String bucketName) { // GH-90000
+        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3 [GH-90000]");
+        if (container == null || !container.isRunning()) { // GH-90000
+            throw new IllegalStateException("S3 container not started. Call s3().start() first. [GH-90000]");
         }
 
         try {
-            container.execInContainer(
+            container.execInContainer( // GH-90000
                 "awslocal", "s3", "mb", "s3://" + bucketName
             );
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create S3 bucket: " + bucketName, e);
+        } catch (Exception e) { // GH-90000
+            throw new RuntimeException("Failed to create S3 bucket: " + bucketName, e); // GH-90000
         }
     }
 
@@ -237,24 +237,24 @@ public final class TestContainersConfig {
      * Stop all containers and clear registry.
      * Call in @AfterAll to clean up resources.
      */
-    public static void stopAll() {
-        CONTAINERS.values().forEach(container -> {
-            if (container.isRunning()) {
-                container.stop();
+    public static void stopAll() { // GH-90000
+        CONTAINERS.values().forEach(container -> { // GH-90000
+            if (container.isRunning()) { // GH-90000
+                container.stop(); // GH-90000
             }
         });
-        CONTAINERS.clear();
+        CONTAINERS.clear(); // GH-90000
     }
 
     /**
      * Stop a specific container by name.
      *
-     * @param name container name (postgres, kafka, redis, s3)
+     * @param name container name (postgres, kafka, redis, s3) // GH-90000
      */
-    public static void stop(String name) {
-        GenericContainer<?> container = CONTAINERS.get(name);
-        if (container != null && container.isRunning()) {
-            container.stop();
+    public static void stop(String name) { // GH-90000
+        GenericContainer<?> container = CONTAINERS.get(name); // GH-90000
+        if (container != null && container.isRunning()) { // GH-90000
+            container.stop(); // GH-90000
         }
     }
 
@@ -264,8 +264,8 @@ public final class TestContainersConfig {
      * @param name container name
      * @return true if running
      */
-    public static boolean isRunning(String name) {
-        GenericContainer<?> container = CONTAINERS.get(name);
-        return container != null && container.isRunning();
+    public static boolean isRunning(String name) { // GH-90000
+        GenericContainer<?> container = CONTAINERS.get(name); // GH-90000
+        return container != null && container.isRunning(); // GH-90000
     }
 }

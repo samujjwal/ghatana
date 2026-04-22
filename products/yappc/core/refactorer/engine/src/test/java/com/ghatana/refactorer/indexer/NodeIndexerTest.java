@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
  * @doc.pattern Test
 */
 class NodeIndexerTest {
-    private static final Logger logger = LogManager.getLogger(NodeIndexerTest.class);
+    private static final Logger logger = LogManager.getLogger(NodeIndexerTest.class); // GH-90000
 
     @TempDir Path tempDir;
     private PolyfixProjectContext context;
@@ -35,59 +35,59 @@ class NodeIndexerTest {
     private SymbolStore symbolStore;
 
     @BeforeAll
-    static void setupLogging() {
+    static void setupLogging() { // GH-90000
         // Configure Log4j for testing
         ConfigurationBuilder<BuiltConfiguration> builder =
-                ConfigurationBuilderFactory.newConfigurationBuilder();
-        builder.add(builder.newRootLogger(Level.INFO));
-        try (LoggerContext ctx = Configurator.initialize(builder.build())) {
+                ConfigurationBuilderFactory.newConfigurationBuilder(); // GH-90000
+        builder.add(builder.newRootLogger(Level.INFO)); // GH-90000
+        try (LoggerContext ctx = Configurator.initialize(builder.build())) { // GH-90000
             // Logger context will be automatically closed
         }
     }
 
     @BeforeEach
-    void setUp() {
+    void setUp() { // GH-90000
         // Setup mock PolyfixProjectContext with a real logger
-        context = mock(PolyfixProjectContext.class);
-        Logger logger = LogManager.getLogger(NodeIndexerTest.class);
-        when(context.log()).thenReturn(logger);
+        context = mock(PolyfixProjectContext.class); // GH-90000
+        Logger logger = LogManager.getLogger(NodeIndexerTest.class); // GH-90000
+        when(context.log()).thenReturn(logger); // GH-90000
 
-        symbolStore = new SymbolStore(context);
-        nodeIndexer = new NodeIndexer(context, symbolStore);
+        symbolStore = new SymbolStore(context); // GH-90000
+        nodeIndexer = new NodeIndexer(context, symbolStore); // GH-90000
     }
 
     @Test
-    void index_shouldFindExports() throws Exception {
+    void index_shouldFindExports() throws Exception { // GH-90000
         // Skip test if we can't create files in the temp directory
-        if (!Files.isWritable(tempDir)) {
-            System.out.println("Skipping test - cannot write to temp directory: " + tempDir);
+        if (!Files.isWritable(tempDir)) { // GH-90000
+            System.out.println("Skipping test - cannot write to temp directory: " + tempDir); // GH-90000
             return;
         }
 
         // Enable debug logging for this test
-        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) {
-            org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
-            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
-            ctx.updateLoggers(config);
+        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) { // GH-90000
+            org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration(); // GH-90000
+            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG); // GH-90000
+            ctx.updateLoggers(config); // GH-90000
         }
 
-        logger.info("Starting test in directory: {}", tempDir);
+        logger.info("Starting test in directory: {}", tempDir); // GH-90000
 
         // Create a simple TypeScript file
-        Path srcDir = tempDir.resolve("src");
-        Files.createDirectories(srcDir);
-        logger.debug("Created source directory: {}", srcDir);
+        Path srcDir = tempDir.resolve("src [GH-90000]");
+        Files.createDirectories(srcDir); // GH-90000
+        logger.debug("Created source directory: {}", srcDir); // GH-90000
 
         // Create a simple TypeScript file with exports
         String tsContent =
                 """
                 // Regular named export
-                export function add(a: number, b: number): number {
+                export function add(a: number, b: number): number { // GH-90000
                     return a + b;
                 }
 
                 // Default export
-                export default function multiply(a: number, b: number): number {
+                export default function multiply(a: number, b: number): number { // GH-90000
                     return a * b;
                 }
 
@@ -98,38 +98,38 @@ class NodeIndexerTest {
                 export { PI, E as EulerNumber };
 
                 // Type export
-                export type Operation = (a: number, b: number) => number;
+                export type Operation = (a: number, b: number) => number; // GH-90000
                 """;
 
-        Path tsFile = srcDir.resolve("math.ts");
-        Files.writeString(tsFile, tsContent);
-        logger.debug("Created TypeScript file: {}", tsFile);
+        Path tsFile = srcDir.resolve("math.ts [GH-90000]");
+        Files.writeString(tsFile, tsContent); // GH-90000
+        logger.debug("Created TypeScript file: {}", tsFile); // GH-90000
 
         // Verify file was created
-        assertTrue(Files.exists(tsFile), "TypeScript file should exist");
-        assertTrue(Files.size(tsFile) > 0, "TypeScript file should not be empty");
+        assertTrue(Files.exists(tsFile), "TypeScript file should exist"); // GH-90000
+        assertTrue(Files.size(tsFile) > 0, "TypeScript file should not be empty"); // GH-90000
 
         // Index the directory
-        logger.info("Starting to index directory: {}", tempDir);
-        nodeIndexer.index(tempDir, symbolStore);
-        logger.info("Completed indexing directory");
+        logger.info("Starting to index directory: {}", tempDir); // GH-90000
+        nodeIndexer.index(tempDir, symbolStore); // GH-90000
+        logger.info("Completed indexing directory [GH-90000]");
 
         // Debug: Print all exports found
-        logger.debug("All exports found:");
-        symbolStore.debugPrintExports();
+        logger.debug("All exports found: [GH-90000]");
+        symbolStore.debugPrintExports(); // GH-90000
 
         // Verify the exports were found
-        var exports = symbolStore.findTsExports("add");
-        assertFalse(exports.isEmpty(), "Should find 'add' export");
+        var exports = symbolStore.findTsExports("add [GH-90000]");
+        assertFalse(exports.isEmpty(), "Should find 'add' export"); // GH-90000
 
-        // Check for default export (multiply)
-        exports = symbolStore.findTsExports("default");
-        assertFalse(exports.isEmpty(), "Should find 'default' export");
+        // Check for default export (multiply) // GH-90000
+        exports = symbolStore.findTsExports("default [GH-90000]");
+        assertFalse(exports.isEmpty(), "Should find 'default' export"); // GH-90000
 
-        exports = symbolStore.findTsExports("PI");
-        assertFalse(exports.isEmpty(), "Should find 'PI' export");
+        exports = symbolStore.findTsExports("PI [GH-90000]");
+        assertFalse(exports.isEmpty(), "Should find 'PI' export"); // GH-90000
 
-        exports = symbolStore.findTsExports("EulerNumber");
-        assertFalse(exports.isEmpty(), "Should find 'EulerNumber' export");
+        exports = symbolStore.findTsExports("EulerNumber [GH-90000]");
+        assertFalse(exports.isEmpty(), "Should find 'EulerNumber' export"); // GH-90000
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.workflow.runtime;
@@ -14,81 +14,81 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("MetricsWorkflowListener Tests")
+@DisplayName("MetricsWorkflowListener Tests [GH-90000]")
 class MetricsWorkflowListenerTest {
 
     private MeterRegistry registry;
     private MetricsWorkflowListener listener;
 
     @BeforeEach
-    void setUp() {
-        registry = new SimpleMeterRegistry();
-        listener = new MetricsWorkflowListener(registry);
+    void setUp() { // GH-90000
+        registry = new SimpleMeterRegistry(); // GH-90000
+        listener = new MetricsWorkflowListener(registry); // GH-90000
     }
 
     @Test
-    void shouldCountWorkflowStarted() {
-        listener.onEvent(WorkflowLifecycleEvent.of(
+    void shouldCountWorkflowStarted() { // GH-90000
+        listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED));
 
-        assertThat(registry.counter("workflow.runs.started").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.started [GH-90000]").count()).isEqualTo(1.0);
     }
 
     @Test
-    void shouldCountWorkflowCompleted() {
-        listener.onEvent(WorkflowLifecycleEvent.of(
+    void shouldCountWorkflowCompleted() { // GH-90000
+        listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_COMPLETED));
 
-        assertThat(registry.counter("workflow.runs.completed").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.completed [GH-90000]").count()).isEqualTo(1.0);
     }
 
     @Test
-    void shouldCountWorkflowFailed() {
-        listener.onEvent(WorkflowLifecycleEvent.of(
+    void shouldCountWorkflowFailed() { // GH-90000
+        listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_FAILED));
 
-        assertThat(registry.counter("workflow.runs.failed").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.failed [GH-90000]").count()).isEqualTo(1.0);
     }
 
     @Test
-    void shouldCountWorkflowCompensated() {
-        listener.onEvent(WorkflowLifecycleEvent.of(
+    void shouldCountWorkflowCompensated() { // GH-90000
+        listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_COMPENSATED));
 
-        assertThat(registry.counter("workflow.runs.compensated").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.compensated [GH-90000]").count()).isEqualTo(1.0);
     }
 
     @Test
-    void shouldCountStepRetries() {
-        listener.onEvent(WorkflowLifecycleEvent.forStep(
+    void shouldCountStepRetries() { // GH-90000
+        listener.onEvent(WorkflowLifecycleEvent.forStep( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.STEP_RETRYING, "s1"));
 
-        assertThat(registry.counter("workflow.step.retries").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.step.retries [GH-90000]").count()).isEqualTo(1.0);
     }
 
     @Test
-    void shouldRecordStepDuration() {
+    void shouldRecordStepDuration() { // GH-90000
         // Start step
-        listener.onEvent(WorkflowLifecycleEvent.forStep(
+        listener.onEvent(WorkflowLifecycleEvent.forStep( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.STEP_STARTED, "s1"));
 
-        // Complete step (small delay)
-        listener.onEvent(WorkflowLifecycleEvent.forStep(
+        // Complete step (small delay) // GH-90000
+        listener.onEvent(WorkflowLifecycleEvent.forStep( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.STEP_COMPLETED, "s1"));
 
-        assertThat(registry.timer("workflow.step.duration", "step", "s1", "status", "STEP_COMPLETED")
-            .count()).isEqualTo(1);
+        assertThat(registry.timer("workflow.step.duration", "step", "s1", "status", "STEP_COMPLETED") // GH-90000
+            .count()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    void shouldCountStepFailures() {
-        listener.onEvent(WorkflowLifecycleEvent.forStep(
+    void shouldCountStepFailures() { // GH-90000
+        listener.onEvent(WorkflowLifecycleEvent.forStep( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.STEP_STARTED, "s1"));
 
-        listener.onEvent(WorkflowLifecycleEvent.forStep(
+        listener.onEvent(WorkflowLifecycleEvent.forStep( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.STEP_FAILED, "s1"));
 
-        assertThat(registry.counter("workflow.step.failures", "step", "s1").count())
-            .isEqualTo(1.0);
+        assertThat(registry.counter("workflow.step.failures", "step", "s1").count()) // GH-90000
+            .isEqualTo(1.0); // GH-90000
     }
 }

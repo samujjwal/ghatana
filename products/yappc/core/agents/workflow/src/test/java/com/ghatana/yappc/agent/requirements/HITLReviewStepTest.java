@@ -15,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Requirements HITLReviewStep Tests")
+@DisplayName("Requirements HITLReviewStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles hitl review step test operations
@@ -29,48 +29,48 @@ class HITLReviewStepTest extends EventloopTestBase {
   private HITLReviewStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new HITLReviewStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new HITLReviewStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("requirements.hitlreview");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("requirements.hitlreview [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should create HITL review for requirements")
-  void shouldCreateHitlReview() {
+  @DisplayName("Should create HITL review for requirements [GH-90000]")
+  void shouldCreateHitlReview() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc");
-    context.put("requirementId", "req-001");
-    context.put("action", "create");
-    context.put("reviewerId", "reviewer-001");
+    WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc"); // GH-90000
+    context.put("requirementId", "req-001"); // GH-90000
+    context.put("action", "create"); // GH-90000
+    context.put("reviewerId", "reviewer-001"); // GH-90000
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
+    assertThat(result).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should fail when requirementId is missing")
-  void shouldFailWhenRequirementIdMissing() {
+  @DisplayName("Should fail when requirementId is missing [GH-90000]")
+  void shouldFailWhenRequirementIdMissing() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc");
-    context.put("action", "create");
+    WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc"); // GH-90000
+    context.put("action", "create"); // GH-90000
 
     // WHEN / THEN
-    assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> runPromise(() -> step.execute(context)))
-        .withMessageContaining("requirementId");
+    assertThatExceptionOfType(IllegalArgumentException.class) // GH-90000
+        .isThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
+        .withMessageContaining("requirementId [GH-90000]");
   }
 }

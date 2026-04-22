@@ -44,76 +44,76 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
     private ExecutorService executor;
 
     @BeforeEach
-    void setUp() {
-        schemaDir = tempDir.resolve("schemas");
+    void setUp() { // GH-90000
+        schemaDir = tempDir.resolve("schemas [GH-90000]");
 
-        mockNodeBridge = mock(NodeBridge.class);
-        when(mockNodeBridge.executeScript(anyString(), anyString(), anyString()))
-                .thenReturn(new NodeBridge.Result(0, "", ""));
+        mockNodeBridge = mock(NodeBridge.class); // GH-90000
+        when(mockNodeBridge.executeScript(anyString(), anyString(), anyString())) // GH-90000
+                .thenReturn(new NodeBridge.Result(0, "", "")); // GH-90000
 
-        mockContext = mock(PolyfixProjectContext.class);
-        mockLogger = mock(Logger.class);
-        when(mockContext.log()).thenReturn(mockLogger);
-        executor = Executors.newSingleThreadExecutor();
-        when(mockContext.exec()).thenReturn(executor);
+        mockContext = mock(PolyfixProjectContext.class); // GH-90000
+        mockLogger = mock(Logger.class); // GH-90000
+        when(mockContext.log()).thenReturn(mockLogger); // GH-90000
+        executor = Executors.newSingleThreadExecutor(); // GH-90000
+        when(mockContext.exec()).thenReturn(executor); // GH-90000
 
-        codemods = new JsonYamlCodemods(mockContext, mockNodeBridge);
+        codemods = new JsonYamlCodemods(mockContext, mockNodeBridge); // GH-90000
     }
 
     @org.junit.jupiter.api.AfterEach
-    void tearDown() {
-        executor.shutdownNow();
+    void tearDown() { // GH-90000
+        executor.shutdownNow(); // GH-90000
     }
 
     @Test
-    void testEmptyFilesList() {
-        List<UnifiedDiagnostic> results = runPromise(() -> codemods.normalizeAndValidate(List.of(), schemaDir));
-        assertThat(results).isEmpty();
-        verifyNoInteractions(mockNodeBridge);
+    void testEmptyFilesList() { // GH-90000
+        List<UnifiedDiagnostic> results = runPromise(() -> codemods.normalizeAndValidate(List.of(), schemaDir)); // GH-90000
+        assertThat(results).isEmpty(); // GH-90000
+        verifyNoInteractions(mockNodeBridge); // GH-90000
     }
 
     @Test
-    void testNonExistentFile() {
-        Path nonExistent = tempDir.resolve("nonexistent.json");
+    void testNonExistentFile() { // GH-90000
+        Path nonExistent = tempDir.resolve("nonexistent.json [GH-90000]");
         List<UnifiedDiagnostic> results =
-                runPromise(() -> codemods.normalizeAndValidate(List.of(nonExistent), schemaDir));
+                runPromise(() -> codemods.normalizeAndValidate(List.of(nonExistent), schemaDir)); // GH-90000
 
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).getMessage()).contains("File not found: " + nonExistent);
+        assertThat(results).hasSize(1); // GH-90000
+        assertThat(results.get(0).getMessage()).contains("File not found: " + nonExistent); // GH-90000
     }
 
     @Test
-    void testSchemaValidationSuccess() throws Exception {
+    void testSchemaValidationSuccess() throws Exception { // GH-90000
         // Create a test JSON file
-        Path jsonFile = tempDir.resolve(TEST_JSON);
-        Files.writeString(jsonFile, "{\"name\": \"test\"}");
+        Path jsonFile = tempDir.resolve(TEST_JSON); // GH-90000
+        Files.writeString(jsonFile, "{\"name\": \"test\"}"); // GH-90000
 
         // Create a matching schema
-        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON);
-        Files.createDirectories(schemaDir);
-        Files.writeString(schemaFile, "{\"type\": \"object\"}");
+        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON); // GH-90000
+        Files.createDirectories(schemaDir); // GH-90000
+        Files.writeString(schemaFile, "{\"type\": \"object\"}"); // GH-90000
 
         // Mock successful validation
-        when(mockNodeBridge.executeScript(
-                        "/bridges/ajv/ajv-validate.js", schemaFile.toString(), jsonFile.toString()))
-                .thenReturn(new NodeBridge.Result(0, "", ""));
+        when(mockNodeBridge.executeScript( // GH-90000
+                        "/bridges/ajv/ajv-validate.js", schemaFile.toString(), jsonFile.toString())) // GH-90000
+                .thenReturn(new NodeBridge.Result(0, "", "")); // GH-90000
 
         List<UnifiedDiagnostic> results =
-                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir)); // GH-90000
 
-        assertThat(results).isEmpty();
+        assertThat(results).isEmpty(); // GH-90000
     }
 
     @Test
-    void testSchemaValidationError() throws Exception {
+    void testSchemaValidationError() throws Exception { // GH-90000
         // Create a test JSON file
-        Path jsonFile = tempDir.resolve(TEST_JSON);
-        Files.writeString(jsonFile, "{\"name\": 123}");
+        Path jsonFile = tempDir.resolve(TEST_JSON); // GH-90000
+        Files.writeString(jsonFile, "{\"name\": 123}"); // GH-90000
 
         // Create a schema that expects a string
-        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON);
-        Files.createDirectories(schemaDir);
-        Files.writeString(
+        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON); // GH-90000
+        Files.createDirectories(schemaDir); // GH-90000
+        Files.writeString( // GH-90000
                 schemaFile,
                 "{\"properties\":{\"name\":{\"type\":\"string\"}},\"required\":[\"name\"]}");
 
@@ -122,75 +122,75 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
                 "[{\"instancePath\":\"/name\",\"schemaPath\":\"#/properties/name/type\",\"keyword\":\"type\",\"params\":{\"type\":\"string\"},\"message\":\"must"
                     + " be string\"}]";
 
-        when(mockNodeBridge.executeScript(
-                        "/bridges/ajv/ajv-validate.js", schemaFile.toString(), jsonFile.toString()))
-                .thenReturn(new NodeBridge.Result(0, errorOutput, ""));
+        when(mockNodeBridge.executeScript( // GH-90000
+                        "/bridges/ajv/ajv-validate.js", schemaFile.toString(), jsonFile.toString())) // GH-90000
+                .thenReturn(new NodeBridge.Result(0, errorOutput, "")); // GH-90000
 
         List<UnifiedDiagnostic> results =
-                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir)); // GH-90000
 
-        assertThat(results).hasSize(1);
+        assertThat(results).hasSize(1); // GH-90000
         // The actual message includes the error details from the Node.js script
-        assertThat(results.get(0).getMessage()).contains("must be string");
+        assertThat(results.get(0).getMessage()).contains("must be string [GH-90000]");
     }
 
     @Test
-    void testNodeBridgeError() throws Exception {
+    void testNodeBridgeError() throws Exception { // GH-90000
         // Create a test JSON file
-        Path jsonFile = tempDir.resolve(TEST_JSON);
-        Files.writeString(jsonFile, "{}");
+        Path jsonFile = tempDir.resolve(TEST_JSON); // GH-90000
+        Files.writeString(jsonFile, "{}"); // GH-90000
 
         // Create a schema file
-        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON);
-        Files.createDirectories(schemaDir);
-        Files.writeString(schemaFile, "{\"type\": \"object\"}");
+        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON); // GH-90000
+        Files.createDirectories(schemaDir); // GH-90000
+        Files.writeString(schemaFile, "{\"type\": \"object\"}"); // GH-90000
 
         // Mock Node.js error
-        when(mockNodeBridge.executeScript(
-                        "/bridges/ajv/ajv-validate.js", schemaFile.toString(), jsonFile.toString()))
-                .thenReturn(new NodeBridge.Result(1, "", "Invalid schema"));
+        when(mockNodeBridge.executeScript( // GH-90000
+                        "/bridges/ajv/ajv-validate.js", schemaFile.toString(), jsonFile.toString())) // GH-90000
+                .thenReturn(new NodeBridge.Result(1, "", "Invalid schema")); // GH-90000
 
         List<UnifiedDiagnostic> results =
-                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir)); // GH-90000
 
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).getMessage())
-                .contains("Schema validation failed: Invalid schema");
+        assertThat(results).hasSize(1); // GH-90000
+        assertThat(results.get(0).getMessage()) // GH-90000
+                .contains("Schema validation failed: Invalid schema [GH-90000]");
     }
 
     @Test
-    void testSchemaDiscovery() throws Exception {
+    void testSchemaDiscovery() throws Exception { // GH-90000
         // Test finding schemas with different extensions
-        Files.createDirectories(schemaDir);
+        Files.createDirectories(schemaDir); // GH-90000
 
         // Create test files
-        Path jsonFile = tempDir.resolve(TEST_JSON);
-        Files.writeString(jsonFile, "{}");
+        Path jsonFile = tempDir.resolve(TEST_JSON); // GH-90000
+        Files.writeString(jsonFile, "{}"); // GH-90000
 
         // Create schemas with different extensions
-        Path schemaJson = schemaDir.resolve(TEST_SCHEMA_JSON);
-        Path schemaYaml = schemaDir.resolve("test.schema.yaml");
+        Path schemaJson = schemaDir.resolve(TEST_SCHEMA_JSON); // GH-90000
+        Path schemaYaml = schemaDir.resolve("test.schema.yaml [GH-90000]");
 
-        Files.writeString(schemaJson, "{}");
+        Files.writeString(schemaJson, "{}"); // GH-90000
 
         // Test finding .json schema
         List<UnifiedDiagnostic> results =
-                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir)); // GH-90000
 
-        ArgumentCaptor<String> schemaPathCaptor = ArgumentCaptor.forClass(String.class);
-        verify(mockNodeBridge).executeScript(anyString(), schemaPathCaptor.capture(), anyString());
+        ArgumentCaptor<String> schemaPathCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
+        verify(mockNodeBridge).executeScript(anyString(), schemaPathCaptor.capture(), anyString()); // GH-90000
 
-        assertThat(schemaPathCaptor.getValue()).endsWith(TEST_SCHEMA_JSON);
+        assertThat(schemaPathCaptor.getValue()).endsWith(TEST_SCHEMA_JSON); // GH-90000
 
         // Test finding .yaml schema when .json doesn't exist
-        Files.delete(schemaJson);
-        Files.writeString(schemaYaml, "type: object");
+        Files.delete(schemaJson); // GH-90000
+        Files.writeString(schemaYaml, "type: object"); // GH-90000
 
-        results = runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
+        results = runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir)); // GH-90000
 
-        verify(mockNodeBridge, times(2))
-                .executeScript(anyString(), schemaPathCaptor.capture(), anyString());
+        verify(mockNodeBridge, times(2)) // GH-90000
+                .executeScript(anyString(), schemaPathCaptor.capture(), anyString()); // GH-90000
 
-        assertThat(schemaPathCaptor.getValue()).endsWith("test.schema.yaml");
+        assertThat(schemaPathCaptor.getValue()).endsWith("test.schema.yaml [GH-90000]");
     }
 }

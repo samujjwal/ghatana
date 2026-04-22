@@ -9,16 +9,24 @@ set -euo pipefail
 
 DEPRECATED_PACKAGES=(
     "@ghatana/ui"
+    "@ghatana/accessibility-audit"
     "@ghatana/yappc-component-traceability"
     "@yappc/component-traceability"
 )
 
 EXIT_CODE=0
 USE_RG=0
+SEARCH_ROOTS=()
 
 if command -v rg >/dev/null 2>&1; then
     USE_RG=1
 fi
+
+for candidate in products platform shared-services apps; do
+    if [ -d "$candidate" ]; then
+        SEARCH_ROOTS+=("$candidate")
+    fi
+done
 
 find_files() {
     local mode="$1"
@@ -59,24 +67,29 @@ run_search() {
     local pattern="$1"
     local mode="$2"
 
+    if [ "${#SEARCH_ROOTS[@]}" -eq 0 ] && [ "$mode" != "lockfile" ]; then
+        return 1
+    fi
+
     if [ "$USE_RG" -eq 1 ]; then
         case "$mode" in
             source)
-                rg "$pattern" --type ts --type tsx --type js --type jsx \
+                rg "$pattern" \
+                    -g '**/*.{ts,tsx,js,jsx,mjs,cjs}' \
                     -g '!**/node_modules/**' -g '!**/build/**' -g '!**/dist/**' -g '!**/coverage/**' \
-                    products platform shared-services apps --no-heading --line-number -n
+                    "${SEARCH_ROOTS[@]}" --no-heading --line-number -n
                 ;;
             manifest)
-                rg "\"${pattern}\"" --type json -g 'package.json' -g '!**/node_modules/**' \
-                    products platform shared-services apps --no-heading --line-number -n
+                rg "\"${pattern}\"" -g '**/package.json' -g '!**/node_modules/**' \
+                    "${SEARCH_ROOTS[@]}" --no-heading --line-number -n
                 ;;
             tsconfig)
                 rg "$pattern" -g 'tsconfig*.json' -g '!**/node_modules/**' \
-                    products platform shared-services apps --no-heading --line-number -n
+                    "${SEARCH_ROOTS[@]}" --no-heading --line-number -n
                 ;;
             bundler)
                 rg "$pattern" -g 'vite.config.*' -g 'tailwind.config.*' -g '!**/node_modules/**' \
-                    products platform shared-services apps --no-heading --line-number -n
+                    "${SEARCH_ROOTS[@]}" --no-heading --line-number -n
                 ;;
             lockfile)
                 rg "${pattern}@" pnpm-lock.yaml --no-heading --line-number -n
@@ -106,7 +119,7 @@ run_search() {
 
 build_source_pattern() {
     local pkg="$1"
-    printf "^[[:space:]]*(import|export)[^;]*['\"]%s([^'\"]*)?['\"]|require\\(['\"]%s([^'\"]*)?['\"]\\)" "$pkg" "$pkg"
+    printf "^[[:space:]]*(import|export)[^;]*['\"]%s(/[^'\"]*)?['\"]|require\\(['\"]%s(/[^'\"]*)?['\"]\\)" "$pkg" "$pkg"
 }
 
 build_exact_config_pattern() {
@@ -176,6 +189,7 @@ else
     echo ""
     echo "  Migration paths:"
     echo "    - @ghatana/ui -> @ghatana/design-system"
+    echo "    - @ghatana/accessibility-audit -> @ghatana/accessibility"
     echo "    - @ghatana/yappc-component-traceability -> @yappc/ui/traceability"
     echo "    - @yappc/component-traceability -> @yappc/ui/traceability"
     echo ""

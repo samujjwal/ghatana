@@ -28,34 +28,34 @@ public abstract class IntegrationTestSupport extends EventloopTestBase {
     protected ObjectMapper objectMapper;
 
     @BeforeEach
-    void bootHarness() throws Exception {
-        harness = new ServerTestHarness().start();
-        httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    void bootHarness() throws Exception { // GH-90000
+        harness = new ServerTestHarness().start(); // GH-90000
+        httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(); // GH-90000
         grpcChannel =
-                ManagedChannelBuilder.forTarget(harness.getGrpcAddress()).usePlaintext().build();
-        grpcBlockingStub = PolyfixServiceGrpc.newBlockingStub(grpcChannel);
-        objectMapper = new ObjectMapper();
-        additionalSetUp();
+                ManagedChannelBuilder.forTarget(harness.getGrpcAddress()).usePlaintext().build(); // GH-90000
+        grpcBlockingStub = PolyfixServiceGrpc.newBlockingStub(grpcChannel); // GH-90000
+        objectMapper = new ObjectMapper(); // GH-90000
+        additionalSetUp(); // GH-90000
     }
 
     @AfterEach
-    void shutdownHarness() throws Exception {
+    void shutdownHarness() throws Exception { // GH-90000
         try {
-            additionalTearDown();
+            additionalTearDown(); // GH-90000
         } finally {
-            if (grpcChannel != null) {
-                grpcChannel.shutdown();
-                grpcChannel.awaitTermination(5, TimeUnit.SECONDS);
+            if (grpcChannel != null) { // GH-90000
+                grpcChannel.shutdown(); // GH-90000
+                grpcChannel.awaitTermination(5, TimeUnit.SECONDS); // GH-90000
             }
-            if (harness != null) {
-                harness.close();
+            if (harness != null) { // GH-90000
+                harness.close(); // GH-90000
             }
         }
     }
 
     /** Hook for subclasses needing extra setup. */
-    protected void additionalSetUp() throws Exception {}
+    protected void additionalSetUp() throws Exception {} // GH-90000
 
     /** Hook for subclasses needing extra teardown. */
-    protected void additionalTearDown() throws Exception {}
+    protected void additionalTearDown() throws Exception {} // GH-90000
 }

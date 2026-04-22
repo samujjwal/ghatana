@@ -19,8 +19,8 @@ import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(EventloopExtension.class)
-@DisplayName("IngestHandler Tests")
+@ExtendWith(EventloopExtension.class) // GH-90000
+@DisplayName("IngestHandler Tests [GH-90000]")
 class IngestHandlerTest {
 
     private MockTraceStorage storage;
@@ -28,23 +28,23 @@ class IngestHandlerTest {
     private IngestHandler handler;
 
     @BeforeEach
-    void setup() {
-        storage = new MockTraceStorage();
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        handler = new IngestHandler(storage, objectMapper);
+    void setup() { // GH-90000
+        storage = new MockTraceStorage(); // GH-90000
+        objectMapper = new ObjectMapper(); // GH-90000
+        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
+        handler = new IngestHandler(storage, objectMapper); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (storage != null) {
-            storage.close();
+    void tearDown() { // GH-90000
+        if (storage != null) { // GH-90000
+            storage.close(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should ingest single span successfully")
-    void shouldIngestSingleSpan(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
+    @DisplayName("Should ingest single span successfully [GH-90000]")
+    void shouldIngestSingleSpan(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         String jsonBody = """
                 {
                     "spanId": "span-1",
@@ -56,21 +56,21 @@ class IngestHandlerTest {
                     "status": "OK"
                 }
                 """;
-        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans")
-                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8))
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans") // GH-90000
+                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse resp = ActiveJServletTestUtil.serve(
-                request -> handler.handleSingleSpan(request), req, runner);
+        HttpResponse resp = ActiveJServletTestUtil.serve( // GH-90000
+                request -> handler.handleSingleSpan(request), req, runner); // GH-90000
 
-        assertThat(resp.getCode()).isEqualTo(201);
-        assertThat(storage.getTotalSpanCount()).isEqualTo(1);
+        assertThat(resp.getCode()).isEqualTo(201); // GH-90000
+        assertThat(storage.getTotalSpanCount()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should ingest batch spans successfully")
-    void shouldIngestBatchSpans(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
+    @DisplayName("Should ingest batch spans successfully [GH-90000]")
+    void shouldIngestBatchSpans(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         String jsonBody = """
                 {
                     "spans": [
@@ -96,71 +96,71 @@ class IngestHandlerTest {
                     ]
                 }
                 """;
-        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans/batch")
-                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8))
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans/batch") // GH-90000
+                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse resp = ActiveJServletTestUtil.serve(
-                request -> handler.handleBatchSpans(request), req, runner);
+        HttpResponse resp = ActiveJServletTestUtil.serve( // GH-90000
+                request -> handler.handleBatchSpans(request), req, runner); // GH-90000
 
-        assertThat(resp.getCode()).isEqualTo(201);
-        String responseBody = resp.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(responseBody).contains("\"successCount\":2");
-        assertThat(responseBody).contains("\"failureCount\":0");
-        assertThat(storage.getTotalSpanCount()).isEqualTo(2);
+        assertThat(resp.getCode()).isEqualTo(201); // GH-90000
+        String responseBody = resp.getBody().asString(StandardCharsets.UTF_8); // GH-90000
+        assertThat(responseBody).contains("\"successCount\":2"); // GH-90000
+        assertThat(responseBody).contains("\"failureCount\":0"); // GH-90000
+        assertThat(storage.getTotalSpanCount()).isEqualTo(2); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return 400 for invalid JSON")
-    void shouldReturn400ForInvalidJson(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans")
-                .withBody("{ invalid }".getBytes(StandardCharsets.UTF_8))
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+    @DisplayName("Should return 400 for invalid JSON [GH-90000]")
+    void shouldReturn400ForInvalidJson(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans") // GH-90000
+                .withBody("{ invalid }".getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse resp = ActiveJServletTestUtil.serve(
-                request -> handler.handleSingleSpan(request), req, runner);
+        HttpResponse resp = ActiveJServletTestUtil.serve( // GH-90000
+                request -> handler.handleSingleSpan(request), req, runner); // GH-90000
 
-        assertThat(resp.getCode()).isEqualTo(400);
+        assertThat(resp.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return 400 for empty body")
-    void shouldReturn400ForEmptyBody(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans")
-                .withBody(new byte[0])
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+    @DisplayName("Should return 400 for empty body [GH-90000]")
+    void shouldReturn400ForEmptyBody(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans") // GH-90000
+                .withBody(new byte[0]) // GH-90000
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse resp = ActiveJServletTestUtil.serve(
-                request -> handler.handleSingleSpan(request), req, runner);
+        HttpResponse resp = ActiveJServletTestUtil.serve( // GH-90000
+                request -> handler.handleSingleSpan(request), req, runner); // GH-90000
 
-        assertThat(resp.getCode()).isEqualTo(400);
+        assertThat(resp.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle large batch of 50 spans")
-    void shouldHandleLargeBatch(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        StringBuilder spansJson = new StringBuilder("[");
-        for (int i = 0; i < 50; i++) {
-            if (i > 0) spansJson.append(",");
-            spansJson.append(String.format(
+    @DisplayName("Should handle large batch of 50 spans [GH-90000]")
+    void shouldHandleLargeBatch(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
+        StringBuilder spansJson = new StringBuilder("[ [GH-90000]");
+        for (int i = 0; i < 50; i++) { // GH-90000
+            if (i > 0) spansJson.append(", [GH-90000]");
+            spansJson.append(String.format( // GH-90000
                     "{\"spanId\":\"span-%d\",\"traceId\":\"trace-1\",\"operationName\":\"op-%d\"," +
                     "\"serviceName\":\"service1\",\"startTime\":\"2024-01-01T00:00:00Z\"," +
                     "\"endTime\":\"2024-01-01T00:00:01Z\",\"status\":\"OK\"}", i, i));
         }
-        spansJson.append("]");
+        spansJson.append("] [GH-90000]");
 
-        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans/batch")
-                .withBody(("{\"spans\":" + spansJson + "}").getBytes(StandardCharsets.UTF_8))
-                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .build();
+        HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans/batch") // GH-90000
+                .withBody(("{\"spans\":" + spansJson + "}").getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+                .build(); // GH-90000
 
-        HttpResponse resp = ActiveJServletTestUtil.serve(
-                request -> handler.handleBatchSpans(request), req, runner);
+        HttpResponse resp = ActiveJServletTestUtil.serve( // GH-90000
+                request -> handler.handleBatchSpans(request), req, runner); // GH-90000
 
-        assertThat(resp.getCode()).isEqualTo(201);
-        assertThat(storage.getTotalSpanCount()).isEqualTo(50);
+        assertThat(resp.getCode()).isEqualTo(201); // GH-90000
+        assertThat(storage.getTotalSpanCount()).isEqualTo(50); // GH-90000
     }
 }

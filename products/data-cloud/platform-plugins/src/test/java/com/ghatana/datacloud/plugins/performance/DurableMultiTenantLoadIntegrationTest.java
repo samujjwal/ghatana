@@ -56,127 +56,127 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, IntegrationTest
  */
-@EnabledIfEnvironmentVariable(named = "DATACLOUD_DURABLE_LOAD_ENABLED", matches = "true")
+@EnabledIfEnvironmentVariable(named = "DATACLOUD_DURABLE_LOAD_ENABLED", matches = "true") // GH-90000
 @Testcontainers
-@DisplayName("Durable Multi-Tenant Load Integration Test")
-@SuppressWarnings({"resource", "deprecation"})
+@DisplayName("Durable Multi-Tenant Load Integration Test [GH-90000]")
+@SuppressWarnings({"resource", "deprecation"}) // GH-90000
 class DurableMultiTenantLoadIntegrationTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule()); // GH-90000
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {}; // GH-90000
 
-    private static final int TENANT_COUNT = Integer.getInteger("datacloud.load.tenants", 100);
-    private static final int ENTITY_OPS_PER_TENANT = Integer.getInteger("datacloud.load.entityOpsPerTenant", 10);
-    private static final int EVENT_OPS_PER_TENANT = Integer.getInteger("datacloud.load.eventOpsPerTenant", 10);
-    private static final int EVENT_BURST_BATCH_SIZE = Integer.getInteger("datacloud.load.eventBurstBatchSize", 10_000);
-    private static final long TIMEOUT_SECONDS = Long.getLong("datacloud.load.timeoutSeconds", 180L);
-    private static final long MAX_HEAP_DELTA_MB = Long.getLong("datacloud.load.maxHeapDeltaMb", 256L);
-    private static final long MAX_P95_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP95EntitySaveMs", 4_000L);
-    private static final long MAX_P95_EVENT_APPEND_MS = Long.getLong("datacloud.load.maxP95EventAppendMs", 2_500L);
-    private static final long MAX_P95_QUERY_MS = Long.getLong("datacloud.load.maxP95QueryMs", 2_500L);
-    private static final long MAX_P99_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP99EntitySaveMs", 0L);
-    private static final long MAX_P99_QUERY_MS = Long.getLong("datacloud.load.maxP99QueryMs", 0L);
-    private static final int MIN_P99_SAMPLE_SIZE = Integer.getInteger("datacloud.load.minP99SampleSize", 100);
-    private static final int ITERATIONS = Integer.getInteger("datacloud.load.iterations", 1);
-    private static final double MIN_THROUGHPUT_OPS_PER_SECOND = Double.parseDouble(
-        System.getProperty("datacloud.load.minThroughputOpsPerSecond", "0")
+    private static final int TENANT_COUNT = Integer.getInteger("datacloud.load.tenants", 100); // GH-90000
+    private static final int ENTITY_OPS_PER_TENANT = Integer.getInteger("datacloud.load.entityOpsPerTenant", 10); // GH-90000
+    private static final int EVENT_OPS_PER_TENANT = Integer.getInteger("datacloud.load.eventOpsPerTenant", 10); // GH-90000
+    private static final int EVENT_BURST_BATCH_SIZE = Integer.getInteger("datacloud.load.eventBurstBatchSize", 10_000); // GH-90000
+    private static final long TIMEOUT_SECONDS = Long.getLong("datacloud.load.timeoutSeconds", 180L); // GH-90000
+    private static final long MAX_HEAP_DELTA_MB = Long.getLong("datacloud.load.maxHeapDeltaMb", 256L); // GH-90000
+    private static final long MAX_P95_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP95EntitySaveMs", 4_000L); // GH-90000
+    private static final long MAX_P95_EVENT_APPEND_MS = Long.getLong("datacloud.load.maxP95EventAppendMs", 2_500L); // GH-90000
+    private static final long MAX_P95_QUERY_MS = Long.getLong("datacloud.load.maxP95QueryMs", 2_500L); // GH-90000
+    private static final long MAX_P99_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP99EntitySaveMs", 0L); // GH-90000
+    private static final long MAX_P99_QUERY_MS = Long.getLong("datacloud.load.maxP99QueryMs", 0L); // GH-90000
+    private static final int MIN_P99_SAMPLE_SIZE = Integer.getInteger("datacloud.load.minP99SampleSize", 100); // GH-90000
+    private static final int ITERATIONS = Integer.getInteger("datacloud.load.iterations", 1); // GH-90000
+    private static final double MIN_THROUGHPUT_OPS_PER_SECOND = Double.parseDouble( // GH-90000
+        System.getProperty("datacloud.load.minThroughputOpsPerSecond", "0") // GH-90000
     );
-    private static final double MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND = Double.parseDouble(
-        System.getProperty("datacloud.load.minEventBurstThroughputOpsPerSecond", "0")
+    private static final double MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND = Double.parseDouble( // GH-90000
+        System.getProperty("datacloud.load.minEventBurstThroughputOpsPerSecond", "0") // GH-90000
     );
-    private static final String METRICS_OUTPUT = System.getProperty("datacloud.load.metricsOutput", "");
+    private static final String METRICS_OUTPUT = System.getProperty("datacloud.load.metricsOutput", ""); // GH-90000
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
-        .withDatabaseName("datacloud_load_it")
-        .withUsername("dc_load")
-        .withPassword("dc_load_secret");
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine [GH-90000]")
+        .withDatabaseName("datacloud_load_it [GH-90000]")
+        .withUsername("dc_load [GH-90000]")
+        .withPassword("dc_load_secret [GH-90000]");
 
     @Container
-    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
-        .withEmbeddedZookeeper();
+    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0 [GH-90000]"))
+        .withEmbeddedZookeeper(); // GH-90000
 
     private PostgresEntityStore entityStore;
     private KafkaEventLogStore eventStore;
 
     @BeforeAll
-    static void migrateSchema() {
-        createDatabaseRoles();
-        Flyway.configure()
-            .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("filesystem:" + resolveMigrationDirectory())
-            .target("10")
-            .load()
-            .migrate();
+    static void migrateSchema() { // GH-90000
+        createDatabaseRoles(); // GH-90000
+        Flyway.configure() // GH-90000
+            .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()) // GH-90000
+            .locations("filesystem:" + resolveMigrationDirectory()) // GH-90000
+            .target("10 [GH-90000]")
+            .load() // GH-90000
+            .migrate(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (entityStore != null) {
-            entityStore.close();
+    void tearDown() { // GH-90000
+        if (entityStore != null) { // GH-90000
+            entityStore.close(); // GH-90000
         }
-        if (eventStore != null) {
-            eventStore.close();
+        if (eventStore != null) { // GH-90000
+            eventStore.close(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("mixed CRUD, query, and event append traffic stays tenant-isolated under durable load")
-    void mixedCrudQueryAndEventAppendTrafficStaysTenantIsolatedUnderDurableLoad() throws InterruptedException {
-        entityStore = new PostgresEntityStore(new PostgresEntityStoreConfig(
-            POSTGRES.getJdbcUrl(),
-            POSTGRES.getUsername(),
-            POSTGRES.getPassword(),
+    @DisplayName("mixed CRUD, query, and event append traffic stays tenant-isolated under durable load [GH-90000]")
+    void mixedCrudQueryAndEventAppendTrafficStaysTenantIsolatedUnderDurableLoad() throws InterruptedException { // GH-90000
+        entityStore = new PostgresEntityStore(new PostgresEntityStoreConfig( // GH-90000
+            POSTGRES.getJdbcUrl(), // GH-90000
+            POSTGRES.getUsername(), // GH-90000
+            POSTGRES.getPassword(), // GH-90000
             24,
             2,
             30_000L,
             600_000L,
             1_800_000L
         ));
-        eventStore = new KafkaEventLogStore(KafkaEventLogStoreConfig.builder()
-            .bootstrapServers(normalizeBootstrapServers(KAFKA.getBootstrapServers()))
-            .partitions(1)
-            .replicationFactor((short) 1)
-            .readTimeoutMs(5_000L)
-            .build());
+        eventStore = new KafkaEventLogStore(KafkaEventLogStoreConfig.builder() // GH-90000
+            .bootstrapServers(normalizeBootstrapServers(KAFKA.getBootstrapServers())) // GH-90000
+            .partitions(1) // GH-90000
+            .replicationFactor((short) 1) // GH-90000
+            .readTimeoutMs(5_000L) // GH-90000
+            .build()); // GH-90000
 
-        preWarmTenants();
+        preWarmTenants(); // GH-90000
 
-        List<Map<String, Object>> iterationSummaries = new ArrayList<>();
+        List<Map<String, Object>> iterationSummaries = new ArrayList<>(); // GH-90000
 
-        for (int iteration = 1; iteration <= ITERATIONS; iteration++) {
-            iterationSummaries.add(runSingleIteration(iteration));
+        for (int iteration = 1; iteration <= ITERATIONS; iteration++) { // GH-90000
+            iterationSummaries.add(runSingleIteration(iteration)); // GH-90000
         }
 
-        long minEntityWrites = (long) TENANT_COUNT * ENTITY_OPS_PER_TENANT * ITERATIONS;
-        long minEventAppends = (long) TENANT_COUNT * EVENT_OPS_PER_TENANT * ITERATIONS;
-        long minQueries = (long) TENANT_COUNT * 2L * ITERATIONS;
+        long minEntityWrites = (long) TENANT_COUNT * ENTITY_OPS_PER_TENANT * ITERATIONS; // GH-90000
+        long minEventAppends = (long) TENANT_COUNT * EVENT_OPS_PER_TENANT * ITERATIONS; // GH-90000
+        long minQueries = (long) TENANT_COUNT * 2L * ITERATIONS; // GH-90000
 
-        long aggregateEntityWrites = iterationSummaries.stream()
-            .mapToLong(summary -> ((Number) summary.get("entityWrites")).longValue())
-            .sum();
-        long aggregateEventAppends = iterationSummaries.stream()
-            .mapToLong(summary -> ((Number) summary.get("eventAppends")).longValue())
-            .sum();
-        long aggregateQueries = iterationSummaries.stream()
-            .mapToLong(summary -> ((Number) summary.get("queries")).longValue())
-            .sum();
-        double bestThroughput = iterationSummaries.stream()
-            .mapToDouble(summary -> ((Number) summary.get("throughputOpsPerSecond")).doubleValue())
-            .max()
-            .orElse(0.0d);
-        double bestEventBurstThroughput = iterationSummaries.stream()
-            .mapToDouble(summary -> ((Number) summary.get("eventBurstThroughputOpsPerSecond")).doubleValue())
-            .max()
-            .orElse(0.0d);
+        long aggregateEntityWrites = iterationSummaries.stream() // GH-90000
+            .mapToLong(summary -> ((Number) summary.get("entityWrites [GH-90000]")).longValue())
+            .sum(); // GH-90000
+        long aggregateEventAppends = iterationSummaries.stream() // GH-90000
+            .mapToLong(summary -> ((Number) summary.get("eventAppends [GH-90000]")).longValue())
+            .sum(); // GH-90000
+        long aggregateQueries = iterationSummaries.stream() // GH-90000
+            .mapToLong(summary -> ((Number) summary.get("queries [GH-90000]")).longValue())
+            .sum(); // GH-90000
+        double bestThroughput = iterationSummaries.stream() // GH-90000
+            .mapToDouble(summary -> ((Number) summary.get("throughputOpsPerSecond [GH-90000]")).doubleValue())
+            .max() // GH-90000
+            .orElse(0.0d); // GH-90000
+        double bestEventBurstThroughput = iterationSummaries.stream() // GH-90000
+            .mapToDouble(summary -> ((Number) summary.get("eventBurstThroughputOpsPerSecond [GH-90000]")).doubleValue())
+            .max() // GH-90000
+            .orElse(0.0d); // GH-90000
 
-        assertThat(aggregateEntityWrites).isGreaterThanOrEqualTo(minEntityWrites);
-        assertThat(aggregateEventAppends).isGreaterThanOrEqualTo(minEventAppends);
-        assertThat(aggregateQueries).isGreaterThanOrEqualTo(minQueries);
-        assertThat(bestThroughput).isGreaterThanOrEqualTo(MIN_THROUGHPUT_OPS_PER_SECOND);
-        assertThat(bestEventBurstThroughput).isGreaterThanOrEqualTo(MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND);
+        assertThat(aggregateEntityWrites).isGreaterThanOrEqualTo(minEntityWrites); // GH-90000
+        assertThat(aggregateEventAppends).isGreaterThanOrEqualTo(minEventAppends); // GH-90000
+        assertThat(aggregateQueries).isGreaterThanOrEqualTo(minQueries); // GH-90000
+        assertThat(bestThroughput).isGreaterThanOrEqualTo(MIN_THROUGHPUT_OPS_PER_SECOND); // GH-90000
+        assertThat(bestEventBurstThroughput).isGreaterThanOrEqualTo(MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND); // GH-90000
 
-        writeMetricsReport(
+        writeMetricsReport( // GH-90000
             iterationSummaries,
             aggregateEntityWrites,
             aggregateEventAppends,
@@ -186,24 +186,24 @@ class DurableMultiTenantLoadIntegrationTest {
         );
     }
 
-    private Map<String, Object> runSingleIteration(int iteration) throws InterruptedException {
+    private Map<String, Object> runSingleIteration(int iteration) throws InterruptedException { // GH-90000
 
-        Queue<Long> entitySaveLatenciesMs = new ConcurrentLinkedQueue<>();
-        Queue<Long> eventAppendLatenciesMs = new ConcurrentLinkedQueue<>();
-        Queue<Long> queryLatenciesMs = new ConcurrentLinkedQueue<>();
-        List<Throwable> failures = java.util.Collections.synchronizedList(new ArrayList<>());
-        CountDownLatch done = new CountDownLatch(TENANT_COUNT);
-        AtomicLong entityWrites = new AtomicLong();
-        AtomicLong eventAppends = new AtomicLong();
-        AtomicLong queries = new AtomicLong();
+        Queue<Long> entitySaveLatenciesMs = new ConcurrentLinkedQueue<>(); // GH-90000
+        Queue<Long> eventAppendLatenciesMs = new ConcurrentLinkedQueue<>(); // GH-90000
+        Queue<Long> queryLatenciesMs = new ConcurrentLinkedQueue<>(); // GH-90000
+        List<Throwable> failures = java.util.Collections.synchronizedList(new ArrayList<>()); // GH-90000
+        CountDownLatch done = new CountDownLatch(TENANT_COUNT); // GH-90000
+        AtomicLong entityWrites = new AtomicLong(); // GH-90000
+        AtomicLong eventAppends = new AtomicLong(); // GH-90000
+        AtomicLong queries = new AtomicLong(); // GH-90000
 
-        long heapBeforeBytes = usedHeapBytes();
-        long startNanos = System.nanoTime();
+        long heapBeforeBytes = usedHeapBytes(); // GH-90000
+        long startNanos = System.nanoTime(); // GH-90000
 
-        try (ExecutorService workers = Executors.newVirtualThreadPerTaskExecutor()) {
-            for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) {
-                final String tenantId = tenantIdFor(tenantIndex);
-                workers.submit(() -> runTenantScenario(
+        try (ExecutorService workers = Executors.newVirtualThreadPerTaskExecutor()) { // GH-90000
+            for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) { // GH-90000
+                final String tenantId = tenantIdFor(tenantIndex); // GH-90000
+                workers.submit(() -> runTenantScenario( // GH-90000
                     tenantId,
                     entitySaveLatenciesMs,
                     eventAppendLatenciesMs,
@@ -216,81 +216,81 @@ class DurableMultiTenantLoadIntegrationTest {
                 ));
             }
 
-            assertThat(done.await(TIMEOUT_SECONDS, TimeUnit.SECONDS))
-                .as("all tenants should complete within %s seconds", TIMEOUT_SECONDS)
-                .isTrue();
+            assertThat(done.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) // GH-90000
+                .as("all tenants should complete within %s seconds", TIMEOUT_SECONDS) // GH-90000
+                .isTrue(); // GH-90000
         }
 
-        long durationNanos = System.nanoTime() - startNanos;
-        long heapAfterBytes = usedHeapBytes();
-        long heapDeltaMb = Math.max(0L, heapAfterBytes - heapBeforeBytes) / (1024L * 1024L);
-        double totalOps = entityWrites.get() + eventAppends.get() + queries.get();
-        double throughputPerSecond = totalOps / Math.max(1.0d, durationNanos / 1_000_000_000.0d);
-        long entitySaveP95 = percentile(entitySaveLatenciesMs, 0.95d);
-        long eventAppendP95 = percentile(eventAppendLatenciesMs, 0.95d);
-        long queryP95 = percentile(queryLatenciesMs, 0.95d);
-        long entitySaveP99 = percentile(entitySaveLatenciesMs, 0.99d);
-        long queryP99 = percentile(queryLatenciesMs, 0.99d);
-        double eventBurstThroughputPerSecond = measureEventBurstThroughput(tenantIdFor(0), EVENT_BURST_BATCH_SIZE);
+        long durationNanos = System.nanoTime() - startNanos; // GH-90000
+        long heapAfterBytes = usedHeapBytes(); // GH-90000
+        long heapDeltaMb = Math.max(0L, heapAfterBytes - heapBeforeBytes) / (1024L * 1024L); // GH-90000
+        double totalOps = entityWrites.get() + eventAppends.get() + queries.get(); // GH-90000
+        double throughputPerSecond = totalOps / Math.max(1.0d, durationNanos / 1_000_000_000.0d); // GH-90000
+        long entitySaveP95 = percentile(entitySaveLatenciesMs, 0.95d); // GH-90000
+        long eventAppendP95 = percentile(eventAppendLatenciesMs, 0.95d); // GH-90000
+        long queryP95 = percentile(queryLatenciesMs, 0.95d); // GH-90000
+        long entitySaveP99 = percentile(entitySaveLatenciesMs, 0.99d); // GH-90000
+        long queryP99 = percentile(queryLatenciesMs, 0.99d); // GH-90000
+        double eventBurstThroughputPerSecond = measureEventBurstThroughput(tenantIdFor(0), EVENT_BURST_BATCH_SIZE); // GH-90000
 
-        assertThat(failures).isEmpty();
-        assertThat(entityWrites.get()).isEqualTo((long) TENANT_COUNT * ENTITY_OPS_PER_TENANT);
-        assertThat(eventAppends.get()).isEqualTo((long) TENANT_COUNT * EVENT_OPS_PER_TENANT);
-        assertThat(queries.get()).isEqualTo((long) TENANT_COUNT * 2L);
-        assertThat(entitySaveP95).isLessThanOrEqualTo(MAX_P95_ENTITY_SAVE_MS);
-        assertThat(eventAppendP95).isLessThanOrEqualTo(MAX_P95_EVENT_APPEND_MS);
-        assertThat(queryP95).isLessThanOrEqualTo(MAX_P95_QUERY_MS);
-        if (MAX_P99_ENTITY_SAVE_MS > 0 && entitySaveLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE) {
-            assertThat(entitySaveP99).isLessThanOrEqualTo(MAX_P99_ENTITY_SAVE_MS);
+        assertThat(failures).isEmpty(); // GH-90000
+        assertThat(entityWrites.get()).isEqualTo((long) TENANT_COUNT * ENTITY_OPS_PER_TENANT); // GH-90000
+        assertThat(eventAppends.get()).isEqualTo((long) TENANT_COUNT * EVENT_OPS_PER_TENANT); // GH-90000
+        assertThat(queries.get()).isEqualTo((long) TENANT_COUNT * 2L); // GH-90000
+        assertThat(entitySaveP95).isLessThanOrEqualTo(MAX_P95_ENTITY_SAVE_MS); // GH-90000
+        assertThat(eventAppendP95).isLessThanOrEqualTo(MAX_P95_EVENT_APPEND_MS); // GH-90000
+        assertThat(queryP95).isLessThanOrEqualTo(MAX_P95_QUERY_MS); // GH-90000
+        if (MAX_P99_ENTITY_SAVE_MS > 0 && entitySaveLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE) { // GH-90000
+            assertThat(entitySaveP99).isLessThanOrEqualTo(MAX_P99_ENTITY_SAVE_MS); // GH-90000
         }
-        if (MAX_P99_QUERY_MS > 0 && queryLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE) {
-            assertThat(queryP99).isLessThanOrEqualTo(MAX_P99_QUERY_MS);
+        if (MAX_P99_QUERY_MS > 0 && queryLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE) { // GH-90000
+            assertThat(queryP99).isLessThanOrEqualTo(MAX_P99_QUERY_MS); // GH-90000
         }
-        assertThat(eventBurstThroughputPerSecond).isGreaterThanOrEqualTo(MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND);
-        assertThat(heapDeltaMb).isLessThanOrEqualTo(MAX_HEAP_DELTA_MB);
-        assertThat(throughputPerSecond).isPositive();
+        assertThat(eventBurstThroughputPerSecond).isGreaterThanOrEqualTo(MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND); // GH-90000
+        assertThat(heapDeltaMb).isLessThanOrEqualTo(MAX_HEAP_DELTA_MB); // GH-90000
+        assertThat(throughputPerSecond).isPositive(); // GH-90000
 
-        try (var connection = POSTGRES.createConnection("");
-             var statement = connection.prepareStatement(
-                 "SELECT tenant_id, COUNT(*) AS entity_count FROM entities WHERE collection_name LIKE 'load-orders-%' GROUP BY tenant_id ORDER BY tenant_id"
+        try (var connection = POSTGRES.createConnection(" [GH-90000]");
+             var statement = connection.prepareStatement( // GH-90000
+                 "SELECT tenant_id, COUNT(*) AS entity_count FROM entities WHERE collection_name LIKE 'load-orders-%' GROUP BY tenant_id ORDER BY tenant_id" // GH-90000
              );
-             var resultSet = statement.executeQuery()) {
+             var resultSet = statement.executeQuery()) { // GH-90000
             int tenantRows = 0;
-            while (resultSet.next()) {
+            while (resultSet.next()) { // GH-90000
                 tenantRows++;
-                assertThat(resultSet.getLong("entity_count")).isEqualTo(ENTITY_OPS_PER_TENANT);
+                assertThat(resultSet.getLong("entity_count [GH-90000]")).isEqualTo(ENTITY_OPS_PER_TENANT);
             }
-            assertThat(tenantRows).isEqualTo(TENANT_COUNT);
-        } catch (Exception exception) {
-            throw new AssertionError("direct entity-store inspection failed", exception);
+            assertThat(tenantRows).isEqualTo(TENANT_COUNT); // GH-90000
+        } catch (Exception exception) { // GH-90000
+            throw new AssertionError("direct entity-store inspection failed", exception); // GH-90000
         }
 
-        return Map.ofEntries(
-            Map.entry("iteration", iteration),
-            Map.entry("tenantCount", TENANT_COUNT),
-            Map.entry("entityOpsPerTenant", ENTITY_OPS_PER_TENANT),
-            Map.entry("eventOpsPerTenant", EVENT_OPS_PER_TENANT),
-            Map.entry("entityWrites", entityWrites.get()),
-            Map.entry("eventAppends", eventAppends.get()),
-            Map.entry("queries", queries.get()),
-            Map.entry("heapDeltaMb", heapDeltaMb),
-            Map.entry("entitySaveP95Ms", entitySaveP95),
-            Map.entry("eventAppendP95Ms", eventAppendP95),
-            Map.entry("queryP95Ms", queryP95),
-            Map.entry("entitySaveP99Ms", entitySaveP99),
-            Map.entry("queryP99Ms", queryP99),
-            Map.entry("minP99SampleSize", MIN_P99_SAMPLE_SIZE),
-            Map.entry("entitySaveP99Evaluated", MAX_P99_ENTITY_SAVE_MS > 0 && entitySaveLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE),
-            Map.entry("queryP99Evaluated", MAX_P99_QUERY_MS > 0 && queryLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE),
-            Map.entry("eventBurstBatchSize", EVENT_BURST_BATCH_SIZE),
-            Map.entry("eventBurstThroughputOpsPerSecond", eventBurstThroughputPerSecond),
-            Map.entry("throughputOpsPerSecond", throughputPerSecond),
-            Map.entry("durationSeconds", durationNanos / 1_000_000_000.0d),
-            Map.entry("timestamp", Instant.now().toString())
+        return Map.ofEntries( // GH-90000
+            Map.entry("iteration", iteration), // GH-90000
+            Map.entry("tenantCount", TENANT_COUNT), // GH-90000
+            Map.entry("entityOpsPerTenant", ENTITY_OPS_PER_TENANT), // GH-90000
+            Map.entry("eventOpsPerTenant", EVENT_OPS_PER_TENANT), // GH-90000
+            Map.entry("entityWrites", entityWrites.get()), // GH-90000
+            Map.entry("eventAppends", eventAppends.get()), // GH-90000
+            Map.entry("queries", queries.get()), // GH-90000
+            Map.entry("heapDeltaMb", heapDeltaMb), // GH-90000
+            Map.entry("entitySaveP95Ms", entitySaveP95), // GH-90000
+            Map.entry("eventAppendP95Ms", eventAppendP95), // GH-90000
+            Map.entry("queryP95Ms", queryP95), // GH-90000
+            Map.entry("entitySaveP99Ms", entitySaveP99), // GH-90000
+            Map.entry("queryP99Ms", queryP99), // GH-90000
+            Map.entry("minP99SampleSize", MIN_P99_SAMPLE_SIZE), // GH-90000
+            Map.entry("entitySaveP99Evaluated", MAX_P99_ENTITY_SAVE_MS > 0 && entitySaveLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE), // GH-90000
+            Map.entry("queryP99Evaluated", MAX_P99_QUERY_MS > 0 && queryLatenciesMs.size() >= MIN_P99_SAMPLE_SIZE), // GH-90000
+            Map.entry("eventBurstBatchSize", EVENT_BURST_BATCH_SIZE), // GH-90000
+            Map.entry("eventBurstThroughputOpsPerSecond", eventBurstThroughputPerSecond), // GH-90000
+            Map.entry("throughputOpsPerSecond", throughputPerSecond), // GH-90000
+            Map.entry("durationSeconds", durationNanos / 1_000_000_000.0d), // GH-90000
+            Map.entry("timestamp", Instant.now().toString()) // GH-90000
         );
     }
 
-    private static void writeMetricsReport(
+    private static void writeMetricsReport( // GH-90000
         List<Map<String, Object>> iterationSummaries,
         long aggregateEntityWrites,
         long aggregateEventAppends,
@@ -298,118 +298,118 @@ class DurableMultiTenantLoadIntegrationTest {
         double bestThroughput,
         double bestEventBurstThroughput
     ) {
-        if (METRICS_OUTPUT.isBlank()) {
+        if (METRICS_OUTPUT.isBlank()) { // GH-90000
             return;
         }
 
-        Path outputPath = Path.of(METRICS_OUTPUT);
-        Map<String, Object> report = Map.ofEntries(
-            Map.entry("tenantCount", TENANT_COUNT),
-            Map.entry("entityOpsPerTenant", ENTITY_OPS_PER_TENANT),
-            Map.entry("eventOpsPerTenant", EVENT_OPS_PER_TENANT),
-            Map.entry("iterations", ITERATIONS),
-            Map.entry("aggregateEntityWrites", aggregateEntityWrites),
-            Map.entry("aggregateEventAppends", aggregateEventAppends),
-            Map.entry("aggregateQueries", aggregateQueries),
-            Map.entry("bestThroughputOpsPerSecond", bestThroughput),
-            Map.entry("bestEventBurstThroughputOpsPerSecond", bestEventBurstThroughput),
-            Map.entry("minThroughputOpsPerSecond", MIN_THROUGHPUT_OPS_PER_SECOND),
-            Map.entry("minEventBurstThroughputOpsPerSecond", MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND),
-            Map.entry("maxP99EntitySaveMs", MAX_P99_ENTITY_SAVE_MS),
-            Map.entry("maxP99QueryMs", MAX_P99_QUERY_MS),
-            Map.entry("generatedAt", Instant.now().toString()),
-            Map.entry("iterationsSummary", iterationSummaries)
+        Path outputPath = Path.of(METRICS_OUTPUT); // GH-90000
+        Map<String, Object> report = Map.ofEntries( // GH-90000
+            Map.entry("tenantCount", TENANT_COUNT), // GH-90000
+            Map.entry("entityOpsPerTenant", ENTITY_OPS_PER_TENANT), // GH-90000
+            Map.entry("eventOpsPerTenant", EVENT_OPS_PER_TENANT), // GH-90000
+            Map.entry("iterations", ITERATIONS), // GH-90000
+            Map.entry("aggregateEntityWrites", aggregateEntityWrites), // GH-90000
+            Map.entry("aggregateEventAppends", aggregateEventAppends), // GH-90000
+            Map.entry("aggregateQueries", aggregateQueries), // GH-90000
+            Map.entry("bestThroughputOpsPerSecond", bestThroughput), // GH-90000
+            Map.entry("bestEventBurstThroughputOpsPerSecond", bestEventBurstThroughput), // GH-90000
+            Map.entry("minThroughputOpsPerSecond", MIN_THROUGHPUT_OPS_PER_SECOND), // GH-90000
+            Map.entry("minEventBurstThroughputOpsPerSecond", MIN_EVENT_BURST_THROUGHPUT_OPS_PER_SECOND), // GH-90000
+            Map.entry("maxP99EntitySaveMs", MAX_P99_ENTITY_SAVE_MS), // GH-90000
+            Map.entry("maxP99QueryMs", MAX_P99_QUERY_MS), // GH-90000
+            Map.entry("generatedAt", Instant.now().toString()), // GH-90000
+            Map.entry("iterationsSummary", iterationSummaries) // GH-90000
         );
 
         try {
-            Files.createDirectories(outputPath.getParent());
-            OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValue(outputPath.toFile(), report);
-        } catch (Exception exception) {
-            throw new AssertionError("failed to write durable load metrics report", exception);
+            Files.createDirectories(outputPath.getParent()); // GH-90000
+            OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValue(outputPath.toFile(), report); // GH-90000
+        } catch (Exception exception) { // GH-90000
+            throw new AssertionError("failed to write durable load metrics report", exception); // GH-90000
         }
     }
 
-    private void preWarmTenants() {
-        ensureTenantTopicsExist();
-        for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) {
-            String tenantId = tenantIdFor(tenantIndex);
-            TenantContext tenant = TenantContext.of(tenantId);
-            String warmupEntityId = UUID.nameUUIDFromBytes((tenantId + "-warmup-entity").getBytes(StandardCharsets.UTF_8)).toString();
-            runBlocking(() -> entityStore.save(tenant, EntityStore.Entity.builder()
-                .collection("warmup-orders-" + tenantId)
-                .id(warmupEntityId)
-                .data(Map.of("tenantTag", tenantId, "warmup", true))
-                .build()));
-            runBlocking(() -> eventStore.append(tenant, EventLogStore.EventEntry.builder()
-                .eventType("warmup.event")
-                .timestamp(Instant.now())
-                .payload(writePayloadBytes(tenantId, -1))
-                .headers(Map.of("tenant", tenantId, "warmup", "true"))
-                .idempotencyKey(tenantId + "-warmup")
-                .build()));
+    private void preWarmTenants() { // GH-90000
+        ensureTenantTopicsExist(); // GH-90000
+        for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) { // GH-90000
+            String tenantId = tenantIdFor(tenantIndex); // GH-90000
+            TenantContext tenant = TenantContext.of(tenantId); // GH-90000
+            String warmupEntityId = UUID.nameUUIDFromBytes((tenantId + "-warmup-entity").getBytes(StandardCharsets.UTF_8)).toString(); // GH-90000
+            runBlocking(() -> entityStore.save(tenant, EntityStore.Entity.builder() // GH-90000
+                .collection("warmup-orders-" + tenantId) // GH-90000
+                .id(warmupEntityId) // GH-90000
+                .data(Map.of("tenantTag", tenantId, "warmup", true)) // GH-90000
+                .build())); // GH-90000
+            runBlocking(() -> eventStore.append(tenant, EventLogStore.EventEntry.builder() // GH-90000
+                .eventType("warmup.event [GH-90000]")
+                .timestamp(Instant.now()) // GH-90000
+                .payload(writePayloadBytes(tenantId, -1)) // GH-90000
+                .headers(Map.of("tenant", tenantId, "warmup", "true")) // GH-90000
+                .idempotencyKey(tenantId + "-warmup") // GH-90000
+                .build())); // GH-90000
         }
     }
 
-    private void ensureTenantTopicsExist() {
-        Map<String, Object> adminProps = Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, normalizeBootstrapServers(KAFKA.getBootstrapServers()));
-        try (AdminClient adminClient = AdminClient.create(adminProps)) {
-            List<NewTopic> topics = new ArrayList<>(TENANT_COUNT);
-            for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) {
-                topics.add(new NewTopic(topicFor(tenantIdFor(tenantIndex)), 1, (short) 1));
+    private void ensureTenantTopicsExist() { // GH-90000
+        Map<String, Object> adminProps = Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, normalizeBootstrapServers(KAFKA.getBootstrapServers())); // GH-90000
+        try (AdminClient adminClient = AdminClient.create(adminProps)) { // GH-90000
+            List<NewTopic> topics = new ArrayList<>(TENANT_COUNT); // GH-90000
+            for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) { // GH-90000
+                topics.add(new NewTopic(topicFor(tenantIdFor(tenantIndex)), 1, (short) 1)); // GH-90000
             }
-            CreateTopicsResult result = adminClient.createTopics(topics);
-            result.all().get(30, TimeUnit.SECONDS);
-        } catch (Exception exception) {
-            String message = exception.getMessage();
-            if (message == null || !message.contains("already exists")) {
-                throw new IllegalStateException("failed to pre-create durable-load Kafka topics", exception);
+            CreateTopicsResult result = adminClient.createTopics(topics); // GH-90000
+            result.all().get(30, TimeUnit.SECONDS); // GH-90000
+        } catch (Exception exception) { // GH-90000
+            String message = exception.getMessage(); // GH-90000
+            if (message == null || !message.contains("already exists [GH-90000]")) {
+                throw new IllegalStateException("failed to pre-create durable-load Kafka topics", exception); // GH-90000
             }
         }
     }
 
-    private double measureEventBurstThroughput(String tenantId, int eventCount) {
-        TenantContext tenant = TenantContext.of(tenantId);
-        List<EventLogStore.EventEntry> entries = new ArrayList<>(eventCount);
-        for (int index = 0; index < eventCount; index++) {
-            entries.add(EventLogStore.EventEntry.builder()
-                .eventType("entity.load-burst")
-                .timestamp(Instant.now())
-                .payload(writePayloadBytes(tenantId, index))
-                .headers(Map.of("tenant", tenantId, "phase", "burst"))
-                .idempotencyKey(tenantId + "-burst-" + index)
-                .build());
+    private double measureEventBurstThroughput(String tenantId, int eventCount) { // GH-90000
+        TenantContext tenant = TenantContext.of(tenantId); // GH-90000
+        List<EventLogStore.EventEntry> entries = new ArrayList<>(eventCount); // GH-90000
+        for (int index = 0; index < eventCount; index++) { // GH-90000
+            entries.add(EventLogStore.EventEntry.builder() // GH-90000
+                .eventType("entity.load-burst [GH-90000]")
+                .timestamp(Instant.now()) // GH-90000
+                .payload(writePayloadBytes(tenantId, index)) // GH-90000
+                .headers(Map.of("tenant", tenantId, "phase", "burst")) // GH-90000
+                .idempotencyKey(tenantId + "-burst-" + index) // GH-90000
+                .build()); // GH-90000
         }
 
-        long startedAt = System.nanoTime();
-        List<Offset> offsets = runBlocking(() -> eventStore.appendBatch(tenant, entries));
-        long durationNanos = System.nanoTime() - startedAt;
+        long startedAt = System.nanoTime(); // GH-90000
+        List<Offset> offsets = runBlocking(() -> eventStore.appendBatch(tenant, entries)); // GH-90000
+        long durationNanos = System.nanoTime() - startedAt; // GH-90000
 
-        assertThat(offsets).hasSize(eventCount);
-        return eventCount / Math.max(1.0d, durationNanos / 1_000_000_000.0d);
+        assertThat(offsets).hasSize(eventCount); // GH-90000
+        return eventCount / Math.max(1.0d, durationNanos / 1_000_000_000.0d); // GH-90000
     }
 
-    private static <T> T runBlocking(Supplier<Promise<T>> operation) {
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
+    private static <T> T runBlocking(Supplier<Promise<T>> operation) { // GH-90000
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
         final Object[] result = new Object[1];
         final Throwable[] failure = new Throwable[1];
-        eventloop.execute(() -> operation.get().whenComplete((value, error) -> {
+        eventloop.execute(() -> operation.get().whenComplete((value, error) -> { // GH-90000
             result[0] = value;
             failure[0] = error;
         }));
-        eventloop.run();
-        if (failure[0] != null) {
-            throw new IllegalStateException("blocking performance helper failed", failure[0]);
+        eventloop.run(); // GH-90000
+        if (failure[0] != null) { // GH-90000
+            throw new IllegalStateException("blocking performance helper failed", failure[0]); // GH-90000
         }
-        @SuppressWarnings("unchecked")
-        T castResult = (T) result[0];
+        @SuppressWarnings("unchecked [GH-90000]")
+        T castResult = (T) result[0]; // GH-90000
         return castResult;
     }
 
-    private static String topicFor(String tenantId) {
+    private static String topicFor(String tenantId) { // GH-90000
         return "datacloud." + tenantId + ".events";
     }
 
-    private void runTenantScenario(
+    private void runTenantScenario( // GH-90000
         String tenantId,
         Queue<Long> entitySaveLatenciesMs,
         Queue<Long> eventAppendLatenciesMs,
@@ -420,8 +420,8 @@ class DurableMultiTenantLoadIntegrationTest {
         List<Throwable> failures,
         CountDownLatch done
     ) {
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
-        eventloop.execute(() -> tenantWorkload(
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
+        eventloop.execute(() -> tenantWorkload( // GH-90000
             tenantId,
             entitySaveLatenciesMs,
             eventAppendLatenciesMs,
@@ -429,12 +429,12 @@ class DurableMultiTenantLoadIntegrationTest {
             entityWrites,
             eventAppends,
             queries
-        ).whenException(failures::add)
-            .whenComplete(($, error) -> done.countDown()));
-        eventloop.run();
+        ).whenException(failures::add) // GH-90000
+            .whenComplete(($, error) -> done.countDown())); // GH-90000
+        eventloop.run(); // GH-90000
     }
 
-    private Promise<Void> tenantWorkload(
+    private Promise<Void> tenantWorkload( // GH-90000
         String tenantId,
         Queue<Long> entitySaveLatenciesMs,
         Queue<Long> eventAppendLatenciesMs,
@@ -443,196 +443,196 @@ class DurableMultiTenantLoadIntegrationTest {
         AtomicLong eventAppends,
         AtomicLong queries
     ) {
-        TenantContext tenant = TenantContext.of(tenantId);
+        TenantContext tenant = TenantContext.of(tenantId); // GH-90000
         String collection = "load-orders-" + tenantId;
-        Promise<Void> chain = Promise.complete();
+        Promise<Void> chain = Promise.complete(); // GH-90000
 
-        for (int index = 0; index < ENTITY_OPS_PER_TENANT; index++) {
+        for (int index = 0; index < ENTITY_OPS_PER_TENANT; index++) { // GH-90000
             final int entityIndex = index;
-            chain = chain.then(() -> measureLatency(
-                () -> entityStore.save(tenant, EntityStore.Entity.builder()
-                    .collection(collection)
-                    .id(entityIdFor(tenantId, entityIndex))
-                    .data(Map.of(
+            chain = chain.then(() -> measureLatency( // GH-90000
+                () -> entityStore.save(tenant, EntityStore.Entity.builder() // GH-90000
+                    .collection(collection) // GH-90000
+                    .id(entityIdFor(tenantId, entityIndex)) // GH-90000
+                    .data(Map.of( // GH-90000
                         "tenantTag", tenantId,
                         "index", entityIndex,
                         "amount", entityIndex * 10,
                         "status", entityIndex % 2 == 0 ? "open" : "closed"
                     ))
-                    .build()),
+                    .build()), // GH-90000
                 entitySaveLatenciesMs
-            ).map(saved -> {
-                entityWrites.incrementAndGet();
-                return (Void) null;
+            ).map(saved -> { // GH-90000
+                entityWrites.incrementAndGet(); // GH-90000
+                return (Void) null; // GH-90000
             }));
         }
 
-        chain = chain.then(() -> {
-            List<EventLogStore.EventEntry> entries = new ArrayList<>(EVENT_OPS_PER_TENANT);
-            for (int index = 0; index < EVENT_OPS_PER_TENANT; index++) {
-                entries.add(EventLogStore.EventEntry.builder()
-                    .eventType("entity.load-tested")
-                    .timestamp(Instant.now())
-                    .payload(writePayloadBytes(tenantId, index))
-                    .headers(Map.of("tenant", tenantId))
-                    .idempotencyKey(tenantId + "-event-" + index)
-                    .build());
+        chain = chain.then(() -> { // GH-90000
+            List<EventLogStore.EventEntry> entries = new ArrayList<>(EVENT_OPS_PER_TENANT); // GH-90000
+            for (int index = 0; index < EVENT_OPS_PER_TENANT; index++) { // GH-90000
+                entries.add(EventLogStore.EventEntry.builder() // GH-90000
+                    .eventType("entity.load-tested [GH-90000]")
+                    .timestamp(Instant.now()) // GH-90000
+                    .payload(writePayloadBytes(tenantId, index)) // GH-90000
+                    .headers(Map.of("tenant", tenantId)) // GH-90000
+                    .idempotencyKey(tenantId + "-event-" + index) // GH-90000
+                    .build()); // GH-90000
             }
-            return measureBatchLatencyPerEvent(
-                () -> eventStore.appendBatch(tenant, entries),
+            return measureBatchLatencyPerEvent( // GH-90000
+                () -> eventStore.appendBatch(tenant, entries), // GH-90000
                 EVENT_OPS_PER_TENANT,
                 eventAppendLatenciesMs
-            ).map(offsets -> {
-                eventAppends.addAndGet(offsets.size());
-                return (Void) null;
+            ).map(offsets -> { // GH-90000
+                eventAppends.addAndGet(offsets.size()); // GH-90000
+                return (Void) null; // GH-90000
             });
         });
 
-        chain = chain.then(() -> measureLatency(
-            () -> entityStore.query(tenant, EntityStore.QuerySpec.builder()
-                .collection(collection)
-                .limit(ENTITY_OPS_PER_TENANT)
-                .build()),
+        chain = chain.then(() -> measureLatency( // GH-90000
+            () -> entityStore.query(tenant, EntityStore.QuerySpec.builder() // GH-90000
+                .collection(collection) // GH-90000
+                .limit(ENTITY_OPS_PER_TENANT) // GH-90000
+                .build()), // GH-90000
             queryLatenciesMs
-        ).map(result -> {
-            queries.incrementAndGet();
-            assertThat(result.entities()).hasSize(ENTITY_OPS_PER_TENANT);
-            assertThat(result.entities())
-                .allSatisfy(entity -> assertThat(entity.data()).containsEntry("tenantTag", tenantId));
-            return (Void) null;
+        ).map(result -> { // GH-90000
+            queries.incrementAndGet(); // GH-90000
+            assertThat(result.entities()).hasSize(ENTITY_OPS_PER_TENANT); // GH-90000
+            assertThat(result.entities()) // GH-90000
+                .allSatisfy(entity -> assertThat(entity.data()).containsEntry("tenantTag", tenantId)); // GH-90000
+            return (Void) null; // GH-90000
         }));
 
-        chain = chain.then(() -> measureLatency(
-            () -> eventStore.readByType(tenant, "entity.load-tested", Offset.zero(), EVENT_OPS_PER_TENANT),
+        chain = chain.then(() -> measureLatency( // GH-90000
+            () -> eventStore.readByType(tenant, "entity.load-tested", Offset.zero(), EVENT_OPS_PER_TENANT), // GH-90000
             queryLatenciesMs
-        ).map(events -> {
-            queries.incrementAndGet();
-            assertThat(events).hasSize(EVENT_OPS_PER_TENANT);
-            assertThat(events)
-                .allSatisfy(event -> assertThat(readPayload(event.payload())).containsEntry("tenantId", tenantId));
-            return (Void) null;
+        ).map(events -> { // GH-90000
+            queries.incrementAndGet(); // GH-90000
+            assertThat(events).hasSize(EVENT_OPS_PER_TENANT); // GH-90000
+            assertThat(events) // GH-90000
+                .allSatisfy(event -> assertThat(readPayload(event.payload())).containsEntry("tenantId", tenantId)); // GH-90000
+            return (Void) null; // GH-90000
         }));
 
         return chain;
     }
 
-    private static <T> Promise<T> measureLatency(Supplier<Promise<T>> operation, Queue<Long> latenciesMs) {
-        long startNanos = System.nanoTime();
-        return operation.get().whenComplete(($, error) -> latenciesMs.add(
-            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos)
+    private static <T> Promise<T> measureLatency(Supplier<Promise<T>> operation, Queue<Long> latenciesMs) { // GH-90000
+        long startNanos = System.nanoTime(); // GH-90000
+        return operation.get().whenComplete(($, error) -> latenciesMs.add( // GH-90000
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos) // GH-90000
         ));
     }
 
-    private static <T> Promise<T> measureBatchLatencyPerEvent(
+    private static <T> Promise<T> measureBatchLatencyPerEvent( // GH-90000
         Supplier<Promise<T>> operation,
         int batchSize,
         Queue<Long> latenciesMs
     ) {
-        long startNanos = System.nanoTime();
-        return operation.get().whenComplete(($, error) -> {
-            long totalMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
-            long perEventMs = Math.max(1L, totalMs / Math.max(1, batchSize));
-            for (int index = 0; index < batchSize; index++) {
-                latenciesMs.add(perEventMs);
+        long startNanos = System.nanoTime(); // GH-90000
+        return operation.get().whenComplete(($, error) -> { // GH-90000
+            long totalMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos); // GH-90000
+            long perEventMs = Math.max(1L, totalMs / Math.max(1, batchSize)); // GH-90000
+            for (int index = 0; index < batchSize; index++) { // GH-90000
+                latenciesMs.add(perEventMs); // GH-90000
             }
         });
     }
 
-    private static String normalizeBootstrapServers(String bootstrapServers) {
+    private static String normalizeBootstrapServers(String bootstrapServers) { // GH-90000
         return bootstrapServers
-            .replace("PLAINTEXT://", "")
-            .replace("SSL://", "");
+            .replace("PLAINTEXT://", "") // GH-90000
+            .replace("SSL://", ""); // GH-90000
     }
 
-    private static void createDatabaseRoles() {
+    private static void createDatabaseRoles() { // GH-90000
         String createRolesSql = """
             DO $$
             BEGIN
-                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'application_user') THEN
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'application_user') THEN // GH-90000
                     CREATE ROLE application_user LOGIN;
                 END IF;
-                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_user') THEN
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_user') THEN // GH-90000
                     CREATE ROLE admin_user LOGIN;
                 END IF;
             END
             $$;
             """;
 
-        try (var connection = POSTGRES.createConnection("");
-             var statement = connection.createStatement()) {
-            statement.execute(createRolesSql);
-        } catch (Exception exception) {
-            throw new IllegalStateException("failed to provision durable-load database roles", exception);
+        try (var connection = POSTGRES.createConnection(" [GH-90000]");
+             var statement = connection.createStatement()) { // GH-90000
+            statement.execute(createRolesSql); // GH-90000
+        } catch (Exception exception) { // GH-90000
+            throw new IllegalStateException("failed to provision durable-load database roles", exception); // GH-90000
         }
     }
 
-    private static Path resolveMigrationDirectory() {
-        Path workingDirectory = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+    private static Path resolveMigrationDirectory() { // GH-90000
+        Path workingDirectory = Path.of(System.getProperty("user.dir [GH-90000]")).toAbsolutePath().normalize();
         Path current = workingDirectory;
-        while (current != null) {
-            Path siblingModulePath = current.resolve("platform-launcher")
-                .resolve("src").resolve("main").resolve("resources").resolve("db").resolve("migration");
-            if (Files.isDirectory(siblingModulePath)) {
+        while (current != null) { // GH-90000
+            Path siblingModulePath = current.resolve("platform-launcher [GH-90000]")
+                .resolve("src [GH-90000]").resolve("main [GH-90000]").resolve("resources [GH-90000]").resolve("db [GH-90000]").resolve("migration [GH-90000]");
+            if (Files.isDirectory(siblingModulePath)) { // GH-90000
                 return siblingModulePath;
             }
 
-            Path monorepoPath = current.resolve("products").resolve("data-cloud")
-                .resolve("platform-launcher").resolve("src").resolve("main").resolve("resources").resolve("db").resolve("migration");
-            if (Files.isDirectory(monorepoPath)) {
+            Path monorepoPath = current.resolve("products [GH-90000]").resolve("data-cloud [GH-90000]")
+                .resolve("platform-launcher [GH-90000]").resolve("src [GH-90000]").resolve("main [GH-90000]").resolve("resources [GH-90000]").resolve("db [GH-90000]").resolve("migration [GH-90000]");
+            if (Files.isDirectory(monorepoPath)) { // GH-90000
                 return monorepoPath;
             }
 
-            current = current.getParent();
+            current = current.getParent(); // GH-90000
         }
 
-        throw new IllegalStateException("could not locate Data Cloud migration directory from " + workingDirectory);
+        throw new IllegalStateException("could not locate Data Cloud migration directory from " + workingDirectory); // GH-90000
     }
 
-    private static ByteBuffer writePayloadBytes(String tenantId, int eventIndex) {
+    private static ByteBuffer writePayloadBytes(String tenantId, int eventIndex) { // GH-90000
         try {
-            return ByteBuffer.wrap(OBJECT_MAPPER.writeValueAsBytes(Map.of(
+            return ByteBuffer.wrap(OBJECT_MAPPER.writeValueAsBytes(Map.of( // GH-90000
                 "tenantId", tenantId,
                 "index", eventIndex,
                 "source", "durable-load-suite"
             )));
-        } catch (Exception exception) {
-            throw new IllegalStateException("failed to serialize event payload", exception);
+        } catch (Exception exception) { // GH-90000
+            throw new IllegalStateException("failed to serialize event payload", exception); // GH-90000
         }
     }
 
-    private static Map<String, Object> readPayload(ByteBuffer payload) {
+    private static Map<String, Object> readPayload(ByteBuffer payload) { // GH-90000
         try {
-            ByteBuffer duplicate = payload.duplicate();
-            byte[] bytes = new byte[duplicate.remaining()];
-            duplicate.get(bytes);
-            return OBJECT_MAPPER.readValue(bytes, MAP_TYPE);
-        } catch (Exception exception) {
-            throw new IllegalStateException("failed to deserialize event payload", exception);
+            ByteBuffer duplicate = payload.duplicate(); // GH-90000
+            byte[] bytes = new byte[duplicate.remaining()]; // GH-90000
+            duplicate.get(bytes); // GH-90000
+            return OBJECT_MAPPER.readValue(bytes, MAP_TYPE); // GH-90000
+        } catch (Exception exception) { // GH-90000
+            throw new IllegalStateException("failed to deserialize event payload", exception); // GH-90000
         }
     }
 
-    private static String tenantIdFor(int tenantIndex) {
-        return deterministicUuid("durable-load-tenant-" + tenantIndex);
+    private static String tenantIdFor(int tenantIndex) { // GH-90000
+        return deterministicUuid("durable-load-tenant-" + tenantIndex); // GH-90000
     }
 
-    private static String entityIdFor(String tenantId, int entityIndex) {
-        return deterministicUuid(tenantId + ":entity:" + entityIndex);
+    private static String entityIdFor(String tenantId, int entityIndex) { // GH-90000
+        return deterministicUuid(tenantId + ":entity:" + entityIndex); // GH-90000
     }
 
-    private static String deterministicUuid(String seed) {
-        return UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)).toString();
+    private static String deterministicUuid(String seed) { // GH-90000
+        return UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)).toString(); // GH-90000
     }
 
-    private static long percentile(Queue<Long> values, double percentile) {
-        List<Long> sorted = values.stream().sorted(Comparator.naturalOrder()).toList();
-        if (sorted.isEmpty()) {
+    private static long percentile(Queue<Long> values, double percentile) { // GH-90000
+        List<Long> sorted = values.stream().sorted(Comparator.naturalOrder()).toList(); // GH-90000
+        if (sorted.isEmpty()) { // GH-90000
             return 0L;
         }
-        int index = (int) Math.ceil(percentile * sorted.size()) - 1;
-        return sorted.get(Math.max(0, Math.min(index, sorted.size() - 1)));
+        int index = (int) Math.ceil(percentile * sorted.size()) - 1; // GH-90000
+        return sorted.get(Math.max(0, Math.min(index, sorted.size() - 1))); // GH-90000
     }
 
-    private static long usedHeapBytes() {
-        return ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
+    private static long usedHeapBytes() { // GH-90000
+        return ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed(); // GH-90000
     }
 }

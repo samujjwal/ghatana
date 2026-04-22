@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * <b>Usage</b><br>
  * <pre>{@code
- * // Run all benchmarks (from repo root):
+ * // Run all benchmarks (from repo root): // GH-90000
  * ./gradlew :products:yappc:core:services-lifecycle:test \
  *   --tests "*LifecyclePerformanceBenchmarks*"
  * }</pre>
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *   <li>phaseGateValidation:     &lt;50 ms  — synchronous gate check on phase advance</li>
  *   <li>approvalSubmit:          &lt;30 ms  — durable write to approval store</li>
  *   <li>approvalQuery:           &lt;20 ms  — read pending approvals for a user</li>
- *   <li>featureFlagEvaluation:   &lt;5 ms   — per-request flag lookup (hot path)</li>
+ *   <li>featureFlagEvaluation:   &lt;5 ms   — per-request flag lookup (hot path)</li> // GH-90000
  *   <li>healthCheck:             &lt;10 ms  — liveness/readiness probe</li>
  *   <li>securityAuditLog:        &lt;5 ms   — fire-and-forget audit event write</li>
  *   <li>lifecyclePhaseTransition:&lt;80 ms  — full advance-phase pipeline</li>
@@ -43,15 +43,15 @@ import java.util.concurrent.TimeUnit;
  * @doc.layer product
  * @doc.pattern Performance Testing
  */
-@Fork(1)
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Fork(1) // GH-90000
+@BenchmarkMode(Mode.AverageTime) // GH-90000
+@OutputTimeUnit(TimeUnit.MILLISECONDS) // GH-90000
+@State(Scope.Benchmark) // GH-90000
+@Warmup(iterations = 3, time = 1) // GH-90000
+@Measurement(iterations = 5, time = 1) // GH-90000
 public class LifecyclePerformanceBenchmarks {
 
-    private final Random random = new Random();
+    private final Random random = new Random(); // GH-90000
 
     // ── Phase Gate Validation ─────────────────────────────────────────────────
 
@@ -59,16 +59,16 @@ public class LifecyclePerformanceBenchmarks {
      * Benchmark: phase gate validation.
      *
      * <p>
-     * Measures the time to run all three gate checks (entry criteria,
+     * Measures the time to run all three gate checks (entry criteria, // GH-90000
      * exit criteria, artifact presence) before allowing a lifecycle phase advance.
      *
      * <p>
-     * Target: &lt;50 ms p99 (synchronous, blocks phase-advance HTTP response).
-     * Typical: ~18 ms (YAML config load is cached after first read).
+     * Target: &lt;50 ms p99 (synchronous, blocks phase-advance HTTP response). // GH-90000
+     * Typical: ~18 ms (YAML config load is cached after first read). // GH-90000
      */
     @Benchmark
-    public void benchPhaseGateValidation() {
-        simulateLatency(18, 8); // ~18 ms typical + 8 ms variation
+    public void benchPhaseGateValidation() { // GH-90000
+        simulateLatency(18, 8); // ~18 ms typical + 8 ms variation // GH-90000
     }
 
     /**
@@ -79,12 +79,12 @@ public class LifecyclePerformanceBenchmarks {
      * Artifact lookup adds a remote round-trip on cold calls.
      *
      * <p>
-     * Target: &lt;80 ms p99 (includes DataCloud round-trip).
+     * Target: &lt;80 ms p99 (includes DataCloud round-trip). // GH-90000
      * Typical: ~35 ms.
      */
     @Benchmark
-    public void benchPhaseGateWithArtifactLookup() {
-        simulateLatency(35, 15);
+    public void benchPhaseGateWithArtifactLookup() { // GH-90000
+        simulateLatency(35, 15); // GH-90000
     }
 
     // ── Approval Workflow ─────────────────────────────────────────────────────
@@ -97,12 +97,12 @@ public class LifecyclePerformanceBenchmarks {
      * the JDBC write and the AEP event emission.
      *
      * <p>
-     * Target: &lt;30 ms p99 (write path).
+     * Target: &lt;30 ms p99 (write path). // GH-90000
      * Typical: ~12 ms.
      */
     @Benchmark
-    public void benchApprovalSubmit() {
-        simulateLatency(12, 6);
+    public void benchApprovalSubmit() { // GH-90000
+        simulateLatency(12, 6); // GH-90000
     }
 
     /**
@@ -117,12 +117,12 @@ public class LifecyclePerformanceBenchmarks {
      * Typical: ~8 ms.
      */
     @Benchmark
-    public void benchApprovalQuery() {
-        simulateLatency(8, 4);
+    public void benchApprovalQuery() { // GH-90000
+        simulateLatency(8, 4); // GH-90000
     }
 
     /**
-     * Benchmark: approval decision (approve/reject).
+     * Benchmark: approval decision (approve/reject). // GH-90000
      *
      * <p>
      * Measures the update path for recording a user's approval decision,
@@ -133,30 +133,30 @@ public class LifecyclePerformanceBenchmarks {
      * Typical: ~10 ms.
      */
     @Benchmark
-    public void benchApprovalDecision() {
-        simulateLatency(10, 5);
+    public void benchApprovalDecision() { // GH-90000
+        simulateLatency(10, 5); // GH-90000
     }
 
     // ── Feature Flags ─────────────────────────────────────────────────────────
 
     /**
-     * Benchmark: feature flag evaluation (hot path).
+     * Benchmark: feature flag evaluation (hot path). // GH-90000
      *
      * <p>
      * Feature flag evaluation is called on every HTTP request. Measures the
      * in-memory lookup after the flag cache is warm.
      *
      * <p>
-     * Target: &lt;5 ms p99 (must not be significant overhead per request).
+     * Target: &lt;5 ms p99 (must not be significant overhead per request). // GH-90000
      * Typical: &lt;1 ms.
      */
     @Benchmark
-    public void benchFeatureFlagEvaluation() {
-        simulateLatency(1, 1);
+    public void benchFeatureFlagEvaluation() { // GH-90000
+        simulateLatency(1, 1); // GH-90000
     }
 
     /**
-     * Benchmark: feature flag cache miss (cold load).
+     * Benchmark: feature flag cache miss (cold load). // GH-90000
      *
      * <p>
      * Measures the latency when a flag is not in the local cache and must be
@@ -167,8 +167,8 @@ public class LifecyclePerformanceBenchmarks {
      * Typical: ~15 ms.
      */
     @Benchmark
-    public void benchFeatureFlagCacheMiss() {
-        simulateLatency(15, 8);
+    public void benchFeatureFlagCacheMiss() { // GH-90000
+        simulateLatency(15, 8); // GH-90000
     }
 
     // ── Health & Readiness ────────────────────────────────────────────────────
@@ -182,11 +182,11 @@ public class LifecyclePerformanceBenchmarks {
      *
      * <p>
      * Target: &lt;5 ms p99.
-     * Typical: &lt;1 ms (in-memory state only).
+     * Typical: &lt;1 ms (in-memory state only). // GH-90000
      */
     @Benchmark
-    public void benchLivenessCheck() {
-        simulateLatency(1, 1);
+    public void benchLivenessCheck() { // GH-90000
+        simulateLatency(1, 1); // GH-90000
     }
 
     /**
@@ -201,8 +201,8 @@ public class LifecyclePerformanceBenchmarks {
      * Typical: ~4 ms.
      */
     @Benchmark
-    public void benchReadinessCheck() {
-        simulateLatency(4, 2);
+    public void benchReadinessCheck() { // GH-90000
+        simulateLatency(4, 2); // GH-90000
     }
 
     // ── Security Audit Logging ────────────────────────────────────────────────
@@ -216,12 +216,12 @@ public class LifecyclePerformanceBenchmarks {
      * and hand-off to the async logger.
      *
      * <p>
-     * Target: &lt;5 ms p99 (hand-off, not full write).
+     * Target: &lt;5 ms p99 (hand-off, not full write). // GH-90000
      * Typical: &lt;1 ms.
      */
     @Benchmark
-    public void benchSecurityAuditLog() {
-        simulateLatency(1, 1);
+    public void benchSecurityAuditLog() { // GH-90000
+        simulateLatency(1, 1); // GH-90000
     }
 
     // ── Full Phase Transition Pipeline ────────────────────────────────────────
@@ -232,7 +232,7 @@ public class LifecyclePerformanceBenchmarks {
      * <p>
      * End-to-end measurement of the advance-phase operation:
      * <ol>
-     *   <li>Phase gate validation (entry + exit + artifact checks)</li>
+     *   <li>Phase gate validation (entry + exit + artifact checks)</li> // GH-90000
      *   <li>Approval status verification</li>
      *   <li>Phase state write to DataCloud</li>
      *   <li>AEP phase-advanced event emission</li>
@@ -240,12 +240,12 @@ public class LifecyclePerformanceBenchmarks {
      * </ol>
      *
      * <p>
-     * Target: &lt;150 ms p99 (acceptable for an explicit user action).
+     * Target: &lt;150 ms p99 (acceptable for an explicit user action). // GH-90000
      * Typical: ~65 ms.
      */
     @Benchmark
-    public void benchFullPhaseTransition() {
-        simulateLatency(65, 25);
+    public void benchFullPhaseTransition() { // GH-90000
+        simulateLatency(65, 25); // GH-90000
     }
 
     // ── Benchmark Runner ──────────────────────────────────────────────────────
@@ -257,20 +257,20 @@ public class LifecyclePerformanceBenchmarks {
      * Usage:
      * <pre>{@code
      * @Test
-     * @Tag("benchmark")
-     * public void runBenchmarks() throws Exception {
-     *     LifecyclePerformanceBenchmarks.main(new String[0]);
+     * @Tag("benchmark [GH-90000]")
+     * public void runBenchmarks() throws Exception { // GH-90000
+     *     LifecyclePerformanceBenchmarks.main(new String[0]); // GH-90000
      * }
      * }</pre>
      */
-    public static void main(String[] args) throws RunnerException {
-        Options opts = new OptionsBuilder()
-                .include(LifecyclePerformanceBenchmarks.class.getSimpleName())
-                .forks(1)
-                .warmupIterations(3)
-                .measurementIterations(5)
-                .build();
-        new Runner(opts).run();
+    public static void main(String[] args) throws RunnerException { // GH-90000
+        Options opts = new OptionsBuilder() // GH-90000
+                .include(LifecyclePerformanceBenchmarks.class.getSimpleName()) // GH-90000
+                .forks(1) // GH-90000
+                .warmupIterations(3) // GH-90000
+                .measurementIterations(5) // GH-90000
+                .build(); // GH-90000
+        new Runner(opts).run(); // GH-90000
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -279,14 +279,14 @@ public class LifecyclePerformanceBenchmarks {
      * Simulate an operation with realistic latency distribution.
      *
      * @param baseMillis    typical latency for the operation
-     * @param variationMs   random variation (simulates jitter / GC pauses)
+     * @param variationMs   random variation (simulates jitter / GC pauses) // GH-90000
      */
-    private void simulateLatency(long baseMillis, long variationMs) {
-        long sleepMs = baseMillis + (variationMs > 0 ? ((random.nextLong() & Long.MAX_VALUE) % variationMs) : 0);
+    private void simulateLatency(long baseMillis, long variationMs) { // GH-90000
+        long sleepMs = baseMillis + (variationMs > 0 ? ((random.nextLong() & Long.MAX_VALUE) % variationMs) : 0); // GH-90000
         try {
-            Thread.sleep(sleepMs);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            Thread.sleep(sleepMs); // GH-90000
+        } catch (InterruptedException e) { // GH-90000
+            Thread.currentThread().interrupt(); // GH-90000
         }
     }
 }

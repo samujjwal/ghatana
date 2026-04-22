@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.toolruntime.change;
@@ -31,114 +31,114 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@Tag("integration")
+@Tag("integration [GH-90000]")
 @Testcontainers
-@DisplayName("PostgresChangeApprovalWorkflow — integration tests")
+@DisplayName("PostgresChangeApprovalWorkflow — integration tests [GH-90000]")
 class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine")
-                    .withDatabaseName("aep_change_test")
-                    .withUsername("aep_test")
-                    .withPassword("aep_test");
+            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
+                    .withDatabaseName("aep_change_test [GH-90000]")
+                    .withUsername("aep_test [GH-90000]")
+                    .withPassword("aep_test [GH-90000]");
 
     private HikariDataSource dataSource;
     private PostgresChangeApprovalWorkflow workflow;
 
     @BeforeEach
-    void setUp() throws Exception {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(POSTGRES.getJdbcUrl());
-        config.setUsername(POSTGRES.getUsername());
-        config.setPassword(POSTGRES.getPassword());
-        config.setMaximumPoolSize(5);
-        dataSource = new HikariDataSource(config);
+    void setUp() throws Exception { // GH-90000
+        HikariConfig config = new HikariConfig(); // GH-90000
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
+        config.setUsername(POSTGRES.getUsername()); // GH-90000
+        config.setPassword(POSTGRES.getPassword()); // GH-90000
+        config.setMaximumPoolSize(5); // GH-90000
+        dataSource = new HikariDataSource(config); // GH-90000
 
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS change_requests (
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             Statement stmt = conn.createStatement()) { // GH-90000
+            stmt.execute(""" // GH-90000
+                    CREATE TABLE IF NOT EXISTS change_requests ( // GH-90000
                         change_id         UUID         PRIMARY KEY,
-                        tenant_id         VARCHAR(255) NOT NULL,
-                        requesting_agent  VARCHAR(512) NOT NULL,
-                        change_type       VARCHAR(100) NOT NULL,
+                        tenant_id         VARCHAR(255) NOT NULL, // GH-90000
+                        requesting_agent  VARCHAR(512) NOT NULL, // GH-90000
+                        change_type       VARCHAR(100) NOT NULL, // GH-90000
                         description       TEXT         NOT NULL,
                         metadata          JSONB        NOT NULL DEFAULT '{}',
-                        status            VARCHAR(50)  NOT NULL DEFAULT 'PENDING_REVIEW',
+                        status            VARCHAR(50)  NOT NULL DEFAULT 'PENDING_REVIEW', // GH-90000
                         risk_score        SMALLINT     NOT NULL,
-                        reviewer_id       VARCHAR(512),
+                        reviewer_id       VARCHAR(512), // GH-90000
                         review_notes      TEXT,
-                        submitted_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+                        submitted_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(), // GH-90000
                         reviewed_at       TIMESTAMPTZ
                     )
                     """);
         }
 
         // Default threshold of 60: risk < 60 → auto-approve, risk >= 60 → pending review
-        workflow = new PostgresChangeApprovalWorkflow(dataSource);
+        workflow = new PostgresChangeApprovalWorkflow(dataSource); // GH-90000
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("DROP TABLE IF EXISTS change_requests");
+    void tearDown() throws Exception { // GH-90000
+        try (Connection conn = dataSource.getConnection(); // GH-90000
+             Statement stmt = conn.createStatement()) { // GH-90000
+            stmt.execute("DROP TABLE IF EXISTS change_requests [GH-90000]");
         }
-        dataSource.close();
+        dataSource.close(); // GH-90000
     }
 
     @Test
-    @DisplayName("low-risk change (FEATURE_FLAG, risk=20) is auto-approved")
-    void submitChange_featureFlag_autoApproved() {
-        ChangeRequest req = runPromise(() -> workflow.submitChange(
+    @DisplayName("low-risk change (FEATURE_FLAG, risk=20) is auto-approved [GH-90000]")
+    void submitChange_featureFlag_autoApproved() { // GH-90000
+        ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.FEATURE_FLAG,
-                "Enable new feature", Map.of()));
+                "Enable new feature", Map.of())); // GH-90000
 
-        assertThat(req.status()).isEqualTo(ChangeStatus.APPROVED);
-        assertThat(req.riskScore()).isEqualTo(20);
-        assertThat(req.changeId()).isNotNull();
+        assertThat(req.status()).isEqualTo(ChangeStatus.APPROVED); // GH-90000
+        assertThat(req.riskScore()).isEqualTo(20); // GH-90000
+        assertThat(req.changeId()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("high-risk change (PERMISSION_GRANT, risk=80) is placed in PENDING_REVIEW")
-    void submitChange_permissionGrant_pendingReview() {
-        ChangeRequest req = runPromise(() -> workflow.submitChange(
+    @DisplayName("high-risk change (PERMISSION_GRANT, risk=80) is placed in PENDING_REVIEW [GH-90000]")
+    void submitChange_permissionGrant_pendingReview() { // GH-90000
+        ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-2", "agent-2", ChangeType.PERMISSION_GRANT,
-                "Grant admin role", Map.of("role", "admin")));
+                "Grant admin role", Map.of("role", "admin"))); // GH-90000
 
-        assertThat(req.status()).isEqualTo(ChangeStatus.PENDING_REVIEW);
-        assertThat(req.riskScore()).isGreaterThanOrEqualTo(60);
-        assertThat(req.reviewerId()).isNull();
+        assertThat(req.status()).isEqualTo(ChangeStatus.PENDING_REVIEW); // GH-90000
+        assertThat(req.riskScore()).isGreaterThanOrEqualTo(60); // GH-90000
+        assertThat(req.reviewerId()).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("submitChange completes without error and returns a non-null changeId")
-    void submitChange_returnsNonNullChangeId() {
-        ChangeRequest req = runPromise(() -> workflow.submitChange(
+    @DisplayName("submitChange completes without error and returns a non-null changeId [GH-90000]")
+    void submitChange_returnsNonNullChangeId() { // GH-90000
+        ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-3", "agent-3", ChangeType.CONFIG_CHANGE,
-                "Change timeout setting", Map.of("timeout", "30s")));
+                "Change timeout setting", Map.of("timeout", "30s"))); // GH-90000
 
-        assertThat(req.changeId()).isNotNull().isNotBlank();
-        assertThat(req.submittedAt()).isNotNull();
+        assertThat(req.changeId()).isNotNull().isNotBlank(); // GH-90000
+        assertThat(req.submittedAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("invalid autoApproveThreshold throws IllegalArgumentException")
-    void constructor_invalidThreshold_throws() {
-        assertThatCode(() -> new PostgresChangeApprovalWorkflow(dataSource, Runnable::run, 150))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("[0, 100]");
+    @DisplayName("invalid autoApproveThreshold throws IllegalArgumentException [GH-90000]")
+    void constructor_invalidThreshold_throws() { // GH-90000
+        assertThatCode(() -> new PostgresChangeApprovalWorkflow(dataSource, Runnable::run, 150)) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .hasMessageContaining("[0, 100] [GH-90000]");
     }
 
     @Test
-    @DisplayName("multiple changes for the same tenant are stored independently")
-    void submitMultipleChanges_storedIndependently() {
-        ChangeRequest req1 = runPromise(() -> workflow.submitChange(
-                "tenant-multi", "agent-1", ChangeType.FEATURE_FLAG, "Change 1", Map.of()));
-        ChangeRequest req2 = runPromise(() -> workflow.submitChange(
-                "tenant-multi", "agent-1", ChangeType.CONFIG_CHANGE, "Change 2", Map.of()));
+    @DisplayName("multiple changes for the same tenant are stored independently [GH-90000]")
+    void submitMultipleChanges_storedIndependently() { // GH-90000
+        ChangeRequest req1 = runPromise(() -> workflow.submitChange( // GH-90000
+                "tenant-multi", "agent-1", ChangeType.FEATURE_FLAG, "Change 1", Map.of())); // GH-90000
+        ChangeRequest req2 = runPromise(() -> workflow.submitChange( // GH-90000
+                "tenant-multi", "agent-1", ChangeType.CONFIG_CHANGE, "Change 2", Map.of())); // GH-90000
 
-        assertThat(req1.changeId()).isNotEqualTo(req2.changeId());
+        assertThat(req1.changeId()).isNotEqualTo(req2.changeId()); // GH-90000
     }
 }

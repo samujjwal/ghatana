@@ -1,0 +1,3 @@
+{"id":"aep-runtime-001","input":{"agentType":"DETERMINISTIC","event":{"kind":"policy-check"}},"expected":{"targetRoute":"deterministic-fast-path"},"tags":["routing","deterministic"]}
+{"id":"aep-runtime-002","input":{"agentType":"PROBABILISTIC","event":{"kind":"risk-score"}},"expected":{"targetRoute":"probabilistic-inference"},"tags":["routing","probabilistic"]}
+

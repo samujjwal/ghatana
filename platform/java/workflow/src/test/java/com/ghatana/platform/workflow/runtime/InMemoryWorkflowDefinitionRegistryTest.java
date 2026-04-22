@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.platform.workflow.runtime;
@@ -14,84 +14,84 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("InMemoryWorkflowDefinitionRegistry Tests")
+@DisplayName("InMemoryWorkflowDefinitionRegistry Tests [GH-90000]")
 class InMemoryWorkflowDefinitionRegistryTest extends EventloopTestBase {
 
     private InMemoryWorkflowDefinitionRegistry registry;
 
     @BeforeEach
-    void setUp() {
-        registry = new InMemoryWorkflowDefinitionRegistry();
+    void setUp() { // GH-90000
+        registry = new InMemoryWorkflowDefinitionRegistry(); // GH-90000
     }
 
-    private WorkflowDefinition defV(String id, int version) {
-        return WorkflowDefinition.builder(id, "WF-" + id)
-            .version(version)
-            .addStep(WorkflowStepDefinition.action("s1", "Step", "op"))
-            .build();
+    private WorkflowDefinition defV(String id, int version) { // GH-90000
+        return WorkflowDefinition.builder(id, "WF-" + id) // GH-90000
+            .version(version) // GH-90000
+            .addStep(WorkflowStepDefinition.action("s1", "Step", "op")) // GH-90000
+            .build(); // GH-90000
     }
 
     @Test
-    void shouldRegisterAndFindLatest() {
-        runPromise(() -> registry.register(defV("wf-1", 1))
-            .then(v -> registry.findLatest("wf-1"))
-            .whenResult(opt -> {
-                assertThat(opt).isPresent();
-                assertThat(opt.get().version()).isEqualTo(1);
+    void shouldRegisterAndFindLatest() { // GH-90000
+        runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
+            .then(v -> registry.findLatest("wf-1 [GH-90000]"))
+            .whenResult(opt -> { // GH-90000
+                assertThat(opt).isPresent(); // GH-90000
+                assertThat(opt.get().version()).isEqualTo(1); // GH-90000
             }));
     }
 
     @Test
-    void shouldFindLatestVersion() {
-        runPromise(() -> registry.register(defV("wf-1", 1))
-            .then(v -> registry.register(defV("wf-1", 2)))
-            .then(v -> registry.register(defV("wf-1", 3)))
-            .then(v -> registry.findLatest("wf-1"))
-            .whenResult(opt -> assertThat(opt.get().version()).isEqualTo(3)));
+    void shouldFindLatestVersion() { // GH-90000
+        runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
+            .then(v -> registry.register(defV("wf-1", 2))) // GH-90000
+            .then(v -> registry.register(defV("wf-1", 3))) // GH-90000
+            .then(v -> registry.findLatest("wf-1 [GH-90000]"))
+            .whenResult(opt -> assertThat(opt.get().version()).isEqualTo(3))); // GH-90000
     }
 
     @Test
-    void shouldFindBySpecificVersion() {
-        runPromise(() -> registry.register(defV("wf-1", 1))
-            .then(v -> registry.register(defV("wf-1", 2)))
-            .then(v -> registry.findByVersion("wf-1", 1))
-            .whenResult(opt -> assertThat(opt.get().version()).isEqualTo(1)));
+    void shouldFindBySpecificVersion() { // GH-90000
+        runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
+            .then(v -> registry.register(defV("wf-1", 2))) // GH-90000
+            .then(v -> registry.findByVersion("wf-1", 1)) // GH-90000
+            .whenResult(opt -> assertThat(opt.get().version()).isEqualTo(1))); // GH-90000
     }
 
     @Test
-    void shouldReturnEmptyForMissing() {
-        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("nope"));
-        assertThat(result).isEmpty();
+    void shouldReturnEmptyForMissing() { // GH-90000
+        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("nope [GH-90000]"));
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    void shouldListAllLatest() {
-        runPromise(() -> registry.register(defV("wf-1", 1))
-            .then(v -> registry.register(defV("wf-1", 2)))
-            .then(v -> registry.register(defV("wf-2", 1))));
+    void shouldListAllLatest() { // GH-90000
+        runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
+            .then(v -> registry.register(defV("wf-1", 2))) // GH-90000
+            .then(v -> registry.register(defV("wf-2", 1)))); // GH-90000
 
-        List<WorkflowDefinition> all = runPromise(() -> registry.listAll());
-        assertThat(all).hasSize(2);
+        List<WorkflowDefinition> all = runPromise(() -> registry.listAll()); // GH-90000
+        assertThat(all).hasSize(2); // GH-90000
     }
 
     @Test
-    void shouldRemove() {
-        runPromise(() -> registry.register(defV("wf-1", 1))
-            .then(v -> registry.remove("wf-1")));
+    void shouldRemove() { // GH-90000
+        runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
+            .then(v -> registry.remove("wf-1 [GH-90000]")));
 
-        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("wf-1"));
-        assertThat(result).isEmpty();
-        assertThat(registry.size()).isZero();
+        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("wf-1 [GH-90000]"));
+        assertThat(result).isEmpty(); // GH-90000
+        assertThat(registry.size()).isZero(); // GH-90000
     }
 
     @Test
-    void shouldTrackSizeAndClear() {
-        runPromise(() -> registry.register(defV("wf-1", 1))
-            .then(v -> registry.register(defV("wf-2", 1))));
+    void shouldTrackSizeAndClear() { // GH-90000
+        runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
+            .then(v -> registry.register(defV("wf-2", 1)))); // GH-90000
 
-        assertThat(registry.size()).isEqualTo(2);
+        assertThat(registry.size()).isEqualTo(2); // GH-90000
 
-        registry.clear();
-        assertThat(registry.size()).isZero();
+        registry.clear(); // GH-90000
+        assertThat(registry.size()).isZero(); // GH-90000
     }
 }

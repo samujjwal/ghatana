@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("MemoryPlaneHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("MemoryPlaneHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class MemoryPlaneHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,85 +41,85 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     private MemoryPlaneHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new MemoryPlaneHandler(client, http);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new MemoryPlaneHandler(client, http); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("store memory rejects missing tenant before loading body")
-    void storeMemoryRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("store memory rejects missing tenant before loading body [GH-90000]")
+    void storeMemoryRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleStoreMemory(request));
+        HttpResponse response = runPromise(() -> handler.handleStoreMemory(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 
     @Test
-    @DisplayName("list memory rejects missing tenant before query access")
-    void listMemoryRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("list memory rejects missing tenant before query access [GH-90000]")
+    void listMemoryRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleListMemory(request));
+        HttpResponse response = runPromise(() -> handler.handleListMemory(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).query("default", "dc_memory", DataCloudClient.Query.limit(1));
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).query("default", "dc_memory", DataCloudClient.Query.limit(1)); // GH-90000
     }
 
     @Test
-    @DisplayName("get agent memory rejects missing tenant before query access")
-    void getAgentMemoryRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("get agent memory rejects missing tenant before query access [GH-90000]")
+    void getAgentMemoryRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleGetAgentMemory(request));
+        HttpResponse response = runPromise(() -> handler.handleGetAgentMemory(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).query("default", "dc_memory", DataCloudClient.Query.limit(1));
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).query("default", "dc_memory", DataCloudClient.Query.limit(1)); // GH-90000
     }
 
     @Test
-    @DisplayName("memory by tier rejects missing tenant before query access")
-    void getMemoryByTierRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("memory by tier rejects missing tenant before query access [GH-90000]")
+    void getMemoryByTierRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleGetAgentMemoryByTier(request));
+        HttpResponse response = runPromise(() -> handler.handleGetAgentMemoryByTier(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).query("default", "dc_memory", DataCloudClient.Query.limit(1));
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).query("default", "dc_memory", DataCloudClient.Query.limit(1)); // GH-90000
     }
 
     @Test
-    @DisplayName("search memory rejects missing tenant before loading body")
-    void searchMemoryRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("search memory rejects missing tenant before loading body [GH-90000]")
+    void searchMemoryRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleSearchAgentMemory(request));
+        HttpResponse response = runPromise(() -> handler.handleSearchAgentMemory(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 
     @Test
-    @DisplayName("delete memory rejects missing tenant before delete access")
-    void deleteMemoryRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("delete memory rejects missing tenant before delete access [GH-90000]")
+    void deleteMemoryRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleDeleteMemory(request));
+        HttpResponse response = runPromise(() -> handler.handleDeleteMemory(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).delete("default", "dc_memory", "default");
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).delete("default", "dc_memory", "default"); // GH-90000
     }
 
     @Test
-    @DisplayName("retain memory rejects missing tenant before loading body")
-    void retainMemoryRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("retain memory rejects missing tenant before loading body [GH-90000]")
+    void retainMemoryRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleRetainMemory(request));
+        HttpResponse response = runPromise(() -> handler.handleRetainMemory(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
     }
 }

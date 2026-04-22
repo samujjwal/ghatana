@@ -7,53 +7,53 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AgentSpecTest {
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
 
     @Test
-    void shouldSerializeAndDeserializeFromYaml() throws Exception {
-        AgentSpec original = AgentSpec.builder()
-                .id("test-agent")
-                .agent("test-agent-type")
-                .role("test-role")
-                .build();
+    void shouldSerializeAndDeserializeFromYaml() throws Exception { // GH-90000
+        AgentSpec original = AgentSpec.builder() // GH-90000
+                .id("test-agent [GH-90000]")
+                .agent("test-agent-type [GH-90000]")
+                .role("test-role [GH-90000]")
+                .build(); // GH-90000
 
-        String yaml = yamlMapper.writeValueAsString(original);
-        AgentSpec deserialized = yamlMapper.readValue(yaml, AgentSpec.class);
+        String yaml = yamlMapper.writeValueAsString(original); // GH-90000
+        AgentSpec deserialized = yamlMapper.readValue(yaml, AgentSpec.class); // GH-90000
 
-        assertThat(deserialized).isEqualTo(original);
-        assertThat(deserialized.getId()).isEqualTo("test-agent");
-        assertThat(deserialized.getAgent()).isEqualTo("test-agent-type");
-        assertThat(deserialized.getRole()).isEqualTo("test-role");
+        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized.getId()).isEqualTo("test-agent [GH-90000]");
+        assertThat(deserialized.getAgent()).isEqualTo("test-agent-type [GH-90000]");
+        assertThat(deserialized.getRole()).isEqualTo("test-role [GH-90000]");
     }
 
     @Test
-    void shouldHandleNullValues() {
-        AgentSpec agentSpec = new AgentSpec();
+    void shouldHandleNullValues() { // GH-90000
+        AgentSpec agentSpec = new AgentSpec(); // GH-90000
 
-        assertThat(agentSpec.getId()).isNull();
-        assertThat(agentSpec.getAgent()).isNull();
-        assertThat(agentSpec.getRole()).isNull();
+        assertThat(agentSpec.getId()).isNull(); // GH-90000
+        assertThat(agentSpec.getAgent()).isNull(); // GH-90000
+        assertThat(agentSpec.getRole()).isNull(); // GH-90000
     }
 
     @Test
-    void shouldImplementEqualsAndHashCode() {
-        AgentSpec spec1 = AgentSpec.builder()
-                .id("test-1")
-                .agent("test-agent")
-                .build();
+    void shouldImplementEqualsAndHashCode() { // GH-90000
+        AgentSpec spec1 = AgentSpec.builder() // GH-90000
+                .id("test-1 [GH-90000]")
+                .agent("test-agent [GH-90000]")
+                .build(); // GH-90000
 
-        AgentSpec spec2 = AgentSpec.builder()
-                .id("test-1")
-                .agent("test-agent")
-                .build();
+        AgentSpec spec2 = AgentSpec.builder() // GH-90000
+                .id("test-1 [GH-90000]")
+                .agent("test-agent [GH-90000]")
+                .build(); // GH-90000
 
-        AgentSpec spec3 = AgentSpec.builder()
-                .id("test-2")
-                .agent("test-agent")
-                .build();
+        AgentSpec spec3 = AgentSpec.builder() // GH-90000
+                .id("test-2 [GH-90000]")
+                .agent("test-agent [GH-90000]")
+                .build(); // GH-90000
 
-        assertThat(spec1).isEqualTo(spec2);
-        assertThat(spec1.hashCode()).isEqualTo(spec2.hashCode());
-        assertThat(spec1).isNotEqualTo(spec3);
+        assertThat(spec1).isEqualTo(spec2); // GH-90000
+        assertThat(spec1.hashCode()).isEqualTo(spec2.hashCode()); // GH-90000
+        assertThat(spec1).isNotEqualTo(spec3); // GH-90000
     }
 }

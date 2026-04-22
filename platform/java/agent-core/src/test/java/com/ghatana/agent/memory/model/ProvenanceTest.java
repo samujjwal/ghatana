@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.agent.memory.model;
@@ -18,93 +18,93 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer agent-memory
  * @doc.pattern Test
  */
-@DisplayName("Provenance - origin and chain-of-custody tracking")
+@DisplayName("Provenance - origin and chain-of-custody tracking [GH-90000]")
 class ProvenanceTest {
 
     @Nested
-    @DisplayName("Builder defaults")
+    @DisplayName("Builder defaults [GH-90000]")
     class BuilderDefaultsTests {
 
         @Test
-        @DisplayName("Default source is 'unknown'")
-        void defaultSource_isUnknown() {
-            assertThat(Provenance.builder().build().getSource()).isEqualTo("unknown");
+        @DisplayName("Default source is 'unknown' [GH-90000]")
+        void defaultSource_isUnknown() { // GH-90000
+            assertThat(Provenance.builder().build().getSource()).isEqualTo("unknown [GH-90000]");
         }
 
         @Test
-        @DisplayName("Default confidenceSource is LLM_INFERENCE")
-        void defaultConfidenceSource_isLlmInference() {
-            assertThat(Provenance.builder().build().getConfidenceSource())
-                    .isEqualTo(Provenance.ConfidenceSource.LLM_INFERENCE);
+        @DisplayName("Default confidenceSource is LLM_INFERENCE [GH-90000]")
+        void defaultConfidenceSource_isLlmInference() { // GH-90000
+            assertThat(Provenance.builder().build().getConfidenceSource()) // GH-90000
+                    .isEqualTo(Provenance.ConfidenceSource.LLM_INFERENCE); // GH-90000
         }
 
         @Test
-        @DisplayName("Default agentId is empty string")
-        void defaultAgentId_isEmptyString() {
-            assertThat(Provenance.builder().build().getAgentId()).isEmpty();
+        @DisplayName("Default agentId is empty string [GH-90000]")
+        void defaultAgentId_isEmptyString() { // GH-90000
+            assertThat(Provenance.builder().build().getAgentId()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Default traceId is null")
-        void defaultTraceId_isNull() {
-            assertThat(Provenance.builder().build().getTraceId()).isNull();
+        @DisplayName("Default traceId is null [GH-90000]")
+        void defaultTraceId_isNull() { // GH-90000
+            assertThat(Provenance.builder().build().getTraceId()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Default sessionId is null")
-        void defaultSessionId_isNull() {
-            assertThat(Provenance.builder().build().getSessionId()).isNull();
+        @DisplayName("Default sessionId is null [GH-90000]")
+        void defaultSessionId_isNull() { // GH-90000
+            assertThat(Provenance.builder().build().getSessionId()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Default parentItemId is null")
-        void defaultParentItemId_isNull() {
-            assertThat(Provenance.builder().build().getParentItemId()).isNull();
+        @DisplayName("Default parentItemId is null [GH-90000]")
+        void defaultParentItemId_isNull() { // GH-90000
+            assertThat(Provenance.builder().build().getParentItemId()).isNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Custom builder values")
+    @DisplayName("Custom builder values [GH-90000]")
     class CustomBuilderTests {
 
         @Test
-        @DisplayName("Custom source is stored correctly")
-        void customSource_storedCorrectly() {
-            Provenance p = Provenance.builder().source("tool:grep").build();
-            assertThat(p.getSource()).isEqualTo("tool:grep");
+        @DisplayName("Custom source is stored correctly [GH-90000]")
+        void customSource_storedCorrectly() { // GH-90000
+            Provenance p = Provenance.builder().source("tool:grep [GH-90000]").build();
+            assertThat(p.getSource()).isEqualTo("tool:grep [GH-90000]");
         }
 
         @Test
-        @DisplayName("HUMAN confidence source can be set")
-        void humanConfidenceSource_settable() {
-            Provenance p = Provenance.builder()
-                    .confidenceSource(Provenance.ConfidenceSource.HUMAN).build();
-            assertThat(p.getConfidenceSource()).isEqualTo(Provenance.ConfidenceSource.HUMAN);
+        @DisplayName("HUMAN confidence source can be set [GH-90000]")
+        void humanConfidenceSource_settable() { // GH-90000
+            Provenance p = Provenance.builder() // GH-90000
+                    .confidenceSource(Provenance.ConfidenceSource.HUMAN).build(); // GH-90000
+            assertThat(p.getConfidenceSource()).isEqualTo(Provenance.ConfidenceSource.HUMAN); // GH-90000
         }
 
         @Test
-        @DisplayName("TraceId is stored when non-null")
-        void traceId_storedWhenSet() {
-            Provenance p = Provenance.builder().traceId("trace-abc-123").build();
-            assertThat(p.getTraceId()).isEqualTo("trace-abc-123");
+        @DisplayName("TraceId is stored when non-null [GH-90000]")
+        void traceId_storedWhenSet() { // GH-90000
+            Provenance p = Provenance.builder().traceId("trace-abc-123 [GH-90000]").build();
+            assertThat(p.getTraceId()).isEqualTo("trace-abc-123 [GH-90000]");
         }
 
         @Test
-        @DisplayName("ParentItemId is stored for derived items")
-        void parentItemId_storedForDerivedItems() {
-            Provenance p = Provenance.builder().parentItemId("parent-001").build();
-            assertThat(p.getParentItemId()).isEqualTo("parent-001");
+        @DisplayName("ParentItemId is stored for derived items [GH-90000]")
+        void parentItemId_storedForDerivedItems() { // GH-90000
+            Provenance p = Provenance.builder().parentItemId("parent-001 [GH-90000]").build();
+            assertThat(p.getParentItemId()).isEqualTo("parent-001 [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("ConfidenceSource enum values")
+    @DisplayName("ConfidenceSource enum values [GH-90000]")
     class ConfidenceSourceEnumTests {
 
         @Test
-        @DisplayName("All five ConfidenceSource values are present")
-        void allConfidenceSourceValues_present() {
-            assertThat(Provenance.ConfidenceSource.values()).containsExactlyInAnyOrder(
+        @DisplayName("All five ConfidenceSource values are present [GH-90000]")
+        void allConfidenceSourceValues_present() { // GH-90000
+            assertThat(Provenance.ConfidenceSource.values()).containsExactlyInAnyOrder( // GH-90000
                     Provenance.ConfidenceSource.HUMAN,
                     Provenance.ConfidenceSource.LLM_INFERENCE,
                     Provenance.ConfidenceSource.TOOL_OUTPUT,

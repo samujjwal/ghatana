@@ -19,39 +19,39 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YAPPC Metrics Registry")
+@DisplayName("YAPPC Metrics Registry [GH-90000]")
 class YappcMetricsRegistryTest {
 
     @Test
-    @DisplayName("MetricsProvider.getRegistry() returns a PrometheusMeterRegistry")
-    void getRegistryShouldReturnPrometheusRegistry() {
-        PrometheusMeterRegistry registry = MetricsProvider.getRegistry();
+    @DisplayName("MetricsProvider.getRegistry() returns a PrometheusMeterRegistry [GH-90000]")
+    void getRegistryShouldReturnPrometheusRegistry() { // GH-90000
+        PrometheusMeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
 
-        assertThat(registry).isNotNull();
-        assertThat(registry).isInstanceOf(PrometheusMeterRegistry.class);
+        assertThat(registry).isNotNull(); // GH-90000
+        assertThat(registry).isInstanceOf(PrometheusMeterRegistry.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Metrics recorded via MetricsProvider appear in the shared registry scrape output")
-    void metricsShouldBeVisibleInSharedRegistryScrape() {
-        PrometheusMeterRegistry registry = MetricsProvider.getRegistry();
-        String tenantId = "test-tenant-yappc-lifecycle-" + System.nanoTime();
+    @DisplayName("Metrics recorded via MetricsProvider appear in the shared registry scrape output [GH-90000]")
+    void metricsShouldBeVisibleInSharedRegistryScrape() { // GH-90000
+        PrometheusMeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
+        String tenantId = "test-tenant-yappc-lifecycle-" + System.nanoTime(); // GH-90000
 
-        // Record a counter through the shared registry (simulates what lifecycle services do)
-        registry.counter("yappc.lifecycle.test.events", "tenantId", tenantId).increment();
+        // Record a counter through the shared registry (simulates what lifecycle services do) // GH-90000
+        registry.counter("yappc.lifecycle.test.events", "tenantId", tenantId).increment(); // GH-90000
 
         // The scrape output should contain the counter we just recorded
-        String scrape = registry.scrape();
-        assertThat(scrape).contains("yappc_lifecycle_test_events");
-        assertThat(scrape).contains(tenantId);
+        String scrape = registry.scrape(); // GH-90000
+        assertThat(scrape).contains("yappc_lifecycle_test_events [GH-90000]");
+        assertThat(scrape).contains(tenantId); // GH-90000
     }
 
     @Test
-    @DisplayName("MetricsProvider.getRegistry() returns the same singleton instance across calls")
-    void getRegistryShouldBeSingleton() {
-        PrometheusMeterRegistry first = MetricsProvider.getRegistry();
-        PrometheusMeterRegistry second = MetricsProvider.getRegistry();
+    @DisplayName("MetricsProvider.getRegistry() returns the same singleton instance across calls [GH-90000]")
+    void getRegistryShouldBeSingleton() { // GH-90000
+        PrometheusMeterRegistry first = MetricsProvider.getRegistry(); // GH-90000
+        PrometheusMeterRegistry second = MetricsProvider.getRegistry(); // GH-90000
 
-        assertThat(first).isSameAs(second);
+        assertThat(first).isSameAs(second); // GH-90000
     }
 }

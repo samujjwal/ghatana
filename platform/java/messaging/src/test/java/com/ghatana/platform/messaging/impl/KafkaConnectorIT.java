@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  */
 
 package com.ghatana.core.connectors.impl;
@@ -42,15 +42,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Integration Test
  */
-@Tag("integration")
+@Tag("integration [GH-90000]")
 @Testcontainers
-@DisplayName("KafkaConnector Integration Tests")
+@DisplayName("KafkaConnector Integration Tests [GH-90000]")
 class KafkaConnectorIT {
 
     @Container
-    @SuppressWarnings("resource")
+    @SuppressWarnings("resource [GH-90000]")
     static final KafkaContainer KAFKA =
-            new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.1"));
+            new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.1 [GH-90000]"));
 
     private static final String TEST_TOPIC = "integration-test-topic";
 
@@ -58,22 +58,22 @@ class KafkaConnectorIT {
     private EventloopTestUtil.EventloopRunner eventloop;
 
     @BeforeEach
-    void setUp() {
-        connector = new KafkaConnector("test-kafka-connector");
-        eventloop = EventloopTestUtil.newRunnerBuilder().build();
+    void setUp() { // GH-90000
+        connector = new KafkaConnector("test-kafka-connector [GH-90000]");
+        eventloop = EventloopTestUtil.newRunnerBuilder().build(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (connector != null) {
+    void tearDown() { // GH-90000
+        if (connector != null) { // GH-90000
             try {
-                eventloop.runPromise(() -> connector.stop());
-            } catch (Exception ignored) {
+                eventloop.runPromise(() -> connector.stop()); // GH-90000
+            } catch (Exception ignored) { // GH-90000
                 // Best-effort cleanup
             }
         }
-        if (eventloop != null) {
-            eventloop.close();
+        if (eventloop != null) { // GH-90000
+            eventloop.close(); // GH-90000
         }
     }
 
@@ -82,63 +82,63 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Lifecycle")
+    @DisplayName("Lifecycle [GH-90000]")
     class Lifecycle {
 
         @Test
-        @DisplayName("should initialize and start sink connector successfully")
-        void shouldInitializeAndStartSinkConnector() {
-            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder()
-                    .name("test-sink")
-                    .bootstrapServers(KAFKA.getBootstrapServers())
-                    .topic(TEST_TOPIC)
-                    .sinkEnabled(true)
-                    .build();
+        @DisplayName("should initialize and start sink connector successfully [GH-90000]")
+        void shouldInitializeAndStartSinkConnector() { // GH-90000
+            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
+                    .name("test-sink [GH-90000]")
+                    .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
+                    .topic(TEST_TOPIC) // GH-90000
+                    .sinkEnabled(true) // GH-90000
+                    .build(); // GH-90000
 
-            eventloop.runPromise(() -> connector.initialize(config));
-            eventloop.runPromise(() -> connector.start());
+            eventloop.runPromise(() -> connector.initialize(config)); // GH-90000
+            eventloop.runPromise(() -> connector.start()); // GH-90000
 
-            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.RUNNING);
-            assertThat(connector.isSinkCapable()).isTrue();
-            assertThat(connector.isSourceCapable()).isFalse();
+            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.RUNNING); // GH-90000
+            assertThat(connector.isSinkCapable()).isTrue(); // GH-90000
+            assertThat(connector.isSourceCapable()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("should initialize and start source connector successfully")
-        void shouldInitializeAndStartSourceConnector() {
-            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder()
-                    .name("test-source")
-                    .bootstrapServers(KAFKA.getBootstrapServers())
-                    .topic(TEST_TOPIC)
-                    .sourceEnabled(true)
-                    .property("consumer.group.id", "test-consumer-group-" + System.nanoTime())
-                    .build();
+        @DisplayName("should initialize and start source connector successfully [GH-90000]")
+        void shouldInitializeAndStartSourceConnector() { // GH-90000
+            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
+                    .name("test-source [GH-90000]")
+                    .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
+                    .topic(TEST_TOPIC) // GH-90000
+                    .sourceEnabled(true) // GH-90000
+                    .property("consumer.group.id", "test-consumer-group-" + System.nanoTime()) // GH-90000
+                    .build(); // GH-90000
 
-            eventloop.runPromise(() -> connector.initialize(config));
-            eventloop.runPromise(() -> connector.start());
+            eventloop.runPromise(() -> connector.initialize(config)); // GH-90000
+            eventloop.runPromise(() -> connector.start()); // GH-90000
 
-            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.RUNNING);
-            assertThat(connector.isSourceCapable()).isTrue();
+            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.RUNNING); // GH-90000
+            assertThat(connector.isSourceCapable()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should transition from started to stopped cleanly")
-        void shouldStopCleanly() {
-            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder()
-                    .name("test-lifecycle")
-                    .bootstrapServers(KAFKA.getBootstrapServers())
-                    .topic(TEST_TOPIC)
-                    .sinkEnabled(true)
-                    .build();
+        @DisplayName("should transition from started to stopped cleanly [GH-90000]")
+        void shouldStopCleanly() { // GH-90000
+            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
+                    .name("test-lifecycle [GH-90000]")
+                    .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
+                    .topic(TEST_TOPIC) // GH-90000
+                    .sinkEnabled(true) // GH-90000
+                    .build(); // GH-90000
 
-            eventloop.runPromise(() -> connector.initialize(config));
-            eventloop.runPromise(() -> connector.start());
+            eventloop.runPromise(() -> connector.initialize(config)); // GH-90000
+            eventloop.runPromise(() -> connector.start()); // GH-90000
 
-            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.RUNNING);
+            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.RUNNING); // GH-90000
 
-            eventloop.runPromise(() -> connector.stop());
+            eventloop.runPromise(() -> connector.stop()); // GH-90000
 
-            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.STOPPED);
+            assertThat(connector.getStatus()).isEqualTo(Connector.ConnectorStatus.STOPPED); // GH-90000
         }
     }
 
@@ -147,59 +147,59 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Producer publish")
+    @DisplayName("Producer publish [GH-90000]")
     class ProducerPublish {
 
         @Test
-        @DisplayName("should send message to Kafka topic")
-        void shouldSendMessageToTopic() throws Exception {
-            String uniqueTopic = "producer-test-" + System.nanoTime();
+        @DisplayName("should send message to Kafka topic [GH-90000]")
+        void shouldSendMessageToTopic() throws Exception { // GH-90000
+            String uniqueTopic = "producer-test-" + System.nanoTime(); // GH-90000
 
-            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder()
-                    .name("producer-sink")
-                    .bootstrapServers(KAFKA.getBootstrapServers())
-                    .topic(uniqueTopic)
-                    .sinkEnabled(true)
-                    .build();
+            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
+                    .name("producer-sink [GH-90000]")
+                    .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
+                    .topic(uniqueTopic) // GH-90000
+                    .sinkEnabled(true) // GH-90000
+                    .build(); // GH-90000
 
-            eventloop.runPromise(() -> connector.initialize(config));
-            eventloop.runPromise(() -> connector.start());
+            eventloop.runPromise(() -> connector.initialize(config)); // GH-90000
+            eventloop.runPromise(() -> connector.start()); // GH-90000
 
-            KafkaProducer<String, String> producer = connector.getProducer();
-            assertThat(producer).isNotNull();
+            KafkaProducer<String, String> producer = connector.getProducer(); // GH-90000
+            assertThat(producer).isNotNull(); // GH-90000
 
-            producer.send(new ProducerRecord<>(uniqueTopic, "key-1", "value-1")).get();
-            producer.flush();
+            producer.send(new ProducerRecord<>(uniqueTopic, "key-1", "value-1")).get(); // GH-90000
+            producer.flush(); // GH-90000
 
             // Verify by consuming the message
-            List<String> received = consumeMessages(uniqueTopic, 1, Duration.ofSeconds(10));
-            assertThat(received).containsExactly("value-1");
+            List<String> received = consumeMessages(uniqueTopic, 1, Duration.ofSeconds(10)); // GH-90000
+            assertThat(received).containsExactly("value-1 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should send multiple messages in sequence")
-        void shouldSendMultipleMessages() throws Exception {
-            String uniqueTopic = "multi-send-test-" + System.nanoTime();
+        @DisplayName("should send multiple messages in sequence [GH-90000]")
+        void shouldSendMultipleMessages() throws Exception { // GH-90000
+            String uniqueTopic = "multi-send-test-" + System.nanoTime(); // GH-90000
 
-            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder()
-                    .name("multi-producer-sink")
-                    .bootstrapServers(KAFKA.getBootstrapServers())
-                    .topic(uniqueTopic)
-                    .sinkEnabled(true)
-                    .build();
+            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
+                    .name("multi-producer-sink [GH-90000]")
+                    .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
+                    .topic(uniqueTopic) // GH-90000
+                    .sinkEnabled(true) // GH-90000
+                    .build(); // GH-90000
 
-            eventloop.runPromise(() -> connector.initialize(config));
-            eventloop.runPromise(() -> connector.start());
+            eventloop.runPromise(() -> connector.initialize(config)); // GH-90000
+            eventloop.runPromise(() -> connector.start()); // GH-90000
 
-            KafkaProducer<String, String> producer = connector.getProducer();
-            for (int i = 0; i < 5; i++) {
-                producer.send(new ProducerRecord<>(uniqueTopic, "key-" + i, "value-" + i)).get();
+            KafkaProducer<String, String> producer = connector.getProducer(); // GH-90000
+            for (int i = 0; i < 5; i++) { // GH-90000
+                producer.send(new ProducerRecord<>(uniqueTopic, "key-" + i, "value-" + i)).get(); // GH-90000
             }
-            producer.flush();
+            producer.flush(); // GH-90000
 
-            List<String> received = consumeMessages(uniqueTopic, 5, Duration.ofSeconds(10));
-            assertThat(received).hasSize(5)
-                    .containsExactlyInAnyOrder("value-0", "value-1", "value-2", "value-3", "value-4");
+            List<String> received = consumeMessages(uniqueTopic, 5, Duration.ofSeconds(10)); // GH-90000
+            assertThat(received).hasSize(5) // GH-90000
+                    .containsExactlyInAnyOrder("value-0", "value-1", "value-2", "value-3", "value-4"); // GH-90000
         }
     }
 
@@ -208,43 +208,43 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Consumer subscribe")
+    @DisplayName("Consumer subscribe [GH-90000]")
     class ConsumerSubscribe {
 
         @Test
-        @DisplayName("should consume message from Kafka topic")
-        void shouldConsumeMessageFromTopic() throws Exception {
-            String uniqueTopic = "consumer-test-" + System.nanoTime();
-            String groupId = "consumer-group-" + System.nanoTime();
+        @DisplayName("should consume message from Kafka topic [GH-90000]")
+        void shouldConsumeMessageFromTopic() throws Exception { // GH-90000
+            String uniqueTopic = "consumer-test-" + System.nanoTime(); // GH-90000
+            String groupId = "consumer-group-" + System.nanoTime(); // GH-90000
 
             // Publish a message before subscribing
-            publishMessage(uniqueTopic, "test-key", "test-value");
+            publishMessage(uniqueTopic, "test-key", "test-value"); // GH-90000
 
-            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder()
-                    .name("consumer-source")
-                    .bootstrapServers(KAFKA.getBootstrapServers())
-                    .topic(uniqueTopic)
-                    .sourceEnabled(true)
-                    .property("consumer.group.id", groupId)
-                    .property("consumer.auto.offset.reset", "earliest")
-                    .build();
+            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
+                    .name("consumer-source [GH-90000]")
+                    .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
+                    .topic(uniqueTopic) // GH-90000
+                    .sourceEnabled(true) // GH-90000
+                    .property("consumer.group.id", groupId) // GH-90000
+                    .property("consumer.auto.offset.reset", "earliest") // GH-90000
+                    .build(); // GH-90000
 
-            eventloop.runPromise(() -> connector.initialize(config));
-            eventloop.runPromise(() -> connector.start());
+            eventloop.runPromise(() -> connector.initialize(config)); // GH-90000
+            eventloop.runPromise(() -> connector.start()); // GH-90000
 
-            KafkaConsumer<String, String> consumer = connector.getConsumer();
-            assertThat(consumer).isNotNull();
+            KafkaConsumer<String, String> consumer = connector.getConsumer(); // GH-90000
+            assertThat(consumer).isNotNull(); // GH-90000
 
-            List<String> messages = new ArrayList<>();
-            long deadline = System.currentTimeMillis() + 10_000;
-            while (messages.size() < 1 && System.currentTimeMillis() < deadline) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
-                for (ConsumerRecord<String, String> r : records) {
-                    messages.add(r.value());
+            List<String> messages = new ArrayList<>(); // GH-90000
+            long deadline = System.currentTimeMillis() + 10_000; // GH-90000
+            while (messages.size() < 1 && System.currentTimeMillis() < deadline) { // GH-90000
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500)); // GH-90000
+                for (ConsumerRecord<String, String> r : records) { // GH-90000
+                    messages.add(r.value()); // GH-90000
                 }
             }
 
-            assertThat(messages).containsExactly("test-value");
+            assertThat(messages).containsExactly("test-value [GH-90000]");
         }
     }
 
@@ -253,36 +253,36 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Health check")
+    @DisplayName("Health check [GH-90000]")
     class HealthCheckTests {
 
         @Test
-        @DisplayName("started sink connector should report healthy")
-        void startedSinkConnectorShouldBeHealthy() {
-            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder()
-                    .name("health-sink")
-                    .bootstrapServers(KAFKA.getBootstrapServers())
-                    .topic(TEST_TOPIC)
-                    .sinkEnabled(true)
-                    .build();
+        @DisplayName("started sink connector should report healthy [GH-90000]")
+        void startedSinkConnectorShouldBeHealthy() { // GH-90000
+            KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
+                    .name("health-sink [GH-90000]")
+                    .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
+                    .topic(TEST_TOPIC) // GH-90000
+                    .sinkEnabled(true) // GH-90000
+                    .build(); // GH-90000
 
-            eventloop.runPromise(() -> connector.initialize(config));
-            eventloop.runPromise(() -> connector.start());
+            eventloop.runPromise(() -> connector.initialize(config)); // GH-90000
+            eventloop.runPromise(() -> connector.start()); // GH-90000
 
             HealthCheck.HealthCheckResult result =
-                    eventloop.runPromise(() -> connector.check());
+                    eventloop.runPromise(() -> connector.check()); // GH-90000
 
-            assertThat(result.isHealthy()).isTrue();
+            assertThat(result.isHealthy()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("uninitialized connector should report unhealthy")
-        void uninitializedConnectorShouldBeUnhealthy() {
+        @DisplayName("uninitialized connector should report unhealthy [GH-90000]")
+        void uninitializedConnectorShouldBeUnhealthy() { // GH-90000
             // Connector not initialized — health check should not throw, just report unhealthy
             HealthCheck.HealthCheckResult result =
-                    eventloop.runPromise(() -> connector.check());
+                    eventloop.runPromise(() -> connector.check()); // GH-90000
 
-            assertThat(result.isHealthy()).isFalse();
+            assertThat(result.isHealthy()).isFalse(); // GH-90000
         }
     }
 
@@ -290,39 +290,39 @@ class KafkaConnectorIT {
     // Helpers
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** Publish a single message directly (no connector lifecycle involved). */
-    private void publishMessage(String topic, String key, String value) throws Exception {
-        Properties props = new Properties();
-        props.put("bootstrap.servers", KAFKA.getBootstrapServers());
-        props.put("key.serializer", StringSerializer.class.getName());
-        props.put("value.serializer", StringSerializer.class.getName());
-        props.put("acks", "all");
+    /** Publish a single message directly (no connector lifecycle involved). */ // GH-90000
+    private void publishMessage(String topic, String key, String value) throws Exception { // GH-90000
+        Properties props = new Properties(); // GH-90000
+        props.put("bootstrap.servers", KAFKA.getBootstrapServers()); // GH-90000
+        props.put("key.serializer", StringSerializer.class.getName()); // GH-90000
+        props.put("value.serializer", StringSerializer.class.getName()); // GH-90000
+        props.put("acks", "all"); // GH-90000
 
-        try (KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
-            producer.send(new ProducerRecord<>(topic, key, value)).get();
-            producer.flush();
+        try (KafkaProducer<String, String> producer = new KafkaProducer<>(props)) { // GH-90000
+            producer.send(new ProducerRecord<>(topic, key, value)).get(); // GH-90000
+            producer.flush(); // GH-90000
         }
     }
 
     /** Consume up to {@code maxMessages} from a topic, waiting up to {@code timeout}. */
-    private List<String> consumeMessages(String topic, int maxMessages, Duration timeout) {
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "verifier-group-" + System.nanoTime());
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    private List<String> consumeMessages(String topic, int maxMessages, Duration timeout) { // GH-90000
+        Properties props = new Properties(); // GH-90000
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers()); // GH-90000
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "verifier-group-" + System.nanoTime()); // GH-90000
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()); // GH-90000
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()); // GH-90000
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // GH-90000
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"); // GH-90000
 
-        List<String> messages = new ArrayList<>();
-        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        List<String> messages = new ArrayList<>(); // GH-90000
+        long deadline = System.currentTimeMillis() + timeout.toMillis(); // GH-90000
 
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
-            consumer.subscribe(List.of(topic));
-            while (messages.size() < maxMessages && System.currentTimeMillis() < deadline) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(200));
-                for (ConsumerRecord<String, String> r : records) {
-                    messages.add(r.value());
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) { // GH-90000
+            consumer.subscribe(List.of(topic)); // GH-90000
+            while (messages.size() < maxMessages && System.currentTimeMillis() < deadline) { // GH-90000
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(200)); // GH-90000
+                for (ConsumerRecord<String, String> r : records) { // GH-90000
+                    messages.add(r.value()); // GH-90000
                 }
             }
         }

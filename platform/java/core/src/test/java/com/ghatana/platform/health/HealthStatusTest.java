@@ -16,171 +16,171 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("HealthStatus — factory methods, builder, and status semantics")
+@DisplayName("HealthStatus — factory methods, builder, and status semantics [GH-90000]")
 class HealthStatusTest {
 
-    // ─── healthy() factory ─────────────────────────────────────────────────────
+    // ─── healthy() factory ───────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("healthy() returns HEALTHY status with non-null timestamp")
-    void healthy_noArgs_returnsHealthyWithTimestamp() {
-        HealthStatus status = HealthStatus.healthy();
+    @DisplayName("healthy() returns HEALTHY status with non-null timestamp [GH-90000]")
+    void healthy_noArgs_returnsHealthyWithTimestamp() { // GH-90000
+        HealthStatus status = HealthStatus.healthy(); // GH-90000
 
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
-        assertThat(status.isHealthy()).isTrue();
-        assertThat(status.getTimestamp()).isNotNull();
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY); // GH-90000
+        assertThat(status.isHealthy()).isTrue(); // GH-90000
+        assertThat(status.getTimestamp()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("healthy(message) preserves the message")
-    void healthy_withMessage_preservesMessage() {
-        HealthStatus status = HealthStatus.healthy("All systems go");
+    @DisplayName("healthy(message) preserves the message [GH-90000]")
+    void healthy_withMessage_preservesMessage() { // GH-90000
+        HealthStatus status = HealthStatus.healthy("All systems go [GH-90000]");
 
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
-        assertThat(status.getMessage()).isEqualTo("All systems go");
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY); // GH-90000
+        assertThat(status.getMessage()).isEqualTo("All systems go [GH-90000]");
     }
 
     @Test
-    @DisplayName("healthy(message, details) preserves both message and details")
-    void healthy_withMessageAndDetails_preservesBoth() {
-        Map<String, Object> details = Map.of("latencyMs", 12L);
-        HealthStatus status = HealthStatus.healthy("Connected", details);
+    @DisplayName("healthy(message, details) preserves both message and details [GH-90000]")
+    void healthy_withMessageAndDetails_preservesBoth() { // GH-90000
+        Map<String, Object> details = Map.of("latencyMs", 12L); // GH-90000
+        HealthStatus status = HealthStatus.healthy("Connected", details); // GH-90000
 
-        assertThat(status.isHealthy()).isTrue();
-        assertThat(status.getMessage()).isEqualTo("Connected");
-        assertThat(status.getDetails()).containsEntry("latencyMs", 12L);
+        assertThat(status.isHealthy()).isTrue(); // GH-90000
+        assertThat(status.getMessage()).isEqualTo("Connected [GH-90000]");
+        assertThat(status.getDetails()).containsEntry("latencyMs", 12L); // GH-90000
     }
 
-    // ─── unhealthy() factory ────────────────────────────────────────────────────
+    // ─── unhealthy() factory ──────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("unhealthy(message) returns UNHEALTHY status")
-    void unhealthy_withMessage_returnsUnhealthy() {
-        HealthStatus status = HealthStatus.unhealthy("Connection refused");
+    @DisplayName("unhealthy(message) returns UNHEALTHY status [GH-90000]")
+    void unhealthy_withMessage_returnsUnhealthy() { // GH-90000
+        HealthStatus status = HealthStatus.unhealthy("Connection refused [GH-90000]");
 
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY);
-        assertThat(status.isUnhealthy()).isTrue();
-        assertThat(status.getMessage()).isEqualTo("Connection refused");
-    }
-
-    @Test
-    @DisplayName("unhealthy(message, cause) captures the exception")
-    void unhealthy_withCause_capturesException() {
-        RuntimeException cause = new RuntimeException("DB down");
-        HealthStatus status = HealthStatus.unhealthy("Database unreachable", cause);
-
-        assertThat(status.isUnhealthy()).isTrue();
-        assertThat(status.getException()).isSameAs(cause);
-    }
-
-    // ─── degraded() factory ────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("degraded(message) returns DEGRADED status")
-    void degraded_withMessage_returnsDegraded() {
-        HealthStatus status = HealthStatus.degraded("Slow response");
-
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.DEGRADED);
-        assertThat(status.isDegraded()).isTrue();
-    }
-
-    // ─── ok() / error() plugin aliases ─────────────────────────────────────────
-
-    @Test
-    @DisplayName("ok() is an alias for healthy() — returns HEALTHY status")
-    void ok_isAliasForHealthy() {
-        HealthStatus status = HealthStatus.ok();
-
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
-        assertThat(status.isHealthy()).isTrue();
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY); // GH-90000
+        assertThat(status.isUnhealthy()).isTrue(); // GH-90000
+        assertThat(status.getMessage()).isEqualTo("Connection refused [GH-90000]");
     }
 
     @Test
-    @DisplayName("error(message) returns UNHEALTHY status")
-    void error_withMessage_returnsUnhealthy() {
-        HealthStatus status = HealthStatus.error("S3 unreachable");
+    @DisplayName("unhealthy(message, cause) captures the exception [GH-90000]")
+    void unhealthy_withCause_capturesException() { // GH-90000
+        RuntimeException cause = new RuntimeException("DB down [GH-90000]");
+        HealthStatus status = HealthStatus.unhealthy("Database unreachable", cause); // GH-90000
 
-        assertThat(status.isUnhealthy()).isTrue();
-        assertThat(status.getMessage()).isEqualTo("S3 unreachable");
+        assertThat(status.isUnhealthy()).isTrue(); // GH-90000
+        assertThat(status.getException()).isSameAs(cause); // GH-90000
+    }
+
+    // ─── degraded() factory ──────────────────────────────────────────────────── // GH-90000
+
+    @Test
+    @DisplayName("degraded(message) returns DEGRADED status [GH-90000]")
+    void degraded_withMessage_returnsDegraded() { // GH-90000
+        HealthStatus status = HealthStatus.degraded("Slow response [GH-90000]");
+
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.DEGRADED); // GH-90000
+        assertThat(status.isDegraded()).isTrue(); // GH-90000
+    }
+
+    // ─── ok() / error() plugin aliases ───────────────────────────────────────── // GH-90000
+
+    @Test
+    @DisplayName("ok() is an alias for healthy() — returns HEALTHY status [GH-90000]")
+    void ok_isAliasForHealthy() { // GH-90000
+        HealthStatus status = HealthStatus.ok(); // GH-90000
+
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY); // GH-90000
+        assertThat(status.isHealthy()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("error(message, Throwable) captures exception and adds details")
-    void error_withThrowable_capturesExceptionAndDetails() {
-        IOException cause = new IOException("timeout");
-        HealthStatus status = HealthStatus.error("Storage failure", cause);
+    @DisplayName("error(message) returns UNHEALTHY status [GH-90000]")
+    void error_withMessage_returnsUnhealthy() { // GH-90000
+        HealthStatus status = HealthStatus.error("S3 unreachable [GH-90000]");
 
-        assertThat(status.isUnhealthy()).isTrue();
-        assertThat(status.getException()).isSameAs(cause);
-        assertThat(status.getDetails()).containsKey("error");
+        assertThat(status.isUnhealthy()).isTrue(); // GH-90000
+        assertThat(status.getMessage()).isEqualTo("S3 unreachable [GH-90000]");
     }
 
-    // ─── unknown() factory ─────────────────────────────────────────────────────
+    @Test
+    @DisplayName("error(message, Throwable) captures exception and adds details [GH-90000]")
+    void error_withThrowable_capturesExceptionAndDetails() { // GH-90000
+        IOException cause = new IOException("timeout [GH-90000]");
+        HealthStatus status = HealthStatus.error("Storage failure", cause); // GH-90000
+
+        assertThat(status.isUnhealthy()).isTrue(); // GH-90000
+        assertThat(status.getException()).isSameAs(cause); // GH-90000
+        assertThat(status.getDetails()).containsKey("error [GH-90000]");
+    }
+
+    // ─── unknown() factory ───────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("unknown(message) returns UNKNOWN status")
-    void unknown_withMessage_returnsUnknown() {
-        HealthStatus status = HealthStatus.unknown("Not yet initialized");
+    @DisplayName("unknown(message) returns UNKNOWN status [GH-90000]")
+    void unknown_withMessage_returnsUnknown() { // GH-90000
+        HealthStatus status = HealthStatus.unknown("Not yet initialized [GH-90000]");
 
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNKNOWN);
-        assertThat(status.getMessage()).isEqualTo("Not yet initialized");
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNKNOWN); // GH-90000
+        assertThat(status.getMessage()).isEqualTo("Not yet initialized [GH-90000]");
     }
 
     // ─── builder ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("builder with withStatus and withCheck adds checks map")
-    void builder_withCheck_addsToChecksMap() {
-        HealthStatus status = HealthStatus.builder()
-                .withStatus(HealthStatus.Status.HEALTHY)
-                .withCheck("db", HealthStatus.Status.HEALTHY, "Connected", 12L)
-                .build();
+    @DisplayName("builder with withStatus and withCheck adds checks map [GH-90000]")
+    void builder_withCheck_addsToChecksMap() { // GH-90000
+        HealthStatus status = HealthStatus.builder() // GH-90000
+                .withStatus(HealthStatus.Status.HEALTHY) // GH-90000
+                .withCheck("db", HealthStatus.Status.HEALTHY, "Connected", 12L) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
-        assertThat(status.getChecks()).containsKey("db");
+        assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY); // GH-90000
+        assertThat(status.getChecks()).containsKey("db [GH-90000]");
 
-        HealthStatus.HealthCheck dbCheck = status.getCheck("db");
-        assertThat(dbCheck).isNotNull();
-        assertThat(dbCheck.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
-        assertThat(dbCheck.getMessage()).isEqualTo("Connected");
-        assertThat(dbCheck.getResponseTimeMs()).isEqualTo(12L);
-        assertThat(dbCheck.isHealthy()).isTrue();
+        HealthStatus.HealthCheck dbCheck = status.getCheck("db [GH-90000]");
+        assertThat(dbCheck).isNotNull(); // GH-90000
+        assertThat(dbCheck.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY); // GH-90000
+        assertThat(dbCheck.getMessage()).isEqualTo("Connected [GH-90000]");
+        assertThat(dbCheck.getResponseTimeMs()).isEqualTo(12L); // GH-90000
+        assertThat(dbCheck.isHealthy()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("builder with multiple checks adds all to the checks map")
-    void builder_multipleChecks_allPresent() {
-        HealthStatus status = HealthStatus.builder()
-                .withStatus(HealthStatus.Status.DEGRADED)
-                .withCheck("db", HealthStatus.Status.HEALTHY, "OK", 5L)
-                .withCheck("cache", HealthStatus.Status.UNHEALTHY, "Redis down", 0L)
-                .build();
+    @DisplayName("builder with multiple checks adds all to the checks map [GH-90000]")
+    void builder_multipleChecks_allPresent() { // GH-90000
+        HealthStatus status = HealthStatus.builder() // GH-90000
+                .withStatus(HealthStatus.Status.DEGRADED) // GH-90000
+                .withCheck("db", HealthStatus.Status.HEALTHY, "OK", 5L) // GH-90000
+                .withCheck("cache", HealthStatus.Status.UNHEALTHY, "Redis down", 0L) // GH-90000
+                .build(); // GH-90000
 
-        assertThat(status.getChecks()).hasSize(2).containsKeys("db", "cache");
+        assertThat(status.getChecks()).hasSize(2).containsKeys("db", "cache"); // GH-90000
     }
 
     @Test
-    @DisplayName("builder toString includes status and check count")
-    void healthStatus_toString_containsStatusInfo() {
-        HealthStatus status = HealthStatus.healthy("OK");
+    @DisplayName("builder toString includes status and check count [GH-90000]")
+    void healthStatus_toString_containsStatusInfo() { // GH-90000
+        HealthStatus status = HealthStatus.healthy("OK [GH-90000]");
 
-        assertThat(status.toString())
-                .contains("HEALTHY")
-                .contains("OK");
+        assertThat(status.toString()) // GH-90000
+                .contains("HEALTHY [GH-90000]")
+                .contains("OK [GH-90000]");
     }
 
     // ─── checks map immutability ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getChecks returns an unmodifiable map")
-    void getChecks_returnsUnmodifiableMap() {
-        HealthStatus status = HealthStatus.builder()
-                .withStatus(HealthStatus.Status.HEALTHY)
-                .withCheck("db", HealthStatus.Status.HEALTHY, "OK", 1L)
-                .build();
+    @DisplayName("getChecks returns an unmodifiable map [GH-90000]")
+    void getChecks_returnsUnmodifiableMap() { // GH-90000
+        HealthStatus status = HealthStatus.builder() // GH-90000
+                .withStatus(HealthStatus.Status.HEALTHY) // GH-90000
+                .withCheck("db", HealthStatus.Status.HEALTHY, "OK", 1L) // GH-90000
+                .build(); // GH-90000
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                () -> status.getChecks().put("extra", null))
-                .isInstanceOf(UnsupportedOperationException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy( // GH-90000
+                () -> status.getChecks().put("extra", null)) // GH-90000
+                .isInstanceOf(UnsupportedOperationException.class); // GH-90000
     }
 }

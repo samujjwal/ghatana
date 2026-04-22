@@ -14,131 +14,131 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Verifies that TypedAgent test doubles work correctly with EventloopTestBase.
  */
-@DisplayName("[Phase 5] Basic Agent E2E Tests")
+@DisplayName("[Phase 5] Basic Agent E2E Tests [GH-90000]")
 class AgentExecutionE2ETest extends EventloopTestBase {
 
     private AgentContext testContext;
 
     @BeforeEach
-    void setUp() {
-        testContext = AgentContext.empty();
+    void setUp() { // GH-90000
+        testContext = AgentContext.empty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Echo agent should echo input unchanged")
-    void testEchoAgent() {
-        TestEchoAgent agent = new TestEchoAgent("echo-test");
+    @DisplayName("Echo agent should echo input unchanged [GH-90000]")
+    void testEchoAgent() { // GH-90000
+        TestEchoAgent agent = new TestEchoAgent("echo-test [GH-90000]");
 
-        AgentResult<String> result = runPromise(() ->
-                agent.process(testContext, "hello")
+        AgentResult<String> result = runPromise(() -> // GH-90000
+                agent.process(testContext, "hello") // GH-90000
         );
 
-        assertThat(result).isNotNull();
-        assertThat(result.getOutput()).isEqualTo("hello");
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getConfidence()).isEqualTo(1.0);
-        assertThat(result.getAgentId()).isEqualTo("echo-test");
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.getOutput()).isEqualTo("hello [GH-90000]");
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.getConfidence()).isEqualTo(1.0); // GH-90000
+        assertThat(result.getAgentId()).isEqualTo("echo-test [GH-90000]");
     }
 
     @Test
-    @DisplayName("Transform agent should apply function")
-    void testTransformAgent() {
+    @DisplayName("Transform agent should apply function [GH-90000]")
+    void testTransformAgent() { // GH-90000
         TestTransformAgent<String, String> agent =
-                new TestTransformAgent<>("uppercase", String::toUpperCase);
+                new TestTransformAgent<>("uppercase", String::toUpperCase); // GH-90000
 
-        AgentResult<String> result = runPromise(() ->
-                agent.process(testContext, "hello world")
+        AgentResult<String> result = runPromise(() -> // GH-90000
+                agent.process(testContext, "hello world") // GH-90000
         );
 
-        assertThat(result).isNotNull();
-        assertThat(result.getOutput()).isEqualTo("HELLO WORLD");
-        assertThat(result.isSuccess()).isTrue();
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.getOutput()).isEqualTo("HELLO WORLD [GH-90000]");
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Confidence agent should return specified confidence")
-    void testConfidenceAgent() {
+    @DisplayName("Confidence agent should return specified confidence [GH-90000]")
+    void testConfidenceAgent() { // GH-90000
         TestConfidenceAgent<String> agent =
-                new TestConfidenceAgent<>("conf-test", 0.75);
+                new TestConfidenceAgent<>("conf-test", 0.75); // GH-90000
 
-        AgentResult<String> result = runPromise(() ->
-                agent.process(testContext, "input")
+        AgentResult<String> result = runPromise(() -> // GH-90000
+                agent.process(testContext, "input") // GH-90000
         );
 
-        assertThat(result).isNotNull();
-        assertThat(result.getOutput()).isEqualTo("input");
-        assertThat(result.getConfidence()).isEqualTo(0.75);
-        assertThat(result.getStatus().name()).isEqualTo("SUCCESS");
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.getOutput()).isEqualTo("input [GH-90000]");
+        assertThat(result.getConfidence()).isEqualTo(0.75); // GH-90000
+        assertThat(result.getStatus().name()).isEqualTo("SUCCESS [GH-90000]");
     }
 
     @Test
-    @DisplayName("Failing agent should return failure status")
-    void testFailingAgent() {
-        Exception testError = new RuntimeException("Test failure");
+    @DisplayName("Failing agent should return failure status [GH-90000]")
+    void testFailingAgent() { // GH-90000
+        Exception testError = new RuntimeException("Test failure [GH-90000]");
         TestFailingAgent<String> agent =
-                new TestFailingAgent<>("fail-test", testError);
+                new TestFailingAgent<>("fail-test", testError); // GH-90000
 
-        AgentResult<String> result = runPromise(() ->
-                agent.process(testContext, "input")
+        AgentResult<String> result = runPromise(() -> // GH-90000
+                agent.process(testContext, "input") // GH-90000
         );
 
-        assertThat(result).isNotNull();
-        assertThat(result.isFailed()).isTrue();
-        assertThat(result.getConfidence()).isEqualTo(0.0);
-        assertThat(result.getExplanation()).contains("Test failure");
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.isFailed()).isTrue(); // GH-90000
+        assertThat(result.getConfidence()).isEqualTo(0.0); // GH-90000
+        assertThat(result.getExplanation()).contains("Test failure [GH-90000]");
     }
 
     @Test
-    @DisplayName("Delay agent should complete execution")
-    void testDelayAgent() {
-        java.time.Duration delay = java.time.Duration.ofMillis(100);
+    @DisplayName("Delay agent should complete execution [GH-90000]")
+    void testDelayAgent() { // GH-90000
+        java.time.Duration delay = java.time.Duration.ofMillis(100); // GH-90000
         TestDelayAgent<String> agent =
-                new TestDelayAgent<>("delay-test", delay);
+                new TestDelayAgent<>("delay-test", delay); // GH-90000
 
-        AgentResult<String> result = runPromise(() ->
-                agent.process(testContext, "data")
+        AgentResult<String> result = runPromise(() -> // GH-90000
+                agent.process(testContext, "data") // GH-90000
         );
 
-        assertThat(result).isNotNull();
-        assertThat(result.getOutput()).isEqualTo("data");
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getProcessingTime()).isNotNull();
+        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result.getOutput()).isEqualTo("data [GH-90000]");
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.getProcessingTime()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Multiple sequential executions should work")
-    void testSequentialExecutions() {
-        TestEchoAgent agent = new TestEchoAgent("seq-test");
+    @DisplayName("Multiple sequential executions should work [GH-90000]")
+    void testSequentialExecutions() { // GH-90000
+        TestEchoAgent agent = new TestEchoAgent("seq-test [GH-90000]");
 
-        AgentResult<String> result1 = runPromise(() ->
-                agent.process(testContext, "first")
+        AgentResult<String> result1 = runPromise(() -> // GH-90000
+                agent.process(testContext, "first") // GH-90000
         );
-        AgentResult<String> result2 = runPromise(() ->
-                agent.process(testContext, "second")
+        AgentResult<String> result2 = runPromise(() -> // GH-90000
+                agent.process(testContext, "second") // GH-90000
         );
-        AgentResult<String> result3 = runPromise(() ->
-                agent.process(testContext, "third")
+        AgentResult<String> result3 = runPromise(() -> // GH-90000
+                agent.process(testContext, "third") // GH-90000
         );
 
-        assertThat(result1.getOutput()).isEqualTo("first");
-        assertThat(result2.getOutput()).isEqualTo("second");
-        assertThat(result3.getOutput()).isEqualTo("third");
+        assertThat(result1.getOutput()).isEqualTo("first [GH-90000]");
+        assertThat(result2.getOutput()).isEqualTo("second [GH-90000]");
+        assertThat(result3.getOutput()).isEqualTo("third [GH-90000]");
     }
 
     @Test
-    @DisplayName("Batch execution via processBatch should work")
-    void testBatchExecution() {
-        TestEchoAgent agent = new TestEchoAgent("batch-test");
+    @DisplayName("Batch execution via processBatch should work [GH-90000]")
+    void testBatchExecution() { // GH-90000
+        TestEchoAgent agent = new TestEchoAgent("batch-test [GH-90000]");
 
-        java.util.List<String> inputs = java.util.Arrays.asList("a", "b", "c");
+        java.util.List<String> inputs = java.util.Arrays.asList("a", "b", "c"); // GH-90000
 
-        java.util.List<AgentResult<String>> results = runPromise(() ->
-                agent.processBatch(testContext, inputs)
+        java.util.List<AgentResult<String>> results = runPromise(() -> // GH-90000
+                agent.processBatch(testContext, inputs) // GH-90000
         );
 
-        assertThat(results).hasSize(3);
-        assertThat(results.get(0).getOutput()).isEqualTo("a");
-        assertThat(results.get(1).getOutput()).isEqualTo("b");
-        assertThat(results.get(2).getOutput()).isEqualTo("c");
+        assertThat(results).hasSize(3); // GH-90000
+        assertThat(results.get(0).getOutput()).isEqualTo("a [GH-90000]");
+        assertThat(results.get(1).getOutput()).isEqualTo("b [GH-90000]");
+        assertThat(results.get(2).getOutput()).isEqualTo("c [GH-90000]");
     }
 }

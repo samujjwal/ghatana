@@ -16,13 +16,13 @@ import org.junit.jupiter.api.Test;
 class JsonSupportTest {
 
     @Test
-    void toPrettyJsonWrapsSerializationFailures() {
-        Map<String, Object> selfReferential = new HashMap<>();
-        selfReferential.put("self", selfReferential);
+    void toPrettyJsonWrapsSerializationFailures() { // GH-90000
+        Map<String, Object> selfReferential = new HashMap<>(); // GH-90000
+        selfReferential.put("self", selfReferential); // GH-90000
 
-        assertThatThrownBy(() -> JsonSupport.toPrettyJson(selfReferential))
-                .isInstanceOf(RefactorerOperationException.class)
-                .hasMessageContaining("Error converting object to JSON")
-                .hasCauseInstanceOf(com.fasterxml.jackson.core.JsonProcessingException.class);
+        assertThatThrownBy(() -> JsonSupport.toPrettyJson(selfReferential)) // GH-90000
+                .isInstanceOf(RefactorerOperationException.class) // GH-90000
+                .hasMessageContaining("Error converting object to JSON [GH-90000]")
+                .hasCauseInstanceOf(com.fasterxml.jackson.core.JsonProcessingException.class); // GH-90000
     }
 }

@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for kernel core components.
  *
- * <p>IMPORTANT — ActiveJ mandate: use runPromise(() -> ...) from EventloopTestBase.
- * CompletableFuture is BANNED in kernel code. Do NOT use .getResult() on Promise.</p>
+ * <p>IMPORTANT — ActiveJ mandate: use runPromise(() -> ...) from EventloopTestBase. // GH-90000
+ * CompletableFuture is BANNED in kernel code. Do NOT use .getResult() on Promise.</p> // GH-90000
  *
  * @doc.type test
  * @doc.purpose Unit tests for kernel registry, config resolver, and descriptors
@@ -33,167 +33,167 @@ class KernelCoreUnitTest extends EventloopTestBase {
     private KernelTenantContext testContext;
 
     @BeforeEach
-    void setUp() {
-        registry = new KernelRegistryImpl();
-        configResolver = new HierarchicalKernelConfigResolver();
-        testContext = createTestTenantContext();
+    void setUp() { // GH-90000
+        registry = new KernelRegistryImpl(); // GH-90000
+        configResolver = new HierarchicalKernelConfigResolver(); // GH-90000
+        testContext = createTestTenantContext(); // GH-90000
     }
 
     // ==================== KernelDescriptor Tests ====================
 
     @Test
-    void kernelDescriptorBuilderCreatesValidDescriptor() {
-        KernelDescriptor descriptor = new KernelDescriptor.Builder()
-            .withDescriptorId("test-module")
-            .withName("Test Module")
-            .withVersion("1.0.0")
-            .withType(KernelDescriptor.DescriptorType.MODULE)
-            .build();
+    void kernelDescriptorBuilderCreatesValidDescriptor() { // GH-90000
+        KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
+            .withDescriptorId("test-module [GH-90000]")
+            .withName("Test Module [GH-90000]")
+            .withVersion("1.0.0 [GH-90000]")
+            .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
+            .build(); // GH-90000
 
-        assertEquals("test-module", descriptor.getDescriptorId());
-        assertEquals("Test Module", descriptor.getName());
-        assertEquals("1.0.0", descriptor.getVersion());
-        assertEquals(KernelDescriptor.DescriptorType.MODULE, descriptor.getType());
+        assertEquals("test-module", descriptor.getDescriptorId()); // GH-90000
+        assertEquals("Test Module", descriptor.getName()); // GH-90000
+        assertEquals("1.0.0", descriptor.getVersion()); // GH-90000
+        assertEquals(KernelDescriptor.DescriptorType.MODULE, descriptor.getType()); // GH-90000
     }
 
     @Test
-    void kernelDescriptorValidationRejectsInvalidId() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new KernelDescriptor.Builder()
-                .withDescriptorId("Invalid_ID_With_CAPS") // Invalid: uppercase
-                .withName("Test")
-                .withVersion("1.0.0")
-                .withType(KernelDescriptor.DescriptorType.MODULE)
-                .build()
+    void kernelDescriptorValidationRejectsInvalidId() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+            new KernelDescriptor.Builder() // GH-90000
+                .withDescriptorId("Invalid_ID_With_CAPS [GH-90000]") // Invalid: uppercase
+                .withName("Test [GH-90000]")
+                .withVersion("1.0.0 [GH-90000]")
+                .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
+                .build() // GH-90000
         );
     }
 
     @Test
-    void kernelDescriptorValidationRejectsInvalidVersion() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new KernelDescriptor.Builder()
-                .withDescriptorId("test-module")
-                .withName("Test")
-                .withVersion("invalid-version") // Invalid: not semver
-                .withType(KernelDescriptor.DescriptorType.MODULE)
-                .build()
+    void kernelDescriptorValidationRejectsInvalidVersion() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+            new KernelDescriptor.Builder() // GH-90000
+                .withDescriptorId("test-module [GH-90000]")
+                .withName("Test [GH-90000]")
+                .withVersion("invalid-version [GH-90000]") // Invalid: not semver
+                .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
+                .build() // GH-90000
         );
     }
 
     @Test
-    void kernelDescriptorHasCapabilityCheck() {
+    void kernelDescriptorHasCapabilityCheck() { // GH-90000
         KernelCapability capability = KernelCapability.Core.DATA_STORAGE;
 
-        KernelDescriptor descriptor = new KernelDescriptor.Builder()
-            .withDescriptorId("test-module")
-            .withName("Test Module")
-            .withVersion("1.0.0")
-            .withType(KernelDescriptor.DescriptorType.MODULE)
-            .withCapability(capability)
-            .build();
+        KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
+            .withDescriptorId("test-module [GH-90000]")
+            .withName("Test Module [GH-90000]")
+            .withVersion("1.0.0 [GH-90000]")
+            .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
+            .withCapability(capability) // GH-90000
+            .build(); // GH-90000
 
-        assertTrue(descriptor.hasCapability(capability));
-        assertTrue(descriptor.hasCapability("data.storage"));
-        assertFalse(descriptor.hasCapability("nonexistent"));
+        assertTrue(descriptor.hasCapability(capability)); // GH-90000
+        assertTrue(descriptor.hasCapability("data.storage [GH-90000]"));
+        assertFalse(descriptor.hasCapability("nonexistent [GH-90000]"));
     }
 
     @Test
-    void kernelDescriptorSupportsTenantCheck() {
-        KernelDescriptor descriptor = new KernelDescriptor.Builder()
-            .withDescriptorId("test-module")
-            .withName("Test")
-            .withVersion("1.0.0")
-            .withType(KernelDescriptor.DescriptorType.MODULE)
-            .withSupportedTenant("tenant-1")
-            .withSupportedTenant("tenant-2")
-            .build();
+    void kernelDescriptorSupportsTenantCheck() { // GH-90000
+        KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
+            .withDescriptorId("test-module [GH-90000]")
+            .withName("Test [GH-90000]")
+            .withVersion("1.0.0 [GH-90000]")
+            .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
+            .withSupportedTenant("tenant-1 [GH-90000]")
+            .withSupportedTenant("tenant-2 [GH-90000]")
+            .build(); // GH-90000
 
-        assertTrue(descriptor.supportsTenant("tenant-1"));
-        assertTrue(descriptor.supportsTenant("tenant-2"));
-        assertFalse(descriptor.supportsTenant("tenant-3"));
+        assertTrue(descriptor.supportsTenant("tenant-1 [GH-90000]"));
+        assertTrue(descriptor.supportsTenant("tenant-2 [GH-90000]"));
+        assertFalse(descriptor.supportsTenant("tenant-3 [GH-90000]"));
     }
 
     @Test
-    void kernelDescriptorEmptySupportedTenantsMeansAllTenants() {
-        KernelDescriptor descriptor = new KernelDescriptor.Builder()
-            .withDescriptorId("test-module")
-            .withName("Test")
-            .withVersion("1.0.0")
-            .withType(KernelDescriptor.DescriptorType.MODULE)
-            .build();
+    void kernelDescriptorEmptySupportedTenantsMeansAllTenants() { // GH-90000
+        KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
+            .withDescriptorId("test-module [GH-90000]")
+            .withName("Test [GH-90000]")
+            .withVersion("1.0.0 [GH-90000]")
+            .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
+            .build(); // GH-90000
 
-        assertTrue(descriptor.supportsTenant("any-tenant"));
+        assertTrue(descriptor.supportsTenant("any-tenant [GH-90000]"));
     }
 
     // ==================== KernelCapability Tests ====================
 
     @Test
-    void kernelCapabilityCreation() {
-        KernelCapability capability = new KernelCapability(
+    void kernelCapabilityCreation() { // GH-90000
+        KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
             "Test Capability",
             "Test description",
             KernelCapability.CapabilityType.DATA_MANAGEMENT,
-            Map.of("key", "value")
+            Map.of("key", "value") // GH-90000
         );
 
-        assertEquals("test.capability", capability.getCapabilityId());
-        assertEquals("Test Capability", capability.getName());
-        assertEquals(KernelCapability.CapabilityType.DATA_MANAGEMENT, capability.getType());
+        assertEquals("test.capability", capability.getCapabilityId()); // GH-90000
+        assertEquals("Test Capability", capability.getName()); // GH-90000
+        assertEquals(KernelCapability.CapabilityType.DATA_MANAGEMENT, capability.getType()); // GH-90000
     }
 
     @Test
-    void kernelCapabilityRequiresServiceCheck() {
-        KernelCapability capability = new KernelCapability(
+    void kernelCapabilityRequiresServiceCheck() { // GH-90000
+        KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
             "Test",
             "Test",
             KernelCapability.CapabilityType.DATA_MANAGEMENT,
-            Map.of("required_services", "service1,service2")
+            Map.of("required_services", "service1,service2") // GH-90000
         );
 
-        assertTrue(capability.requiresService("service1"));
-        assertTrue(capability.requiresService("service2"));
-        assertFalse(capability.requiresService("service3"));
+        assertTrue(capability.requiresService("service1 [GH-90000]"));
+        assertTrue(capability.requiresService("service2 [GH-90000]"));
+        assertFalse(capability.requiresService("service3 [GH-90000]"));
     }
 
     @Test
-    void kernelCapabilitySupportsProductCheck() {
-        KernelCapability capability = new KernelCapability(
+    void kernelCapabilitySupportsProductCheck() { // GH-90000
+        KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
             "Test",
             "Test",
             KernelCapability.CapabilityType.DATA_MANAGEMENT,
-            Map.of("supported_products", "phr,finance")
+            Map.of("supported_products", "phr,finance") // GH-90000
         );
 
-        assertTrue(capability.supportsProduct("phr"));
-        assertTrue(capability.supportsProduct("finance"));
-        assertFalse(capability.supportsProduct("flashit"));
+        assertTrue(capability.supportsProduct("phr [GH-90000]"));
+        assertTrue(capability.supportsProduct("finance [GH-90000]"));
+        assertFalse(capability.supportsProduct("flashit [GH-90000]"));
     }
 
     @Test
-    void kernelCapabilityEmptySupportedProductsMeansAllProducts() {
-        KernelCapability capability = new KernelCapability(
+    void kernelCapabilityEmptySupportedProductsMeansAllProducts() { // GH-90000
+        KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
             "Test",
             "Test",
             KernelCapability.CapabilityType.DATA_MANAGEMENT,
-            Map.of()
+            Map.of() // GH-90000
         );
 
-        assertTrue(capability.supportsProduct("any-product"));
+        assertTrue(capability.supportsProduct("any-product [GH-90000]"));
     }
 
     @Test
-    void kernelCapabilityValidationRejectsInvalidId() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new KernelCapability(
+    void kernelCapabilityValidationRejectsInvalidId() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+            new KernelCapability( // GH-90000
                 "Invalid.Capability.ID", // Invalid: uppercase
                 "Test",
                 "Test",
                 KernelCapability.CapabilityType.DATA_MANAGEMENT,
-                Map.of()
+                Map.of() // GH-90000
             )
         );
     }
@@ -201,48 +201,48 @@ class KernelCoreUnitTest extends EventloopTestBase {
     // ==================== HierarchicalKernelConfigResolver Tests ====================
 
     @Test
-    void configResolverUsesKernelDefault() {
-        configResolver.setKernelDefault("test.key", "default-value");
+    void configResolverUsesKernelDefault() { // GH-90000
+        configResolver.setKernelDefault("test.key", "default-value"); // GH-90000
 
-        String value = configResolver.resolve("test.key", String.class, testContext);
-        assertEquals("default-value", value);
+        String value = configResolver.resolve("test.key", String.class, testContext); // GH-90000
+        assertEquals("default-value", value); // GH-90000
     }
 
     @Test
-    void configResolverResolveWithDefault() {
-        String value = configResolver.resolveWithDefault(
+    void configResolverResolveWithDefault() { // GH-90000
+        String value = configResolver.resolveWithDefault( // GH-90000
             "missing.key", String.class, "fallback", testContext);
-        assertEquals("fallback", value);
+        assertEquals("fallback", value); // GH-90000
     }
 
     @Test
-    void configResolverThrowsOnMissingRequiredConfig() {
-        assertThrows(IllegalArgumentException.class, () ->
-            configResolver.resolve("missing.required.key", String.class, testContext)
+    void configResolverThrowsOnMissingRequiredConfig() { // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+            configResolver.resolve("missing.required.key", String.class, testContext) // GH-90000
         );
     }
 
     @Test
-    void configResolverReturnsOptional() {
-        Optional<String> value = configResolver.resolveOptional(
+    void configResolverReturnsOptional() { // GH-90000
+        Optional<String> value = configResolver.resolveOptional( // GH-90000
             "missing.key", String.class, testContext);
-        assertTrue(value.isEmpty());
+        assertTrue(value.isEmpty()); // GH-90000
 
-        configResolver.setKernelDefault("existing.key", "value");
-        Optional<String> existing = configResolver.resolveOptional(
+        configResolver.setKernelDefault("existing.key", "value"); // GH-90000
+        Optional<String> existing = configResolver.resolveOptional( // GH-90000
             "existing.key", String.class, testContext);
-        assertTrue(existing.isPresent());
-        assertEquals("value", existing.get());
+        assertTrue(existing.isPresent()); // GH-90000
+        assertEquals("value", existing.get()); // GH-90000
     }
 
     // ==================== Helper Methods ====================
 
-    private KernelTenantContext createTestTenantContext() {
-        return new KernelTenantContext(
+    private KernelTenantContext createTestTenantContext() { // GH-90000
+        return new KernelTenantContext( // GH-90000
             "test-tenant",
             KernelTenantContext.TenantType.STANDARD,
-            Map.of(),
-            Set.of("test-feature"),
+            Map.of(), // GH-90000
+            Set.of("test-feature [GH-90000]"),
             null,
             null
         );

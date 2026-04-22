@@ -24,77 +24,77 @@ import static org.mockito.Mockito.*;
 class PhaseOperatorTest extends EventloopTestBase {
 
     @Test
-    void shouldExecuteIntentPhase() {
+    void shouldExecuteIntentPhase() { // GH-90000
         // GIVEN
-        IntentService intentService = mock(IntentService.class);
-        IntentSpec expectedSpec = IntentSpec.builder()
-                .id("intent-123")
-                .productName("Test Product")
-                .description("Test product intent")
-                .goals(List.of())
-                .personas(List.of())
-                .constraints(List.of())
-                .build();
+        IntentService intentService = mock(IntentService.class); // GH-90000
+        IntentSpec expectedSpec = IntentSpec.builder() // GH-90000
+                .id("intent-123 [GH-90000]")
+                .productName("Test Product [GH-90000]")
+                .description("Test product intent [GH-90000]")
+                .goals(List.of()) // GH-90000
+                .personas(List.of()) // GH-90000
+                .constraints(List.of()) // GH-90000
+                .build(); // GH-90000
 
-        when(intentService.capture(any(IntentInput.class)))
-                .thenReturn(Promise.of(expectedSpec));
+        when(intentService.capture(any(IntentInput.class))) // GH-90000
+                .thenReturn(Promise.of(expectedSpec)); // GH-90000
 
-        PhaseOperator operator = new PhaseOperator(
+        PhaseOperator operator = new PhaseOperator( // GH-90000
                 PhaseType.INTENT, intentService, null, null, null, null, null, null, null);
 
-        IntentInput input = IntentInput.builder()
-                .rawText("Build an app")
-                .format("text")
-                .build();
+        IntentInput input = IntentInput.builder() // GH-90000
+                .rawText("Build an app [GH-90000]")
+                .format("text [GH-90000]")
+                .build(); // GH-90000
 
         // WHEN
-        Object result = runPromise(() -> operator.execute(input));
+        Object result = runPromise(() -> operator.execute(input)); // GH-90000
 
         // THEN
-        assertNotNull(result);
-        assertInstanceOf(IntentSpec.class, result);
-        assertEquals("intent-123", ((IntentSpec) result).id());
-        verify(intentService, times(1)).capture(any(IntentInput.class));
+        assertNotNull(result); // GH-90000
+        assertInstanceOf(IntentSpec.class, result); // GH-90000
+        assertEquals("intent-123", ((IntentSpec) result).id()); // GH-90000
+        verify(intentService, times(1)).capture(any(IntentInput.class)); // GH-90000
     }
 
     @Test
-    void shouldReturnOperatorId() {
+    void shouldReturnOperatorId() { // GH-90000
         // GIVEN
-        PhaseOperator operator = new PhaseOperator(
+        PhaseOperator operator = new PhaseOperator( // GH-90000
                 PhaseType.SHAPE, null, null, null, null, null, null, null, null);
 
         // WHEN
-        String operatorId = operator.getOperatorId();
+        String operatorId = operator.getOperatorId(); // GH-90000
 
         // THEN
-        assertEquals("yappc.phase.shape", operatorId);
+        assertEquals("yappc.phase.shape", operatorId); // GH-90000
     }
 
     @Test
-    void shouldReturnMetadata() {
+    void shouldReturnMetadata() { // GH-90000
         // GIVEN
-        PhaseOperator operator = new PhaseOperator(
+        PhaseOperator operator = new PhaseOperator( // GH-90000
                 PhaseType.VALIDATE, null, null, null, null, null, null, null, null);
 
         // WHEN
-        Map<String, String> metadata = operator.getMetadata();
+        Map<String, String> metadata = operator.getMetadata(); // GH-90000
 
         // THEN
-        assertNotNull(metadata);
-        assertEquals("VALIDATE", metadata.get("phase"));
-        assertEquals("yappc.phase.validate", metadata.get("operator_id"));
-        assertEquals("1.0.0", metadata.get("version"));
+        assertNotNull(metadata); // GH-90000
+        assertEquals("VALIDATE", metadata.get("phase [GH-90000]"));
+        assertEquals("yappc.phase.validate", metadata.get("operator_id [GH-90000]"));
+        assertEquals("1.0.0", metadata.get("version [GH-90000]"));
     }
 
     @Test
-    void shouldHandleInvalidInputType() {
+    void shouldHandleInvalidInputType() { // GH-90000
         // GIVEN
-        PhaseOperator operator = new PhaseOperator(
-                PhaseType.INTENT, mock(IntentService.class), null, null, null, null, null, null, null);
+        PhaseOperator operator = new PhaseOperator( // GH-90000
+                PhaseType.INTENT, mock(IntentService.class), null, null, null, null, null, null, null); // GH-90000
 
         // WHEN/THEN
-        Exception e = assertThrows(Exception.class, () ->
-                runPromise(() -> operator.execute("invalid input")));
-        assertTrue(e.getMessage().contains("Invalid input type"));
+        Exception e = assertThrows(Exception.class, () -> // GH-90000
+                runPromise(() -> operator.execute("invalid input [GH-90000]")));
+        assertTrue(e.getMessage().contains("Invalid input type [GH-90000]"));
     }
 }

@@ -20,439 +20,439 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AEP Tracing Provider Integration Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("AEP Tracing Provider Integration Tests [GH-90000]")
 class AepTracingProviderIntegrationTest {
 
     private AepTracingProvider tracingProvider;
 
     @BeforeEach
-    void setUp() {
+    void setUp() { // GH-90000
         // Reset singleton instance for testing
-        tracingProvider = AepTracingProvider.getInstance();
-        MDC.clear();
+        tracingProvider = AepTracingProvider.getInstance(); // GH-90000
+        MDC.clear(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Pipeline Deployment Tracing")
+    @DisplayName("Pipeline Deployment Tracing [GH-90000]")
     class PipelineDeploymentTracingTests {
 
         @Test
-        void shouldCreatePipelineDeploymentSpan() {
+        void shouldCreatePipelineDeploymentSpan() { // GH-90000
             // Given
             String pipelineId = "pipeline-123";
             String tenantId = "tenant-456";
 
             // When
-            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId);
+            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId); // GH-90000
 
             // Then
-            assertThat(span).isNotNull();
-            assertThat(MDC.get("pipelineId")).isEqualTo(pipelineId);
-            assertThat(MDC.get("tenantId")).isEqualTo(tenantId);
-            assertThat(MDC.get("correlationId")).isNotNull();
+            assertThat(span).isNotNull(); // GH-90000
+            assertThat(MDC.get("pipelineId [GH-90000]")).isEqualTo(pipelineId);
+            assertThat(MDC.get("tenantId [GH-90000]")).isEqualTo(tenantId);
+            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
 
         @Test
-        void shouldPropagateCorrelationId() {
+        void shouldPropagateCorrelationId() { // GH-90000
             // Given
             String pipelineId = "pipeline-789";
             String tenantId = "tenant-012";
-            MDC.put("correlationId", "existing-correlation-id");
+            MDC.put("correlationId", "existing-correlation-id"); // GH-90000
 
             // When
-            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId);
+            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("correlationId")).isEqualTo("existing-correlation-id");
+            assertThat(MDC.get("correlationId [GH-90000]")).isEqualTo("existing-correlation-id [GH-90000]");
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
 
         @Test
-        void shouldGenerateNewCorrelationIdWhenMissing() {
+        void shouldGenerateNewCorrelationIdWhenMissing() { // GH-90000
             // Given
             String pipelineId = "pipeline-new";
             String tenantId = "tenant-new";
-            MDC.clear();
+            MDC.clear(); // GH-90000
 
             // When
-            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId);
-            String generatedCorrelationId = MDC.get("correlationId");
+            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId); // GH-90000
+            String generatedCorrelationId = MDC.get("correlationId [GH-90000]");
 
             // Then
-            assertThat(generatedCorrelationId).isNotNull();
-            assertThat(generatedCorrelationId).isNotEmpty();
-            assertThat(generatedCorrelationId).matches("[0-9a-f\\-]+");
+            assertThat(generatedCorrelationId).isNotNull(); // GH-90000
+            assertThat(generatedCorrelationId).isNotEmpty(); // GH-90000
+            assertThat(generatedCorrelationId).matches("[0-9a-f\\-]+ [GH-90000]");
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Agent Execution Tracing")
+    @DisplayName("Agent Execution Tracing [GH-90000]")
     class AgentExecutionTracingTests {
 
         @Test
-        void shouldCreateAgentExecutionSpan() {
+        void shouldCreateAgentExecutionSpan() { // GH-90000
             // Given
             String agentId = "agent-123";
             String pipelineId = "pipeline-456";
             String tenantId = "tenant-789";
 
             // When
-            Span span = tracingProvider.startAgentExecutionSpan(agentId, pipelineId, tenantId);
+            Span span = tracingProvider.startAgentExecutionSpan(agentId, pipelineId, tenantId); // GH-90000
 
             // Then
-            assertThat(span).isNotNull();
-            assertThat(MDC.get("agentId")).isEqualTo(agentId);
-            assertThat(MDC.get("correlationId")).isNotNull();
+            assertThat(span).isNotNull(); // GH-90000
+            assertThat(MDC.get("agentId [GH-90000]")).isEqualTo(agentId);
+            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
 
         @Test
-        void shouldIncludeSpanContextInMDC() {
+        void shouldIncludeSpanContextInMDC() { // GH-90000
             // Given
             String agentId = "agent-context-test";
             String pipelineId = "pipeline-context-test";
             String tenantId = "tenant-context-test";
 
             // When
-            Span span = tracingProvider.startAgentExecutionSpan(agentId, pipelineId, tenantId);
-            String traceId = MDC.get("traceId");
+            Span span = tracingProvider.startAgentExecutionSpan(agentId, pipelineId, tenantId); // GH-90000
+            String traceId = MDC.get("traceId [GH-90000]");
 
             // Then
-            assertThat(MDC.get("correlationId")).isNotNull();
-            assertThat(MDC.get("agentId")).isEqualTo(agentId);
+            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("agentId [GH-90000]")).isEqualTo(agentId);
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Event Processing Tracing")
+    @DisplayName("Event Processing Tracing [GH-90000]")
     class EventProcessingTracingTests {
 
         @Test
-        void shouldCreateEventProcessingSpan() {
+        void shouldCreateEventProcessingSpan() { // GH-90000
             // Given
             String eventId = "event-123";
             String eventType = "agent.deployed";
             String tenantId = "tenant-456";
 
             // When
-            Span span = tracingProvider.startEventProcessingSpan(eventId, eventType, tenantId);
+            Span span = tracingProvider.startEventProcessingSpan(eventId, eventType, tenantId); // GH-90000
 
             // Then
-            assertThat(span).isNotNull();
-            assertThat(MDC.get("eventId")).isEqualTo(eventId);
-            assertThat(MDC.get("eventType")).isEqualTo(eventType);
-            assertThat(MDC.get("correlationId")).isNotNull();
+            assertThat(span).isNotNull(); // GH-90000
+            assertThat(MDC.get("eventId [GH-90000]")).isEqualTo(eventId);
+            assertThat(MDC.get("eventType [GH-90000]")).isEqualTo(eventType);
+            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
 
         @Test
-        void shouldTrackEventTypeInContext() {
+        void shouldTrackEventTypeInContext() { // GH-90000
             // Given
             String eventId = "event-type-test";
             String eventType = "pipeline.updated";
             String tenantId = "tenant-type-test";
 
             // When
-            Span span = tracingProvider.startEventProcessingSpan(eventId, eventType, tenantId);
+            Span span = tracingProvider.startEventProcessingSpan(eventId, eventType, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("eventType")).isEqualTo("pipeline.updated");
+            assertThat(MDC.get("eventType [GH-90000]")).isEqualTo("pipeline.updated [GH-90000]");
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Success Recording")
+    @DisplayName("Success Recording [GH-90000]")
     class SuccessRecordingTests {
 
         @Test
-        void shouldRecordSuccessfulOperation() {
+        void shouldRecordSuccessfulOperation() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("test.operation").startSpan();
+            Span span = tracingProvider.getTracer().spanBuilder("test.operation [GH-90000]").startSpan();
             long duration = 150;
 
             // When
-            tracingProvider.recordSuccess(span, duration);
+            tracingProvider.recordSuccess(span, duration); // GH-90000
 
             // Then
-            assertThat(span).isNotNull();
+            assertThat(span).isNotNull(); // GH-90000
             // Span is ended, verifiable through no exception thrown
         }
 
         @Test
-        void shouldHandleNullSpan() {
+        void shouldHandleNullSpan() { // GH-90000
             // When + Then
-            tracingProvider.recordSuccess(null, 100);
+            tracingProvider.recordSuccess(null, 100); // GH-90000
             // Should not throw
         }
 
         @Test
-        void shouldRecordDurationAttribute() {
+        void shouldRecordDurationAttribute() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("duration.test").startSpan();
+            Span span = tracingProvider.getTracer().spanBuilder("duration.test [GH-90000]").startSpan();
             long duration = 250;
 
             // When
-            tracingProvider.recordSuccess(span, duration);
+            tracingProvider.recordSuccess(span, duration); // GH-90000
 
             // Then
-            // Duration recorded in span (verified by observer pattern in real tracing)
-            assertThat(duration).isEqualTo(250);
+            // Duration recorded in span (verified by observer pattern in real tracing) // GH-90000
+            assertThat(duration).isEqualTo(250); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Error Recording")
+    @DisplayName("Error Recording [GH-90000]")
     class ErrorRecordingTests {
 
         @Test
-        void shouldRecordErrorWithException() {
+        void shouldRecordErrorWithException() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("error.test").startSpan();
-            Exception exception = new IllegalArgumentException("Test error");
+            Span span = tracingProvider.getTracer().spanBuilder("error.test [GH-90000]").startSpan();
+            Exception exception = new IllegalArgumentException("Test error [GH-90000]");
             long duration = 100;
 
             // When
-            tracingProvider.recordError(span, exception, duration);
+            tracingProvider.recordError(span, exception, duration); // GH-90000
 
             // Then
-            assertThat(span).isNotNull();
+            assertThat(span).isNotNull(); // GH-90000
         }
 
         @Test
-        void shouldHandleNullSpanInError() {
+        void shouldHandleNullSpanInError() { // GH-90000
             // When + Then
-            Exception exception = new RuntimeException("Test");
-            tracingProvider.recordError(null, exception, 50);
+            Exception exception = new RuntimeException("Test [GH-90000]");
+            tracingProvider.recordError(null, exception, 50); // GH-90000
             // Should not throw
         }
 
         @Test
-        void shouldRecordExceptionDetails() {
+        void shouldRecordExceptionDetails() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("exception.details.test").startSpan();
-            Exception exception = new IllegalStateException("Invalid state");
+            Span span = tracingProvider.getTracer().spanBuilder("exception.details.test [GH-90000]").startSpan();
+            Exception exception = new IllegalStateException("Invalid state [GH-90000]");
             long duration = 75;
 
             // When
-            tracingProvider.recordError(span, exception, duration);
+            tracingProvider.recordError(span, exception, duration); // GH-90000
 
             // Then
-            assertThat(exception.getMessage()).isEqualTo("Invalid state");
+            assertThat(exception.getMessage()).isEqualTo("Invalid state [GH-90000]");
         }
 
         @Test
-        void shouldHandleDifferentExceptionTypes() {
+        void shouldHandleDifferentExceptionTypes() { // GH-90000
             // Given
-            Span span1 = tracingProvider.getTracer().spanBuilder("io.error").startSpan();
-            Span span2 = tracingProvider.getTracer().spanBuilder("validation.error").startSpan();
+            Span span1 = tracingProvider.getTracer().spanBuilder("io.error [GH-90000]").startSpan();
+            Span span2 = tracingProvider.getTracer().spanBuilder("validation.error [GH-90000]").startSpan();
 
             // When
-            tracingProvider.recordError(span1, new java.io.IOException("IO failed"), 100);
-            tracingProvider.recordError(span2, new IllegalArgumentException("Invalid arg"), 80);
+            tracingProvider.recordError(span1, new java.io.IOException("IO failed [GH-90000]"), 100);
+            tracingProvider.recordError(span2, new IllegalArgumentException("Invalid arg [GH-90000]"), 80);
 
             // Then
-            assertThat(span1).isNotNull();
-            assertThat(span2).isNotNull();
+            assertThat(span1).isNotNull(); // GH-90000
+            assertThat(span2).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Scope Management")
+    @DisplayName("Scope Management [GH-90000]")
     class ScopeManagementTests {
 
         @Test
-        void shouldCreateScopeForSpan() {
+        void shouldCreateScopeForSpan() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("scope.test").startSpan();
+            Span span = tracingProvider.getTracer().spanBuilder("scope.test [GH-90000]").startSpan();
 
             // When
-            Scope scope = tracingProvider.createScope(span);
+            Scope scope = tracingProvider.createScope(span); // GH-90000
 
             // Then
-            assertThat(scope).isNotNull();
-            scope.close();
-            span.end();
+            assertThat(scope).isNotNull(); // GH-90000
+            scope.close(); // GH-90000
+            span.end(); // GH-90000
         }
 
         @Test
-        void shouldMaintainSpanContextAcrossScope() {
+        void shouldMaintainSpanContextAcrossScope() { // GH-90000
             // Given
             String pipelineId = "scope-context-test";
             String tenantId = "tenant-scope-test";
-            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId);
-            String correlationIdBeforeScope = MDC.get("correlationId");
+            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId); // GH-90000
+            String correlationIdBeforeScope = MDC.get("correlationId [GH-90000]");
 
             // When
-            Scope scope = tracingProvider.createScope(span);
-            String correlationIdInScope = MDC.get("correlationId");
+            Scope scope = tracingProvider.createScope(span); // GH-90000
+            String correlationIdInScope = MDC.get("correlationId [GH-90000]");
 
             // Then
-            assertThat(correlationIdInScope).isEqualTo(correlationIdBeforeScope);
-            scope.close();
-            span.end();
-            MDC.clear();
+            assertThat(correlationIdInScope).isEqualTo(correlationIdBeforeScope); // GH-90000
+            scope.close(); // GH-90000
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Provider Shutdown")
+    @DisplayName("Provider Shutdown [GH-90000]")
     class ProviderShutdownTests {
 
         @Test
-        void shouldShutdownProviderGracefully() {
+        void shouldShutdownProviderGracefully() { // GH-90000
             // Given
-            AepTracingProvider provider = AepTracingProvider.getInstance();
+            AepTracingProvider provider = AepTracingProvider.getInstance(); // GH-90000
 
             // When + Then
-            provider.shutdown();
+            provider.shutdown(); // GH-90000
             // Should not throw, provider should clean resources
 
-            assertThat(provider).isNotNull();
+            assertThat(provider).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Multi-Tenant Isolation")
+    @DisplayName("Multi-Tenant Isolation [GH-90000]")
     class MultiTenantIsolationTests {
 
         @Test
-        void shouldIsolateTenantContexts() {
+        void shouldIsolateTenantContexts() { // GH-90000
             // Given
             String tenant1Id = "tenant-1";
             String tenant2Id = "tenant-2";
             String pipelineId = "isolation-test";
 
             // When
-            Span span1 = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant1Id);
-            String tenant1Context = MDC.get("tenantId");
+            Span span1 = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant1Id); // GH-90000
+            String tenant1Context = MDC.get("tenantId [GH-90000]");
 
             // Reset MDC for second tenant
-            MDC.clear();
+            MDC.clear(); // GH-90000
 
-            Span span2 = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant2Id);
-            String tenant2Context = MDC.get("tenantId");
+            Span span2 = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant2Id); // GH-90000
+            String tenant2Context = MDC.get("tenantId [GH-90000]");
 
             // Then
-            assertThat(tenant1Context).isEqualTo(tenant1Id);
-            assertThat(tenant2Context).isEqualTo(tenant2Id);
-            assertThat(tenant1Context).isNotEqualTo(tenant2Context);
+            assertThat(tenant1Context).isEqualTo(tenant1Id); // GH-90000
+            assertThat(tenant2Context).isEqualTo(tenant2Id); // GH-90000
+            assertThat(tenant1Context).isNotEqualTo(tenant2Context); // GH-90000
 
-            span1.end();
-            span2.end();
-            MDC.clear();
+            span1.end(); // GH-90000
+            span2.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
 
         @Test
-        void shouldPropagateCorrelationIdAcrossTenants() {
+        void shouldPropagateCorrelationIdAcrossTenants() { // GH-90000
             // Given
             String correlationId = "shared-correlation-123";
-            MDC.put("correlationId", correlationId);
+            MDC.put("correlationId", correlationId); // GH-90000
             String tenant1Id = "tenant-1";
             String pipelineId = "correlation-test";
 
             // When
-            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant1Id);
+            Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant1Id); // GH-90000
 
             // Then
-            assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
+            assertThat(MDC.get("correlationId [GH-90000]")).isEqualTo(correlationId);
 
-            span.end();
-            MDC.clear();
+            span.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Tracer and Meter Access")
+    @DisplayName("Tracer and Meter Access [GH-90000]")
     class TracerAndMeterAccessTests {
 
         @Test
-        void shouldProvideTracerAccess() {
+        void shouldProvideTracerAccess() { // GH-90000
             // When
-            var tracer = tracingProvider.getTracer();
+            var tracer = tracingProvider.getTracer(); // GH-90000
 
             // Then
-            assertThat(tracer).isNotNull();
+            assertThat(tracer).isNotNull(); // GH-90000
         }
 
         @Test
-        void shouldProvideMeterAccess() {
+        void shouldProvideMeterAccess() { // GH-90000
             // When
-            var meter = tracingProvider.getMeter();
+            var meter = tracingProvider.getMeter(); // GH-90000
 
             // Then
-            assertThat(meter).isNotNull();
+            assertThat(meter).isNotNull(); // GH-90000
         }
 
         @Test
-        void shouldProvideOpenTelemetryAccess() {
+        void shouldProvideOpenTelemetryAccess() { // GH-90000
             // When
-            var openTelemetry = tracingProvider.getOpenTelemetry();
+            var openTelemetry = tracingProvider.getOpenTelemetry(); // GH-90000
 
             // Then
-            assertThat(openTelemetry).isNotNull();
+            assertThat(openTelemetry).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Concurrent Span Operations")
+    @DisplayName("Concurrent Span Operations [GH-90000]")
     class ConcurrentSpanOperationsTests {
 
         @Test
-        void shouldHandleConcurrentPipelineDeployments() throws InterruptedException {
+        void shouldHandleConcurrentPipelineDeployments() throws InterruptedException { // GH-90000
             // Given
             String[] pipelineIds = {"pipeline-a", "pipeline-b", "pipeline-c"};
             Span[] spans = new Span[3];
 
             // When
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) { // GH-90000
                 final int index = i;
-                spans[i] = tracingProvider.startPipelineDeploymentSpan(pipelineIds[i], "tenant-concurrent");
+                spans[i] = tracingProvider.startPipelineDeploymentSpan(pipelineIds[i], "tenant-concurrent"); // GH-90000
             }
 
             // Then
-            for (Span span : spans) {
-                assertThat(span).isNotNull();
-                span.end();
+            for (Span span : spans) { // GH-90000
+                assertThat(span).isNotNull(); // GH-90000
+                span.end(); // GH-90000
             }
-            MDC.clear();
+            MDC.clear(); // GH-90000
         }
 
         @Test
-        void shouldMaintainContextInConcurrentAgentExecution() throws InterruptedException {
+        void shouldMaintainContextInConcurrentAgentExecution() throws InterruptedException { // GH-90000
             // Given
             String pipelineId = "concurrent-pipeline";
             String tenantId = "concurrent-tenant";
 
             // When
-            Span span1 = tracingProvider.startAgentExecutionSpan("agent-1", pipelineId, tenantId);
-            Span span2 = tracingProvider.startAgentExecutionSpan("agent-2", pipelineId, tenantId);
+            Span span1 = tracingProvider.startAgentExecutionSpan("agent-1", pipelineId, tenantId); // GH-90000
+            Span span2 = tracingProvider.startAgentExecutionSpan("agent-2", pipelineId, tenantId); // GH-90000
 
             // Then
-            assertThat(span1).isNotNull();
-            assertThat(span2).isNotNull();
+            assertThat(span1).isNotNull(); // GH-90000
+            assertThat(span2).isNotNull(); // GH-90000
 
-            span1.end();
-            span2.end();
-            MDC.clear();
+            span1.end(); // GH-90000
+            span2.end(); // GH-90000
+            MDC.clear(); // GH-90000
         }
     }
 }

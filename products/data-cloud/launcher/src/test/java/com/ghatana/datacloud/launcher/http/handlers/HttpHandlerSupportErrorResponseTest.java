@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
@@ -21,13 +21,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("HttpHandlerSupport ErrorResponse Integration")
+@DisplayName("HttpHandlerSupport ErrorResponse Integration [GH-90000]")
 class HttpHandlerSupportErrorResponseTest {
 
     private static final String ORIGIN = "http://localhost:3000";
 
-    private final HttpHandlerSupport support = new HttpHandlerSupport(
-        new ObjectMapper(),
+    private final HttpHandlerSupport support = new HttpHandlerSupport( // GH-90000
+        new ObjectMapper(), // GH-90000
         ORIGIN,
         "GET,POST,PUT,DELETE,OPTIONS",
         "Content-Type,X-Tenant-Id",
@@ -35,77 +35,77 @@ class HttpHandlerSupportErrorResponseTest {
     );
 
     @Test
-    @DisplayName("errorResponse creates ApiResponse with error envelope")
-    void errorResponseCreatesApiResponseWithErrorEnvelope() {
-        HttpResponse response = support.errorResponse(400, "Invalid request");
+    @DisplayName("errorResponse creates ApiResponse with error envelope [GH-90000]")
+    void errorResponseCreatesApiResponseWithErrorEnvelope() { // GH-90000
+        HttpResponse response = support.errorResponse(400, "Invalid request"); // GH-90000
         
-        assertThat(response).isNotNull();
-        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response).isNotNull(); // GH-90000
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("envelopeResponse with ApiResponse preserves error structure")
-    void envelopeResponseWithApiResponsePreservesErrorStructure() {
-        ApiResponse apiResponse = ApiResponse.error("VALIDATION_ERROR", "Invalid input", "test-tenant", "test-request");
-        HttpResponse response = support.envelopeResponse(apiResponse, new ObjectMapper());
+    @DisplayName("envelopeResponse with ApiResponse preserves error structure [GH-90000]")
+    void envelopeResponseWithApiResponsePreservesErrorStructure() { // GH-90000
+        ApiResponse apiResponse = ApiResponse.error("VALIDATION_ERROR", "Invalid input", "test-tenant", "test-request"); // GH-90000
+        HttpResponse response = support.envelopeResponse(apiResponse, new ObjectMapper()); // GH-90000
         
-        assertThat(response).isNotNull();
-        assertThat(response.getCode()).isEqualTo(400);
+        assertThat(response).isNotNull(); // GH-90000
+        assertThat(response.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("errorResponse with custom status code uses provided code")
-    void errorResponseWithCustomStatusCodeUsesProvidedCode() {
-        HttpResponse response = support.errorResponse(404, "Not found");
+    @DisplayName("errorResponse with custom status code uses provided code [GH-90000]")
+    void errorResponseWithCustomStatusCodeUsesProvidedCode() { // GH-90000
+        HttpResponse response = support.errorResponse(404, "Not found"); // GH-90000
         
-        assertThat(response.getCode()).isEqualTo(404);
+        assertThat(response.getCode()).isEqualTo(404); // GH-90000
     }
 
     @Test
-    @DisplayName("errorResponse with 503 uses service unavailable status")
-    void errorResponseWith503UsesServiceUnavailableStatus() {
-        HttpResponse response = support.errorResponse(503, "Service unavailable");
+    @DisplayName("errorResponse with 503 uses service unavailable status [GH-90000]")
+    void errorResponseWith503UsesServiceUnavailableStatus() { // GH-90000
+        HttpResponse response = support.errorResponse(503, "Service unavailable"); // GH-90000
         
-        assertThat(response.getCode()).isEqualTo(503);
+        assertThat(response.getCode()).isEqualTo(503); // GH-90000
     }
 
     @Test
-    @DisplayName("errorResponse with 429 uses rate limit status")
-    void errorResponseWith429UsesRateLimitStatus() {
-        HttpResponse response = support.errorResponse(429, "Rate limit exceeded");
+    @DisplayName("errorResponse with 429 uses rate limit status [GH-90000]")
+    void errorResponseWith429UsesRateLimitStatus() { // GH-90000
+        HttpResponse response = support.errorResponse(429, "Rate limit exceeded"); // GH-90000
         
-        assertThat(response.getCode()).isEqualTo(429);
+        assertThat(response.getCode()).isEqualTo(429); // GH-90000
     }
 
     @Test
-    @DisplayName("errorResponse with 401 uses unauthorized status")
-    void errorResponseWith401UsesUnauthorizedStatus() {
-        HttpResponse response = support.errorResponse(401, "Unauthorized");
+    @DisplayName("errorResponse with 401 uses unauthorized status [GH-90000]")
+    void errorResponseWith401UsesUnauthorizedStatus() { // GH-90000
+        HttpResponse response = support.errorResponse(401, "Unauthorized"); // GH-90000
         
-        assertThat(response.getCode()).isEqualTo(401);
+        assertThat(response.getCode()).isEqualTo(401); // GH-90000
     }
 
     @Test
-    @DisplayName("errorResponse with 403 uses forbidden status")
-    void errorResponseWith403UsesForbiddenStatus() {
-        HttpResponse response = support.errorResponse(403, "Forbidden");
+    @DisplayName("errorResponse with 403 uses forbidden status [GH-90000]")
+    void errorResponseWith403UsesForbiddenStatus() { // GH-90000
+        HttpResponse response = support.errorResponse(403, "Forbidden"); // GH-90000
         
-        assertThat(response.getCode()).isEqualTo(403);
+        assertThat(response.getCode()).isEqualTo(403); // GH-90000
     }
 
     @Test
-    @DisplayName("errorResponse with 409 uses conflict status")
-    void errorResponseWith409UsesConflictStatus() {
-        HttpResponse response = support.errorResponse(409, "Conflict");
+    @DisplayName("errorResponse with 409 uses conflict status [GH-90000]")
+    void errorResponseWith409UsesConflictStatus() { // GH-90000
+        HttpResponse response = support.errorResponse(409, "Conflict"); // GH-90000
         
-        assertThat(response.getCode()).isEqualTo(409);
+        assertThat(response.getCode()).isEqualTo(409); // GH-90000
     }
 
     @Test
-    @DisplayName("errorResponse with 500 uses internal server error status")
-    void errorResponseWith500UsesInternalServerErrorStatus() {
-        HttpResponse response = support.errorResponse(500, "Internal server error");
+    @DisplayName("errorResponse with 500 uses internal server error status [GH-90000]")
+    void errorResponseWith500UsesInternalServerErrorStatus() { // GH-90000
+        HttpResponse response = support.errorResponse(500, "Internal server error"); // GH-90000
         
-        assertThat(response.getCode()).isEqualTo(500);
+        assertThat(response.getCode()).isEqualTo(500); // GH-90000
     }
 }

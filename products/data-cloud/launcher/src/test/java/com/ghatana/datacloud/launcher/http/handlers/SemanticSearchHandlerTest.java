@@ -25,8 +25,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SemanticSearchHandler")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("SemanticSearchHandler [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class SemanticSearchHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -47,31 +47,31 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
     private SemanticSearchHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new SemanticSearchHandler(vectorPlugin, client, http, new ObjectMapper());
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new SemanticSearchHandler(vectorPlugin, client, http, new ObjectMapper()); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("similar-entities rejects missing tenant before vector lookup")
-    void similarEntitiesRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("similar-entities rejects missing tenant before vector lookup [GH-90000]")
+    void similarEntitiesRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleSimilarEntities(request));
+        HttpResponse response = runPromise(() -> handler.handleSimilarEntities(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(vectorPlugin, never()).findSimilar(any(), any(Integer.class), any(Boolean.class), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(vectorPlugin, never()).findSimilar(any(), any(Integer.class), any(Boolean.class), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("collection rag rejects missing tenant before reading body")
-    void collectionRagRejectsMissingTenant() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("collection rag rejects missing tenant before reading body [GH-90000]")
+    void collectionRagRejectsMissingTenant() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleCollectionRag(request));
+        HttpResponse response = runPromise(() -> handler.handleCollectionRag(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
-        verify(vectorPlugin, never()).search(any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
+        verify(vectorPlugin, never()).search(any()); // GH-90000
     }
 }

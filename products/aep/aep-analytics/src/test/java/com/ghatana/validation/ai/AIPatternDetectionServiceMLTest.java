@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.validation.ai;
@@ -39,120 +39,120 @@ import static org.mockito.Mockito.when;
  * @doc.purpose Unit tests for ML-based pattern detection
  * @doc.layer test
  */
-@DisplayName("AI Pattern Detection Service ML Tests")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("AI Pattern Detection Service ML Tests [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class AIPatternDetectionServiceMLTest extends EventloopTestBase {
 
     @Mock
     private LLMGateway llmGateway;
 
     @Test
-    @DisplayName("uses ML when LLM gateway is provided and useML is true")
-    void usesMLWhenGatewayProvided() {
-        Metrics metrics = new Metrics(new SimpleMeterRegistry());
-        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway);
+    @DisplayName("uses ML when LLM gateway is provided and useML is true [GH-90000]")
+    void usesMLWhenGatewayProvided() { // GH-90000
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
+        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway); // GH-90000
 
-        List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true));
+        List<Event> events = createSampleEvents(); // GH-90000
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true)); // GH-90000
 
-        CompletionResult mockResult = CompletionResult.builder()
-            .text("[]")
-            .tokensUsed(10)
-            .promptTokens(5)
-            .completionTokens(5)
-            .finishReason("stop")
-            .modelUsed("gpt-4")
-            .build();
+        CompletionResult mockResult = CompletionResult.builder() // GH-90000
+            .text("[] [GH-90000]")
+            .tokensUsed(10) // GH-90000
+            .promptTokens(5) // GH-90000
+            .completionTokens(5) // GH-90000
+            .finishReason("stop [GH-90000]")
+            .modelUsed("gpt-4 [GH-90000]")
+            .build(); // GH-90000
 
-        when(llmGateway.complete(any(CompletionRequest.class)))
-            .thenReturn(Promise.of(mockResult));
+        when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
+            .thenReturn(Promise.of(mockResult)); // GH-90000
 
-        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config)); // GH-90000
 
-        assertThat(patterns).isNotNull();
+        assertThat(patterns).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("falls back to heuristic when useML is false")
-    void fallsBackToHeuristicWhenUseMLFalse() {
-        Metrics metrics = new Metrics(new SimpleMeterRegistry());
-        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway);
+    @DisplayName("falls back to heuristic when useML is false [GH-90000]")
+    void fallsBackToHeuristicWhenUseMLFalse() { // GH-90000
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
+        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway); // GH-90000
 
-        List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", false));
+        List<Event> events = createSampleEvents(); // GH-90000
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", false)); // GH-90000
 
-        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config)); // GH-90000
 
-        assertThat(patterns).isNotNull();
+        assertThat(patterns).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("falls back to heuristic when LLM gateway is null")
-    void fallsBackToHeuristicWhenGatewayNull() {
-        Metrics metrics = new Metrics(new SimpleMeterRegistry());
-        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, null);
+    @DisplayName("falls back to heuristic when LLM gateway is null [GH-90000]")
+    void fallsBackToHeuristicWhenGatewayNull() { // GH-90000
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
+        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, null); // GH-90000
 
-        List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true));
+        List<Event> events = createSampleEvents(); // GH-90000
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true)); // GH-90000
 
-        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config)); // GH-90000
 
-        assertThat(patterns).isNotNull();
+        assertThat(patterns).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("converts operator spec to detected pattern")
-    void convertsOperatorSpecToDetectedPattern() {
-        Metrics metrics = new Metrics(new SimpleMeterRegistry());
-        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway);
+    @DisplayName("converts operator spec to detected pattern [GH-90000]")
+    void convertsOperatorSpecToDetectedPattern() { // GH-90000
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
+        AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway); // GH-90000
 
-        List<Event> events = createSampleEvents();
-        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true));
+        List<Event> events = createSampleEvents(); // GH-90000
+        PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true)); // GH-90000
 
-        CompletionResult mockResult = CompletionResult.builder()
-            .text("[]")
-            .tokensUsed(10)
-            .promptTokens(5)
-            .completionTokens(5)
-            .finishReason("stop")
-            .modelUsed("gpt-4")
-            .build();
+        CompletionResult mockResult = CompletionResult.builder() // GH-90000
+            .text("[] [GH-90000]")
+            .tokensUsed(10) // GH-90000
+            .promptTokens(5) // GH-90000
+            .completionTokens(5) // GH-90000
+            .finishReason("stop [GH-90000]")
+            .modelUsed("gpt-4 [GH-90000]")
+            .build(); // GH-90000
 
-        when(llmGateway.complete(any(CompletionRequest.class)))
-            .thenReturn(Promise.of(mockResult));
+        when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
+            .thenReturn(Promise.of(mockResult)); // GH-90000
 
-        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config));
+        List<DetectedPattern> patterns = runPromise(() -> service.detectPatterns(events, config)); // GH-90000
 
-        assertThat(patterns).isNotNull();
+        assertThat(patterns).isNotNull(); // GH-90000
     }
 
     /**
      * Creates sample events for testing.
      */
-    private List<Event> createSampleEvents() {
-        return List.of(
-            createEvent("user.login", "event-1"),
-            createEvent("order.created", "event-2"),
-            createEvent("payment.success", "event-3")
+    private List<Event> createSampleEvents() { // GH-90000
+        return List.of( // GH-90000
+            createEvent("user.login", "event-1"), // GH-90000
+            createEvent("order.created", "event-2"), // GH-90000
+            createEvent("payment.success", "event-3") // GH-90000
         );
     }
 
     /**
      * Creates a sample event.
      */
-    private Event createEvent(String type, String id) {
-        return GEvent.builder()
-            .id(EventId.create(id, type, "v1", "test-tenant"))
-            .time(EventTime.now())
-            .stats(EventStats.builder()
-                .withProcessingTimeNanos(0)
-                .withSizeInBytes(16)
-                .withFieldCount(1)
-                .withTagCount(0)
-                .build())
-            .relations(EventRelations.empty())
-            .headers(Map.of())
-            .payload(Map.of("test", "data"))
-            .build();
+    private Event createEvent(String type, String id) { // GH-90000
+        return GEvent.builder() // GH-90000
+            .id(EventId.create(id, type, "v1", "test-tenant")) // GH-90000
+            .time(EventTime.now()) // GH-90000
+            .stats(EventStats.builder() // GH-90000
+                .withProcessingTimeNanos(0) // GH-90000
+                .withSizeInBytes(16) // GH-90000
+                .withFieldCount(1) // GH-90000
+                .withTagCount(0) // GH-90000
+                .build()) // GH-90000
+            .relations(EventRelations.empty()) // GH-90000
+            .headers(Map.of()) // GH-90000
+            .payload(Map.of("test", "data")) // GH-90000
+            .build(); // GH-90000
     }
 }

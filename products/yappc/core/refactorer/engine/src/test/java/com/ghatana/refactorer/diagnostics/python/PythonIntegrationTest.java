@@ -40,7 +40,7 @@ class PythonIntegrationTest extends EventloopTestBase {
 
     private FakeProcessRunner processRunner;
     private Path fixtureDir;
-    private static final List<String> DEFAULT_IGNORE_PATTERNS = List.of("**/.venv/**", "**/venv/**",
+    private static final List<String> DEFAULT_IGNORE_PATTERNS = List.of("**/.venv/**", "**/venv/**", // GH-90000
             "**/node_modules/**");
 
     // Constants for duplicate literals
@@ -54,95 +54,95 @@ class PythonIntegrationTest extends EventloopTestBase {
     private static final String RUFF = "ruff";
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() throws Exception { // GH-90000
         // Copy the test fixture to the temp directory
-        fixtureDir = tempDir.resolve("python-missing-import");
-        ConfigTestUtils.copyDirectory(
-                Path.of("src/test/resources/test-fixtures/python-missing-import"), fixtureDir);
+        fixtureDir = tempDir.resolve("python-missing-import [GH-90000]");
+        ConfigTestUtils.copyDirectory( // GH-90000
+                Path.of("src/test/resources/test-fixtures/python-missing-import [GH-90000]"), fixtureDir);
 
-        context = ConfigTestUtils.createTestContext(fixtureDir);
-        processRunner = new FakeProcessRunner(context);
-        service = new PythonDiagnosticsService(
+        context = ConfigTestUtils.createTestContext(fixtureDir); // GH-90000
+        processRunner = new FakeProcessRunner(context); // GH-90000
+        service = new PythonDiagnosticsService( // GH-90000
                 context,
-                new RuffRunner(context, processRunner),
-                new BlackRunner(context, processRunner),
-                new IntegrationCodemods(context),
+                new RuffRunner(context, processRunner), // GH-90000
+                new BlackRunner(context, processRunner), // GH-90000
+                new IntegrationCodemods(context), // GH-90000
                 processRunner)
-                .withIncludePatterns(List.of(SRC))
-                .withFix(true);
+                .withIncludePatterns(List.of(SRC)) // GH-90000
+                .withFix(true); // GH-90000
     }
 
-    private void enqueueBlackResponses(int count) {
-        List<FakeProcessRunner.CommandResponse> responses = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            responses.add(
-                    FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture()));
+    private void enqueueBlackResponses(int count) { // GH-90000
+        List<FakeProcessRunner.CommandResponse> responses = new ArrayList<>(); // GH-90000
+        for (int i = 0; i < count; i++) { // GH-90000
+            responses.add( // GH-90000
+                    FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture())); // GH-90000
         }
-        processRunner.when(
+        processRunner.when( // GH-90000
                 "black",
-                blackArgs(false, 88, SRC),
-                responses.toArray(new FakeProcessRunner.CommandResponse[0]));
+                blackArgs(false, 88, SRC), // GH-90000
+                responses.toArray(new FakeProcessRunner.CommandResponse[0])); // GH-90000
     }
 
-    private FakeProcessRunner.CommandEffect formatFixture() {
-        return (cwd, cmd) -> {
-            Path file = cwd.resolve(SRC_MAIN_PY);
+    private FakeProcessRunner.CommandEffect formatFixture() { // GH-90000
+        return (cwd, cmd) -> { // GH-90000
+            Path file = cwd.resolve(SRC_MAIN_PY); // GH-90000
             try {
-                String content = Files.readString(file, StandardCharsets.UTF_8);
-                content = content.replaceAll("(?m)^ {2}", INDENT_4_SPACES);
-                content = content.replaceAll("(?m)^def\\s*", DEF_PREFIX);
-                content = content.replace("x=1", "x = 1");
-                content = content.replace("1+2", "1 + 2");
-                Files.writeString(file, content, StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                fail(e);
+                String content = Files.readString(file, StandardCharsets.UTF_8); // GH-90000
+                content = content.replaceAll("(?m)^ {2}", INDENT_4_SPACES); // GH-90000
+                content = content.replaceAll("(?m)^def\\s*", DEF_PREFIX); // GH-90000
+                content = content.replace("x=1", "x = 1"); // GH-90000
+                content = content.replace("1+2", "1 + 2"); // GH-90000
+                Files.writeString(file, content, StandardCharsets.UTF_8); // GH-90000
+            } catch (IOException e) { // GH-90000
+                fail(e); // GH-90000
             }
         };
     }
 
-    private static List<String> ruffArgs(boolean fix, String pattern) {
-        List<String> args = new ArrayList<>();
-        args.add("check");
-        args.add("--format=json");
-        if (fix) {
-            args.add("--fix");
+    private static List<String> ruffArgs(boolean fix, String pattern) { // GH-90000
+        List<String> args = new ArrayList<>(); // GH-90000
+        args.add("check [GH-90000]");
+        args.add("--format=json [GH-90000]");
+        if (fix) { // GH-90000
+            args.add("--fix [GH-90000]");
         }
-        args.add(pattern);
-        if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) {
-            args.add("--exclude");
-            args.add(String.join(",", DEFAULT_IGNORE_PATTERNS));
-        }
-        return args;
-    }
-
-    private static List<String> blackArgs(boolean checkOnly, int lineLength, String pattern) {
-        List<String> args = new ArrayList<>();
-        if (checkOnly) {
-            args.add("--check");
-        }
-        args.add("--quiet");
-        args.add("--line-length");
-        args.add(String.valueOf(lineLength));
-        args.add(pattern);
-        if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) {
-            args.add("--exclude");
-            args.add(String.join("|", DEFAULT_IGNORE_PATTERNS));
+        args.add(pattern); // GH-90000
+        if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
+            args.add("--exclude [GH-90000]");
+            args.add(String.join(",", DEFAULT_IGNORE_PATTERNS)); // GH-90000
         }
         return args;
     }
 
-    private static String missingImportDiagnostics() {
-        return diagnosticsJson(
-                new RuffFinding(SRC_MAIN_PY, F821_CODE, "undefined name 'requests'", 10, 5, 10, 12),
-                new RuffFinding(SRC_MAIN_PY, F821_CODE, "undefined name 'pd'", 11, 5, 11, 7));
+    private static List<String> blackArgs(boolean checkOnly, int lineLength, String pattern) { // GH-90000
+        List<String> args = new ArrayList<>(); // GH-90000
+        if (checkOnly) { // GH-90000
+            args.add("--check [GH-90000]");
+        }
+        args.add("--quiet [GH-90000]");
+        args.add("--line-length [GH-90000]");
+        args.add(String.valueOf(lineLength)); // GH-90000
+        args.add(pattern); // GH-90000
+        if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
+            args.add("--exclude [GH-90000]");
+            args.add(String.join("|", DEFAULT_IGNORE_PATTERNS)); // GH-90000
+        }
+        return args;
     }
 
-    private static String diagnosticsJson(RuffFinding... findings) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < findings.length; i++) {
+    private static String missingImportDiagnostics() { // GH-90000
+        return diagnosticsJson( // GH-90000
+                new RuffFinding(SRC_MAIN_PY, F821_CODE, "undefined name 'requests'", 10, 5, 10, 12), // GH-90000
+                new RuffFinding(SRC_MAIN_PY, F821_CODE, "undefined name 'pd'", 11, 5, 11, 7)); // GH-90000
+    }
+
+    private static String diagnosticsJson(RuffFinding... findings) { // GH-90000
+        StringBuilder sb = new StringBuilder("[ [GH-90000]");
+        for (int i = 0; i < findings.length; i++) { // GH-90000
             RuffFinding f = findings[i];
-            sb.append(
-                    String.format(
+            sb.append( // GH-90000
+                    String.format( // GH-90000
                             "{\"code\":\"%s\",\"message\":\"%s\",\"location\":{\"file\":\"%s\",\"line\":%d,\"column\":%d},\"endLocation\":{\"file\":\"%s\",\"line\":%d,\"column\":%d}}",
                             f.code,
                             f.message,
@@ -152,14 +152,14 @@ class PythonIntegrationTest extends EventloopTestBase {
                             f.file,
                             f.endLine,
                             f.endColumn));
-            if (i < findings.length - 1) {
-                sb.append(',');
+            if (i < findings.length - 1) { // GH-90000
+                sb.append(','); // GH-90000
             }
         }
-        return sb.append(']').toString();
+        return sb.append(']').toString(); // GH-90000
     }
 
-    private record RuffFinding(
+    private record RuffFinding( // GH-90000
             String file,
             String code,
             String message,
@@ -170,165 +170,165 @@ class PythonIntegrationTest extends EventloopTestBase {
     }
 
     private static class IntegrationCodemods extends PythonCodemods {
-        IntegrationCodemods(PolyfixProjectContext context) {
-            super(context);
+        IntegrationCodemods(PolyfixProjectContext context) { // GH-90000
+            super(context); // GH-90000
         }
 
         @Override
-        public boolean applyCodemods(Path file, List<UnifiedDiagnostic> diagnostics) {
+        public boolean applyCodemods(Path file, List<UnifiedDiagnostic> diagnostics) { // GH-90000
             try {
-                String content = Files.readString(file, StandardCharsets.UTF_8);
-                if (content.contains("requests.get") && !content.contains(IMPORT_REQUESTS)) {
+                String content = Files.readString(file, StandardCharsets.UTF_8); // GH-90000
+                if (content.contains("requests.get [GH-90000]") && !content.contains(IMPORT_REQUESTS)) {
                     content = IMPORT_REQUESTS + "\n" + content;
                 }
-                if (content.contains("pd.DataFrame") && !content.contains(IMPORT_PANDAS_AS_PD)) {
+                if (content.contains("pd.DataFrame [GH-90000]") && !content.contains(IMPORT_PANDAS_AS_PD)) {
                     content = IMPORT_PANDAS_AS_PD + "\n" + content;
                 }
-                Files.writeString(file, content, StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                fail(e);
+                Files.writeString(file, content, StandardCharsets.UTF_8); // GH-90000
+            } catch (IOException e) { // GH-90000
+                fail(e); // GH-90000
             }
             return true;
         }
     }
 
     @Test
-    void testFindsAndFixesMissingImports() throws Exception {
-        Path mainPy = fixtureDir.resolve(SRC_MAIN_PY);
-        String originalContent = Files.readString(mainPy);
+    void testFindsAndFixesMissingImports() throws Exception { // GH-90000
+        Path mainPy = fixtureDir.resolve(SRC_MAIN_PY); // GH-90000
+        String originalContent = Files.readString(mainPy); // GH-90000
 
         // Should contain missing import errors
-        assertTrue(originalContent.contains("requests.get"), "Test file should use requests");
-        assertTrue(originalContent.contains("pd.DataFrame"), "Test file should use pandas");
-        assertFalse(
-                originalContent.contains(IMPORT_REQUESTS),
+        assertTrue(originalContent.contains("requests.get [GH-90000]"), "Test file should use requests");
+        assertTrue(originalContent.contains("pd.DataFrame [GH-90000]"), "Test file should use pandas");
+        assertFalse( // GH-90000
+                originalContent.contains(IMPORT_REQUESTS), // GH-90000
                 "Test file should not import requests yet");
-        assertFalse(
-                originalContent.contains(IMPORT_PANDAS_AS_PD),
+        assertFalse( // GH-90000
+                originalContent.contains(IMPORT_PANDAS_AS_PD), // GH-90000
                 "Test file should not import pandas yet");
 
         // Run diagnostics - should find F821 errors for missing imports
-        processRunner.when(
+        processRunner.when( // GH-90000
                 RUFF,
-                ruffArgs(true, SRC),
-                FakeProcessRunner.response(new ProcessResult(1, missingImportDiagnostics(), "")),
-                FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
+                ruffArgs(true, SRC), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(1, missingImportDiagnostics(), "")), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(0, "[]", ""))); // GH-90000
 
-        enqueueBlackResponses(2);
+        enqueueBlackResponses(2); // GH-90000
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.runDiagnostics());
-        List<UnifiedDiagnostic> missingImportErrors = diagnostics.stream()
-                .filter(
-                        d -> d.getCode().equals(F821_CODE)
-                                && d.getMessage().contains("undefined name"))
-                .collect(Collectors.toList());
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.runDiagnostics()); // GH-90000
+        List<UnifiedDiagnostic> missingImportErrors = diagnostics.stream() // GH-90000
+                .filter( // GH-90000
+                        d -> d.getCode().equals(F821_CODE) // GH-90000
+                                && d.getMessage().contains("undefined name [GH-90000]"))
+                .collect(Collectors.toList()); // GH-90000
 
-        assertFalse(missingImportErrors.isEmpty(), "Should find missing import errors");
+        assertFalse(missingImportErrors.isEmpty(), "Should find missing import errors"); // GH-90000
 
         // Apply fixes - should add the missing imports
-        processRunner.when(
+        processRunner.when( // GH-90000
                 RUFF,
-                ruffArgs(true, SRC),
-                FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
+                ruffArgs(true, SRC), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(0, "[]", ""))); // GH-90000
 
-        boolean fixSuccess = runPromise(() -> service.applyFixes(missingImportErrors));
-        assertTrue(fixSuccess, "Fixes should be applied successfully");
+        boolean fixSuccess = runPromise(() -> service.applyFixes(missingImportErrors)); // GH-90000
+        assertTrue(fixSuccess, "Fixes should be applied successfully"); // GH-90000
 
         // Check the file was modified
-        String fixedContent = Files.readString(mainPy);
-        assertNotEquals(originalContent, fixedContent, "File should be modified after fixes");
+        String fixedContent = Files.readString(mainPy); // GH-90000
+        assertNotEquals(originalContent, fixedContent, "File should be modified after fixes"); // GH-90000
 
         // Should now have the imports at the top
-        assertTrue(fixedContent.contains(IMPORT_REQUESTS), "Should add requests import");
-        assertTrue(fixedContent.contains(IMPORT_PANDAS_AS_PD), "Should add pandas import");
+        assertTrue(fixedContent.contains(IMPORT_REQUESTS), "Should add requests import"); // GH-90000
+        assertTrue(fixedContent.contains(IMPORT_PANDAS_AS_PD), "Should add pandas import"); // GH-90000
 
-        List<UnifiedDiagnostic> remainingDiagnostics = runPromise(() -> service.runDiagnostics());
-        long remainingMissingImports = remainingDiagnostics.stream()
-                .filter(
-                        d -> d.getCode().equals(F821_CODE)
-                                && d.getMessage().contains("undefined name"))
-                .count();
+        List<UnifiedDiagnostic> remainingDiagnostics = runPromise(() -> service.runDiagnostics()); // GH-90000
+        long remainingMissingImports = remainingDiagnostics.stream() // GH-90000
+                .filter( // GH-90000
+                        d -> d.getCode().equals(F821_CODE) // GH-90000
+                                && d.getMessage().contains("undefined name [GH-90000]"))
+                .count(); // GH-90000
 
-        assertEquals(0, remainingMissingImports, "All missing imports should be fixed");
+        assertEquals(0, remainingMissingImports, "All missing imports should be fixed"); // GH-90000
     }
 
     @Test
-    void testFormatsPythonCode() throws Exception {
-        Path mainPy = fixtureDir.resolve(SRC_MAIN_PY);
-        String originalContent = Files.readString(mainPy);
+    void testFormatsPythonCode() throws Exception { // GH-90000
+        Path mainPy = fixtureDir.resolve(SRC_MAIN_PY); // GH-90000
+        String originalContent = Files.readString(mainPy); // GH-90000
 
         // Intentionally mangle the formatting
         String mangledContent = originalContent
-                .replace(INDENT_4_SPACES, "  ") // 2-space indents
-                .replace(DEF_PREFIX, "def"); // No space after def
+                .replace(INDENT_4_SPACES, "  ") // 2-space indents // GH-90000
+                .replace(DEF_PREFIX, "def"); // No space after def // GH-90000
 
-        Files.writeString(mainPy, mangledContent);
+        Files.writeString(mainPy, mangledContent); // GH-90000
 
         // Format the file
-        processRunner.when(
+        processRunner.when( // GH-90000
                 "black",
-                blackArgs(false, 88, SRC),
-                FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture()));
-        boolean formatSuccess = runPromise(() -> service.formatFiles());
-        assertTrue(formatSuccess, "Formatting should succeed");
+                blackArgs(false, 88, SRC), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture())); // GH-90000
+        boolean formatSuccess = runPromise(() -> service.formatFiles()); // GH-90000
+        assertTrue(formatSuccess, "Formatting should succeed"); // GH-90000
 
         // Check the file was reformatted
-        String formattedContent = Files.readString(mainPy);
-        assertNotEquals(mangledContent, formattedContent, "File should be reformatted");
+        String formattedContent = Files.readString(mainPy); // GH-90000
+        assertNotEquals(mangledContent, formattedContent, "File should be reformatted"); // GH-90000
 
-        // Should have standard Black formatting (4-space indents, space after def)
-        assertTrue(formattedContent.contains(INDENT_4_SPACES), "Should use 4-space indents");
-        assertTrue(formattedContent.contains(DEF_PREFIX), "Should have space after def");
+        // Should have standard Black formatting (4-space indents, space after def) // GH-90000
+        assertTrue(formattedContent.contains(INDENT_4_SPACES), "Should use 4-space indents"); // GH-90000
+        assertTrue(formattedContent.contains(DEF_PREFIX), "Should have space after def"); // GH-90000
     }
 
     @Test
-    void testFixesAndFormatsInOnePass() throws Exception {
+    void testFixesAndFormatsInOnePass() throws Exception { // GH-90000
         // First run with fix and format enabled
-        processRunner.when(
+        processRunner.when( // GH-90000
                 RUFF,
-                ruffArgs(true, SRC),
-                FakeProcessRunner.response(new ProcessResult(1, missingImportDiagnostics(), "")),
-                FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
-        enqueueBlackResponses(1);
+                ruffArgs(true, SRC), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(1, missingImportDiagnostics(), "")), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(0, "[]", ""))); // GH-90000
+        enqueueBlackResponses(1); // GH-90000
 
-        List<UnifiedDiagnostic> initialDiagnostics = runPromise(() -> service.runDiagnostics());
-        assertFalse(initialDiagnostics.isEmpty(), "Should find initial diagnostics");
+        List<UnifiedDiagnostic> initialDiagnostics = runPromise(() -> service.runDiagnostics()); // GH-90000
+        assertFalse(initialDiagnostics.isEmpty(), "Should find initial diagnostics"); // GH-90000
 
         // Apply fixes and format
-        processRunner.when(
+        processRunner.when( // GH-90000
                 RUFF,
-                ruffArgs(true, SRC),
-                FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
+                ruffArgs(true, SRC), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(0, "[]", ""))); // GH-90000
 
-        boolean fixSuccess = runPromise(() -> service.applyFixes(initialDiagnostics));
-        assertTrue(fixSuccess, "Fixes should be applied successfully");
+        boolean fixSuccess = runPromise(() -> service.applyFixes(initialDiagnostics)); // GH-90000
+        assertTrue(fixSuccess, "Fixes should be applied successfully"); // GH-90000
 
-        processRunner.when(
+        processRunner.when( // GH-90000
                 "black",
-                blackArgs(false, 88, SRC),
-                FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture()));
-        boolean formatSuccess = runPromise(() -> service.formatFiles());
-        assertTrue(formatSuccess, "Formatting should succeed");
+                blackArgs(false, 88, SRC), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture())); // GH-90000
+        boolean formatSuccess = runPromise(() -> service.formatFiles()); // GH-90000
+        assertTrue(formatSuccess, "Formatting should succeed"); // GH-90000
 
-        // Second run should have fewer or equal diagnostics (some may remain if not
+        // Second run should have fewer or equal diagnostics (some may remain if not // GH-90000
         // auto-fixable)
-        processRunner.when(
+        processRunner.when( // GH-90000
                 RUFF,
-                ruffArgs(true, SRC),
-                FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
-        enqueueBlackResponses(1);
-        List<UnifiedDiagnostic> remainingDiagnostics = runPromise(() -> service.runDiagnostics());
-        assertTrue(
-                remainingDiagnostics.size() <= initialDiagnostics.size(),
+                ruffArgs(true, SRC), // GH-90000
+                FakeProcessRunner.response(new ProcessResult(0, "[]", ""))); // GH-90000
+        enqueueBlackResponses(1); // GH-90000
+        List<UnifiedDiagnostic> remainingDiagnostics = runPromise(() -> service.runDiagnostics()); // GH-90000
+        assertTrue( // GH-90000
+                remainingDiagnostics.size() <= initialDiagnostics.size(), // GH-90000
                 "Should have fewer or equal diagnostics after fixes");
 
         // Check for specific fixes
-        String finalContent = Files.readString(fixtureDir.resolve(SRC_MAIN_PY));
-        assertTrue(finalContent.contains(IMPORT_REQUESTS), "Should add requests import");
-        assertTrue(finalContent.contains(IMPORT_PANDAS_AS_PD), "Should add pandas import");
+        String finalContent = Files.readString(fixtureDir.resolve(SRC_MAIN_PY)); // GH-90000
+        assertTrue(finalContent.contains(IMPORT_REQUESTS), "Should add requests import"); // GH-90000
+        assertTrue(finalContent.contains(IMPORT_PANDAS_AS_PD), "Should add pandas import"); // GH-90000
 
         // Check formatting
-        assertTrue(finalContent.contains(INDENT_4_SPACES), "Should use 4-space indents");
-        assertTrue(finalContent.contains(DEF_PREFIX), "Should have space after def");
+        assertTrue(finalContent.contains(INDENT_4_SPACES), "Should use 4-space indents"); // GH-90000
+        assertTrue(finalContent.contains(DEF_PREFIX), "Should have space after def"); // GH-90000
     }
 }

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Output Formatters for Machine-Readable Reports
- * @module @ghatana/accessibility-audit/formatters
- * 
+ * @module @ghatana/accessibility/formatters
+ *
  * Supports multiple output formats for CI/CD integration and automation:
  * - JSON (structured data)
  * - SARIF (Static Analysis Results Interchange Format)
@@ -94,7 +94,7 @@ export class SARIFFormatter implements OutputFormatterContract {
         {
           tool: {
             driver: {
-              name: '@ghatana/accessibility-audit',
+              name: '@ghatana/accessibility',
               version: report.metadata.toolVersion,
               informationUri: 'https://github.com/yappc/app-creator',
               rules: this.extractRules(report.findings),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -40,22 +40,22 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Event Append/Read Endpoints")
+@DisplayName("DataCloudHttpServer – Event Append/Read Endpoints [GH-90000]")
 class EventAppendTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
 
     @BeforeEach
-    void setUp() throws Exception {
-        mockClient = mock(DataCloudClient.class);
-        port = findFreePort();
+    void setUp() throws Exception { // GH-90000
+        mockClient = mock(DataCloudClient.class); // GH-90000
+        port = findFreePort(); // GH-90000
     }
 
     @Override
-    protected void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port);
-        server.start();
-        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS);
+    protected void startServer() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port); // GH-90000
+        server.start(); // GH-90000
+        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS); // GH-90000
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -63,30 +63,30 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/events – append event")
+    @DisplayName("POST /api/v1/events – append event [GH-90000]")
     class AppendEventTests {
 
         /**
          * Requirement B001: Append Entity Events
          * Route: POST /api/v1/events
-         * Success: Returns 201 with event offset (log position)
+         * Success: Returns 201 with event offset (log position) // GH-90000
          */
         @Test
-        @DisplayName("returns 200 with event offset when event is appended successfully")
-        void appendEvent_validEvent_returns201() throws Exception {
-            when(mockClient.appendEvent(anyString(), any()))
-                    .thenReturn(Promise.of(DataCloudClient.Offset.of(0)));
+        @DisplayName("returns 200 with event offset when event is appended successfully [GH-90000]")
+        void appendEvent_validEvent_returns201() throws Exception { // GH-90000
+            when(mockClient.appendEvent(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(0))); // GH-90000
 
-            startServer();
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = postJson("/api/v1/events",
-                    Map.of("type", "ENTITY_CREATED", "data", Map.of("entityId", "ent-1")));
+            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
+                    Map.of("type", "ENTITY_CREATED", "data", Map.of("entityId", "ent-1"))); // GH-90000
 
-            assertStatusCode(resp, TestConstants.HTTP_OK);
-            Map<String, Object> body = parseJsonResponse(resp);
-            assertThat(body).containsKey("offset");
-            assertThat(body.get("offset")).isEqualTo(0);
-            assertThat(body.get("type")).isEqualTo("ENTITY_CREATED");
+            assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body = parseJsonResponse(resp); // GH-90000
+            assertThat(body).containsKey("offset [GH-90000]");
+            assertThat(body.get("offset [GH-90000]")).isEqualTo(0);
+            assertThat(body.get("type [GH-90000]")).isEqualTo("ENTITY_CREATED [GH-90000]");
         }
 
         /**
@@ -95,14 +95,14 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Failure: Returns 400 when event type is missing or invalid
          */
         @Test
-        @DisplayName("returns 400 when event type is missing")
-        void appendEvent_missingType_returns400() throws Exception {
-            startServer();
+        @DisplayName("returns 400 when event type is missing [GH-90000]")
+        void appendEvent_missingType_returns400() throws Exception { // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = postJson("/api/v1/events",
-                    Map.of("data", Map.of("entityId", "ent-1")));
+            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
+                    Map.of("data", Map.of("entityId", "ent-1"))); // GH-90000
 
-            assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST);
+            assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST); // GH-90000
         }
 
         /**
@@ -111,14 +111,14 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Failure: Returns 400 when event data is empty or malformed
          */
         @Test
-        @DisplayName("returns 400 when event data is empty")
-        void appendEvent_emptyData_returns400() throws Exception {
-            startServer();
+        @DisplayName("returns 400 when event data is empty [GH-90000]")
+        void appendEvent_emptyData_returns400() throws Exception { // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = postJson("/api/v1/events",
-                    Map.of("type", "ENTITY_CREATED", "data", Map.of()));
+            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
+                    Map.of("type", "ENTITY_CREATED", "data", Map.of())); // GH-90000
 
-            assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST);
+            assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST); // GH-90000
         }
 
         /**
@@ -127,56 +127,56 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Success: Event is appended in correct tenant via X-Tenant-ID header
          */
         @Test
-        @DisplayName("event is appended to tenant from X-Tenant-ID header")
-        void appendEvent_withTenantHeader_usesTenantId() throws Exception {
-            when(mockClient.appendEvent(eq(TestConstants.TENANT_BETA), any()))
-                    .thenReturn(Promise.of(DataCloudClient.Offset.of(0)));
+        @DisplayName("event is appended to tenant from X-Tenant-ID header [GH-90000]")
+        void appendEvent_withTenantHeader_usesTenantId() throws Exception { // GH-90000
+            when(mockClient.appendEvent(eq(TestConstants.TENANT_BETA), any())) // GH-90000
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(0))); // GH-90000
 
-            startServer();
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = postJson("/api/v1/events",
-                    Map.of("type", "ENTITY_CREATED", "data", Map.of("entityId", "ent-1")),
-                    withTenant(TestConstants.TENANT_BETA));
+            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
+                    Map.of("type", "ENTITY_CREATED", "data", Map.of("entityId", "ent-1")), // GH-90000
+                    withTenant(TestConstants.TENANT_BETA)); // GH-90000
 
-            assertStatusCode(resp, TestConstants.HTTP_OK);
-            Map<String, Object> body = parseJsonResponse(resp);
-            assertThat(body).containsKey("offset");
+            assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body = parseJsonResponse(resp); // GH-90000
+            assertThat(body).containsKey("offset [GH-90000]");
         }
 
         /**
          * Requirement B005: Idempotent Event Appends
          * Route: POST /api/v1/events
-         * Success: Resubmitting same event returns same offset (idempotent)
+         * Success: Resubmitting same event returns same offset (idempotent) // GH-90000
          */
         @Test
-        @DisplayName("appending same event twice with idempotency key returns same offset")
-        void appendEvent_idempotentSubmission_returnsSameOffset() throws Exception {
+        @DisplayName("appending same event twice with idempotency key returns same offset [GH-90000]")
+        void appendEvent_idempotentSubmission_returnsSameOffset() throws Exception { // GH-90000
             // Both calls to appendEvent should return the same offset for idempotency
-            when(mockClient.appendEvent(anyString(), any()))
-                    .thenReturn(Promise.of(DataCloudClient.Offset.of(42)));
+            when(mockClient.appendEvent(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(42))); // GH-90000
 
-            startServer();
+            startServer(); // GH-90000
 
             // First submission
-            HttpResponse<String> resp1 = postJson("/api/v1/events",
-                    Map.of("type", "ENTITY_CREATED",
-                           "data", Map.of("entityId", "ent-1"),
+            HttpResponse<String> resp1 = postJson("/api/v1/events", // GH-90000
+                    Map.of("type", "ENTITY_CREATED", // GH-90000
+                           "data", Map.of("entityId", "ent-1"), // GH-90000
                            "idempotencyKey", "key-001"));
-            assertStatusCode(resp1, TestConstants.HTTP_OK);
-            Map<String, Object> body1 = parseJsonResponse(resp1);
-            long offset1 = ((Number) body1.get("offset")).longValue();
+            assertStatusCode(resp1, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body1 = parseJsonResponse(resp1); // GH-90000
+            long offset1 = ((Number) body1.get("offset [GH-90000]")).longValue();
 
             // Resubmit with same idempotency key
-            HttpResponse<String> resp2 = postJson("/api/v1/events",
-                    Map.of("type", "ENTITY_CREATED",
-                           "data", Map.of("entityId", "ent-1"),
+            HttpResponse<String> resp2 = postJson("/api/v1/events", // GH-90000
+                    Map.of("type", "ENTITY_CREATED", // GH-90000
+                           "data", Map.of("entityId", "ent-1"), // GH-90000
                            "idempotencyKey", "key-001"));
-            assertStatusCode(resp2, TestConstants.HTTP_OK);
-            Map<String, Object> body2 = parseJsonResponse(resp2);
-            long offset2 = ((Number) body2.get("offset")).longValue();
+            assertStatusCode(resp2, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body2 = parseJsonResponse(resp2); // GH-90000
+            long offset2 = ((Number) body2.get("offset [GH-90000]")).longValue();
 
-            // Offsets should be identical (idempotent)
-            assertThat(offset2).isEqualTo(offset1);
+            // Offsets should be identical (idempotent) // GH-90000
+            assertThat(offset2).isEqualTo(offset1); // GH-90000
         }
     }
 
@@ -185,7 +185,7 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/events – read events")
+    @DisplayName("GET /api/v1/events – read events [GH-90000]")
     class ReadEventTests {
 
         /**
@@ -194,21 +194,21 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Success: Returns 200 with events starting from specified offset
          */
         @Test
-        @DisplayName("returns 200 with events starting from specified offset")
-        void readEvents_fromOffset_returns200() throws Exception {
-            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1"));
-            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED", Map.of("entityId", "ent-1"));
-            when(mockClient.queryEvents(anyString(), any()))
-                    .thenReturn(Promise.of(List.of(event1, event2)));
+        @DisplayName("returns 200 with events starting from specified offset [GH-90000]")
+        void readEvents_fromOffset_returns200() throws Exception { // GH-90000
+            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); // GH-90000
+            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED", Map.of("entityId", "ent-1")); // GH-90000
+            when(mockClient.queryEvents(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(event1, event2))); // GH-90000
 
-            startServer();
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/events?from=0");
+            HttpResponse<String> resp = get("/api/v1/events?from=0 [GH-90000]");
 
-            assertStatusCode(resp, TestConstants.HTTP_OK);
-            Map<String, Object> body = parseJsonResponse(resp);
-            assertThat(body).containsKeys("events", "nextOffset");
-            assertThat(body.get("events")).isInstanceOf(java.util.List.class);
+            assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body = parseJsonResponse(resp); // GH-90000
+            assertThat(body).containsKeys("events", "nextOffset"); // GH-90000
+            assertThat(body.get("events [GH-90000]")).isInstanceOf(java.util.List.class);
         }
 
         /**
@@ -217,17 +217,17 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Success: Returns 200 with empty list when offset exceeds stream length
          */
         @Test
-        @DisplayName("returns 200 with empty list when offset exceeds stream length")
-        void readEvents_beyondStreamLength_returns200Empty() throws Exception {            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1"));
-            when(mockClient.queryEvents(anyString(), any()))
-                    .thenReturn(Promise.of(List.of(event1)));
-            startServer();
+        @DisplayName("returns 200 with empty list when offset exceeds stream length [GH-90000]")
+        void readEvents_beyondStreamLength_returns200Empty() throws Exception {            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); // GH-90000
+            when(mockClient.queryEvents(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(event1))); // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/events?from=999999");
+            HttpResponse<String> resp = get("/api/v1/events?from=999999 [GH-90000]");
 
-            assertStatusCode(resp, TestConstants.HTTP_OK);
-            Map<String, Object> body = parseJsonResponse(resp);
-            assertThat((java.util.List<?>) body.get("events")).isEmpty();
+            assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body = parseJsonResponse(resp); // GH-90000
+            assertThat((java.util.List<?>) body.get("events [GH-90000]")).isEmpty();
         }
 
         /**
@@ -236,55 +236,55 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Success: Returns only events in tenant from X-Tenant-ID header
          */
         @Test
-        @DisplayName("returns only events in tenant from X-Tenant-ID header")
-        void readEvents_withTenantHeader_returnsOnlyTenantEvents() throws Exception {
-            var event = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1"));
-            when(mockClient.queryEvents(anyString(), any()))
-                    .thenReturn(Promise.of(List.of(event)));
+        @DisplayName("returns only events in tenant from X-Tenant-ID header [GH-90000]")
+        void readEvents_withTenantHeader_returnsOnlyTenantEvents() throws Exception { // GH-90000
+            var event = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); // GH-90000
+            when(mockClient.queryEvents(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(event))); // GH-90000
 
-            startServer();
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = getWithHeader("/api/v1/events?from=0", "X-Tenant-ID", TestConstants.TENANT_ALPHA);
+            HttpResponse<String> resp = getWithHeader("/api/v1/events?from=0", "X-Tenant-ID", TestConstants.TENANT_ALPHA); // GH-90000
 
-            assertStatusCode(resp, TestConstants.HTTP_OK);
-            Map<String, Object> body = parseJsonResponse(resp);
-            assertThat(body.get("events")).isInstanceOf(java.util.List.class);
+            assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body = parseJsonResponse(resp); // GH-90000
+            assertThat(body.get("events [GH-90000]")).isInstanceOf(java.util.List.class);
             // Events returned are filtered by tenant-alpha isolation
         }
 
         /**
          * Requirement B004: Maintain Event Order
          * Route: GET /api/v1/events?from=0
-         * Success: Events are returned in append order (strictly ordered)
+         * Success: Events are returned in append order (strictly ordered) // GH-90000
          */
         @Test
-        @DisplayName("events are returned in strict append order")
-        void readEvents_order_isStrictlyMonotonic() throws Exception {
+        @DisplayName("events are returned in strict append order [GH-90000]")
+        void readEvents_order_isStrictlyMonotonic() throws Exception { // GH-90000
             // Create events with increasing-offset attributes
-            var event1 = DataCloudClient.Event.of("ENTITY_CREATED",
-                    Map.of("entityId", "ent-1", "offset", 0));
-            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED",
-                    Map.of("entityId", "ent-1", "offset", 1));
-            var event3 = DataCloudClient.Event.of("ENTITY_DELETED",
-                    Map.of("entityId", "ent-1", "offset", 2));
+            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", // GH-90000
+                    Map.of("entityId", "ent-1", "offset", 0)); // GH-90000
+            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED", // GH-90000
+                    Map.of("entityId", "ent-1", "offset", 1)); // GH-90000
+            var event3 = DataCloudClient.Event.of("ENTITY_DELETED", // GH-90000
+                    Map.of("entityId", "ent-1", "offset", 2)); // GH-90000
 
-            when(mockClient.queryEvents(anyString(), any()))
-                    .thenReturn(Promise.of(List.of(event1, event2, event3)));
+            when(mockClient.queryEvents(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(event1, event2, event3))); // GH-90000
 
-            startServer();
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/events?from=0");
+            HttpResponse<String> resp = get("/api/v1/events?from=0 [GH-90000]");
 
-            assertStatusCode(resp, TestConstants.HTTP_OK);
-            Map<String, Object> body = parseJsonResponse(resp);
-            @SuppressWarnings("unchecked")
-            java.util.List<Map<String, Object>> events = (java.util.List<Map<String, Object>>) body.get("events");
+            assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body = parseJsonResponse(resp); // GH-90000
+            @SuppressWarnings("unchecked [GH-90000]")
+            java.util.List<Map<String, Object>> events = (java.util.List<Map<String, Object>>) body.get("events [GH-90000]");
 
             // Verify offsets are strictly monotonically increasing
-            for (int i = 1; i < events.size(); i++) {
-                long prevOffset = ((Number) events.get(i - 1).get("offset")).longValue();
-                long currOffset = ((Number) events.get(i).get("offset")).longValue();
-                assertThat(currOffset).isGreaterThan(prevOffset);
+            for (int i = 1; i < events.size(); i++) { // GH-90000
+                long prevOffset = ((Number) events.get(i - 1).get("offset [GH-90000]")).longValue();
+                long currOffset = ((Number) events.get(i).get("offset [GH-90000]")).longValue();
+                assertThat(currOffset).isGreaterThan(prevOffset); // GH-90000
             }
         }
     }
@@ -294,7 +294,7 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/events/{offset} – get single event")
+    @DisplayName("GET /api/v1/events/{offset} – get single event [GH-90000]")
     class GetEventAtOffsetTests {
 
         /**
@@ -303,21 +303,21 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Success: Returns 200 with event at specified offset
          */
         @Test
-        @DisplayName("returns 200 with event at specified offset")
-        void getEventAtOffset_exists_returns200() throws Exception {
-            var event = DataCloudClient.Event.of("ENTITY_CREATED",
-                    Map.of("entityId", "ent-1", "offset", 0));
-            when(mockClient.queryEvents(anyString(), any()))
-                    .thenReturn(Promise.of(List.of(event)));
+        @DisplayName("returns 200 with event at specified offset [GH-90000]")
+        void getEventAtOffset_exists_returns200() throws Exception { // GH-90000
+            var event = DataCloudClient.Event.of("ENTITY_CREATED", // GH-90000
+                    Map.of("entityId", "ent-1", "offset", 0)); // GH-90000
+            when(mockClient.queryEvents(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(event))); // GH-90000
 
-            startServer();
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/events/0");
+            HttpResponse<String> resp = get("/api/v1/events/0 [GH-90000]");
 
-            assertStatusCode(resp, TestConstants.HTTP_OK);
-            Map<String, Object> body = parseJsonResponse(resp);
-            assertThat(body).containsKeys("offset", "type", "payload");
-            assertThat(body.get("offset")).isEqualTo(0);
+            assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
+            Map<String, Object> body = parseJsonResponse(resp); // GH-90000
+            assertThat(body).containsKeys("offset", "type", "payload"); // GH-90000
+            assertThat(body.get("offset [GH-90000]")).isEqualTo(0);
         }
 
         /**
@@ -326,15 +326,15 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
          * Failure: Returns 404 or 400 when offset does not exist
          */
         @Test
-        @DisplayName("returns 404 when offset does not exist")
-        void getEventAtOffset_outOfRange_returns404() throws Exception {            var event = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1"));
-            when(mockClient.queryEvents(anyString(), any()))
-                    .thenReturn(Promise.of(List.of(event)));
-            startServer();
+        @DisplayName("returns 404 when offset does not exist [GH-90000]")
+        void getEventAtOffset_outOfRange_returns404() throws Exception {            var event = DataCloudClient.Event.of("ENTITY_CREATED", Map.of("entityId", "ent-1")); // GH-90000
+            when(mockClient.queryEvents(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.of(List.of(event))); // GH-90000
+            startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/events/999999");
+            HttpResponse<String> resp = get("/api/v1/events/999999 [GH-90000]");
 
-            assertStatusCode(resp, TestConstants.HTTP_NOT_FOUND);
+            assertStatusCode(resp, TestConstants.HTTP_NOT_FOUND); // GH-90000
         }
     }
 }

@@ -11,25 +11,25 @@ class GoStackTraceParserTest extends BaseParserTest<GoStackTraceParser> {
     private static final String SAMPLE_TRACE =
             "panic: runtime error: index out of range [5] with length 3\n\n"
                     + "goroutine 1 [running]:\n"
-                    + "main.main()\n\t/Users/example/go/src/example.com/app/main.go:10 +0x1b5";
+                    + "main.main()\n\t/Users/example/go/src/example.com/app/main.go:10 +0x1b5"; // GH-90000
 
     @Override
-    protected GoStackTraceParser createParser() {
-        return new GoStackTraceParser();
+    protected GoStackTraceParser createParser() { // GH-90000
+        return new GoStackTraceParser(); // GH-90000
     }
 
     @Override
-    protected String getExpectedFileName() {
+    protected String getExpectedFileName() { // GH-90000
         return "/Users/example/go/src/example.com/app/main.go";
     }
 
     @Override
-    protected int getExpectedLineNumber() {
+    protected int getExpectedLineNumber() { // GH-90000
         return 10;
     }
 
     @Override
-    protected String getSampleStackTrace() {
+    protected String getSampleStackTrace() { // GH-90000
         return SAMPLE_TRACE;
     }
 

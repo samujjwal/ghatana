@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.agent.release;
@@ -21,111 +21,111 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AgentInstanceConfig")
+@DisplayName("AgentInstanceConfig [GH-90000]")
 class AgentInstanceConfigTest {
 
-    private static AgentInstanceConfig minimal() {
-        return new AgentInstanceConfig(
+    private static AgentInstanceConfig minimal() { // GH-90000
+        return new AgentInstanceConfig( // GH-90000
                 "cfg-001",
                 "release-001",
                 "tenant-001",
                 "production",
-                Map.of(),
-                Map.of(),
-                Map.of(),
-                Map.of(),
+                Map.of(), // GH-90000
+                Map.of(), // GH-90000
+                Map.of(), // GH-90000
+                Map.of(), // GH-90000
                 false,
-                Instant.now(),
-                Instant.now()
+                Instant.now(), // GH-90000
+                Instant.now() // GH-90000
         );
     }
 
     @Test
-    @DisplayName("construction with valid fields succeeds")
-    void validConstruction() {
-        AgentInstanceConfig config = minimal();
-        assertThat(config.instanceConfigId()).isEqualTo("cfg-001");
-        assertThat(config.tenantId()).isEqualTo("tenant-001");
-        assertThat(config.killSwitch()).isFalse();
+    @DisplayName("construction with valid fields succeeds [GH-90000]")
+    void validConstruction() { // GH-90000
+        AgentInstanceConfig config = minimal(); // GH-90000
+        assertThat(config.instanceConfigId()).isEqualTo("cfg-001 [GH-90000]");
+        assertThat(config.tenantId()).isEqualTo("tenant-001 [GH-90000]");
+        assertThat(config.killSwitch()).isFalse(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Blank ID validation")
+    @DisplayName("Blank ID validation [GH-90000]")
     class BlankIdValidation {
 
         @Test
-        @DisplayName("blank instanceConfigId throws")
-        void blankInstanceConfigId() {
-            assertThatThrownBy(() -> new AgentInstanceConfig(
+        @DisplayName("blank instanceConfigId throws [GH-90000]")
+        void blankInstanceConfigId() { // GH-90000
+            assertThatThrownBy(() -> new AgentInstanceConfig( // GH-90000
                     " ", "release-001", "tenant-001", "production",
-                    Map.of(), Map.of(), Map.of(), Map.of(), false,
-                    Instant.now(), Instant.now()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("instanceConfigId");
+                    Map.of(), Map.of(), Map.of(), Map.of(), false, // GH-90000
+                    Instant.now(), Instant.now())) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("instanceConfigId [GH-90000]");
         }
 
         @Test
-        @DisplayName("blank agentReleaseId throws")
-        void blankAgentReleaseId() {
-            assertThatThrownBy(() -> new AgentInstanceConfig(
+        @DisplayName("blank agentReleaseId throws [GH-90000]")
+        void blankAgentReleaseId() { // GH-90000
+            assertThatThrownBy(() -> new AgentInstanceConfig( // GH-90000
                     "cfg-001", "", "tenant-001", "production",
-                    Map.of(), Map.of(), Map.of(), Map.of(), false,
-                    Instant.now(), Instant.now()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("agentReleaseId");
+                    Map.of(), Map.of(), Map.of(), Map.of(), false, // GH-90000
+                    Instant.now(), Instant.now())) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("agentReleaseId [GH-90000]");
         }
 
         @Test
-        @DisplayName("blank tenantId throws")
-        void blankTenantId() {
-            assertThatThrownBy(() -> new AgentInstanceConfig(
+        @DisplayName("blank tenantId throws [GH-90000]")
+        void blankTenantId() { // GH-90000
+            assertThatThrownBy(() -> new AgentInstanceConfig( // GH-90000
                     "cfg-001", "release-001", "", "production",
-                    Map.of(), Map.of(), Map.of(), Map.of(), false,
-                    Instant.now(), Instant.now()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("tenantId");
+                    Map.of(), Map.of(), Map.of(), Map.of(), false, // GH-90000
+                    Instant.now(), Instant.now())) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .hasMessageContaining("tenantId [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("Immutability")
+    @DisplayName("Immutability [GH-90000]")
     class Immutability {
 
         @Test
-        @DisplayName("modelOverrides map is unmodifiable")
-        void modelOverridesUnmodifiable() {
-            AgentInstanceConfig config = new AgentInstanceConfig(
+        @DisplayName("modelOverrides map is unmodifiable [GH-90000]")
+        void modelOverridesUnmodifiable() { // GH-90000
+            AgentInstanceConfig config = new AgentInstanceConfig( // GH-90000
                     "cfg-001", "release-001", "tenant-001", "production",
-                    Map.of("model", "gpt-4"),
-                    Map.of(), Map.of(), Map.of(), false,
-                    Instant.now(), Instant.now());
+                    Map.of("model", "gpt-4"), // GH-90000
+                    Map.of(), Map.of(), Map.of(), false, // GH-90000
+                    Instant.now(), Instant.now()); // GH-90000
 
-            assertThatThrownBy(() -> config.modelOverrides().put("key", "value"))
-                    .isInstanceOf(UnsupportedOperationException.class);
+            assertThatThrownBy(() -> config.modelOverrides().put("key", "value")) // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("featureFlags map is unmodifiable")
-        void featureFlagsUnmodifiable() {
-            AgentInstanceConfig config = new AgentInstanceConfig(
+        @DisplayName("featureFlags map is unmodifiable [GH-90000]")
+        void featureFlagsUnmodifiable() { // GH-90000
+            AgentInstanceConfig config = new AgentInstanceConfig( // GH-90000
                     "cfg-001", "release-001", "tenant-001", "production",
-                    Map.of(), Map.of(), Map.of("flag", "true"), Map.of(), false,
-                    Instant.now(), Instant.now());
+                    Map.of(), Map.of(), Map.of("flag", "true"), Map.of(), false, // GH-90000
+                    Instant.now(), Instant.now()); // GH-90000
 
-            assertThatThrownBy(() -> config.featureFlags().put("extra", "val"))
-                    .isInstanceOf(UnsupportedOperationException.class);
+            assertThatThrownBy(() -> config.featureFlags().put("extra", "val")) // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("killSwitch can be set to true")
-    void killSwitchTrue() {
-        AgentInstanceConfig config = new AgentInstanceConfig(
+    @DisplayName("killSwitch can be set to true [GH-90000]")
+    void killSwitchTrue() { // GH-90000
+        AgentInstanceConfig config = new AgentInstanceConfig( // GH-90000
                 "cfg-001", "release-001", "tenant-001", "staging",
-                Map.of(), Map.of(), Map.of(), Map.of(),
+                Map.of(), Map.of(), Map.of(), Map.of(), // GH-90000
                 true,
-                Instant.now(), Instant.now());
+                Instant.now(), Instant.now()); // GH-90000
 
-        assertThat(config.killSwitch()).isTrue();
+        assertThat(config.killSwitch()).isTrue(); // GH-90000
     }
 }

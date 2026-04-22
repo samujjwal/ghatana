@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * YAPPC Lifecycle Service — AI Readiness Assessor Tests
  */
 package com.ghatana.yappc.services.lifecycle.assessment;
@@ -30,8 +30,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AIReadinessAssessor Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("AIReadinessAssessor Tests [GH-90000]")
 class AIReadinessAssessorTest extends EventloopTestBase {
 
     @Mock
@@ -56,365 +56,365 @@ class AIReadinessAssessorTest extends EventloopTestBase {
             "NOTE: Project needs more clarity before advancing.";
 
     @BeforeEach
-    void setUp() {
-        assessor = new AIReadinessAssessor(aiService);
+    void setUp() { // GH-90000
+        assessor = new AIReadinessAssessor(aiService); // GH-90000
     }
 
     // ─── Constructor ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("should throw NullPointerException when aiService is null")
-    void shouldThrowOnNullAiService() {
-        assertThatThrownBy(() -> new AIReadinessAssessor(null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("aiService");
+    @DisplayName("should throw NullPointerException when aiService is null [GH-90000]")
+    void shouldThrowOnNullAiService() { // GH-90000
+        assertThatThrownBy(() -> new AIReadinessAssessor(null)) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("aiService [GH-90000]");
     }
 
     // ─── Hard Gates: intent → shape ────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Hard gates: intent → shape")
+    @DisplayName("Hard gates: intent → shape [GH-90000]")
     class IntentToShapeHardGates {
 
         @Test
-        @DisplayName("should block when no requirements exist")
-        void shouldBlockNoRequirements() {
-            ProjectContext ctx = ctx("intent", 0, 0.9, 0, -1, null, 0, 0);
+        @DisplayName("should block when no requirements exist [GH-90000]")
+        void shouldBlockNoRequirements() { // GH-90000
+            ProjectContext ctx = ctx("intent", 0, 0.9, 0, -1, null, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("intent", "shape", ctx);
+            var blockers = assessor.evaluateHardGates("intent", "shape", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(1);
-            assertThat(blockers.get(0)).contains("requirement");
+            assertThat(blockers).hasSize(1); // GH-90000
+            assertThat(blockers.get(0)).contains("requirement [GH-90000]");
         }
 
         @Test
-        @DisplayName("should pass when requirements exist")
-        void shouldPassWithRequirements() {
-            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0);
+        @DisplayName("should pass when requirements exist [GH-90000]")
+        void shouldPassWithRequirements() { // GH-90000
+            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("intent", "shape", ctx);
+            var blockers = assessor.evaluateHardGates("intent", "shape", ctx); // GH-90000
 
-            assertThat(blockers).isEmpty();
+            assertThat(blockers).isEmpty(); // GH-90000
         }
     }
 
     // ─── Hard Gates: shape → generate ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("Hard gates: shape → generate")
+    @DisplayName("Hard gates: shape → generate [GH-90000]")
     class ShapeToGenerateHardGates {
 
         @Test
-        @DisplayName("should block when no requirements and low clarity")
-        void shouldBlockNoRequirementsAndLowClarity() {
-            ProjectContext ctx = ctx("shape", 0, 0.5, 0, -1, null, 0, 0);
+        @DisplayName("should block when no requirements and low clarity [GH-90000]")
+        void shouldBlockNoRequirementsAndLowClarity() { // GH-90000
+            ProjectContext ctx = ctx("shape", 0, 0.5, 0, -1, null, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("shape", "generate", ctx);
+            var blockers = assessor.evaluateHardGates("shape", "generate", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(2);
+            assertThat(blockers).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("should block when clarity below 0.7")
-        void shouldBlockWhenClarityLow() {
-            ProjectContext ctx = ctx("shape", 5, 0.5, 0, -1, null, 0, 0);
+        @DisplayName("should block when clarity below 0.7 [GH-90000]")
+        void shouldBlockWhenClarityLow() { // GH-90000
+            ProjectContext ctx = ctx("shape", 5, 0.5, 0, -1, null, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("shape", "generate", ctx);
+            var blockers = assessor.evaluateHardGates("shape", "generate", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(1);
-            assertThat(blockers.get(0)).contains("clarity");
+            assertThat(blockers).hasSize(1); // GH-90000
+            assertThat(blockers.get(0)).contains("clarity [GH-90000]");
         }
 
         @Test
-        @DisplayName("should pass when requirements exist and clarity meets threshold")
-        void shouldPassWhenRequirementsAndClarityOk() {
-            ProjectContext ctx = ctx("shape", 3, 0.75, 0, -1, null, 0, 0);
+        @DisplayName("should pass when requirements exist and clarity meets threshold [GH-90000]")
+        void shouldPassWhenRequirementsAndClarityOk() { // GH-90000
+            ProjectContext ctx = ctx("shape", 3, 0.75, 0, -1, null, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("shape", "generate", ctx);
+            var blockers = assessor.evaluateHardGates("shape", "generate", ctx); // GH-90000
 
-            assertThat(blockers).isEmpty();
+            assertThat(blockers).isEmpty(); // GH-90000
         }
     }
 
     // ─── Hard Gates: generate → run ───────────────────────────────────────────
 
     @Nested
-    @DisplayName("Hard gates: generate → run")
+    @DisplayName("Hard gates: generate → run [GH-90000]")
     class GenerateToRunHardGates {
 
         @Test
-        @DisplayName("should block when no commits")
-        void shouldBlockNoCommits() {
-            ProjectContext ctx = ctx("generate", 3, 0.9, 0, -1, null, 0, 0);
+        @DisplayName("should block when no commits [GH-90000]")
+        void shouldBlockNoCommits() { // GH-90000
+            ProjectContext ctx = ctx("generate", 3, 0.9, 0, -1, null, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("generate", "run", ctx);
+            var blockers = assessor.evaluateHardGates("generate", "run", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(1);
-            assertThat(blockers.get(0)).contains("commit");
+            assertThat(blockers).hasSize(1); // GH-90000
+            assertThat(blockers.get(0)).contains("commit [GH-90000]");
         }
 
         @Test
-        @DisplayName("should pass when commits exist")
-        void shouldPassWithCommits() {
-            ProjectContext ctx = ctx("generate", 3, 0.9, 5, -1, null, 0, 0);
+        @DisplayName("should pass when commits exist [GH-90000]")
+        void shouldPassWithCommits() { // GH-90000
+            ProjectContext ctx = ctx("generate", 3, 0.9, 5, -1, null, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("generate", "run", ctx);
+            var blockers = assessor.evaluateHardGates("generate", "run", ctx); // GH-90000
 
-            assertThat(blockers).isEmpty();
+            assertThat(blockers).isEmpty(); // GH-90000
         }
     }
 
     // ─── Hard Gates: run → review ────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Hard gates: run → review")
+    @DisplayName("Hard gates: run → review [GH-90000]")
     class RunToReviewHardGates {
 
         @Test
-        @DisplayName("should block when build is not passing")
-        void shouldBlockBuildFailing() {
-            ProjectContext ctx = ctx("run", 3, 0.9, 10, 75, false, 0, 0);
+        @DisplayName("should block when build is not passing [GH-90000]")
+        void shouldBlockBuildFailing() { // GH-90000
+            ProjectContext ctx = ctx("run", 3, 0.9, 10, 75, false, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("run", "review", ctx);
+            var blockers = assessor.evaluateHardGates("run", "review", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(1);
-            assertThat(blockers.get(0)).containsIgnoringCase("build");
+            assertThat(blockers).hasSize(1); // GH-90000
+            assertThat(blockers.get(0)).containsIgnoringCase("build [GH-90000]");
         }
 
         @Test
-        @DisplayName("should block when coverage below threshold")
-        void shouldBlockLowCoverage() {
-            ProjectContext ctx = ctx("run", 3, 0.9, 10, 40, true, 0, 0);
+        @DisplayName("should block when coverage below threshold [GH-90000]")
+        void shouldBlockLowCoverage() { // GH-90000
+            ProjectContext ctx = ctx("run", 3, 0.9, 10, 40, true, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("run", "review", ctx);
+            var blockers = assessor.evaluateHardGates("run", "review", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(1);
-            assertThat(blockers.get(0)).contains("coverage");
+            assertThat(blockers).hasSize(1); // GH-90000
+            assertThat(blockers.get(0)).contains("coverage [GH-90000]");
         }
 
         @Test
-        @DisplayName("should pass when build passing and coverage ok")
-        void shouldPassWhenBuildAndCoverageOk() {
-            ProjectContext ctx = ctx("run", 3, 0.9, 10, 70, true, 0, 0);
+        @DisplayName("should pass when build passing and coverage ok [GH-90000]")
+        void shouldPassWhenBuildAndCoverageOk() { // GH-90000
+            ProjectContext ctx = ctx("run", 3, 0.9, 10, 70, true, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("run", "review", ctx);
+            var blockers = assessor.evaluateHardGates("run", "review", ctx); // GH-90000
 
-            assertThat(blockers).isEmpty();
+            assertThat(blockers).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should skip coverage check when coverage is -1 (unknown)")
-        void shouldSkipCoverageCheckWhenUnknown() {
-            ProjectContext ctx = ctx("run", 3, 0.9, 10, -1, true, 0, 0);
+        @DisplayName("should skip coverage check when coverage is -1 (unknown) [GH-90000]")
+        void shouldSkipCoverageCheckWhenUnknown() { // GH-90000
+            ProjectContext ctx = ctx("run", 3, 0.9, 10, -1, true, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("run", "review", ctx);
+            var blockers = assessor.evaluateHardGates("run", "review", ctx); // GH-90000
 
-            assertThat(blockers).isEmpty();
+            assertThat(blockers).isEmpty(); // GH-90000
         }
     }
 
     // ─── Hard Gates: review → deploy ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("Hard gates: review → deploy")
+    @DisplayName("Hard gates: review → deploy [GH-90000]")
     class ReviewToDeployHardGates {
 
         @Test
-        @DisplayName("should block when no decisions recorded")
-        void shouldBlockNoDecisions() {
-            ProjectContext ctx = ctx("review", 3, 0.9, 10, 80, true, 0, 0);
+        @DisplayName("should block when no decisions recorded [GH-90000]")
+        void shouldBlockNoDecisions() { // GH-90000
+            ProjectContext ctx = ctx("review", 3, 0.9, 10, 80, true, 0, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("review", "deploy", ctx);
+            var blockers = assessor.evaluateHardGates("review", "deploy", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(1);
-            assertThat(blockers.get(0)).contains("decision");
+            assertThat(blockers).hasSize(1); // GH-90000
+            assertThat(blockers.get(0)).contains("decision [GH-90000]");
         }
 
         @Test
-        @DisplayName("should pass when decisions exist")
-        void shouldPassWithDecisions() {
-            ProjectContext ctx = ctx("review", 3, 0.9, 10, 80, true, 2, 0);
+        @DisplayName("should pass when decisions exist [GH-90000]")
+        void shouldPassWithDecisions() { // GH-90000
+            ProjectContext ctx = ctx("review", 3, 0.9, 10, 80, true, 2, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("review", "deploy", ctx);
+            var blockers = assessor.evaluateHardGates("review", "deploy", ctx); // GH-90000
 
-            assertThat(blockers).isEmpty();
+            assertThat(blockers).isEmpty(); // GH-90000
         }
     }
 
     // ─── Hard Gates: deploy → maintain ───────────────────────────────────────
 
     @Nested
-    @DisplayName("Hard gates: deploy → maintain")
+    @DisplayName("Hard gates: deploy → maintain [GH-90000]")
     class DeployToMaintainHardGates {
 
         @Test
-        @DisplayName("should block when build is failing")
-        void shouldBlockBuildFailing() {
-            ProjectContext ctx = ctx("deploy", 3, 0.9, 10, 80, false, 2, 0);
+        @DisplayName("should block when build is failing [GH-90000]")
+        void shouldBlockBuildFailing() { // GH-90000
+            ProjectContext ctx = ctx("deploy", 3, 0.9, 10, 80, false, 2, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("deploy", "maintain", ctx);
+            var blockers = assessor.evaluateHardGates("deploy", "maintain", ctx); // GH-90000
 
-            assertThat(blockers).hasSize(1);
-            assertThat(blockers.get(0)).containsIgnoringCase("build");
+            assertThat(blockers).hasSize(1); // GH-90000
+            assertThat(blockers.get(0)).containsIgnoringCase("build [GH-90000]");
         }
 
         @Test
-        @DisplayName("should pass when build is passing")
-        void shouldPassWhenBuildPassing() {
-            ProjectContext ctx = ctx("deploy", 3, 0.9, 10, 80, true, 2, 0);
+        @DisplayName("should pass when build is passing [GH-90000]")
+        void shouldPassWhenBuildPassing() { // GH-90000
+            ProjectContext ctx = ctx("deploy", 3, 0.9, 10, 80, true, 2, 0); // GH-90000
 
-            var blockers = assessor.evaluateHardGates("deploy", "maintain", ctx);
+            var blockers = assessor.evaluateHardGates("deploy", "maintain", ctx); // GH-90000
 
-            assertThat(blockers).isEmpty();
+            assertThat(blockers).isEmpty(); // GH-90000
         }
     }
 
-    // ─── Full assess() — with AI ──────────────────────────────────────────────
+    // ─── Full assess() — with AI ────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("Full assess() with AI")
+    @DisplayName("Full assess() with AI [GH-90000]")
     class FullAssessWithAi {
 
         @Test
-        @DisplayName("should return ready report when all gates pass and AI says ready")
-        void shouldReturnReadyWhenAllGatesPass() {
-            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_READY_RESPONSE));
-            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0);
+        @DisplayName("should return ready report when all gates pass and AI says ready [GH-90000]")
+        void shouldReturnReadyWhenAllGatesPass() { // GH-90000
+            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_READY_RESPONSE)); // GH-90000
+            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0); // GH-90000
 
-            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx));
+            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx)); // GH-90000
 
-            assertThat(report.ready()).isTrue();
-            assertThat(report.fromPhase()).isEqualTo("intent");
-            assertThat(report.toPhase()).isEqualTo("shape");
-            assertThat(report.blockers()).isEmpty();
-            assertThat(report.clarityScore()).isEqualTo(0.85);
+            assertThat(report.ready()).isTrue(); // GH-90000
+            assertThat(report.fromPhase()).isEqualTo("intent [GH-90000]");
+            assertThat(report.toPhase()).isEqualTo("shape [GH-90000]");
+            assertThat(report.blockers()).isEmpty(); // GH-90000
+            assertThat(report.clarityScore()).isEqualTo(0.85); // GH-90000
         }
 
         @Test
-        @DisplayName("should return blocked report when hard gate fails (no AI call)")
-        void shouldBlockOnHardGateWithoutCallingAi() {
-            // No requirements — hard gate will fail; AI gate still runs (fallback for null response)
-            when(aiService.reason(anyString(), anyMap()))
-                    .thenReturn(Promise.of(AI_READY_RESPONSE));
-            ProjectContext ctx = ctx("intent", 0, 0.9, 0, -1, null, 0, 0);
+        @DisplayName("should return blocked report when hard gate fails (no AI call) [GH-90000]")
+        void shouldBlockOnHardGateWithoutCallingAi() { // GH-90000
+            // No requirements — hard gate will fail; AI gate still runs (fallback for null response) // GH-90000
+            when(aiService.reason(anyString(), anyMap())) // GH-90000
+                    .thenReturn(Promise.of(AI_READY_RESPONSE)); // GH-90000
+            ProjectContext ctx = ctx("intent", 0, 0.9, 0, -1, null, 0, 0); // GH-90000
 
-            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx));
+            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx)); // GH-90000
 
-            assertThat(report.ready()).isFalse();
-            assertThat(report.blockers()).anyMatch(b -> b.contains("requirement"));
+            assertThat(report.ready()).isFalse(); // GH-90000
+            assertThat(report.blockers()).anyMatch(b -> b.contains("requirement [GH-90000]"));
         }
 
         @Test
-        @DisplayName("should merge hard gate blockers with AI blockers")
-        void shouldMergeHardGateAndAiBlockers() {
-            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_BLOCKED_RESPONSE));
-            // Hard gate would also fail (low clarity)
-            ProjectContext ctx = ctx("shape", 3, 0.5, 0, -1, null, 0, 0);
+        @DisplayName("should merge hard gate blockers with AI blockers [GH-90000]")
+        void shouldMergeHardGateAndAiBlockers() { // GH-90000
+            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_BLOCKED_RESPONSE)); // GH-90000
+            // Hard gate would also fail (low clarity) // GH-90000
+            ProjectContext ctx = ctx("shape", 3, 0.5, 0, -1, null, 0, 0); // GH-90000
 
-            ReadinessReport report = runPromise(() -> assessor.assess("shape", "generate", ctx));
+            ReadinessReport report = runPromise(() -> assessor.assess("shape", "generate", ctx)); // GH-90000
 
-            assertThat(report.ready()).isFalse();
+            assertThat(report.ready()).isFalse(); // GH-90000
             // Hard gate blocker + 2 AI blockers = 3 total
-            assertThat(report.blockers()).hasSizeGreaterThanOrEqualTo(2);
+            assertThat(report.blockers()).hasSizeGreaterThanOrEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("should return ready report when AI says ready (no hard gate blockers)")
-        void shouldReturnReadyWhenAiSaysReady() {
-            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_READY_RESPONSE));
-            ProjectContext ctx = ctx("shape", 5, 0.85, 0, -1, null, 0, 0);
+        @DisplayName("should return ready report when AI says ready (no hard gate blockers) [GH-90000]")
+        void shouldReturnReadyWhenAiSaysReady() { // GH-90000
+            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_READY_RESPONSE)); // GH-90000
+            ProjectContext ctx = ctx("shape", 5, 0.85, 0, -1, null, 0, 0); // GH-90000
 
-            ReadinessReport report = runPromise(() -> assessor.assess("shape", "generate", ctx));
+            ReadinessReport report = runPromise(() -> assessor.assess("shape", "generate", ctx)); // GH-90000
 
-            assertThat(report.ready()).isTrue();
-            assertThat(report.assessmentNote()).contains("ready");
+            assertThat(report.ready()).isTrue(); // GH-90000
+            assertThat(report.assessmentNote()).contains("ready [GH-90000]");
         }
 
         @Test
-        @DisplayName("should degrade gracefully when AI service throws exception")
-        void shouldDegradeGracefullyOnAiException() {
-            when(aiService.reason(anyString(), anyMap()))
-                    .thenReturn(Promise.ofException(new RuntimeException("AI service unavailable")));
-            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0);
+        @DisplayName("should degrade gracefully when AI service throws exception [GH-90000]")
+        void shouldDegradeGracefullyOnAiException() { // GH-90000
+            when(aiService.reason(anyString(), anyMap())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("AI service unavailable [GH-90000]")));
+            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0); // GH-90000
 
-            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx));
+            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx)); // GH-90000
 
-            // Should still pass (AI gate bypassed on error)
-            assertThat(report.ready()).isTrue();
-            assertThat(report.assessmentNote()).contains("unavailable");
+            // Should still pass (AI gate bypassed on error) // GH-90000
+            assertThat(report.ready()).isTrue(); // GH-90000
+            assertThat(report.assessmentNote()).contains("unavailable [GH-90000]");
         }
 
         @Test
-        @DisplayName("should return blocked report with AI recommendations when AI says blocked")
-        void shouldReturnBlockedWithRecommendations() {
-            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_BLOCKED_RESPONSE));
-            ProjectContext ctx = ctx("shape", 5, 0.85, 0, -1, null, 0, 0);
+        @DisplayName("should return blocked report with AI recommendations when AI says blocked [GH-90000]")
+        void shouldReturnBlockedWithRecommendations() { // GH-90000
+            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(AI_BLOCKED_RESPONSE)); // GH-90000
+            ProjectContext ctx = ctx("shape", 5, 0.85, 0, -1, null, 0, 0); // GH-90000
 
-            ReadinessReport report = runPromise(() -> assessor.assess("shape", "generate", ctx));
+            ReadinessReport report = runPromise(() -> assessor.assess("shape", "generate", ctx)); // GH-90000
 
-            assertThat(report.ready()).isFalse();
-            assertThat(report.recommendations()).isNotEmpty();
-            assertThat(report.blockers()).contains("Requirements lack acceptance criteria");
+            assertThat(report.ready()).isFalse(); // GH-90000
+            assertThat(report.recommendations()).isNotEmpty(); // GH-90000
+            assertThat(report.blockers()).contains("Requirements lack acceptance criteria [GH-90000]");
         }
 
         @Test
-        @DisplayName("should handle blank AI response gracefully")
-        void shouldHandleBlankAiResponse() {
-            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(""));
-            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0);
+        @DisplayName("should handle blank AI response gracefully [GH-90000]")
+        void shouldHandleBlankAiResponse() { // GH-90000
+            when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(" [GH-90000]"));
+            ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0); // GH-90000
 
-            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx));
+            ReadinessReport report = runPromise(() -> assessor.assess("intent", "shape", ctx)); // GH-90000
 
             // Blank response → AI unavailable fallback → pass gate
-            assertThat(report.ready()).isTrue();
+            assertThat(report.ready()).isTrue(); // GH-90000
         }
     }
 
     // ─── Unknown transition key ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("should return empty hard blockers for unknown transition key")
-    void shouldReturnEmptyForUnknownTransition() {
-        // evaluateHardGates() is a direct method call — no AI involved
-        ProjectContext ctx = ctx("maintain", 3, 0.9, 10, 80, true, 2, 0);
+    @DisplayName("should return empty hard blockers for unknown transition key [GH-90000]")
+    void shouldReturnEmptyForUnknownTransition() { // GH-90000
+        // evaluateHardGates() is a direct method call — no AI involved // GH-90000
+        ProjectContext ctx = ctx("maintain", 3, 0.9, 10, 80, true, 2, 0); // GH-90000
 
-        var blockers = assessor.evaluateHardGates("maintain", "unknown", ctx);
+        var blockers = assessor.evaluateHardGates("maintain", "unknown", ctx); // GH-90000
 
-        assertThat(blockers).isEmpty();
+        assertThat(blockers).isEmpty(); // GH-90000
     }
 
     // ─── Null guard ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("should throw NullPointerException when fromPhase is null")
-    void shouldThrowOnNullFromPhase() {
-        ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0);
-        assertThatThrownBy(() -> runPromise(() -> assessor.assess(null, "shape", ctx)))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("should throw NullPointerException when fromPhase is null [GH-90000]")
+    void shouldThrowOnNullFromPhase() { // GH-90000
+        ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0); // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> assessor.assess(null, "shape", ctx))) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("should throw NullPointerException when toPhase is null")
-    void shouldThrowOnNullToPhase() {
-        ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0);
-        assertThatThrownBy(() -> runPromise(() -> assessor.assess("intent", null, ctx)))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("should throw NullPointerException when toPhase is null [GH-90000]")
+    void shouldThrowOnNullToPhase() { // GH-90000
+        ProjectContext ctx = ctx("intent", 3, 0.9, 0, -1, null, 0, 0); // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> assessor.assess("intent", null, ctx))) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("should throw NullPointerException when context is null")
-    void shouldThrowOnNullContext() {
-        assertThatThrownBy(() -> runPromise(() -> assessor.assess("intent", "shape", null)))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("should throw NullPointerException when context is null [GH-90000]")
+    void shouldThrowOnNullContext() { // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> assessor.assess("intent", "shape", null))) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     // ─── Helper ───────────────────────────────────────────────────────────────
 
-    private static ProjectContext ctx(
+    private static ProjectContext ctx( // GH-90000
             String phase, int reqCount, double avgClarity,
             int commits, int coverage, Boolean buildPassing,
             int decisions, int agents) {
-        return new ProjectContext(
+        return new ProjectContext( // GH-90000
                 "proj-001", "tenant-001", phase,
                 reqCount, avgClarity, commits, coverage,
                 buildPassing, decisions, agents);

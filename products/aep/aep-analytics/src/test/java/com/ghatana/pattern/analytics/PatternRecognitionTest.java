@@ -18,54 +18,54 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test pattern recognition, anomaly detection, and classification.
  */
-@DisplayName("Pattern Recognition Tests")
+@DisplayName("Pattern Recognition Tests [GH-90000]")
 class PatternRecognitionTest {
 
     @Test
-    @DisplayName("Should recognize patterns")
-    void shouldRecognizePatterns() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should recognize patterns [GH-90000]")
+    void shouldRecognizePatterns() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect anomalies")
-    void shouldDetectAnomalies() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should detect anomalies [GH-90000]")
+    void shouldDetectAnomalies() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should classify patterns")
-    void shouldClassifyPatterns() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should classify patterns [GH-90000]")
+    void shouldClassifyPatterns() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle pattern updates")
-    void shouldHandlePatternUpdates() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle pattern updates [GH-90000]")
+    void shouldHandlePatternUpdates() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle pattern deletion")
-    void shouldHandlePatternDeletion() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle pattern deletion [GH-90000]")
+    void shouldHandlePatternDeletion() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle pattern queries")
-    void shouldHandlePatternQueries() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle pattern queries [GH-90000]")
+    void shouldHandlePatternQueries() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 }

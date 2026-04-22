@@ -28,14 +28,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration tests for AEP HTTP compliance endpoints (GDPR, CCPA, SOC2).
+ * Integration tests for AEP HTTP compliance endpoints (GDPR, CCPA, SOC2). // GH-90000
  *
  * @doc.type class
  * @doc.purpose Integration tests for /api/v1/compliance/** HTTP endpoints
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Compliance Endpoints")
+@DisplayName("AepHttpServer – Compliance Endpoints [GH-90000]")
 class AepHttpServerComplianceTest {
 
     private AepEngine engine;
@@ -43,291 +43,291 @@ class AepHttpServerComplianceTest {
     private AepHttpServer server;
     private int port;
     private HttpClient httpClient;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     @BeforeEach
-    void setUp() throws Exception {
-        engine = Aep.forTesting();
-        mockDc = mock(DataCloudClient.class);
-        port = findFreePort();
-        httpClient = HttpClient.newBuilder().build();
+    void setUp() throws Exception { // GH-90000
+        engine = Aep.forTesting(); // GH-90000
+        mockDc = mock(DataCloudClient.class); // GH-90000
+        port = findFreePort(); // GH-90000
+        httpClient = HttpClient.newBuilder().build(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) server.stop();
-        if (engine != null) engine.close();
+    void tearDown() { // GH-90000
+        if (server != null) server.stop(); // GH-90000
+        if (engine != null) engine.close(); // GH-90000
     }
 
     // ==================== POST /api/v1/compliance/gdpr/access ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/gdpr/access")
+    @DisplayName("POST /api/v1/compliance/gdpr/access [GH-90000]")
     class GdprAccessTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured (no DC)")
-        void gdprAccess_whenNoDc_returns503() throws Exception {
-            server = new AepHttpServer(engine, port);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 503 when compliance service not configured (no DC) [GH-90000]")
+        void gdprAccess_whenNoDc_returns503() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "subjectId", "user-123",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(503);
-            Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class);
-            assertThat(respBody.get("message").toString()).contains("not available");
+            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
+            Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(respBody.get("message [GH-90000]").toString()).contains("not available [GH-90000]");
         }
 
         @Test
-        @DisplayName("returns 200 with access report when DC configured")
-        void gdprAccess_withDc_returns200() throws Exception {
-            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
-                .thenReturn(Promise.of(List.of()));
+        @DisplayName("returns 200 with access report when DC configured [GH-90000]")
+        void gdprAccess_withDc_returns200() throws Exception { // GH-90000
+            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
+                .thenReturn(Promise.of(List.of())); // GH-90000
 
-            server = new AepHttpServer(engine, port, null, mockDc);
-            server.start();
-            waitForServerReady(port);
+            server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "subjectId", "user-456",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when subjectId is missing")
-        void gdprAccess_withoutSubjectId_returns400() throws Exception {
-            server = new AepHttpServer(engine, port, null, mockDc);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 400 when subjectId is missing [GH-90000]")
+        void gdprAccess_withoutSubjectId_returns400() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of("tenantId", "t1"));
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", body);
+            String body = mapper.writeValueAsString(Map.of("tenantId", "t1")); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(400);
+            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body")
-        void gdprAccess_withMalformedJson_returns400() throws Exception {
-            server = new AepHttpServer(engine, port, null, mockDc);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        void gdprAccess_withMalformedJson_returns400() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", "{bad json");
-            assertThat(resp.statusCode()).isEqualTo(400);
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/access", "{bad json"); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
     }
 
     // ==================== POST /api/v1/compliance/gdpr/erasure ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/gdpr/erasure")
+    @DisplayName("POST /api/v1/compliance/gdpr/erasure [GH-90000]")
     class GdprErasureTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured")
-        void gdprErasure_whenNoDc_returns503() throws Exception {
-            server = new AepHttpServer(engine, port);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 503 when compliance service not configured [GH-90000]")
+        void gdprErasure_whenNoDc_returns503() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "subjectId", "user-789",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/erasure", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/erasure", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(503);
+            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 200 with erasure report when DC configured")
-        void gdprErasure_withDc_returns200() throws Exception {
-            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
-                .thenReturn(Promise.of(List.of()));
-            when(mockDc.delete(anyString(), anyString(), anyString()))
-                .thenReturn(Promise.of((Void) null));
+        @DisplayName("returns 200 with erasure report when DC configured [GH-90000]")
+        void gdprErasure_withDc_returns200() throws Exception { // GH-90000
+            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
+                .thenReturn(Promise.of(List.of())); // GH-90000
+            when(mockDc.delete(anyString(), anyString(), anyString())) // GH-90000
+                .thenReturn(Promise.of((Void) null)); // GH-90000
 
-            server = new AepHttpServer(engine, port, null, mockDc);
-            server.start();
-            waitForServerReady(port);
+            server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "subjectId", "user-789",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/erasure", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/erasure", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         }
     }
 
     // ==================== POST /api/v1/compliance/gdpr/portability ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/gdpr/portability")
+    @DisplayName("POST /api/v1/compliance/gdpr/portability [GH-90000]")
     class GdprPortabilityTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured")
-        void gdprPortability_whenNoDc_returns503() throws Exception {
-            server = new AepHttpServer(engine, port);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 503 when compliance service not configured [GH-90000]")
+        void gdprPortability_whenNoDc_returns503() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "subjectId", "user-export",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/portability", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/portability", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(503);
+            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 200 with export data when DC configured")
-        void gdprPortability_withDc_returns200() throws Exception {
-            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
-                .thenReturn(Promise.of(List.of()));
+        @DisplayName("returns 200 with export data when DC configured [GH-90000]")
+        void gdprPortability_withDc_returns200() throws Exception { // GH-90000
+            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
+                .thenReturn(Promise.of(List.of())); // GH-90000
 
-            server = new AepHttpServer(engine, port, null, mockDc);
-            server.start();
-            waitForServerReady(port);
+            server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "subjectId", "user-export",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/portability", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/gdpr/portability", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         }
     }
 
     // ==================== POST /api/v1/compliance/ccpa/opt-out ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/ccpa/opt-out")
+    @DisplayName("POST /api/v1/compliance/ccpa/opt-out [GH-90000]")
     class CcpaOptOutTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured")
-        void ccpaOptOut_whenNoDc_returns503() throws Exception {
-            server = new AepHttpServer(engine, port);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 503 when compliance service not configured [GH-90000]")
+        void ccpaOptOut_whenNoDc_returns503() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "consumerId", "consumer-1",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/ccpa/opt-out", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/ccpa/opt-out", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(503);
+            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 200 with opt-out confirmation when DC configured")
-        void ccpaOptOut_withDc_returns200() throws Exception {
-            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
-                .thenReturn(Promise.of(List.of()));
-            when(mockDc.save(anyString(), anyString(), any()))
-                .thenReturn(Promise.of(DataCloudClient.Entity.of(
+        @DisplayName("returns 200 with opt-out confirmation when DC configured [GH-90000]")
+        void ccpaOptOut_withDc_returns200() throws Exception { // GH-90000
+            when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
+                .thenReturn(Promise.of(List.of())); // GH-90000
+            when(mockDc.save(anyString(), anyString(), any())) // GH-90000
+                .thenReturn(Promise.of(DataCloudClient.Entity.of( // GH-90000
                         "consumer-1", "aep_ccpa_opt_out",
-                        java.util.Map.of("id", "consumer-1", "_ccpaOptOut", true))));
+                        java.util.Map.of("id", "consumer-1", "_ccpaOptOut", true)))); // GH-90000
 
-            server = new AepHttpServer(engine, port, null, mockDc);
-            server.start();
-            waitForServerReady(port);
+            server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of(
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "consumerId", "consumer-1",
                 "tenantId", "tenant-1"
             ));
-            HttpResponse<String> resp = post("/api/v1/compliance/ccpa/opt-out", body);
+            HttpResponse<String> resp = post("/api/v1/compliance/ccpa/opt-out", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when consumerId is missing")
-        void ccpaOptOut_withoutConsumerId_returns400() throws Exception {
-            server = new AepHttpServer(engine, port, null, mockDc);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 400 when consumerId is missing [GH-90000]")
+        void ccpaOptOut_withoutConsumerId_returns400() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            String body = mapper.writeValueAsString(Map.of("tenantId", "t1"));
-            HttpResponse<String> resp = post("/api/v1/compliance/ccpa/opt-out", body);
+            String body = mapper.writeValueAsString(Map.of("tenantId", "t1")); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/compliance/ccpa/opt-out", body); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(400);
+            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
     }
 
     // ==================== GET /api/v1/compliance/soc2 ====================
 
     @Nested
-    @DisplayName("GET /api/v1/compliance/soc2")
+    @DisplayName("GET /api/v1/compliance/soc2 [GH-90000]")
     class Soc2Tests {
 
         @Test
-        @DisplayName("returns 200 with SOC2 report (always available)")
-        void soc2Report_returns200() throws Exception {
-            server = new AepHttpServer(engine, port);
-            server.start();
-            waitForServerReady(port);
+        @DisplayName("returns 200 with SOC2 report (always available) [GH-90000]")
+        void soc2Report_returns200() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/compliance/soc2/report");
+            HttpResponse<String> resp = get("/api/v1/compliance/soc2/report [GH-90000]");
 
-            assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-            assertThat(body).isNotEmpty();
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(body).isNotEmpty(); // GH-90000
         }
     }
 
     // ==================== Helpers ====================
 
-    private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> get(String path) throws Exception { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+            .GET() // GH-90000
+            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+            .build(); // GH-90000
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .header("Content-Type", "application/json")
-            .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+            .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
+            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
+            .header("Content-Type", "application/json") // GH-90000
+            .build(); // GH-90000
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private static int findFreePort() throws IOException {
-        try (ServerSocket ss = new ServerSocket(0)) {
-            return ss.getLocalPort();
+    private static int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
+            return ss.getLocalPort(); // GH-90000
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception {
-        long deadline = System.currentTimeMillis() + 5_000;
-        while (System.currentTimeMillis() < deadline) {
+    private static void waitForServerReady(int port) throws Exception { // GH-90000
+        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
+        while (System.currentTimeMillis() < deadline) { // GH-90000
             try {
-                new Socket("127.0.0.1", port).close();
+                new Socket("127.0.0.1", port).close(); // GH-90000
                 return;
-            } catch (IOException ignored) {
-                Thread.sleep(50);
+            } catch (IOException ignored) { // GH-90000
+                Thread.sleep(50); // GH-90000
             }
         }
-        throw new AssertionError("Server did not start on port " + port + " within 5 s");
+        throw new AssertionError("Server did not start on port " + port + " within 5 s"); // GH-90000
     }
 }

@@ -19,218 +19,218 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 
-@DisplayName("DataCloudHttpServer – Health Endpoints")
+@DisplayName("DataCloudHttpServer – Health Endpoints [GH-90000]")
 class DataCloudHttpServerHealthTest {
 
     private DataCloudClient mockClient;
     private DataCloudHttpServer server;
     private HttpClient httpClient;
     private int port;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
 
     @BeforeEach
-    void setUp() throws Exception {
-        mockClient = mock(DataCloudClient.class);
-        httpClient = HttpClient.newHttpClient();
-        port = findFreePort();
+    void setUp() throws Exception { // GH-90000
+        mockClient = mock(DataCloudClient.class); // GH-90000
+        httpClient = HttpClient.newHttpClient(); // GH-90000
+        port = findFreePort(); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (server != null) {
-            server.stop();
+    void tearDown() { // GH-90000
+        if (server != null) { // GH-90000
+            server.stop(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("health detail reports not configured for optional subsystems without probes")
-    void healthDetailUsesNotConfiguredDefaults() throws Exception {
-        startServer();
+    @DisplayName("health detail reports not configured for optional subsystems without probes [GH-90000]")
+    void healthDetailUsesNotConfiguredDefaults() throws Exception { // GH-90000
+        startServer(); // GH-90000
 
-        HttpResponse<String> response = get("/health/detail");
+        HttpResponse<String> response = get("/health/detail [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        assertThat(database).containsEntry("status", "NOT_CONFIGURED");
-        assertThat(database).containsEntry("note", "dependency-not-configured");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database [GH-90000]");
+        assertThat(database).containsEntry("status", "NOT_CONFIGURED"); // GH-90000
+        assertThat(database).containsEntry("note", "dependency-not-configured"); // GH-90000
     }
 
     @Test
-    @DisplayName("health deep reports unknown for unconfigured optional subsystems")
-    void healthDeepUsesUnknownDefaults() throws Exception {
-        startServer();
+    @DisplayName("health deep reports unknown for unconfigured optional subsystems [GH-90000]")
+    void healthDeepUsesUnknownDefaults() throws Exception { // GH-90000
+        startServer(); // GH-90000
 
-        HttpResponse<String> response = get("/health/deep");
+        HttpResponse<String> response = get("/health/deep [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        assertThat(database).containsEntry("status", "UNKNOWN");
-        assertThat(database).containsEntry("note", "dependency-not-configured");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database [GH-90000]");
+        assertThat(database).containsEntry("status", "UNKNOWN"); // GH-90000
+        assertThat(database).containsEntry("note", "dependency-not-configured"); // GH-90000
     }
 
     @Test
-    @DisplayName("health detail merges injected database subsystem snapshot")
-    void healthDetailMergesInjectedSubsystem() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-            .withHealthSubsystem("database", () -> Map.of(
+    @DisplayName("health detail merges injected database subsystem snapshot [GH-90000]")
+    void healthDetailMergesInjectedSubsystem() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withHealthSubsystem("database", () -> Map.of( // GH-90000
                 "status", "UP",
                 "latency_ms", 12,
                 "pool_status", "active"
             ));
-        server.start();
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/health/detail");
+        HttpResponse<String> response = get("/health/detail [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "UP");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        assertThat(database).containsEntry("status", "UP");
-        assertThat(database).containsEntry("latency_ms", 12);
-        assertThat(database).containsEntry("pool_status", "active");
-        assertThat(database).containsKey("response_time_ms");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        assertThat(body).containsEntry("status", "UP"); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database [GH-90000]");
+        assertThat(database).containsEntry("status", "UP"); // GH-90000
+        assertThat(database).containsEntry("latency_ms", 12); // GH-90000
+        assertThat(database).containsEntry("pool_status", "active"); // GH-90000
+        assertThat(database).containsKey("response_time_ms [GH-90000]");
     }
 
     @Test
-    @DisplayName("health deep aliases structured health detail endpoint")
-    void healthDeepAliasesHealthDetail() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-            .withHealthSubsystem("database", () -> Map.of("status", "UP", "latency_ms", 9));
-        server.start();
+    @DisplayName("health deep aliases structured health detail endpoint [GH-90000]")
+    void healthDeepAliasesHealthDetail() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withHealthSubsystem("database", () -> Map.of("status", "UP", "latency_ms", 9)); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/health/deep");
+        HttpResponse<String> response = get("/health/deep [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "UP");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        assertThat(database).containsEntry("status", "UP");
-        assertThat(database).containsKey("response_time_ms");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        assertThat(body).containsEntry("status", "UP"); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database [GH-90000]");
+        assertThat(database).containsEntry("status", "UP"); // GH-90000
+        assertThat(database).containsKey("response_time_ms [GH-90000]");
     }
 
     @Test
-    @DisplayName("health detail marks overall status down when subsystem probe fails")
-    void healthDetailMarksDownWhenProbeFails() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-            .withHealthSubsystem("database", () -> {
-                throw new IllegalStateException("database probe failed");
+    @DisplayName("health detail marks overall status down when subsystem probe fails [GH-90000]")
+    void healthDetailMarksDownWhenProbeFails() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withHealthSubsystem("database", () -> { // GH-90000
+                throw new IllegalStateException("database probe failed [GH-90000]");
             });
-        server.start();
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/health/detail");
+        HttpResponse<String> response = get("/health/detail [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "DOWN");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        assertThat(database).containsEntry("status", "DOWN");
-        assertThat(database).containsEntry("error", "IllegalStateException");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        assertThat(body).containsEntry("status", "DOWN"); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database [GH-90000]");
+        assertThat(database).containsEntry("status", "DOWN"); // GH-90000
+        assertThat(database).containsEntry("error", "IllegalStateException"); // GH-90000
     }
 
     @Test
-    @DisplayName("ready returns 503 when database probe is down")
-    void readyReturns503WhenDatabaseProbeIsDown() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-            .withHealthSubsystem("database", () -> Map.of("status", "DOWN", "message", "db unreachable"));
-        server.start();
+    @DisplayName("ready returns 503 when database probe is down [GH-90000]")
+    void readyReturns503WhenDatabaseProbeIsDown() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withHealthSubsystem("database", () -> Map.of("status", "DOWN", "message", "db unreachable")); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/ready");
+        HttpResponse<String> response = get("/ready [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(503);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "NOT_READY");
-        assertThat(body).containsEntry("message", "Critical dependencies are not ready");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        assertThat(database).containsEntry("status", "DOWN");
+        assertThat(response.statusCode()).isEqualTo(503); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        assertThat(body).containsEntry("status", "NOT_READY"); // GH-90000
+        assertThat(body).containsEntry("message", "Critical dependencies are not ready"); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database [GH-90000]");
+        assertThat(database).containsEntry("status", "DOWN"); // GH-90000
     }
 
     @Test
-    @DisplayName("ready returns 503 when event store probe is down")
-    void readyReturns503WhenEventStoreProbeIsDown() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-            .withHealthSubsystem("event_store", () -> Map.of("status", "DOWN", "message", "event store unavailable"));
-        server.start();
+    @DisplayName("ready returns 503 when event store probe is down [GH-90000]")
+    void readyReturns503WhenEventStoreProbeIsDown() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withHealthSubsystem("event_store", () -> Map.of("status", "DOWN", "message", "event store unavailable")); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/ready");
+        HttpResponse<String> response = get("/ready [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(503);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "NOT_READY");
-        assertThat(body).containsEntry("message", "Critical dependencies are not ready");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> eventStore = (Map<String, Object>) subsystems.get("event_store");
-        assertThat(eventStore).containsEntry("status", "DOWN");
+        assertThat(response.statusCode()).isEqualTo(503); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        assertThat(body).containsEntry("status", "NOT_READY"); // GH-90000
+        assertThat(body).containsEntry("message", "Critical dependencies are not ready"); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> eventStore = (Map<String, Object>) subsystems.get("event_store [GH-90000]");
+        assertThat(eventStore).containsEntry("status", "DOWN"); // GH-90000
     }
 
     @Test
-    @DisplayName("ready returns 200 when required dependencies are up")
-    void readyReturns200WhenRequiredDependenciesAreUp() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-            .withHealthSubsystem("database", () -> Map.of("status", "UP", "latency_ms", 8))
-            .withHealthSubsystem("event_store", () -> Map.of("status", "UP", "latency_ms", 11));
-        server.start();
+    @DisplayName("ready returns 200 when required dependencies are up [GH-90000]")
+    void readyReturns200WhenRequiredDependenciesAreUp() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withHealthSubsystem("database", () -> Map.of("status", "UP", "latency_ms", 8)) // GH-90000
+            .withHealthSubsystem("event_store", () -> Map.of("status", "UP", "latency_ms", 11)); // GH-90000
+        server.start(); // GH-90000
 
-        HttpResponse<String> response = get("/ready");
+        HttpResponse<String> response = get("/ready [GH-90000]");
 
-        assertThat(response.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "READY");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> eventStore = (Map<String, Object>) subsystems.get("event_store");
-        assertThat(database).containsEntry("status", "UP");
-        assertThat(eventStore).containsEntry("status", "UP");
+        assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        assertThat(body).containsEntry("status", "READY"); // GH-90000
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database [GH-90000]");
+        @SuppressWarnings("unchecked [GH-90000]")
+        Map<String, Object> eventStore = (Map<String, Object>) subsystems.get("event_store [GH-90000]");
+        assertThat(database).containsEntry("status", "UP"); // GH-90000
+        assertThat(eventStore).containsEntry("status", "UP"); // GH-90000
     }
 
-    private void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port);
-        server.start();
+    private void startServer() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port); // GH-90000
+        server.start(); // GH-90000
     }
 
-    private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("http://localhost:" + port + path))
-            .GET()
-            .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    private HttpResponse<String> get(String path) throws Exception { // GH-90000
+        HttpRequest request = HttpRequest.newBuilder() // GH-90000
+            .uri(URI.create("http://localhost:" + port + path)) // GH-90000
+            .GET() // GH-90000
+            .build(); // GH-90000
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private int findFreePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
+    private int findFreePort() throws IOException { // GH-90000
+        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
+            return socket.getLocalPort(); // GH-90000
         }
     }
 }

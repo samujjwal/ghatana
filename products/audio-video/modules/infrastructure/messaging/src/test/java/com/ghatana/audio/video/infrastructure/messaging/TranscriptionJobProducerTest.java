@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("TranscriptionJobProducer Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("TranscriptionJobProducer Tests [GH-90000]")
 class TranscriptionJobProducerTest {
 
     @Mock
@@ -35,49 +35,49 @@ class TranscriptionJobProducerTest {
     private MetricsCollector metricsCollector;
 
     @Test
-    @DisplayName("submitJob fails when producer has not started")
-    void submitJobFailsWhenNotStarted() {
-        TranscriptionJobProducer producer = new TranscriptionJobProducer("av.jobs", producerStrategy, metricsCollector);
+    @DisplayName("submitJob fails when producer has not started [GH-90000]")
+    void submitJobFailsWhenNotStarted() { // GH-90000
+        TranscriptionJobProducer producer = new TranscriptionJobProducer("av.jobs", producerStrategy, metricsCollector); // GH-90000
         TranscriptionJobProducer.TranscriptionJobMessage job =
-            new TranscriptionJobProducer.TranscriptionJobMessage(
-                UUID.randomUUID(),
+            new TranscriptionJobProducer.TranscriptionJobMessage( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-1",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 "en",
                 "m1",
-                Instant.now()
+                Instant.now() // GH-90000
             );
 
-        var promise = producer.submitJob(job);
+        var promise = producer.submitJob(job); // GH-90000
 
-        assertThat(promise.getException()).isInstanceOf(IllegalStateException.class);
-        assertThat(promise.getException()).hasMessageContaining("Producer not started");
+        assertThat(promise.getException()).isInstanceOf(IllegalStateException.class); // GH-90000
+        assertThat(promise.getException()).hasMessageContaining("Producer not started [GH-90000]");
     }
 
     @Test
-    @DisplayName("start then submitJob delegates to producer strategy")
-    void startAndSubmitDelegatesToStrategy() {
-        TranscriptionJobProducer producer = new TranscriptionJobProducer("av.jobs", producerStrategy, metricsCollector);
-        when(producerStrategy.start()).thenReturn(Promise.complete());
-        when(producerStrategy.send(any(String.class), any(String.class))).thenReturn(Promise.of("msg-1"));
+    @DisplayName("start then submitJob delegates to producer strategy [GH-90000]")
+    void startAndSubmitDelegatesToStrategy() { // GH-90000
+        TranscriptionJobProducer producer = new TranscriptionJobProducer("av.jobs", producerStrategy, metricsCollector); // GH-90000
+        when(producerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
+        when(producerStrategy.send(any(String.class), any(String.class))).thenReturn(Promise.of("msg-1 [GH-90000]"));
 
-        producer.start().getResult();
+        producer.start().getResult(); // GH-90000
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
-            new TranscriptionJobProducer.TranscriptionJobMessage(
-                UUID.randomUUID(),
+            new TranscriptionJobProducer.TranscriptionJobMessage( // GH-90000
+                UUID.randomUUID(), // GH-90000
                 "tenant-1",
-                UUID.randomUUID(),
+                UUID.randomUUID(), // GH-90000
                 "en",
                 "m1",
-                Instant.now()
+                Instant.now() // GH-90000
             );
 
-        String messageId = producer.submitJob(job).getResult();
+        String messageId = producer.submitJob(job).getResult(); // GH-90000
 
-        assertThat(messageId).isEqualTo("msg-1");
-        verify(producerStrategy).send(eq(job.jobId().toString()), any(String.class));
-        verify(metricsCollector).incrementCounter("av.messaging.jobs.submitted", "queue", "av.jobs", "tenant_id", "tenant-1");
+        assertThat(messageId).isEqualTo("msg-1 [GH-90000]");
+        verify(producerStrategy).send(eq(job.jobId().toString()), any(String.class)); // GH-90000
+        verify(metricsCollector).incrementCounter("av.messaging.jobs.submitted", "queue", "av.jobs", "tenant_id", "tenant-1"); // GH-90000
     }
 }
 

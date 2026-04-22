@@ -297,16 +297,18 @@ describe('ABTestFramework', () => {
       await framework.assignVariant(experimentId, 'user1');
       await framework.trackMetric(experimentId, 'user1', 'conversion', 1);
 
-      // Should not throw
-      expect(true).toBe(true);
+      const results = await framework.getResults(experimentId);
+      const sampleSizes = results.variants.map((variant) => variant.sampleSize);
+      expect(sampleSizes.some((sample) => sample > 0)).toBe(true);
     });
 
     it('should track conversions', async () => {
       await framework.assignVariant(experimentId, 'user1');
       await framework.trackConversion(experimentId, 'user1', 'conversion');
 
-      // Should not throw
-      expect(true).toBe(true);
+      const results = await framework.getResults(experimentId);
+      expect(results.variants.length).toBeGreaterThan(0);
+      expect(results.variants.some((variant) => variant.metrics.length > 0)).toBe(true);
     });
 
     it('should require user assignment before tracking', async () => {
@@ -320,8 +322,8 @@ describe('ABTestFramework', () => {
       await framework.trackMetric(experimentId, 'user1', 'conversion', 1);
       await framework.trackMetric(experimentId, 'user1', 'revenue', 99.99);
 
-      // Both metrics tracked
-      expect(true).toBe(true);
+      const results = await framework.getResults(experimentId);
+      expect(results.variants.some((variant) => variant.metrics.length >= 2)).toBe(true);
     });
   });
 

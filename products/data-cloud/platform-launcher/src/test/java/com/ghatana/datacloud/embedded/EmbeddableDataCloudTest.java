@@ -13,10 +13,10 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p><b>Test Coverage</b><br>
  * <ul>
- *   <li>Factory methods (forTesting, forProduction, forEdge)</li>
+ *   <li>Factory methods (forTesting, forProduction, forEdge)</li> // GH-90000
  *   <li>Builder API</li>
- *   <li>Lifecycle (start, stop, isRunning)</li>
- *   <li>Service access (eventCloud, entityService, brain)</li>
+ *   <li>Lifecycle (start, stop, isRunning)</li> // GH-90000
+ *   <li>Service access (eventCloud, entityService, brain)</li> // GH-90000
  *   <li>Error handling</li>
  * </ul>
  *
@@ -24,253 +24,253 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.purpose Verify embedded Data-Cloud functionality
  * @doc.layer core
  */
-@DisplayName("EmbeddableDataCloud Tests")
+@DisplayName("EmbeddableDataCloud Tests [GH-90000]")
 class EmbeddableDataCloudTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("Factory Methods")
+    @DisplayName("Factory Methods [GH-90000]")
     class FactoryMethodsTests {
 
         @Test
-        @DisplayName("Should create for testing with in-memory storage")
-        void shouldCreateForTesting() {
+        @DisplayName("Should create for testing with in-memory storage [GH-90000]")
+        void shouldCreateForTesting() { // GH-90000
             // WHEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
 
             // THEN
-            assertThat(dataCloud).isNotNull();
-            assertThat(dataCloud.isRunning()).isFalse();
+            assertThat(dataCloud).isNotNull(); // GH-90000
+            assertThat(dataCloud.isRunning()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should create with custom config using builder")
-        void shouldCreateWithCustomConfig() {
+        @DisplayName("Should create with custom config using builder [GH-90000]")
+        void shouldCreateWithCustomConfig() { // GH-90000
             // GIVEN
-            EmbeddedConfig config = EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY)
-                .enableAI(false)
-                .maxCacheEntries(5000)
-                .enableMetrics(true)
-                .build();
+            EmbeddedConfig config = EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY) // GH-90000
+                .enableAI(false) // GH-90000
+                .maxCacheEntries(5000) // GH-90000
+                .enableMetrics(true) // GH-90000
+                .build(); // GH-90000
 
             // WHEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create()
-                    .withStorage(config.storageType())
-                    .withAI(config.enableAI())
-                    .build();
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create() // GH-90000
+                    .withStorage(config.storageType()) // GH-90000
+                    .withAI(config.enableAI()) // GH-90000
+                    .build(); // GH-90000
 
             // THEN
-            assertThat(dataCloud).isNotNull();
+            assertThat(dataCloud).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Builder API")
+    @DisplayName("Builder API [GH-90000]")
     class BuilderTests {
 
         @Test
-        @DisplayName("Should build with memory storage")
-        void shouldBuildWithMemoryStorage() {
+        @DisplayName("Should build with memory storage [GH-90000]")
+        void shouldBuildWithMemoryStorage() { // GH-90000
             // WHEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create()
-                .withStorage(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY)
-                .withAI(false)
-                .build();
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create() // GH-90000
+                .withStorage(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY) // GH-90000
+                .withAI(false) // GH-90000
+                .build(); // GH-90000
 
             // THEN
-            assertThat(dataCloud).isNotNull();
+            assertThat(dataCloud).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should build with RocksDB storage")
-        void shouldBuildWithRocksDBStorage() {
+        @DisplayName("Should build with RocksDB storage [GH-90000]")
+        void shouldBuildWithRocksDBStorage() { // GH-90000
             // WHEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create()
-                .withStorage(EmbeddedConfig.EmbeddedStorageType.ROCKS_DB)
-                .withDataDirectory("/tmp/rocks-test")
-                .withAI(true)
-                .build();
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create() // GH-90000
+                .withStorage(EmbeddedConfig.EmbeddedStorageType.ROCKS_DB) // GH-90000
+                .withDataDirectory("/tmp/rocks-test [GH-90000]")
+                .withAI(true) // GH-90000
+                .build(); // GH-90000
 
             // THEN
-            assertThat(dataCloud).isNotNull();
+            assertThat(dataCloud).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should build with SQLite storage")
-        void shouldBuildWithSQLiteStorage() {
+        @DisplayName("Should build with SQLite storage [GH-90000]")
+        void shouldBuildWithSQLiteStorage() { // GH-90000
             // WHEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create()
-                .withStorage(EmbeddedConfig.EmbeddedStorageType.SQLITE)
-                .withDataDirectory("/tmp/sqlite-test")
-                .build();
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create() // GH-90000
+                .withStorage(EmbeddedConfig.EmbeddedStorageType.SQLITE) // GH-90000
+                .withDataDirectory("/tmp/sqlite-test [GH-90000]")
+                .build(); // GH-90000
 
             // THEN
-            assertThat(dataCloud).isNotNull();
+            assertThat(dataCloud).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Lifecycle")
+    @DisplayName("Lifecycle [GH-90000]")
     class LifecycleTests {
 
         @Test
-        @DisplayName("Should start and stop successfully")
-        void shouldStartAndStop() {
+        @DisplayName("Should start and stop successfully [GH-90000]")
+        void shouldStartAndStop() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
 
             // WHEN - Start
-            runPromise(() -> dataCloud.start());
+            runPromise(() -> dataCloud.start()); // GH-90000
 
             // THEN
-            assertThat(dataCloud.isRunning()).isTrue();
+            assertThat(dataCloud.isRunning()).isTrue(); // GH-90000
 
             // WHEN - Stop
-            runPromise(() -> dataCloud.stop());
+            runPromise(() -> dataCloud.stop()); // GH-90000
 
             // THEN
-            assertThat(dataCloud.isRunning()).isFalse();
+            assertThat(dataCloud.isRunning()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should be idempotent on start")
-        void shouldBeIdempotentOnStart() {
+        @DisplayName("Should be idempotent on start [GH-90000]")
+        void shouldBeIdempotentOnStart() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
-            runPromise(() -> dataCloud.start());
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
+            runPromise(() -> dataCloud.start()); // GH-90000
 
             // WHEN - Start again
-            runPromise(() -> dataCloud.start());
+            runPromise(() -> dataCloud.start()); // GH-90000
 
             // THEN - No exception
-            assertThat(dataCloud.isRunning()).isTrue();
+            assertThat(dataCloud.isRunning()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should be idempotent on stop")
-        void shouldBeIdempotentOnStop() {
+        @DisplayName("Should be idempotent on stop [GH-90000]")
+        void shouldBeIdempotentOnStop() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
-            runPromise(() -> dataCloud.start());
-            runPromise(() -> dataCloud.stop());
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
+            runPromise(() -> dataCloud.start()); // GH-90000
+            runPromise(() -> dataCloud.stop()); // GH-90000
 
             // WHEN - Stop again
-            runPromise(() -> dataCloud.stop());
+            runPromise(() -> dataCloud.stop()); // GH-90000
 
             // THEN - No exception
-            assertThat(dataCloud.isRunning()).isFalse();
+            assertThat(dataCloud.isRunning()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Service Access")
+    @DisplayName("Service Access [GH-90000]")
     class ServiceAccessTests {
 
         @Test
-        @DisplayName("Should provide Store access when running")
-        void shouldProvideStoreAccess() {
+        @DisplayName("Should provide Store access when running [GH-90000]")
+        void shouldProvideStoreAccess() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
-            runPromise(() -> dataCloud.start());
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
+            runPromise(() -> dataCloud.start()); // GH-90000
 
             // WHEN
-            EmbeddableDataCloud.EmbeddedStore store = dataCloud.store();
+            EmbeddableDataCloud.EmbeddedStore store = dataCloud.store(); // GH-90000
 
             // THEN
-            assertThat(store).isNotNull();
+            assertThat(store).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should provide Query access when running")
-        void shouldProvideQueryAccess() {
+        @DisplayName("Should provide Query access when running [GH-90000]")
+        void shouldProvideQueryAccess() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
-            runPromise(() -> dataCloud.start());
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
+            runPromise(() -> dataCloud.start()); // GH-90000
 
             // WHEN
-            EmbeddableDataCloud.EmbeddedQuery query = dataCloud.query();
+            EmbeddableDataCloud.EmbeddedQuery query = dataCloud.query(); // GH-90000
 
             // THEN
-            assertThat(query).isNotNull();
+            assertThat(query).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should provide EventStream access when running")
-        void shouldProvideEventStreamAccess() {
+        @DisplayName("Should provide EventStream access when running [GH-90000]")
+        void shouldProvideEventStreamAccess() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create()
-                .withStorage(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY)
-                .withAI(true)
-                .build();
-            runPromise(() -> dataCloud.start());
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.create() // GH-90000
+                .withStorage(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY) // GH-90000
+                .withAI(true) // GH-90000
+                .build(); // GH-90000
+            runPromise(() -> dataCloud.start()); // GH-90000
 
             // WHEN
-            EmbeddableDataCloud.EmbeddedEventStream events = dataCloud.events();
+            EmbeddableDataCloud.EmbeddedEventStream events = dataCloud.events(); // GH-90000
 
             // THEN
-            assertThat(events).isNotNull();
+            assertThat(events).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should provide Coordinator access")
-        void shouldProvideCoordinatorAccess() {
+        @DisplayName("Should provide Coordinator access [GH-90000]")
+        void shouldProvideCoordinatorAccess() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
-            runPromise(() -> dataCloud.start());
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
+            runPromise(() -> dataCloud.start()); // GH-90000
 
             // WHEN
-            var coordinator = dataCloud.coordinator();
+            var coordinator = dataCloud.coordinator(); // GH-90000
 
             // THEN
-            assertThat(coordinator).isNotNull();
+            assertThat(coordinator).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should provide config access")
-        void shouldProvideConfigAccess() {
+        @DisplayName("Should provide config access [GH-90000]")
+        void shouldProvideConfigAccess() { // GH-90000
             // GIVEN
-            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory();
+            EmbeddableDataCloud dataCloud = EmbeddableDataCloud.inMemory(); // GH-90000
 
             // WHEN
-            var config = dataCloud.config();
+            var config = dataCloud.config(); // GH-90000
 
             // THEN
-            assertThat(config).isNotNull();
+            assertThat(config).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Configuration")
+    @DisplayName("Configuration [GH-90000]")
     class ConfigurationTests {
 
         @Test
-        @DisplayName("Should validate storage type and data directory")
-        void shouldValidateStorageTypeAndDataDirectory() {
+        @DisplayName("Should validate storage type and data directory [GH-90000]")
+        void shouldValidateStorageTypeAndDataDirectory() { // GH-90000
             // WHEN / THEN - RocksDB requires data directory
-            assertThatThrownBy(() ->
-                EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.ROCKS_DB)
-                    .dataDirectory((String) null)
-                    .build()
-            ).hasMessageContaining("dataDirectory");
+            assertThatThrownBy(() -> // GH-90000
+                EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.ROCKS_DB) // GH-90000
+                    .dataDirectory((String) null) // GH-90000
+                    .build() // GH-90000
+            ).hasMessageContaining("dataDirectory [GH-90000]");
 
             // WHEN / THEN - SQLite requires data directory
-            assertThatThrownBy(() ->
-                EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.SQLITE)
-                    .dataDirectory((String) null)
-                    .build()
-            ).hasMessageContaining("dataDirectory");
+            assertThatThrownBy(() -> // GH-90000
+                EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.SQLITE) // GH-90000
+                    .dataDirectory((String) null) // GH-90000
+                    .build() // GH-90000
+            ).hasMessageContaining("dataDirectory [GH-90000]");
         }
 
         @Test
-        @DisplayName("Should allow in-memory without data directory")
-        void shouldAllowInMemoryWithoutDataDirectory() {
+        @DisplayName("Should allow in-memory without data directory [GH-90000]")
+        void shouldAllowInMemoryWithoutDataDirectory() { // GH-90000
             // WHEN
-            EmbeddedConfig config = EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY)
-                    .dataDirectory((String) null)
-                    .build();
+            EmbeddedConfig config = EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY) // GH-90000
+                    .dataDirectory((String) null) // GH-90000
+                    .build(); // GH-90000
 
             // THEN
-            assertThat(config).isNotNull();
-            assertThat(config.storageType()).isEqualTo(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY);
+            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config.storageType()).isEqualTo(EmbeddedConfig.EmbeddedStorageType.IN_MEMORY); // GH-90000
         }
     }
 }

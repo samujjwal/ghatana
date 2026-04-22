@@ -18,266 +18,266 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer core
  * @doc.pattern UnitTest
  */
-@DisplayName("Chaos Testing Framework Tests")
+@DisplayName("Chaos Testing Framework Tests [GH-90000]")
 class ChaosFrameworkTest {
 
     @Nested
-    @DisplayName("ChaosType Tests")
+    @DisplayName("ChaosType Tests [GH-90000]")
     class ChaosTypeTests {
 
         @Test
-        @DisplayName("should have all expected chaos types")
-        void shouldHaveAllExpectedTypes() {
-            assertThat(ChaosType.values()).hasSize(10);
+        @DisplayName("should have all expected chaos types [GH-90000]")
+        void shouldHaveAllExpectedTypes() { // GH-90000
+            assertThat(ChaosType.values()).hasSize(10); // GH-90000
         }
 
         @Test
-        @DisplayName("NETWORK should be network-related")
-        void networkShouldBeNetworkRelated() {
-            assertThat(ChaosType.NETWORK.isNetworkRelated()).isTrue();
-            assertThat(ChaosType.NETWORK.isDataRelated()).isFalse();
-            assertThat(ChaosType.NETWORK.isResourceRelated()).isFalse();
+        @DisplayName("NETWORK should be network-related [GH-90000]")
+        void networkShouldBeNetworkRelated() { // GH-90000
+            assertThat(ChaosType.NETWORK.isNetworkRelated()).isTrue(); // GH-90000
+            assertThat(ChaosType.NETWORK.isDataRelated()).isFalse(); // GH-90000
+            assertThat(ChaosType.NETWORK.isResourceRelated()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("DATA_CORRUPTION should be data-related")
-        void dataCorruptionShouldBeDataRelated() {
-            assertThat(ChaosType.DATA_CORRUPTION.isDataRelated()).isTrue();
-            assertThat(ChaosType.DATA_CORRUPTION.isNetworkRelated()).isFalse();
+        @DisplayName("DATA_CORRUPTION should be data-related [GH-90000]")
+        void dataCorruptionShouldBeDataRelated() { // GH-90000
+            assertThat(ChaosType.DATA_CORRUPTION.isDataRelated()).isTrue(); // GH-90000
+            assertThat(ChaosType.DATA_CORRUPTION.isNetworkRelated()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("RESOURCE_EXHAUSTION should be resource-related")
-        void resourceExhaustionShouldBeResourceRelated() {
-            assertThat(ChaosType.RESOURCE_EXHAUSTION.isResourceRelated()).isTrue();
-            assertThat(ChaosType.RESOURCE_EXHAUSTION.isNetworkRelated()).isFalse();
+        @DisplayName("RESOURCE_EXHAUSTION should be resource-related [GH-90000]")
+        void resourceExhaustionShouldBeResourceRelated() { // GH-90000
+            assertThat(ChaosType.RESOURCE_EXHAUSTION.isResourceRelated()).isTrue(); // GH-90000
+            assertThat(ChaosType.RESOURCE_EXHAUSTION.isNetworkRelated()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("all types should have descriptions")
-        void allTypesShouldHaveDescriptions() {
-            for (ChaosType type : ChaosType.values()) {
-                assertThat(type.getDescription()).isNotBlank();
+        @DisplayName("all types should have descriptions [GH-90000]")
+        void allTypesShouldHaveDescriptions() { // GH-90000
+            for (ChaosType type : ChaosType.values()) { // GH-90000
+                assertThat(type.getDescription()).isNotBlank(); // GH-90000
             }
         }
     }
 
     @Nested
-    @DisplayName("ChaosContext Tests")
+    @DisplayName("ChaosContext Tests [GH-90000]")
     class ChaosContextTests {
 
         @Test
-        @DisplayName("should initialize with correct values")
-        void shouldInitializeWithCorrectValues() {
-            ChaosContext context = new ChaosContext(ChaosType.NETWORK, 0.5, 5000);
+        @DisplayName("should initialize with correct values [GH-90000]")
+        void shouldInitializeWithCorrectValues() { // GH-90000
+            ChaosContext context = new ChaosContext(ChaosType.NETWORK, 0.5, 5000); // GH-90000
 
-            assertThat(context.getChaosType()).isEqualTo(ChaosType.NETWORK);
-            assertThat(context.getFailureProbability()).isEqualTo(0.5);
-            assertThat(context.getMaxDurationMs()).isEqualTo(5000);
-            assertThat(context.isActive()).isTrue();
+            assertThat(context.getChaosType()).isEqualTo(ChaosType.NETWORK); // GH-90000
+            assertThat(context.getFailureProbability()).isEqualTo(0.5); // GH-90000
+            assertThat(context.getMaxDurationMs()).isEqualTo(5000); // GH-90000
+            assertThat(context.isActive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should clamp probability to valid range")
-        void shouldClampProbability() {
-            ChaosContext tooHigh = new ChaosContext(ChaosType.RANDOM, 1.5, 1000);
-            ChaosContext tooLow = new ChaosContext(ChaosType.RANDOM, -0.5, 1000);
+        @DisplayName("should clamp probability to valid range [GH-90000]")
+        void shouldClampProbability() { // GH-90000
+            ChaosContext tooHigh = new ChaosContext(ChaosType.RANDOM, 1.5, 1000); // GH-90000
+            ChaosContext tooLow = new ChaosContext(ChaosType.RANDOM, -0.5, 1000); // GH-90000
 
-            assertThat(tooHigh.getFailureProbability()).isEqualTo(1.0);
-            assertThat(tooLow.getFailureProbability()).isEqualTo(0.0);
+            assertThat(tooHigh.getFailureProbability()).isEqualTo(1.0); // GH-90000
+            assertThat(tooLow.getFailureProbability()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("should track injection and failure counts")
-        void shouldTrackCounts() {
-            ChaosContext context = new ChaosContext(ChaosType.RANDOM, 1.0, 5000);
+        @DisplayName("should track injection and failure counts [GH-90000]")
+        void shouldTrackCounts() { // GH-90000
+            ChaosContext context = new ChaosContext(ChaosType.RANDOM, 1.0, 5000); // GH-90000
 
-            context.recordInjection();
-            context.recordInjection();
-            context.recordFailure();
+            context.recordInjection(); // GH-90000
+            context.recordInjection(); // GH-90000
+            context.recordFailure(); // GH-90000
 
-            assertThat(context.getInjectionCount()).isEqualTo(2);
-            assertThat(context.getFailureCount()).isEqualTo(1);
+            assertThat(context.getInjectionCount()).isEqualTo(2); // GH-90000
+            assertThat(context.getFailureCount()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldInjectFailure respects probability 0")
-        void shouldNotInjectWhenProbabilityZero() {
-            ChaosContext context = new ChaosContext(ChaosType.RANDOM, 0.0, 5000);
+        @DisplayName("shouldInjectFailure respects probability 0 [GH-90000]")
+        void shouldNotInjectWhenProbabilityZero() { // GH-90000
+            ChaosContext context = new ChaosContext(ChaosType.RANDOM, 0.0, 5000); // GH-90000
 
-            for (int i = 0; i < 100; i++) {
-                assertThat(context.shouldInjectFailure()).isFalse();
+            for (int i = 0; i < 100; i++) { // GH-90000
+                assertThat(context.shouldInjectFailure()).isFalse(); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("shouldInjectFailure respects probability 1")
-        void shouldAlwaysInjectWhenProbabilityOne() {
-            ChaosContext context = new ChaosContext(ChaosType.RANDOM, 1.0, 5000);
+        @DisplayName("shouldInjectFailure respects probability 1 [GH-90000]")
+        void shouldAlwaysInjectWhenProbabilityOne() { // GH-90000
+            ChaosContext context = new ChaosContext(ChaosType.RANDOM, 1.0, 5000); // GH-90000
 
-            for (int i = 0; i < 10; i++) {
-                assertThat(context.shouldInjectFailure()).isTrue();
+            for (int i = 0; i < 10; i++) { // GH-90000
+                assertThat(context.shouldInjectFailure()).isTrue(); // GH-90000
             }
         }
     }
 
     @Nested
-    @DisplayName("ChaosInjector Tests")
+    @DisplayName("ChaosInjector Tests [GH-90000]")
     class ChaosInjectorTests {
 
         @Test
-        @DisplayName("should be inactive by default")
-        void shouldBeInactiveByDefault() {
-            assertThat(ChaosInjector.isActive()).isFalse();
-            assertThat(ChaosInjector.getContext()).isNull();
+        @DisplayName("should be inactive by default [GH-90000]")
+        void shouldBeInactiveByDefault() { // GH-90000
+            assertThat(ChaosInjector.isActive()).isFalse(); // GH-90000
+            assertThat(ChaosInjector.getContext()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should activate and deactivate")
-        void shouldActivateAndDeactivate() {
-            ChaosContext context = new ChaosContext(ChaosType.NETWORK, 0.5, 5000);
+        @DisplayName("should activate and deactivate [GH-90000]")
+        void shouldActivateAndDeactivate() { // GH-90000
+            ChaosContext context = new ChaosContext(ChaosType.NETWORK, 0.5, 5000); // GH-90000
 
-            ChaosInjector.activate(context);
-            assertThat(ChaosInjector.isActive()).isTrue();
-            assertThat(ChaosInjector.getContext()).isSameAs(context);
+            ChaosInjector.activate(context); // GH-90000
+            assertThat(ChaosInjector.isActive()).isTrue(); // GH-90000
+            assertThat(ChaosInjector.getContext()).isSameAs(context); // GH-90000
 
-            ChaosInjector.deactivate();
-            assertThat(ChaosInjector.isActive()).isFalse();
-            assertThat(ChaosInjector.getContext()).isNull();
+            ChaosInjector.deactivate(); // GH-90000
+            assertThat(ChaosInjector.isActive()).isFalse(); // GH-90000
+            assertThat(ChaosInjector.getContext()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("maybeCorruptData returns original when inactive")
-        void maybeCorruptDataReturnsOriginalWhenInactive() {
+        @DisplayName("maybeCorruptData returns original when inactive [GH-90000]")
+        void maybeCorruptDataReturnsOriginalWhenInactive() { // GH-90000
             String original = "test data";
-            String result = ChaosInjector.maybeCorruptData(original);
-            assertThat(result).isEqualTo(original);
+            String result = ChaosInjector.maybeCorruptData(original); // GH-90000
+            assertThat(result).isEqualTo(original); // GH-90000
         }
 
         @Test
-        @DisplayName("maybeCorruptData can corrupt data when active")
-        void maybeCorruptDataCanCorruptWhenActive() {
-            ChaosContext context = new ChaosContext(ChaosType.DATA_CORRUPTION, 1.0, 5000);
-            ChaosInjector.activate(context);
+        @DisplayName("maybeCorruptData can corrupt data when active [GH-90000]")
+        void maybeCorruptDataCanCorruptWhenActive() { // GH-90000
+            ChaosContext context = new ChaosContext(ChaosType.DATA_CORRUPTION, 1.0, 5000); // GH-90000
+            ChaosInjector.activate(context); // GH-90000
 
             try {
-                String result = ChaosInjector.maybeCorruptData("test");
-                assertThat(result).isNull(); // Corruption returns null
+                String result = ChaosInjector.maybeCorruptData("test [GH-90000]");
+                assertThat(result).isNull(); // Corruption returns null // GH-90000
             } finally {
-                ChaosInjector.deactivate();
+                ChaosInjector.deactivate(); // GH-90000
             }
         }
     }
 
     @Nested
-    @DisplayName("ChaosScenario Tests")
+    @DisplayName("ChaosScenario Tests [GH-90000]")
     class ChaosScenarioTests {
 
         @Test
-        @DisplayName("should execute operations successfully without chaos")
-        void shouldExecuteWithoutChaos() {
-            AtomicInteger counter = new AtomicInteger(0);
+        @DisplayName("should execute operations successfully without chaos [GH-90000]")
+        void shouldExecuteWithoutChaos() { // GH-90000
+            AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
-            ChaosScenario.ChaosExecutionResult<Integer> result = ChaosScenario.builder()
-                    .withChaosType(ChaosType.RANDOM)
-                    .withFailureProbability(0.0) // No chaos
-                    .withIterations(10)
-                    .execute(counter::incrementAndGet);
+            ChaosScenario.ChaosExecutionResult<Integer> result = ChaosScenario.builder() // GH-90000
+                    .withChaosType(ChaosType.RANDOM) // GH-90000
+                    .withFailureProbability(0.0) // No chaos // GH-90000
+                    .withIterations(10) // GH-90000
+                    .execute(counter::incrementAndGet); // GH-90000
 
-            assertThat(result.getSuccessCount()).isEqualTo(10);
-            assertThat(result.getFailureCount()).isZero();
-            assertThat(result.getSuccessRate()).isEqualTo(1.0);
+            assertThat(result.getSuccessCount()).isEqualTo(10); // GH-90000
+            assertThat(result.getFailureCount()).isZero(); // GH-90000
+            assertThat(result.getSuccessRate()).isEqualTo(1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("should track failures when operation throws")
-        void shouldTrackFailures() {
-            AtomicInteger counter = new AtomicInteger(0);
+        @DisplayName("should track failures when operation throws [GH-90000]")
+        void shouldTrackFailures() { // GH-90000
+            AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
-            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder()
-                    .withFailureProbability(0.0)
-                    .withIterations(10)
-                    .execute(() -> {
-                        if (counter.incrementAndGet() % 2 == 0) {
-                            throw new RuntimeException("Simulated failure");
+            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder() // GH-90000
+                    .withFailureProbability(0.0) // GH-90000
+                    .withIterations(10) // GH-90000
+                    .execute(() -> { // GH-90000
+                        if (counter.incrementAndGet() % 2 == 0) { // GH-90000
+                            throw new RuntimeException("Simulated failure [GH-90000]");
                         }
                     });
 
-            assertThat(result.getSuccessCount()).isEqualTo(5);
-            assertThat(result.getFailureCount()).isEqualTo(5);
-            assertThat(result.getSuccessRate()).isEqualTo(0.5);
+            assertThat(result.getSuccessCount()).isEqualTo(5); // GH-90000
+            assertThat(result.getFailureCount()).isEqualTo(5); // GH-90000
+            assertThat(result.getSuccessRate()).isEqualTo(0.5); // GH-90000
         }
 
         @Test
-        @DisplayName("assertAllSucceeded throws when failures exist")
-        void assertAllSucceededThrowsOnFailures() {
-            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder()
-                    .withFailureProbability(0.0)
-                    .withIterations(1)
-                    .execute(() -> {
-                        throw new RuntimeException("fail");
+        @DisplayName("assertAllSucceeded throws when failures exist [GH-90000]")
+        void assertAllSucceededThrowsOnFailures() { // GH-90000
+            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder() // GH-90000
+                    .withFailureProbability(0.0) // GH-90000
+                    .withIterations(1) // GH-90000
+                    .execute(() -> { // GH-90000
+                        throw new RuntimeException("fail [GH-90000]");
                     });
 
-            assertThatThrownBy(result::assertAllSucceeded)
-                    .isInstanceOf(AssertionError.class)
-                    .hasMessageContaining("1 failed");
+            assertThatThrownBy(result::assertAllSucceeded) // GH-90000
+                    .isInstanceOf(AssertionError.class) // GH-90000
+                    .hasMessageContaining("1 failed [GH-90000]");
         }
 
         @Test
-        @DisplayName("assertSuccessRate validates minimum rate")
-        void assertSuccessRateValidatesMinRate() {
-            AtomicInteger counter = new AtomicInteger(0);
+        @DisplayName("assertSuccessRate validates minimum rate [GH-90000]")
+        void assertSuccessRateValidatesMinRate() { // GH-90000
+            AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
-            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder()
-                    .withFailureProbability(0.0)
-                    .withIterations(10)
-                    .execute(() -> {
-                        if (counter.incrementAndGet() <= 8) {
+            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder() // GH-90000
+                    .withFailureProbability(0.0) // GH-90000
+                    .withIterations(10) // GH-90000
+                    .execute(() -> { // GH-90000
+                        if (counter.incrementAndGet() <= 8) { // GH-90000
                             // 8 successes
                         } else {
-                            throw new RuntimeException("fail");
+                            throw new RuntimeException("fail [GH-90000]");
                         }
                     });
 
             // 80% success rate
-            result.assertSuccessRate(0.8);
+            result.assertSuccessRate(0.8); // GH-90000
 
-            assertThatThrownBy(() -> result.assertSuccessRate(0.9))
-                    .isInstanceOf(AssertionError.class);
+            assertThatThrownBy(() -> result.assertSuccessRate(0.9)) // GH-90000
+                    .isInstanceOf(AssertionError.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should calculate average duration")
-        void shouldCalculateAverageDuration() {
-            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder()
-                    .withFailureProbability(0.0)
-                    .withIterations(5)
-                    .execute(() -> {
+        @DisplayName("should calculate average duration [GH-90000]")
+        void shouldCalculateAverageDuration() { // GH-90000
+            ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder() // GH-90000
+                    .withFailureProbability(0.0) // GH-90000
+                    .withIterations(5) // GH-90000
+                    .execute(() -> { // GH-90000
                         try {
-                            Thread.sleep(10);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
+                            Thread.sleep(10); // GH-90000
+                        } catch (InterruptedException e) { // GH-90000
+                            Thread.currentThread().interrupt(); // GH-90000
                         }
                     });
 
-            Duration avgDuration = result.getAverageDuration();
-            assertThat(avgDuration.toMillis()).isGreaterThanOrEqualTo(10);
+            Duration avgDuration = result.getAverageDuration(); // GH-90000
+            assertThat(avgDuration.toMillis()).isGreaterThanOrEqualTo(10); // GH-90000
         }
 
         @Test
-        @DisplayName("should support concurrent execution")
-        void shouldSupportConcurrentExecution() {
-            AtomicInteger counter = new AtomicInteger(0);
+        @DisplayName("should support concurrent execution [GH-90000]")
+        void shouldSupportConcurrentExecution() { // GH-90000
+            AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
-            ChaosScenario.ChaosExecutionResult<Integer> result = ChaosScenario.builder()
-                    .withFailureProbability(0.0)
-                    .withConcurrency(4)
-                    .withIterations(20)
-                    .withDuration(Duration.ofSeconds(5))
-                    .execute(counter::incrementAndGet);
+            ChaosScenario.ChaosExecutionResult<Integer> result = ChaosScenario.builder() // GH-90000
+                    .withFailureProbability(0.0) // GH-90000
+                    .withConcurrency(4) // GH-90000
+                    .withIterations(20) // GH-90000
+                    .withDuration(Duration.ofSeconds(5)) // GH-90000
+                    .execute(counter::incrementAndGet); // GH-90000
 
-            assertThat(result.getSuccessCount()).isEqualTo(20);
-            assertThat(counter.get()).isEqualTo(20);
+            assertThat(result.getSuccessCount()).isEqualTo(20); // GH-90000
+            assertThat(counter.get()).isEqualTo(20); // GH-90000
         }
     }
 }

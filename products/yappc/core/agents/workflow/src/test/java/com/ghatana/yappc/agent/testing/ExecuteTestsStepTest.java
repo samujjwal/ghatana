@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing ExecuteTestsStep Tests")
+@DisplayName("Testing ExecuteTestsStep Tests [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles execute tests step test operations
@@ -33,38 +33,38 @@ class ExecuteTestsStepTest extends EventloopTestBase {
   private ExecuteTestsStep step;
 
   @BeforeEach
-  void setUp() {
-    dbClient = mock(DatabaseClient.class);
-    eventClient = mock(EventPublisher.class);
-    step = new ExecuteTestsStep(dbClient, eventClient);
+  void setUp() { // GH-90000
+    dbClient = mock(DatabaseClient.class); // GH-90000
+    eventClient = mock(EventPublisher.class); // GH-90000
+    step = new ExecuteTestsStep(dbClient, eventClient); // GH-90000
   }
 
   @Test
-  @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() {
-    assertThat(step.getStepId()).isEqualTo("testing.execute_tests");
+  @DisplayName("Should return correct step ID [GH-90000]")
+  void shouldReturnCorrectStepId() { // GH-90000
+    assertThat(step.getStepId()).isEqualTo("testing.execute_tests [GH-90000]");
   }
 
   @Test
-  @DisplayName("Should execute tests")
-  void shouldExecuteTests() {
+  @DisplayName("Should execute tests [GH-90000]")
+  void shouldExecuteTests() { // GH-90000
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc");
-    context.put("runId", "test-run-001");
-    context.put("tenantId", "tenant-abc"); // Required by step validation
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    context.put("runId", "test-run-001"); // GH-90000
+    context.put("tenantId", "tenant-abc"); // Required by step validation // GH-90000
 
     List<Map<String, Object>> testCases =
-        List.of(Map.of("_id", "test-001", "runId", "test-run-001", "status", "READY"));
-    when(dbClient.query(eq("test_cases"), any(), anyInt())).thenReturn(Promise.of(testCases));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null));
+        List.of(Map.of("_id", "test-001", "runId", "test-run-001", "status", "READY")); // GH-90000
+    when(dbClient.query(eq("test_cases [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(testCases));
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context));
+    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN
-    assertThat(result).isNotNull();
-    assertThat(result.get("runId")).isEqualTo("test-run-001");
+    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result.get("runId [GH-90000]")).isEqualTo("test-run-001 [GH-90000]");
   }
 }

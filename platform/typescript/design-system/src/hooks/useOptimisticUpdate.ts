@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 
 /**
  * Minimal toast interface for optimistic update notifications.
- * Consumers should provide a global toast implementation (e.g., from @ghatana/ui)
+ * Consumers should provide a global toast implementation (e.g., from @ghatana/design-system)
  * or override via the onSuccess/onError callbacks.
  */
 const toast = {

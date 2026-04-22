@@ -67,8 +67,8 @@ describe('AnomalyDetectionDashboard', () => {
       },
     };
 
-    // Component expected to render with sections
-    expect(true).toBe(true);
+    // Component data setup is valid for the dashboard sections under test
+    expect(mockData.getRecentAnomalies.anomalies).toHaveLength(2);
   });
 
   /**

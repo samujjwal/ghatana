@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana Technologies
+ * Copyright (c) 2025 Ghatana Technologies // GH-90000
  * YAPPC Infrastructure — AEP Runtime Adapter Tests
  */
 package com.ghatana.yappc.infrastructure.aep;
@@ -27,8 +27,8 @@ import static org.mockito.Mockito.when;
  * {@link com.ghatana.yappc.agent.spi.AgentRuntimePort#dispatch} to
  * the underlying {@link AgentDispatcher}.
  */
-@DisplayName("AepAgentRuntimeAdapter — delegation contract")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("AepAgentRuntimeAdapter — delegation contract [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class AepAgentRuntimeAdapterTest {
 
     @Mock
@@ -40,43 +40,43 @@ class AepAgentRuntimeAdapterTest {
     private AepAgentRuntimeAdapter adapter;
 
     @BeforeEach
-    void setUp() {
-        adapter = new AepAgentRuntimeAdapter(delegate);
+    void setUp() { // GH-90000
+        adapter = new AepAgentRuntimeAdapter(delegate); // GH-90000
     }
 
     @Test
-    @DisplayName("dispatch delegates to AgentDispatcher")
-    void dispatch_delegatesToAgentDispatcher() {
+    @DisplayName("dispatch delegates to AgentDispatcher [GH-90000]")
+    void dispatch_delegatesToAgentDispatcher() { // GH-90000
         String agentId = "code-gen-v1";
         String input = "write a hello-world function";
-        AgentResult<String> expected = AgentResult.success("function hello() {}", agentId, Duration.ofMillis(100));
-        when(delegate.<String, String>dispatch(agentId, input, context))
-                .thenReturn(Promise.of(expected));
+        AgentResult<String> expected = AgentResult.success("function hello() {}", agentId, Duration.ofMillis(100)); // GH-90000
+        when(delegate.<String, String>dispatch(agentId, input, context)) // GH-90000
+                .thenReturn(Promise.of(expected)); // GH-90000
 
-        Promise<AgentResult<String>> result = adapter.dispatch(agentId, input, context);
+        Promise<AgentResult<String>> result = adapter.dispatch(agentId, input, context); // GH-90000
 
-        verify(delegate).dispatch(agentId, input, context);
-        assertThat(result).isNotNull();
+        verify(delegate).dispatch(agentId, input, context); // GH-90000
+        assertThat(result).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("dispatch forwards non-string payloads without coercion")
-    void dispatch_forwardsArbitraryPayloadType() {
+    @DisplayName("dispatch forwards non-string payloads without coercion [GH-90000]")
+    void dispatch_forwardsArbitraryPayloadType() { // GH-90000
         String agentId = "review-agent";
         Integer input = 42;
-        AgentResult<Boolean> expected = AgentResult.success(true, agentId, Duration.ofMillis(50));
-        when(delegate.<Integer, Boolean>dispatch(agentId, input, context))
-                .thenReturn(Promise.of(expected));
+        AgentResult<Boolean> expected = AgentResult.success(true, agentId, Duration.ofMillis(50)); // GH-90000
+        when(delegate.<Integer, Boolean>dispatch(agentId, input, context)) // GH-90000
+                .thenReturn(Promise.of(expected)); // GH-90000
 
-        adapter.dispatch(agentId, input, context);
+        adapter.dispatch(agentId, input, context); // GH-90000
 
-        verify(delegate).dispatch(agentId, input, context);
+        verify(delegate).dispatch(agentId, input, context); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null delegate")
-    void constructor_rejectsNullDelegate() {
-        assertThatThrownBy(() -> new AepAgentRuntimeAdapter(null))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("constructor rejects null delegate [GH-90000]")
+    void constructor_rejectsNullDelegate() { // GH-90000
+        assertThatThrownBy(() -> new AepAgentRuntimeAdapter(null)) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 }

@@ -30,131 +30,131 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kernel Plugin Lifecycle Tests")
+@DisplayName("Kernel Plugin Lifecycle Tests [GH-90000]")
 class KernelPluginLifecycleTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
     private KernelContext context;
 
     @BeforeEach
-    void setUp() {
-        registry = new KernelRegistryImpl();
-        context = TestKernelContextFactory.create(registry);
+    void setUp() { // GH-90000
+        registry = new KernelRegistryImpl(); // GH-90000
+        context = TestKernelContextFactory.create(registry); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and initialize plugin successfully")
-    void testPluginRegistrationAndInitialization() {
+    @DisplayName("Should register and initialize plugin successfully [GH-90000]")
+    void testPluginRegistrationAndInitialization() { // GH-90000
         // GIVEN: A plugin module
-        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0");
+        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
 
         // WHEN: Register and initialize plugin
-        registry.registerModule(plugin);
-        plugin.initialize(context);
+        registry.registerModule(plugin); // GH-90000
+        plugin.initialize(context); // GH-90000
 
         // THEN: Plugin is initialized
-        assertThat(plugin.isInitialized()).isTrue();
-        assertThat(plugin.getInitializationCount()).isEqualTo(1);
+        assertThat(plugin.isInitialized()).isTrue(); // GH-90000
+        assertThat(plugin.getInitializationCount()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle plugin start and stop lifecycle")
-    void testPluginStartStopLifecycle() {
+    @DisplayName("Should handle plugin start and stop lifecycle [GH-90000]")
+    void testPluginStartStopLifecycle() { // GH-90000
         // GIVEN: An initialized plugin
-        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0");
-        registry.registerModule(plugin);
-        plugin.initialize(context);
+        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
+        registry.registerModule(plugin); // GH-90000
+        plugin.initialize(context); // GH-90000
 
         // WHEN: Start plugin
-        runPromise(() -> plugin.start());
+        runPromise(() -> plugin.start()); // GH-90000
 
         // THEN: Plugin is started
-        assertThat(plugin.isStarted()).isTrue();
+        assertThat(plugin.isStarted()).isTrue(); // GH-90000
 
         // WHEN: Stop plugin
-        runPromise(() -> plugin.stop());
+        runPromise(() -> plugin.stop()); // GH-90000
 
         // THEN: Plugin is stopped
-        assertThat(plugin.isStarted()).isFalse();
-        assertThat(plugin.isStopped()).isTrue();
+        assertThat(plugin.isStarted()).isFalse(); // GH-90000
+        assertThat(plugin.isStopped()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should prevent double initialization")
-    void testPreventDoubleInitialization() {
+    @DisplayName("Should prevent double initialization [GH-90000]")
+    void testPreventDoubleInitialization() { // GH-90000
         // GIVEN: An initialized plugin
-        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0");
-        registry.registerModule(plugin);
-        plugin.initialize(context);
+        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
+        registry.registerModule(plugin); // GH-90000
+        plugin.initialize(context); // GH-90000
 
         // WHEN: Attempt to initialize again
-        plugin.initialize(context);
+        plugin.initialize(context); // GH-90000
 
         // THEN: Initialization only happens once
-        assertThat(plugin.getInitializationCount()).isEqualTo(1);
+        assertThat(plugin.getInitializationCount()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle plugin dependencies during initialization")
-    void testPluginDependencyInitialization() {
+    @DisplayName("Should handle plugin dependencies during initialization [GH-90000]")
+    void testPluginDependencyInitialization() { // GH-90000
         // GIVEN: Two plugins with dependency relationship
-        TestPlugin providerPlugin = new TestPlugin("provider-plugin", "1.0.0");
-        providerPlugin.addCapability(createTestCapability("test-capability"));
+        TestPlugin providerPlugin = new TestPlugin("provider-plugin", "1.0.0"); // GH-90000
+        providerPlugin.addCapability(createTestCapability("test-capability [GH-90000]"));
 
-        DependentPlugin dependentPlugin = new DependentPlugin(
+        DependentPlugin dependentPlugin = new DependentPlugin( // GH-90000
             "dependent-plugin",
             "1.0.0",
             "provider-plugin"
         );
 
         // WHEN: Register both plugins
-        registry.registerModule(providerPlugin);
-        registry.registerModule(dependentPlugin);
+        registry.registerModule(providerPlugin); // GH-90000
+        registry.registerModule(dependentPlugin); // GH-90000
 
-        providerPlugin.initialize(context);
-        dependentPlugin.initialize(context);
+        providerPlugin.initialize(context); // GH-90000
+        dependentPlugin.initialize(context); // GH-90000
 
         // THEN: Both plugins initialized
-        assertThat(providerPlugin.isInitialized()).isTrue();
-        assertThat(dependentPlugin.isInitialized()).isTrue();
+        assertThat(providerPlugin.isInitialized()).isTrue(); // GH-90000
+        assertThat(dependentPlugin.isInitialized()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle plugin unregistration")
-    void testPluginUnregistration() {
+    @DisplayName("Should handle plugin unregistration [GH-90000]")
+    void testPluginUnregistration() { // GH-90000
         // GIVEN: A registered and started plugin
-        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0");
-        registry.registerModule(plugin);
-        plugin.initialize(context);
-        runPromise(() -> plugin.start());
+        TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
+        registry.registerModule(plugin); // GH-90000
+        plugin.initialize(context); // GH-90000
+        runPromise(() -> plugin.start()); // GH-90000
 
         // WHEN: Unregister plugin
-        runPromise(() -> plugin.stop());
-        // In real implementation: registry.unregisterModule(plugin.getModuleId());
+        runPromise(() -> plugin.stop()); // GH-90000
+        // In real implementation: registry.unregisterModule(plugin.getModuleId()); // GH-90000
 
         // THEN: Plugin is stopped
-        assertThat(plugin.isStopped()).isTrue();
+        assertThat(plugin.isStopped()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle plugin state transitions")
-    void testPluginStateTransitions() {
+    @DisplayName("Should handle plugin state transitions [GH-90000]")
+    void testPluginStateTransitions() { // GH-90000
         // GIVEN: A plugin tracking state transitions
-        StateTrackingPlugin plugin = new StateTrackingPlugin("state-plugin", "1.0.0");
-        registry.registerModule(plugin);
+        StateTrackingPlugin plugin = new StateTrackingPlugin("state-plugin", "1.0.0"); // GH-90000
+        registry.registerModule(plugin); // GH-90000
 
         // WHEN: Go through lifecycle
-        plugin.initialize(context);
-        assertThat(plugin.getCurrentState()).isEqualTo(PluginState.INITIALIZED);
+        plugin.initialize(context); // GH-90000
+        assertThat(plugin.getCurrentState()).isEqualTo(PluginState.INITIALIZED); // GH-90000
 
-        runPromise(() -> plugin.start());
-        assertThat(plugin.getCurrentState()).isEqualTo(PluginState.STARTED);
+        runPromise(() -> plugin.start()); // GH-90000
+        assertThat(plugin.getCurrentState()).isEqualTo(PluginState.STARTED); // GH-90000
 
-        runPromise(() -> plugin.stop());
-        assertThat(plugin.getCurrentState()).isEqualTo(PluginState.STOPPED);
+        runPromise(() -> plugin.stop()); // GH-90000
+        assertThat(plugin.getCurrentState()).isEqualTo(PluginState.STOPPED); // GH-90000
 
         // THEN: State transitions recorded
-        assertThat(plugin.getStateHistory()).containsExactly(
+        assertThat(plugin.getStateHistory()).containsExactly( // GH-90000
             PluginState.REGISTERED,
             PluginState.INITIALIZED,
             PluginState.STARTED,
@@ -163,38 +163,38 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle plugin initialization failure")
-    void testPluginInitializationFailure() {
+    @DisplayName("Should handle plugin initialization failure [GH-90000]")
+    void testPluginInitializationFailure() { // GH-90000
         // GIVEN: A plugin that fails initialization
-        FailingPlugin plugin = new FailingPlugin("failing-plugin", "1.0.0");
-        registry.registerModule(plugin);
+        FailingPlugin plugin = new FailingPlugin("failing-plugin", "1.0.0"); // GH-90000
+        registry.registerModule(plugin); // GH-90000
 
         // WHEN: Attempt to initialize
         // THEN: Initialization fails
-        assertThatThrownBy(() -> plugin.initialize(context))
-            .isInstanceOf(RuntimeException.class)
-            .hasMessageContaining("Initialization failed");
+        assertThatThrownBy(() -> plugin.initialize(context)) // GH-90000
+            .isInstanceOf(RuntimeException.class) // GH-90000
+            .hasMessageContaining("Initialization failed [GH-90000]");
 
-        assertThat(plugin.isInitialized()).isFalse();
+        assertThat(plugin.isInitialized()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle plugin hot reload")
-    void testPluginHotReload() {
+    @DisplayName("Should handle plugin hot reload [GH-90000]")
+    void testPluginHotReload() { // GH-90000
         // GIVEN: A running plugin
-        TestPlugin plugin = new TestPlugin("hot-reload-plugin", "1.0.0");
-        registry.registerModule(plugin);
-        plugin.initialize(context);
-        runPromise(() -> plugin.start());
+        TestPlugin plugin = new TestPlugin("hot-reload-plugin", "1.0.0"); // GH-90000
+        registry.registerModule(plugin); // GH-90000
+        plugin.initialize(context); // GH-90000
+        runPromise(() -> plugin.start()); // GH-90000
 
         // WHEN: Stop, update, and restart
-        runPromise(() -> plugin.stop());
-        plugin.updateVersion("2.0.0");
-        runPromise(() -> plugin.start());
+        runPromise(() -> plugin.stop()); // GH-90000
+        plugin.updateVersion("2.0.0 [GH-90000]");
+        runPromise(() -> plugin.start()); // GH-90000
 
         // THEN: Plugin restarted with new version
-        assertThat(plugin.isStarted()).isTrue();
-        assertThat(plugin.getVersion()).isEqualTo("2.0.0");
+        assertThat(plugin.isStarted()).isTrue(); // GH-90000
+        assertThat(plugin.getVersion()).isEqualTo("2.0.0 [GH-90000]");
     }
 
     // Test plugin implementations
@@ -202,99 +202,99 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     private static class TestPlugin implements KernelModule {
         private final String moduleId;
         private String version;
-        private final AtomicBoolean initialized = new AtomicBoolean(false);
-        private final AtomicBoolean started = new AtomicBoolean(false);
-        private final AtomicBoolean stopped = new AtomicBoolean(false);
-        private final AtomicInteger initializationCount = new AtomicInteger(0);
-        private final List<KernelCapability> capabilities = new ArrayList<>();
+        private final AtomicBoolean initialized = new AtomicBoolean(false); // GH-90000
+        private final AtomicBoolean started = new AtomicBoolean(false); // GH-90000
+        private final AtomicBoolean stopped = new AtomicBoolean(false); // GH-90000
+        private final AtomicInteger initializationCount = new AtomicInteger(0); // GH-90000
+        private final List<KernelCapability> capabilities = new ArrayList<>(); // GH-90000
 
-        TestPlugin(String moduleId, String version) {
+        TestPlugin(String moduleId, String version) { // GH-90000
             this.moduleId = moduleId;
             this.version = version;
         }
 
-        void addCapability(KernelCapability capability) {
-            capabilities.add(capability);
+        void addCapability(KernelCapability capability) { // GH-90000
+            capabilities.add(capability); // GH-90000
         }
 
-        void updateVersion(String newVersion) {
+        void updateVersion(String newVersion) { // GH-90000
             this.version = newVersion;
         }
 
         @Override
-        public String getModuleId() {
+        public String getModuleId() { // GH-90000
             return moduleId;
         }
 
         @Override
-        public String getVersion() {
+        public String getVersion() { // GH-90000
             return version;
         }
 
         @Override
-        public Set<KernelDependency> getDependencies() {
-            return Set.of();
+        public Set<KernelDependency> getDependencies() { // GH-90000
+            return Set.of(); // GH-90000
         }
 
         @Override
-        public Set<KernelCapability> getCapabilities() {
-            return Set.copyOf(capabilities);
+        public Set<KernelCapability> getCapabilities() { // GH-90000
+            return Set.copyOf(capabilities); // GH-90000
         }
 
         @Override
-        public void initialize(KernelContext context) {
-            if (initialized.compareAndSet(false, true)) {
-                initializationCount.incrementAndGet();
+        public void initialize(KernelContext context) { // GH-90000
+            if (initialized.compareAndSet(false, true)) { // GH-90000
+                initializationCount.incrementAndGet(); // GH-90000
             }
         }
 
         @Override
-        public Promise<Void> start() {
-            started.set(true);
-            stopped.set(false);
-            return Promise.complete();
+        public Promise<Void> start() { // GH-90000
+            started.set(true); // GH-90000
+            stopped.set(false); // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
         @Override
-        public Promise<Void> stop() {
-            started.set(false);
-            stopped.set(true);
-            return Promise.complete();
+        public Promise<Void> stop() { // GH-90000
+            started.set(false); // GH-90000
+            stopped.set(true); // GH-90000
+            return Promise.complete(); // GH-90000
         }
 
         @Override
-        public HealthStatus getHealthStatus() {
-            return HealthStatus.healthy();
+        public HealthStatus getHealthStatus() { // GH-90000
+            return HealthStatus.healthy(); // GH-90000
         }
 
-        boolean isInitialized() {
-            return initialized.get();
+        boolean isInitialized() { // GH-90000
+            return initialized.get(); // GH-90000
         }
 
-        boolean isStarted() {
-            return started.get();
+        boolean isStarted() { // GH-90000
+            return started.get(); // GH-90000
         }
 
-        boolean isStopped() {
-            return stopped.get();
+        boolean isStopped() { // GH-90000
+            return stopped.get(); // GH-90000
         }
 
-        int getInitializationCount() {
-            return initializationCount.get();
+        int getInitializationCount() { // GH-90000
+            return initializationCount.get(); // GH-90000
         }
     }
 
     private static class DependentPlugin extends TestPlugin {
-        private final List<KernelDependency> dependencies = new ArrayList<>();
+        private final List<KernelDependency> dependencies = new ArrayList<>(); // GH-90000
 
-        DependentPlugin(String moduleId, String version, String dependsOn) {
-            super(moduleId, version);
-            dependencies.add(new KernelDependency(dependsOn, "1.0.0", KernelDependency.DependencyType.MODULE, false));
+        DependentPlugin(String moduleId, String version, String dependsOn) { // GH-90000
+            super(moduleId, version); // GH-90000
+            dependencies.add(new KernelDependency(dependsOn, "1.0.0", KernelDependency.DependencyType.MODULE, false)); // GH-90000
         }
 
         @Override
-        public Set<KernelDependency> getDependencies() {
-            return Set.copyOf(dependencies);
+        public Set<KernelDependency> getDependencies() { // GH-90000
+            return Set.copyOf(dependencies); // GH-90000
         }
     }
 
@@ -307,65 +307,65 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
 
     private static class StateTrackingPlugin extends TestPlugin {
         private PluginState currentState = PluginState.REGISTERED;
-        private final List<PluginState> stateHistory = new ArrayList<>();
+        private final List<PluginState> stateHistory = new ArrayList<>(); // GH-90000
 
-        StateTrackingPlugin(String moduleId, String version) {
-            super(moduleId, version);
-            stateHistory.add(PluginState.REGISTERED);
+        StateTrackingPlugin(String moduleId, String version) { // GH-90000
+            super(moduleId, version); // GH-90000
+            stateHistory.add(PluginState.REGISTERED); // GH-90000
         }
 
         @Override
-        public void initialize(KernelContext context) {
-            super.initialize(context);
+        public void initialize(KernelContext context) { // GH-90000
+            super.initialize(context); // GH-90000
             currentState = PluginState.INITIALIZED;
-            stateHistory.add(PluginState.INITIALIZED);
+            stateHistory.add(PluginState.INITIALIZED); // GH-90000
         }
 
         @Override
-        public Promise<Void> start() {
-            return super.start().then(() -> {
+        public Promise<Void> start() { // GH-90000
+            return super.start().then(() -> { // GH-90000
                 currentState = PluginState.STARTED;
-                stateHistory.add(PluginState.STARTED);
-                return Promise.complete();
+                stateHistory.add(PluginState.STARTED); // GH-90000
+                return Promise.complete(); // GH-90000
             });
         }
 
         @Override
-        public Promise<Void> stop() {
-            return super.stop().then(() -> {
+        public Promise<Void> stop() { // GH-90000
+            return super.stop().then(() -> { // GH-90000
                 currentState = PluginState.STOPPED;
-                stateHistory.add(PluginState.STOPPED);
-                return Promise.complete();
+                stateHistory.add(PluginState.STOPPED); // GH-90000
+                return Promise.complete(); // GH-90000
             });
         }
 
-        PluginState getCurrentState() {
+        PluginState getCurrentState() { // GH-90000
             return currentState;
         }
 
-        List<PluginState> getStateHistory() {
-            return new ArrayList<>(stateHistory);
+        List<PluginState> getStateHistory() { // GH-90000
+            return new ArrayList<>(stateHistory); // GH-90000
         }
     }
 
     private static class FailingPlugin extends TestPlugin {
-        FailingPlugin(String moduleId, String version) {
-            super(moduleId, version);
+        FailingPlugin(String moduleId, String version) { // GH-90000
+            super(moduleId, version); // GH-90000
         }
 
         @Override
-        public void initialize(KernelContext context) {
-            throw new RuntimeException("Initialization failed");
+        public void initialize(KernelContext context) { // GH-90000
+            throw new RuntimeException("Initialization failed [GH-90000]");
         }
     }
 
-    private static KernelCapability createTestCapability(String capabilityId) {
-        return new KernelCapability(
+    private static KernelCapability createTestCapability(String capabilityId) { // GH-90000
+        return new KernelCapability( // GH-90000
             capabilityId,
             "Test Capability",
             "Test capability for unit tests",
             KernelCapability.CapabilityType.BUSINESS_LOGIC,
-            java.util.Map.of()
+            java.util.Map.of() // GH-90000
         );
     }
 }

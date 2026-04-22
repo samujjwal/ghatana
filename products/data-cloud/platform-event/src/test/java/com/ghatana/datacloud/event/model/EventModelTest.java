@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.datacloud.event.model;
@@ -15,48 +15,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Covers {@link Event}'s payload-alias builder path and free accessor methods.
  */
-@DisplayName("Event model")
+@DisplayName("Event model [GH-90000]")
 class EventModelTest {
 
-    private Event buildMinimal(Map<String, Object> payload) {
-        return Event.builder()
-                .tenantId("tenant-1")
-                .streamName("orders")
-                .eventOffset(1L)
-                .eventTypeName("commerce.order.created")
-                .occurrenceTime(Instant.now())
-                .detectionTime(Instant.now())
-                .payload(payload)   // exercises EventBuilder.payload() alias
-                .build();
+    private Event buildMinimal(Map<String, Object> payload) { // GH-90000
+        return Event.builder() // GH-90000
+                .tenantId("tenant-1 [GH-90000]")
+                .streamName("orders [GH-90000]")
+                .eventOffset(1L) // GH-90000
+                .eventTypeName("commerce.order.created [GH-90000]")
+                .occurrenceTime(Instant.now()) // GH-90000
+                .detectionTime(Instant.now()) // GH-90000
+                .payload(payload)   // exercises EventBuilder.payload() alias // GH-90000
+                .build(); // GH-90000
     }
 
     @Test
-    void builderPayloadAliasPopulatesData() {
-        Event event = buildMinimal(Map.of("orderId", "order-1", "amount", 99.99));
-        assertThat(event.getPayload()).containsEntry("orderId", "order-1");
+    void builderPayloadAliasPopulatesData() { // GH-90000
+        Event event = buildMinimal(Map.of("orderId", "order-1", "amount", 99.99)); // GH-90000
+        assertThat(event.getPayload()).containsEntry("orderId", "order-1"); // GH-90000
     }
 
     @Test
-    void getPayloadAsReturnsTypedValue() {
-        Event event = buildMinimal(Map.of("qty", 5));
-        assertThat(event.getPayloadAs("qty", Integer.class)).isEqualTo(5);
+    void getPayloadAsReturnsTypedValue() { // GH-90000
+        Event event = buildMinimal(Map.of("qty", 5)); // GH-90000
+        assertThat(event.getPayloadAs("qty", Integer.class)).isEqualTo(5); // GH-90000
     }
 
     @Test
-    void getPayloadAsReturnsNullForMissingKey() {
-        Event event = buildMinimal(Map.of());
-        assertThat(event.getPayloadAs("missing", String.class)).isNull();
+    void getPayloadAsReturnsNullForMissingKey() { // GH-90000
+        Event event = buildMinimal(Map.of()); // GH-90000
+        assertThat(event.getPayloadAs("missing", String.class)).isNull(); // GH-90000
     }
 
     @Test
-    void getHeaderReturnsNullWhenAbsent() {
-        Event event = buildMinimal(Map.of());
-        assertThat(event.getHeader("x-not-set")).isNull();
+    void getHeaderReturnsNullWhenAbsent() { // GH-90000
+        Event event = buildMinimal(Map.of()); // GH-90000
+        assertThat(event.getHeader("x-not-set [GH-90000]")).isNull();
     }
 
     @Test
-    void toStringContainsEventType() {
-        Event event = buildMinimal(Map.of());
-        assertThat(event.toString()).contains("commerce.order.created");
+    void toStringContainsEventType() { // GH-90000
+        Event event = buildMinimal(Map.of()); // GH-90000
+        assertThat(event.toString()).contains("commerce.order.created [GH-90000]");
     }
 }

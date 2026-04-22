@@ -29,24 +29,24 @@ import static org.mockito.Mockito.when;
 class EventCloudPluginAdapterTest extends EventloopTestBase {
 
     @Test
-    void shouldPublishToEventLogStore() {
-        EventLogStore eventLogStore = mock(EventLogStore.class);
-        when(eventLogStore.append(any(), any())).thenReturn(Promise.of(Offset.zero()));
+    void shouldPublishToEventLogStore() { // GH-90000
+        EventLogStore eventLogStore = mock(EventLogStore.class); // GH-90000
+        when(eventLogStore.append(any(), any())).thenReturn(Promise.of(Offset.zero())); // GH-90000
 
-        EventCloudPluginAdapter adapter = new EventCloudPluginAdapter(eventLogStore);
-        PluginRegistry registry = new PluginRegistry();
-        registry.register(adapter);
+        EventCloudPluginAdapter adapter = new EventCloudPluginAdapter(eventLogStore); // GH-90000
+        PluginRegistry registry = new PluginRegistry(); // GH-90000
+        registry.register(adapter); // GH-90000
 
-        TenantId tenantId = TenantId.random();
-        EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class);
+        TenantId tenantId = TenantId.random(); // GH-90000
+        EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class); // GH-90000
 
-        runPromise(() -> registry.initializeAll(new DefaultPluginContext(registry, Map.of()))
-                .then(() -> registry.startAll())
-                .then(() -> adapter.publish("topic", entry, tenantId))
-                .whenResult(() -> {
-                    ArgumentCaptor<EventLogStore.EventEntry> captor = ArgumentCaptor.forClass(EventLogStore.EventEntry.class);
-                    verify(eventLogStore).append(any(TenantContext.class), captor.capture());
-                    assertEquals(entry, captor.getValue());
+        runPromise(() -> registry.initializeAll(new DefaultPluginContext(registry, Map.of())) // GH-90000
+                .then(() -> registry.startAll()) // GH-90000
+                .then(() -> adapter.publish("topic", entry, tenantId)) // GH-90000
+                .whenResult(() -> { // GH-90000
+                    ArgumentCaptor<EventLogStore.EventEntry> captor = ArgumentCaptor.forClass(EventLogStore.EventEntry.class); // GH-90000
+                    verify(eventLogStore).append(any(TenantContext.class), captor.capture()); // GH-90000
+                    assertEquals(entry, captor.getValue()); // GH-90000
                 }));
     }
 }

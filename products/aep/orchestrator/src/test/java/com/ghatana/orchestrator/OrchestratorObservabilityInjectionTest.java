@@ -13,18 +13,18 @@ import org.junit.jupiter.api.Test;
 class OrchestratorObservabilityInjectionTest {
 
     @Test
-    void observabilityModuleShouldProvideMetricsAndTracingForOrchestrator() {
-        Injector injector = Injector.of(new ObservabilityModule());
+    void observabilityModuleShouldProvideMetricsAndTracingForOrchestrator() { // GH-90000
+        Injector injector = Injector.of(new ObservabilityModule()); // GH-90000
 
-        MetricsRegistry metricsRegistry = injector.getInstance(MetricsRegistry.class);
-        MetricsCollector metricsCollector = injector.getInstance(MetricsCollector.class);
-        TracingManager tracingManager = injector.getInstance(TracingManager.class);
-        Metrics metrics = injector.getInstance(Metrics.class);
+        MetricsRegistry metricsRegistry = injector.getInstance(MetricsRegistry.class); // GH-90000
+        MetricsCollector metricsCollector = injector.getInstance(MetricsCollector.class); // GH-90000
+        TracingManager tracingManager = injector.getInstance(TracingManager.class); // GH-90000
+        Metrics metrics = injector.getInstance(Metrics.class); // GH-90000
 
-        assertThat(metricsRegistry).isNotNull();
-        assertThat(metricsCollector).isNotNull();
-        assertThat(tracingManager).isNotNull();
-        assertThat(metrics).isNotNull();
-        assertThat(metricsCollector.getMeterRegistry()).isSameAs(metricsRegistry.getMeterRegistry());
+        assertThat(metricsRegistry).isNotNull(); // GH-90000
+        assertThat(metricsCollector).isNotNull(); // GH-90000
+        assertThat(tracingManager).isNotNull(); // GH-90000
+        assertThat(metrics).isNotNull(); // GH-90000
+        assertThat(metricsCollector.getMeterRegistry()).isSameAs(metricsRegistry.getMeterRegistry()); // GH-90000
     }
 }

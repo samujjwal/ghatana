@@ -17,159 +17,159 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("DefaultWorkflowContext")
+@DisplayName("DefaultWorkflowContext [GH-90000]")
 class DefaultWorkflowContextTest {
 
     @Nested
-    @DisplayName("constructor")
+    @DisplayName("constructor [GH-90000]")
     class Constructor {
 
         @Test
-        @DisplayName("should set workflowId and tenantId")
-        void shouldSetIds() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1");
+        @DisplayName("should set workflowId and tenantId [GH-90000]")
+        void shouldSetIds() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1"); // GH-90000
 
-            assertThat(ctx.getWorkflowId()).isEqualTo("wf-1");
-            assertThat(ctx.getTenantId()).isEqualTo("tenant-1");
+            assertThat(ctx.getWorkflowId()).isEqualTo("wf-1 [GH-90000]");
+            assertThat(ctx.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should auto-generate correlationId")
-        void shouldAutoGenerateCorrelationId() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1");
+        @DisplayName("should auto-generate correlationId [GH-90000]")
+        void shouldAutoGenerateCorrelationId() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1"); // GH-90000
 
-            assertThat(ctx.getCorrelationId()).isNotNull().isNotEmpty();
+            assertThat(ctx.getCorrelationId()).isNotNull().isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should accept explicit correlationId")
-        void shouldAcceptExplicitCorrelationId() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1", "corr-42");
+        @DisplayName("should accept explicit correlationId [GH-90000]")
+        void shouldAcceptExplicitCorrelationId() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1", "corr-42"); // GH-90000
 
-            assertThat(ctx.getCorrelationId()).isEqualTo("corr-42");
+            assertThat(ctx.getCorrelationId()).isEqualTo("corr-42 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should reject null workflowId")
-        void shouldRejectNullWorkflowId() {
-            assertThatThrownBy(() -> new DefaultWorkflowContext(null, "tenant-1"))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("should reject null workflowId [GH-90000]")
+        void shouldRejectNullWorkflowId() { // GH-90000
+            assertThatThrownBy(() -> new DefaultWorkflowContext(null, "tenant-1")) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject null tenantId")
-        void shouldRejectNullTenantId() {
-            assertThatThrownBy(() -> new DefaultWorkflowContext("wf-1", null))
-                    .isInstanceOf(NullPointerException.class);
+        @DisplayName("should reject null tenantId [GH-90000]")
+        void shouldRejectNullTenantId() { // GH-90000
+            assertThatThrownBy(() -> new DefaultWorkflowContext("wf-1", null)) // GH-90000
+                    .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("variables")
+    @DisplayName("variables [GH-90000]")
     class Variables {
 
         @Test
-        @DisplayName("should store and retrieve variables")
-        void shouldStoreAndRetrieve() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1");
-            ctx.setVariable("key", "value");
+        @DisplayName("should store and retrieve variables [GH-90000]")
+        void shouldStoreAndRetrieve() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+            ctx.setVariable("key", "value"); // GH-90000
 
-            assertThat(ctx.getVariable("key")).isEqualTo("value");
+            assertThat(ctx.getVariable("key [GH-90000]")).isEqualTo("value [GH-90000]");
         }
 
         @Test
-        @DisplayName("should return null for missing variable")
-        void shouldReturnNullForMissing() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1");
+        @DisplayName("should return null for missing variable [GH-90000]")
+        void shouldReturnNullForMissing() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
 
-            assertThat(ctx.getVariable("nonexistent")).isNull();
+            assertThat(ctx.getVariable("nonexistent [GH-90000]")).isNull();
         }
 
         @Test
-        @DisplayName("should remove variable when set to null")
-        void shouldRemoveOnNull() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1");
-            ctx.setVariable("key", "value");
-            ctx.setVariable("key", null);
+        @DisplayName("should remove variable when set to null [GH-90000]")
+        void shouldRemoveOnNull() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+            ctx.setVariable("key", "value"); // GH-90000
+            ctx.setVariable("key", null); // GH-90000
 
-            assertThat(ctx.getVariable("key")).isNull();
+            assertThat(ctx.getVariable("key [GH-90000]")).isNull();
         }
 
         @Test
-        @DisplayName("should return immutable copy of variables map")
-        void shouldReturnImmutableVariables() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1");
-            ctx.setVariable("a", 1);
+        @DisplayName("should return immutable copy of variables map [GH-90000]")
+        void shouldReturnImmutableVariables() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+            ctx.setVariable("a", 1); // GH-90000
 
-            Map<String, Object> vars = ctx.getVariables();
-            assertThat(vars).containsEntry("a", 1);
+            Map<String, Object> vars = ctx.getVariables(); // GH-90000
+            assertThat(vars).containsEntry("a", 1); // GH-90000
 
             // Modifying original should not affect returned map
-            ctx.setVariable("b", 2);
-            assertThat(vars).doesNotContainKey("b");
+            ctx.setVariable("b", 2); // GH-90000
+            assertThat(vars).doesNotContainKey("b [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("copy")
+    @DisplayName("copy [GH-90000]")
     class Copy {
 
         @Test
-        @DisplayName("should create independent copy")
-        void shouldCreateIndependentCopy() {
-            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1", "corr-1");
-            original.setVariable("x", 42);
-            original.setCurrentStep("step-1");
-            original.setCategory("cat-A");
+        @DisplayName("should create independent copy [GH-90000]")
+        void shouldCreateIndependentCopy() { // GH-90000
+            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1", "corr-1"); // GH-90000
+            original.setVariable("x", 42); // GH-90000
+            original.setCurrentStep("step-1 [GH-90000]");
+            original.setCategory("cat-A [GH-90000]");
 
-            WorkflowContext copy = original.copy();
+            WorkflowContext copy = original.copy(); // GH-90000
 
-            assertThat(copy.getWorkflowId()).isEqualTo("wf-1");
-            assertThat(copy.getTenantId()).isEqualTo("t-1");
-            assertThat(copy.getCorrelationId()).isEqualTo("corr-1");
-            assertThat(copy.getVariable("x")).isEqualTo(42);
-            assertThat(copy.getCurrentStep()).isEqualTo("step-1");
-            assertThat(copy.getCategory()).isEqualTo("cat-A");
+            assertThat(copy.getWorkflowId()).isEqualTo("wf-1 [GH-90000]");
+            assertThat(copy.getTenantId()).isEqualTo("t-1 [GH-90000]");
+            assertThat(copy.getCorrelationId()).isEqualTo("corr-1 [GH-90000]");
+            assertThat(copy.getVariable("x [GH-90000]")).isEqualTo(42);
+            assertThat(copy.getCurrentStep()).isEqualTo("step-1 [GH-90000]");
+            assertThat(copy.getCategory()).isEqualTo("cat-A [GH-90000]");
         }
 
         @Test
-        @DisplayName("should not share variable state with original")
-        void shouldNotShareState() {
-            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1");
-            original.setVariable("key", "original");
+        @DisplayName("should not share variable state with original [GH-90000]")
+        void shouldNotShareState() { // GH-90000
+            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+            original.setVariable("key", "original"); // GH-90000
 
-            WorkflowContext copy = original.copy();
-            original.setVariable("key", "changed");
+            WorkflowContext copy = original.copy(); // GH-90000
+            original.setVariable("key", "changed"); // GH-90000
 
-            assertThat(copy.getVariable("key")).isEqualTo("original");
+            assertThat(copy.getVariable("key [GH-90000]")).isEqualTo("original [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("step and category")
+    @DisplayName("step and category [GH-90000]")
     class StepAndCategory {
 
         @Test
-        @DisplayName("should initially have null currentStep")
-        void shouldHaveNullStep() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1");
-            assertThat(ctx.getCurrentStep()).isNull();
+        @DisplayName("should initially have null currentStep [GH-90000]")
+        void shouldHaveNullStep() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+            assertThat(ctx.getCurrentStep()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should set and get currentStep")
-        void shouldSetStep() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1");
-            ctx.setCurrentStep("step-2");
-            assertThat(ctx.getCurrentStep()).isEqualTo("step-2");
+        @DisplayName("should set and get currentStep [GH-90000]")
+        void shouldSetStep() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+            ctx.setCurrentStep("step-2 [GH-90000]");
+            assertThat(ctx.getCurrentStep()).isEqualTo("step-2 [GH-90000]");
         }
 
         @Test
-        @DisplayName("should set and get category")
-        void shouldSetCategory() {
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1");
-            ctx.setCategory("analysis");
-            assertThat(ctx.getCategory()).isEqualTo("analysis");
+        @DisplayName("should set and get category [GH-90000]")
+        void shouldSetCategory() { // GH-90000
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+            ctx.setCategory("analysis [GH-90000]");
+            assertThat(ctx.getCategory()).isEqualTo("analysis [GH-90000]");
         }
     }
 }

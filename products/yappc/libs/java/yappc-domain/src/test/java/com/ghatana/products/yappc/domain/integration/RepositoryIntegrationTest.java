@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @IntegrationTest
-@DisplayName("YAPPC Domain Repository Integration Tests")
+@DisplayName("YAPPC Domain Repository Integration Tests [GH-90000]")
 class RepositoryIntegrationTest {
 
     /**
@@ -64,367 +64,367 @@ class RepositoryIntegrationTest {
     private InMemorySecurityAlertRepository securityAlertRepository;
 
     @BeforeEach
-    void setUp() {
-        dashboardRepository = new InMemoryDashboardRepository();
-        scanJobRepository = new InMemoryScanJobRepository();
-        incidentRepository = new InMemoryIncidentRepository();
-        cloudAccountRepository = new InMemoryCloudAccountRepository();
-        securityAlertRepository = new InMemorySecurityAlertRepository();
+    void setUp() { // GH-90000
+        dashboardRepository = new InMemoryDashboardRepository(); // GH-90000
+        scanJobRepository = new InMemoryScanJobRepository(); // GH-90000
+        incidentRepository = new InMemoryIncidentRepository(); // GH-90000
+        cloudAccountRepository = new InMemoryCloudAccountRepository(); // GH-90000
+        securityAlertRepository = new InMemorySecurityAlertRepository(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Dashboard Repository Tests")
+    @DisplayName("Dashboard Repository Tests [GH-90000]")
     class DashboardRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve dashboard")
-        void shouldSaveAndRetrieveDashboard() {
+        @DisplayName("should save and retrieve dashboard [GH-90000]")
+        void shouldSaveAndRetrieveDashboard() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            Dashboard dashboard = Dashboard.of(workspaceId, "My Dashboard");
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            Dashboard dashboard = Dashboard.of(workspaceId, "My Dashboard"); // GH-90000
 
             // When
-            Dashboard saved = dashboardRepository.save(dashboard);
-            Optional<Dashboard> retrieved = dashboardRepository.findById(saved.getId());
+            Dashboard saved = dashboardRepository.save(dashboard); // GH-90000
+            Optional<Dashboard> retrieved = dashboardRepository.findById(saved.getId()); // GH-90000
 
             // Then
-            assertThat(retrieved).isPresent();
-            assertThat(retrieved.get().getName()).isEqualTo("My Dashboard");
-            assertThat(retrieved.get().getWorkspaceId()).isEqualTo(workspaceId);
+            assertThat(retrieved).isPresent(); // GH-90000
+            assertThat(retrieved.get().getName()).isEqualTo("My Dashboard [GH-90000]");
+            assertThat(retrieved.get().getWorkspaceId()).isEqualTo(workspaceId); // GH-90000
         }
 
         @Test
-        @DisplayName("should find dashboards by workspace id")
-        void shouldFindDashboardsByWorkspaceId() {
+        @DisplayName("should find dashboards by workspace id [GH-90000]")
+        void shouldFindDashboardsByWorkspaceId() { // GH-90000
             // Given
-            UUID workspaceId1 = UUID.randomUUID();
-            UUID workspaceId2 = UUID.randomUUID();
+            UUID workspaceId1 = UUID.randomUUID(); // GH-90000
+            UUID workspaceId2 = UUID.randomUUID(); // GH-90000
 
-            dashboardRepository.save(Dashboard.of(workspaceId1, "Dashboard 1"));
-            dashboardRepository.save(Dashboard.of(workspaceId1, "Dashboard 2"));
-            dashboardRepository.save(Dashboard.of(workspaceId2, "Dashboard 3"));
+            dashboardRepository.save(Dashboard.of(workspaceId1, "Dashboard 1")); // GH-90000
+            dashboardRepository.save(Dashboard.of(workspaceId1, "Dashboard 2")); // GH-90000
+            dashboardRepository.save(Dashboard.of(workspaceId2, "Dashboard 3")); // GH-90000
 
             // When
-            List<Dashboard> workspace1Dashboards = dashboardRepository.findByWorkspaceId(workspaceId1);
+            List<Dashboard> workspace1Dashboards = dashboardRepository.findByWorkspaceId(workspaceId1); // GH-90000
 
             // Then
-            assertThat(workspace1Dashboards).hasSize(2);
-            assertThat(workspace1Dashboards).extracting(Dashboard::getName)
-                    .containsExactlyInAnyOrder("Dashboard 1", "Dashboard 2");
+            assertThat(workspace1Dashboards).hasSize(2); // GH-90000
+            assertThat(workspace1Dashboards).extracting(Dashboard::getName) // GH-90000
+                    .containsExactlyInAnyOrder("Dashboard 1", "Dashboard 2"); // GH-90000
         }
 
         @Test
-        @DisplayName("should find dashboard by workspace and name")
-        void shouldFindDashboardByWorkspaceAndName() {
+        @DisplayName("should find dashboard by workspace and name [GH-90000]")
+        void shouldFindDashboardByWorkspaceAndName() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            Dashboard dashboard = Dashboard.of(workspaceId, "Unique Dashboard");
-            dashboardRepository.save(dashboard);
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            Dashboard dashboard = Dashboard.of(workspaceId, "Unique Dashboard"); // GH-90000
+            dashboardRepository.save(dashboard); // GH-90000
 
             // When
-            Optional<Dashboard> found = dashboardRepository.findByWorkspaceIdAndName(workspaceId, "Unique Dashboard");
-            Optional<Dashboard> notFound = dashboardRepository.findByWorkspaceIdAndName(workspaceId, "Non-existent");
+            Optional<Dashboard> found = dashboardRepository.findByWorkspaceIdAndName(workspaceId, "Unique Dashboard"); // GH-90000
+            Optional<Dashboard> notFound = dashboardRepository.findByWorkspaceIdAndName(workspaceId, "Non-existent"); // GH-90000
 
             // Then
-            assertThat(found).isPresent();
-            assertThat(found.get().getName()).isEqualTo("Unique Dashboard");
-            assertThat(notFound).isEmpty();
+            assertThat(found).isPresent(); // GH-90000
+            assertThat(found.get().getName()).isEqualTo("Unique Dashboard [GH-90000]");
+            assertThat(notFound).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should delete dashboard")
-        void shouldDeleteDashboard() {
+        @DisplayName("should delete dashboard [GH-90000]")
+        void shouldDeleteDashboard() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            Dashboard dashboard = Dashboard.of(workspaceId, "To Be Deleted");
-            Dashboard saved = dashboardRepository.save(dashboard);
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            Dashboard dashboard = Dashboard.of(workspaceId, "To Be Deleted"); // GH-90000
+            Dashboard saved = dashboardRepository.save(dashboard); // GH-90000
 
             // When
-            dashboardRepository.deleteById(saved.getId());
+            dashboardRepository.deleteById(saved.getId()); // GH-90000
 
             // Then
-            assertThat(dashboardRepository.findById(saved.getId())).isEmpty();
+            assertThat(dashboardRepository.findById(saved.getId())).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("ScanJob Repository Tests")
+    @DisplayName("ScanJob Repository Tests [GH-90000]")
     class ScanJobRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve scan job")
-        void shouldSaveAndRetrieveScanJob() {
+        @DisplayName("should save and retrieve scan job [GH-90000]")
+        void shouldSaveAndRetrieveScanJob() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            UUID projectId = UUID.randomUUID();
-            ScanJob scanJob = ScanJob.pending(workspaceId, projectId, ScanType.SAST);
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            UUID projectId = UUID.randomUUID(); // GH-90000
+            ScanJob scanJob = ScanJob.pending(workspaceId, projectId, ScanType.SAST); // GH-90000
 
             // When
-            ScanJob saved = scanJobRepository.save(scanJob);
-            Optional<ScanJob> retrieved = scanJobRepository.findById(saved.getId());
+            ScanJob saved = scanJobRepository.save(scanJob); // GH-90000
+            Optional<ScanJob> retrieved = scanJobRepository.findById(saved.getId()); // GH-90000
 
             // Then
-            assertThat(retrieved).isPresent();
-            assertThat(retrieved.get().getStatus()).isEqualTo(ScanStatus.PENDING);
-            assertThat(retrieved.get().getScanType()).isEqualTo(ScanType.SAST);
+            assertThat(retrieved).isPresent(); // GH-90000
+            assertThat(retrieved.get().getStatus()).isEqualTo(ScanStatus.PENDING); // GH-90000
+            assertThat(retrieved.get().getScanType()).isEqualTo(ScanType.SAST); // GH-90000
         }
 
         @Test
-        @DisplayName("should find scan jobs by status")
-        void shouldFindScanJobsByStatus() {
+        @DisplayName("should find scan jobs by status [GH-90000]")
+        void shouldFindScanJobsByStatus() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            UUID projectId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            UUID projectId = UUID.randomUUID(); // GH-90000
 
-            ScanJob pending = ScanJob.pending(workspaceId, projectId, ScanType.SAST);
-            ScanJob running = ScanJob.pending(workspaceId, projectId, ScanType.DAST);
-            running.start();
-            ScanJob completed = ScanJob.pending(workspaceId, projectId, ScanType.SCA);
-            completed.start();
-            completed.complete();
+            ScanJob pending = ScanJob.pending(workspaceId, projectId, ScanType.SAST); // GH-90000
+            ScanJob running = ScanJob.pending(workspaceId, projectId, ScanType.DAST); // GH-90000
+            running.start(); // GH-90000
+            ScanJob completed = ScanJob.pending(workspaceId, projectId, ScanType.SCA); // GH-90000
+            completed.start(); // GH-90000
+            completed.complete(); // GH-90000
 
-            scanJobRepository.save(pending);
-            scanJobRepository.save(running);
-            scanJobRepository.save(completed);
+            scanJobRepository.save(pending); // GH-90000
+            scanJobRepository.save(running); // GH-90000
+            scanJobRepository.save(completed); // GH-90000
 
             // When
-            List<ScanJob> pendingJobs = scanJobRepository.findByStatus(ScanStatus.PENDING);
-            List<ScanJob> runningJobs = scanJobRepository.findByStatus(ScanStatus.RUNNING);
+            List<ScanJob> pendingJobs = scanJobRepository.findByStatus(ScanStatus.PENDING); // GH-90000
+            List<ScanJob> runningJobs = scanJobRepository.findByStatus(ScanStatus.RUNNING); // GH-90000
 
             // Then
-            assertThat(pendingJobs).hasSize(1);
-            assertThat(runningJobs).hasSize(1);
+            assertThat(pendingJobs).hasSize(1); // GH-90000
+            assertThat(runningJobs).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("should find scan jobs by project id")
-        void shouldFindScanJobsByProjectId() {
+        @DisplayName("should find scan jobs by project id [GH-90000]")
+        void shouldFindScanJobsByProjectId() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            UUID projectId1 = UUID.randomUUID();
-            UUID projectId2 = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            UUID projectId1 = UUID.randomUUID(); // GH-90000
+            UUID projectId2 = UUID.randomUUID(); // GH-90000
 
-            scanJobRepository.save(ScanJob.pending(workspaceId, projectId1, ScanType.SAST));
-            scanJobRepository.save(ScanJob.pending(workspaceId, projectId1, ScanType.DAST));
-            scanJobRepository.save(ScanJob.pending(workspaceId, projectId2, ScanType.SCA));
+            scanJobRepository.save(ScanJob.pending(workspaceId, projectId1, ScanType.SAST)); // GH-90000
+            scanJobRepository.save(ScanJob.pending(workspaceId, projectId1, ScanType.DAST)); // GH-90000
+            scanJobRepository.save(ScanJob.pending(workspaceId, projectId2, ScanType.SCA)); // GH-90000
 
             // When
-            List<ScanJob> project1Jobs = scanJobRepository.findByProjectId(projectId1);
+            List<ScanJob> project1Jobs = scanJobRepository.findByProjectId(projectId1); // GH-90000
 
             // Then
-            assertThat(project1Jobs).hasSize(2);
+            assertThat(project1Jobs).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("should update scan job status")
-        void shouldUpdateScanJobStatus() {
+        @DisplayName("should update scan job status [GH-90000]")
+        void shouldUpdateScanJobStatus() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            UUID projectId = UUID.randomUUID();
-            ScanJob scanJob = ScanJob.pending(workspaceId, projectId, ScanType.SAST);
-            ScanJob saved = scanJobRepository.save(scanJob);
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            UUID projectId = UUID.randomUUID(); // GH-90000
+            ScanJob scanJob = ScanJob.pending(workspaceId, projectId, ScanType.SAST); // GH-90000
+            ScanJob saved = scanJobRepository.save(scanJob); // GH-90000
 
             // When
-            saved.start();
-            scanJobRepository.save(saved);
-            Optional<ScanJob> updated = scanJobRepository.findById(saved.getId());
+            saved.start(); // GH-90000
+            scanJobRepository.save(saved); // GH-90000
+            Optional<ScanJob> updated = scanJobRepository.findById(saved.getId()); // GH-90000
 
             // Then
-            assertThat(updated).isPresent();
-            assertThat(updated.get().getStatus()).isEqualTo(ScanStatus.RUNNING);
-            assertThat(updated.get().getStartedAt()).isNotNull();
+            assertThat(updated).isPresent(); // GH-90000
+            assertThat(updated.get().getStatus()).isEqualTo(ScanStatus.RUNNING); // GH-90000
+            assertThat(updated.get().getStartedAt()).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Incident Repository Tests")
+    @DisplayName("Incident Repository Tests [GH-90000]")
     class IncidentRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve incident")
-        void shouldSaveAndRetrieveIncident() {
+        @DisplayName("should save and retrieve incident [GH-90000]")
+        void shouldSaveAndRetrieveIncident() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            Incident incident = Incident.of(workspaceId, "Security Breach", "CRITICAL");
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            Incident incident = Incident.of(workspaceId, "Security Breach", "CRITICAL"); // GH-90000
 
             // When
-            Incident saved = incidentRepository.save(incident);
-            Optional<Incident> retrieved = incidentRepository.findById(saved.getId());
+            Incident saved = incidentRepository.save(incident); // GH-90000
+            Optional<Incident> retrieved = incidentRepository.findById(saved.getId()); // GH-90000
 
             // Then
-            assertThat(retrieved).isPresent();
-            assertThat(retrieved.get().getTitle()).isEqualTo("Security Breach");
-            assertThat(retrieved.get().getSeverity()).isEqualTo("CRITICAL");
+            assertThat(retrieved).isPresent(); // GH-90000
+            assertThat(retrieved.get().getTitle()).isEqualTo("Security Breach [GH-90000]");
+            assertThat(retrieved.get().getSeverity()).isEqualTo("CRITICAL [GH-90000]");
         }
 
         @Test
-        @DisplayName("should find open incidents by workspace")
-        void shouldFindOpenIncidentsByWorkspace() {
+        @DisplayName("should find open incidents by workspace [GH-90000]")
+        void shouldFindOpenIncidentsByWorkspace() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
 
-            Incident open1 = Incident.of(workspaceId, "Open Incident 1", "HIGH");
-            Incident open2 = Incident.of(workspaceId, "Open Incident 2", "MEDIUM");
-            Incident resolved = Incident.of(workspaceId, "Resolved Incident", "LOW");
-            resolved.resolve("Fixed");
+            Incident open1 = Incident.of(workspaceId, "Open Incident 1", "HIGH"); // GH-90000
+            Incident open2 = Incident.of(workspaceId, "Open Incident 2", "MEDIUM"); // GH-90000
+            Incident resolved = Incident.of(workspaceId, "Resolved Incident", "LOW"); // GH-90000
+            resolved.resolve("Fixed [GH-90000]");
 
-            incidentRepository.save(open1);
-            incidentRepository.save(open2);
-            incidentRepository.save(resolved);
+            incidentRepository.save(open1); // GH-90000
+            incidentRepository.save(open2); // GH-90000
+            incidentRepository.save(resolved); // GH-90000
 
             // When
-            List<Incident> openIncidents = incidentRepository.findOpenByWorkspaceId(workspaceId);
+            List<Incident> openIncidents = incidentRepository.findOpenByWorkspaceId(workspaceId); // GH-90000
 
             // Then
-            assertThat(openIncidents).hasSize(2);
-            assertThat(openIncidents).allMatch(Incident::isOpen);
+            assertThat(openIncidents).hasSize(2); // GH-90000
+            assertThat(openIncidents).allMatch(Incident::isOpen); // GH-90000
         }
 
         @Test
-        @DisplayName("should find incidents by severity")
-        void shouldFindIncidentsBySeverity() {
+        @DisplayName("should find incidents by severity [GH-90000]")
+        void shouldFindIncidentsBySeverity() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
 
-            incidentRepository.save(Incident.of(workspaceId, "Critical 1", "CRITICAL"));
-            incidentRepository.save(Incident.of(workspaceId, "Critical 2", "CRITICAL"));
-            incidentRepository.save(Incident.of(workspaceId, "High", "HIGH"));
-            incidentRepository.save(Incident.of(workspaceId, "Medium", "MEDIUM"));
+            incidentRepository.save(Incident.of(workspaceId, "Critical 1", "CRITICAL")); // GH-90000
+            incidentRepository.save(Incident.of(workspaceId, "Critical 2", "CRITICAL")); // GH-90000
+            incidentRepository.save(Incident.of(workspaceId, "High", "HIGH")); // GH-90000
+            incidentRepository.save(Incident.of(workspaceId, "Medium", "MEDIUM")); // GH-90000
 
             // When
-            List<Incident> criticalIncidents = incidentRepository.findBySeverity("CRITICAL");
+            List<Incident> criticalIncidents = incidentRepository.findBySeverity("CRITICAL [GH-90000]");
 
             // Then
-            assertThat(criticalIncidents).hasSize(2);
+            assertThat(criticalIncidents).hasSize(2); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("CloudAccount Repository Tests")
+    @DisplayName("CloudAccount Repository Tests [GH-90000]")
     class CloudAccountRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve cloud account")
-        void shouldSaveAndRetrieveCloudAccount() {
+        @DisplayName("should save and retrieve cloud account [GH-90000]")
+        void shouldSaveAndRetrieveCloudAccount() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            CloudAccount account = CloudAccount.of(workspaceId, CloudProvider.AWS, "123456789012", "Production AWS");
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            CloudAccount account = CloudAccount.of(workspaceId, CloudProvider.AWS, "123456789012", "Production AWS"); // GH-90000
 
             // When
-            CloudAccount saved = cloudAccountRepository.save(account);
-            Optional<CloudAccount> retrieved = cloudAccountRepository.findById(saved.getId());
+            CloudAccount saved = cloudAccountRepository.save(account); // GH-90000
+            Optional<CloudAccount> retrieved = cloudAccountRepository.findById(saved.getId()); // GH-90000
 
             // Then
-            assertThat(retrieved).isPresent();
-            assertThat(retrieved.get().getName()).isEqualTo("Production AWS");
-            assertThat(retrieved.get().getProvider()).isEqualTo(CloudProvider.AWS);
+            assertThat(retrieved).isPresent(); // GH-90000
+            assertThat(retrieved.get().getName()).isEqualTo("Production AWS [GH-90000]");
+            assertThat(retrieved.get().getProvider()).isEqualTo(CloudProvider.AWS); // GH-90000
         }
 
         @Test
-        @DisplayName("should find cloud accounts by provider")
-        void shouldFindCloudAccountsByProvider() {
+        @DisplayName("should find cloud accounts by provider [GH-90000]")
+        void shouldFindCloudAccountsByProvider() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
 
-            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.AWS, "111111111111", "AWS 1"));
-            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.AWS, "222222222222", "AWS 2"));
-            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.GCP, "gcp-project-1", "GCP 1"));
-            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.AZURE, "azure-sub-1", "Azure 1"));
+            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.AWS, "111111111111", "AWS 1")); // GH-90000
+            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.AWS, "222222222222", "AWS 2")); // GH-90000
+            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.GCP, "gcp-project-1", "GCP 1")); // GH-90000
+            cloudAccountRepository.save(CloudAccount.of(workspaceId, CloudProvider.AZURE, "azure-sub-1", "Azure 1")); // GH-90000
 
             // When
-            List<CloudAccount> awsAccounts = cloudAccountRepository.findByProvider(CloudProvider.AWS);
+            List<CloudAccount> awsAccounts = cloudAccountRepository.findByProvider(CloudProvider.AWS); // GH-90000
 
             // Then
-            assertThat(awsAccounts).hasSize(2);
-            assertThat(awsAccounts).allMatch(a -> a.getProvider() == CloudProvider.AWS);
+            assertThat(awsAccounts).hasSize(2); // GH-90000
+            assertThat(awsAccounts).allMatch(a -> a.getProvider() == CloudProvider.AWS); // GH-90000
         }
 
         @Test
-        @DisplayName("should find enabled cloud accounts")
-        void shouldFindEnabledCloudAccounts() {
+        @DisplayName("should find enabled cloud accounts [GH-90000]")
+        void shouldFindEnabledCloudAccounts() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
 
-            CloudAccount enabled = CloudAccount.of(workspaceId, CloudProvider.AWS, "111111111111", "Enabled");
-            CloudAccount disabled = CloudAccount.of(workspaceId, CloudProvider.AWS, "222222222222", "Disabled");
-            disabled.disable();
+            CloudAccount enabled = CloudAccount.of(workspaceId, CloudProvider.AWS, "111111111111", "Enabled"); // GH-90000
+            CloudAccount disabled = CloudAccount.of(workspaceId, CloudProvider.AWS, "222222222222", "Disabled"); // GH-90000
+            disabled.disable(); // GH-90000
 
-            cloudAccountRepository.save(enabled);
-            cloudAccountRepository.save(disabled);
+            cloudAccountRepository.save(enabled); // GH-90000
+            cloudAccountRepository.save(disabled); // GH-90000
 
             // When
-            List<CloudAccount> enabledAccounts = cloudAccountRepository.findEnabled(workspaceId);
+            List<CloudAccount> enabledAccounts = cloudAccountRepository.findEnabled(workspaceId); // GH-90000
 
             // Then
-            assertThat(enabledAccounts).hasSize(1);
-            assertThat(enabledAccounts.get(0).getName()).isEqualTo("Enabled");
+            assertThat(enabledAccounts).hasSize(1); // GH-90000
+            assertThat(enabledAccounts.get(0).getName()).isEqualTo("Enabled [GH-90000]");
         }
     }
 
     @Nested
-    @DisplayName("SecurityAlert Repository Tests")
+    @DisplayName("SecurityAlert Repository Tests [GH-90000]")
     class SecurityAlertRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve security alert")
-        void shouldSaveAndRetrieveSecurityAlert() {
+        @DisplayName("should save and retrieve security alert [GH-90000]")
+        void shouldSaveAndRetrieveSecurityAlert() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
-            // Signature: of(workspaceId, alertType, severity, title)
-            SecurityAlert alert = SecurityAlert.of(workspaceId, "IDS", "HIGH", "Suspicious Activity");
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
+            // Signature: of(workspaceId, alertType, severity, title) // GH-90000
+            SecurityAlert alert = SecurityAlert.of(workspaceId, "IDS", "HIGH", "Suspicious Activity"); // GH-90000
 
             // When
-            SecurityAlert saved = securityAlertRepository.save(alert);
-            Optional<SecurityAlert> retrieved = securityAlertRepository.findById(saved.getId());
+            SecurityAlert saved = securityAlertRepository.save(alert); // GH-90000
+            Optional<SecurityAlert> retrieved = securityAlertRepository.findById(saved.getId()); // GH-90000
 
             // Then
-            assertThat(retrieved).isPresent();
-            assertThat(retrieved.get().getTitle()).isEqualTo("Suspicious Activity");
-            assertThat(retrieved.get().getSeverity()).isEqualTo("HIGH");
+            assertThat(retrieved).isPresent(); // GH-90000
+            assertThat(retrieved.get().getTitle()).isEqualTo("Suspicious Activity [GH-90000]");
+            assertThat(retrieved.get().getSeverity()).isEqualTo("HIGH [GH-90000]");
         }
 
         @Test
-        @DisplayName("should find unacknowledged alerts")
-        void shouldFindUnacknowledgedAlerts() {
+        @DisplayName("should find unacknowledged alerts [GH-90000]")
+        void shouldFindUnacknowledgedAlerts() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
 
-            // Signature: of(workspaceId, alertType, severity, title)
-            SecurityAlert open1 = SecurityAlert.of(workspaceId, "IDS", "HIGH", "Open 1");
-            SecurityAlert open2 = SecurityAlert.of(workspaceId, "WAF", "MEDIUM", "Open 2");
-            SecurityAlert acked = SecurityAlert.of(workspaceId, "SIEM", "LOW", "Acknowledged");
-            acked.acknowledge(UUID.randomUUID());
+            // Signature: of(workspaceId, alertType, severity, title) // GH-90000
+            SecurityAlert open1 = SecurityAlert.of(workspaceId, "IDS", "HIGH", "Open 1"); // GH-90000
+            SecurityAlert open2 = SecurityAlert.of(workspaceId, "WAF", "MEDIUM", "Open 2"); // GH-90000
+            SecurityAlert acked = SecurityAlert.of(workspaceId, "SIEM", "LOW", "Acknowledged"); // GH-90000
+            acked.acknowledge(UUID.randomUUID()); // GH-90000
 
-            securityAlertRepository.save(open1);
-            securityAlertRepository.save(open2);
-            securityAlertRepository.save(acked);
+            securityAlertRepository.save(open1); // GH-90000
+            securityAlertRepository.save(open2); // GH-90000
+            securityAlertRepository.save(acked); // GH-90000
 
             // When
-            List<SecurityAlert> openAlerts = securityAlertRepository.findOpenByWorkspaceId(workspaceId);
+            List<SecurityAlert> openAlerts = securityAlertRepository.findOpenByWorkspaceId(workspaceId); // GH-90000
 
             // Then
-            assertThat(openAlerts).hasSize(2);
-            assertThat(openAlerts).allMatch(SecurityAlert::isOpen);
+            assertThat(openAlerts).hasSize(2); // GH-90000
+            assertThat(openAlerts).allMatch(SecurityAlert::isOpen); // GH-90000
         }
 
         @Test
-        @DisplayName("should count alerts by severity")
-        void shouldCountAlertsBySeverity() {
+        @DisplayName("should count alerts by severity [GH-90000]")
+        void shouldCountAlertsBySeverity() { // GH-90000
             // Given
-            UUID workspaceId = UUID.randomUUID();
+            UUID workspaceId = UUID.randomUUID(); // GH-90000
 
-            // Signature: of(workspaceId, alertType, severity, title)
-            securityAlertRepository.save(SecurityAlert.of(workspaceId, "IDS", "CRITICAL", "Critical 1"));
-            securityAlertRepository.save(SecurityAlert.of(workspaceId, "WAF", "CRITICAL", "Critical 2"));
-            securityAlertRepository.save(SecurityAlert.of(workspaceId, "SIEM", "HIGH", "High"));
+            // Signature: of(workspaceId, alertType, severity, title) // GH-90000
+            securityAlertRepository.save(SecurityAlert.of(workspaceId, "IDS", "CRITICAL", "Critical 1")); // GH-90000
+            securityAlertRepository.save(SecurityAlert.of(workspaceId, "WAF", "CRITICAL", "Critical 2")); // GH-90000
+            securityAlertRepository.save(SecurityAlert.of(workspaceId, "SIEM", "HIGH", "High")); // GH-90000
 
             // When
-            long criticalCount = securityAlertRepository.countBySeverity(workspaceId, "CRITICAL");
-            long highCount = securityAlertRepository.countBySeverity(workspaceId, "HIGH");
+            long criticalCount = securityAlertRepository.countBySeverity(workspaceId, "CRITICAL"); // GH-90000
+            long highCount = securityAlertRepository.countBySeverity(workspaceId, "HIGH"); // GH-90000
 
             // Then
-            assertThat(criticalCount).isEqualTo(2);
-            assertThat(highCount).isEqualTo(1);
+            assertThat(criticalCount).isEqualTo(2); // GH-90000
+            assertThat(highCount).isEqualTo(1); // GH-90000
         }
     }
 
@@ -436,39 +436,39 @@ class RepositoryIntegrationTest {
      * In-memory implementation of Dashboard repository for testing.
      */
     static class InMemoryDashboardRepository {
-        private final Map<UUID, Dashboard> store = new ConcurrentHashMap<>();
+        private final Map<UUID, Dashboard> store = new ConcurrentHashMap<>(); // GH-90000
 
-        public Dashboard save(Dashboard dashboard) {
-            if (dashboard.getId() == null) {
+        public Dashboard save(Dashboard dashboard) { // GH-90000
+            if (dashboard.getId() == null) { // GH-90000
                 // Simulate ID generation
-                Dashboard withId = dashboard.toBuilder()
-                        .id(UUID.randomUUID())
-                        .build();
-                store.put(withId.getId(), withId);
+                Dashboard withId = dashboard.toBuilder() // GH-90000
+                        .id(UUID.randomUUID()) // GH-90000
+                        .build(); // GH-90000
+                store.put(withId.getId(), withId); // GH-90000
                 return withId;
             }
-            store.put(dashboard.getId(), dashboard);
+            store.put(dashboard.getId(), dashboard); // GH-90000
             return dashboard;
         }
 
-        public Optional<Dashboard> findById(UUID id) {
-            return Optional.ofNullable(store.get(id));
+        public Optional<Dashboard> findById(UUID id) { // GH-90000
+            return Optional.ofNullable(store.get(id)); // GH-90000
         }
 
-        public List<Dashboard> findByWorkspaceId(UUID workspaceId) {
-            return store.values().stream()
-                    .filter(d -> d.getWorkspaceId().equals(workspaceId))
-                    .collect(Collectors.toList());
+        public List<Dashboard> findByWorkspaceId(UUID workspaceId) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(d -> d.getWorkspaceId().equals(workspaceId)) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
 
-        public Optional<Dashboard> findByWorkspaceIdAndName(UUID workspaceId, String name) {
-            return store.values().stream()
-                    .filter(d -> d.getWorkspaceId().equals(workspaceId) && d.getName().equals(name))
-                    .findFirst();
+        public Optional<Dashboard> findByWorkspaceIdAndName(UUID workspaceId, String name) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(d -> d.getWorkspaceId().equals(workspaceId) && d.getName().equals(name)) // GH-90000
+                    .findFirst(); // GH-90000
         }
 
-        public void deleteById(UUID id) {
-            store.remove(id);
+        public void deleteById(UUID id) { // GH-90000
+            store.remove(id); // GH-90000
         }
     }
 
@@ -476,34 +476,34 @@ class RepositoryIntegrationTest {
      * In-memory implementation of ScanJob repository for testing.
      */
     static class InMemoryScanJobRepository {
-        private final Map<UUID, ScanJob> store = new ConcurrentHashMap<>();
+        private final Map<UUID, ScanJob> store = new ConcurrentHashMap<>(); // GH-90000
 
-        public ScanJob save(ScanJob scanJob) {
-            if (scanJob.getId() == null) {
-                ScanJob withId = scanJob.toBuilder()
-                        .id(UUID.randomUUID())
-                        .build();
-                store.put(withId.getId(), withId);
+        public ScanJob save(ScanJob scanJob) { // GH-90000
+            if (scanJob.getId() == null) { // GH-90000
+                ScanJob withId = scanJob.toBuilder() // GH-90000
+                        .id(UUID.randomUUID()) // GH-90000
+                        .build(); // GH-90000
+                store.put(withId.getId(), withId); // GH-90000
                 return withId;
             }
-            store.put(scanJob.getId(), scanJob);
+            store.put(scanJob.getId(), scanJob); // GH-90000
             return scanJob;
         }
 
-        public Optional<ScanJob> findById(UUID id) {
-            return Optional.ofNullable(store.get(id));
+        public Optional<ScanJob> findById(UUID id) { // GH-90000
+            return Optional.ofNullable(store.get(id)); // GH-90000
         }
 
-        public List<ScanJob> findByStatus(ScanStatus status) {
-            return store.values().stream()
-                    .filter(j -> j.getStatus() == status)
-                    .collect(Collectors.toList());
+        public List<ScanJob> findByStatus(ScanStatus status) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(j -> j.getStatus() == status) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
 
-        public List<ScanJob> findByProjectId(UUID projectId) {
-            return store.values().stream()
-                    .filter(j -> j.getProjectId().equals(projectId))
-                    .collect(Collectors.toList());
+        public List<ScanJob> findByProjectId(UUID projectId) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(j -> j.getProjectId().equals(projectId)) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
     }
 
@@ -511,34 +511,34 @@ class RepositoryIntegrationTest {
      * In-memory implementation of Incident repository for testing.
      */
     static class InMemoryIncidentRepository {
-        private final Map<UUID, Incident> store = new ConcurrentHashMap<>();
+        private final Map<UUID, Incident> store = new ConcurrentHashMap<>(); // GH-90000
 
-        public Incident save(Incident incident) {
-            if (incident.getId() == null) {
-                Incident withId = incident.toBuilder()
-                        .id(UUID.randomUUID())
-                        .build();
-                store.put(withId.getId(), withId);
+        public Incident save(Incident incident) { // GH-90000
+            if (incident.getId() == null) { // GH-90000
+                Incident withId = incident.toBuilder() // GH-90000
+                        .id(UUID.randomUUID()) // GH-90000
+                        .build(); // GH-90000
+                store.put(withId.getId(), withId); // GH-90000
                 return withId;
             }
-            store.put(incident.getId(), incident);
+            store.put(incident.getId(), incident); // GH-90000
             return incident;
         }
 
-        public Optional<Incident> findById(UUID id) {
-            return Optional.ofNullable(store.get(id));
+        public Optional<Incident> findById(UUID id) { // GH-90000
+            return Optional.ofNullable(store.get(id)); // GH-90000
         }
 
-        public List<Incident> findOpenByWorkspaceId(UUID workspaceId) {
-            return store.values().stream()
-                    .filter(i -> i.getWorkspaceId().equals(workspaceId) && i.isOpen())
-                    .collect(Collectors.toList());
+        public List<Incident> findOpenByWorkspaceId(UUID workspaceId) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(i -> i.getWorkspaceId().equals(workspaceId) && i.isOpen()) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
 
-        public List<Incident> findBySeverity(String severity) {
-            return store.values().stream()
-                    .filter(i -> i.getSeverity().equals(severity))
-                    .collect(Collectors.toList());
+        public List<Incident> findBySeverity(String severity) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(i -> i.getSeverity().equals(severity)) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
     }
 
@@ -546,34 +546,34 @@ class RepositoryIntegrationTest {
      * In-memory implementation of CloudAccount repository for testing.
      */
     static class InMemoryCloudAccountRepository {
-        private final Map<UUID, CloudAccount> store = new ConcurrentHashMap<>();
+        private final Map<UUID, CloudAccount> store = new ConcurrentHashMap<>(); // GH-90000
 
-        public CloudAccount save(CloudAccount account) {
-            if (account.getId() == null) {
-                CloudAccount withId = account.toBuilder()
-                        .id(UUID.randomUUID())
-                        .build();
-                store.put(withId.getId(), withId);
+        public CloudAccount save(CloudAccount account) { // GH-90000
+            if (account.getId() == null) { // GH-90000
+                CloudAccount withId = account.toBuilder() // GH-90000
+                        .id(UUID.randomUUID()) // GH-90000
+                        .build(); // GH-90000
+                store.put(withId.getId(), withId); // GH-90000
                 return withId;
             }
-            store.put(account.getId(), account);
+            store.put(account.getId(), account); // GH-90000
             return account;
         }
 
-        public Optional<CloudAccount> findById(UUID id) {
-            return Optional.ofNullable(store.get(id));
+        public Optional<CloudAccount> findById(UUID id) { // GH-90000
+            return Optional.ofNullable(store.get(id)); // GH-90000
         }
 
-        public List<CloudAccount> findByProvider(CloudProvider provider) {
-            return store.values().stream()
-                    .filter(a -> a.getProvider() == provider)
-                    .collect(Collectors.toList());
+        public List<CloudAccount> findByProvider(CloudProvider provider) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.getProvider() == provider) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
 
-        public List<CloudAccount> findEnabled(UUID workspaceId) {
-            return store.values().stream()
-                    .filter(a -> a.getWorkspaceId().equals(workspaceId) && a.isEnabled())
-                    .collect(Collectors.toList());
+        public List<CloudAccount> findEnabled(UUID workspaceId) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.getWorkspaceId().equals(workspaceId) && a.isEnabled()) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
     }
 
@@ -581,34 +581,34 @@ class RepositoryIntegrationTest {
      * In-memory implementation of SecurityAlert repository for testing.
      */
     static class InMemorySecurityAlertRepository {
-        private final Map<UUID, SecurityAlert> store = new ConcurrentHashMap<>();
+        private final Map<UUID, SecurityAlert> store = new ConcurrentHashMap<>(); // GH-90000
 
-        public SecurityAlert save(SecurityAlert alert) {
-            if (alert.getId() == null) {
-                SecurityAlert withId = alert.toBuilder()
-                        .id(UUID.randomUUID())
-                        .build();
-                store.put(withId.getId(), withId);
+        public SecurityAlert save(SecurityAlert alert) { // GH-90000
+            if (alert.getId() == null) { // GH-90000
+                SecurityAlert withId = alert.toBuilder() // GH-90000
+                        .id(UUID.randomUUID()) // GH-90000
+                        .build(); // GH-90000
+                store.put(withId.getId(), withId); // GH-90000
                 return withId;
             }
-            store.put(alert.getId(), alert);
+            store.put(alert.getId(), alert); // GH-90000
             return alert;
         }
 
-        public Optional<SecurityAlert> findById(UUID id) {
-            return Optional.ofNullable(store.get(id));
+        public Optional<SecurityAlert> findById(UUID id) { // GH-90000
+            return Optional.ofNullable(store.get(id)); // GH-90000
         }
 
-        public List<SecurityAlert> findOpenByWorkspaceId(UUID workspaceId) {
-            return store.values().stream()
-                    .filter(a -> a.getWorkspaceId().equals(workspaceId) && a.isOpen())
-                    .collect(Collectors.toList());
+        public List<SecurityAlert> findOpenByWorkspaceId(UUID workspaceId) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.getWorkspaceId().equals(workspaceId) && a.isOpen()) // GH-90000
+                    .collect(Collectors.toList()); // GH-90000
         }
 
-        public long countBySeverity(UUID workspaceId, String severity) {
-            return store.values().stream()
-                    .filter(a -> a.getWorkspaceId().equals(workspaceId) && a.getSeverity().equals(severity))
-                    .count();
+        public long countBySeverity(UUID workspaceId, String severity) { // GH-90000
+            return store.values().stream() // GH-90000
+                    .filter(a -> a.getWorkspaceId().equals(workspaceId) && a.getSeverity().equals(severity)) // GH-90000
+                    .count(); // GH-90000
         }
     }
 }

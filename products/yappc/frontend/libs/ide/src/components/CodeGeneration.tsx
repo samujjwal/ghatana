@@ -211,7 +211,7 @@ export default \${1:ComponentName};`,
 export const \${1:endpointName}Handler = async (req: Request, res: Response) => {
   try {
     \${2:// Implementation here}
-    
+
     res.json({
       success: true,
       data: \${3:// Response data}
@@ -328,7 +328,7 @@ describe('\${2:SuiteName}', () => {
 
   it('should handle basic operations', async () => {
     \${5:// Test implementation}
-    expect(true).toBe(true);
+    expect(service).toBeDefined();
   });
 
   describe('error handling', () => {

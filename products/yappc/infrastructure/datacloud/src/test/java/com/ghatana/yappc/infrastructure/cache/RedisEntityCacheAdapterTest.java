@@ -15,76 +15,76 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  *
  * Verifies the current no-op cache adapter contract while platform cache wiring is disabled.
  */
-@DisplayName("RedisEntityCacheAdapter Tests")
+@DisplayName("RedisEntityCacheAdapter Tests [GH-90000]")
 class RedisEntityCacheAdapterTest {
 
     private RedisEntityCacheAdapter<TestEntity> cacheAdapter;
 
     @BeforeEach
-    void setUp() {
-        cacheAdapter = new RedisEntityCacheAdapter<>(
-                new Object(),
-                new ObjectMapper(),
-                Duration.ofMinutes(5),
+    void setUp() { // GH-90000
+        cacheAdapter = new RedisEntityCacheAdapter<>( // GH-90000
+                new Object(), // GH-90000
+                new ObjectMapper(), // GH-90000
+                Duration.ofMinutes(5), // GH-90000
                 "test-collection"
         );
     }
 
     @Test
-    @DisplayName("Should always return empty while cache stub is disabled")
-    void shouldReturnEmptyWhenCacheMiss() {
-        assertThat(cacheAdapter.get("id1")).isEmpty();
+    @DisplayName("Should always return empty while cache stub is disabled [GH-90000]")
+    void shouldReturnEmptyWhenCacheMiss() { // GH-90000
+        assertThat(cacheAdapter.get("id1 [GH-90000]")).isEmpty();
     }
 
     @Test
-    @DisplayName("Should ignore put with default TTL without throwing")
-    void shouldPutValueInCacheWithDefaultTtl() {
-        TestEntity entity = new TestEntity("id1", "Test Entity");
+    @DisplayName("Should ignore put with default TTL without throwing [GH-90000]")
+    void shouldPutValueInCacheWithDefaultTtl() { // GH-90000
+        TestEntity entity = new TestEntity("id1", "Test Entity"); // GH-90000
 
-        assertThatCode(() -> cacheAdapter.put("id1", entity)).doesNotThrowAnyException();
+        assertThatCode(() -> cacheAdapter.put("id1", entity)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should ignore put with custom TTL without throwing")
-    void shouldPutValueInCacheWithCustomTtl() {
-        TestEntity entity = new TestEntity("id1", "Test Entity");
-        Duration customTtl = Duration.ofMinutes(10);
+    @DisplayName("Should ignore put with custom TTL without throwing [GH-90000]")
+    void shouldPutValueInCacheWithCustomTtl() { // GH-90000
+        TestEntity entity = new TestEntity("id1", "Test Entity"); // GH-90000
+        Duration customTtl = Duration.ofMinutes(10); // GH-90000
 
-        assertThatCode(() -> cacheAdapter.put("id1", entity, customTtl)).doesNotThrowAnyException();
+        assertThatCode(() -> cacheAdapter.put("id1", entity, customTtl)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should ignore invalidation without throwing")
-    void shouldInvalidateCacheEntry() {
-        assertThatCode(() -> cacheAdapter.invalidate("id1")).doesNotThrowAnyException();
+    @DisplayName("Should ignore invalidation without throwing [GH-90000]")
+    void shouldInvalidateCacheEntry() { // GH-90000
+        assertThatCode(() -> cacheAdapter.invalidate("id1 [GH-90000]")).doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("Should ignore clear without throwing")
-    void shouldClearAllCacheEntriesForCollection() {
-        assertThatCode(cacheAdapter::clear).doesNotThrowAnyException();
+    @DisplayName("Should ignore clear without throwing [GH-90000]")
+    void shouldClearAllCacheEntriesForCollection() { // GH-90000
+        assertThatCode(cacheAdapter::clear).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return zero statistics for cache stub")
-    void shouldReturnCacheStatistics() {
-        RedisEntityCacheAdapter.CacheStatistics result = cacheAdapter.getStatistics();
+    @DisplayName("Should return zero statistics for cache stub [GH-90000]")
+    void shouldReturnCacheStatistics() { // GH-90000
+        RedisEntityCacheAdapter.CacheStatistics result = cacheAdapter.getStatistics(); // GH-90000
 
-        assertThat(result.keyCount()).isZero();
-        assertThat(result.sizeBytes()).isZero();
+        assertThat(result.keyCount()).isZero(); // GH-90000
+        assertThat(result.sizeBytes()).isZero(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should ignore repeated cache operations")
-    void shouldNotThrowOnRepeatedOperations() {
-        TestEntity entity = new TestEntity("id1", "Test Entity");
-        assertThatCode(() -> {
-            cacheAdapter.put("id1", entity);
-            cacheAdapter.put("id1", entity, Duration.ofSeconds(30));
-            cacheAdapter.invalidate("id1");
-            cacheAdapter.clear();
-        }).doesNotThrowAnyException();
+    @DisplayName("Should ignore repeated cache operations [GH-90000]")
+    void shouldNotThrowOnRepeatedOperations() { // GH-90000
+        TestEntity entity = new TestEntity("id1", "Test Entity"); // GH-90000
+        assertThatCode(() -> { // GH-90000
+            cacheAdapter.put("id1", entity); // GH-90000
+            cacheAdapter.put("id1", entity, Duration.ofSeconds(30)); // GH-90000
+            cacheAdapter.invalidate("id1 [GH-90000]");
+            cacheAdapter.clear(); // GH-90000
+        }).doesNotThrowAnyException(); // GH-90000
     }
 
-    record TestEntity(String id, String name) {}
+    record TestEntity(String id, String name) {} // GH-90000
 }

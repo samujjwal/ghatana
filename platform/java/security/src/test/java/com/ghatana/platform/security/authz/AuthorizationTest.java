@@ -22,122 +22,122 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Role-based access control, permission checks, and security policy validation.
  */
-@DisplayName("Authorization Tests")
+@DisplayName("Authorization Tests [GH-90000]")
 class AuthorizationTest {
 
     @Test
-    @DisplayName("Should enforce role-based access control")
-    void shouldEnforceRoleBasedAccessControl() {
-        AbacEngine engine = new AbacEngine();
+    @DisplayName("Should enforce role-based access control [GH-90000]")
+    void shouldEnforceRoleBasedAccessControl() { // GH-90000
+        AbacEngine engine = new AbacEngine(); // GH-90000
 
-        AbacPolicy adminPolicy = AbacPolicy.builder("admin-policy")
-            .target(req -> "admin".equals(req.subject().get("role")))
-            .condition(req -> true)
-            .build();
+        AbacPolicy adminPolicy = AbacPolicy.builder("admin-policy [GH-90000]")
+            .target(req -> "admin".equals(req.subject().get("role [GH-90000]")))
+            .condition(req -> true) // GH-90000
+            .build(); // GH-90000
 
-        engine.addPolicy(adminPolicy);
+        engine.addPolicy(adminPolicy); // GH-90000
 
-        assertThat(engine.policyCount()).isEqualTo(1);
+        assertThat(engine.policyCount()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should check permissions correctly")
-    void shouldCheckPermissionsCorrectly() {
-        AbacEngine engine = new AbacEngine();
+    @DisplayName("Should check permissions correctly [GH-90000]")
+    void shouldCheckPermissionsCorrectly() { // GH-90000
+        AbacEngine engine = new AbacEngine(); // GH-90000
 
-        AbacPolicy readPolicy = AbacPolicy.builder("read-policy")
-            .target(req -> "read".equals(req.action()))
-            .condition(req -> "user".equals(req.subject().get("role")))
-            .build();
+        AbacPolicy readPolicy = AbacPolicy.builder("read-policy [GH-90000]")
+            .target(req -> "read".equals(req.action())) // GH-90000
+            .condition(req -> "user".equals(req.subject().get("role [GH-90000]")))
+            .build(); // GH-90000
 
-        engine.addPolicy(readPolicy);
+        engine.addPolicy(readPolicy); // GH-90000
 
-        AbacRequest request = new AbacRequest(
-            Map.of("role", "user"),
-            Map.of("type", "document"),
+        AbacRequest request = new AbacRequest( // GH-90000
+            Map.of("role", "user"), // GH-90000
+            Map.of("type", "document"), // GH-90000
             "read",
-            Map.of()
+            Map.of() // GH-90000
         );
 
-        AbacDecision decision = engine.evaluate(request);
-        assertThat(decision.permitted()).isTrue();
+        AbacDecision decision = engine.evaluate(request); // GH-90000
+        assertThat(decision.permitted()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate security policies")
-    void shouldValidateSecurityPolicies() {
-        AbacEngine engine = new AbacEngine();
+    @DisplayName("Should validate security policies [GH-90000]")
+    void shouldValidateSecurityPolicies() { // GH-90000
+        AbacEngine engine = new AbacEngine(); // GH-90000
 
-        AbacPolicy policy = AbacPolicy.builder("security-policy")
-            .target(req -> "sensitive".equals(req.resource().get("level")))
-            .condition(req -> "admin".equals(req.subject().get("role")))
-            .build();
+        AbacPolicy policy = AbacPolicy.builder("security-policy [GH-90000]")
+            .target(req -> "sensitive".equals(req.resource().get("level [GH-90000]")))
+            .condition(req -> "admin".equals(req.subject().get("role [GH-90000]")))
+            .build(); // GH-90000
 
-        engine.addPolicy(policy);
+        engine.addPolicy(policy); // GH-90000
 
-        assertThat(engine.removePolicy("security-policy")).isTrue();
-        assertThat(engine.policyCount()).isEqualTo(0);
+        assertThat(engine.removePolicy("security-policy [GH-90000]")).isTrue();
+        assertThat(engine.policyCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle permission revocation")
-    void shouldHandlePermissionRevocation() {
-        AbacEngine engine = new AbacEngine();
+    @DisplayName("Should handle permission revocation [GH-90000]")
+    void shouldHandlePermissionRevocation() { // GH-90000
+        AbacEngine engine = new AbacEngine(); // GH-90000
 
-        AbacPolicy policy = AbacPolicy.builder("revoke-policy")
-            .target(req -> true)
-            .condition(req -> false)
-            .build();
+        AbacPolicy policy = AbacPolicy.builder("revoke-policy [GH-90000]")
+            .target(req -> true) // GH-90000
+            .condition(req -> false) // GH-90000
+            .build(); // GH-90000
 
-        engine.addPolicy(policy);
-        engine.removePolicy("revoke-policy");
+        engine.addPolicy(policy); // GH-90000
+        engine.removePolicy("revoke-policy [GH-90000]");
 
-        assertThat(engine.policyCount()).isEqualTo(0);
+        assertThat(engine.policyCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle role assignment changes")
-    void shouldHandleRoleAssignmentChanges() {
-        AbacEngine engine = new AbacEngine();
+    @DisplayName("Should handle role assignment changes [GH-90000]")
+    void shouldHandleRoleAssignmentChanges() { // GH-90000
+        AbacEngine engine = new AbacEngine(); // GH-90000
 
-        AbacPolicy userPolicy = AbacPolicy.builder("user-policy")
-            .target(req -> "user".equals(req.subject().get("role")))
-            .condition(req -> true)
-            .build();
+        AbacPolicy userPolicy = AbacPolicy.builder("user-policy [GH-90000]")
+            .target(req -> "user".equals(req.subject().get("role [GH-90000]")))
+            .condition(req -> true) // GH-90000
+            .build(); // GH-90000
 
-        engine.addPolicy(userPolicy);
+        engine.addPolicy(userPolicy); // GH-90000
 
-        AbacRequest request = new AbacRequest(
-            Map.of("role", "user"),
-            Map.of("type", "resource"),
+        AbacRequest request = new AbacRequest( // GH-90000
+            Map.of("role", "user"), // GH-90000
+            Map.of("type", "resource"), // GH-90000
             "access",
-            Map.of()
+            Map.of() // GH-90000
         );
 
-        AbacDecision decision = engine.evaluate(request);
-        assertThat(decision.permitted()).isTrue();
+        AbacDecision decision = engine.evaluate(request); // GH-90000
+        assertThat(decision.permitted()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle cross-tenant authorization")
-    void shouldHandleCrossTenantAuthorization() {
-        AbacEngine engine = new AbacEngine();
+    @DisplayName("Should handle cross-tenant authorization [GH-90000]")
+    void shouldHandleCrossTenantAuthorization() { // GH-90000
+        AbacEngine engine = new AbacEngine(); // GH-90000
 
-        AbacPolicy tenantPolicy = AbacPolicy.builder("tenant-policy")
-            .target(req -> req.subject().get("tenantId").equals(req.resource().get("tenantId")))
-            .condition(req -> true)
-            .build();
+        AbacPolicy tenantPolicy = AbacPolicy.builder("tenant-policy [GH-90000]")
+            .target(req -> req.subject().get("tenantId [GH-90000]").equals(req.resource().get("tenantId [GH-90000]")))
+            .condition(req -> true) // GH-90000
+            .build(); // GH-90000
 
-        engine.addPolicy(tenantPolicy);
+        engine.addPolicy(tenantPolicy); // GH-90000
 
-        AbacRequest sameTenantRequest = new AbacRequest(
-            Map.of("tenantId", "tenant-1"),
-            Map.of("tenantId", "tenant-1"),
+        AbacRequest sameTenantRequest = new AbacRequest( // GH-90000
+            Map.of("tenantId", "tenant-1"), // GH-90000
+            Map.of("tenantId", "tenant-1"), // GH-90000
             "access",
-            Map.of()
+            Map.of() // GH-90000
         );
 
-        AbacDecision decision = engine.evaluate(sameTenantRequest);
-        assertThat(decision.permitted()).isTrue();
+        AbacDecision decision = engine.evaluate(sameTenantRequest); // GH-90000
+        assertThat(decision.permitted()).isTrue(); // GH-90000
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc.
+ * Copyright (c) 2026 Ghatana Inc. // GH-90000
  * All rights reserved.
  */
 package com.ghatana.core.domain.pipeline;
@@ -18,133 +18,133 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for template marketplace
  * @doc.layer test
  */
-@DisplayName("Template Marketplace Tests")
+@DisplayName("Template Marketplace Tests [GH-90000]")
 class TemplateMarketplaceTest {
 
     @Test
-    @DisplayName("initializes with default curated templates")
-    void initializesWithDefaultTemplates() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("initializes with default curated templates [GH-90000]")
+    void initializesWithDefaultTemplates() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        assertThat(marketplace.getPopular(10)).hasSizeGreaterThan(0);
+        assertThat(marketplace.getPopular(10)).hasSizeGreaterThan(0); // GH-90000
     }
 
     @Test
-    @DisplayName("searches templates by query")
-    void searchesTemplatesByQuery() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("searches templates by query [GH-90000]")
+    void searchesTemplatesByQuery() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> results = marketplace.search("fraud");
+        List<TemplateMarketplace.TemplateListing> results = marketplace.search("fraud [GH-90000]");
 
-        assertThat(results).isNotEmpty();
-        assertThat(results.stream().allMatch(l -> l.name().toLowerCase().contains("fraud") ||
-                                              l.description().toLowerCase().contains("fraud"))).isTrue();
+        assertThat(results).isNotEmpty(); // GH-90000
+        assertThat(results.stream().allMatch(l -> l.name().toLowerCase().contains("fraud [GH-90000]") ||
+                                              l.description().toLowerCase().contains("fraud [GH-90000]"))).isTrue();
     }
 
     @Test
-    @DisplayName("gets templates by category")
-    void getsTemplatesByCategory() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("gets templates by category [GH-90000]")
+    void getsTemplatesByCategory() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> results = marketplace.getByCategory("security");
+        List<TemplateMarketplace.TemplateListing> results = marketplace.getByCategory("security [GH-90000]");
 
-        assertThat(results).isNotEmpty();
-        assertThat(results.stream().allMatch(l -> l.category().equalsIgnoreCase("security"))).isTrue();
+        assertThat(results).isNotEmpty(); // GH-90000
+        assertThat(results.stream().allMatch(l -> l.category().equalsIgnoreCase("security [GH-90000]"))).isTrue();
     }
 
     @Test
-    @DisplayName("gets popular templates")
-    void getsPopularTemplates() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("gets popular templates [GH-90000]")
+    void getsPopularTemplates() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> popular = marketplace.getPopular(3);
+        List<TemplateMarketplace.TemplateListing> popular = marketplace.getPopular(3); // GH-90000
 
-        assertThat(popular).hasSizeLessThanOrEqualTo(3);
+        assertThat(popular).hasSizeLessThanOrEqualTo(3); // GH-90000
         // Should be sorted by popularity descending
-        for (int i = 0; i < popular.size() - 1; i++) {
-            assertThat(popular.get(i).popularity()).isGreaterThanOrEqualTo(popular.get(i + 1).popularity());
+        for (int i = 0; i < popular.size() - 1; i++) { // GH-90000
+            assertThat(popular.get(i).popularity()).isGreaterThanOrEqualTo(popular.get(i + 1).popularity()); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("gets new templates")
-    void getsNewTemplates() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("gets new templates [GH-90000]")
+    void getsNewTemplates() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> newTemplates = marketplace.getNew(3);
+        List<TemplateMarketplace.TemplateListing> newTemplates = marketplace.getNew(3); // GH-90000
 
-        assertThat(newTemplates).hasSizeLessThanOrEqualTo(3);
+        assertThat(newTemplates).hasSizeLessThanOrEqualTo(3); // GH-90000
     }
 
     @Test
-    @DisplayName("rates a template")
-    void ratesTemplate() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("rates a template [GH-90000]")
+    void ratesTemplate() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection").orElseThrow();
-        double originalRating = original.averageRating();
+        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        double originalRating = original.averageRating(); // GH-90000
 
-        marketplace.rateTemplate("fraud-detection", 5);
+        marketplace.rateTemplate("fraud-detection", 5); // GH-90000
 
-        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection").orElseThrow();
-        assertThat(updated.averageRating()).isNotEqualTo(originalRating);
-        assertThat(updated.ratingCount()).isEqualTo(original.ratingCount() + 1);
+        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        assertThat(updated.averageRating()).isNotEqualTo(originalRating); // GH-90000
+        assertThat(updated.ratingCount()).isEqualTo(original.ratingCount() + 1); // GH-90000
     }
 
     @Test
-    @DisplayName("records template usage")
-    void recordsTemplateUsage() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("records template usage [GH-90000]")
+    void recordsTemplateUsage() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection").orElseThrow();
-        int originalUsage = original.usageCount();
+        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        int originalUsage = original.usageCount(); // GH-90000
 
-        marketplace.recordUsage("fraud-detection");
+        marketplace.recordUsage("fraud-detection [GH-90000]");
 
-        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection").orElseThrow();
-        assertThat(updated.usageCount()).isEqualTo(originalUsage + 1);
-        assertThat(updated.popularity()).isGreaterThan(original.popularity());
+        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        assertThat(updated.usageCount()).isEqualTo(originalUsage + 1); // GH-90000
+        assertThat(updated.popularity()).isGreaterThan(original.popularity()); // GH-90000
     }
 
     @Test
-    @DisplayName("gets usage statistics")
-    void getsUsageStatistics() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("gets usage statistics [GH-90000]")
+    void getsUsageStatistics() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        marketplace.recordUsage("fraud-detection");
+        marketplace.recordUsage("fraud-detection [GH-90000]");
 
-        var stats = marketplace.getUsageStats("fraud-detection");
-        assertThat(stats).isPresent();
-        assertThat(stats.get().usageCount()).isGreaterThan(0);
+        var stats = marketplace.getUsageStats("fraud-detection [GH-90000]");
+        assertThat(stats).isPresent(); // GH-90000
+        assertThat(stats.get().usageCount()).isGreaterThan(0); // GH-90000
     }
 
     @Test
-    @DisplayName("gets spec builder for template")
-    void getsSpecBuilderForTemplate() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("gets spec builder for template [GH-90000]")
+    void getsSpecBuilderForTemplate() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        var specBuilder = marketplace.getSpecBuilder("fraud-detection");
-        assertThat(specBuilder).isPresent();
+        var specBuilder = marketplace.getSpecBuilder("fraud-detection [GH-90000]");
+        assertThat(specBuilder).isPresent(); // GH-90000
     }
 
     @Test
-    @DisplayName("gets all categories")
-    void getsAllCategories() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("gets all categories [GH-90000]")
+    void getsAllCategories() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateCategory> categories = marketplace.getCategories();
+        List<TemplateMarketplace.TemplateCategory> categories = marketplace.getCategories(); // GH-90000
 
-        assertThat(categories).isNotEmpty();
-        assertThat(categories.stream().anyMatch(c -> c.id().equals("security"))).isTrue();
+        assertThat(categories).isNotEmpty(); // GH-90000
+        assertThat(categories.stream().anyMatch(c -> c.id().equals("security [GH-90000]"))).isTrue();
     }
 
     @Test
-    @DisplayName("lists custom template")
-    void listsCustomTemplate() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("lists custom template [GH-90000]")
+    void listsCustomTemplate() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        PipelineSpecBuilder specBuilder = PipelineTemplateLibrary.rawIngest("custom-pipe", "tenant-1");
-        TemplateMarketplace.TemplateListing listing = new TemplateMarketplace.TemplateListing(
+        PipelineSpecBuilder specBuilder = PipelineTemplateLibrary.rawIngest("custom-pipe", "tenant-1"); // GH-90000
+        TemplateMarketplace.TemplateListing listing = new TemplateMarketplace.TemplateListing( // GH-90000
             "custom-template",
             "Custom Template",
             "A custom template",
@@ -152,28 +152,28 @@ class TemplateMarketplaceTest {
             "user",
             "1.0.0",
             specBuilder,
-            List.of("custom"),
+            List.of("custom [GH-90000]"),
             "beginner",
             5.0,
             1,
             10,
             5,
-            java.time.Instant.now()
+            java.time.Instant.now() // GH-90000
         );
 
-        String listingId = marketplace.listTemplate(listing);
+        String listingId = marketplace.listTemplate(listing); // GH-90000
 
-        assertThat(marketplace.getListing(listingId)).isPresent();
+        assertThat(marketplace.getListing(listingId)).isPresent(); // GH-90000
     }
 
     @Test
-    @DisplayName("searches by tags")
-    void searchesByTags() {
-        TemplateMarketplace marketplace = new TemplateMarketplace();
+    @DisplayName("searches by tags [GH-90000]")
+    void searchesByTags() { // GH-90000
+        TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> results = marketplace.search("ml");
+        List<TemplateMarketplace.TemplateListing> results = marketplace.search("ml [GH-90000]");
 
-        assertThat(results).isNotEmpty();
-        assertThat(results.stream().anyMatch(l -> l.tags().contains("ml"))).isTrue();
+        assertThat(results).isNotEmpty(); // GH-90000
+        assertThat(results.stream().anyMatch(l -> l.tags().contains("ml [GH-90000]"))).isTrue();
     }
 }

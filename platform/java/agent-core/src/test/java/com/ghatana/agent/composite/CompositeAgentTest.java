@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved.
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
  */
 
 package com.ghatana.agent.composite;
@@ -23,31 +23,31 @@ import static org.mockito.Mockito.mock;
 /**
  * Comprehensive tests for CompositeAgent — all aggregation strategies.
  */
-@DisplayName("Composite Agent")
+@DisplayName("Composite Agent [GH-90000]")
 class CompositeAgentTest {
 
     private AgentContext ctx;
 
     @BeforeEach
-    void setUp() {
-        ctx = AgentContext.builder()
-                .turnId("turn-1")
-                .agentId("composite-test")
-                .tenantId("test-tenant")
-                .memoryStore(mock(MemoryStore.class))
-                .build();
+    void setUp() { // GH-90000
+        ctx = AgentContext.builder() // GH-90000
+                .turnId("turn-1 [GH-90000]")
+                .agentId("composite-test [GH-90000]")
+                .tenantId("test-tenant [GH-90000]")
+                .memoryStore(mock(MemoryStore.class)) // GH-90000
+                .build(); // GH-90000
     }
 
-    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) {
-        AtomicReference<T> result = new AtomicReference<>();
-        AtomicReference<Exception> err = new AtomicReference<>();
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
-        eventloop.post(() -> supplier.get()
-                .whenResult(result::set)
-                .whenException(err::set));
-        eventloop.run();
-        if (err.get() != null) throw new RuntimeException(err.get());
-        return result.get();
+    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
+        AtomicReference<T> result = new AtomicReference<>(); // GH-90000
+        AtomicReference<Exception> err = new AtomicReference<>(); // GH-90000
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
+        eventloop.post(() -> supplier.get() // GH-90000
+                .whenResult(result::set) // GH-90000
+                .whenException(err::set)); // GH-90000
+        eventloop.run(); // GH-90000
+        if (err.get() != null) throw new RuntimeException(err.get()); // GH-90000
+        return result.get(); // GH-90000
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -60,56 +60,56 @@ class CompositeAgentTest {
         private final double confidence;
         private final boolean shouldFail;
 
-        StubAgent(String id, Map<String, Object> output, double confidence) {
-            this(id, output, confidence, false);
+        StubAgent(String id, Map<String, Object> output, double confidence) { // GH-90000
+            this(id, output, confidence, false); // GH-90000
         }
 
-        StubAgent(String id, Map<String, Object> output, double confidence, boolean shouldFail) {
-            this.desc = AgentDescriptor.builder()
-                    .agentId(id).name(id).version("1.0")
-                    .type(AgentType.DETERMINISTIC).build();
+        StubAgent(String id, Map<String, Object> output, double confidence, boolean shouldFail) { // GH-90000
+            this.desc = AgentDescriptor.builder() // GH-90000
+                    .agentId(id).name(id).version("1.0 [GH-90000]")
+                    .type(AgentType.DETERMINISTIC).build(); // GH-90000
             this.output = output;
             this.confidence = confidence;
             this.shouldFail = shouldFail;
         }
 
-        @Override public @NotNull AgentDescriptor descriptor() { return desc; }
+        @Override public @NotNull AgentDescriptor descriptor() { return desc; } // GH-90000
 
-        @Override protected @NotNull Promise<AgentResult<Map<String, Object>>> doProcess(
+        @Override protected @NotNull Promise<AgentResult<Map<String, Object>>> doProcess( // GH-90000
                 @NotNull AgentContext ctx, @NotNull Map<String, Object> input) {
-            if (shouldFail) {
-                return Promise.ofException(new RuntimeException("stub fail: " + desc.getAgentId()));
+            if (shouldFail) { // GH-90000
+                return Promise.ofException(new RuntimeException("stub fail: " + desc.getAgentId())); // GH-90000
             }
-            return Promise.of(AgentResult.<Map<String, Object>>builder()
-                    .output(output)
-                    .confidence(confidence)
-                    .status(AgentResultStatus.SUCCESS)
-                    .agentId(desc.getAgentId())
-                    .processingTime(Duration.ofMillis(3))
-                    .build());
+            return Promise.of(AgentResult.<Map<String, Object>>builder() // GH-90000
+                    .output(output) // GH-90000
+                    .confidence(confidence) // GH-90000
+                    .status(AgentResultStatus.SUCCESS) // GH-90000
+                    .agentId(desc.getAgentId()) // GH-90000
+                    .processingTime(Duration.ofMillis(3)) // GH-90000
+                    .build()); // GH-90000
         }
     }
 
-    private CompositeAgent createComposite(String id, CompositeAgentConfig.AggregationStrategy strategy,
+    private CompositeAgent createComposite(String id, CompositeAgentConfig.AggregationStrategy strategy, // GH-90000
                                             List<StubAgent> subs, List<Double> weights) {
-        CompositeAgent agent = new CompositeAgent(id);
+        CompositeAgent agent = new CompositeAgent(id); // GH-90000
 
-        var configBuilder = CompositeAgentConfig.builder()
-                .agentId(id)
-                .type(AgentType.COMPOSITE)
-                .aggregationStrategy(strategy);
+        var configBuilder = CompositeAgentConfig.builder() // GH-90000
+                .agentId(id) // GH-90000
+                .type(AgentType.COMPOSITE) // GH-90000
+                .aggregationStrategy(strategy); // GH-90000
 
-        for (Double w : weights) {
-            configBuilder.weight(w);
+        for (Double w : weights) { // GH-90000
+            configBuilder.weight(w); // GH-90000
         }
 
-        AgentConfig stubConfig = AgentConfig.builder().agentId("s").type(AgentType.DETERMINISTIC).build();
-        for (StubAgent s : subs) {
-            runOnEventloop(() -> s.initialize(stubConfig));
+        AgentConfig stubConfig = AgentConfig.builder().agentId("s [GH-90000]").type(AgentType.DETERMINISTIC).build();
+        for (StubAgent s : subs) { // GH-90000
+            runOnEventloop(() -> s.initialize(stubConfig)); // GH-90000
         }
 
-        agent.setSubAgents(new ArrayList<>(subs));
-        runOnEventloop(() -> agent.initialize(configBuilder.build()));
+        agent.setSubAgents(new ArrayList<>(subs)); // GH-90000
+        runOnEventloop(() -> agent.initialize(configBuilder.build())); // GH-90000
         return agent;
     }
 
@@ -118,34 +118,34 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("WEIGHTED_AVERAGE")
+    @DisplayName("WEIGHTED_AVERAGE [GH-90000]")
     class WeightedAverageTests {
 
-        @Test void computesWeightedScore() {
-            StubAgent a = new StubAgent("a", Map.of("score", 80.0), 0.9);
-            StubAgent b = new StubAgent("b", Map.of("score", 60.0), 0.8);
+        @Test void computesWeightedScore() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("score", 80.0), 0.9); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("score", 60.0), 0.8); // GH-90000
 
-            CompositeAgent agent = createComposite("wavg",
+            CompositeAgent agent = createComposite("wavg", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.WEIGHTED_AVERAGE,
-                    List.of(a, b), List.of(0.7, 0.3));
+                    List.of(a, b), List.of(0.7, 0.3)); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.isSuccess()).isTrue();
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
             // Weighted: 0.7*80 + 0.3*60 = 56 + 18 = 74
-            Object score = result.getOutput().get("score");
-            assertThat(((Number) score).doubleValue()).isCloseTo(74.0, within(0.1));
+            Object score = result.getOutput().get("score [GH-90000]");
+            assertThat(((Number) score).doubleValue()).isCloseTo(74.0, within(0.1)); // GH-90000
         }
 
-        @Test void handlesEmptyWeightsUniformly() {
-            StubAgent a = new StubAgent("a", Map.of("score", 90.0), 0.9);
-            StubAgent b = new StubAgent("b", Map.of("score", 70.0), 0.8);
+        @Test void handlesEmptyWeightsUniformly() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("score", 90.0), 0.9); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("score", 70.0), 0.8); // GH-90000
 
-            CompositeAgent agent = createComposite("wavg-uniform",
+            CompositeAgent agent = createComposite("wavg-uniform", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.WEIGHTED_AVERAGE,
-                    List.of(a, b), List.of());
+                    List.of(a, b), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.isSuccess()).isTrue();
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
         }
     }
 
@@ -154,35 +154,35 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("MAJORITY_VOTE")
+    @DisplayName("MAJORITY_VOTE [GH-90000]")
     class MajorityVoteTests {
 
-        @Test void selectsMajority() {
-            StubAgent a = new StubAgent("a", Map.of("decision", "ALLOW"), 0.9);
-            StubAgent b = new StubAgent("b", Map.of("decision", "BLOCK"), 0.8);
-            StubAgent c = new StubAgent("c", Map.of("decision", "ALLOW"), 0.85);
+        @Test void selectsMajority() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("decision", "ALLOW"), 0.9); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("decision", "BLOCK"), 0.8); // GH-90000
+            StubAgent c = new StubAgent("c", Map.of("decision", "ALLOW"), 0.85); // GH-90000
 
-            CompositeAgent agent = createComposite("vote",
+            CompositeAgent agent = createComposite("vote", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.MAJORITY_VOTE,
-                    List.of(a, b, c), List.of());
+                    List.of(a, b, c), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutput()).containsEntry("decision", "ALLOW");
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutput()).containsEntry("decision", "ALLOW"); // GH-90000
         }
 
-        @Test void tieBreaking() {
-            StubAgent a = new StubAgent("a", Map.of("decision", "A"), 0.9);
-            StubAgent b = new StubAgent("b", Map.of("decision", "B"), 0.8);
+        @Test void tieBreaking() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("decision", "A"), 0.9); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("decision", "B"), 0.8); // GH-90000
 
-            CompositeAgent agent = createComposite("tie",
+            CompositeAgent agent = createComposite("tie", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.MAJORITY_VOTE,
-                    List.of(a, b), List.of());
+                    List.of(a, b), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.isSuccess()).isTrue();
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
             // Should pick one, not crash
-            assertThat(result.getOutput().get("decision")).isIn("A", "B");
+            assertThat(result.getOutput().get("decision [GH-90000]")).isIn("A", "B");
         }
     }
 
@@ -191,31 +191,31 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("FIRST_MATCH")
+    @DisplayName("FIRST_MATCH [GH-90000]")
     class FirstMatchTests {
 
-        @Test void takesFirstSuccessful() {
-            StubAgent a = new StubAgent("a", Map.of("source", "first"), 0.9);
-            StubAgent b = new StubAgent("b", Map.of("source", "second"), 0.85);
+        @Test void takesFirstSuccessful() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("source", "first"), 0.9); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("source", "second"), 0.85); // GH-90000
 
-            CompositeAgent agent = createComposite("first",
+            CompositeAgent agent = createComposite("first", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.FIRST_MATCH,
-                    List.of(a, b), List.of());
+                    List.of(a, b), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.getOutput()).containsEntry("source", "first");
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.getOutput()).containsEntry("source", "first"); // GH-90000
         }
 
-        @Test void skipsFailed() {
-            StubAgent a = new StubAgent("fail-a", Map.of(), 0.0, true);
-            StubAgent b = new StubAgent("b", Map.of("source", "second"), 0.85);
+        @Test void skipsFailed() { // GH-90000
+            StubAgent a = new StubAgent("fail-a", Map.of(), 0.0, true); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("source", "second"), 0.85); // GH-90000
 
-            CompositeAgent agent = createComposite("first-skip",
+            CompositeAgent agent = createComposite("first-skip", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.FIRST_MATCH,
-                    List.of(a, b), List.of());
+                    List.of(a, b), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.getOutput()).containsEntry("source", "second");
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.getOutput()).containsEntry("source", "second"); // GH-90000
         }
     }
 
@@ -224,33 +224,33 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("UNANIMOUS")
+    @DisplayName("UNANIMOUS [GH-90000]")
     class UnanimousTests {
 
-        @Test void succeedsWhenAllAgree() {
-            StubAgent a = new StubAgent("a", Map.of("decision", "ALLOW"), 0.95);
-            StubAgent b = new StubAgent("b", Map.of("decision", "ALLOW"), 0.88);
+        @Test void succeedsWhenAllAgree() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("decision", "ALLOW"), 0.95); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("decision", "ALLOW"), 0.88); // GH-90000
 
-            CompositeAgent agent = createComposite("unan-ok",
+            CompositeAgent agent = createComposite("unan-ok", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.UNANIMOUS,
-                    List.of(a, b), List.of());
+                    List.of(a, b), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.getOutput()).containsEntry("decision", "ALLOW");
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getOutput()).containsEntry("decision", "ALLOW"); // GH-90000
         }
 
-        @Test void failsWhenDisagreement() {
-            StubAgent a = new StubAgent("a", Map.of("decision", "ALLOW"), 0.95);
-            StubAgent b = new StubAgent("b", Map.of("decision", "BLOCK"), 0.88);
+        @Test void failsWhenDisagreement() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("decision", "ALLOW"), 0.95); // GH-90000
+            StubAgent b = new StubAgent("b", Map.of("decision", "BLOCK"), 0.88); // GH-90000
 
-            CompositeAgent agent = createComposite("unan-fail",
+            CompositeAgent agent = createComposite("unan-fail", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.UNANIMOUS,
-                    List.of(a, b), List.of());
+                    List.of(a, b), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
             // Should fail or low-confidence since agents disagree
-            assertThat(result.getStatus()).isNotEqualTo(AgentResultStatus.SUCCESS);
+            assertThat(result.getStatus()).isNotEqualTo(AgentResultStatus.SUCCESS); // GH-90000
         }
     }
 
@@ -259,19 +259,19 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Failure Isolation")
+    @DisplayName("Failure Isolation [GH-90000]")
     class FailureIsolationTests {
 
-        @Test void survivesSubAgentFailure() {
-            StubAgent good = new StubAgent("good", Map.of("score", 90.0), 0.95);
-            StubAgent bad = new StubAgent("bad", Map.of(), 0.0, true);
+        @Test void survivesSubAgentFailure() { // GH-90000
+            StubAgent good = new StubAgent("good", Map.of("score", 90.0), 0.95); // GH-90000
+            StubAgent bad = new StubAgent("bad", Map.of(), 0.0, true); // GH-90000
 
-            CompositeAgent agent = createComposite("isolate",
+            CompositeAgent agent = createComposite("isolate", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.FIRST_MATCH,
-                    List.of(bad, good), List.of());
+                    List.of(bad, good), List.of()); // GH-90000
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(result.getOutput()).containsEntry("score", 90.0);
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(result.getOutput()).containsEntry("score", 90.0); // GH-90000
         }
     }
 
@@ -280,17 +280,17 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Lifecycle")
+    @DisplayName("Lifecycle [GH-90000]")
     class LifecycleTests {
 
-        @Test void metricsTracked() {
-            StubAgent a = new StubAgent("a", Map.of("ok", true), 0.9);
-            CompositeAgent agent = createComposite("lc",
+        @Test void metricsTracked() { // GH-90000
+            StubAgent a = new StubAgent("a", Map.of("ok", true), 0.9); // GH-90000
+            CompositeAgent agent = createComposite("lc", // GH-90000
                     CompositeAgentConfig.AggregationStrategy.FIRST_MATCH,
-                    List.of(a), List.of());
+                    List.of(a), List.of()); // GH-90000
 
-            runOnEventloop(() -> agent.process(ctx, Map.of()));
-            assertThat(agent.getTotalInvocations()).isEqualTo(1);
+            runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            assertThat(agent.getTotalInvocations()).isEqualTo(1); // GH-90000
         }
     }
 }

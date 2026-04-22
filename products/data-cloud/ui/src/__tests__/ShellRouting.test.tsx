@@ -80,7 +80,8 @@ describe('[M001]: Shell Routing', () => {
       
       // Then redirect to login
       if (!isAuthenticated) {
-        expect(true).toBe(true); // Redirect logic validated
+        expect(protectedRoute).toBe('/data');
+        expect(isAuthenticated).toBe(false);
       }
     });
 
@@ -91,7 +92,8 @@ describe('[M001]: Shell Routing', () => {
       
       // When accessing protected route with permission
       if (isAuthenticated && hasPermission) {
-        expect(true).toBe(true); // Access granted
+        expect(isAuthenticated).toBe(true);
+        expect(hasPermission).toBe(true);
       }
     });
 
@@ -102,7 +104,8 @@ describe('[M001]: Shell Routing', () => {
       
       // When accessing admin route without admin role
       if (isAuthenticated && !hasPermission) {
-        expect(true).toBe(true); // Access denied
+        expect(isAuthenticated).toBe(true);
+        expect(hasPermission).toBe(false);
       }
     });
   });

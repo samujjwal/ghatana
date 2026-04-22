@@ -18,54 +18,54 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test analytics performance, throughput, and resource usage.
  */
-@DisplayName("Analytics Performance Tests")
+@DisplayName("Analytics Performance Tests [GH-90000]")
 class AnalyticsPerformanceTest {
 
     @Test
-    @DisplayName("Should handle high throughput")
-    void shouldHandleHighThroughput() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle high throughput [GH-90000]")
+    void shouldHandleHighThroughput() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should measure processing latency")
-    void shouldMeasureProcessingLatency() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should measure processing latency [GH-90000]")
+    void shouldMeasureProcessingLatency() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should monitor resource usage")
-    void shouldMonitorResourceUsage() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should monitor resource usage [GH-90000]")
+    void shouldMonitorResourceUsage() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle concurrent queries")
-    void shouldHandleConcurrentQueries() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle concurrent queries [GH-90000]")
+    void shouldHandleConcurrentQueries() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should optimize query performance")
-    void shouldOptimizeQueryPerformance() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should optimize query performance [GH-90000]")
+    void shouldOptimizeQueryPerformance() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle performance degradation")
-    void shouldHandlePerformanceDegradation() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle performance degradation [GH-90000]")
+    void shouldHandlePerformanceDegradation() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 }

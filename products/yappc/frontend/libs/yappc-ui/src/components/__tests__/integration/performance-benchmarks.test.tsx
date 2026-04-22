@@ -524,6 +524,7 @@ describe('Performance Benchmarks', () => {
 
   describe('Performance Baselines Summary', () => {
     it('should log all performance baselines', () => {
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
       console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║         PERFORMANCE BASELINES - PHASE 3 SYSTEMS           ║
@@ -555,7 +556,8 @@ describe('Performance Benchmarks', () => {
 ╚════════════════════════════════════════════════════════════╝
       `);
 
-      expect(true).toBe(true); // Placeholder assertion
+      expect(logSpy).toHaveBeenCalled();
+      logSpy.mockRestore();
     });
   });
 });

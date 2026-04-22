@@ -40,8 +40,8 @@ import static org.mockito.Mockito.*;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AI Model Manager Tests")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("AI Model Manager Tests [GH-90000]")
 class AIModelManagerTest extends EventloopTestBase {
 
     @Mock
@@ -53,8 +53,8 @@ class AIModelManagerTest extends EventloopTestBase {
     private AIModelManager modelManager;
 
     @BeforeEach
-    void setup() {
-        modelManager = new AIModelManager(modelRegistry, aiMetrics);
+    void setup() { // GH-90000
+        modelManager = new AIModelManager(modelRegistry, aiMetrics); // GH-90000
     }
 
     // ========================================================================
@@ -62,33 +62,33 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should create AIModelManager with valid dependencies")
-    void shouldCreateWithValidDependencies() {
+    @DisplayName("Should create AIModelManager with valid dependencies [GH-90000]")
+    void shouldCreateWithValidDependencies() { // GH-90000
         // WHEN: Creating manager
-        AIModelManager manager = new AIModelManager(modelRegistry, aiMetrics);
+        AIModelManager manager = new AIModelManager(modelRegistry, aiMetrics); // GH-90000
 
         // THEN: Manager is created successfully
-        assertThat(manager).isNotNull();
+        assertThat(manager).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject null model registry")
-    void shouldRejectNullModelRegistry() {
+    @DisplayName("Should reject null model registry [GH-90000]")
+    void shouldRejectNullModelRegistry() { // GH-90000
         // WHEN/THEN: Throws exception for null registry
-        assertThatThrownBy(() ->
-            new AIModelManager(null, aiMetrics)
-        ).isInstanceOf(NullPointerException.class)
-         .hasMessageContaining("modelRegistry");
+        assertThatThrownBy(() -> // GH-90000
+            new AIModelManager(null, aiMetrics) // GH-90000
+        ).isInstanceOf(NullPointerException.class) // GH-90000
+         .hasMessageContaining("modelRegistry [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should reject null AI metrics")
-    void shouldRejectNullAiMetrics() {
+    @DisplayName("Should reject null AI metrics [GH-90000]")
+    void shouldRejectNullAiMetrics() { // GH-90000
         // WHEN/THEN: Throws exception for null metrics
-        assertThatThrownBy(() ->
-            new AIModelManager(modelRegistry, null)
-        ).isInstanceOf(NullPointerException.class)
-         .hasMessageContaining("aiMetrics");
+        assertThatThrownBy(() -> // GH-90000
+            new AIModelManager(modelRegistry, null) // GH-90000
+        ).isInstanceOf(NullPointerException.class) // GH-90000
+         .hasMessageContaining("aiMetrics [GH-90000]");
     }
 
     // ========================================================================
@@ -96,115 +96,115 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should register model successfully")
-    void shouldRegisterModel() {
+    @DisplayName("Should register model successfully [GH-90000]")
+    void shouldRegisterModel() { // GH-90000
         // GIVEN: Valid model metadata
-        ModelMetadata model = createModel("quality-scorer", "v1.0.0", DeploymentStatus.STAGED);
+        ModelMetadata model = createModel("quality-scorer", "v1.0.0", DeploymentStatus.STAGED); // GH-90000
 
         // WHEN: Registering model
-        ModelMetadata registered = runPromise(() ->
-            modelManager.registerModel("tenant-1", model)
+        ModelMetadata registered = runPromise(() -> // GH-90000
+            modelManager.registerModel("tenant-1", model) // GH-90000
         );
 
         // THEN: Model is registered
-        assertThat(registered).isNotNull();
-        assertThat(registered.getName()).isEqualTo("quality-scorer");
-        assertThat(registered.getVersion()).isEqualTo("v1.0.0");
+        assertThat(registered).isNotNull(); // GH-90000
+        assertThat(registered.getName()).isEqualTo("quality-scorer [GH-90000]");
+        assertThat(registered.getVersion()).isEqualTo("v1.0.0 [GH-90000]");
 
         // AND: Registry is called
-        verify(modelRegistry).register(model);
+        verify(modelRegistry).register(model); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject null tenant ID in registration")
-    void shouldRejectNullTenantIdInRegistration() {
+    @DisplayName("Should reject null tenant ID in registration [GH-90000]")
+    void shouldRejectNullTenantIdInRegistration() { // GH-90000
         // GIVEN: Valid model
-        ModelMetadata model = createModel("test-model", "v1.0.0", DeploymentStatus.STAGED);
+        ModelMetadata model = createModel("test-model", "v1.0.0", DeploymentStatus.STAGED); // GH-90000
 
         // WHEN/THEN: Throws exception for null tenant ID
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.registerModel(null, model))
-        ).isInstanceOf(NullPointerException.class)
-         .hasMessageContaining("tenantId");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.registerModel(null, model)) // GH-90000
+        ).isInstanceOf(NullPointerException.class) // GH-90000
+         .hasMessageContaining("tenantId [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should reject null model in registration")
-    void shouldRejectNullModelInRegistration() {
+    @DisplayName("Should reject null model in registration [GH-90000]")
+    void shouldRejectNullModelInRegistration() { // GH-90000
         // WHEN/THEN: Throws exception for null model
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.registerModel("tenant-1", null))
-        ).isInstanceOf(NullPointerException.class)
-         .hasMessageContaining("model");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.registerModel("tenant-1", null)) // GH-90000
+        ).isInstanceOf(NullPointerException.class) // GH-90000
+         .hasMessageContaining("model [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should validate model name is not blank")
-    void shouldValidateModelName() {
+    @DisplayName("Should validate model name is not blank [GH-90000]")
+    void shouldValidateModelName() { // GH-90000
         // GIVEN: Model with blank name
-        ModelMetadata model = ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("tenant-1")
-            .name("")
-            .version("v1.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.STAGED)
-            .createdAt(Instant.now())
-            .build();
+        ModelMetadata model = ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name(" [GH-90000]")
+            .version("v1.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.STAGED) // GH-90000
+            .createdAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
 
         // WHEN/THEN: Throws exception for blank name
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.registerModel("tenant-1", model))
-        ).isInstanceOf(IllegalArgumentException.class)
-         .hasMessageContaining("model.name is required");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.registerModel("tenant-1", model)) // GH-90000
+        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+         .hasMessageContaining("model.name is required [GH-90000]");
 
-        clearFatalError();
+        clearFatalError(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate model version is not blank")
-    void shouldValidateModelVersion() {
+    @DisplayName("Should validate model version is not blank [GH-90000]")
+    void shouldValidateModelVersion() { // GH-90000
         // GIVEN: Model with blank version
-        ModelMetadata model = ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("tenant-1")
-            .name("test-model")
-            .version("")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.STAGED)
-            .createdAt(Instant.now())
-            .build();
+        ModelMetadata model = ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("test-model [GH-90000]")
+            .version(" [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.STAGED) // GH-90000
+            .createdAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
 
         // WHEN/THEN: Throws exception for blank version
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.registerModel("tenant-1", model))
-        ).isInstanceOf(IllegalArgumentException.class)
-         .hasMessageContaining("model.version is required");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.registerModel("tenant-1", model)) // GH-90000
+        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+         .hasMessageContaining("model.version is required [GH-90000]");
 
-        clearFatalError();
+        clearFatalError(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate model tenant ID is not blank")
-    void shouldValidateModelTenantId() {
+    @DisplayName("Should validate model tenant ID is not blank [GH-90000]")
+    void shouldValidateModelTenantId() { // GH-90000
         // GIVEN: Model with blank tenant ID
-        ModelMetadata model = ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("")
-            .name("test-model")
-            .version("v1.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.STAGED)
-            .createdAt(Instant.now())
-            .build();
+        ModelMetadata model = ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId(" [GH-90000]")
+            .name("test-model [GH-90000]")
+            .version("v1.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.STAGED) // GH-90000
+            .createdAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
 
         // WHEN/THEN: Throws exception for blank tenant ID
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.registerModel("tenant-1", model))
-        ).isInstanceOf(IllegalArgumentException.class)
-         .hasMessageContaining("model.tenantId is required");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.registerModel("tenant-1", model)) // GH-90000
+        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+         .hasMessageContaining("model.tenantId is required [GH-90000]");
 
-        clearFatalError();
+        clearFatalError(); // GH-90000
     }
 
     // ========================================================================
@@ -212,75 +212,75 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should get active model from registry")
-    void shouldGetActiveModel() {
+    @DisplayName("Should get active model from registry [GH-90000]")
+    void shouldGetActiveModel() { // GH-90000
         // GIVEN: Production model in registry
-        ModelMetadata prodModel = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION);
-        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION))
-            .thenReturn(List.of(prodModel));
+        ModelMetadata prodModel = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION); // GH-90000
+        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION)) // GH-90000
+            .thenReturn(List.of(prodModel)); // GH-90000
 
         // WHEN: Getting active model
-        ModelMetadata active = runPromise(() ->
-            modelManager.getActiveModel("tenant-1", "quality-scorer")
+        ModelMetadata active = runPromise(() -> // GH-90000
+            modelManager.getActiveModel("tenant-1", "quality-scorer") // GH-90000
         );
 
         // THEN: Returns production model
-        assertThat(active).isNotNull();
-        assertThat(active.getName()).isEqualTo("quality-scorer");
-        assertThat(active.getDeploymentStatus()).isEqualTo(DeploymentStatus.PRODUCTION);
+        assertThat(active).isNotNull(); // GH-90000
+        assertThat(active.getName()).isEqualTo("quality-scorer [GH-90000]");
+        assertThat(active.getDeploymentStatus()).isEqualTo(DeploymentStatus.PRODUCTION); // GH-90000
     }
 
     @Test
-    @DisplayName("Should cache registered models")
-    void shouldCacheRegisteredModels() {
+    @DisplayName("Should cache registered models [GH-90000]")
+    void shouldCacheRegisteredModels() { // GH-90000
         // GIVEN: Model registered
-        ModelMetadata model = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION);
+        ModelMetadata model = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION); // GH-90000
 
         // WHEN: Registering model
-        ModelMetadata registered = runPromise(() ->
-            modelManager.registerModel("tenant-1", model)
+        ModelMetadata registered = runPromise(() -> // GH-90000
+            modelManager.registerModel("tenant-1", model) // GH-90000
         );
 
         // THEN: Model is registered and cached
-        assertThat(registered).isNotNull();
-        assertThat(registered.getName()).isEqualTo("quality-scorer");
-        verify(modelRegistry).register(model);
+        assertThat(registered).isNotNull(); // GH-90000
+        assertThat(registered.getName()).isEqualTo("quality-scorer [GH-90000]");
+        verify(modelRegistry).register(model); // GH-90000
     }
 
     @Test
-    @DisplayName("Should throw exception when no active model found")
-    void shouldThrowExceptionWhenNoActiveModel() {
+    @DisplayName("Should throw exception when no active model found [GH-90000]")
+    void shouldThrowExceptionWhenNoActiveModel() { // GH-90000
         // GIVEN: No production models
-        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION))
-            .thenReturn(List.of());
+        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION)) // GH-90000
+            .thenReturn(List.of()); // GH-90000
 
         // WHEN/THEN: Throws exception
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.getActiveModel("tenant-1", "non-existent"))
-        ).isInstanceOf(IllegalStateException.class)
-         .hasMessageContaining("No active model found");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.getActiveModel("tenant-1", "non-existent")) // GH-90000
+        ).isInstanceOf(IllegalStateException.class) // GH-90000
+         .hasMessageContaining("No active model found [GH-90000]");
 
-        clearFatalError();
+        clearFatalError(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject null tenant ID in get active model")
-    void shouldRejectNullTenantIdInGetActive() {
+    @DisplayName("Should reject null tenant ID in get active model [GH-90000]")
+    void shouldRejectNullTenantIdInGetActive() { // GH-90000
         // WHEN/THEN: Throws exception for null tenant ID
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.getActiveModel(null, "model-name"))
-        ).isInstanceOf(NullPointerException.class)
-         .hasMessageContaining("tenantId");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.getActiveModel(null, "model-name")) // GH-90000
+        ).isInstanceOf(NullPointerException.class) // GH-90000
+         .hasMessageContaining("tenantId [GH-90000]");
     }
 
     @Test
-    @DisplayName("Should reject null model name in get active model")
-    void shouldRejectNullModelNameInGetActive() {
+    @DisplayName("Should reject null model name in get active model [GH-90000]")
+    void shouldRejectNullModelNameInGetActive() { // GH-90000
         // WHEN/THEN: Throws exception for null model name
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.getActiveModel("tenant-1", null))
-        ).isInstanceOf(NullPointerException.class)
-         .hasMessageContaining("modelName");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.getActiveModel("tenant-1", null)) // GH-90000
+        ).isInstanceOf(NullPointerException.class) // GH-90000
+         .hasMessageContaining("modelName [GH-90000]");
     }
 
     // ========================================================================
@@ -288,41 +288,41 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should get all models across all statuses")
-    void shouldGetAllModels() {
+    @DisplayName("Should get all models across all statuses [GH-90000]")
+    void shouldGetAllModels() { // GH-90000
         // GIVEN: Models in different statuses
-        ModelMetadata prodModel = createModel("model-1", "v1.0.0", DeploymentStatus.PRODUCTION);
-        ModelMetadata stagedModel = createModel("model-2", "v2.0.0", DeploymentStatus.STAGED);
-        ModelMetadata retiredModel = createModel("model-3", "v0.9.0", DeploymentStatus.RETIRED);
+        ModelMetadata prodModel = createModel("model-1", "v1.0.0", DeploymentStatus.PRODUCTION); // GH-90000
+        ModelMetadata stagedModel = createModel("model-2", "v2.0.0", DeploymentStatus.STAGED); // GH-90000
+        ModelMetadata retiredModel = createModel("model-3", "v0.9.0", DeploymentStatus.RETIRED); // GH-90000
 
-        when(modelRegistry.findByStatus(anyString(), any(DeploymentStatus.class)))
-            .thenAnswer(invocation -> {
-                DeploymentStatus status = invocation.getArgument(1);
-                if (status == DeploymentStatus.PRODUCTION) return List.of(prodModel);
-                if (status == DeploymentStatus.STAGED) return List.of(stagedModel);
-                if (status == DeploymentStatus.RETIRED) return List.of(retiredModel);
-                return List.of();
+        when(modelRegistry.findByStatus(anyString(), any(DeploymentStatus.class))) // GH-90000
+            .thenAnswer(invocation -> { // GH-90000
+                DeploymentStatus status = invocation.getArgument(1); // GH-90000
+                if (status == DeploymentStatus.PRODUCTION) return List.of(prodModel); // GH-90000
+                if (status == DeploymentStatus.STAGED) return List.of(stagedModel); // GH-90000
+                if (status == DeploymentStatus.RETIRED) return List.of(retiredModel); // GH-90000
+                return List.of(); // GH-90000
             });
 
         // WHEN: Getting all models
-        List<ModelMetadata> allModels = runPromise(() ->
-            modelManager.getAllModels("tenant-1")
+        List<ModelMetadata> allModels = runPromise(() -> // GH-90000
+            modelManager.getAllModels("tenant-1 [GH-90000]")
         );
 
         // THEN: Returns all models
-        assertThat(allModels).hasSize(3);
-        assertThat(allModels).extracting(ModelMetadata::getName)
-            .containsExactlyInAnyOrder("model-1", "model-2", "model-3");
+        assertThat(allModels).hasSize(3); // GH-90000
+        assertThat(allModels).extracting(ModelMetadata::getName) // GH-90000
+            .containsExactlyInAnyOrder("model-1", "model-2", "model-3"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject null tenant ID in get all models")
-    void shouldRejectNullTenantIdInGetAll() {
+    @DisplayName("Should reject null tenant ID in get all models [GH-90000]")
+    void shouldRejectNullTenantIdInGetAll() { // GH-90000
         // WHEN/THEN: Throws exception for null tenant ID
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.getAllModels(null))
-        ).isInstanceOf(NullPointerException.class)
-         .hasMessageContaining("tenantId");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.getAllModels(null)) // GH-90000
+        ).isInstanceOf(NullPointerException.class) // GH-90000
+         .hasMessageContaining("tenantId [GH-90000]");
     }
 
     // ========================================================================
@@ -330,135 +330,135 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should promote staged model to production")
-    void shouldPromoteToProduction() {
+    @DisplayName("Should promote staged model to production [GH-90000]")
+    void shouldPromoteToProduction() { // GH-90000
         // GIVEN: Staged model
-        UUID modelId = UUID.randomUUID();
-        Instant createdAt = Instant.now();
+        UUID modelId = UUID.randomUUID(); // GH-90000
+        Instant createdAt = Instant.now(); // GH-90000
 
-        ModelMetadata stagedModel = ModelMetadata.builder()
-            .id(modelId)
-            .tenantId("tenant-1")
-            .name("quality-scorer")
-            .version("v2.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.STAGED)
-            .trainingMetrics(Map.of("accuracy", 0.95))
-            .createdAt(createdAt)
-            .updatedAt(createdAt)
-            .build();
+        ModelMetadata stagedModel = ModelMetadata.builder() // GH-90000
+            .id(modelId) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("quality-scorer [GH-90000]")
+            .version("v2.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.STAGED) // GH-90000
+            .trainingMetrics(Map.of("accuracy", 0.95)) // GH-90000
+            .createdAt(createdAt) // GH-90000
+            .updatedAt(createdAt) // GH-90000
+            .build(); // GH-90000
 
-        ModelMetadata promotedModel = ModelMetadata.builder()
-            .id(modelId)
-            .tenantId("tenant-1")
-            .name("quality-scorer")
-            .version("v2.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.PRODUCTION)
-            .trainingMetrics(Map.of("accuracy", 0.95))
-            .createdAt(createdAt)
-            .updatedAt(Instant.now())
-            .build();
+        ModelMetadata promotedModel = ModelMetadata.builder() // GH-90000
+            .id(modelId) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("quality-scorer [GH-90000]")
+            .version("v2.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.PRODUCTION) // GH-90000
+            .trainingMetrics(Map.of("accuracy", 0.95)) // GH-90000
+            .createdAt(createdAt) // GH-90000
+            .updatedAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
 
-        when(modelRegistry.findByName("tenant-1", "quality-scorer", "v2.0.0"))
-            .thenReturn(Optional.of(stagedModel))
-            .thenReturn(Optional.of(promotedModel));
+        when(modelRegistry.findByName("tenant-1", "quality-scorer", "v2.0.0")) // GH-90000
+            .thenReturn(Optional.of(stagedModel)) // GH-90000
+            .thenReturn(Optional.of(promotedModel)); // GH-90000
 
         // WHEN: Promoting model
-        ModelMetadata promoted = runPromise(() ->
-            modelManager.promoteToProduction("tenant-1", "quality-scorer", "v2.0.0")
+        ModelMetadata promoted = runPromise(() -> // GH-90000
+            modelManager.promoteToProduction("tenant-1", "quality-scorer", "v2.0.0") // GH-90000
         );
 
         // THEN: Model is promoted
-        assertThat(promoted).isNotNull();
-        assertThat(promoted.getDeploymentStatus()).isEqualTo(DeploymentStatus.PRODUCTION);
+        assertThat(promoted).isNotNull(); // GH-90000
+        assertThat(promoted.getDeploymentStatus()).isEqualTo(DeploymentStatus.PRODUCTION); // GH-90000
 
         // AND: Registry is updated
-        verify(modelRegistry).updateStatus("tenant-1", stagedModel.getId(), DeploymentStatus.PRODUCTION);
+        verify(modelRegistry).updateStatus("tenant-1", stagedModel.getId(), DeploymentStatus.PRODUCTION); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject promotion of non-staged model")
-    void shouldRejectPromotionOfNonStagedModel() {
-        // GIVEN: Production model (not staged)
-        ModelMetadata prodModel = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION);
-        when(modelRegistry.findByName("tenant-1", "quality-scorer", "v1.0.0"))
-            .thenReturn(Optional.of(prodModel));
+    @DisplayName("Should reject promotion of non-staged model [GH-90000]")
+    void shouldRejectPromotionOfNonStagedModel() { // GH-90000
+        // GIVEN: Production model (not staged) // GH-90000
+        ModelMetadata prodModel = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION); // GH-90000
+        when(modelRegistry.findByName("tenant-1", "quality-scorer", "v1.0.0")) // GH-90000
+            .thenReturn(Optional.of(prodModel)); // GH-90000
 
         // WHEN/THEN: Throws exception
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.promoteToProduction("tenant-1", "quality-scorer", "v1.0.0"))
-        ).isInstanceOf(IllegalStateException.class)
-         .hasMessageContaining("Model must be in STAGED status");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.promoteToProduction("tenant-1", "quality-scorer", "v1.0.0")) // GH-90000
+        ).isInstanceOf(IllegalStateException.class) // GH-90000
+         .hasMessageContaining("Model must be in STAGED status [GH-90000]");
 
-        clearFatalError();
+        clearFatalError(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should throw exception when promoting non-existent model")
-    void shouldThrowExceptionWhenPromotingNonExistent() {
+    @DisplayName("Should throw exception when promoting non-existent model [GH-90000]")
+    void shouldThrowExceptionWhenPromotingNonExistent() { // GH-90000
         // GIVEN: No model found
-        when(modelRegistry.findByName("tenant-1", "non-existent", "v1.0.0"))
-            .thenReturn(Optional.empty());
+        when(modelRegistry.findByName("tenant-1", "non-existent", "v1.0.0")) // GH-90000
+            .thenReturn(Optional.empty()); // GH-90000
 
         // WHEN/THEN: Throws exception
-        assertThatThrownBy(() ->
-            runPromise(() -> modelManager.promoteToProduction("tenant-1", "non-existent", "v1.0.0"))
-        ).isInstanceOf(IllegalStateException.class)
-         .hasMessageContaining("Model not found");
+        assertThatThrownBy(() -> // GH-90000
+            runPromise(() -> modelManager.promoteToProduction("tenant-1", "non-existent", "v1.0.0")) // GH-90000
+        ).isInstanceOf(IllegalStateException.class) // GH-90000
+         .hasMessageContaining("Model not found [GH-90000]");
 
-        clearFatalError();
+        clearFatalError(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should invalidate cache after promotion")
-    void shouldInvalidateCacheAfterPromotion() {
+    @DisplayName("Should invalidate cache after promotion [GH-90000]")
+    void shouldInvalidateCacheAfterPromotion() { // GH-90000
         // GIVEN: Staged model with cache
-        UUID modelId = UUID.randomUUID();
-        Instant createdAt = Instant.now();
+        UUID modelId = UUID.randomUUID(); // GH-90000
+        Instant createdAt = Instant.now(); // GH-90000
 
-        ModelMetadata stagedModel = ModelMetadata.builder()
-            .id(modelId)
-            .tenantId("tenant-1")
-            .name("quality-scorer")
-            .version("v2.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.STAGED)
-            .trainingMetrics(Map.of("accuracy", 0.95))
-            .createdAt(createdAt)
-            .updatedAt(createdAt)
-            .build();
+        ModelMetadata stagedModel = ModelMetadata.builder() // GH-90000
+            .id(modelId) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("quality-scorer [GH-90000]")
+            .version("v2.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.STAGED) // GH-90000
+            .trainingMetrics(Map.of("accuracy", 0.95)) // GH-90000
+            .createdAt(createdAt) // GH-90000
+            .updatedAt(createdAt) // GH-90000
+            .build(); // GH-90000
 
-        ModelMetadata promotedModel = ModelMetadata.builder()
-            .id(modelId)
-            .tenantId("tenant-1")
-            .name("quality-scorer")
-            .version("v2.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.PRODUCTION)
-            .trainingMetrics(Map.of("accuracy", 0.95))
-            .createdAt(createdAt)
-            .updatedAt(Instant.now())
-            .build();
+        ModelMetadata promotedModel = ModelMetadata.builder() // GH-90000
+            .id(modelId) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("quality-scorer [GH-90000]")
+            .version("v2.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.PRODUCTION) // GH-90000
+            .trainingMetrics(Map.of("accuracy", 0.95)) // GH-90000
+            .createdAt(createdAt) // GH-90000
+            .updatedAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
 
-        when(modelRegistry.findByName("tenant-1", "quality-scorer", "v2.0.0"))
-            .thenReturn(Optional.of(stagedModel))
-            .thenReturn(Optional.of(promotedModel));
+        when(modelRegistry.findByName("tenant-1", "quality-scorer", "v2.0.0")) // GH-90000
+            .thenReturn(Optional.of(stagedModel)) // GH-90000
+            .thenReturn(Optional.of(promotedModel)); // GH-90000
 
         // WHEN: Promoting model
-        runPromise(() ->
-            modelManager.promoteToProduction("tenant-1", "quality-scorer", "v2.0.0")
+        runPromise(() -> // GH-90000
+            modelManager.promoteToProduction("tenant-1", "quality-scorer", "v2.0.0") // GH-90000
         );
 
-        // THEN: Cache is invalidated (next getActiveModel will query registry)
-        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION))
-            .thenReturn(List.of(promotedModel));
+        // THEN: Cache is invalidated (next getActiveModel will query registry) // GH-90000
+        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION)) // GH-90000
+            .thenReturn(List.of(promotedModel)); // GH-90000
 
-        ModelMetadata active = runPromise(() ->
-            modelManager.getActiveModel("tenant-1", "quality-scorer")
+        ModelMetadata active = runPromise(() -> // GH-90000
+            modelManager.getActiveModel("tenant-1", "quality-scorer") // GH-90000
         );
 
-        assertThat(active.getDeploymentStatus()).isEqualTo(DeploymentStatus.PRODUCTION);
+        assertThat(active.getDeploymentStatus()).isEqualTo(DeploymentStatus.PRODUCTION); // GH-90000
     }
 
     // ========================================================================
@@ -466,95 +466,95 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should detect stale model based on update time")
-    void shouldDetectStaleModel() {
+    @DisplayName("Should detect stale model based on update time [GH-90000]")
+    void shouldDetectStaleModel() { // GH-90000
         // GIVEN: Old model
-        Instant oldTime = Instant.now().minus(Duration.ofDays(100));
-        ModelMetadata oldModel = ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("tenant-1")
-            .name("old-model")
-            .version("v1.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.PRODUCTION)
-            .createdAt(oldTime)
-            .updatedAt(oldTime)
-            .build();
+        Instant oldTime = Instant.now().minus(Duration.ofDays(100)); // GH-90000
+        ModelMetadata oldModel = ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("old-model [GH-90000]")
+            .version("v1.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.PRODUCTION) // GH-90000
+            .createdAt(oldTime) // GH-90000
+            .updatedAt(oldTime) // GH-90000
+            .build(); // GH-90000
 
         // WHEN: Checking staleness
-        boolean isStale = modelManager.isModelStale(oldModel, Duration.ofDays(30));
+        boolean isStale = modelManager.isModelStale(oldModel, Duration.ofDays(30)); // GH-90000
 
         // THEN: Model is stale
-        assertThat(isStale).isTrue();
+        assertThat(isStale).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect fresh model")
-    void shouldDetectFreshModel() {
+    @DisplayName("Should detect fresh model [GH-90000]")
+    void shouldDetectFreshModel() { // GH-90000
         // GIVEN: Recent model
-        Instant recentTime = Instant.now().minus(Duration.ofDays(5));
-        ModelMetadata recentModel = ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("tenant-1")
-            .name("recent-model")
-            .version("v1.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.PRODUCTION)
-            .createdAt(recentTime)
-            .updatedAt(recentTime)
-            .build();
+        Instant recentTime = Instant.now().minus(Duration.ofDays(5)); // GH-90000
+        ModelMetadata recentModel = ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("recent-model [GH-90000]")
+            .version("v1.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.PRODUCTION) // GH-90000
+            .createdAt(recentTime) // GH-90000
+            .updatedAt(recentTime) // GH-90000
+            .build(); // GH-90000
 
         // WHEN: Checking staleness
-        boolean isStale = modelManager.isModelStale(recentModel, Duration.ofDays(30));
+        boolean isStale = modelManager.isModelStale(recentModel, Duration.ofDays(30)); // GH-90000
 
         // THEN: Model is not stale
-        assertThat(isStale).isFalse();
+        assertThat(isStale).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect stale model using old update time")
-    void shouldDetectStaleModelWithOldUpdateTime() {
+    @DisplayName("Should detect stale model using old update time [GH-90000]")
+    void shouldDetectStaleModelWithOldUpdateTime() { // GH-90000
         // GIVEN: Model with old update time
-        Instant oldTime = Instant.now().minus(Duration.ofDays(100));
-        ModelMetadata model = ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("tenant-1")
-            .name("model")
-            .version("v1.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.PRODUCTION)
-            .createdAt(oldTime)
-            .updatedAt(oldTime)
-            .build();
+        Instant oldTime = Instant.now().minus(Duration.ofDays(100)); // GH-90000
+        ModelMetadata model = ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("model [GH-90000]")
+            .version("v1.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.PRODUCTION) // GH-90000
+            .createdAt(oldTime) // GH-90000
+            .updatedAt(oldTime) // GH-90000
+            .build(); // GH-90000
 
         // WHEN: Checking staleness with 30-day threshold
-        boolean isStale = modelManager.isModelStale(model, Duration.ofDays(30));
+        boolean isStale = modelManager.isModelStale(model, Duration.ofDays(30)); // GH-90000
 
-        // THEN: Model is stale (100 days > 30 days threshold)
-        assertThat(isStale).isTrue();
+        // THEN: Model is stale (100 days > 30 days threshold) // GH-90000
+        assertThat(isStale).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect fresh model with recent update time")
-    void shouldDetectFreshModelWithRecentUpdateTime() {
+    @DisplayName("Should detect fresh model with recent update time [GH-90000]")
+    void shouldDetectFreshModelWithRecentUpdateTime() { // GH-90000
         // GIVEN: Model with recent update time
-        Instant recentTime = Instant.now().minus(Duration.ofDays(5));
-        ModelMetadata model = ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("tenant-1")
-            .name("model")
-            .version("v1.0.0")
-            .framework("tensorflow")
-            .deploymentStatus(DeploymentStatus.PRODUCTION)
-            .createdAt(recentTime)
-            .updatedAt(recentTime)
-            .build();
+        Instant recentTime = Instant.now().minus(Duration.ofDays(5)); // GH-90000
+        ModelMetadata model = ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name("model [GH-90000]")
+            .version("v1.0.0 [GH-90000]")
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(DeploymentStatus.PRODUCTION) // GH-90000
+            .createdAt(recentTime) // GH-90000
+            .updatedAt(recentTime) // GH-90000
+            .build(); // GH-90000
 
         // WHEN: Checking staleness with 30-day threshold
-        boolean isStale = modelManager.isModelStale(model, Duration.ofDays(30));
+        boolean isStale = modelManager.isModelStale(model, Duration.ofDays(30)); // GH-90000
 
-        // THEN: Model is not stale (5 days < 30 days threshold)
-        assertThat(isStale).isFalse();
+        // THEN: Model is not stale (5 days < 30 days threshold) // GH-90000
+        assertThat(isStale).isFalse(); // GH-90000
     }
 
     // ========================================================================
@@ -562,24 +562,24 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should record inference metrics")
-    void shouldRecordInferenceMetrics() {
+    @DisplayName("Should record inference metrics [GH-90000]")
+    void shouldRecordInferenceMetrics() { // GH-90000
         // WHEN: Recording inference
-        modelManager.recordInference("tenant-1", "quality-scorer", "v1.0.0",
-            Duration.ofMillis(45), true);
+        modelManager.recordInference("tenant-1", "quality-scorer", "v1.0.0", // GH-90000
+            Duration.ofMillis(45), true); // GH-90000
 
         // THEN: Metrics are recorded
-        verify(aiMetrics).recordInference("quality-scorer", "v1.0.0", Duration.ofMillis(45), true);
+        verify(aiMetrics).recordInference("quality-scorer", "v1.0.0", Duration.ofMillis(45), true); // GH-90000
     }
 
     @Test
-    @DisplayName("Should record prediction quality metrics")
-    void shouldRecordPredictionQuality() {
+    @DisplayName("Should record prediction quality metrics [GH-90000]")
+    void shouldRecordPredictionQuality() { // GH-90000
         // WHEN: Recording quality
-        modelManager.recordPredictionQuality("tenant-1", "quality-scorer", "v1.0.0", 0.95);
+        modelManager.recordPredictionQuality("tenant-1", "quality-scorer", "v1.0.0", 0.95); // GH-90000
 
         // THEN: Metrics are recorded
-        verify(aiMetrics).recordPredictionQuality("quality-scorer", "v1.0.0", 0.95);
+        verify(aiMetrics).recordPredictionQuality("quality-scorer", "v1.0.0", 0.95); // GH-90000
     }
 
     // ========================================================================
@@ -587,37 +587,37 @@ class AIModelManagerTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should clear cache")
-    void shouldClearCache() {
+    @DisplayName("Should clear cache [GH-90000]")
+    void shouldClearCache() { // GH-90000
         // GIVEN: Model in cache
-        ModelMetadata model = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION);
-        runPromise(() -> modelManager.registerModel("tenant-1", model));
+        ModelMetadata model = createModel("quality-scorer", "v1.0.0", DeploymentStatus.PRODUCTION); // GH-90000
+        runPromise(() -> modelManager.registerModel("tenant-1", model)); // GH-90000
 
         // WHEN: Clearing cache
-        modelManager.clearCache();
+        modelManager.clearCache(); // GH-90000
 
-        // THEN: Cache is cleared (next retrieval queries registry)
-        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION))
-            .thenReturn(List.of(model));
+        // THEN: Cache is cleared (next retrieval queries registry) // GH-90000
+        when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION)) // GH-90000
+            .thenReturn(List.of(model)); // GH-90000
 
-        runPromise(() -> modelManager.getActiveModel("tenant-1", "quality-scorer"));
-        verify(modelRegistry).findByStatus("tenant-1", DeploymentStatus.PRODUCTION);
+        runPromise(() -> modelManager.getActiveModel("tenant-1", "quality-scorer")); // GH-90000
+        verify(modelRegistry).findByStatus("tenant-1", DeploymentStatus.PRODUCTION); // GH-90000
     }
 
     // ========================================================================
     // HELPER METHODS
     // ========================================================================
 
-    private ModelMetadata createModel(String name, String version, DeploymentStatus status) {
-        return ModelMetadata.builder()
-            .id(UUID.randomUUID())
-            .tenantId("tenant-1")
-            .name(name)
-            .version(version)
-            .framework("tensorflow")
-            .deploymentStatus(status)
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
-            .build();
+    private ModelMetadata createModel(String name, String version, DeploymentStatus status) { // GH-90000
+        return ModelMetadata.builder() // GH-90000
+            .id(UUID.randomUUID()) // GH-90000
+            .tenantId("tenant-1 [GH-90000]")
+            .name(name) // GH-90000
+            .version(version) // GH-90000
+            .framework("tensorflow [GH-90000]")
+            .deploymentStatus(status) // GH-90000
+            .createdAt(Instant.now()) // GH-90000
+            .updatedAt(Instant.now()) // GH-90000
+            .build(); // GH-90000
     }
 }

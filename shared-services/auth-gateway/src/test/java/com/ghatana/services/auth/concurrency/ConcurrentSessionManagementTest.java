@@ -24,222 +24,222 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   service
  * @doc.pattern Test
  */
-@DisplayName("Concurrent Session Management Tests")
-@Tag("integration")
+@DisplayName("Concurrent Session Management Tests [GH-90000]")
+@Tag("integration [GH-90000]")
 class ConcurrentSessionManagementTest extends EventloopTestBase {
 
     /** Simple in-memory session store used in tests. */
     private ConcurrentHashMap<String, Session> sessionStore;
 
     @BeforeEach
-    void setUp() {
-        sessionStore = new ConcurrentHashMap<>();
+    void setUp() { // GH-90000
+        sessionStore = new ConcurrentHashMap<>(); // GH-90000
     }
 
     // ── Session data model ────────────────────────────────────────────────────
 
-    record Session(String sessionId, String userId, String tenantId,
+    record Session(String sessionId, String userId, String tenantId, // GH-90000
                    Instant createdAt, Instant expiresAt, String accessToken) {
 
-        boolean isExpired() {
-            return Instant.now().isAfter(expiresAt);
+        boolean isExpired() { // GH-90000
+            return Instant.now().isAfter(expiresAt); // GH-90000
         }
 
-        Session withRefreshedExpiry(Instant newExpiry) {
-            return new Session(sessionId, userId, tenantId, createdAt, newExpiry, accessToken);
+        Session withRefreshedExpiry(Instant newExpiry) { // GH-90000
+            return new Session(sessionId, userId, tenantId, createdAt, newExpiry, accessToken); // GH-90000
         }
     }
 
     // ── Concurrent login ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent login attempts for different users all succeed")
-    void concurrentLoginForDifferentUsersAllSucceed() throws InterruptedException {
+    @DisplayName("concurrent login attempts for different users all succeed [GH-90000]")
+    void concurrentLoginForDifferentUsersAllSucceed() throws InterruptedException { // GH-90000
         int userCount = 20;
-        CountDownLatch latch = new CountDownLatch(userCount);
-        AtomicInteger successCount = new AtomicInteger(0);
+        CountDownLatch latch = new CountDownLatch(userCount); // GH-90000
+        AtomicInteger successCount = new AtomicInteger(0); // GH-90000
 
-        for (int i = 0; i < userCount; i++) {
+        for (int i = 0; i < userCount; i++) { // GH-90000
             final String userId = "user-concurrent-" + i;
-            Thread.ofVirtual().start(() -> {
+            Thread.ofVirtual().start(() -> { // GH-90000
                 try {
-                    String sessionId = UUID.randomUUID().toString();
-                    Session session = new Session(
+                    String sessionId = UUID.randomUUID().toString(); // GH-90000
+                    Session session = new Session( // GH-90000
                             sessionId, userId, "tenant-concurrent",
-                            Instant.now(), Instant.now().plusSeconds(3600),
+                            Instant.now(), Instant.now().plusSeconds(3600), // GH-90000
                             "token-" + sessionId);
-                    sessionStore.put(sessionId, session);
-                    successCount.incrementAndGet();
+                    sessionStore.put(sessionId, session); // GH-90000
+                    successCount.incrementAndGet(); // GH-90000
                 } finally {
-                    latch.countDown();
+                    latch.countDown(); // GH-90000
                 }
             });
         }
 
-        latch.await(5, TimeUnit.SECONDS);
-        assertThat(successCount.get()).isEqualTo(userCount);
-        assertThat(sessionStore).hasSize(userCount);
+        latch.await(5, TimeUnit.SECONDS); // GH-90000
+        assertThat(successCount.get()).isEqualTo(userCount); // GH-90000
+        assertThat(sessionStore).hasSize(userCount); // GH-90000
     }
 
     @Test
-    @DisplayName("concurrent logins for same user create separate sessions")
-    void concurrentLoginsForSameUserCreateSeparateSessions() throws InterruptedException {
+    @DisplayName("concurrent logins for same user create separate sessions [GH-90000]")
+    void concurrentLoginsForSameUserCreateSeparateSessions() throws InterruptedException { // GH-90000
         String userId = "user-multi-session";
         int loginCount = 5;
-        CountDownLatch latch = new CountDownLatch(loginCount);
-        List<String> sessionIds = Collections.synchronizedList(new ArrayList<>());
+        CountDownLatch latch = new CountDownLatch(loginCount); // GH-90000
+        List<String> sessionIds = Collections.synchronizedList(new ArrayList<>()); // GH-90000
 
-        for (int i = 0; i < loginCount; i++) {
-            Thread.ofVirtual().start(() -> {
+        for (int i = 0; i < loginCount; i++) { // GH-90000
+            Thread.ofVirtual().start(() -> { // GH-90000
                 try {
-                    String sessionId = UUID.randomUUID().toString();
-                    Session session = new Session(
+                    String sessionId = UUID.randomUUID().toString(); // GH-90000
+                    Session session = new Session( // GH-90000
                             sessionId, userId, "tenant-A",
-                            Instant.now(), Instant.now().plusSeconds(3600),
+                            Instant.now(), Instant.now().plusSeconds(3600), // GH-90000
                             "token-" + sessionId);
-                    sessionStore.put(sessionId, session);
-                    sessionIds.add(sessionId);
+                    sessionStore.put(sessionId, session); // GH-90000
+                    sessionIds.add(sessionId); // GH-90000
                 } finally {
-                    latch.countDown();
+                    latch.countDown(); // GH-90000
                 }
             });
         }
 
-        latch.await(5, TimeUnit.SECONDS);
+        latch.await(5, TimeUnit.SECONDS); // GH-90000
 
-        assertThat(sessionIds).hasSize(loginCount);
+        assertThat(sessionIds).hasSize(loginCount); // GH-90000
         // All session IDs must be unique
-        assertThat(new HashSet<>(sessionIds)).hasSize(loginCount);
+        assertThat(new HashSet<>(sessionIds)).hasSize(loginCount); // GH-90000
     }
 
     // ── Concurrent token refresh ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent token refresh requests extend session expiry correctly")
-    void concurrentTokenRefreshExtendsSessionExpiry() throws InterruptedException {
-        String sessionId = UUID.randomUUID().toString();
-        Session original = new Session(
+    @DisplayName("concurrent token refresh requests extend session expiry correctly [GH-90000]")
+    void concurrentTokenRefreshExtendsSessionExpiry() throws InterruptedException { // GH-90000
+        String sessionId = UUID.randomUUID().toString(); // GH-90000
+        Session original = new Session( // GH-90000
                 sessionId, "user-refresh", "tenant-refresh",
-                Instant.now(), Instant.now().plusSeconds(60), "old-token");
-        sessionStore.put(sessionId, original);
+                Instant.now(), Instant.now().plusSeconds(60), "old-token"); // GH-90000
+        sessionStore.put(sessionId, original); // GH-90000
 
         int refreshCount = 10;
-        CountDownLatch latch = new CountDownLatch(refreshCount);
-        AtomicInteger refreshOkCount = new AtomicInteger(0);
+        CountDownLatch latch = new CountDownLatch(refreshCount); // GH-90000
+        AtomicInteger refreshOkCount = new AtomicInteger(0); // GH-90000
 
-        for (int i = 0; i < refreshCount; i++) {
-            Thread.ofVirtual().start(() -> {
+        for (int i = 0; i < refreshCount; i++) { // GH-90000
+            Thread.ofVirtual().start(() -> { // GH-90000
                 try {
-                    Session current = sessionStore.get(sessionId);
-                    if (current != null && !current.isExpired()) {
-                        Session refreshed = current.withRefreshedExpiry(Instant.now().plusSeconds(3600));
-                        sessionStore.replace(sessionId, refreshed);
-                        refreshOkCount.incrementAndGet();
+                    Session current = sessionStore.get(sessionId); // GH-90000
+                    if (current != null && !current.isExpired()) { // GH-90000
+                        Session refreshed = current.withRefreshedExpiry(Instant.now().plusSeconds(3600)); // GH-90000
+                        sessionStore.replace(sessionId, refreshed); // GH-90000
+                        refreshOkCount.incrementAndGet(); // GH-90000
                     }
                 } finally {
-                    latch.countDown();
+                    latch.countDown(); // GH-90000
                 }
             });
         }
 
-        latch.await(5, TimeUnit.SECONDS);
+        latch.await(5, TimeUnit.SECONDS); // GH-90000
 
-        Session finalSession = sessionStore.get(sessionId);
-        assertThat(finalSession).isNotNull();
-        assertThat(finalSession.isExpired()).isFalse();
-        assertThat(finalSession.expiresAt()).isAfter(original.expiresAt());
+        Session finalSession = sessionStore.get(sessionId); // GH-90000
+        assertThat(finalSession).isNotNull(); // GH-90000
+        assertThat(finalSession.isExpired()).isFalse(); // GH-90000
+        assertThat(finalSession.expiresAt()).isAfter(original.expiresAt()); // GH-90000
     }
 
     // ── Concurrent session invalidation ──────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent logout requests for same session result in session removal")
-    void concurrentLogoutForSameSessionRemovesSession() throws InterruptedException {
-        String sessionId = UUID.randomUUID().toString();
-        Session session = new Session(
+    @DisplayName("concurrent logout requests for same session result in session removal [GH-90000]")
+    void concurrentLogoutForSameSessionRemovesSession() throws InterruptedException { // GH-90000
+        String sessionId = UUID.randomUUID().toString(); // GH-90000
+        Session session = new Session( // GH-90000
                 sessionId, "user-logout", "tenant-logout",
-                Instant.now(), Instant.now().plusSeconds(3600), "token-xyz");
-        sessionStore.put(sessionId, session);
+                Instant.now(), Instant.now().plusSeconds(3600), "token-xyz"); // GH-90000
+        sessionStore.put(sessionId, session); // GH-90000
 
         int logoutCount = 5;
-        CountDownLatch latch = new CountDownLatch(logoutCount);
-        AtomicInteger removedCount = new AtomicInteger(0);
+        CountDownLatch latch = new CountDownLatch(logoutCount); // GH-90000
+        AtomicInteger removedCount = new AtomicInteger(0); // GH-90000
 
-        for (int i = 0; i < logoutCount; i++) {
-            Thread.ofVirtual().start(() -> {
+        for (int i = 0; i < logoutCount; i++) { // GH-90000
+            Thread.ofVirtual().start(() -> { // GH-90000
                 try {
-                    Session removed = sessionStore.remove(sessionId);
-                    if (removed != null) {
-                        removedCount.incrementAndGet();
+                    Session removed = sessionStore.remove(sessionId); // GH-90000
+                    if (removed != null) { // GH-90000
+                        removedCount.incrementAndGet(); // GH-90000
                     }
                 } finally {
-                    latch.countDown();
+                    latch.countDown(); // GH-90000
                 }
             });
         }
 
-        latch.await(5, TimeUnit.SECONDS);
+        latch.await(5, TimeUnit.SECONDS); // GH-90000
 
-        // Exactly one thread removes the session (ConcurrentHashMap guarantees)
-        assertThat(removedCount.get()).isEqualTo(1);
-        assertThat(sessionStore.containsKey(sessionId)).isFalse();
+        // Exactly one thread removes the session (ConcurrentHashMap guarantees) // GH-90000
+        assertThat(removedCount.get()).isEqualTo(1); // GH-90000
+        assertThat(sessionStore.containsKey(sessionId)).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("session invalidation does not affect other active sessions")
-    void sessionInvalidationDoesNotAffectOtherSessions() throws InterruptedException {
+    @DisplayName("session invalidation does not affect other active sessions [GH-90000]")
+    void sessionInvalidationDoesNotAffectOtherSessions() throws InterruptedException { // GH-90000
         // Seed 10 sessions
-        List<String> allSessionIds = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            String sid = UUID.randomUUID().toString();
-            sessionStore.put(sid, new Session(
+        List<String> allSessionIds = new ArrayList<>(); // GH-90000
+        for (int i = 0; i < 10; i++) { // GH-90000
+            String sid = UUID.randomUUID().toString(); // GH-90000
+            sessionStore.put(sid, new Session( // GH-90000
                     sid, "user-" + i, "tenant-" + i,
-                    Instant.now(), Instant.now().plusSeconds(3600), "tok-" + i));
-            allSessionIds.add(sid);
+                    Instant.now(), Instant.now().plusSeconds(3600), "tok-" + i)); // GH-90000
+            allSessionIds.add(sid); // GH-90000
         }
 
         // Invalidate the first 5 concurrently
-        CountDownLatch latch = new CountDownLatch(5);
-        for (int i = 0; i < 5; i++) {
-            final String sid = allSessionIds.get(i);
-            Thread.ofVirtual().start(() -> {
-                sessionStore.remove(sid);
-                latch.countDown();
+        CountDownLatch latch = new CountDownLatch(5); // GH-90000
+        for (int i = 0; i < 5; i++) { // GH-90000
+            final String sid = allSessionIds.get(i); // GH-90000
+            Thread.ofVirtual().start(() -> { // GH-90000
+                sessionStore.remove(sid); // GH-90000
+                latch.countDown(); // GH-90000
             });
         }
-        latch.await(5, TimeUnit.SECONDS);
+        latch.await(5, TimeUnit.SECONDS); // GH-90000
 
         // Remaining 5 sessions must be intact
-        for (int i = 5; i < 10; i++) {
-            assertThat(sessionStore.containsKey(allSessionIds.get(i))).isTrue();
+        for (int i = 5; i < 10; i++) { // GH-90000
+            assertThat(sessionStore.containsKey(allSessionIds.get(i))).isTrue(); // GH-90000
         }
-        assertThat(sessionStore).hasSize(5);
+        assertThat(sessionStore).hasSize(5); // GH-90000
     }
 
     // ── Session conflict resolution ───────────────────────────────────────────
 
     @Test
-    @DisplayName("simultaneous upsert of same session ID preserves exactly one session")
-    void simultaneousUpsertPreservesOneSession() throws InterruptedException {
-        String sharedSessionId = UUID.randomUUID().toString();
+    @DisplayName("simultaneous upsert of same session ID preserves exactly one session [GH-90000]")
+    void simultaneousUpsertPreservesOneSession() throws InterruptedException { // GH-90000
+        String sharedSessionId = UUID.randomUUID().toString(); // GH-90000
         int threadCount = 10;
-        CountDownLatch latch = new CountDownLatch(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
 
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 0; i < threadCount; i++) { // GH-90000
             final int index = i;
-            Thread.ofVirtual().start(() -> {
-                Session s = new Session(
+            Thread.ofVirtual().start(() -> { // GH-90000
+                Session s = new Session( // GH-90000
                         sharedSessionId, "user-" + index, "tenant-conflict",
-                        Instant.now(), Instant.now().plusSeconds(3600), "tok-" + index);
-                sessionStore.put(sharedSessionId, s);
-                latch.countDown();
+                        Instant.now(), Instant.now().plusSeconds(3600), "tok-" + index); // GH-90000
+                sessionStore.put(sharedSessionId, s); // GH-90000
+                latch.countDown(); // GH-90000
             });
         }
 
-        latch.await(5, TimeUnit.SECONDS);
+        latch.await(5, TimeUnit.SECONDS); // GH-90000
 
         // One session must win — store has exactly one entry for the session ID
-        assertThat(sessionStore.containsKey(sharedSessionId)).isTrue();
-        assertThat(sessionStore).hasSize(1);
+        assertThat(sessionStore.containsKey(sharedSessionId)).isTrue(); // GH-90000
+        assertThat(sessionStore).hasSize(1); // GH-90000
     }
 }

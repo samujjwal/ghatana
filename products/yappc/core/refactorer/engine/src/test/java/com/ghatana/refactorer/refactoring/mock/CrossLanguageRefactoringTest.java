@@ -30,7 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
  * Tests cross-language refactoring using mock implementations. This test ensures that the
  * RefactoringOrchestrator can handle refactorings across different languages.
  */
-@Disabled("Temporarily disabled until cross-language refactoring is fully implemented")
+@Disabled("Temporarily disabled until cross-language refactoring is fully implemented [GH-90000]")
 /**
  * @doc.type class
  * @doc.purpose Handles cross language refactoring test operations
@@ -55,252 +55,252 @@ public class CrossLanguageRefactoringTest {
     private static final String TYPESCRIPT = "typescript";
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() throws IOException { // GH-90000
         // Create mock reference resolver
-        referenceResolver = mock(ReferenceResolver.class);
+        referenceResolver = mock(ReferenceResolver.class); // GH-90000
 
         // Create real mock implementations
-        pythonRefactoring = new MockPythonRenameRefactoring();
-        typescriptRefactoring = new MockTypeScriptRenameRefactoring();
+        pythonRefactoring = new MockPythonRenameRefactoring(); // GH-90000
+        typescriptRefactoring = new MockTypeScriptRenameRefactoring(); // GH-90000
 
         // Create executor and project context
-        executor = Executors.newSingleThreadExecutor();
+        executor = Executors.newSingleThreadExecutor(); // GH-90000
 
         // Create a minimal PolyfixConfig for testing
         PolyfixConfig config =
-                new PolyfixConfig(
-                        List.of("java", "python", "typescript"),
-                        List.of(),
-                        new PolyfixConfig.Budgets(10, 100),
-                        new PolyfixConfig.Policies(false, true, true, false),
-                        new PolyfixConfig.Tools(
+                new PolyfixConfig( // GH-90000
+                        List.of("java", "python", "typescript"), // GH-90000
+                        List.of(), // GH-90000
+                        new PolyfixConfig.Budgets(10, 100), // GH-90000
+                        new PolyfixConfig.Policies(false, true, true, false), // GH-90000
+                        new PolyfixConfig.Tools( // GH-90000
                                 "node", "", "", "", "", "", "", "", "", "", "", ""));
 
-        projectContext = new PolyfixProjectContext(tempDir, config, List.of(), executor, null);
+        projectContext = new PolyfixProjectContext(tempDir, config, List.of(), executor, null); // GH-90000
 
         // Create orchestrator with mock implementations
-        orchestrator = new RefactoringOrchestrator(referenceResolver, projectContext, false);
-        orchestrator.registerRefactoring(pythonRefactoring);
-        orchestrator.registerRefactoring(typescriptRefactoring);
+        orchestrator = new RefactoringOrchestrator(referenceResolver, projectContext, false); // GH-90000
+        orchestrator.registerRefactoring(pythonRefactoring); // GH-90000
+        orchestrator.registerRefactoring(typescriptRefactoring); // GH-90000
 
         // Create test files
-        pythonFile = tempDir.resolve("module.py");
-        typescriptFile = tempDir.resolve("component.ts");
+        pythonFile = tempDir.resolve("module.py [GH-90000]");
+        typescriptFile = tempDir.resolve("component.ts [GH-90000]");
 
         // Create Python file
         String pythonCode =
-                "def old_function():\n"
+                "def old_function():\n" // GH-90000
                         + "    return \"Hello from Python\"\n"
                         + "    \n"
                         + "class PythonClass:\n"
-                        + "    def use_typescript_function(self):\n"
+                        + "    def use_typescript_function(self):\n" // GH-90000
                         + "        # This references a TypeScript function\n"
-                        + "        print(\"Calling typescript_function\")\n";
-        Files.writeString(pythonFile, pythonCode);
+                        + "        print(\"Calling typescript_function\")\n"; // GH-90000
+        Files.writeString(pythonFile, pythonCode); // GH-90000
 
         // Create TypeScript file
         String typescriptCode =
-                "function typescript_function(): string {\n"
+                "function typescript_function(): string {\n" // GH-90000
                         + "    return \"Hello from TypeScript\";\n"
                         + "}\n"
                         + "\n"
                         + "class TypeScriptClass {\n"
-                        + "    callPythonFunction(): void {\n"
+                        + "    callPythonFunction(): void {\n" // GH-90000
                         + "        // This references a Python function\n"
-                        + "        console.log(\"Calling old_function\");\n"
+                        + "        console.log(\"Calling old_function\");\n" // GH-90000
                         + "    }\n"
                         + "}\n";
-        Files.writeString(typescriptFile, typescriptCode);
+        Files.writeString(typescriptFile, typescriptCode); // GH-90000
     }
 
     @AfterEach
-    void tearDown() {
-        if (executor != null) {
-            executor.shutdownNow();
+    void tearDown() { // GH-90000
+        if (executor != null) { // GH-90000
+            executor.shutdownNow(); // GH-90000
         }
     }
 
     @Test
-    void shouldHandleCrossLanguageRefactoring() {
+    void shouldHandleCrossLanguageRefactoring() { // GH-90000
         // Setup cross-language references
         CrossLanguageReference pyToTsRef =
-                CrossLanguageReference.builder()
-                        .sourceFile(pythonFile.toString())
-                        .sourceLanguage("python")
-                        .sourceElement("use_typescript_function")
-                        .sourceElementType("METHOD")
-                        .sourcePosition(4, 4)
-                        .targetFile(typescriptFile.toString())
-                        .targetLanguage(TYPESCRIPT)
-                        .targetElement("typescript_function")
-                        .targetElementType(FUNCTION)
-                        .referenceType(ReferenceType.METHOD_CALL)
-                        .build();
+                CrossLanguageReference.builder() // GH-90000
+                        .sourceFile(pythonFile.toString()) // GH-90000
+                        .sourceLanguage("python [GH-90000]")
+                        .sourceElement("use_typescript_function [GH-90000]")
+                        .sourceElementType("METHOD [GH-90000]")
+                        .sourcePosition(4, 4) // GH-90000
+                        .targetFile(typescriptFile.toString()) // GH-90000
+                        .targetLanguage(TYPESCRIPT) // GH-90000
+                        .targetElement("typescript_function [GH-90000]")
+                        .targetElementType(FUNCTION) // GH-90000
+                        .referenceType(ReferenceType.METHOD_CALL) // GH-90000
+                        .build(); // GH-90000
 
         CrossLanguageReference tsToPyRef =
-                CrossLanguageReference.builder()
-                        .sourceFile(typescriptFile.toString())
-                        .sourceLanguage(TYPESCRIPT)
-                        .sourceElement("callPythonFunction")
-                        .sourceElementType("METHOD")
-                        .sourcePosition(6, 4)
-                        .targetFile(pythonFile.toString())
-                        .targetLanguage("python")
-                        .targetElement("old_function")
-                        .targetElementType(FUNCTION)
-                        .referenceType(ReferenceType.METHOD_CALL)
-                        .build();
+                CrossLanguageReference.builder() // GH-90000
+                        .sourceFile(typescriptFile.toString()) // GH-90000
+                        .sourceLanguage(TYPESCRIPT) // GH-90000
+                        .sourceElement("callPythonFunction [GH-90000]")
+                        .sourceElementType("METHOD [GH-90000]")
+                        .sourcePosition(6, 4) // GH-90000
+                        .targetFile(pythonFile.toString()) // GH-90000
+                        .targetLanguage("python [GH-90000]")
+                        .targetElement("old_function [GH-90000]")
+                        .targetElementType(FUNCTION) // GH-90000
+                        .referenceType(ReferenceType.METHOD_CALL) // GH-90000
+                        .build(); // GH-90000
 
         // Configure reference resolver to return cross-language references
-        when(referenceResolver.findReferences(any(), any(), any(), any()))
-                .thenReturn(List.of(pyToTsRef));
-        when(referenceResolver.findIncomingReferences(any())).thenReturn(List.of(tsToPyRef));
+        when(referenceResolver.findReferences(any(), any(), any(), any())) // GH-90000
+                .thenReturn(List.of(pyToTsRef)); // GH-90000
+        when(referenceResolver.findIncomingReferences(any())).thenReturn(List.of(tsToPyRef)); // GH-90000
 
         // Create context for renaming Python function
         RenameRefactoring.Context context =
-                createContext(pythonFile, FUNCTION, "old_function", "new_function");
+                createContext(pythonFile, FUNCTION, "old_function", "new_function"); // GH-90000
 
         // Perform the refactoring
-        RefactoringResult result = orchestrator.performRename(context);
+        RefactoringResult result = orchestrator.performRename(context); // GH-90000
 
         // Verify the result
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getChangeCount()).isGreaterThan(0);
+        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.getChangeCount()).isGreaterThan(0); // GH-90000
 
         // Verify Python file was updated
-        String pythonContent = readFileContent(pythonFile);
-        assertThat(pythonContent).contains("def new_function()");
-        assertThat(pythonContent).doesNotContain("def old_function()");
+        String pythonContent = readFileContent(pythonFile); // GH-90000
+        assertThat(pythonContent).contains("def new_function() [GH-90000]");
+        assertThat(pythonContent).doesNotContain("def old_function() [GH-90000]");
 
         // Verify TypeScript file was updated
-        String tsContent = readFileContent(typescriptFile);
-        assertThat(tsContent).contains("Calling new_function");
-        assertThat(tsContent).doesNotContain("Calling old_function");
+        String tsContent = readFileContent(typescriptFile); // GH-90000
+        assertThat(tsContent).contains("Calling new_function [GH-90000]");
+        assertThat(tsContent).doesNotContain("Calling old_function [GH-90000]");
     }
 
     @Test
-    void shouldHandleTypeScriptToJavaScriptRefactoring() {
+    void shouldHandleTypeScriptToJavaScriptRefactoring() { // GH-90000
         // Create JavaScript file
-        Path jsFile = tempDir.resolve("script.js");
+        Path jsFile = tempDir.resolve("script.js [GH-90000]");
         try {
             String jsCode =
                     "// JavaScript code that uses TypeScript function\n"
-                            + "function jsFunction() {\n"
-                            + "    return typescript_function() + \" from JS\";\n"
+                            + "function jsFunction() {\n" // GH-90000
+                            + "    return typescript_function() + \" from JS\";\n" // GH-90000
                             + "}\n";
-            Files.writeString(jsFile, jsCode);
+            Files.writeString(jsFile, jsCode); // GH-90000
 
             // Setup cross-language references
             CrossLanguageReference jsToTsRef =
-                    CrossLanguageReference.builder()
-                            .sourceFile(jsFile.toString())
-                            .sourceLanguage("javascript")
-                            .sourceElement("jsFunction")
-                            .sourceElementType("FUNCTION")
-                            .sourcePosition(3, 4)
-                            .targetFile(typescriptFile.toString())
-                            .targetLanguage(TYPESCRIPT)
-                            .targetElement("typescript_function")
-                            .targetElementType(FUNCTION)
-                            .referenceType(ReferenceType.METHOD_CALL)
-                            .build();
+                    CrossLanguageReference.builder() // GH-90000
+                            .sourceFile(jsFile.toString()) // GH-90000
+                            .sourceLanguage("javascript [GH-90000]")
+                            .sourceElement("jsFunction [GH-90000]")
+                            .sourceElementType("FUNCTION [GH-90000]")
+                            .sourcePosition(3, 4) // GH-90000
+                            .targetFile(typescriptFile.toString()) // GH-90000
+                            .targetLanguage(TYPESCRIPT) // GH-90000
+                            .targetElement("typescript_function [GH-90000]")
+                            .targetElementType(FUNCTION) // GH-90000
+                            .referenceType(ReferenceType.METHOD_CALL) // GH-90000
+                            .build(); // GH-90000
 
             // Configure reference resolver
-            when(referenceResolver.findReferences(any(), any(), any(), any()))
-                    .thenReturn(List.of(jsToTsRef));
-            when(referenceResolver.findIncomingReferences(any())).thenReturn(List.of());
+            when(referenceResolver.findReferences(any(), any(), any(), any())) // GH-90000
+                    .thenReturn(List.of(jsToTsRef)); // GH-90000
+            when(referenceResolver.findIncomingReferences(any())).thenReturn(List.of()); // GH-90000
 
             // Create context for renaming TypeScript function
             RenameRefactoring.Context context =
-                    createContext(
+                    createContext( // GH-90000
                             typescriptFile,
                             FUNCTION,
                             "typescript_function",
                             "renamed_typescript_function");
 
             // Perform the refactoring
-            RefactoringResult result = orchestrator.performRename(context);
+            RefactoringResult result = orchestrator.performRename(context); // GH-90000
 
             // Verify the result
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.isSuccess()).isTrue(); // GH-90000
 
             // Verify TypeScript file was updated
-            String tsContent = readFileContent(typescriptFile);
-            assertThat(tsContent).contains("function renamed_typescript_function()");
-            assertThat(tsContent).doesNotContain("function typescript_function()");
+            String tsContent = readFileContent(typescriptFile); // GH-90000
+            assertThat(tsContent).contains("function renamed_typescript_function() [GH-90000]");
+            assertThat(tsContent).doesNotContain("function typescript_function() [GH-90000]");
 
             // Verify JavaScript file was updated
-            String jsContent = readFileContent(jsFile);
-            assertThat(jsContent).contains("return renamed_typescript_function()");
-            assertThat(jsContent).doesNotContain("return typescript_function()");
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create test file", e);
+            String jsContent = readFileContent(jsFile); // GH-90000
+            assertThat(jsContent).contains("return renamed_typescript_function() [GH-90000]");
+            assertThat(jsContent).doesNotContain("return typescript_function() [GH-90000]");
+        } catch (IOException e) { // GH-90000
+            throw new RuntimeException("Failed to create test file", e); // GH-90000
         }
     }
 
-    private String readFileContent(Path file) {
+    private String readFileContent(Path file) { // GH-90000
         try {
-            return Files.readString(file);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read test file", e);
+            return Files.readString(file); // GH-90000
+        } catch (IOException e) { // GH-90000
+            throw new RuntimeException("Failed to read test file", e); // GH-90000
         }
     }
 
-    private RenameRefactoring.Context createContext(
+    private RenameRefactoring.Context createContext( // GH-90000
             Path sourceFile, String elementType, String oldName, String newName) {
-        return new RenameRefactoring.Context() {
+        return new RenameRefactoring.Context() { // GH-90000
             @Override
-            public String getOldName() {
+            public String getOldName() { // GH-90000
                 return oldName;
             }
 
             @Override
-            public String getNewName() {
+            public String getNewName() { // GH-90000
                 return newName;
             }
 
             @Override
-            public String getElementType() {
+            public String getElementType() { // GH-90000
                 return elementType;
             }
 
             @Override
-            public String getSourceFile() {
-                return sourceFile.toString();
+            public String getSourceFile() { // GH-90000
+                return sourceFile.toString(); // GH-90000
             }
 
             @Override
-            public int getLineNumber() {
+            public int getLineNumber() { // GH-90000
                 return 0;
             }
 
             @Override
-            public int getColumnNumber() {
+            public int getColumnNumber() { // GH-90000
                 return 0;
             }
 
             @Override
-            public PolyfixProjectContext getPolyfixProjectContext() {
+            public PolyfixProjectContext getPolyfixProjectContext() { // GH-90000
                 return projectContext;
             }
 
             @Override
-            public Path getProjectRoot() {
-                return projectContext.getProjectRoot();
+            public Path getProjectRoot() { // GH-90000
+                return projectContext.getProjectRoot(); // GH-90000
             }
 
             @Override
-            public Set<Path> getAffectedFiles() {
-                return Set.of(sourceFile);
+            public Set<Path> getAffectedFiles() { // GH-90000
+                return Set.of(sourceFile); // GH-90000
             }
 
             @Override
-            public boolean isDryRun() {
+            public boolean isDryRun() { // GH-90000
                 return false;
             }
 
             @Override
-            public boolean isInteractive() {
+            public boolean isInteractive() { // GH-90000
                 return false;
             }
         };

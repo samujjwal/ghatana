@@ -1,6 +1,6 @@
 /**
  * @fileoverview Accessibility Scoring System Implementation
- * @module @ghatana/accessibility-audit/scoring
+ * @module @ghatana/accessibility/scoring
  *
  * Implements an 8-dimensional accessibility scoring system that evaluates web pages and components
  * against WCAG 2.0/2.1 standards. Provides granular insights across key accessibility dimensions,
@@ -22,8 +22,8 @@
  *
  * @example Basic Scoring
  * ```typescript
- * import { AccessibilityScorer } from '@ghatana/accessibility-audit';
- * 
+ * import { AccessibilityScorer } from '@ghatana/accessibility';
+ *
  * const scorer = AccessibilityScorer.getInstance();
  * const findings = [...]; // From axe-core audit
  * 

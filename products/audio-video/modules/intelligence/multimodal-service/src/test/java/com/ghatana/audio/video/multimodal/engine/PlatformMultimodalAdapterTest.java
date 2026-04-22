@@ -18,8 +18,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("PlatformMultimodalAdapter")
+@ExtendWith(MockitoExtension.class) // GH-90000
+@DisplayName("PlatformMultimodalAdapter [GH-90000]")
 class PlatformMultimodalAdapterTest {
 
     @Mock
@@ -32,25 +32,25 @@ class PlatformMultimodalAdapterTest {
     private SttClientAdapter sttClientAdapter;
 
     @Test
-    @DisplayName("transcribe delegates to STT adapter and returns adapter result")
-    void transcribeDelegatesToSttAdapter() {
-        AudioResult expected = AudioResult.builder()
-            .transcription("hello via llm")
-            .confidence(0.93)
-            .build();
-        when(sttClientAdapter.transcribe(any())).thenReturn(expected);
+    @DisplayName("transcribe delegates to STT adapter and returns adapter result [GH-90000]")
+    void transcribeDelegatesToSttAdapter() { // GH-90000
+        AudioResult expected = AudioResult.builder() // GH-90000
+            .transcription("hello via llm [GH-90000]")
+            .confidence(0.93) // GH-90000
+            .build(); // GH-90000
+        when(sttClientAdapter.transcribe(any())).thenReturn(expected); // GH-90000
 
-        PlatformMultimodalAdapter adapter = new PlatformMultimodalAdapter(
-            AudioVideoRuntimeSettings.defaults(),
+        PlatformMultimodalAdapter adapter = new PlatformMultimodalAdapter( // GH-90000
+            AudioVideoRuntimeSettings.defaults(), // GH-90000
             library,
             frameExtractor,
             sttClientAdapter
         );
 
-        AudioResult actual = adapter.transcribe(new byte[] {1, 2, 3});
+        AudioResult actual = adapter.transcribe(new byte[] {1, 2, 3}); // GH-90000
 
-        assertThat(actual.getTranscription()).isEqualTo("hello via llm");
-        assertThat(actual.getConfidence()).isEqualTo(0.93);
+        assertThat(actual.getTranscription()).isEqualTo("hello via llm [GH-90000]");
+        assertThat(actual.getConfidence()).isEqualTo(0.93); // GH-90000
     }
 }
 

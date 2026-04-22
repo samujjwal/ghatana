@@ -23,8 +23,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EventHandler tenant enforcement")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("EventHandler tenant enforcement [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class EventHandlerTenantEnforcementTest extends EventloopTestBase {
 
     @Mock
@@ -42,42 +42,42 @@ class EventHandlerTenantEnforcementTest extends EventloopTestBase {
     private EventHandler handler;
 
     @BeforeEach
-    void setUp() {
-        handler = new EventHandler(client, http);
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    void setUp() { // GH-90000
+        handler = new EventHandler(client, http); // GH-90000
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("append rejects missing tenant before reading body")
-    void appendRejectsMissingTenantBeforeReadingBody() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("append rejects missing tenant before reading body [GH-90000]")
+    void appendRejectsMissingTenantBeforeReadingBody() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(request, never()).loadBody();
-        verify(client, never()).appendEvent(any(), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(request, never()).loadBody(); // GH-90000
+        verify(client, never()).appendEvent(any(), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("query rejects missing tenant before querying events")
-    void queryRejectsMissingTenantBeforeQueryingEvents() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("query rejects missing tenant before querying events [GH-90000]")
+    void queryRejectsMissingTenantBeforeQueryingEvents() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleQueryEvents(request));
+        HttpResponse response = runPromise(() -> handler.handleQueryEvents(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).queryEvents(any(), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).queryEvents(any(), any()); // GH-90000
     }
 
     @Test
-    @DisplayName("get-by-offset rejects missing tenant before querying events")
-    void getByOffsetRejectsMissingTenantBeforeQueryingEvents() {
-        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+    @DisplayName("get-by-offset rejects missing tenant before querying events [GH-90000]")
+    void getByOffsetRejectsMissingTenantBeforeQueryingEvents() { // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
-        HttpResponse response = runPromise(() -> handler.handleGetEventByOffset(request));
+        HttpResponse response = runPromise(() -> handler.handleGetEventByOffset(request)); // GH-90000
 
-        assertThat(response).isSameAs(errorResponse);
-        verify(client, never()).queryEvents(any(), any());
+        assertThat(response).isSameAs(errorResponse); // GH-90000
+        verify(client, never()).queryEvents(any(), any()); // GH-90000
     }
 }

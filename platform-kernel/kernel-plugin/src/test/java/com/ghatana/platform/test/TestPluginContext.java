@@ -13,33 +13,33 @@ import java.util.Optional;
 public class TestPluginContext implements PluginContext {
 
     @Override
-    public <T> @Nullable T getConfig(@NotNull Class<T> configType) {
+    public <T> @Nullable T getConfig(@NotNull Class<T> configType) { // GH-90000
         return null;
     }
 
     @Override
-    public <T extends Plugin> @NotNull Optional<T> findPlugin(@NotNull String pluginId) {
-        return Optional.empty();
+    public <T extends Plugin> @NotNull Optional<T> findPlugin(@NotNull String pluginId) { // GH-90000
+        return Optional.empty(); // GH-90000
     }
 
     @Override
-    public @NotNull List<Plugin> findPluginsByCapability(@NotNull Class<? extends PluginCapability> capability) {
-        return List.of();
+    public @NotNull List<Plugin> findPluginsByCapability(@NotNull Class<? extends PluginCapability> capability) { // GH-90000
+        return List.of(); // GH-90000
     }
 
     @Override
-    public @NotNull PluginInteractionBus getInteractionBus() {
-        return new PluginInteractionBus() {
+    public @NotNull PluginInteractionBus getInteractionBus() { // GH-90000
+        return new PluginInteractionBus() { // GH-90000
             @Override
-            public <Req, Res> @NotNull io.activej.promise.Promise<Res> request(@NotNull String targetPluginId, @NotNull Req request, @NotNull Class<Res> responseType, @NotNull java.time.Duration timeout) {
-                return io.activej.promise.Promise.ofException(new UnsupportedOperationException("Not implemented"));
+            public <Req, Res> @NotNull io.activej.promise.Promise<Res> request(@NotNull String targetPluginId, @NotNull Req request, @NotNull Class<Res> responseType, @NotNull java.time.Duration timeout) { // GH-90000
+                return io.activej.promise.Promise.ofException(new UnsupportedOperationException("Not implemented [GH-90000]"));
             }
 
             @Override
-            public void publish(@NotNull String topic, @NotNull Object event) {}
+            public void publish(@NotNull String topic, @NotNull Object event) {} // GH-90000
 
             @Override
-            public void subscribe(@NotNull String topic, @NotNull java.util.function.Consumer<Object> listener) {}
+            public void subscribe(@NotNull String topic, @NotNull java.util.function.Consumer<Object> listener) {} // GH-90000
         };
     }
 }

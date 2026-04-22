@@ -21,6 +21,12 @@ plugins {
 group = "com.ghatana"
 version = "2026.3.1-SNAPSHOT"
 
+apply(from = rootProject.file("gradle/doc-tag-check.gradle"))
+
+tasks.matching { it.name == "check" }.configureEach {
+    dependsOn("checkDocTags")
+}
+
 subprojects {
     // Prevent clean/build races in parallel multi-project execution.
     // Running `clean build` can otherwise delete a project's build directory

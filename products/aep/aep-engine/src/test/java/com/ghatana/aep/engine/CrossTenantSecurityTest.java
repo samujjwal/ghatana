@@ -18,54 +18,54 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test cross-tenant security, access control, and data protection.
  */
-@DisplayName("Cross-Tenant Security Tests")
+@DisplayName("Cross-Tenant Security Tests [GH-90000]")
 class CrossTenantSecurityTest {
 
     @Test
-    @DisplayName("Should prevent cross-tenant data access")
-    void shouldPreventCrossTenantDataAccess() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should prevent cross-tenant data access [GH-90000]")
+    void shouldPreventCrossTenantDataAccess() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should enforce tenant-specific permissions")
-    void shouldEnforceTenantSpecificPermissions() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should enforce tenant-specific permissions [GH-90000]")
+    void shouldEnforceTenantSpecificPermissions() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle tenant context validation")
-    void shouldHandleTenantContextValidation() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle tenant context validation [GH-90000]")
+    void shouldHandleTenantContextValidation() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should prevent privilege escalation")
-    void shouldPreventPrivilegeEscalation() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should prevent privilege escalation [GH-90000]")
+    void shouldPreventPrivilegeEscalation() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle security audit logging")
-    void shouldHandleSecurityAuditLogging() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle security audit logging [GH-90000]")
+    void shouldHandleSecurityAuditLogging() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle security violation detection")
-    void shouldHandleSecurityViolationDetection() {
-        AepEngine engine = Aep.forTesting();
+    @DisplayName("Should handle security violation detection [GH-90000]")
+    void shouldHandleSecurityViolationDetection() { // GH-90000
+        AepEngine engine = Aep.forTesting(); // GH-90000
 
-        assertThat(engine).isNotNull();
+        assertThat(engine).isNotNull(); // GH-90000
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies
+ * Copyright (c) 2026 Ghatana Technologies // GH-90000
  * YAPPC Services Platform — KeyRotationService Tests
  */
 package com.ghatana.yappc.services.security;
@@ -36,8 +36,8 @@ import static org.mockito.Mockito.*;
  *   <li>Constructor rejects null arguments</li>
  * </ul>
  */
-@DisplayName("KeyRotationService")
-@ExtendWith(MockitoExtension.class)
+@DisplayName("KeyRotationService [GH-90000]")
+@ExtendWith(MockitoExtension.class) // GH-90000
 class KeyRotationServiceTest extends EventloopTestBase {
 
     @Mock private DataSource        dataSource;
@@ -52,241 +52,241 @@ class KeyRotationServiceTest extends EventloopTestBase {
 
     private KeyRotationService service;
 
-    /** Generated 32-byte test key (AES-256). */
+    /** Generated 32-byte test key (AES-256). */ // GH-90000
     private static final byte[] TEST_KEY_BYTES = new byte[32];
 
     @BeforeEach
-    void setUp() throws SQLException {
-        lenient().when(dataSource.getConnection()).thenReturn(connection);
-        lenient().when(connection.prepareStatement(anyString())).thenReturn(insertVersionStmt);
-        lenient().when(insertVersionStmt.executeUpdate()).thenReturn(1);
-        lenient().when(supersedeStmt.executeUpdate()).thenReturn(1);
-        lenient().when(activateStmt.executeUpdate()).thenReturn(1);
-        lenient().when(insertJobStmt.executeUpdate()).thenReturn(1);
-        lenient().when(completeJobStmt.executeUpdate()).thenReturn(1);
+    void setUp() throws SQLException { // GH-90000
+        lenient().when(dataSource.getConnection()).thenReturn(connection); // GH-90000
+        lenient().when(connection.prepareStatement(anyString())).thenReturn(insertVersionStmt); // GH-90000
+        lenient().when(insertVersionStmt.executeUpdate()).thenReturn(1); // GH-90000
+        lenient().when(supersedeStmt.executeUpdate()).thenReturn(1); // GH-90000
+        lenient().when(activateStmt.executeUpdate()).thenReturn(1); // GH-90000
+        lenient().when(insertJobStmt.executeUpdate()).thenReturn(1); // GH-90000
+        lenient().when(completeJobStmt.executeUpdate()).thenReturn(1); // GH-90000
 
-        service = new KeyRotationService(dataSource, eventloop());
+        service = new KeyRotationService(dataSource, eventloop()); // GH-90000
     }
 
     // ── registerKey ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("registerKey: inserts ACTIVE key_versions row and returns version ID")
-    void registerKey_insertsActiveRow() throws SQLException {
-        String versionId = runPromise(() -> service.registerKey("yappc-main-key", "system"));
+    @DisplayName("registerKey: inserts ACTIVE key_versions row and returns version ID [GH-90000]")
+    void registerKey_insertsActiveRow() throws SQLException { // GH-90000
+        String versionId = runPromise(() -> service.registerKey("yappc-main-key", "system")); // GH-90000
 
-        assertThat(versionId).isNotBlank();
-        verify(connection).prepareStatement(contains("INSERT INTO key_versions"));
-        verify(insertVersionStmt).setString(2, "yappc-main-key");
-        verify(insertVersionStmt).setString(3, "ACTIVE");
-        verify(insertVersionStmt).setString(4, "system");
-        verify(insertVersionStmt).executeUpdate();
+        assertThat(versionId).isNotBlank(); // GH-90000
+        verify(connection).prepareStatement(contains("INSERT INTO key_versions [GH-90000]"));
+        verify(insertVersionStmt).setString(2, "yappc-main-key"); // GH-90000
+        verify(insertVersionStmt).setString(3, "ACTIVE"); // GH-90000
+        verify(insertVersionStmt).setString(4, "system"); // GH-90000
+        verify(insertVersionStmt).executeUpdate(); // GH-90000
     }
 
     @Test
-    @DisplayName("registerKey: returns unique UUID for each call")
-    void registerKey_returnsUniqueIds() {
-        String id1 = runPromise(() -> service.registerKey("key-alias", "system"));
-        String id2 = runPromise(() -> service.registerKey("key-alias", "system"));
+    @DisplayName("registerKey: returns unique UUID for each call [GH-90000]")
+    void registerKey_returnsUniqueIds() { // GH-90000
+        String id1 = runPromise(() -> service.registerKey("key-alias", "system")); // GH-90000
+        String id2 = runPromise(() -> service.registerKey("key-alias", "system")); // GH-90000
 
-        assertThat(id1).isNotEqualTo(id2);
+        assertThat(id1).isNotEqualTo(id2); // GH-90000
     }
 
     @Test
-    @DisplayName("registerKey: null keyAlias throws NullPointerException")
-    void registerKey_nullAlias_throws() {
-        assertThatThrownBy(() -> runPromise(() -> service.registerKey(null, "system")))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("keyAlias");
+    @DisplayName("registerKey: null keyAlias throws NullPointerException [GH-90000]")
+    void registerKey_nullAlias_throws() { // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> service.registerKey(null, "system"))) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("keyAlias [GH-90000]");
     }
 
     @Test
-    @DisplayName("registerKey: null createdBy throws NullPointerException")
-    void registerKey_nullCreatedBy_throws() {
-        assertThatThrownBy(() -> runPromise(() -> service.registerKey("key-alias", null)))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("createdBy");
+    @DisplayName("registerKey: null createdBy throws NullPointerException [GH-90000]")
+    void registerKey_nullCreatedBy_throws() { // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> service.registerKey("key-alias", null))) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("createdBy [GH-90000]");
     }
 
     // ── rotateKey ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("rotateKey: supersedes old key, activates new key, creates job row")
-    void rotateKey_fullWorkflow() throws SQLException {
+    @DisplayName("rotateKey: supersedes old key, activates new key, creates job row [GH-90000]")
+    void rotateKey_fullWorkflow() throws SQLException { // GH-90000
         // rotateKey opens one Connection and calls prepareStatement 4 times in order:
-        //   1. SELECT (findActiveVersion)
+        //   1. SELECT (findActiveVersion) // GH-90000
         //   2. UPDATE … SUPERSEDED
         //   3. UPDATE … ACTIVE
         //   4. INSERT INTO key_rotation_jobs
-        when(connection.prepareStatement(anyString()))
-                .thenReturn(selectActiveStmt)   // call 1: SELECT
-                .thenReturn(supersedeStmt)      // call 2: SUPERSEDED update
-                .thenReturn(activateStmt)       // call 3: ACTIVE update
-                .thenReturn(insertJobStmt);     // call 4: job insert
+        when(connection.prepareStatement(anyString())) // GH-90000
+                .thenReturn(selectActiveStmt)   // call 1: SELECT // GH-90000
+                .thenReturn(supersedeStmt)      // call 2: SUPERSEDED update // GH-90000
+                .thenReturn(activateStmt)       // call 3: ACTIVE update // GH-90000
+                .thenReturn(insertJobStmt);     // call 4: job insert // GH-90000
 
-        when(selectActiveStmt.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.getString("version_id")).thenReturn("old-version-id");
-        when(supersedeStmt.executeUpdate()).thenReturn(1);
-        when(activateStmt.executeUpdate()).thenReturn(1);
-        when(insertJobStmt.executeUpdate()).thenReturn(1);
+        when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
+        when(resultSet.next()).thenReturn(true); // GH-90000
+        when(resultSet.getString("version_id [GH-90000]")).thenReturn("old-version-id [GH-90000]");
+        when(supersedeStmt.executeUpdate()).thenReturn(1); // GH-90000
+        when(activateStmt.executeUpdate()).thenReturn(1); // GH-90000
+        when(insertJobStmt.executeUpdate()).thenReturn(1); // GH-90000
 
-        String jobId = runPromise(() ->
-                service.rotateKey("yappc-main-key", "new-version-id", "admin"));
+        String jobId = runPromise(() -> // GH-90000
+                service.rotateKey("yappc-main-key", "new-version-id", "admin")); // GH-90000
 
-        assertThat(jobId).isNotBlank();
+        assertThat(jobId).isNotBlank(); // GH-90000
 
-        verify(connection).setAutoCommit(false);
-        verify(supersedeStmt).setString(2, "old-version-id");
-        verify(insertJobStmt).setString(3, "old-version-id");
-        verify(insertJobStmt).setString(4, "new-version-id");
-        verify(connection).commit();
+        verify(connection).setAutoCommit(false); // GH-90000
+        verify(supersedeStmt).setString(2, "old-version-id"); // GH-90000
+        verify(insertJobStmt).setString(3, "old-version-id"); // GH-90000
+        verify(insertJobStmt).setString(4, "new-version-id"); // GH-90000
+        verify(connection).commit(); // GH-90000
     }
 
     @Test
-    @DisplayName("rotateKey: rolls back transaction when no active key found")
-    void rotateKey_noActiveKey_rollsBack() throws SQLException {
-        when(connection.prepareStatement(contains("SELECT version_id"))).thenReturn(selectActiveStmt);
-        when(selectActiveStmt.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(false);    // no active key
+    @DisplayName("rotateKey: rolls back transaction when no active key found [GH-90000]")
+    void rotateKey_noActiveKey_rollsBack() throws SQLException { // GH-90000
+        when(connection.prepareStatement(contains("SELECT version_id [GH-90000]"))).thenReturn(selectActiveStmt);
+        when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
+        when(resultSet.next()).thenReturn(false);    // no active key // GH-90000
 
-        assertThatThrownBy(() ->
-                runPromise(() -> service.rotateKey("yappc-main-key", "new-id", "admin")))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No active key found for alias");
+        assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> service.rotateKey("yappc-main-key", "new-id", "admin"))) // GH-90000
+                .isInstanceOf(IllegalStateException.class) // GH-90000
+                .hasMessageContaining("No active key found for alias [GH-90000]");
 
-        verify(connection).rollback();
+        verify(connection).rollback(); // GH-90000
     }
 
     @Test
-    @DisplayName("rotateKey: null keyAlias throws NullPointerException")
-    void rotateKey_nullAlias_throws() {
-        assertThatThrownBy(() ->
-                runPromise(() -> service.rotateKey(null, "new-id", "admin")))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("keyAlias");
+    @DisplayName("rotateKey: null keyAlias throws NullPointerException [GH-90000]")
+    void rotateKey_nullAlias_throws() { // GH-90000
+        assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> service.rotateKey(null, "new-id", "admin"))) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("keyAlias [GH-90000]");
     }
 
     // ── completeRotationJob ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("completeRotationJob: marks job COMPLETE when zero failures")
-    void completeRotationJob_zeroFailures_marksComplete() throws SQLException {
-        when(connection.prepareStatement(anyString())).thenReturn(completeJobStmt);
-        when(completeJobStmt.executeUpdate()).thenReturn(1);
+    @DisplayName("completeRotationJob: marks job COMPLETE when zero failures [GH-90000]")
+    void completeRotationJob_zeroFailures_marksComplete() throws SQLException { // GH-90000
+        when(connection.prepareStatement(anyString())).thenReturn(completeJobStmt); // GH-90000
+        when(completeJobStmt.executeUpdate()).thenReturn(1); // GH-90000
 
-        runPromise(() -> service.completeRotationJob("job-1", 500L, 0L, null));
+        runPromise(() -> service.completeRotationJob("job-1", 500L, 0L, null)); // GH-90000
 
-        verify(completeJobStmt).setString(1, "COMPLETE");
-        verify(completeJobStmt).setLong(3, 500L);
-        verify(completeJobStmt).setLong(4, 0L);
-        verify(completeJobStmt).setString(5, null);
-        verify(completeJobStmt).setString(6, "job-1");
+        verify(completeJobStmt).setString(1, "COMPLETE"); // GH-90000
+        verify(completeJobStmt).setLong(3, 500L); // GH-90000
+        verify(completeJobStmt).setLong(4, 0L); // GH-90000
+        verify(completeJobStmt).setString(5, null); // GH-90000
+        verify(completeJobStmt).setString(6, "job-1"); // GH-90000
     }
 
     @Test
-    @DisplayName("completeRotationJob: marks job FAILED when failures > 0")
-    void completeRotationJob_withFailures_marksFailed() throws SQLException {
-        when(connection.prepareStatement(anyString())).thenReturn(completeJobStmt);
-        when(completeJobStmt.executeUpdate()).thenReturn(1);
+    @DisplayName("completeRotationJob: marks job FAILED when failures > 0 [GH-90000]")
+    void completeRotationJob_withFailures_marksFailed() throws SQLException { // GH-90000
+        when(connection.prepareStatement(anyString())).thenReturn(completeJobStmt); // GH-90000
+        when(completeJobStmt.executeUpdate()).thenReturn(1); // GH-90000
 
-        runPromise(() -> service.completeRotationJob("job-2", 490L, 10L, "some error"));
+        runPromise(() -> service.completeRotationJob("job-2", 490L, 10L, "some error")); // GH-90000
 
-        verify(completeJobStmt).setString(1, "FAILED");
-        verify(completeJobStmt).setLong(4, 10L);
-        verify(completeJobStmt).setString(5, "some error");
+        verify(completeJobStmt).setString(1, "FAILED"); // GH-90000
+        verify(completeJobStmt).setLong(4, 10L); // GH-90000
+        verify(completeJobStmt).setString(5, "some error"); // GH-90000
     }
 
     @Test
-    @DisplayName("completeRotationJob: null jobId throws NullPointerException")
-    void completeRotationJob_nullJobId_throws() {
-        assertThatThrownBy(() ->
-                runPromise(() -> service.completeRotationJob(null, 0L, 0L, null)))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("jobId");
+    @DisplayName("completeRotationJob: null jobId throws NullPointerException [GH-90000]")
+    void completeRotationJob_nullJobId_throws() { // GH-90000
+        assertThatThrownBy(() -> // GH-90000
+                runPromise(() -> service.completeRotationJob(null, 0L, 0L, null))) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("jobId [GH-90000]");
     }
 
     // ── getActiveVersionId ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getActiveVersionId: returns version ID when ACTIVE key exists")
-    void getActiveVersionId_found() throws SQLException {
-        when(connection.prepareStatement(anyString())).thenReturn(selectActiveStmt);
-        when(selectActiveStmt.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.getString("version_id")).thenReturn("v-abc-123");
+    @DisplayName("getActiveVersionId: returns version ID when ACTIVE key exists [GH-90000]")
+    void getActiveVersionId_found() throws SQLException { // GH-90000
+        when(connection.prepareStatement(anyString())).thenReturn(selectActiveStmt); // GH-90000
+        when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
+        when(resultSet.next()).thenReturn(true); // GH-90000
+        when(resultSet.getString("version_id [GH-90000]")).thenReturn("v-abc-123 [GH-90000]");
 
-        Optional<String> result = runPromise(() ->
-                service.getActiveVersionId("yappc-main-key"));
+        Optional<String> result = runPromise(() -> // GH-90000
+                service.getActiveVersionId("yappc-main-key [GH-90000]"));
 
-        assertThat(result).isPresent().hasValue("v-abc-123");
+        assertThat(result).isPresent().hasValue("v-abc-123 [GH-90000]");
     }
 
     @Test
-    @DisplayName("getActiveVersionId: returns empty when no ACTIVE key for alias")
-    void getActiveVersionId_notFound() throws SQLException {
-        when(connection.prepareStatement(anyString())).thenReturn(selectActiveStmt);
-        when(selectActiveStmt.executeQuery()).thenReturn(resultSet);
-        when(resultSet.next()).thenReturn(false);
+    @DisplayName("getActiveVersionId: returns empty when no ACTIVE key for alias [GH-90000]")
+    void getActiveVersionId_notFound() throws SQLException { // GH-90000
+        when(connection.prepareStatement(anyString())).thenReturn(selectActiveStmt); // GH-90000
+        when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
+        when(resultSet.next()).thenReturn(false); // GH-90000
 
-        Optional<String> result = runPromise(() ->
-                service.getActiveVersionId("yappc-main-key"));
+        Optional<String> result = runPromise(() -> // GH-90000
+                service.getActiveVersionId("yappc-main-key [GH-90000]"));
 
-        assertThat(result).isEmpty();
+        assertThat(result).isEmpty(); // GH-90000
     }
 
     // ── encryptionServiceForKey ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("encryptionServiceForKey: returns EncryptionService for given key bytes")
-    void encryptionServiceForKey_returnsInstance() {
-        EncryptionService enc = service.encryptionServiceForKey(TEST_KEY_BYTES);
-        assertThat(enc).isNotNull();
+    @DisplayName("encryptionServiceForKey: returns EncryptionService for given key bytes [GH-90000]")
+    void encryptionServiceForKey_returnsInstance() { // GH-90000
+        EncryptionService enc = service.encryptionServiceForKey(TEST_KEY_BYTES); // GH-90000
+        assertThat(enc).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("encryptionServiceForKey: null keyBytes throws NullPointerException")
-    void encryptionServiceForKey_nullThrows() {
-        assertThatThrownBy(() -> service.encryptionServiceForKey(null))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("encryptionServiceForKey: null keyBytes throws NullPointerException [GH-90000]")
+    void encryptionServiceForKey_nullThrows() { // GH-90000
+        assertThatThrownBy(() -> service.encryptionServiceForKey(null)) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     // ── decryptWithOldKey ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("decryptWithOldKey: decrypts ciphertext produced by EncryptionService")
-    void decryptWithOldKey_roundTrip() {
-        EncryptionService enc = new EncryptionService(TEST_KEY_BYTES);
+    @DisplayName("decryptWithOldKey: decrypts ciphertext produced by EncryptionService [GH-90000]")
+    void decryptWithOldKey_roundTrip() { // GH-90000
+        EncryptionService enc = new EncryptionService(TEST_KEY_BYTES); // GH-90000
         String plaintext  = "my-secret-env-value";
-        String ciphertext = enc.encrypt(plaintext);
+        String ciphertext = enc.encrypt(plaintext); // GH-90000
 
-        String decrypted = service.decryptWithOldKey(ciphertext, TEST_KEY_BYTES);
+        String decrypted = service.decryptWithOldKey(ciphertext, TEST_KEY_BYTES); // GH-90000
 
-        assertThat(decrypted).isEqualTo(plaintext);
+        assertThat(decrypted).isEqualTo(plaintext); // GH-90000
     }
 
     @Test
-    @DisplayName("decryptWithOldKey: null ciphertext throws NullPointerException")
-    void decryptWithOldKey_nullCiphertext_throws() {
-        assertThatThrownBy(() -> service.decryptWithOldKey(null, TEST_KEY_BYTES))
-                .isInstanceOf(NullPointerException.class);
+    @DisplayName("decryptWithOldKey: null ciphertext throws NullPointerException [GH-90000]")
+    void decryptWithOldKey_nullCiphertext_throws() { // GH-90000
+        assertThatThrownBy(() -> service.decryptWithOldKey(null, TEST_KEY_BYTES)) // GH-90000
+                .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     // ── Constructor validation ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null dataSource throws NullPointerException")
-    void constructor_nullDataSource_throws() {
-        assertThatThrownBy(() -> new KeyRotationService(null, eventloop()))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("dataSource");
+    @DisplayName("null dataSource throws NullPointerException [GH-90000]")
+    void constructor_nullDataSource_throws() { // GH-90000
+        assertThatThrownBy(() -> new KeyRotationService(null, eventloop())) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("dataSource [GH-90000]");
     }
 
     @Test
-    @DisplayName("null eventloop throws NullPointerException")
-    void constructor_nullEventloop_throws() {
-        assertThatThrownBy(() -> new KeyRotationService(dataSource, null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("eventloop");
+    @DisplayName("null eventloop throws NullPointerException [GH-90000]")
+    void constructor_nullEventloop_throws() { // GH-90000
+        assertThatThrownBy(() -> new KeyRotationService(dataSource, null)) // GH-90000
+                .isInstanceOf(NullPointerException.class) // GH-90000
+                .hasMessageContaining("eventloop [GH-90000]");
     }
 }
