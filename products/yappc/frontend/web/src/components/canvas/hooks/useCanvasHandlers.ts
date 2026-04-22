@@ -32,6 +32,7 @@ import {
     MoveNodesCommand,
 } from '../workspace/canvasCommands';
 import { type ArtifactNodeData } from '../nodes/ArtifactNode';
+import { type PageDesignerNodeData } from '../nodes/PageDesignerNode';
 import { type DependencyEdgeData } from '../edges';
 import { type ArtifactTemplate, type InspectorArtifact } from '../workspace';
 import { migrateData } from '@/lib/canvas/migrationRules';
@@ -83,15 +84,18 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
     const handleCreateArtifact = useCallback(
         async (template: ArtifactTemplate, position: { x: number; y: number }) => {
             const newId = `artifact-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const title = template.defaultTitle || template.label || 'New Artifact';
+            const isPageDesignerArtifact = template.type === 'mockup';
 
-            const newNode: Node<ArtifactNodeData> = {
-                id: newId,
-                type: 'artifact',
-                position,
-                data: {
+            const newNodeData: ArtifactNodeData | PageDesignerNodeData = isPageDesignerArtifact
+                ? {
+                    label: title,
+                    expanded: true,
+                }
+                : {
                     id: newId,
                     type: template.type as ArtifactType,
-                    title: template.defaultTitle || template.label || 'New Artifact',
+                    title,
                     description: template.description || '',
                     status: 'pending',
                     persona: personaName || 'developer',
@@ -102,18 +106,24 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                         setIsInspectorOpen(true);
                     },
                     onLink: (_id: string) => { /* handled by inspector */ },
-                },
+                };
+
+            const newNode: Node<ArtifactNodeData> = {
+                id: newId,
+                type: isPageDesignerArtifact ? 'page-designer' : 'artifact',
+                position,
+                data: newNodeData as ArtifactNodeData,
             };
 
             // Command pattern: AddNodeCommand pushes to history and executes
             executeCommand(new AddNodeCommand(newNode));
-            announce(`Created artifact: ${newNode.data.title}`);
+            announce(`Created artifact: ${title}`);
 
             try {
                 await createArtifact({
                     type: template.type,
-                    title: newNode.data.title,
-                    description: newNode.data.description || '',
+                    title,
+                    description: template.description || '',
                     phase: template.phase || currentPhase,
                     status: 'pending',
                     createdBy: personaName || 'developer',

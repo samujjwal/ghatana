@@ -17,6 +17,7 @@ import { SimpleUnifiedNode } from '../unified/SimpleUnifiedNode';
 import { DiagramNode } from '../nodes/DiagramNode';
 import { MonacoNode } from '../nodes/MonacoNode';
 import { GroupNode } from '../nodes/GroupNode';
+import { PageDesignerNode } from '../nodes/PageDesignerNode';
 import { DependencyEdge } from '../edges';
 
 interface CanvasRegistryContextType {
@@ -51,6 +52,7 @@ export const CanvasRegistryProvider: React.FC<CanvasRegistryProviderProps> = ({
     diagram: DiagramNode as React.ComponentType<NodeProps>,
     monaco: MonacoNode as React.ComponentType<NodeProps>,
     group: GroupNode as React.ComponentType<NodeProps>,
+    'page-designer': PageDesignerNode as React.ComponentType<NodeProps>,
     ...additionalNodeTypes
   }), [additionalNodeTypes]);
 

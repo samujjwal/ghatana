@@ -4,6 +4,7 @@ export { default as DataNode } from './DataNode';
 export { default as FlowNode } from './FlowNode';
 export { default as PageNode } from './PageNode';
 export { ArtifactNode, type ArtifactNodeData } from './ArtifactNode';
+export { PageDesignerNode, type PageDesignerNodeData, type PageDesignerCanvasNode } from './PageDesignerNode';
 
 // Bootstrap Phase Nodes
 export * from './bootstrap';

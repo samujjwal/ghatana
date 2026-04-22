@@ -4950,6 +4950,12 @@ importers:
 
   products/yappc/frontend/libs/yappc-ai:
     dependencies:
+      '@ghatana/platform-events':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/platform-events
+      '@ghatana/ui-builder':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/ui-builder
       '@yappc/core':
         specifier: workspace:*
         version: link:../yappc-core
@@ -5002,6 +5008,12 @@ importers:
 
   products/yappc/frontend/libs/yappc-artifact-compiler:
     dependencies:
+      '@ghatana/ds-schema':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/ds-schema
+      '@ghatana/ui-builder':
+        specifier: workspace:*
+        version: link:../../../../../platform/typescript/ui-builder
       nanoid:
         specifier: ^5.1.7
         version: 5.1.7

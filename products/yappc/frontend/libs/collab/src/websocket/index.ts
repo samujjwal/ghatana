@@ -1,4 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import {
+  useWebSocket as useRealtimeWebSocket,
+  useWebSocketData as useRealtimeWebSocketData,
+  useWebSocketSubscription as useRealtimeWebSocketSubscription,
+} from '@ghatana/realtime';
+
+import type {
+  UseWebSocketOptions as RealtimeUseWebSocketOptions,
+  WebSocketMessage,
+  WebSocketEventHandler,
+} from '@ghatana/realtime';
 
 type ConnectionStatus =
   | 'idle'
@@ -10,14 +22,8 @@ type ConnectionStatus =
 
 type MessageHandler = (message: unknown) => void;
 
-type Subscription = {
-  topic: string;
-  handler: MessageHandler;
-  unsubscribe: () => void;
-};
-
 export interface UseWebSocketOptions {
-  url: string;
+  url?: string;
   autoConnect?: boolean;
   reconnect?: boolean;
   maxReconnectAttempts?: number;
@@ -41,127 +47,73 @@ export function useWebSocket({
   maxReconnectAttempts = 5,
   protocols,
 }: UseWebSocketOptions): UseWebSocketReturn {
-  const socketRef = useRef<WebSocket | null>(null);
-  const [status, setStatus] = useState<ConnectionStatus>('idle');
-  const [lastError, setLastError] = useState<Error | undefined>();
-  const reconnectAttemptsRef = useRef(0);
-  const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
-
-  const cleanupSocket = () => {
-    if (socketRef.current) {
-      socketRef.current.onopen = null;
-      socketRef.current.onclose = null;
-      socketRef.current.onerror = null;
-      socketRef.current.onmessage = null;
-      socketRef.current.close();
-      socketRef.current = null;
-    }
+  const realtimeOptions: RealtimeUseWebSocketOptions = {
+    url,
+    autoConnect,
+    reconnect,
+    maxReconnectAttempts,
+    protocols,
   };
 
-  const connect = () => {
-    cleanupSocket();
-    setStatus(reconnectAttemptsRef.current > 0 ? 'reconnecting' : 'connecting');
+  const {
+    connectionState,
+    send: sendRealtime,
+    subscribe: subscribeRealtime,
+    disconnect,
+    connect: connectRealtime,
+  } = useRealtimeWebSocket(realtimeOptions);
 
-    try {
-      const socket = new WebSocket(url, protocols);
-      socketRef.current = socket;
+  const status: ConnectionStatus = connectionState.status;
+  const reconnectAttempt = connectionState.reconnectAttempt;
 
-      socket.onopen = () => {
-        setStatus('connected');
-        reconnectAttemptsRef.current = 0;
+  const send = useCallback(
+    (payload: unknown): boolean => {
+      if (
+        typeof payload === 'object' &&
+        payload !== null &&
+        'type' in payload &&
+        typeof (payload as { type: unknown }).type === 'string'
+      ) {
+        return sendRealtime(payload as WebSocketMessage<unknown>);
+      }
+
+      return sendRealtime({
+        type: 'message',
+        payload,
+      });
+    },
+    [sendRealtime],
+  );
+
+  const subscribe = useCallback(
+    (topic: string, handler: MessageHandler): (() => void) => {
+      const bridgeHandler: WebSocketEventHandler<unknown> = (message) => {
+        const candidate =
+          message && typeof message === 'object' && 'payload' in message
+            ? (message as { payload?: unknown }).payload
+            : message;
+        handler(candidate ?? message);
       };
+      return subscribeRealtime(topic, bridgeHandler);
+    },
+    [subscribeRealtime],
+  );
 
-      socket.onclose = () => {
-        const shouldRetry =
-          reconnect && reconnectAttemptsRef.current < maxReconnectAttempts;
-        if (shouldRetry) {
-          reconnectAttemptsRef.current += 1;
-          const delay = Math.min(1000 * reconnectAttemptsRef.current, 5000);
-          setTimeout(connect, delay);
-        } else {
-          setStatus('disconnected');
-        }
-      };
-
-      socket.onerror = (event) => {
-        setLastError(new Error('WebSocket error'));
-        setStatus('failed');
-        socket.close();
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          const topic = message.type || message.topic;
-          if (topic && handlersRef.current.has(topic)) {
-            handlersRef.current
-              .get(topic)!
-              .forEach((handler) => handler(message));
-          }
-        } catch (err) {
-          console.error('Failed to parse WebSocket message', err);
-        }
-      };
-    } catch (error: unknown) {
-      setLastError(error);
-      setStatus('failed');
-    }
-  };
-
-  useEffect(() => {
-    if (autoConnect) {
-      connect();
-    }
-    return () => cleanupSocket();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url]);
-
-  const send = (payload: unknown) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(payload));
-      return true;
-    }
-    return false;
-  };
-
-  const subscribe = (topic: string, handler: MessageHandler) => {
-    if (!handlersRef.current.has(topic)) {
-      handlersRef.current.set(topic, new Set());
-    }
-    handlersRef.current.get(topic)!.add(handler);
-
-    const subscription: Subscription = {
-      topic,
-      handler,
-      unsubscribe: () => {
-        const set = handlersRef.current.get(topic);
-        if (set) {
-          set.delete(handler);
-          if (set.size === 0) handlersRef.current.delete(topic);
-        }
-      },
-    };
-
-    return () => subscription.unsubscribe();
-  };
-
-  const disconnect = () => {
-    reconnectAttemptsRef.current = maxReconnectAttempts; // stop reconnection attempts
-    cleanupSocket();
-    setStatus('disconnected');
-  };
+  const connect = useCallback((): void => {
+    void connectRealtime();
+  }, [connectRealtime]);
 
   return useMemo(
     () => ({
       status,
-      lastError,
-      reconnectAttempt: reconnectAttemptsRef.current,
+      lastError: connectionState.lastError,
+      reconnectAttempt,
       send,
       subscribe,
       disconnect,
       connect,
     }),
-    [status, lastError]
+    [status, connectionState.lastError, reconnectAttempt, send, subscribe, disconnect, connect],
   );
 }
 
@@ -173,14 +125,14 @@ export interface UseWebSocketStatusReturn {
 }
 
 export function useWebSocketStatus(): UseWebSocketStatusReturn {
-  const [status, setStatus] = useState<ConnectionStatus>('idle');
-  const [lastError, setLastError] = useState<Error | undefined>();
-  const [reconnectAttempt, setReconnectAttempt] = useState(0);
-  const [showNotification, setShowNotification] = useState(false);
+  const { status, lastError, reconnectAttempt } = useWebSocket({
+    autoConnect: true,
+    reconnect: true,
+  });
+
+  const [showNotification, setShowNotification] = useState(status !== 'idle');
 
   useEffect(() => {
-    // Placeholder: in a real implementation this would subscribe to global WS events
-    // Expose setters so consuming code can manage status display.
     setShowNotification(status !== 'idle');
   }, [status]);
 
@@ -201,12 +153,12 @@ export function useWebSocketSubscription<T = unknown>(
   deps: React.DependencyList = [],
   options: UseWebSocketOptions = {}
 ) {
-  const { subscribe } = useWebSocket(options);
-
-  useEffect(() => {
-    const unsubscribe = subscribe(messageType, handler);
-    return unsubscribe;
-  }, [subscribe, messageType, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
+  useRealtimeWebSocketSubscription<T>(
+    messageType,
+    (message) => handler(message),
+    deps,
+    options,
+  );
 }
 
 /**
@@ -222,54 +174,10 @@ export function useWebSocketData<T = unknown>(
   error: Error | null;
   refresh: () => void;
 } {
-  const [data, setData] = useState<T | undefined>(initialData);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const { send, status } = useWebSocket(options);
-
-  // Request initial data when connected
-  useEffect(() => {
-    if (status === 'connected') {
-      setIsLoading(true);
-      setError(null);
-      send({
-        type: 'subscribe',
-        payload: { messageType },
-      });
-    }
-  }, [status, messageType, send]);
-
-  // Subscribe to data updates
-  useWebSocketSubscription<T>(
-    messageType,
-    (message) => {
-      setData(message);
-      setIsLoading(false);
-      setError(null);
-    },
-    [messageType],
-    options
-  );
-
-  // Subscribe to error messages
-  useWebSocketSubscription<{ error: string }>(
-    `${messageType}_error`,
-    (message) => {
-      const errorMsg =
-        typeof message === 'object' && message !== null && 'error' in message
-          ? (message as unknown).error
-          : 'Unknown error';
-      setError(new Error(errorMsg));
-      setIsLoading(false);
-    },
-    [messageType],
-    options
-  );
+  const realtime = useRealtimeWebSocketData<T>(messageType, initialData, options);
+  const { send } = useWebSocket(options);
 
   const refresh = useCallback(() => {
-    setIsLoading(true);
-    setError(null);
     send({
       type: 'refresh',
       payload: { messageType },
@@ -277,9 +185,9 @@ export function useWebSocketData<T = unknown>(
   }, [messageType, send]);
 
   return {
-    data,
-    isLoading,
-    error,
+    data: realtime.data,
+    isLoading: realtime.isLoading,
+    error: realtime.error,
     refresh,
   };
 }

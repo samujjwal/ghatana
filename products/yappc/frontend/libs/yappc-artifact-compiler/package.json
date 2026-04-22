@@ -46,7 +46,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node ./scripts/generate-dist-package.mjs",
     "dev": "tsc --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",

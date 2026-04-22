@@ -9,10 +9,8 @@ import {
   TemplateSaveDialog,
 } from '../components';
 import { VersionHistoryPanel } from '@/components/canvas/versioning/VersionHistoryPanel';
-import {
-  SimplePageDesigner,
-  type SimplePageComponent,
-} from '@/components/canvas/SimplePageDesigner';
+import { PageDesigner } from '@/components/canvas/page/PageDesigner';
+import type { BuilderDocument } from '@ghatana/ui-builder';
 import {
   UnifiedRightPanel,
   type GuidanceItem,
@@ -98,9 +96,10 @@ export interface CanvasPanelsProps {
   currentUser: unknown;
 
   designerNodeId: string | null;
-  pageDesignerComponents: Record<string, SimplePageComponent[]>;
-  setPageDesignerComponents: React.Dispatch<
-    React.SetStateAction<Record<string, SimplePageComponent[]>>
+  /** Per-node BuilderDocument state keyed by ReactFlow node id */
+  pageDesignerDocuments: Record<string, BuilderDocument>;
+  setPageDesignerDocuments: React.Dispatch<
+    React.SetStateAction<Record<string, BuilderDocument>>
   >;
 
   persistenceRef: React.MutableRefObject<unknown>;
@@ -156,8 +155,8 @@ export function CanvasPanels({
   designerOpen,
   setDesignerOpen,
   designerNodeId,
-  pageDesignerComponents,
-  setPageDesignerComponents,
+  pageDesignerDocuments,
+  setPageDesignerDocuments,
   showVersionHistory,
   setShowVersionHistory,
   persistenceRef,
@@ -227,15 +226,15 @@ export function CanvasPanels({
       </Drawer>
 
       <Drawer anchor={panelAnchor} open={designerOpen} onClose={() => setDesignerOpen(false)}>
-        <Box className="p-4" style={{ width: widePanelWidth, height: isMobile ? '80vh' : '100%' }}>
+        <Box style={{ width: widePanelWidth, height: isMobile ? '80vh' : '100%', overflow: 'hidden' }}>
           {designerNodeId && (
-            <SimplePageDesigner
+            <PageDesigner
               key={designerNodeId}
-              components={pageDesignerComponents[designerNodeId] ?? []}
-              onComponentsChange={(components) =>
-                setPageDesignerComponents((prev) => ({
+              initialComponents={pageDesignerDocuments[designerNodeId]}
+              onDocumentChange={(doc) =>
+                setPageDesignerDocuments((prev) => ({
                   ...prev,
-                  [designerNodeId]: components,
+                  [designerNodeId]: doc,
                 }))
               }
             />

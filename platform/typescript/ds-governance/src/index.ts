@@ -12,3 +12,4 @@ export * from './duplication/index';
 export * from './compatibility/index';
 export * from './contribution/index';
 export * from './quality/index';
+export * from './accessibility/index';

@@ -13,6 +13,7 @@ import {
     DataNode,
     FlowNode,
     PageNode,
+    PageDesignerNode,
 } from './nodes';
 import { SimpleStickyNode } from './SimpleStickyNode';
 import { SimpleFrameNode } from './SimpleFrameNode';
@@ -41,6 +42,7 @@ export const nodeTypes: NodeTypes = {
     data: asNodeComponent(DataNode),
     flow: asNodeComponent(FlowNode),
     page: asNodeComponent(PageNode),
+    'page-designer': asNodeComponent(PageDesignerNode),
 
     // Fallbacks
     infrastructure: asNodeComponent(ComponentNode),

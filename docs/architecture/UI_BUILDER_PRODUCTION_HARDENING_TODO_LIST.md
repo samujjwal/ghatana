@@ -6,7 +6,7 @@
 - `docs/architecture/LIVE_UI_BUILDER_AND_EXECUTION_PLATFORM_ARCHITECTURE.md`
 - `.github/copilot-instructions.md`
 
-<!-- COMPLETED PHASES REMOVED: 0 (Guardrails), 1 (Test Harness), 2 (ds-registry builder queries + schemas.ts migration), 3 (round-trip loss reporting: codegen stateVariants/responsiveVariants/protected/confidence-decay tests), 4 (canvas public API narrowing), 5 (Preview Trust), 6 (AI hooks in ui-builder + platform-events, useBuilderAI in yappc-ai, toBuilderDocument in yappc-artifact-compiler), 7 (YAPPC shell + diagnostics + collab + state). -->
+<!-- COMPLETED PHASES REMOVED: 0 (Guardrails), 1 (Test Harness), 2 (ds-registry builder queries + schemas.ts migration + all 5 starter contracts with full metadata + registry versioning), 3 (round-trip loss reporting: codegen stateVariants/responsiveVariants/protected/confidence-decay tests), 4 (canvas public API narrowing), 5 (Preview Trust), 6 (AI hooks in ui-builder + platform-events, useBuilderAI in yappc-ai, toBuilderDocument in yappc-artifact-compiler, accessibility governance helpers), 7 (YAPPC shell + diagnostics + collab + state). -->
 
 ## How To Use This List
 
@@ -32,48 +32,3 @@
 - `products/yappc/frontend/libs/yappc-ai`: canonical home for YAPPC product-specific AI assistant flows.
 - `products/yappc/frontend/libs/yappc-artifact-compiler`: canonical home for YAPPC import, reverse engineering, artifact synthesis, and migration into shared builder documents.
 - `products/yappc/frontend/web/src/components/canvas/page/*`: keep only compatibility shims and integration glue here while shared builder ownership is completed.
-
-## Phase 2 - Design-System Contract Completion
-
-- `platform/typescript/ds-schema`: cover accessibility obligations in shared component contracts.
-- `platform/typescript/ds-schema`: cover AI-safe versus review-required operations in shared component contracts.
-- `platform/typescript/ds-schema`: cover telemetry and observability expectations in shared component contracts.
-- `platform/typescript/ds-registry`: support contract versioning, manifest lookup, and stable preview/codegen resolution.
-- Keep only legacy parsing and migration glue in YAPPC page-builder schema code.
-- Register shared starter contracts for button, card, text field, typography, and box/container components.
-
-## Phase 3 - Shared Builder Core Completion
-
-- `platform/typescript/ui-builder`: align codegen with contract metadata instead of local heuristics.
-- `platform/typescript/ui-builder`: align renderers with contract metadata instead of local heuristics.
-
-## Phase 4 - Canvas And Page-Builder Convergence
-
-- `platform/typescript/canvas`: keep shared canvas behavior limited to generic spatial editing primitives.
-- `platform/typescript/canvas`: isolate or remove product-specific behavior from shared canvas surfaces.
-- `products/yappc/frontend/web/src/components/canvas/page/PageDesigner.tsx`: migrate from list-first editing to a real shared-builder integration.
-- Remove shared foundational builder logic from YAPPC route-level and page-level components.
-
-## Phase 6 - AI, Accessibility, Privacy, Security, And Observability
-
-- `platform/typescript/design-system`: strengthen accessibility declarations needed by builder and preview flows.
-- `platform/typescript/ds-schema`: strengthen preview and runtime disclosure support for component contracts.
-- `platform/typescript/design-system` and `platform/typescript/ds-schema`: add automated accessibility checks for component contracts where feasible.
-
-## Phase 7 - YAPPC Productization And UX Simplification
-
-- `products/yappc/frontend/libs/collab`: use `@ghatana/realtime` for generic transport helpers instead of parallel networking utilities.
-- Simplify default authoring flows so common tasks require minimal decisions.
-- Keep advanced capability available through progressive disclosure rather than always-visible complexity.
-- Keep inline editing, keyboard workflows, and drag/drop workflows first-class in the editor UX.
-
-## Execution Order
-
-- Refactor `PageDesigner` to preserve a stable `BuilderDocument`.
-- Fix lossy adapter behavior and add round-trip regression tests.
-- Enrich shared design-system contracts until YAPPC local schemas are compatibility-only.
-- Expand shared builder operations, validation, and document projections.
-- Converge canvas and page-builder surfaces on the same document model.
-- Layer in accessibility, privacy, and security completion.
-- Finish YAPPC UX simplification.
-- Run the full CI and governance release gates.

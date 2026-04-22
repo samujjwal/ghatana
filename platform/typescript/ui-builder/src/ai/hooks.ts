@@ -20,8 +20,9 @@
  * - action-wiring: Suggest event→action bindings based on contract patterns
  */
 
-import type { BuilderDocument, NodeId } from '../core/types.js';
+import type { BuilderDocument, ComponentInstance, NodeId } from '../core/types.js';
 import type { AIActionLineage, AIHookKind } from './lineage.js';
+import type { ComponentContract } from '@ghatana/ds-schema';
 
 // ============================================================================
 // Hook Result
@@ -49,6 +50,10 @@ export interface AIHookProposal {
   readonly nodeProposals: readonly AINodeProposal[];
   /** Lineage record for this proposal (one per hook invocation). */
   readonly lineage: AIActionLineage;
+  /** True when policy requires a human to review before applying the proposal. */
+  readonly reviewRequired?: boolean;
+  /** Policy markers explaining why review or gating was applied. */
+  readonly policyTriggers?: readonly string[];
 }
 
 /** Returned when a hook has no suggestions. */
@@ -62,6 +67,110 @@ export type AIHookResult = AIHookProposal | AIHookNoOp;
 /** Type guard: narrows to a proposal (has changes). */
 export function isAIHookProposal(result: AIHookResult): result is AIHookProposal {
   return 'nodeProposals' in result;
+}
+
+function getNodeById(document: BuilderDocument, nodeId: NodeId): ComponentInstance | undefined {
+  const nodes = document.nodes as unknown;
+  if (nodes instanceof Map) {
+    return nodes.get(nodeId) as ComponentInstance | undefined;
+  }
+
+  if (nodes && typeof nodes === 'object') {
+    return (nodes as Record<string, ComponentInstance>)[nodeId as string];
+  }
+
+  return undefined;
+}
+
+function getContractByName(document: BuilderDocument, contractName: string): ComponentContract | undefined {
+  return document.designSystem.componentContracts.find((contract) => contract.name === contractName);
+}
+
+function applyContractPolicy(result: AIHookResult, context: AIHookContext): AIHookResult {
+  if (!isAIHookProposal(result)) {
+    return result;
+  }
+
+  if (result.nodeProposals.length === 0) {
+    return result;
+  }
+
+  const policyTriggers = new Set<string>();
+  let reviewRequired = false;
+
+  const filteredNodeProposals = result.nodeProposals.filter((proposal) => {
+    const node = getNodeById(context.document, proposal.nodeId);
+    if (!node) {
+      return true;
+    }
+
+    const contract = getContractByName(context.document, node.contractName);
+    if (!contract) {
+      return true;
+    }
+
+    const aiPolicy = contract.aiPolicy;
+
+    if (aiPolicy?.allowAutonomousConfiguration === false) {
+      policyTriggers.add('ai.autonomous-configuration.disabled');
+      return false;
+    }
+
+    if (aiPolicy?.permittedActions?.length && !aiPolicy.permittedActions.includes('set-prop')) {
+      policyTriggers.add('ai.action.set-prop.not-permitted');
+      return false;
+    }
+
+    const updatedPropNames = Object.keys(proposal.propsUpdate);
+
+    if (aiPolicy?.reviewRequiredProps?.some((propName) => updatedPropNames.includes(propName))) {
+      reviewRequired = true;
+      policyTriggers.add('ai.prop.review-required');
+    }
+
+    if (contract.privacy?.mayRenderPii || contract.privacy?.regulatoryFrameworks.length) {
+      reviewRequired = true;
+      policyTriggers.add('security.privacy.review-required');
+    }
+
+    for (const propName of updatedPropNames) {
+      const propContract = contract.props.find((prop) => prop.name === propName);
+      if (!propContract) {
+        continue;
+      }
+
+      if (propContract.secretBearing || propContract.reviewRequired) {
+        reviewRequired = true;
+        policyTriggers.add('security.prop.review-required');
+      }
+
+      if (
+        propContract.dataClassification === 'restricted' ||
+        propContract.dataClassification === 'confidential' ||
+        propContract.dataClassification === 'pii' ||
+        propContract.dataClassification === 'sensitive'
+      ) {
+        reviewRequired = true;
+        policyTriggers.add('security.data-classification.review-required');
+      }
+    }
+
+    return true;
+  });
+
+  if (!filteredNodeProposals.length) {
+    return {
+      hookKind: result.hookKind,
+      reason: 'All proposals were blocked by AI/security policy constraints.',
+    };
+  }
+
+  return {
+    ...result,
+    nodeProposals: filteredNodeProposals,
+    reviewRequired: reviewRequired || result.reviewRequired,
+    policyTriggers: [...policyTriggers],
+  };
 }
 
 // ============================================================================
@@ -112,7 +221,8 @@ export class AIHookRegistry {
     if (!fn) {
       throw new Error(`No AI hook registered for kind '${kind}'.`);
     }
-    return fn(context);
+    const result = await fn(context);
+    return applyContractPolicy(result, context);
   }
 
   /**
@@ -129,7 +239,7 @@ export class AIHookRegistry {
       if (r.status === 'fulfilled') return r.value;
       const kind = entries[i]?.[0] ?? ('missing-prop-repair' as AIHookKind);
       return { hookKind: kind, reason: `Hook threw: ${String(r.reason)}` };
-    });
+    }).map((result) => applyContractPolicy(result, context));
   }
 
   /** Returns the registered hook kinds. */

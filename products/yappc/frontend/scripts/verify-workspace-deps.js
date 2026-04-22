@@ -344,11 +344,16 @@ function checkProductionBuilds(packages) {
     if (pkg.pkg.private) continue;
 
     const distPath = path.join(pkg.path, 'dist');
+    const distPackageJsonPath = path.join(distPath, 'package.json');
 
     if (fs.existsSync(distPath)) {
+      if (!fs.existsSync(distPackageJsonPath)) {
+        continue;
+      }
+
       // Check for devDependencies in production build
       const pkgJson = JSON.parse(
-        fs.readFileSync(path.join(distPath, 'package.json'), 'utf8')
+        fs.readFileSync(distPackageJsonPath, 'utf8')
       );
 
       if (pkgJson.devDependencies) {

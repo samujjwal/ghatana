@@ -128,6 +128,118 @@ describe('AIHookRegistry', () => {
       expect(isAIHookProposal(result)).toBe(false);
     }
   });
+
+  it('blocks proposals when contract disables autonomous configuration', async () => {
+    const registry = new AIHookRegistry();
+    const lineage = createLineageEntry('property-completion', 'Filled label', 0.9, ['node-1' as never]);
+
+    registry.register('property-completion', async () => ({
+      hookKind: 'property-completion',
+      confidence: 0.9,
+      summary: 'Set label',
+      nodeProposals: [
+        {
+          nodeId: 'node-1' as never,
+          propsUpdate: { label: 'Welcome' },
+          description: 'Populate missing label',
+        },
+      ],
+      lineage,
+    }));
+
+    const context = makeContext({
+      document: {
+        designSystem: {
+          componentContracts: [
+            {
+              name: 'Button',
+              aiPolicy: {
+                allowAutonomousConfiguration: false,
+                reviewRequiredProps: [],
+                permittedActions: ['set-prop'],
+                autoApplyConfidenceThreshold: 0.8,
+              },
+              props: [
+                { name: 'label', type: 'string', required: false },
+              ],
+            },
+          ],
+        },
+        nodes: {
+          'node-1': { contractName: 'Button' },
+        },
+      } as unknown as BuilderDocument,
+    });
+
+    const result = await registry.invoke('property-completion', context);
+    expect(isAIHookProposal(result)).toBe(false);
+    expect((result as { reason: string }).reason).toContain('blocked by AI/security policy');
+  });
+
+  it('marks proposals as review-required for sensitive prop updates', async () => {
+    const registry = new AIHookRegistry();
+    const lineage = createLineageEntry('missing-prop-repair', 'Set email', 0.92, ['node-1' as never]);
+
+    registry.register('missing-prop-repair', async () => ({
+      hookKind: 'missing-prop-repair',
+      confidence: 0.92,
+      summary: 'Populate email',
+      nodeProposals: [
+        {
+          nodeId: 'node-1' as never,
+          propsUpdate: { email: 'user@example.com' },
+          description: 'Fill email field',
+        },
+      ],
+      lineage,
+    }));
+
+    const context = makeContext({
+      document: {
+        designSystem: {
+          componentContracts: [
+            {
+              name: 'TextField',
+              aiPolicy: {
+                allowAutonomousConfiguration: true,
+                reviewRequiredProps: ['email'],
+                permittedActions: ['set-prop'],
+                autoApplyConfidenceThreshold: 0.8,
+              },
+              privacy: {
+                mayRenderPii: true,
+                regulatoryFrameworks: [],
+              },
+              props: [
+                {
+                  name: 'email',
+                  type: 'string',
+                  required: false,
+                  dataClassification: 'pii',
+                },
+              ],
+            },
+          ],
+        },
+        nodes: {
+          'node-1': { contractName: 'TextField' },
+        },
+      } as unknown as BuilderDocument,
+    });
+
+    const result = await registry.invoke('missing-prop-repair', context);
+    expect(isAIHookProposal(result)).toBe(true);
+    if (isAIHookProposal(result)) {
+      expect(result.reviewRequired).toBe(true);
+      expect(result.policyTriggers).toEqual(
+        expect.arrayContaining([
+          'ai.prop.review-required',
+          'security.privacy.review-required',
+          'security.data-classification.review-required',
+        ]),
+      );
+    }
+  });
 });
 
 describe('createDefaultAIHookRegistry', () => {

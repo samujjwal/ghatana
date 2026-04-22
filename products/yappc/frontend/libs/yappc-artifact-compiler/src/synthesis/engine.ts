@@ -4,7 +4,6 @@
  * SemanticProductModel.
  */
 
-import { z } from 'zod';
 import type { ArtifactGraph, GraphNode, GraphEdge } from '../graph/types';
 import type {
   SemanticProductModel,
@@ -134,12 +133,10 @@ export interface SynthesisEngineOptions {
 }
 
 export class SynthesisEngine {
-  private readonly apiBaseUrl: string;
   private readonly tenantId: string;
   private readonly productId: string;
 
   constructor(options: SynthesisEngineOptions) {
-    this.apiBaseUrl = options.apiBaseUrl ?? ARTIFACT_API_BASE;
     this.tenantId = options.tenantId;
     this.productId = options.productId;
   }
@@ -247,7 +244,7 @@ export class SynthesisEngine {
       residualIslands: islands.map(i => ({
         id: i.id,
         kind: i.kind,
-        sourceLocations: i.sourceLocations,
+        sourceLocation: i.sourceLocation,
         confidence: i.confidence,
         regenerationStrategy: i.regenerationStrategy,
       })),
@@ -341,6 +338,7 @@ export class SynthesisEngine {
     switch (node.kind) {
       case 'component': {
         const props = (node.metadata['props'] as Array<{ name: string; type: string; required?: boolean }>) ?? [];
+        const tags = (node.metadata['tags'] as string[] | undefined) ?? [];
         return {
           id: node.id,
           name: node.label,
@@ -352,6 +350,7 @@ export class SynthesisEngine {
             name: p.name,
             type: p.type,
             required: p.required ?? false,
+            examples: [],
           })),
           slots: [],
           events: [],
@@ -362,6 +361,9 @@ export class SynthesisEngine {
           accessibility: node.metadata['accessibility'] as ComponentModel['accessibility'] ?? undefined,
           storyIds: this.findConnectedNodes(node.id, graph, 'story-for'),
           builderCanvasHints: {},
+          securityFlags: node.privacySecurityFlags,
+          privacyFlags: node.privacySecurityFlags,
+          tags,
         } as ComponentModel;
       }
 
@@ -416,6 +418,7 @@ export class SynthesisEngine {
       }
 
       case 'entity': {
+        const tags = (node.metadata['tags'] as string[] | undefined) ?? [];
         return {
           id: node.id,
           name: node.label,
@@ -429,10 +432,14 @@ export class SynthesisEngine {
           constraints: (node.metadata['constraints'] as string[]) ?? [],
           unsupportedFeatures: (node.metadata['unsupportedFeatures'] as DataModel['unsupportedFeatures']) ?? [],
           migrationLineage: [],
+          securityFlags: node.privacySecurityFlags,
+          privacyFlags: node.privacySecurityFlags,
+          tags,
         } as DataModel;
       }
 
       case 'api-endpoint': {
+        const tags = (node.metadata['tags'] as ApiModel['tags']) ?? [];
         return {
           id: node.id,
           name: node.label,
@@ -442,12 +449,14 @@ export class SynthesisEngine {
           path: (node.metadata['path'] as string) ?? '/',
           methods: (node.metadata['methods'] as string[]) ?? ['GET'],
           additionalOperations: [],
-          tags: (node.metadata['tags'] as ApiModel['tags']) ?? [],
+          tags,
           parameters: (node.metadata['parameters'] as ApiModel['parameters']) ?? [],
           requestBodySchema: (node.metadata['requestBodySchema'] as string) ?? undefined,
           responses: (node.metadata['responses'] as ApiModel['responses']) ?? [],
           authRequired: (node.metadata['authRequired'] as boolean) ?? false,
           rateLimited: (node.metadata['rateLimited'] as boolean) ?? false,
+          securityFlags: node.privacySecurityFlags,
+          privacyFlags: node.privacySecurityFlags,
         } as ApiModel;
       }
 

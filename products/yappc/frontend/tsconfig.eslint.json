@@ -6,6 +6,7 @@
   },
   "include": [
     "apps/**/src/**/*",
+    "web/src/**/*",
     "libs/**/src/**/*",
     "packages/**/src/**/*",
     "apps/**/src/generated/**/*",
