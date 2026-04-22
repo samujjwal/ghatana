@@ -37,8 +37,7 @@
   },
   "dependencies": {
     "@ghatana/platform-events": "workspace:*",
-    "@ghatana/primitives": "workspace:*",
-    "@ghatana/ui": "workspace:*"
+    "@ghatana/primitives": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

@@ -14,9 +14,7 @@ import com.ghatana.pipeline.registry.model.Pipeline;
 import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
 import com.ghatana.platform.domain.auth.TenantId;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -136,6 +134,7 @@ class AepHttpServerDataCloudIntegrationTest {
         String runId = String.valueOf(processBody.get("eventId"));
 
         assertThat(waitForRunCount(firstPort, "tenant-runs", 1).body()).contains(runId);
+        assertDurableDeepHealth(firstPort, "sovereign");
 
         server.stop();
         engine.close();
@@ -156,6 +155,7 @@ class AepHttpServerDataCloudIntegrationTest {
         Map<?, ?> runsBody = mapper.readValue(runsResponse.body(), Map.class);
         assertThat(((Number) runsBody.get("count")).intValue()).isEqualTo(1);
         assertThat(((List<?>) runsBody.get("runs")).toString()).contains(runId, "SUCCEEDED");
+        assertDurableDeepHealth(secondPort, "sovereign");
 
         HttpResponse<String> detailResponse = get(secondPort, "/api/v1/runs/" + runId, "tenant-runs");
         assertThat(detailResponse.statusCode()).isEqualTo(200);
@@ -541,14 +541,18 @@ class AepHttpServerDataCloudIntegrationTest {
             .build();
     }
 
-    private String processEvent(int port, String tenantId, String eventType, Map<String, Object> payload) throws Exception {
-        HttpResponse<String> response = post(port, "/api/v1/events", mapper.writeValueAsString(Map.of(
-            "tenantId", tenantId,
-            "type", eventType,
-            "payload", payload
-        )));
+    private void assertDurableDeepHealth(int port, String expectedStorage) throws Exception {
+        HttpResponse<String> response = get(port, "/health/deep");
         assertThat(response.statusCode()).isEqualTo(200);
-        return String.valueOf(mapper.readValue(response.body(), Map.class).get("eventId"));
+
+        Map<?, ?> body = mapper.readValue(response.body(), Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> durability = (Map<String, Object>) body.get("durability");
+        assertThat(durability).containsEntry("mode", "durable");
+        assertThat(durability).containsEntry("dataCloudStorage", expectedStorage);
+        assertThat(durability).containsEntry("executionHistory", "durable");
+        assertThat(durability).containsEntry("pipelineStorage", "durable");
+        assertThat(durability).containsEntry("memoryPersistence", "durable");
     }
 
     private HttpResponse<String> waitForRunCount(int port, String tenantId, int expectedCount) throws Exception {

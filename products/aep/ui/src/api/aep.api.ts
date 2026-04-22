@@ -13,6 +13,7 @@ import { apiClient as client } from "@/lib/http-client";
 // ─── Types ───────────────────────────────────────────────────────────
 
 export type AgentStatus = "ACTIVE" | "IDLE" | "ERROR" | "UNKNOWN";
+export type AgentRegistrationMode = "direct" | "manifest-only";
 export type ReviewItemStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type PolicyStatus =
   | "PENDING_REVIEW"
@@ -27,11 +28,18 @@ export interface AgentRegistration {
   name: string;
   tenantId: string;
   version: string;
+  type: string;
   status: AgentStatus;
   capabilities: string[];
   memoryCount: number;
+  description: string;
+  registrationMode: AgentRegistrationMode;
+  executable: boolean;
+  registryStorage: string;
+  memoryPersistence: string;
   lastSeen?: string;
   registeredAt: string;
+  config?: Record<string, unknown>;
 }
 
 export interface PipelineRun {
@@ -148,6 +156,29 @@ export interface PipelineMetrics {
   activeRuns: number;
   totalRuns: number;
   lastRunAt?: string;
+}
+
+export interface RuntimeDurabilityStatus {
+  mode: "durable" | "degraded" | "ephemeral";
+  title: string;
+  description: string;
+  components: Record<string, string>;
+  checkedAt: string;
+  profile?: string;
+  dataCloudStorage?: string;
+  reasons?: string[];
+}
+
+interface DeepHealthDurabilityResponse {
+  mode: RuntimeDurabilityStatus["mode"];
+  title: string;
+  description: string;
+  profile?: string;
+  dataCloudStorage?: string;
+  executionHistory?: string;
+  pipelineStorage?: string;
+  memoryPersistence?: string;
+  reasons?: string[];
 }
 
 export interface ReviewItem {
@@ -277,6 +308,14 @@ interface AgentListResponse {
   agents?: AgentRegistration[];
 }
 
+interface DeepHealthResponse {
+  status: string;
+  probe: string;
+  timestamp: string;
+  components?: Record<string, string>;
+  durability?: DeepHealthDurabilityResponse;
+}
+
 interface AgentMemoryResponse {
   agentId: string;
   tenantId: string;
@@ -299,6 +338,104 @@ interface AgentPoliciesResponse {
 
 interface PipelineRunsResponse {
   runs?: PipelineRunWire[];
+}
+
+type AgentRegistrationWire = Partial<AgentRegistration> & {
+  capabilities?: unknown;
+  memoryCount?: number | string;
+  config?: Record<string, unknown>;
+};
+
+function normalizeAgentStatus(status: unknown): AgentStatus {
+  switch (status) {
+    case "ACTIVE":
+    case "IDLE":
+    case "ERROR":
+    case "UNKNOWN":
+      return status;
+    default:
+      return "UNKNOWN";
+  }
+}
+
+function normalizeAgentRegistration(raw: AgentRegistrationWire): AgentRegistration {
+  const capabilities = Array.isArray(raw.capabilities)
+    ? raw.capabilities.map((capability) => String(capability))
+    : [];
+  const memoryCount = typeof raw.memoryCount === "string"
+    ? Number.parseInt(raw.memoryCount, 10)
+    : raw.memoryCount;
+
+  return {
+    id: raw.id ?? "",
+    name: raw.name ?? raw.id ?? "Unnamed agent",
+    tenantId: raw.tenantId ?? "default",
+    version: raw.version ?? "1.0.0",
+    type: raw.type ?? "unknown",
+    status: normalizeAgentStatus(raw.status),
+    capabilities,
+    memoryCount: Number.isFinite(memoryCount) ? Number(memoryCount) : 0,
+    description: raw.description ?? "",
+    registrationMode: raw.registrationMode === "manifest-only" ? "manifest-only" : "direct",
+    executable: raw.executable ?? true,
+    registryStorage: raw.registryStorage ?? "unconfigured",
+    memoryPersistence: raw.memoryPersistence ?? "unavailable",
+    lastSeen: raw.lastSeen,
+    registeredAt: raw.registeredAt ?? new Date(0).toISOString(),
+    config: raw.config ?? {},
+  };
+}
+
+function deriveRuntimeDurabilityStatus(health: DeepHealthResponse): RuntimeDurabilityStatus {
+  const components = health.components ?? {};
+  if (health.durability) {
+    return {
+      mode: health.durability.mode,
+      title: health.durability.title,
+      description: health.durability.description,
+      components,
+      checkedAt: health.timestamp,
+      profile: health.durability.profile,
+      dataCloudStorage: health.durability.dataCloudStorage,
+      reasons: health.durability.reasons,
+    };
+  }
+
+  const executionHistory = components["execution-history"] ?? "unknown";
+  const eventLog = components["data-cloud.event-log"] ?? "unknown";
+  const runLedger = components["run-ledger"] ?? "unknown";
+  const pipelineStorage = components["pipeline-storage"] ?? "unknown";
+
+  if (executionHistory === "ok" && eventLog === "ok" && runLedger === "ok" && pipelineStorage === "ok") {
+    return {
+      mode: "durable",
+      title: "Durable runtime state",
+      description: "Run history, ledger state, and pipeline storage are backed by configured persistent services.",
+      components,
+      checkedAt: health.timestamp,
+      reasons: [],
+    };
+  }
+
+  if (executionHistory === "ok" && eventLog === "ok") {
+    return {
+      mode: "degraded",
+      title: "Partially durable runtime state",
+      description: `Run history is durable, but related runtime state is degraded: pipeline storage=${pipelineStorage}, run ledger=${runLedger}.`,
+      components,
+      checkedAt: health.timestamp,
+      reasons: ["At least one runtime backing surface is not durable."],
+    };
+  }
+
+  return {
+    mode: "ephemeral",
+    title: "Ephemeral runtime state",
+    description: `Execution history is not durable: execution-history=${executionHistory}, event-log=${eventLog}, run-ledger=${runLedger}.`,
+    components,
+    checkedAt: health.timestamp,
+    reasons: ["Runtime state will be lost on restart."],
+  };
 }
 
 interface GovernanceKillSwitchResponse {
@@ -371,20 +508,20 @@ export async function listAgents(
   const { data } = await client.get<AgentListResponse>("/api/v1/agents", {
     params: { tenantId },
   });
-  return data.agents ?? [];
+  return (data.agents ?? []).map((agent) => normalizeAgentRegistration(agent));
 }
 
 export async function getAgent(
   agentId: string,
   tenantId = "default",
 ): Promise<AgentRegistration> {
-  const { data } = await client.get<AgentRegistration>(
+  const { data } = await client.get<AgentRegistrationWire>(
     `/api/v1/agents/${agentId}`,
     {
       params: { tenantId },
     },
   );
-  return data;
+  return normalizeAgentRegistration(data);
 }
 
 export async function getAgentMemory(
@@ -508,6 +645,11 @@ export async function listPipelineRuns(
   return (data.runs ?? []).map((run: PipelineRunWire) =>
     normalizePipelineRun(run),
   );
+}
+
+export async function getRuntimeDurabilityStatus(): Promise<RuntimeDurabilityStatus> {
+  const { data } = await client.get<DeepHealthResponse>("/health/deep");
+  return deriveRuntimeDurabilityStatus(data);
 }
 
 export async function getPipelineMetrics(

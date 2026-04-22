@@ -15,7 +15,6 @@ import com.ghatana.aep.engine.registry.NoopAgentExecutionHistoryStore;
 import com.ghatana.aep.engine.registry.RunLedgerBackedHistory;
 import com.ghatana.aep.integration.registry.CatalogRegistryContractAdapter;
 import com.ghatana.aep.integration.registry.DataCloudPipelineRegistryClientImpl;
-import com.ghatana.aep.integration.registry.NoOpPipelineRegistryClient;
 import com.ghatana.aep.registry.AgentRegistryContracts;
 import com.ghatana.agent.catalog.CatalogRegistry;
 import com.ghatana.agent.memory.model.working.WorkingMemoryConfig;
@@ -58,21 +57,17 @@ public class AepRegistryModule extends AbstractModule {
     /**
      * Provides a {@link PipelineRegistryClient} backed by Data-Cloud's pipeline HTTP API.
      *
-     * <p>The implementation is selected by the {@code AEP_PIPELINE_REGISTRY_MODE} environment
-     * variable:
-     * <ul>
-     *   <li>{@code datacloud} (default) — {@link DataCloudPipelineRegistryClientImpl} calling
-     *       {@code GET/POST /api/v1/pipelines} on the Data-Cloud service.</li>
-     *   <li>{@code noop} — {@link NoOpPipelineRegistryClient} that returns empty collections;
-     *       useful when running AEP without a Data-Cloud service.</li>
-     * </ul>
+     * <p>AEP no longer permits a no-op registry fallback because returning empty pipeline
+     * collections causes silent orchestration degradation. The only supported mode is
+     * {@code datacloud}, and startup must fail fast when the backing Data-Cloud base URL is not
+     * configured.
      *
-     * @return pipeline registry client backed by Data-Cloud, or a no-op stub
+     * @return pipeline registry client backed by Data-Cloud
      *
      * @doc.type method
-     * @doc.purpose Provides env-driven PipelineRegistryClient (datacloud vs. noop)
+     * @doc.purpose Provides fail-closed Data-Cloud-backed PipelineRegistryClient
      * @doc.layer product
-     * @doc.pattern Factory, Strategy
+     * @doc.pattern Factory
      */
     @Provides
     PipelineRegistryClient pipelineRegistryClient() {
@@ -82,15 +77,17 @@ public class AepRegistryModule extends AbstractModule {
     }
 
     static PipelineRegistryClient createPipelineRegistryClient(EnvConfig env, String mode) {
-        if ("noop".equalsIgnoreCase(mode)) {
-            return new NoOpPipelineRegistryClient();
+        if (!"datacloud".equalsIgnoreCase(mode)) {
+            throw new IllegalStateException(
+                "Unsupported AEP_PIPELINE_REGISTRY_MODE='" + mode + "'. "
+                    + "AEP requires AEP_PIPELINE_REGISTRY_MODE=datacloud with a reachable Data-Cloud registry."
+            );
         }
 
         String dcBaseUrl = env.aepDcBaseUrl();
         if (dcBaseUrl == null || dcBaseUrl.isBlank()) {
             throw new IllegalStateException(
-                "AEP_PIPELINE_REGISTRY_MODE=datacloud requires AEP_DC_BASE_URL (or AEP_DC_BASE_URL-backed config) to be set. "
-                    + "Set AEP_PIPELINE_REGISTRY_MODE=noop to disable Data-Cloud pipeline lookups."
+                "AEP_PIPELINE_REGISTRY_MODE=datacloud requires AEP_DC_BASE_URL (or AEP_DC_BASE_URL-backed config) to be set."
             );
         }
 

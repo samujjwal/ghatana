@@ -1,71 +1,49 @@
 # AEP Benchmark Baseline
 
 **Date:** 2026-04-15  
-**Status:** Baseline harness validated; load-test harness added and target tables published  
-**Scope:** Existing JMH-backed benchmark coverage in `products/aep/aep-runtime-core`
+**Status:** Engine-backed performance coverage documented; legacy facade benchmark harness retired with `aep-runtime-core`  
+**Scope:** Current performance and load-validation coverage in `products/aep/aep-engine` and `products/aep/test-scripts`
 
 ---
 
-## 1. Benchmark Inventory
+## 1. Performance Coverage Inventory
 
-### 1.1 Pipeline Execution Benchmarks
+### 1.1 Engine Performance and Load Tests
 
-- `products/aep/aep-runtime-core/src/test/java/com/ghatana/core/pipeline/benchmark/PipelineExecutionBenchmark.java`
-  - JMH benchmark suite for:
-    - single-stage pipeline execution
-    - three-stage linear pipeline execution
-    - five-stage DAG pipeline execution
-  - Modes:
-    - throughput
-    - average time
-  - Declared production targets in code:
-    - single-stage pipeline throughput greater than 10K ops/sec
-    - single-stage pipeline p99 less than 5 ms
-    - three-stage linear pipeline p99 less than 15 ms
-    - five-stage DAG pipeline p99 less than 50 ms
+- `products/aep/aep-engine/src/test/java/com/ghatana/aep/EventIngestionLoadTest.java`
+  - Validates ingress behavior under higher request volume at the engine boundary.
 
-- `products/aep/aep-runtime-core/src/test/java/com/ghatana/core/pipeline/benchmark/PipelineBenchmarkRunner.java`
-  - JUnit wrapper that runs the JMH suite and asserts the single-stage throughput target when the JMH result is reported in ops/sec.
+- `products/aep/aep-engine/src/test/java/com/ghatana/aep/AepLoadSimulationTest.java`
+  - Exercises end-to-end load simulation paths for the current engine runtime.
 
-### 1.2 Event Processing Benchmark
+- `products/aep/aep-engine/src/test/java/com/ghatana/aep/AepStressAndChaosTest.java`
+  - Covers saturation and resilience scenarios on the supported engine module.
 
-- `products/aep/aep-runtime-core/src/test/java/com/ghatana/aep/performance/AepEventProcessingBenchmark.java`
-  - JMH-backed event-loop benchmark for a simple ActiveJ promise chain.
-  - Includes a focused JUnit entry point (`runJmh`) suitable for CI-style validation.
+- `products/aep/aep-engine/src/test/java/com/ghatana/aep/devtools/PipelinePerformanceProfilerTest.java`
+  - Provides profiler-oriented pipeline performance verification on the canonical engine path.
+
+### 1.2 Live Ingress Harness
+
+- `products/aep/test-scripts/k6/aep-load-test.js`
+  - Targets the live `/api/v1/events` ingress path on the default AEP HTTP port (`8090`).
+  - Suitable for smoke-load validation and scaled stage-based verification.
+
+### 1.3 Retired Legacy Harness
+
+- The previous JMH suites under `products/aep/aep-runtime-core` were retired with that compatibility facade on 2026-04-21.
+- No supported benchmark command should target `:products:aep:aep-runtime-core:*` anymore.
 
 ---
 
 ## 2. Validation Performed
 
-### 2.1 Event Processing Harness
+### 2.1 Supported Validation Surface
 
-Validated on 2026-04-15 with:
+The supported performance-validation surface now consists of the canonical engine performance tests plus the live `k6` ingress harness. Historical `aep-runtime-core` commands are intentionally invalid after the facade retirement.
 
-```bash
-/home/samujjwal/Developments/ghatana/gradlew --console=plain -p /home/samujjwal/Developments/ghatana \
-  :products:aep:aep-runtime-core:test \
-  --tests com.ghatana.aep.performance.AepEventProcessingBenchmark
-```
+### 2.2 Legacy Validation Record
 
-Result:
-
-- `AepEventProcessingBenchmark > runJmh() PASSED`
-
-### 2.2 Pipeline Benchmark Runner
-
-Validated on 2026-04-15 with:
-
-```bash
-/home/samujjwal/Developments/ghatana/gradlew --console=plain -p /home/samujjwal/Developments/ghatana \
-  :products:aep:aep-runtime-core:test \
-  --tests com.ghatana.core.pipeline.benchmark.PipelineBenchmarkRunner
-```
-
-Result:
-
-- `Pipeline Performance Benchmarks > Pipeline execution meets latency targets PASSED`
-
-This confirms that the current benchmark harness is executable in the workspace and that the runner’s encoded target assertions passed for the validated scenario.
+The earlier JMH runs remain useful as historical baseline context, but they are no longer the active benchmark path because the owning module has been deleted.
 
 ---
 
@@ -73,10 +51,9 @@ This confirms that the current benchmark harness is executable in the workspace 
 
 Completed:
 
-- JMH benchmark coverage exists for core pipeline execution.
-- A runnable benchmark wrapper exists for CI/manual validation.
-- A baseline benchmark report now exists in documentation.
-- The benchmark harness was revalidated successfully on 2026-04-15.
+- Canonical performance coverage is now anchored to the supported `aep-engine` test surface.
+- The live `k6` harness remains available for ingress validation.
+- This document no longer points operators at the retired compatibility facade.
 
 Scale target tables now published:
 
@@ -85,16 +62,16 @@ Scale target tables now published:
 | Scenario | Traffic Shape | Validation Command / Harness | Target Outcome |
 |----------|---------------|------------------------------|----------------|
 | 1K events/sec | sustained ingress smoke | `k6 run products/aep/test-scripts/k6/aep-load-test.js -e AEP_URL=http://localhost:8090` with lower VU override | Stable 200 responses, no error-rate breach |
-| 10K events/sec | steady-state ramp | `PipelineExecutionBenchmark` + tuned k6 stages | p95 under 100 ms, no request-failure breach |
-| 100K events/sec | burst / saturation envelope | JMH benchmark runner plus distributed ingress replay | Throughput remains above encoded JMH target for the single-stage path |
+| 10K events/sec | steady-state ramp | `AepLoadSimulationTest` plus tuned k6 stages | p95 under 100 ms, no request-failure breach |
+| 100K events/sec | burst / saturation envelope | `AepStressAndChaosTest` plus distributed ingress replay | Throughput stays within service SLO envelopes without sustained failure-rate breach |
 
 ### 3.2 Target Latency Percentiles
 
 | Scenario | p50 target | p99 target | p99.9 target |
 |----------|------------|------------|--------------|
 | single-stage pipeline | less than 2 ms | less than 5 ms | less than 8 ms |
-| three-stage linear pipeline | less than 8 ms | less than 15 ms | less than 25 ms |
-| five-stage DAG pipeline | less than 20 ms | less than 50 ms | less than 80 ms |
+| multi-stage linear pipeline | less than 8 ms | less than 15 ms | less than 25 ms |
+| DAG-heavy execution | less than 20 ms | less than 50 ms | less than 80 ms |
 
 ### 3.3 Load-Test Harness
 
@@ -107,6 +84,6 @@ Scale target tables now published:
 
 ## 4. Recommended Next Benchmark Steps
 
-1. Capture and persist observed JMH score output from `PipelineBenchmarkRunner` into this document for a tagged hardware baseline.
+1. Capture and persist observed engine-test and `k6` latency output for a tagged hardware baseline.
 2. Run the `k6` harness against a production-like deployment and attach the observed latency/error histograms.
 3. Expand the benchmark report with environment details so future runs are comparable.

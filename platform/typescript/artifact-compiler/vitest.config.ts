@@ -1,9 +1,14 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: "node",
+    environment: 'node',
     globals: true,
-    include: ["src/**/*.test.ts"],
+    include: ['src/**/*.test.ts'],
+    pool: 'forks',
+    deps: {
+      interopDefault: true,
+      inline: ['typescript'],
+    },
   },
 });

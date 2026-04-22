@@ -13,6 +13,14 @@ import React from 'react';
 import type { AgentRegistration } from '@/api/aep.api';
 import { AgentStatusBadge } from './AgentStatusBadge';
 
+function registrationLabel(agent: AgentRegistration): string {
+  return agent.executable ? 'Executable' : 'Discovery only';
+}
+
+function storageLabel(storage: string): string {
+  return storage === 'datacloud' ? 'Data Cloud' : 'Unavailable';
+}
+
 interface AgentTableProps {
   agents: AgentRegistration[];
   selectedId?: string | null;
@@ -36,8 +44,9 @@ export function AgentTable({ agents, selectedId, onSelect, className = '' }: Age
           <tr className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-800">
             <th className="pb-2 pr-4">Name</th>
             <th className="pb-2 pr-4">Status</th>
-            <th className="pb-2 pr-4">Version</th>
+            <th className="pb-2 pr-4">Registration</th>
             <th className="pb-2 pr-4">Memory</th>
+            <th className="pb-2 pr-4">Storage</th>
             <th className="pb-2">Last seen</th>
           </tr>
         </thead>
@@ -55,16 +64,37 @@ export function AgentTable({ agents, selectedId, onSelect, className = '' }: Age
             >
               <td className="py-2.5 pr-4">
                 <p className="font-medium text-gray-900 dark:text-gray-100">{agent.name}</p>
+                {agent.description ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[18rem]">{agent.description}</p>
+                ) : null}
                 <p className="text-xs text-gray-400 font-mono truncate max-w-[12rem]">{agent.id}</p>
               </td>
               <td className="py-2.5 pr-4">
                 <AgentStatusBadge status={agent.status} />
               </td>
-              <td className="py-2.5 pr-4 text-gray-500 dark:text-gray-400 font-mono text-xs">
-                {agent.version}
+              <td className="py-2.5 pr-4">
+                <div className="flex flex-col gap-1">
+                  <span
+                    className={[
+                      'inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-medium',
+                      agent.executable
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+                    ].join(' ')}
+                  >
+                    {registrationLabel(agent)}
+                  </span>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {agent.registrationMode} · v{agent.version}
+                  </span>
+                </div>
               </td>
               <td className="py-2.5 pr-4 text-gray-500 dark:text-gray-400">
                 {agent.memoryCount}
+              </td>
+              <td className="py-2.5 pr-4 text-xs text-gray-500 dark:text-gray-400">
+                <div>{storageLabel(agent.registryStorage)}</div>
+                <div className="text-gray-400">Memory: {storageLabel(agent.memoryPersistence)}</div>
               </td>
               <td className="py-2.5 text-gray-400 text-xs">
                 {agent.lastSeen ? new Date(agent.lastSeen).toLocaleString() : '—'}

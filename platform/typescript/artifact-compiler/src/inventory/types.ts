@@ -153,9 +153,9 @@ export const ArtifactInventorySchema = z.object({
   artifacts: z.array(ArtifactRecordSchema),
   summary: z.object({
     totalFiles: z.number().int().nonnegative(),
-    byKind: z.record(z.number().int().nonnegative()),
-    byLanguage: z.record(z.number().int().nonnegative()),
-    byFramework: z.record(z.number().int().nonnegative()),
+    byKind: z.record(z.string(), z.number().int().nonnegative()),
+    byLanguage: z.record(z.string(), z.number().int().nonnegative()),
+    byFramework: z.record(z.string(), z.number().int().nonnegative()),
     eligibleForExtraction: z.number().int().nonnegative(),
   }),
 });

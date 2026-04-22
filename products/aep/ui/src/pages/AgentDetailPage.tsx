@@ -78,28 +78,42 @@ function OverviewTab({ agent }: { agent: AgentRegistration }) {
     ['ID', <code className="text-xs font-mono">{agent.id}</code>],
     ['Name', agent.name],
     ['Version', agent.version],
+    ['Type', agent.type],
     ['Tenant', agent.tenantId],
+    ['Registration', agent.registrationMode === 'manifest-only' ? 'Discovery only' : 'Direct registration'],
+    ['Execution', agent.executable ? 'Executable' : 'Blocked for execution'],
+    ['Registry storage', agent.registryStorage === 'datacloud' ? 'Data Cloud' : 'Unavailable'],
+    ['Memory persistence', agent.memoryPersistence === 'datacloud' ? 'Data Cloud' : 'Unavailable'],
     ['Capabilities', agent.capabilities.join(', ') || '—'],
+    ['Description', agent.description || '—'],
     ['Registered', new Date(agent.registeredAt).toLocaleString()],
     ...(agent.lastSeen
       ? [['Last seen', new Date(agent.lastSeen).toLocaleString()] as [string, React.ReactNode]]
       : []),
   ];
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-      <table className="w-full text-sm">
-        <tbody>
-          {rows.map(([label, value]) => (
-            <tr
-              key={label}
-              className="border-b border-gray-100 dark:border-gray-800 last:border-0"
-            >
-              <td className="px-4 py-3 font-medium text-gray-500 w-40">{label}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-white">{value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-4">
+      {!agent.executable ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+          This agent is visible for discovery only. Execution requests are intentionally rejected until an executable runtime agent replaces the manifest placeholder.
+        </div>
+      ) : null}
+
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <table className="w-full text-sm">
+          <tbody>
+            {rows.map(([label, value]) => (
+              <tr
+                key={label}
+                className="border-b border-gray-100 dark:border-gray-800 last:border-0"
+              >
+                <td className="px-4 py-3 font-medium text-gray-500 w-40">{label}</td>
+                <td className="px-4 py-3 text-gray-900 dark:text-white">{value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

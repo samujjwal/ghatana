@@ -45,6 +45,12 @@ import java.util.regex.Pattern;
 public class AgentController {
 
     private static final Logger log = LoggerFactory.getLogger(AgentController.class);
+    private static final String REGISTRATION_MODE_DIRECT = "direct";
+    private static final String REGISTRATION_MODE_MANIFEST_ONLY = "manifest-only";
+    private static final String REGISTRY_STORAGE_DATACLOUD = "datacloud";
+    private static final String REGISTRY_STORAGE_UNCONFIGURED = "unconfigured";
+    private static final String MEMORY_PERSISTENCE_DATACLOUD = "datacloud";
+    private static final String MEMORY_PERSISTENCE_UNAVAILABLE = "unavailable";
 
     // P1-9: Security scan patterns for detecting suspicious agent definitions
     private static final Pattern SUSPICIOUS_CODE_PATTERN = Pattern.compile(
@@ -153,6 +159,11 @@ public class AgentController {
                 agentData.put("id", agentId);
                 agentData.put("tenantId", tenantId);
                 agentData.put("status", "ACTIVE");
+                agentData.putIfAbsent("version", "1.0.0");
+                agentData.putIfAbsent("capabilities", List.of());
+                agentData.putIfAbsent("memoryCount", 0);
+                agentData.putIfAbsent("registrationMode", REGISTRATION_MODE_DIRECT);
+                agentData.putIfAbsent("executable", true);
                 agentData.put("createdAt", Instant.now().toString());
 
                 return agentStore.save(tenantId, agentId, agentData)
@@ -192,13 +203,7 @@ public class AgentController {
         return agentStore.listAgents(tenantId, limit)
             .map(entities -> {
                 List<Map<String, Object>> summaries = entities.stream()
-                    .map(e -> Map.<String, Object>of(
-                        "id", e.data().getOrDefault("id", e.id().value()),
-                        "name", e.data().getOrDefault("name", e.id().value()),
-                        "type", e.data().getOrDefault("type", "unknown"),
-                        "status", e.data().getOrDefault("status", "ACTIVE"),
-                        "tenantId", tenantId
-                    ))
+                    .map(e -> summarizeAgentEntity(tenantId, e))
                     .toList();
                 return HttpHelper.jsonResponse(Map.of(
                     "tenantId", tenantId,
@@ -227,12 +232,7 @@ public class AgentController {
         String tenantId = HttpHelper.resolveTenantId(request);
         return agentStore.findById(tenantId, agentId)
             .map(opt -> opt
-                .map(e -> HttpHelper.jsonResponse(Map.of(
-                    "id", e.data().getOrDefault("id", e.id().value()),
-                    "tenantId", tenantId,
-                    "data", e.data(),
-                    "timestamp", Instant.now().toString()
-                )))
+                .map(e -> HttpHelper.jsonResponse(detailAgentEntity(tenantId, e)))
                 .orElse(HttpHelper.errorResponse(404, "Agent not found: " + agentId)))
             .then(Promise::of, e -> {
                 log.error("[agents] get failed for agentId={}: {}", agentId, e.getMessage(), e);
@@ -655,5 +655,86 @@ public class AgentController {
                 return Promise.of(HttpHelper.errorResponse(500,
                     "Failed to deregister agent: " + e.getMessage()));
             });
+    }
+
+    private Map<String, Object> summarizeAgentEntity(String tenantId, EntityStore.Entity entity) {
+        Map<String, Object> data = entity.data();
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("id", data.getOrDefault("id", entity.id().value()));
+        response.put("name", data.getOrDefault("name", entity.id().value()));
+        response.put("tenantId", data.getOrDefault("tenantId", tenantId));
+        response.put("version", data.getOrDefault("version", "1.0.0"));
+        response.put("type", data.getOrDefault("type", "unknown"));
+        response.put("status", data.getOrDefault("status", "ACTIVE"));
+        response.put("capabilities", normalizeCapabilities(data.get("capabilities")));
+        response.put("memoryCount", normalizeInteger(data.get("memoryCount")));
+        response.put("registeredAt", normalizeTimestamp(data, "registeredAt", "createdAt"));
+        response.put("lastSeen", normalizeOptionalTimestamp(data, "lastSeen", "updatedAt"));
+        response.put("description", data.getOrDefault("description", ""));
+        response.put("registrationMode", normalizeRegistrationMode(data.get("registrationMode")));
+        response.put("executable", isExecutable(data));
+        response.put("registryStorage", agentStore != null ? REGISTRY_STORAGE_DATACLOUD : REGISTRY_STORAGE_UNCONFIGURED);
+        response.put("memoryPersistence", agentDataCloud != null ? MEMORY_PERSISTENCE_DATACLOUD : MEMORY_PERSISTENCE_UNAVAILABLE);
+        return response;
+    }
+
+    private Map<String, Object> detailAgentEntity(String tenantId, EntityStore.Entity entity) {
+        Map<String, Object> response = new java.util.LinkedHashMap<>(summarizeAgentEntity(tenantId, entity));
+        response.put("config", entity.data().getOrDefault("config", Map.of()));
+        response.put("timestamp", Instant.now().toString());
+        return response;
+    }
+
+    private static List<String> normalizeCapabilities(@Nullable Object capabilitiesValue) {
+        if (capabilitiesValue instanceof List<?> capabilities) {
+            return capabilities.stream().map(String::valueOf).toList();
+        }
+        return List.of();
+    }
+
+    private static int normalizeInteger(@Nullable Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return 0;
+    }
+
+    private static String normalizeTimestamp(Map<String, Object> data, String preferredKey, String fallbackKey) {
+        Object value = data.get(preferredKey);
+        if (value == null || String.valueOf(value).isBlank()) {
+            value = data.get(fallbackKey);
+        }
+        if (value == null || String.valueOf(value).isBlank()) {
+            return Instant.EPOCH.toString();
+        }
+        return String.valueOf(value);
+    }
+
+    @Nullable
+    private static String normalizeOptionalTimestamp(Map<String, Object> data, String preferredKey, String fallbackKey) {
+        Object value = data.get(preferredKey);
+        if (value == null || String.valueOf(value).isBlank()) {
+            value = data.get(fallbackKey);
+        }
+        if (value == null || String.valueOf(value).isBlank()) {
+            return null;
+        }
+        return String.valueOf(value);
+    }
+
+    private static String normalizeRegistrationMode(@Nullable Object value) {
+        String registrationMode = value != null ? String.valueOf(value) : REGISTRATION_MODE_DIRECT;
+        if (registrationMode.isBlank()) {
+            return REGISTRATION_MODE_DIRECT;
+        }
+        return registrationMode;
+    }
+
+    private static boolean isExecutable(Map<String, Object> data) {
+        Object executable = data.get("executable");
+        if (executable instanceof Boolean executableFlag) {
+            return executableFlag;
+        }
+        return !REGISTRATION_MODE_MANIFEST_ONLY.equals(normalizeRegistrationMode(data.get("registrationMode")));
     }
 }

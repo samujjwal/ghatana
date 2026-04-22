@@ -5,7 +5,6 @@ import com.ghatana.aep.engine.registry.AgentExecutionHistoryStore;
 import com.ghatana.aep.engine.registry.AgentMemoryPlaneClient;
 import com.ghatana.aep.engine.registry.NoopAgentExecutionHistoryStore;
 import com.ghatana.aep.integration.registry.DataCloudPipelineRegistryClientImpl;
-import com.ghatana.aep.integration.registry.NoOpPipelineRegistryClient;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -58,14 +57,12 @@ class AepRegistryModuleTest {
     }
 
     @Test
-    @DisplayName("uses no-op pipeline registry when noop mode is selected")
-    void usesNoopPipelineRegistryInNoopMode() {
-        PipelineRegistryClient client = AepRegistryModule.createPipelineRegistryClient(
-            EnvConfig.fromMap(Map.of()),
-            "noop"
-        );
-
-        assertThat(client).isInstanceOf(NoOpPipelineRegistryClient.class);
+    @DisplayName("fails fast when an unsupported pipeline registry mode is selected")
+    void failsFastWhenUnsupportedPipelineRegistryModeSelected() {
+        assertThatIllegalStateException()
+            .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "noop"))
+            .withMessageContaining("Unsupported AEP_PIPELINE_REGISTRY_MODE='noop'")
+            .withMessageContaining("AEP requires AEP_PIPELINE_REGISTRY_MODE=datacloud");
     }
 
     @Test
@@ -73,8 +70,7 @@ class AepRegistryModuleTest {
     void failsFastWhenDatacloudModeMissingBaseUrl() {
         assertThatIllegalStateException()
             .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "datacloud"))
-            .withMessageContaining("AEP_DC_BASE_URL")
-            .withMessageContaining("AEP_PIPELINE_REGISTRY_MODE=noop");
+            .withMessageContaining("AEP_DC_BASE_URL");
     }
 
     @Test

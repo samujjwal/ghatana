@@ -78,6 +78,19 @@ export interface AuditLogQueryResponse {
   hasMore: boolean;
 }
 
+function getStorageKeys(storage: Storage): string[] {
+  const keys: string[] = [];
+
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (key !== null) {
+      keys.push(key);
+    }
+  }
+
+  return keys;
+}
+
 /**
  * Audit log service
  *
@@ -193,7 +206,7 @@ export const auditLogService = {
       localStorage.setItem(key, JSON.stringify(event));
       
       // Clean up old backups (keep last 100)
-      const keys = Object.keys(localStorage)
+      const keys = getStorageKeys(localStorage)
         .filter(k => k.startsWith('audit_backup_'))
         .sort((a, b) => {
           const aTime = JSON.parse(localStorage.getItem(a) || '{}').timestamp || '';
@@ -214,7 +227,7 @@ export const auditLogService = {
    */
   getLocalBackups(): AuditEvent[] {
     try {
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('audit_backup_'));
+      const keys = getStorageKeys(localStorage).filter(k => k.startsWith('audit_backup_'));
       return keys
         .map(k => {
           const data = localStorage.getItem(k);
@@ -239,7 +252,7 @@ export const auditLogService = {
    */
   clearLocalBackups(): void {
     try {
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('audit_backup_'));
+      const keys = getStorageKeys(localStorage).filter(k => k.startsWith('audit_backup_'));
       keys.forEach(k => localStorage.removeItem(k));
     } catch (error) {
       console.error('Failed to clear local audit backups:', error);

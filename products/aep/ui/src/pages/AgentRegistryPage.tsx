@@ -13,6 +13,7 @@
  * @doc.layer frontend
  */
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import type { AgentRegistration } from '@/api/aep.api';
 import { useAgents, useDeregisterAgent } from '@/hooks/useAgents';
 import { AgentTable } from '@/components/agents/AgentTable';
@@ -31,6 +32,14 @@ function Row({ label, value, mono = false }: { label: string; value: React.React
       <div className={['mt-0.5', mono ? 'font-mono text-xs' : ''].join(' ')}>{value}</div>
     </div>
   );
+}
+
+function registrationModeLabel(agent: AgentRegistration): string {
+  return agent.registrationMode === 'manifest-only' ? 'Discovery only' : 'Direct registration';
+}
+
+function persistenceLabel(value: string): string {
+  return value === 'datacloud' ? 'Data Cloud' : 'Unavailable';
 }
 
 function AgentDetailPanel({
@@ -65,13 +74,25 @@ function AgentDetailPanel({
       <div className="px-4 py-3 space-y-3 text-sm">
         <Row label="ID" value={agent.id} mono />
         <Row label="Status" value={<AgentStatusBadge status={agent.status} />} />
+        <Row label="Type" value={agent.type} />
         <Row label="Version" value={agent.version} />
         <Row label="Tenant" value={agent.tenantId} />
+        <Row label="Registration" value={registrationModeLabel(agent)} />
+        <Row label="Execution" value={agent.executable ? 'Executable' : 'Blocked for execution'} />
+        <Row label="Registry storage" value={persistenceLabel(agent.registryStorage)} />
+        <Row label="Memory persistence" value={persistenceLabel(agent.memoryPersistence)} />
         <Row label="Memory items" value={String(agent.memoryCount)} />
         <Row label="Registered" value={new Date(agent.registeredAt).toLocaleString()} />
         {agent.lastSeen && (
           <Row label="Last seen" value={new Date(agent.lastSeen).toLocaleString()} />
         )}
+        {agent.description ? <Row label="Description" value={agent.description} /> : null}
+
+        {!agent.executable ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            This agent was registered for discovery and catalog visibility only. The runtime will reject direct execution requests until a real executable implementation is attached.
+          </div>
+        ) : null}
 
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
@@ -111,6 +132,7 @@ function AgentDetailPanel({
 // ─── Page ────────────────────────────────────────────────────────────
 
 export function AgentRegistryPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<AgentRegistration | null>(null);
 
@@ -123,6 +145,9 @@ export function AgentRegistryPage() {
     return agents.filter(
       (a) =>
         a.name.toLowerCase().includes(q) ||
+        a.id.toLowerCase().includes(q) ||
+        a.type.toLowerCase().includes(q) ||
+        a.description.toLowerCase().includes(q) ||
         a.capabilities.some((c) => c.toLowerCase().includes(q)),
     );
   }, [agents, search]);
@@ -168,14 +193,14 @@ export function AgentRegistryPage() {
               </p>
               <div className="flex gap-3">
                 <Button
-                  onClick={() => {/* TODO: Open agent registration dialog */}}
+                  onClick={() => void navigate('/catalog/marketplace')}
                   variant="primary"
                   className="px-4 py-2 text-sm font-medium"
                 >
                   Register first agent
                 </Button>
                 <Button
-                  onClick={() => {/* TODO: Open discovery dialog */}}
+                  onClick={() => void navigate('/catalog/workflows')}
                   variant="secondary"
                   className="px-4 py-2 text-sm font-medium"
                 >

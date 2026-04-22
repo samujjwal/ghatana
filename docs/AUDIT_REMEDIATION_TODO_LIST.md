@@ -645,9 +645,9 @@
 - Added exact-IP and CIDR trusted-proxy parsing plus a test-only remote-address hook so the validation path is covered without weakening embedded/library deployments.
 - Wired environment-based configuration in [products/aep/server/src/main/java/com/ghatana/aep/server/http/AepHttpServer.java](products/aep/server/src/main/java/com/ghatana/aep/server/http/AepHttpServer.java) with an empty default for direct-service and embedded usage.
 - Added proxy decision counters for trusted forwarded-IP usage and rejected spoofed or malformed headers, exported through the existing Prometheus metrics path.
-- Added regression coverage in [products/aep/aep-runtime-core/src/test/java/com/ghatana/aep/security/AepSecurityFilterTest.java](products/aep/aep-runtime-core/src/test/java/com/ghatana/aep/security/AepSecurityFilterTest.java) for both trusted-proxy forwarding, spoofed-header rejection, and proxy metrics emission.
+- Added regression coverage in [products/aep/aep-security/src/test/java/com/ghatana/aep/security/AepSecurityFilterTest.java](products/aep/aep-security/src/test/java/com/ghatana/aep/security/AepSecurityFilterTest.java) for trusted-proxy forwarding, spoofed-header rejection, and proxy metrics emission.
 - Documented deployment and ingress setup in [products/aep/README.md](products/aep/README.md) and [products/aep/docs/OPERATIONAL_RUNBOOK.md](products/aep/docs/OPERATIONAL_RUNBOOK.md).
-- Validation command: `gradlew :products:aep:aep-runtime-core:test --tests com.ghatana.aep.security.AepSecurityFilterTest`.
+- Validation command: `./gradlew :products:aep:aep-security:test --tests com.ghatana.aep.security.AepSecurityFilterTest`.
 
 ---
 

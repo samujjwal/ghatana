@@ -18,7 +18,7 @@ import java.util.Optional;
  *
  * <p>Consolidates common {@link AepEngine.Event} builders, consent decisions, and
  * {@link AepEngine.PatternDefinition} factories that were previously duplicated across
- * test classes in {@code aep-engine}, {@code aep-runtime-core}, and the operator tests.
+ * test classes in {@code aep-engine} and the operator tests.
  *
  * <p><b>Usage:</b>
  * <pre>{@code

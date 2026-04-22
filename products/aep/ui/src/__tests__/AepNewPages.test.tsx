@@ -15,7 +15,7 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 
@@ -45,11 +45,18 @@ const AGENT: aepApi.AgentRegistration = {
   name: 'ValidatorAgent',
   tenantId: 'default',
   version: '1.0.0',
+  type: 'DETERMINISTIC',
   status: 'ACTIVE',
   capabilities: ['validate', 'enrich'],
   memoryCount: 42,
+  description: 'Validates inbound payloads before execution.',
+  registrationMode: 'direct',
+  executable: true,
+  registryStorage: 'datacloud',
+  memoryPersistence: 'datacloud',
   lastSeen: new Date().toISOString(),
   registeredAt: new Date().toISOString(),
+  config: {},
 };
 
 const RUN: aepApi.PipelineRun = {
@@ -127,6 +134,7 @@ describe('AgentRegistryPage', () => {
   beforeEach(() => {
     vi.mocked(aepApi.listAgents).mockResolvedValue([AGENT]);
     vi.mocked(aepApi.deregisterAgent).mockResolvedValue(undefined);
+    window.history.pushState({}, '', '/catalog/agents');
   });
 
   it('renders loading state initially', () => {
@@ -139,7 +147,7 @@ describe('AgentRegistryPage', () => {
     renderWithQuery(<AgentRegistryPage />);
     await waitFor(() => expect(screen.getByText('ValidatorAgent')).toBeInTheDocument());
     expect(screen.getByText('Active')).toBeInTheDocument();
-    expect(screen.getByText('1.0.0')).toBeInTheDocument();
+    expect(screen.getByText('direct · v1.0.0')).toBeInTheDocument();
   });
 
   it('shows empty state when no agents', async () => {
@@ -175,8 +183,48 @@ describe('AgentRegistryPage', () => {
 
     await user.click(screen.getByText('ValidatorAgent'));
     await waitFor(() => expect(screen.getByText('Capabilities')).toBeInTheDocument());
+    expect(screen.getByText('Direct registration')).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog')).getAllByText('Data Cloud')).toHaveLength(2);
     expect(screen.getByText('validate')).toBeInTheDocument();
     expect(screen.getByText('enrich')).toBeInTheDocument();
+  });
+
+  it('surfaces manifest-only agents as discovery-only in the registry', async () => {
+    const user = userEvent.setup();
+    vi.mocked(aepApi.listAgents).mockResolvedValue([
+      {
+        ...AGENT,
+        id: 'agent-002',
+        name: 'ManifestAgent',
+        registrationMode: 'manifest-only',
+        executable: false,
+        description: 'Imported from manifest registration.',
+      },
+    ]);
+
+    renderWithQuery(<AgentRegistryPage />);
+    await waitFor(() => expect(screen.getByText('ManifestAgent')).toBeInTheDocument());
+    expect(screen.getByText('Discovery only')).toBeInTheDocument();
+
+    await user.click(screen.getByText('ManifestAgent'));
+    await waitFor(() => expect(screen.getByText(/registered for discovery and catalog visibility only/i)).toBeInTheDocument());
+  });
+
+  it('routes empty-state actions to real catalog entry points', async () => {
+    const user = userEvent.setup();
+    vi.mocked(aepApi.listAgents).mockResolvedValue([]);
+
+    renderWithQuery(<AgentRegistryPage />);
+    await waitFor(() => expect(screen.getByText(/no agents registered/i)).toBeInTheDocument());
+
+    await user.click(screen.getByText('Register first agent'));
+    expect(window.location.pathname).toBe('/catalog/marketplace');
+
+    window.history.pushState({}, '', '/catalog/agents');
+    renderWithQuery(<AgentRegistryPage />);
+    await waitFor(() => expect(screen.getByText(/no agents registered/i)).toBeInTheDocument());
+    await user.click(screen.getByText('Auto-discover services'));
+    expect(window.location.pathname).toBe('/catalog/workflows');
   });
 
   it('closes detail panel on X button', async () => {
@@ -210,7 +258,32 @@ describe('MonitoringDashboardPage', () => {
   beforeEach(() => {
     vi.mocked(aepApi.listPipelineRuns).mockResolvedValue([RUN]);
     vi.mocked(aepApi.getPipelineMetrics).mockResolvedValue([METRIC]);
+    vi.mocked(aepApi.getRuntimeDurabilityStatus).mockResolvedValue({
+      mode: 'degraded',
+      title: 'Partially durable runtime state',
+      description: 'Run history is durable, but related runtime state is degraded: pipeline storage=in-memory, run ledger=ok.',
+      components: {
+        'execution-history': 'ok',
+        'data-cloud.event-log': 'ok',
+        'run-ledger': 'ok',
+        'pipeline-storage': 'in-memory',
+      },
+      checkedAt: new Date().toISOString(),
+      profile: 'test',
+      dataCloudStorage: 'disabled',
+      reasons: ['Runtime state will be lost on restart.'],
+    });
     vi.mocked(aepApi.cancelRun).mockResolvedValue(undefined);
+  });
+
+  it('shows runtime durability status above monitoring KPIs', async () => {
+    renderWithQuery(<MonitoringDashboardPage />);
+    await waitFor(() => expect(screen.getByText('Partially durable runtime state')).toBeInTheDocument());
+    expect(screen.getByText(/pipeline storage=in-memory/i)).toBeInTheDocument();
+    expect(screen.getByText(/execution-history: ok/i)).toBeInTheDocument();
+    expect(screen.getByText('profile: test')).toBeInTheDocument();
+    expect(screen.getByText('storage: disabled')).toBeInTheDocument();
+    expect(screen.getByText('Runtime state will be lost on restart.')).toBeInTheDocument();
   });
 
   it('renders KPI cards after data loads', async () => {

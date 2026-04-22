@@ -159,6 +159,26 @@ class HealthControllerTest {
             assertThat(components).containsEntry("dep-a", "ok");
             assertThat(components).containsEntry("dep-connectivity", "ok");
         }
+
+        @Test
+        @DisplayName("deep probe includes structured runtime metadata when supplied")
+        void deepProbeIncludesStructuredRuntimeMetadata() throws Exception {
+            controller.addDependencyCheck("dep-a", () -> "ok");
+            controller.setDeepResponseMetadataSupplier(() -> Map.of(
+                "durability",
+                Map.of(
+                    "mode", "ephemeral",
+                    "title", "Ephemeral runtime state"
+                )
+            ));
+
+            Map<String, Object> parsed = getDeepHealth();
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> durability = (Map<String, Object>) parsed.get("durability");
+            assertThat(durability).containsEntry("mode", "ephemeral");
+            assertThat(durability).containsEntry("title", "Ephemeral runtime state");
+        }
     }
 
     @Nested

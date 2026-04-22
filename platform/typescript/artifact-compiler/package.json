@@ -58,15 +58,15 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@ghatana/ui-builder": "workspace:*",
-    "@ghatana/ds-schema": "workspace:*",
     "@ghatana/ds-registry": "workspace:*",
+    "@ghatana/ds-schema": "workspace:*",
     "@ghatana/platform-events": "workspace:*",
-    "zod": "^4.3.6",
-    "nanoid": "^5.1.7"
+    "@ghatana/ui-builder": "workspace:*",
+    "nanoid": "^5.1.7",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^18.19.130",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   },

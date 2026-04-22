@@ -740,8 +740,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/AgentListResponse'
 
   /api/v1/agents/{agentId}:
     get:
@@ -761,8 +760,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/AgentDetail'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -2297,14 +2295,143 @@ components:
       properties:
         status:
           type: string
-        service:
+          enum: [ok, degraded]
+        probe:
+          type: string
+          enum: [deep]
+        version:
           type: string
         timestamp:
           type: string
           format: date-time
+        durability:
+          $ref: '#/components/schemas/RuntimeDurabilitySummary'
         components:
           type: object
-          additionalProperties: true
+          additionalProperties:
+            type: string
+
+    RuntimeDurabilitySummary:
+      type: object
+      required: [mode, title, description]
+      properties:
+        mode:
+          type: string
+          enum: [durable, degraded, ephemeral]
+        title:
+          type: string
+        description:
+          type: string
+        profile:
+          type: string
+        dataCloudStorage:
+          type: string
+          description: Deployment storage classification such as disabled, embedded, sovereign, or production.
+        executionHistory:
+          type: string
+          description: Durability state for run and execution history.
+        pipelineStorage:
+          type: string
+          description: Durability state for pipeline definitions.
+        memoryPersistence:
+          type: string
+          description: Durability state for agent memory.
+        reasons:
+          type: array
+          items:
+            type: string
+
+    AgentListResponse:
+      type: object
+      required: [tenantId, agents, count, timestamp]
+      properties:
+        tenantId:
+          type: string
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentSummary'
+        count:
+          type: integer
+        configured:
+          type: boolean
+          description: Present and false when the registry is unavailable and AEP is returning a truthful unconfigured payload.
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    AgentSummary:
+      type: object
+      required:
+        - id
+        - name
+        - tenantId
+        - version
+        - type
+        - status
+        - capabilities
+        - memoryCount
+        - description
+        - registrationMode
+        - executable
+        - registryStorage
+        - memoryPersistence
+        - registeredAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        tenantId:
+          type: string
+        version:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, IDLE, ERROR, UNKNOWN]
+        capabilities:
+          type: array
+          items:
+            type: string
+        memoryCount:
+          type: integer
+        description:
+          type: string
+        registrationMode:
+          type: string
+          enum: [direct, manifest-only]
+          description: Manifest-only registrations are visible for discovery but intentionally blocked from direct execution.
+        executable:
+          type: boolean
+        registryStorage:
+          type: string
+          enum: [datacloud, unconfigured]
+        memoryPersistence:
+          type: string
+          enum: [datacloud, unavailable]
+        registeredAt:
+          type: string
+          format: date-time
+        lastSeen:
+          type: string
+          format: date-time
+          nullable: true
+
+    AgentDetail:
+      allOf:
+        - $ref: '#/components/schemas/AgentSummary'
+        - type: object
+          properties:
+            config:
+              type: object
+              additionalProperties: true
+            timestamp:
+              type: string
+              format: date-time
 
     SnapshotCounters:
       type: object

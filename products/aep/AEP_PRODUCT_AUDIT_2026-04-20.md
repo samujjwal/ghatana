@@ -10,7 +10,9 @@
 
 ## 1. Executive Verdict
 
-**Scope Audited**: AEP product including 16 modules (aep-engine, aep-registry, aep-analytics, aep-agent-runtime, aep-api, aep-central-runtime, aep-compliance, aep-event-cloud, aep-identity, aep-observability, aep-operator-contracts, aep-runtime-core, aep-scaling, aep-security, orchestrator, server, gateway, ui, contracts)
+**Scope Audited**: AEP product including 18 active modules/apps (aep-engine, aep-registry, aep-analytics, aep-agent-runtime, aep-api, aep-central-runtime, aep-compliance, aep-event-cloud, aep-identity, aep-observability, aep-operator-contracts, aep-scaling, aep-security, orchestrator, server, gateway, ui, contracts)
+
+**Follow-up remediation note (2026-04-21)**: the deprecated `aep-runtime-core` facade has been retired from the build, `/health/deep` now exposes explicit runtime durability metadata, the operator UI consumes that contract directly, and sovereign Data Cloud restart coverage now asserts durable runtime behavior.
 
 - **Feature completeness**: Moderate
 - **Technical excellence**: Strong
@@ -74,7 +76,6 @@ AEP is the **Agentic Execution Runtime** - an event-driven agent orchestration r
 - `aep-identity` - Identity management
 - `aep-observability` - Observability infrastructure
 - `aep-operator-contracts` - Shared operator and pipeline contracts
-- `aep-runtime-core` - Runtime core (backward-compat stub, not in Gradle build)
 - `aep-scaling` - Scaling infrastructure
 - `aep-security` - Security filters and validation
 - `orchestrator` - Multi-tenant orchestration

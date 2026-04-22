@@ -25,7 +25,9 @@ import {
 } from 'recharts';
 import {
   getPipelineMetrics,
+  getRuntimeDurabilityStatus,
   type PipelineMetrics,
+  type RuntimeDurabilityStatus,
 } from '@/api/aep.api';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { useLivePipelineRuns, useCancelRun } from '@/hooks/usePipelineRuns';
@@ -64,6 +66,32 @@ function SuccessRateChart({ metrics }: { metrics: PipelineMetrics[] }) {
   );
 }
 
+function durabilityTone(mode: RuntimeDurabilityStatus['mode']): string {
+  switch (mode) {
+    case 'durable':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100';
+    case 'degraded':
+      return 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100';
+    case 'ephemeral':
+      return 'border-red-200 bg-red-50 text-red-950 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100';
+  }
+}
+
+function formatComponentName(name: string): string {
+  return name.replaceAll('.', ' ');
+}
+
+function formatRuntimeContext(durability: RuntimeDurabilityStatus): string[] {
+  const context: string[] = [];
+  if (durability.profile) {
+    context.push(`profile: ${durability.profile}`);
+  }
+  if (durability.dataCloudStorage) {
+    context.push(`storage: ${durability.dataCloudStorage}`);
+  }
+  return context;
+}
+
 // ─── Page ────────────────────────────────────────────────────────────
 
 export function MonitoringDashboardPage() {
@@ -78,6 +106,13 @@ export function MonitoringDashboardPage() {
   const { data: metrics = [], isLoading: metricsLoading } = useQuery({
     queryKey: ['aep', 'metrics', tenantId],
     queryFn: () => getPipelineMetrics(tenantId),
+    refetchInterval: 15_000,
+  });
+
+  const { data: durability } = useQuery({
+    queryKey: ['aep', 'runtime-durability'],
+    queryFn: () => getRuntimeDurabilityStatus(),
+    staleTime: 15_000,
     refetchInterval: 15_000,
   });
 
@@ -126,6 +161,48 @@ export function MonitoringDashboardPage() {
       </div>
 
       <div className="flex-1 overflow-auto px-6 py-4 space-y-6">
+        {durability ? (
+          <div className={['rounded-xl border px-4 py-3', durabilityTone(durability.mode)].join(' ')}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">{durability.title}</p>
+                <p className="mt-1 text-xs opacity-90">{durability.description}</p>
+              </div>
+              <span className="text-[11px] uppercase tracking-wide opacity-75">
+                Checked {new Date(durability.checkedAt).toLocaleTimeString()}
+              </span>
+            </div>
+            {formatRuntimeContext(durability).length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-wide opacity-80">
+                {formatRuntimeContext(durability).map((entry) => (
+                  <span key={entry} className="rounded-full border border-current/15 px-2 py-1 font-mono">
+                    {entry}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {durability.reasons && durability.reasons.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] opacity-85">
+                {durability.reasons.map((reason) => (
+                  <span key={reason} className="rounded-full border border-current/15 px-2 py-1">
+                    {reason}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+              {Object.entries(durability.components).map(([name, value]) => (
+                <span
+                  key={name}
+                  className="rounded-full border border-current/15 px-2 py-1 font-mono"
+                >
+                  {formatComponentName(name)}: {value}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* KPI row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard label="Total runs" value={runs.length} />

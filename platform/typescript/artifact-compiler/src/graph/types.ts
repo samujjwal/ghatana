@@ -94,7 +94,7 @@ export const GraphNodeSchema = z.object({
   provenance: z.enum(["exact", "inferred", "synthesized", "manual", "assumed"]),
   privacySecurityFlags: z.array(z.string()).default([]),
   residualFragmentIds: z.array(z.string()).default([]),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
 export type GraphNode = z.infer<typeof GraphNodeSchema>;
@@ -110,7 +110,7 @@ export const GraphEdgeSchema = z.object({
   kind: GraphEdgeKindSchema,
   confidence: z.number().min(0).max(1),
   bidirectional: z.boolean().default(false),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
 export type GraphEdge = z.infer<typeof GraphEdgeSchema>;
@@ -127,8 +127,8 @@ export const ArtifactGraphSchema = z.object({
   version: z.number().int().nonnegative(),
   nodes: z.array(GraphNodeSchema),
   edges: z.array(GraphEdgeSchema),
-  nodeIndex: z.record(z.array(z.string().uuid())), // kind -> nodeIds
-  edgeIndex: z.record(z.array(z.string().uuid())), // kind -> edgeIds
+  nodeIndex: z.record(z.string(), z.array(z.string().uuid())), // kind -> nodeIds
+  edgeIndex: z.record(z.string(), z.array(z.string().uuid())), // kind -> edgeIds
 });
 
 export type ArtifactGraph = z.infer<typeof ArtifactGraphSchema>;

@@ -161,6 +161,11 @@ class AepHttpServerObservabilityTest {
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsEntry("probe", "deep");
             @SuppressWarnings("unchecked")
+            Map<String, Object> durability = (Map<String, Object>) body.get("durability");
+            assertThat(durability).containsEntry("mode", "ephemeral");
+            assertThat(durability).containsEntry("profile", "test");
+            assertThat(durability).containsEntry("dataCloudStorage", "disabled");
+            @SuppressWarnings("unchecked")
             Map<String, Object> components = (Map<String, Object>) body.get("components");
             assertThat(components).containsKeys(
                 "database",
@@ -218,6 +223,10 @@ class AepHttpServerObservabilityTest {
             assertThat(resp.statusCode()).isEqualTo(200);
             @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> durability = (Map<String, Object>) body.get("durability");
+            assertThat(durability).containsEntry("mode", "durable");
+            assertThat(durability).containsEntry("dataCloudStorage", "embedded");
             @SuppressWarnings("unchecked")
             Map<String, Object> components = (Map<String, Object>) body.get("components");
             assertThat(components).containsEntry("data-cloud.connectivity", "ok");

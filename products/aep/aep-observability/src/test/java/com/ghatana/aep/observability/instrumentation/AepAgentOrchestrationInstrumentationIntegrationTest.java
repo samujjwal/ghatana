@@ -1,6 +1,7 @@
 package com.ghatana.aep.observability.instrumentation;
 
 import com.ghatana.aep.observability.tracing.AepTracingProvider;
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -51,7 +52,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
 
             // Then
             assertThat(result).isEqualTo(expectedResult);
-            assertThat(MDC.get("pipelineId")).isEqualTo(pipelineId);
+            assertThat(MDC.getCopyOfContextMap()).isEmpty();
         }
 
         @Test
@@ -141,7 +142,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
 
             // Then
             assertThat(result).isEqualTo(expectedResult);
-            assertThat(MDC.get("agentId")).isEqualTo(agentId);
+            assertThat(MDC.get("agentId")).isNull();
         }
 
         @Test
@@ -255,7 +256,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
 
             // Then
             assertThat(result).isEqualTo(expectedResult);
-            assertThat(MDC.get("eventId")).isEqualTo(eventId);
+            assertThat(MDC.get("eventId")).isNull();
         }
 
         @Test
@@ -495,7 +496,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             );
 
             // Then
-            assertThat(MDC.get("tenantId")).isEqualTo(tenant2);
+            assertThat(MDC.get("tenantId")).isNull();
         }
 
         @Test
@@ -524,7 +525,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             );
 
             // Then
-            assertThat(MDC.get("tenantId")).isEqualTo(tenant2);
+            assertThat(MDC.get("tenantId")).isNull();
         }
     }
 
@@ -533,7 +534,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
     class ExceptionHandlingAndErrorPropagationTests {
 
         @Test
-        void shouldClearMDCEvenOnException() {
+        void shouldClearMDCEvenOnException() throws Exception {
             // Given
             String pipelineId = "exception-cleanup";
             String tenantId = "exception-cleanup-tenant";

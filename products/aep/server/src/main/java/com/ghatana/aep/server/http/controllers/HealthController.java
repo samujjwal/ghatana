@@ -38,6 +38,7 @@ public class HealthController implements AepController {
 
     private volatile boolean ready = false;
     private final String version;
+    private volatile Supplier<Map<String, Object>> deepResponseMetadataSupplier = Map::of;
     /** Synchronous dependency-status checks registered at startup. */
     private final List<Map.Entry<String, Supplier<String>>> componentChecks = new CopyOnWriteArrayList<>();
     /** Deeper startup/runtime checks used by {@code /health/deep}. */
@@ -86,6 +87,13 @@ public class HealthController implements AepController {
         asyncDeepComponentChecks.add(Map.entry(name, check));
     }
 
+    /**
+     * Registers additional structured metadata to include only in {@code /health/deep} responses.
+     */
+    public void setDeepResponseMetadataSupplier(Supplier<Map<String, Object>> metadataSupplier) {
+        this.deepResponseMetadataSupplier = metadataSupplier != null ? metadataSupplier : Map::of;
+    }
+
     @Override
     public String getBasePath() {
         return "/";
@@ -112,8 +120,9 @@ public class HealthController implements AepController {
         List<Map.Entry<String, Supplier<String>>> checks = new ArrayList<>(componentChecks);
         checks.addAll(deepComponentChecks);
         Map<String, Object> components = evaluateChecks(checks);
+        Map<String, Object> responseMetadata = evaluateDeepResponseMetadata();
         if (asyncDeepComponentChecks.isEmpty()) {
-            return Promise.of(buildHealthResponse(components, "deep"));
+            return Promise.of(buildHealthResponse(components, "deep", responseMetadata));
         }
 
         List<Promise<Map.Entry<String, String>>> asyncChecks = asyncDeepComponentChecks.stream()
@@ -125,7 +134,7 @@ public class HealthController implements AepController {
                 for (Map.Entry<String, String> entry : results) {
                     components.put(entry.getKey(), entry.getValue());
                 }
-                return buildHealthResponse(components, "deep");
+                return buildHealthResponse(components, "deep", responseMetadata);
             });
     }
 
@@ -190,6 +199,13 @@ public class HealthController implements AepController {
     }
 
     private HttpResponse buildHealthResponse(Map<String, Object> components, String probeType) {
+        return buildHealthResponse(components, probeType, Map.of());
+    }
+
+    private HttpResponse buildHealthResponse(
+            Map<String, Object> components,
+            String probeType,
+            Map<String, Object> responseMetadata) {
         boolean allHealthy = components.values().stream().allMatch("ok"::equals);
 
         Map<String, Object> response = new LinkedHashMap<>();
@@ -197,10 +213,22 @@ public class HealthController implements AepController {
         response.put("probe", probeType);
         response.put("version", version);
         response.put("timestamp", Instant.now().toString());
+        if (!responseMetadata.isEmpty()) {
+            response.putAll(responseMetadata);
+        }
         if (!components.isEmpty()) {
             response.put("components", components);
         }
         return HttpHelper.jsonResponse(response);
+    }
+
+    private Map<String, Object> evaluateDeepResponseMetadata() {
+        try {
+            Map<String, Object> metadata = deepResponseMetadataSupplier.get();
+            return metadata != null ? metadata : Map.of();
+        } catch (Exception error) {
+            return Map.of("deepProbeMetadataError", errorStatus(error));
+        }
     }
 
     private String errorStatus(Throwable error) {

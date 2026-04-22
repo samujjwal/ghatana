@@ -27,12 +27,13 @@ AEP is the **event-driven agent orchestration runtime** for the Ghatana platform
 | `aep-operator-contracts` | Shared operator and pipeline contracts |
 | `aep-analytics` | Pipeline observability and metrics |
 | `aep-registry` | Operator, pipeline and agent registry |
+| `aep-observability` | AEP-specific tracing and orchestration instrumentation |
 | `orchestrator` | Multi-tenant orchestration |
+| `kernel-bridge` | Product kernel integration boundary |
 | `server` | HTTP server entry point |
 
-> Note: `aep-runtime-core` exists on-disk as a backward-compat stub but is not
-> included in the Gradle build. `aep-agent` was merged into `aep-registry`
-> (2026-03-22). All `platform-*` directories have been removed.
+> Note: `aep-agent` was merged into `aep-registry` (2026-03-22). `aep-runtime` and the
+> former `aep-runtime-core` compatibility facade have both been retired and removed.
 
 ## Consumers
 

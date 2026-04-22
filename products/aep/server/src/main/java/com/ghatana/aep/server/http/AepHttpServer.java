@@ -44,7 +44,6 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import com.ghatana.platform.security.analytics.DefaultEgressMonitor;
 import com.ghatana.platform.security.analytics.RegexPromptInjectionDetector;
 import com.ghatana.aep.server.http.controllers.PatternController;
-import com.ghatana.aep.server.http.controllers.PipelineController;
 import com.ghatana.aep.server.learning.LearningScheduler;
 import com.ghatana.aep.server.http.controllers.AiSuggestionsController;
 import com.ghatana.aep.server.http.controllers.NlpController;
@@ -649,6 +648,7 @@ public class AepHttpServer {
             () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
         this.healthController.addAsyncDeepDependencyCheck("data-cloud.connectivity", this::dataCloudConnectivityStatus);
         this.healthController.addAsyncDeepDependencyCheck("kafka.connectivity", this::kafkaConnectivityStatus);
+        this.healthController.setDeepResponseMetadataSupplier(this::runtimeDurabilityMetadata);
         // P0-2: Removed discarded PipelineController instantiation - pipeline routes are handled inline
         this.agentController = new AgentController(this.engine, this.agentDataCloud, this.sloMetrics);
         this.marketplaceController = new AgentMarketplaceController(this.agentDataCloud);
@@ -706,6 +706,107 @@ public class AepHttpServer {
         return this.agentDataCloud.queryEvents("health-check-tenant", DataCloudClient.EventQuery.all())
             .map(ignored -> "ok")
             .then(Promise::of, error -> Promise.of("error: " + error.getClass().getSimpleName()));
+    }
+
+    private Map<String, Object> runtimeDurabilityMetadata() {
+        String executionHistoryMode = this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null
+            ? "durable"
+            : "ephemeral";
+        String pipelineStorageMode = this.durablePipelines ? "durable" : "ephemeral";
+        String memoryPersistenceMode = this.agentDataCloud != null && this.agentDataCloud.entityStore() != null
+            ? "durable"
+            : "ephemeral";
+        String dataCloudStorage = dataCloudStorageMode();
+        String profile = AepRuntimeProfile.resolve(runtimeSettings());
+
+        int durableSubsystems = 0;
+        if ("durable".equals(executionHistoryMode)) {
+            durableSubsystems++;
+        }
+        if ("durable".equals(pipelineStorageMode)) {
+            durableSubsystems++;
+        }
+        if ("durable".equals(memoryPersistenceMode)) {
+            durableSubsystems++;
+        }
+
+        String mode;
+        if (durableSubsystems == 3) {
+            mode = "durable";
+        } else if (durableSubsystems == 0) {
+            mode = "ephemeral";
+        } else {
+            mode = "degraded";
+        }
+
+        List<String> reasons = new ArrayList<>();
+        if (!"durable".equals(executionHistoryMode)) {
+            reasons.add("execution history is not persisted across restart");
+        }
+        if (!"durable".equals(pipelineStorageMode)) {
+            reasons.add("pipeline definitions are running from in-memory storage");
+        }
+        if (!"durable".equals(memoryPersistenceMode)) {
+            reasons.add("agent memory is not persisted in Data Cloud");
+        }
+
+        String title;
+        String description;
+        if ("durable".equals(mode)) {
+            title = "Durable runtime state";
+            description = "Run history, pipeline storage, and agent memory are backed by persistent services.";
+        } else if ("degraded".equals(mode)) {
+            title = "Partially durable runtime state";
+            description = "Some runtime state is durable, but at least one backing surface is still ephemeral.";
+        } else {
+            title = "Ephemeral runtime state";
+            description = "Runtime state is operating without persistent backing and will be lost on restart.";
+        }
+
+        Map<String, Object> durability = new LinkedHashMap<>();
+        durability.put("mode", mode);
+        durability.put("title", title);
+        durability.put("description", description);
+        durability.put("profile", profile);
+        durability.put("dataCloudStorage", dataCloudStorage);
+        durability.put("executionHistory", executionHistoryMode);
+        durability.put("pipelineStorage", pipelineStorageMode);
+        durability.put("memoryPersistence", memoryPersistenceMode);
+        durability.put("reasons", List.copyOf(reasons));
+
+        return Map.of("durability", durability);
+    }
+
+    private Map<String, String> runtimeSettings() {
+        LinkedHashMap<String, String> settings = new LinkedHashMap<>();
+        copySetting(settings, "AEP_PROFILE");
+        copySetting(settings, "AEP_ENV");
+        copySetting(settings, "DATACLOUD_SOVEREIGN_DATA_DIR");
+        return Map.copyOf(settings);
+    }
+
+    private void copySetting(Map<String, String> settings, String key) {
+        String value = resolveSetting(key);
+        if (value != null && !value.isBlank()) {
+            settings.put(key, value);
+        }
+    }
+
+    private String dataCloudStorageMode() {
+        if (this.agentDataCloud == null) {
+            return "disabled";
+        }
+        if (isSovereignStore(this.agentDataCloud.entityStore()) || isSovereignStore(this.agentDataCloud.eventLogStore())) {
+            return "sovereign";
+        }
+        if (resolveSetting("DATACLOUD_SOVEREIGN_DATA_DIR") != null) {
+            return "sovereign";
+        }
+        return AepRuntimeProfile.isProduction(runtimeSettings()) ? "production" : "embedded";
+    }
+
+    private boolean isSovereignStore(Object store) {
+        return store != null && store.getClass().getSimpleName().contains("Sovereign");
     }
 
     private static boolean isExplicitProductionProfile() {

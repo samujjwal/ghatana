@@ -3,6 +3,7 @@ package com.ghatana.aep.observability.tracing;
 import java.util.Arrays;
 import java.util.UUID;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -10,11 +11,11 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.exporter.jaeger.thrift.JaegerThriftSpanExporter;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -30,12 +31,11 @@ public class AepTracingProvider {
     private static final Logger log = LoggerFactory.getLogger(AepTracingProvider.class);
 
     private static final String SERVICE_NAME = "aep-engine";
-    private static final String JAEGER_HOST = System.getenv("JAEGER_AGENT_HOST") != null
-            ? System.getenv("JAEGER_AGENT_HOST")
-            : "localhost";
-    private static final int JAEGER_PORT = Integer.parseInt(System.getenv("JAEGER_AGENT_PORT") != null
-            ? System.getenv("JAEGER_AGENT_PORT")
-            : "6831");
+        private static final String OTLP_ENDPOINT = System.getenv("AEP_OTLP_ENDPOINT") != null
+            ? System.getenv("AEP_OTLP_ENDPOINT")
+            : System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != null
+            ? System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+            : "http://localhost:4317";
 
     private final OpenTelemetry openTelemetry;
     private final Tracer tracer;
@@ -49,13 +49,13 @@ public class AepTracingProvider {
      */
     private AepTracingProvider() {
         this.tracerProvider = initializeTracerProvider();
-        this.openTelemetry = io.opentelemetry.sdk.OpenTelemetrySdk.builder()
+        this.openTelemetry = OpenTelemetrySdk.builder()
                 .setTracerProvider(tracerProvider)
                 .build();
         this.tracer = openTelemetry.getTracer(SERVICE_NAME);
         this.meter = openTelemetry.getMeter(SERVICE_NAME);
 
-        log.info("AEP Tracing Provider initialized - Jaeger endpoint: {}:{}", JAEGER_HOST, JAEGER_PORT);
+        log.info("AEP Tracing Provider initialized - OTLP endpoint: {}", OTLP_ENDPOINT);
     }
 
     /**
@@ -69,7 +69,7 @@ public class AepTracingProvider {
     }
 
     /**
-     * Initialize tracer provider with Jaeger exporter
+         * Initialize tracer provider with OTLP exporter
      */
     private SdkTracerProvider initializeTracerProvider() {
         String version = System.getenv("SERVICE_VERSION") != null
@@ -77,20 +77,20 @@ public class AepTracingProvider {
                 : "0.0.1";
 
         Resource resource = Resource.getDefault().merge(Resource.create(
-                io.opentelemetry.sdk.resources.Attributes.builder()
-                        .put(SemanticAttributes.SERVICE_NAME, SERVICE_NAME)
-                        .put(SemanticAttributes.SERVICE_VERSION, version)
+            Attributes.builder()
+                .put("service.name", SERVICE_NAME)
+                .put("service.version", version)
                         .build()
         ));
 
-        JaegerThriftSpanExporter jaegerExporter = JaegerThriftSpanExporter.builder()
-                .setAgentHost(JAEGER_HOST)
-                .setAgentPort(JAEGER_PORT)
+        OtlpGrpcSpanExporter spanExporter = OtlpGrpcSpanExporter.builder()
+            .setEndpoint(OTLP_ENDPOINT)
+            .setCompression("gzip")
                 .build();
 
         return SdkTracerProvider.builder()
                 .setResource(resource)
-                .addSpanProcessor(new SimpleSpanProcessor(jaegerExporter))
+            .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
                 .setSampler(io.opentelemetry.sdk.trace.samplers.Sampler.traceIdRatioBased(0.1))  // 10% sampling
                 .build();
     }

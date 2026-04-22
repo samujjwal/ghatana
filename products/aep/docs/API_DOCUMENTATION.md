@@ -33,6 +33,14 @@ This document is a human guide to the route families AEP actually exposes today.
 
 These routes expose liveness, readiness, dependency depth, and metrics shape. `GET /metrics` may return Prometheus text or a JSON fallback depending on the registry wiring.
 
+`GET /health/deep` is the runtime durability contract. In addition to `components`, it now returns a structured `durability` object with:
+
+- `mode`: `durable`, `degraded`, or `ephemeral`
+- `title` and `description`: operator-facing state summary
+- `profile` and `dataCloudStorage`: deployment context surfaced directly from the backend
+- `executionHistory`, `pipelineStorage`, and `memoryPersistence`: per-surface durability state
+- `reasons`: human-readable explanations when the runtime is not fully durable
+
 ### Events and patterns
 
 - `POST /api/v1/events`
@@ -52,6 +60,14 @@ These are the remaining event-facing routes. They exist inside the broader execu
 - `GET /api/v1/agents/{agentId}/memory`
 
 The runtime may truthfully report `configured: false` with an empty set when the backing registry or store is absent.
+
+Agent list and detail payloads now expose execution truth directly instead of requiring UI heuristics:
+
+- `registrationMode`: `direct` or `manifest-only`
+- `executable`: whether direct execution is actually allowed
+- `registryStorage` and `memoryPersistence`: whether the registry and memory views are backed by Data Cloud
+
+Manifest-only registrations are discovery-visible but intentionally non-executable until a real runtime implementation replaces the placeholder.
 
 ### Pipelines and runs
 
@@ -160,7 +176,7 @@ Listener failures and invalid writes roll back atomically and are recorded in th
 
 ## Documentation Discipline
 
-- When public routes change, update both OpenAPI copies and this document in the same change.
+- When public routes change, update the platform canonical spec at `platform/contracts/openapi/aep.yaml`, the legacy product-local alias at `products/aep/contracts/openapi.yaml`, and this document in the same change.
 - The server test suite includes route/spec drift coverage for exercised public endpoints; that is the guardrail against silently stale docs.
 - If an endpoint is present but only partially backed by runtime dependencies, document that degraded behavior explicitly instead of claiming full production readiness.
 
