@@ -35,6 +35,8 @@ function getSystemTheme(): ResolvedTheme {
  */
 function getStoredTheme(storageKey: string): ThemeMode | null {
   if (typeof window === 'undefined') return null;
+  if (typeof localStorage === 'undefined') return null;
+  if (typeof localStorage.getItem !== 'function') return null;
 
   try {
     const stored = localStorage.getItem(storageKey);
@@ -53,6 +55,8 @@ function getStoredTheme(storageKey: string): ThemeMode | null {
  */
 function storeTheme(storageKey: string, theme: ThemeMode): void {
   if (typeof window === 'undefined') return;
+  if (typeof localStorage === 'undefined') return;
+  if (typeof localStorage.setItem !== 'function') return;
 
   try {
     localStorage.setItem(storageKey, theme);

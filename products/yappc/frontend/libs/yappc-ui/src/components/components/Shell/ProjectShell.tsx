@@ -17,7 +17,6 @@ import {
   Container,
   Typography,
   Breadcrumb as Breadcrumbs,
-  Link as MuiLink,
   IconButton,
   Button,
   Drawer,
@@ -34,13 +33,24 @@ function useIsMobile(): boolean {
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (typeof window.matchMedia !== 'function') return;
 
     const mql = window.matchMedia('(max-width: 767px)');
     setIsMobile(mql.matches);
 
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    }
+
+    // Legacy WebKit/JSDOM fallback
+    if (typeof mql.addListener === 'function') {
+      mql.addListener(handler);
+      return () => mql.removeListener(handler);
+    }
+
+    return;
   }, []);
 
   return isMobile;
@@ -222,31 +232,21 @@ export const ProjectShell = React.forwardRef<HTMLDivElement, ProjectShellProps>(
       if (!breadcrumbs || breadcrumbs.length === 0) return null;
 
       return (
-        <Breadcrumbs aria-label="project breadcrumb" className="mb-2">
-          <MuiLink
-            href="/"
-            underline="hover"
-            tone="neutral"
-            className="flex items-center gap-1"
-          >
-            <HomeIcon size={16} />
-            Home
-          </MuiLink>
-          {breadcrumbs.map((crumb, index) => (
-            <MuiLink
-              key={index}
-              href={crumb.href}
-              underline="hover"
-              color={
-                index === breadcrumbs.length - 1 ? 'text.primary' : 'inherit'
-              }
-              className="flex items-center gap-1"
-            >
-              {crumb.icon}
-              {crumb.label}
-            </MuiLink>
-          ))}
-        </Breadcrumbs>
+        <Breadcrumbs
+          className="mb-2"
+          items={[
+            {
+              label: 'Home',
+              href: '/',
+              icon: <HomeIcon size={16} />,
+            },
+            ...breadcrumbs.map((crumb) => ({
+              label: crumb.label,
+              href: crumb.href,
+              icon: crumb.icon,
+            })),
+          ]}
+        />
       );
     };
 
@@ -254,18 +254,25 @@ export const ProjectShell = React.forwardRef<HTMLDivElement, ProjectShellProps>(
       if (!actions || actions.length === 0) return null;
 
       return (
-        <Box className="flex items-center gap-2 ml-auto sm:flex hidden">
+        <Box className="flex items-center gap-2">
           {actions.map((action) => (
-            <IconButton
+            <Button
               key={action.id}
               onClick={action.onClick}
               disabled={action.disabled || isLoading}
-              tone="primary"
+              variant={
+                action.variant === 'contained'
+                  ? 'solid'
+                  : action.variant === 'outlined'
+                    ? 'outline'
+                    : 'ghost'
+              }
+              size="sm"
+              startIcon={action.icon as unknown}
               aria-label={action.label}
-              title={action.label}
             >
-              {action.icon}
-            </IconButton>
+              {!isMobile && action.label}
+            </Button>
           ))}
         </Box>
       );
@@ -274,10 +281,7 @@ export const ProjectShell = React.forwardRef<HTMLDivElement, ProjectShellProps>(
     return (
       <Box
         ref={ref}
-        className={[
-          'flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950',
-          className,
-        ]
+        className={['min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950', className]
           .filter(Boolean)
           .join(' ')}
         {...forwardedProps}

@@ -121,6 +121,7 @@ export interface AdaptiveUIConfig {
 export class AdaptiveUI {
   private rules: Map<string, AdaptationRule> = new Map();
   private appliedAdaptations: Map<HTMLElement, Set<string>> = new Map();
+  private volatilePreferences: UserPreferences = {};
   // Cached sorted rules to avoid repeated sorts during heavy workloads
   private sortedRulesCache: AdaptationRule[] | null = null;
   // Cache per-rule apply strategy to avoid expensive toString() heuristics on each run
@@ -138,6 +139,24 @@ export class AdaptiveUI {
   private contextCacheTTL = 200; // ms
   private observer: MutationObserver | null = null;
   private adaptationInterval: NodeJS.Timeout | null = null;
+
+  /**
+   * Returns localStorage only when the storage API is fully available.
+   */
+  private getSafeLocalStorage(): Storage | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    if (
+      typeof localStorage.getItem !== 'function' ||
+      typeof localStorage.setItem !== 'function'
+    ) {
+      return null;
+    }
+
+    return localStorage;
+  }
 
   /**
    *
@@ -234,8 +253,9 @@ export class AdaptiveUI {
    * Clear persisted preferences
    */
   clearPreferences(): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.removeItem(this.config.storageKey);
+    const storage = this.getSafeLocalStorage();
+    if (!storage || typeof storage.removeItem !== 'function') return;
+    storage.removeItem(this.config.storageKey);
   }
 
   /**
@@ -403,20 +423,23 @@ export class AdaptiveUI {
    */
   getPreferences(): UserPreferences {
     if (!this.config.persistPreferences) {
-      return {};
+      return this.volatilePreferences;
     }
 
-    if (typeof localStorage === 'undefined') {
-      return {};
+    const storage = this.getSafeLocalStorage();
+    if (!storage) {
+      return this.volatilePreferences;
     }
 
-    const stored = localStorage.getItem(this.config.storageKey);
+    const stored = storage.getItem(this.config.storageKey);
     if (!stored) return {};
 
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored) as UserPreferences;
+      this.volatilePreferences = parsed;
+      return parsed;
     } catch {
-      return {};
+      return this.volatilePreferences;
     }
   }
 
@@ -424,13 +447,19 @@ export class AdaptiveUI {
    * Save user preferences
    */
   savePreferences(preferences: UserPreferences): void {
+    this.volatilePreferences = {
+      ...this.volatilePreferences,
+      ...preferences,
+    };
+
     if (!this.config.persistPreferences) return;
-    if (typeof localStorage === 'undefined') return;
+    const storage = this.getSafeLocalStorage();
+    if (!storage) return;
 
     const current = this.getPreferences();
     const updated = { ...current, ...preferences };
 
-    localStorage.setItem(this.config.storageKey, JSON.stringify(updated));
+    storage.setItem(this.config.storageKey, JSON.stringify(updated));
   }
 
   /**
@@ -863,9 +892,10 @@ export class AdaptiveUI {
    * Get visit count
    */
   private getVisitCount(): number {
-    if (typeof localStorage === 'undefined') return 0;
+    const storage = this.getSafeLocalStorage();
+    if (!storage) return 0;
 
-    const count = localStorage.getItem('yappc_visit_count');
+    const count = storage.getItem('yappc_visit_count');
     return count ? parseInt(count, 10) : 0;
   }
 }

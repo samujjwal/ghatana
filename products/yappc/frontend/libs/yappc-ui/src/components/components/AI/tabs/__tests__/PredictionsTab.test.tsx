@@ -2,8 +2,8 @@
 import { screen } from '@testing-library/react';
 import React from 'react';
 
-import { PredictionsTab } from './PredictionsTab';
-import { render } from './test-utils';
+import { PredictionsTab } from '../PredictionsTab';
+import { render } from '../test-utils';
 
 const mockInsights = {
   buildTimePrediction: {

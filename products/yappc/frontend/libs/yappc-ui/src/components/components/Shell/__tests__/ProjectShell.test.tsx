@@ -2,9 +2,16 @@ import { Settings as SettingsIcon, Hammer as BuildIcon } from 'lucide-react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme/provider';
 
-import { ProjectShell } from './ProjectShell';
-import ThemeProvider from '../../theme/ThemeProvider';
+import { ProjectShell } from '../ProjectShell';
+import AppThemeProvider from '../../../../components/theme/ThemeProvider';
+
+const ThemeProvider = ({ children }: { children: React.ReactNode }) => (
+  <PlatformThemeProvider defaultTheme="light">
+    <AppThemeProvider defaultMode="light">{children}</AppThemeProvider>
+  </PlatformThemeProvider>
+);
 
 // Mock navigation items
 const mockTabs = [
@@ -88,7 +95,7 @@ describe('ProjectShell Component', () => {
       </ThemeProvider>
     );
 
-    const breadcrumbNav = screen.getByLabelText('project breadcrumb');
+    const breadcrumbNav = screen.getByLabelText('Breadcrumb');
     expect(breadcrumbNav).toBeInTheDocument();
     expect(within(breadcrumbNav).getByText('Workspace')).toBeInTheDocument();
     expect(within(breadcrumbNav).getByText('My Project')).toBeInTheDocument();

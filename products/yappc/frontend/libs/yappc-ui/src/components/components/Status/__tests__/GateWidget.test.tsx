@@ -2,12 +2,17 @@
 import React, { act } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme/provider';
 
-import { ThemeProvider } from '../../../theme/ThemeProvider';
-import { GateWidget, type GateStatus } from './GateWidget';
+import { ThemeProvider as AppThemeProvider } from '../../../../components/theme/ThemeProvider';
+import { GateWidget, type GateStatus } from '../GateWidget';
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider>{component}</ThemeProvider>);
+  return render(
+    <PlatformThemeProvider defaultTheme="light">
+      <AppThemeProvider defaultMode="light">{component}</AppThemeProvider>
+    </PlatformThemeProvider>
+  );
 };
 
 const mockGates: GateStatus[] = [
@@ -188,7 +193,7 @@ describe('GateWidget', () => {
 
   describe('Interactions', () => {
     it('calls onRefresh when refresh button is clicked', () => {
-      const onRefresh = jest.fn();
+      const onRefresh = vi.fn();
       renderWithTheme(<GateWidget gates={mockGates} onRefresh={onRefresh} />);
 
       const refreshButton = screen.getByRole('button', { name: /refresh/i });
@@ -200,7 +205,7 @@ describe('GateWidget', () => {
     });
 
     it('disables refresh button when loading', () => {
-      const onRefresh = jest.fn();
+      const onRefresh = vi.fn();
       renderWithTheme(
         <GateWidget gates={mockGates} loading onRefresh={onRefresh} />
       );
@@ -251,7 +256,7 @@ describe('GateWidget', () => {
 
   describe('Accessibility', () => {
     it('has proper ARIA labels for buttons', () => {
-      const onRefresh = jest.fn();
+      const onRefresh = vi.fn();
       renderWithTheme(<GateWidget gates={mockGates} onRefresh={onRefresh} />);
 
       expect(
@@ -271,7 +276,7 @@ describe('GateWidget', () => {
     });
 
     it('supports keyboard navigation', () => {
-      const onRefresh = jest.fn();
+      const onRefresh = vi.fn();
       renderWithTheme(<GateWidget gates={mockGates} onRefresh={onRefresh} />);
 
       const refreshButton = screen.getByRole('button', { name: /refresh/i });

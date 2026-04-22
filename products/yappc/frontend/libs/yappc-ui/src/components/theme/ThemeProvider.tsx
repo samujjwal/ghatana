@@ -29,6 +29,21 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(
 
 const THEME_STORAGE_KEY = 'app-theme-mode';
 
+function getSafeLocalStorage(): Storage | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+
+  if (
+    typeof localStorage.getItem !== 'function' ||
+    typeof localStorage.setItem !== 'function'
+  ) {
+    return null;
+  }
+
+  return localStorage;
+}
+
 export interface ThemeProviderProps {
   children: React.ReactNode;
   defaultMode?: ThemeMode;
@@ -44,16 +59,18 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const [mode, setMode] = useState<ThemeMode>(() => {
-    if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem(storageKey) as ThemeMode | null;
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      const savedMode = storage.getItem(storageKey) as ThemeMode | null;
       if (savedMode) return savedMode;
     }
     return defaultMode;
   });
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(storageKey, mode);
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      storage.setItem(storageKey, mode);
     }
   }, [mode, storageKey]);
 
@@ -65,6 +82,10 @@ export function ThemeProvider({
 
   useEffect(() => {
     if (disableSystemPreference || typeof window === 'undefined') {
+      return;
+    }
+
+    if (typeof window.matchMedia !== 'function') {
       return;
     }
 

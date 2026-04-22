@@ -3,9 +3,16 @@ import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme/provider';
 
-import { ProjectShell } from './ProjectShell';
-import ThemeProvider from '../../theme/ThemeProvider';
+import { ProjectShell } from '../ProjectShell';
+import AppThemeProvider from '../../../../components/theme/ThemeProvider';
+
+const ThemeProvider = ({ children }: { children: React.ReactNode }) => (
+  <PlatformThemeProvider defaultTheme="light">
+    <AppThemeProvider defaultMode="light">{children}</AppThemeProvider>
+  </PlatformThemeProvider>
+);
 
 // Add jest-axe matcher
 expect.extend(toHaveNoViolations);

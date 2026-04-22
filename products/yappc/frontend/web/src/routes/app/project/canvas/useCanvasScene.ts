@@ -178,10 +178,26 @@ export const useCanvasScene = ({
 
   // Sync lifecycle state with canvas state
   useEffect(() => {
-    setCanvasState((prev) => ({
-      ...prev,
-      ...lifecycle.exportToCanvasState(),
-    }));
+    setCanvasState((prev) => {
+      const lifecycleState = lifecycle.exportToCanvasState() as Record<
+        string,
+        unknown
+      >;
+      const prevState = prev as unknown as Record<string, unknown>;
+
+      const changed = Object.entries(lifecycleState).some(
+        ([key, value]) => prevState[key] !== value
+      );
+
+      if (!changed) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        ...lifecycleState,
+      };
+    });
   }, [currentPhase, lifecycle, setCanvasState]);
 
   // Derive nodes and edges from canvas state and memoize to keep stable references
@@ -246,18 +262,22 @@ export const useCanvasScene = ({
         );
       }
       setIsLoading(true);
-      // Reset state immediately to avoid showing stale data from previous project
-      setCanvasState({
-        elements: [],
-        connections: [],
-        selectedElements: [],
-        lifecyclePhase: LifecyclePhase.DESIGN,
-      });
 
       if (import.meta.env.DEV) {
         console.log('[useCanvasScene] Calling persistence.loadCanvas()...');
       }
-      let loadedState = await persistence.loadCanvas();
+      let loadedState: CanvasState | null = null;
+      if (typeof (persistence as unknown as { loadCanvas?: () => Promise<CanvasState | null> }).loadCanvas === 'function') {
+        loadedState =
+          (await (
+            persistence as unknown as {
+              loadCanvas: () => Promise<CanvasState | null>;
+            }
+          ).loadCanvas()) ?? null;
+      } else if (typeof persistence.load === 'function') {
+        const snapshot = await persistence.load(projectId, canvasId);
+        loadedState = snapshot?.data ?? null;
+      }
       let loadedFromLegacy = false;
 
       if (import.meta.env.DEV) {
@@ -281,7 +301,21 @@ export const useCanvasScene = ({
           loadedState = migratedState;
           loadedFromLegacy = true;
           try {
-            await persistence.saveCanvas(loadedState);
+            if (
+              typeof (
+                persistence as unknown as {
+                  saveCanvas?: (state: CanvasState) => Promise<void>;
+                }
+              ).saveCanvas === 'function'
+            ) {
+              await (
+                persistence as unknown as {
+                  saveCanvas: (state: CanvasState) => Promise<void>;
+                }
+              ).saveCanvas(loadedState);
+            } else {
+              await persistence.save(projectId, canvasId, loadedState);
+            }
           } catch (e) {
             console.warn('Failed to persist legacy canvas state', e);
           }
@@ -305,7 +339,12 @@ export const useCanvasScene = ({
         console.warn(
           '[useCanvasScene] No canvas state found - showing empty canvas'
         );
-        setNotification({ type: 'info', message: 'New canvas created' });
+        setCanvasState((prev) => ({
+          ...prev,
+          lifecyclePhase: prev.lifecyclePhase ?? ('DESIGN' as LifecyclePhase),
+          selectedElements: prev.selectedElements ?? [],
+        }));
+        setNotification({ type: 'info', message: 'Using in-memory canvas state' });
       }
 
       if (isE2E) {
@@ -710,7 +749,9 @@ export const useCanvasScene = ({
     // Call fitView once on initialization to fit all nodes in view
     // This avoids the infinite loop caused by the fitView prop
     setTimeout(() => {
-      instance.fitView({ padding: 0.2 });
+      if (typeof instance.fitView === 'function') {
+        instance.fitView({ padding: 0.2 });
+      }
     }, 0);
   }, []);
 

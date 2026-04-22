@@ -2,16 +2,21 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme/provider';
 
-import { ThemeProvider } from '../../../theme/ThemeProvider';
-import { GateWidget, type GateStatus } from './GateWidget';
-import { StatusBadge } from './StatusBadge';
+import { ThemeProvider as AppThemeProvider } from '../../../../components/theme/ThemeProvider';
+import { GateWidget, type GateStatus } from '../GateWidget';
+import { StatusBadge } from '../StatusBadge';
 
 expect.extend(toHaveNoViolations);
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider>{component}</ThemeProvider>);
+  return render(
+    <PlatformThemeProvider defaultTheme="light">
+      <AppThemeProvider defaultMode="light">{component}</AppThemeProvider>
+    </PlatformThemeProvider>
+  );
 };
 
 const mockGates: GateStatus[] = [
@@ -138,7 +143,7 @@ describe('Status Components Accessibility', () => {
     });
 
     it('should not have accessibility violations with refresh functionality', async () => {
-      const mockRefresh = jest.fn();
+      const mockRefresh = vi.fn();
       const { container } = renderWithTheme(
         <GateWidget gates={mockGates} showRefresh onRefresh={mockRefresh} />
       );

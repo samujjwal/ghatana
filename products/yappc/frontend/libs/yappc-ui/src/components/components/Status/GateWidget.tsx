@@ -175,18 +175,16 @@ const GateItemComponent: React.FC<{
         <Tooltip title={`${gate.name} - ${gate.category}`} arrow>
           {wrapForTooltip(
             <CategoryIcon
-              role="img"
               aria-hidden={true}
               className="size-4"
               style={{
                 color: categoryConfig[gate.category]?.color || undefined,
               }}
             />,
-            // The Tooltip will sometimes add aria-label to the wrapper; provide role='img' so
-            // aria-label is valid on the wrapper element for non-interactive decorative icons.
             {
               'aria-describedby': `gate-${gate.id}-category-tooltip`,
               role: 'img',
+              'aria-label': `${gate.name} category`,
             }
           )}
         </Tooltip>
@@ -205,6 +203,7 @@ const GateItemComponent: React.FC<{
       <Box className="flex items-center gap-2 flex-1">
         <CategoryIcon
           role="img"
+          aria-label={`${gate.name} category`}
           aria-hidden={true}
           className="size-[18px]"
           style={{ color: categoryConfig[gate.category]?.color || undefined }}

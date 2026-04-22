@@ -65,6 +65,22 @@ function getUnknownArray(value: unknown): unknown[] {
     return Array.isArray(value) ? value : [];
 }
 
+function getSafeLocalStorage(): Storage | null {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return null;
+    }
+
+    if (
+        typeof localStorage.getItem !== 'function' ||
+        typeof localStorage.setItem !== 'function' ||
+        typeof localStorage.removeItem !== 'function'
+    ) {
+        return null;
+    }
+
+    return localStorage;
+}
+
 /**
  * Canvas snapshot with version metadata
  */
@@ -244,9 +260,10 @@ export class CanvasPersistence {
      * Migrate legacy localStorage state
      */
     public async migrateLegacyState(): Promise<CanvasState | null> {
-        if (typeof window === 'undefined') return null;
+        const storage = getSafeLocalStorage();
+        if (!storage) return null;
 
-        const legacyRaw = localStorage.getItem('canvas-state');
+        const legacyRaw = storage.getItem('canvas-state');
         if (!legacyRaw) return null;
 
         try {
@@ -333,7 +350,7 @@ export class CanvasPersistence {
                 history: legacy.history,
             };
 
-            localStorage.removeItem('canvas-state');
+            storage.removeItem('canvas-state');
             return loadedState;
         } catch (e) {
             logger.warn('Failed to parse legacy canvas-state', 'canvas-persistence', {
@@ -397,15 +414,18 @@ export class CanvasPersistence {
 
         // First check for AI-generated canvas data with old key format
         const legacyAIKey = `canvas:${projectId}:${canvasId}`;
-        const legacyAIData = typeof window !== 'undefined' ? localStorage.getItem(legacyAIKey) : null;
+        const storage = getSafeLocalStorage();
+        const legacyAIData = storage ? storage.getItem(legacyAIKey) : null;
 
         if (legacyAIData) {
             try {
                 const snapshot = JSON.parse(legacyAIData);
                 // Migrate to new key format
                 const newKey = `yappc-canvas:${projectId}:${canvasId}`;
-                localStorage.setItem(newKey, legacyAIData);
-                localStorage.removeItem(legacyAIKey);
+                if (storage) {
+                    storage.setItem(newKey, legacyAIData);
+                    storage.removeItem(legacyAIKey);
+                }
                 logger.info('Migrated AI-generated canvas', 'canvas-persistence', { from: legacyAIKey, to: newKey });
                 return snapshot;
             } catch (e) {
@@ -444,7 +464,8 @@ export class CanvasPersistence {
 
         switch (this.config.storage) {
             case 'localStorage': {
-                const stored = localStorage.getItem(key);
+                const storage = getSafeLocalStorage();
+                const stored = storage ? storage.getItem(key) : null;
                 return stored ? JSON.parse(stored) : [];
             }
             case 'indexedDB': {
@@ -553,7 +574,8 @@ export class CanvasPersistence {
      */
     public async getVersionHistory(projectId: string, canvasId: string): Promise<CanvasSnapshot[]> {
         const key = `yappc-canvas:${projectId}:${canvasId}:history`;
-        const historyJson = localStorage.getItem(key);
+        const storage = getSafeLocalStorage();
+        const historyJson = storage ? storage.getItem(key) : null;
         if (!historyJson) return [];
 
         const history = JSON.parse(historyJson);
@@ -577,11 +599,12 @@ export class CanvasPersistence {
         this.snapshots.delete(snapshotId);
         if (snapshot) {
             const key = `yappc-canvas:${snapshot.projectId}:${snapshot.canvasId}:history`;
-            const historyJson = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+            const storage = getSafeLocalStorage();
+            const historyJson = storage ? storage.getItem(key) : null;
             if (historyJson) {
                 const history = JSON.parse(historyJson) as CanvasSnapshot[];
                 const updated = history.filter(s => s.id !== snapshotId);
-                localStorage.setItem(key, JSON.stringify(updated));
+                storage?.setItem(key, JSON.stringify(updated));
             }
         }
     }
@@ -719,16 +742,21 @@ export class CanvasPersistence {
         canvasId: string,
         snapshot: CanvasSnapshot
     ): Promise<void> {
+        const storage = getSafeLocalStorage();
+        if (!storage) {
+            return;
+        }
+
         const key = `yappc-canvas:${projectId}:${canvasId}`;
         const historyKey = `${key}:history`;
 
         // Save current snapshot
-        localStorage.setItem(key, JSON.stringify(snapshot));
+        storage.setItem(key, JSON.stringify(snapshot));
 
         // Save to history
         const history = await this.getHistory(projectId, canvasId);
         history.unshift(snapshot);
-        localStorage.setItem(historyKey, JSON.stringify(history));
+        storage.setItem(historyKey, JSON.stringify(history));
     }
 
     private async loadFromLocalStorage(
@@ -736,7 +764,8 @@ export class CanvasPersistence {
         canvasId: string
     ): Promise<CanvasSnapshot | null> {
         const key = `yappc-canvas:${projectId}:${canvasId}`;
-        const stored = localStorage.getItem(key);
+        const storage = getSafeLocalStorage();
+        const stored = storage ? storage.getItem(key) : null;
         return stored ? JSON.parse(stored) : null;
     }
 
@@ -838,7 +867,8 @@ export class CanvasPersistence {
         if (history.length > maxSnapshots) {
             const pruned = history.slice(0, maxSnapshots);
             const key = `yappc-canvas:${projectId}:${canvasId}:history`;
-            localStorage.setItem(key, JSON.stringify(pruned));
+            const storage = getSafeLocalStorage();
+            storage?.setItem(key, JSON.stringify(pruned));
         }
     }
 

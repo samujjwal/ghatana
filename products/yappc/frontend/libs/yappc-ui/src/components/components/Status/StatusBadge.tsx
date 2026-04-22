@@ -67,7 +67,7 @@ export interface StatusBadgeProps extends Omit<
   animated?: boolean;
 
   /** Size of the badge */
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'sm' | 'md' | 'lg';
 }
 
 const statusConfig = {
@@ -166,6 +166,14 @@ const sizeClasses: Record<string, string> = {
   large: 'h-7 text-[0.8125rem] px-2.5 [&_svg]:size-[18px]',
 };
 
+function normalizeSize(
+  input: StatusBadgeProps['size']
+): 'small' | 'medium' | 'large' {
+  if (input === 'sm' || input === 'small') return 'small';
+  if (input === 'lg' || input === 'large') return 'large';
+  return 'medium';
+}
+
 export const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
   (
     {
@@ -202,6 +210,7 @@ export const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
     // Generate default label if not provided
     const displayLabel = label || config.defaultLabel;
 
+    const normalizedSize = normalizeSize(size);
     const variantStyles = getVariantStyles(
       variant,
       config.color,
@@ -210,7 +219,9 @@ export const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
     );
     const chipClassName = [
       'min-w-0 font-medium transition-all duration-200',
-      sizeClasses[size] || sizeClasses.medium,
+      sizeClasses[normalizedSize] || sizeClasses.medium,
+      normalizedSize === 'small' ? 'MuiChip-sizeSmall' : 'MuiChip-sizeMedium',
+      normalizedSize === 'large' ? 'status-badge-large' : '',
       'hover:shadow focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2',
       animated && (status === 'running' || status === 'pending')
         ? 'animate-pulse'
@@ -226,7 +237,9 @@ export const StatusBadge = React.forwardRef<HTMLDivElement, StatusBadgeProps>(
         label={displayLabel}
         icon={showIcon ? <IconComponent aria-hidden={true} /> : undefined}
         size={
-          size === 'large' ? 'medium' : (size as 'small' | 'medium' | undefined)
+          normalizedSize === 'large'
+            ? 'medium'
+            : (normalizedSize as 'small' | 'medium' | undefined)
         }
         className={chipClassName}
         style={variantStyles}

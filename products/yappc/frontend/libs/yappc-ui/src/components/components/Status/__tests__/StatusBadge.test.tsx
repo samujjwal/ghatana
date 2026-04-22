@@ -2,12 +2,17 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { ThemeProvider as PlatformThemeProvider } from '@ghatana/theme/provider';
 
-import { ThemeProvider } from '../../../theme/ThemeProvider';
-import { StatusBadge } from './StatusBadge';
+import { ThemeProvider as AppThemeProvider } from '../../../../components/theme/ThemeProvider';
+import { StatusBadge } from '../StatusBadge';
 
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider>{component}</ThemeProvider>);
+  return render(
+    <PlatformThemeProvider defaultTheme="light">
+      <AppThemeProvider defaultMode="light">{component}</AppThemeProvider>
+    </PlatformThemeProvider>
+  );
 };
 
 describe('StatusBadge', () => {
