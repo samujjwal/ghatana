@@ -27,8 +27,6 @@ import type {
 } from '../../model/types';
 import type {
   ResidualIsland,
-  ResidualIslandKind,
-  RegenerationStrategy,
 } from '../../residual/types';
 import type {
   ExtractionResult,
@@ -422,7 +420,7 @@ function extractJsxUsage(node: ts.Node): string[] {
 // Accessibility Extraction
 // ============================================================================
 
-function extractAccessibility(node: ts.Node, sourceFile: ts.SourceFile): AccessibilityMetadata | undefined {
+function extractAccessibility(node: ts.Node, _sourceFile: ts.SourceFile): AccessibilityMetadata | undefined {
   let ariaRole: string | undefined;
   let keyboardNavigation = false;
   let focusable = false;
@@ -462,7 +460,7 @@ function extractAccessibility(node: ts.Node, sourceFile: ts.SourceFile): Accessi
 // Component Name Extraction
 // ============================================================================
 
-function getComponentName(node: ts.Node, sourceFile: ts.SourceFile): string {
+function getComponentName(node: ts.Node, _sourceFile: ts.SourceFile): string {
   if (ts.isFunctionDeclaration(node) && node.name) {
     return node.name.text;
   }

@@ -7,9 +7,6 @@ import {
   type ArtifactKind,
   type ArtifactLanguage,
   type ArtifactFramework,
-  ArtifactKindSchema,
-  ArtifactLanguageSchema,
-  ArtifactFrameworkSchema,
   type ExtractorEligibility,
   type ImportExportSummary,
 } from './types';

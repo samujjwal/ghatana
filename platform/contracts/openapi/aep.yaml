@@ -159,8 +159,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/DeepHealthResponse'
 
   /metrics/slo:
     get:
@@ -2089,7 +2088,7 @@ components:
 
   schemas:
     # ---------- Health ----------
-    HealthResponse:
+    DeepHealthResponse:
       type: object
       properties:
         status:
@@ -2099,14 +2098,14 @@ components:
           type: string
           enum: [deep]
         version:
+          type: string
         timestamp:
           type: string
           format: date-time
-        service:
         durability:
           $ref: '#/components/schemas/RuntimeDurabilitySummary'
-          type: string
-
+        components:
+          type: object
           additionalProperties:
             type: string
 
@@ -2231,6 +2230,19 @@ components:
             timestamp:
               type: string
               format: date-time
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        service:
+          type: string
+
+    StatusResponse:
       type: object
       properties:
         status:

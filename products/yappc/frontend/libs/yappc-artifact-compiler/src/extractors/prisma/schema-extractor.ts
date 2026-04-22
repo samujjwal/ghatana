@@ -29,7 +29,7 @@ export interface ExtractedPrismaModel {
   }>;
 }
 
-export function parsePrismaSchema(content: string, filePath: string): ExtractedPrismaModel[] {
+export function parsePrismaSchema(content: string, _filePath: string): ExtractedPrismaModel[] {
   const models: ExtractedPrismaModel[] = [];
   const lines = content.split('\n');
 
@@ -42,10 +42,9 @@ export function parsePrismaSchema(content: string, filePath: string): ExtractedP
   } | null = null;
 
   let inModel = false;
-  let inBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
+    const line = lines[i]!.trim();
     const lineNum = i + 1;
 
     // Skip comments and empty lines
@@ -65,7 +64,6 @@ export function parsePrismaSchema(content: string, filePath: string): ExtractedP
           unsupportedFeatures: [],
         };
         inModel = true;
-        inBlock = true;
       }
       continue;
     }
@@ -77,18 +75,13 @@ export function parsePrismaSchema(content: string, filePath: string): ExtractedP
       }
       currentModel = null;
       inModel = false;
-      inBlock = false;
       continue;
     }
 
-    if (!inModel || !currentModel) {
-      console.error('DEBUG: skipping, inModel=', inModel, 'currentModel=', currentModel);
-      continue;
-    }
+    if (!inModel || !currentModel) continue;
 
     // Field definition
-    const fieldMatch = line.match(/^(\w+)\s+(\w+(\?)?(\[\])?)(\s+@id)?(\s+@unique)?(\s+@default\(.+\))?/);
-    console.error('DEBUG: fieldMatch result for line', line, ':', fieldMatch !== null);
+    const fieldMatch = line.match(new RegExp('^(\\w+)\\s+(\\w+(\\?)?(\\[\\])?)(\\s+@id)?(\\s+@unique)?(\\s+@default\\(.+\\))?'));
     if (fieldMatch && fieldMatch[1] !== undefined && fieldMatch[2] !== undefined) {
       const name = fieldMatch[1];
       const typeStr = fieldMatch[2];
@@ -96,17 +89,15 @@ export function parsePrismaSchema(content: string, filePath: string): ExtractedP
       const isArray = !!fieldMatch[4];
       const isPrimaryKey = !!fieldMatch[5];
       const isUnique = !!fieldMatch[6];
-      const defaultMatch = line.match(/@default\((.+)\)/);
+      const defaultMatch = line.match(new RegExp('@default\\((.+)\\)'));
       const defaultValue = defaultMatch && defaultMatch[1] !== undefined ? parseDefaultValue(defaultMatch[1]) : undefined;
-
-      console.error('DEBUG: fieldMatch', { name, typeStr, isOptional, isArray, isRelation: !isScalarType(typeStr.replace(/\?$/, '').replace(/\[\]$/, '')), line });
 
       // Check if this is a relation field (type is another model name)
       const isRelation = typeStr && !isScalarType(typeStr.replace(/\?$/, '').replace(/\[\]$/, ''));
 
       if (isRelation) {
         const targetModel = typeStr.replace(/\?$/, '').replace(/\[\]$/, '');
-        const relationAttrs = line.match(/@relation\([^)]*\)/);
+        const relationAttrs = line.match(new RegExp('@relation\\([^]*\\)'));
         let kind: EntityRelation['kind'] = 'many-to-one';
         if (isArray) kind = 'one-to-many';
         if (isOptional) kind = 'many-to-one';

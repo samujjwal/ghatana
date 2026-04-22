@@ -1,4 +1,4 @@
-# @ghatana/artifact-compiler
+# @yappc/artifact-compiler
 
 Bidirectional artifact-to-model pipeline for Ghatana. Decompiles arbitrary codebases into governed product models and enables round-trip code generation.
 
@@ -53,8 +53,8 @@ regeneration and re-import both attach provenance, confidence, and residual loss
 ## Usage
 
 ```typescript
-import { scanRepository } from '@ghatana/artifact-compiler/inventory';
-import { extractComponentsFromSource } from '@ghatana/artifact-compiler/extractors';
+import { scanRepository } from '@yappc/artifact-compiler/inventory';
+import { extractComponentsFromSource } from '@yappc/artifact-compiler/extractors';
 
 // Scan repository
 const inventory = await scanRepository({ rootPath: '/path/to/repo' });

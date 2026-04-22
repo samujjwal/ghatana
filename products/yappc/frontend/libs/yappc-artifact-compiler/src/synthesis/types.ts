@@ -4,7 +4,7 @@
  * Synthesis converts ArtifactGraph nodes into SemanticProductModel elements.
  */
 
-import type { ArtifactGraph, GraphNode, GraphEdge } from '../graph/types';
+import type { ArtifactGraph, GraphNode } from '../graph/types';
 import type { SemanticModelElement } from '../model/types';
 import type { ResidualIsland } from '../residual/types';
 

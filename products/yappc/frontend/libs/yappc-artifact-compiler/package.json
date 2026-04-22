@@ -1,0 +1,89 @@
+{
+  "name": "@yappc/artifact-compiler",
+  "version": "1.0.0",
+  "description": "YAPPC Artifact Compiler - Decompilation and reverse engineering of source code into semantic product models",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./inventory": {
+      "import": "./dist/inventory/index.js",
+      "types": "./dist/inventory/index.d.ts"
+    },
+    "./graph": {
+      "import": "./dist/graph/index.js",
+      "types": "./dist/graph/index.d.ts"
+    },
+    "./model": {
+      "import": "./dist/model/index.js",
+      "types": "./dist/model/index.d.ts"
+    },
+    "./extractors": {
+      "import": "./dist/extractors/index.js",
+      "types": "./dist/extractors/index.d.ts"
+    },
+    "./provenance": {
+      "import": "./dist/provenance/index.js",
+      "types": "./dist/provenance/index.d.ts"
+    },
+    "./residual": {
+      "import": "./dist/residual/index.js",
+      "types": "./dist/residual/index.d.ts"
+    },
+    "./merge": {
+      "import": "./dist/merge/index.js",
+      "types": "./dist/merge/index.d.ts"
+    },
+    "./synthesis": {
+      "import": "./dist/synthesis/index.js",
+      "types": "./dist/synthesis/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6",
+    "nanoid": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0"
+  },
+  "peerDependencies": {
+    "typescript": "^6.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghatana/ghatana.git",
+    "directory": "products/yappc/frontend/libs/yappc-artifact-compiler"
+  },
+  "keywords": [
+    "yappc",
+    "artifact-compiler",
+    "decompiler",
+    "reverse-engineering",
+    "code-extraction",
+    "semantic-model"
+  ],
+  "author": "Ghatana AI Platform",
+  "license": "Apache-2.0"
+}
