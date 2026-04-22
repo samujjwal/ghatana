@@ -52,7 +52,7 @@ public final class PiiRedactor {
 
     // Phone pattern: various formats
     private static final Pattern PHONE_PATTERN = Pattern.compile(
-        "\\b(?:\\+?1[-.\\s]?)?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b"
+        "(?<!\\d)(?:\\+?\\d{1,3}[\\s.-]?)?(?:\\(\\d{3}\\)|\\d{3})[\\s.-]\\d{3}[\\s.-]\\d{4}(?!\\d)"
     );
 
     // Credit card pattern: 13-19 digits, may have spaces or dashes
@@ -72,7 +72,17 @@ public final class PiiRedactor {
 
     // API key/token pattern: common patterns like "key=...", "token=...", "Bearer ..."
     private static final Pattern API_KEY_PATTERN = Pattern.compile(
-        "(?i)(key|token|api[_-]?key|secret|password|passwd|pwd)[\\s]*[=:][\\s]*([^\\s&]+)"
+        "(?i)\\\"?(key|token|api[_-]?key|secret|password|passwd|pwd)\\\"?[\\s]*[=:][\\s]*\\\"?([^\\s\\\",&}]+)\\\"?"
+    );
+
+    // Bearer token header values
+    private static final Pattern BEARER_TOKEN_PATTERN = Pattern.compile(
+        "(?i)\\bBearer\\s+[^\\s,;]+"
+    );
+
+    // URI credentials, e.g. protocol://user:password@host
+    private static final Pattern URI_CREDENTIAL_PATTERN = Pattern.compile(
+        "(?i)(://[^:@/\\s]+:)([^@/\\s]+)(@)"
     );
 
     // UUID pattern
@@ -191,7 +201,9 @@ public final class PiiRedactor {
         if (input == null) {
             return null;
         }
-        return API_KEY_PATTERN.matcher(input).replaceAll("$1=" + REDACTION_MASK);
+        String result = API_KEY_PATTERN.matcher(input).replaceAll("$1=" + REDACTION_MASK);
+        result = BEARER_TOKEN_PATTERN.matcher(result).replaceAll("token=" + REDACTION_MASK);
+        return URI_CREDENTIAL_PATTERN.matcher(result).replaceAll("$1password=" + REDACTION_MASK + "$3");
     }
 
     /**

@@ -71,8 +71,39 @@ dependencies {
 }
 
 tasks.test {
-    // useJUnitPlatform() already applied by java-module; keep maxParallelForks override
-    maxParallelForks = 1
+    // useJUnitPlatform() already applied by java-module; increase parallelism for faster test execution
+    maxParallelForks = 4
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                minimum = "0.50".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 spotbugs {

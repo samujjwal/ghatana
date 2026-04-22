@@ -38,7 +38,7 @@ interface BaseCardProps {
  * </BaseCard>
  * ```
  */
-export const BaseCard: React.FC<BaseCardProps> = ({
+export const BaseCard: React.FC<BaseCardProps> = React.memo(({
   title,
   subtitle,
   icon,
@@ -63,6 +63,6 @@ export const BaseCard: React.FC<BaseCardProps> = ({
     )}
     {children}
   </div>
-);
+));
 
 export default BaseCard;

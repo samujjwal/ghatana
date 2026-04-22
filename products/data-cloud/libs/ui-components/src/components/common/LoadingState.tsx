@@ -31,7 +31,7 @@ interface LoadingStateProps {
  * <LoadingState message="Loading collections..." />
  * ```
  */
-export const LoadingState: React.FC<LoadingStateProps> = ({
+export const LoadingState: React.FC<LoadingStateProps> = React.memo(({
   message = 'Loading...',
   className = '',
   size = 'md',
@@ -45,6 +45,6 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
     <Spinner size={size} aria-hidden="true" />
     {message && <span className={cn('ml-3', textStyles.muted)}>{message}</span>}
   </div>
-);
+));
 
 export default LoadingState;

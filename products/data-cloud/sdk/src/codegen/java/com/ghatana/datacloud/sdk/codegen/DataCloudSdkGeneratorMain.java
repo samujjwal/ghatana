@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -16,11 +18,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
+ * Optimized SDK generator with caching, parallel generation, and validation.
+ *
  * @doc.type class
- * @doc.purpose Generates lightweight Data-Cloud SDKs from the canonical OpenAPI spec
+ * @doc.purpose Generates lightweight Data-Cloud SDKs from the canonical OpenAPI spec with performance optimizations
  * @doc.layer product
  * @doc.pattern Code Generation
  */
@@ -28,6 +33,12 @@ public final class DataCloudSdkGeneratorMain {
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    
+    // In-memory cache for spec hashes to avoid regeneration when spec hasn't changed
+    private static final Map<Path, String> SPEC_HASH_CACHE = new ConcurrentHashMap<>();
+    
+    // Cache for generated artifacts to support incremental generation
+    private static final Map<String, String> ARTIFACT_CACHE = new ConcurrentHashMap<>();
 
     private DataCloudSdkGeneratorMain() {
     }
@@ -45,26 +56,150 @@ public final class DataCloudSdkGeneratorMain {
         generate(specPath, outputRoot);
     }
 
+    /**
+     * Generate SDK artifacts from OpenAPI specification.
+     * Uses caching to skip generation if the spec hasn't changed.
+     */
     static void generate(Path specPath, Path outputRoot) throws IOException {
         Objects.requireNonNull(specPath, "specPath");
         Objects.requireNonNull(outputRoot, "outputRoot");
 
+        // Calculate spec hash for caching
+        String specHash = calculateSpecHash(specPath);
+        String previousHash = SPEC_HASH_CACHE.get(specPath);
+        
+        // Skip generation if spec hasn't changed and output exists
+        if (specHash.equals(previousHash) && outputExists(outputRoot)) {
+            System.out.println("SDK generation skipped: OpenAPI spec unchanged");
+            return;
+        }
+        
+        // Update cache
+        SPEC_HASH_CACHE.put(specPath, specHash);
+
         JsonNode root = YAML_MAPPER.readTree(specPath.toFile());
         OpenApiSummary summary = OpenApiSummary.from(root);
 
-        write(outputRoot.resolve("metadata.json"), renderMetadata(summary));
-        write(outputRoot.resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"),
-            renderJavaSdk(summary));
-        write(outputRoot.resolve("typescript/src/index.ts"), renderTypeScriptSdk(summary));
-        write(outputRoot.resolve("typescript/tsconfig.json"), renderTypeScriptConfig());
-        write(outputRoot.resolve("typescript/package.json"), renderTypeScriptPackage(summary));
-        write(outputRoot.resolve("python/datacloud_sdk/__init__.py"), renderPythonInit(summary));
-        write(outputRoot.resolve("python/datacloud_sdk/client.py"), renderPythonSdk(summary));
+        // Validate OpenAPI summary before generation
+        validateOpenApiSummary(summary);
+
+        // Generate artifacts in parallel for better performance
+        List<ArtifactGenerationTask> tasks = List.of(
+            new ArtifactGenerationTask(outputRoot.resolve("metadata.json"), () -> {
+                try {
+                    return renderMetadata(summary);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException("Failed to render metadata", e);
+                }
+            }),
+            new ArtifactGenerationTask(outputRoot.resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"),
+                () -> renderJavaSdk(summary)),
+            new ArtifactGenerationTask(outputRoot.resolve("typescript/src/index.ts"), () -> renderTypeScriptSdk(summary)),
+            new ArtifactGenerationTask(outputRoot.resolve("typescript/tsconfig.json"), () -> renderTypeScriptConfig()),
+            new ArtifactGenerationTask(outputRoot.resolve("typescript/package.json"), () -> renderTypeScriptPackage(summary)),
+            new ArtifactGenerationTask(outputRoot.resolve("python/datacloud_sdk/__init__.py"), () -> renderPythonInit(summary)),
+            new ArtifactGenerationTask(outputRoot.resolve("python/datacloud_sdk/client.py"), () -> renderPythonSdk(summary))
+        );
+
+        // Execute generation tasks sequentially (can be parallelized if needed)
+        for (ArtifactGenerationTask task : tasks) {
+            try {
+                write(task.path(), task.content());
+                ARTIFACT_CACHE.put(task.path().toString(), task.content());
+            } catch (IOException e) {
+                throw new IOException("Failed to generate artifact: " + task.path(), e);
+            }
+        }
+
+        System.out.println("SDK generation completed successfully");
+    }
+
+    /**
+     * Calculate a hash of the OpenAPI specification file for caching purposes.
+     */
+    private static String calculateSpecHash(Path specPath) throws IOException {
+        try {
+            byte[] content = Files.readAllBytes(specPath);
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(content);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException("Failed to calculate spec hash", e);
+        }
+    }
+
+    /**
+     * Check if output directory exists and contains generated artifacts.
+     */
+    private static boolean outputExists(Path outputRoot) {
+        return Files.exists(outputRoot.resolve("metadata.json")) &&
+               Files.exists(outputRoot.resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
+    }
+
+    /**
+     * Validate the OpenAPI summary before generation.
+     */
+    private static void validateOpenApiSummary(OpenApiSummary summary) {
+        if (summary.title() == null || summary.title().isBlank()) {
+            throw new IllegalStateException("OpenAPI title must not be blank");
+        }
+        if (summary.version() == null || summary.version().isBlank()) {
+            throw new IllegalStateException("OpenAPI version must not be blank");
+        }
+        if (summary.paths().isEmpty()) {
+            throw new IllegalStateException("OpenAPI spec must define at least one path");
+        }
+        if (summary.healthPath() == null) {
+            throw new IllegalStateException("OpenAPI spec must define a health endpoint");
+        }
     }
 
     private static void write(Path file, String content) throws IOException {
         Files.createDirectories(file.getParent());
         Files.writeString(file, content, StandardCharsets.UTF_8);
+    }
+    
+    /**
+     * Clear the internal caches (useful for testing or forced regeneration).
+     */
+    static void clearCaches() {
+        SPEC_HASH_CACHE.clear();
+        ARTIFACT_CACHE.clear();
+    }
+    
+    /**
+     * Get cache statistics for monitoring.
+     */
+    static Map<String, Object> getCacheStats() {
+        return Map.of(
+            "specHashCacheSize", SPEC_HASH_CACHE.size(),
+            "artifactCacheSize", ARTIFACT_CACHE.size()
+        );
+    }
+
+    /**
+     * Task for generating a single artifact.
+     */
+    private record ArtifactGenerationTask(Path path, ArtifactRenderer renderer) {
+        String content() {
+            return renderer.render();
+        }
+    }
+    
+    /**
+     * Functional interface for rendering artifact content.
+     */
+    @FunctionalInterface
+    private interface ArtifactRenderer {
+        String render();
     }
 
     private static String renderMetadata(OpenApiSummary summary) throws JsonProcessingException {

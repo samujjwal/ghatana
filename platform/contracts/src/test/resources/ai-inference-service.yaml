@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: AI Inference Service API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Healthy
+  /ai/infer/embedding:
+    post:
+      operationId: generateEmbedding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddingRequest'
+      responses:
+        '200':
+          description: Embedding generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddingResponse'
+        '429':
+          description: Rate limited
+  /ai/infer/embeddings:
+    post:
+      operationId: generateBatchEmbeddings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchEmbeddingRequest'
+      responses:
+        '200':
+          description: Batch embeddings generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchEmbeddingResponse'
+  /ai/infer/completion:
+    post:
+      operationId: generateCompletion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletionRequest'
+      responses:
+        '200':
+          description: Completion generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletionResponse'
+        '429':
+          description: Rate limited
+  /ai/admin/status:
+    get:
+      operationId: adminStatus
+      responses:
+        '200':
+          description: Admin status
+components:
+  schemas:
+    EmbeddingRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        model:
+          type: string
+    EmbeddingResponse:
+      type: object
+      required:
+        - embedding
+      properties:
+        embedding:
+          type: array
+          items:
+            type: number
+    BatchEmbeddingRequest:
+      type: object
+      required:
+        - texts
+      properties:
+        texts:
+          type: array
+          items:
+            type: string
+    BatchEmbeddingResponse:
+      type: object
+      required:
+        - embeddings
+      properties:
+        embeddings:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+    CompletionRequest:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+        systemPrompt:
+          type: string
+        model:
+          type: string
+        temperature:
+          type: number
+        maxTokens:
+          type: integer
+        tenantId:
+          type: string
+    CompletionResponse:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+        tokensUsed:
+          type: integer
+        promptTokens:
+          type: integer
+        completionTokens:
+          type: integer
+        finishReason:
+          type: string
+          enum:
+            - stop
+            - length
+            - content_filter
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+

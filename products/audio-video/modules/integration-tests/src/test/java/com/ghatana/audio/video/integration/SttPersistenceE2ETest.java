@@ -8,19 +8,17 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.stt.grpc.PersistentSttGrpcService;
 import com.ghatana.media.AudioVideoLibrary;
 import io.grpc.ManagedChannel;
+import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.testing.GrpcCleanupRule;
 import com.ghatana.stt.core.grpc.proto.STTServiceGrpc;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -32,15 +30,13 @@ import static org.mockito.Mockito.*;
 @DisplayName("STT Persistence E2E Tests")
 class SttPersistenceE2ETest extends EventloopTestBase {
 
-    @RegisterExtension
-    static final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-
     private static final String TENANT_ID = "test-tenant";
     private static final UUID USER_ID = UUID.randomUUID();
 
     private AudioFileService audioFileService;
     private TranscriptionService transcriptionService;
     private SimpleMeterRegistry meterRegistry;
+    private Server server;
     private ManagedChannel channel;
     private STTServiceGrpc.STTServiceBlockingStub blockingStub;
 
@@ -60,20 +56,32 @@ class SttPersistenceE2ETest extends EventloopTestBase {
         PersistentSttGrpcService service = new PersistentSttGrpcService(
             library, audioFileService, transcriptionService, meterRegistry);
 
-        grpcCleanup.register(InProcessServerBuilder
+        server = InProcessServerBuilder
             .forName(serverName)
             .directExecutor()
             .addService(service)
             .build()
-            .start());
+            .start();
 
         // Create client channel
-        channel = grpcCleanup.register(InProcessChannelBuilder
+        channel = InProcessChannelBuilder
             .forName(serverName)
             .directExecutor()
-            .build());
+            .build();
 
         blockingStub = STTServiceGrpc.newBlockingStub(channel);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (channel != null) {
+            channel.shutdownNow();
+            channel.awaitTermination(5, TimeUnit.SECONDS);
+        }
+        if (server != null) {
+            server.shutdownNow();
+            server.awaitTermination(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test

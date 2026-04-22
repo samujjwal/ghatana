@@ -6,6 +6,7 @@ package com.ghatana.services.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.server.response.ErrorResponse;
+import io.activej.http.HttpHeader;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;

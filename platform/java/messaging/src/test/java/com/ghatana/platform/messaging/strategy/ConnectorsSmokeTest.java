@@ -195,7 +195,22 @@ class ConnectorsSmokeTest {
             assertThat(config.rabbitPort()).isEqualTo(5672);
             assertThat(config.virtualHost()).isEqualTo("/");
             assertThat(config.queueName()).isEqualTo("events");
+            assertThat(config.maxDeliveryAttempts()).isEqualTo(Integer.MAX_VALUE);
             assertThat(config.isTlsEnabled()).isFalse();
+        }
+
+        @Test
+        @DisplayName("Builder allows configuring max delivery attempts")
+        void buildsWithConfiguredMaxDeliveryAttempts() {
+            RabbitMQConfig config = RabbitMQConfig.builder()
+                .host("rabbitmq.internal")
+                .username("user")
+                .password("pass")
+                .queueName("events")
+                .maxDeliveryAttempts(2)
+                .build();
+
+            assertThat(config.maxDeliveryAttempts()).isEqualTo(2);
         }
     }
 

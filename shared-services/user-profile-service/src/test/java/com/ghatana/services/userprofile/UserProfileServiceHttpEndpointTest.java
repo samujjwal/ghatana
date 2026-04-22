@@ -41,7 +41,11 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         jwtProvider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 15 * 60 * 1000L);
-        validToken = jwtProvider.createToken("test-user", TEST_TENANT_ID, java.util.Map.of());
+        validToken = jwtProvider.createToken(
+            "test-user",
+            java.util.List.of("USER"),
+            java.util.Map.of("tenantId", TEST_TENANT_ID)
+        );
     }
 
     @AfterEach

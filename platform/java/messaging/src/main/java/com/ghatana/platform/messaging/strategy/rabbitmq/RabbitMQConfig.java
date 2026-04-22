@@ -26,6 +26,7 @@ public final class RabbitMQConfig extends ConnectorConfig {
     private final String password;
     private final String virtualHost;
     private final String queueName;
+    private final int maxDeliveryAttempts;
 
     private RabbitMQConfig(RabbitMQBuilder b) {
         super(b);
@@ -35,6 +36,7 @@ public final class RabbitMQConfig extends ConnectorConfig {
         this.password    = Objects.requireNonNull(b.password, "password");
         this.virtualHost = b.virtualHost;
         this.queueName   = Objects.requireNonNull(b.queueName, "queueName");
+        this.maxDeliveryAttempts = b.maxDeliveryAttempts;
     }
 
     public static RabbitMQBuilder builder() { return new RabbitMQBuilder(); }
@@ -45,6 +47,7 @@ public final class RabbitMQConfig extends ConnectorConfig {
     public String password()     { return password; }
     public String virtualHost()  { return virtualHost; }
     public String queueName()    { return queueName; }
+    public int maxDeliveryAttempts() { return maxDeliveryAttempts; }
 
     // ── Builder ──────────────────────────────────────────────────────────────
 
@@ -55,6 +58,7 @@ public final class RabbitMQConfig extends ConnectorConfig {
         private String password;
         private String virtualHost = "/";
         private String queueName;
+        private int maxDeliveryAttempts = Integer.MAX_VALUE;
 
         @Override protected RabbitMQBuilder self() { return this; }
 
@@ -64,6 +68,13 @@ public final class RabbitMQConfig extends ConnectorConfig {
         public RabbitMQBuilder password(String p)       { password = p; return this; }
         public RabbitMQBuilder virtualHost(String vh)   { virtualHost = vh; return this; }
         public RabbitMQBuilder queueName(String q)      { queueName = q; return this; }
+        public RabbitMQBuilder maxDeliveryAttempts(int attempts) {
+            if (attempts < 1) {
+                throw new IllegalArgumentException("maxDeliveryAttempts must be >= 1");
+            }
+            maxDeliveryAttempts = attempts;
+            return this;
+        }
 
         @Override public RabbitMQConfig build() { return new RabbitMQConfig(this); }
     }

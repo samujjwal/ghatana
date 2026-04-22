@@ -56,22 +56,29 @@ import static org.mockito.Mockito.lenient;
 @DisplayName("Transcription Messaging Integration Tests (AV-P0-04)")
 class TranscriptionMessagingIT extends EventloopTestBase {
 
+    private static final int MAX_DELIVERY_ATTEMPTS = 2;
+
     @Container
     static final RabbitMQContainer RABBIT = new RabbitMQContainer(
-            DockerImageName.parse("rabbitmq:3.13-management-alpine"))
-            .withVhost("/")
-            .withUser("guest", "guest");
+            DockerImageName.parse("rabbitmq:3.13-management-alpine"));
 
     @Mock
     private MetricsCollector metricsCollector;
 
     private TranscriptionJobProducer producer;
     private TranscriptionJobConsumer consumer;
+    private String queueName;
+    private String dlqName;
 
     @BeforeEach
     void setUp() throws Exception {
         lenient().doNothing().when(metricsCollector).incrementCounter(anyString(), any(String[].class));
         lenient().doNothing().when(metricsCollector).recordTimer(anyString(), anyLong(), any(String[].class));
+
+        String queueSuffix = UUID.randomUUID().toString();
+        queueName = "av.jobs." + queueSuffix;
+        dlqName = queueName + ".dlq";
+        String deadLetterExchange = "dlx." + queueSuffix;
 
         // Declare queues with DLQ wiring via direct AMQP connection
         ConnectionFactory factory = new ConnectionFactory();
@@ -82,13 +89,12 @@ class TranscriptionMessagingIT extends EventloopTestBase {
         factory.setVirtualHost("/");
         try (Connection conn = factory.newConnection();
              com.rabbitmq.client.Channel ch = conn.createChannel()) {
-            ch.exchangeDeclare("dlx", "direct", true);
-            ch.queueDeclare("av.jobs.dlq", true, false, false, java.util.Map.of());
-            ch.queueBind("av.jobs.dlq", "dlx", "av.jobs");
-            ch.queueDeclare("av.jobs", true, false, false, java.util.Map.of(
-                    "x-dead-letter-exchange", "dlx",
-                    "x-dead-letter-routing-key", "av.jobs",
-                    "x-max-delivery-count", 2
+            ch.exchangeDeclare(deadLetterExchange, "direct", true);
+            ch.queueDeclare(dlqName, true, false, false, java.util.Map.of());
+            ch.queueBind(dlqName, deadLetterExchange, queueName);
+            ch.queueDeclare(queueName, true, false, false, java.util.Map.of(
+                    "x-dead-letter-exchange", deadLetterExchange,
+                    "x-dead-letter-routing-key", queueName
             ));
         }
 
@@ -98,14 +104,15 @@ class TranscriptionMessagingIT extends EventloopTestBase {
                 .username("guest")
                 .password("guest")
                 .virtualHost("/")
-                .queueName("av.jobs")
+                .queueName(queueName)
+                .maxDeliveryAttempts(MAX_DELIVERY_ATTEMPTS)
                 .build();
 
-        producer = new TranscriptionJobProducer("av.jobs",
+        producer = new TranscriptionJobProducer(queueName,
                 new com.ghatana.platform.messaging.strategy.rabbitmq.RabbitMQProducerStrategy(config),
                 metricsCollector);
 
-        consumer = new TranscriptionJobConsumer("av.jobs",
+        consumer = new TranscriptionJobConsumer(queueName,
                 new RabbitMQConsumerStrategy(config),
                 metricsCollector);
     }
@@ -187,7 +194,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
     void shouldDeadLetterPoisonMessage() throws Exception {
         AtomicInteger deliveryCount = new AtomicInteger(0);
 
-        // Consumer always nacks → message eventually dead-lettered
+        // Consumer always fails → strategy retries up to MAX_DELIVERY_ATTEMPTS, then dead-letters
         consumer.setJobProcessor(job -> {
             deliveryCount.incrementAndGet();
             return Promise.ofException(new RuntimeException("always fails — DLQ test"));
@@ -206,7 +213,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
 
         Connection dlqConn = factory.newConnection();
         com.rabbitmq.client.Channel dlqChannel = dlqConn.createChannel();
-        dlqChannel.basicConsume("av.jobs.dlq", true,
+        dlqChannel.basicConsume(dlqName, true,
                 (tag, delivery) -> {
                     dlqMessages.add(new String(delivery.getBody(), StandardCharsets.UTF_8));
                     dlqLatch.countDown();
@@ -225,6 +232,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
         boolean receivedInDlq = dlqLatch.await(30, TimeUnit.SECONDS);
         assertThat(receivedInDlq).isTrue();
         assertThat(dlqMessages).hasSize(1);
+        assertThat(deliveryCount.get()).isEqualTo(MAX_DELIVERY_ATTEMPTS);
 
         dlqChannel.close();
         dlqConn.close();

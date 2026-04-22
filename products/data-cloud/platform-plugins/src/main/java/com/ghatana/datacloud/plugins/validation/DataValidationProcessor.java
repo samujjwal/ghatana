@@ -187,10 +187,13 @@ public class DataValidationProcessor {
     private static class BasicValidationStrategy implements ValidationStrategy {
         @Override
         public Promise<ValidationResult> validate(TenantContext tenant, EntityStore.Entity entity) {
+            List<ValidationError> errors = new java.util.ArrayList<>();
+            
             if (entity.data().isEmpty()) {
-                return Promise.of(ValidationResult.failed("Entity data cannot be empty"));
+                errors.add(new ValidationError("EMPTY_DATA", "Entity data cannot be empty", null));
             }
-            return Promise.of(ValidationResult.success());
+            
+            return Promise.of(errors.isEmpty() ? ValidationResult.success() : ValidationResult.failed(errors));
         }
 
         @Override
@@ -217,12 +220,25 @@ public class DataValidationProcessor {
                             errors.add(new ValidationError("MAX_LENGTH", rule.message(), rule.field()));
                         }
                     }
+                    case MIN_VALUE -> {
+                        if (value instanceof Number n && n.doubleValue() < ((Number) rule.value()).doubleValue()) {
+                            errors.add(new ValidationError("MIN_VALUE", rule.message(), rule.field()));
+                        }
+                    }
+                    case MAX_VALUE -> {
+                        if (value instanceof Number n && n.doubleValue() > ((Number) rule.value()).doubleValue()) {
+                            errors.add(new ValidationError("MAX_VALUE", rule.message(), rule.field()));
+                        }
+                    }
                     case PATTERN -> {
                         if (value instanceof String s && !s.matches((String) rule.value())) {
                             errors.add(new ValidationError("PATTERN", rule.message(), rule.field()));
                         }
                     }
-                    default -> {}
+                    case CUSTOM -> {
+                        // Custom validation would be handled by a custom strategy
+                        // For basic strategy, we skip custom rules
+                    }
                 }
             }
 
@@ -231,7 +247,33 @@ public class DataValidationProcessor {
 
         @Override
         public Promise<List<DetectedPattern>> detectPatterns(TenantContext tenant, EntityStore.Entity entity) {
-            return Promise.of(List.of());
+            List<DetectedPattern> patterns = new java.util.ArrayList<>();
+            
+            // Detect common data patterns
+            for (Map.Entry<String, Object> entry : entity.data().entrySet()) {
+                String field = entry.getKey();
+                Object value = entry.getValue();
+                
+                if (value instanceof String s) {
+                    // Email pattern detection
+                    if (s.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                        patterns.add(new DetectedPattern("email", "Email Address", 0.95, 
+                            Map.of("field", field, "value", s)));
+                    }
+                    // URL pattern detection
+                    if (s.matches("^https?://.*")) {
+                        patterns.add(new DetectedPattern("url", "URL", 0.90,
+                            Map.of("field", field, "value", s)));
+                    }
+                    // UUID pattern detection
+                    if (s.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")) {
+                        patterns.add(new DetectedPattern("uuid", "UUID", 0.98,
+                            Map.of("field", field, "value", s)));
+                    }
+                }
+            }
+            
+            return Promise.of(patterns);
         }
     }
 }

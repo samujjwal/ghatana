@@ -22,6 +22,11 @@ dependencies {
     implementation(libs.hibernate.core)
     implementation("org.apache.kafka:kafka-clients:3.8.0")
 
+    // EventValidator dependencies
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+    implementation("com.networknt:json-schema-validator:1.5.2")
+
     testImplementation(libs.bundles.testing.core)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

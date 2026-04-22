@@ -6,13 +6,17 @@ package com.ghatana.platform.messaging.strategy.rabbitmq;
 
 import com.ghatana.platform.messaging.AbstractResilientConnector;
 import com.ghatana.platform.messaging.strategy.QueueConsumerStrategy;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Delivery;
 import io.activej.promise.Promise;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -29,6 +33,8 @@ import java.util.function.Consumer;
  * @doc.pattern Strategy
  */
 public class RabbitMQConsumerStrategy extends AbstractResilientConnector implements QueueConsumerStrategy {
+
+    private static final String DELIVERY_ATTEMPT_HEADER = "x-ghatana-delivery-attempt";
 
     private final RabbitMQConfig config;
     private volatile Consumer<String> messageHandler;
@@ -82,14 +88,13 @@ public class RabbitMQConsumerStrategy extends AbstractResilientConnector impleme
                     channel.basicConsume(config.queueName(), false,
                         (consumerTag, delivery) -> {
                             long tag = delivery.getEnvelope().getDeliveryTag();
+                            String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
                             try {
-                                String body = new String(delivery.getBody(), StandardCharsets.UTF_8);
                                 messageHandler.accept(body);
                                 channel.basicAck(tag, false);
                             } catch (Exception e) {
                                 log.error("Error processing RabbitMQ message tag={}: {}", tag, e.getMessage(), e);
-                                // Nack with requeue so the message is retried
-                                channel.basicNack(tag, false, true);
+                                handleProcessingFailure(delivery, tag, body);
                             }
                         },
                         consumerTag -> log.warn("RabbitMQ consumer cancelled: {}", consumerTag)
@@ -132,5 +137,75 @@ public class RabbitMQConsumerStrategy extends AbstractResilientConnector impleme
         } catch (IOException passiveDeclareFailure) {
             channel.queueDeclare(queueName, true, false, false, null);
         }
+    }
+
+    private void handleProcessingFailure(Delivery delivery, long tag, String body) throws IOException {
+        int deliveryAttempt = resolveDeliveryAttempt(delivery);
+        if (deliveryAttempt >= config.maxDeliveryAttempts()) {
+            log.warn("Rejecting RabbitMQ message without requeue after {} attempts; queue={}",
+                deliveryAttempt, config.queueName());
+            channel.basicReject(tag, false);
+            return;
+        }
+
+        try {
+            republishForRetry(delivery, body, deliveryAttempt + 1);
+            channel.basicAck(tag, false);
+        } catch (IOException retryFailure) {
+            log.error("Failed to republish RabbitMQ message for retry; falling back to broker requeue", retryFailure);
+            channel.basicNack(tag, false, true);
+        }
+    }
+
+    private int resolveDeliveryAttempt(Delivery delivery) {
+        Map<String, Object> headers = delivery.getProperties().getHeaders();
+        if (headers == null) {
+            return 1;
+        }
+
+        Object rawAttempt = headers.get(DELIVERY_ATTEMPT_HEADER);
+        if (rawAttempt instanceof Number number) {
+            return Math.max(1, number.intValue());
+        }
+        if (rawAttempt instanceof String text) {
+            try {
+                return Math.max(1, Integer.parseInt(text));
+            } catch (NumberFormatException ignored) {
+                return 1;
+            }
+        }
+        return 1;
+    }
+
+    private void republishForRetry(Delivery delivery, String body, int nextDeliveryAttempt) throws IOException {
+        Map<String, Object> retryHeaders = new HashMap<>();
+        Map<String, Object> existingHeaders = delivery.getProperties().getHeaders();
+        if (existingHeaders != null) {
+            retryHeaders.putAll(existingHeaders);
+        }
+        retryHeaders.put(DELIVERY_ATTEMPT_HEADER, nextDeliveryAttempt);
+
+        AMQP.BasicProperties properties = delivery.getProperties();
+        AMQP.BasicProperties retryProperties = new AMQP.BasicProperties.Builder()
+            .contentType(properties.getContentType())
+            .contentEncoding(properties.getContentEncoding())
+            .headers(retryHeaders)
+            .deliveryMode(properties.getDeliveryMode())
+            .priority(properties.getPriority())
+            .correlationId(properties.getCorrelationId())
+            .replyTo(properties.getReplyTo())
+            .expiration(properties.getExpiration())
+            .messageId(properties.getMessageId())
+            .timestamp(properties.getTimestamp())
+            .type(properties.getType())
+            .userId(properties.getUserId())
+            .appId(properties.getAppId())
+            .clusterId(properties.getClusterId())
+            .build();
+
+        String routingKey = delivery.getEnvelope().getRoutingKey() != null
+            ? delivery.getEnvelope().getRoutingKey()
+            : config.queueName();
+        channel.basicPublish("", routingKey, retryProperties, body.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -40,9 +40,8 @@ tasks.register("checkYappcStructuralGovernance") {
     doLast {
         // Minimal validation: just check that settings.gradle.kts doesn't have obvious violations
         // Use System property to avoid project serialization with configuration cache
-        val userDir = System.getProperty("user.dir")
-        val settingsPath = "$userDir/settings.gradle.kts"
-        val settingsFile = File(settingsPath)
+        val settingsFile = File(project.projectDir, "settings.gradle.kts")
+        val settingsPath = settingsFile.absolutePath
 
         if (!settingsFile.exists()) {
             logger.warn("YAPPC settings.gradle.kts not found at $settingsPath, skipping governance check")

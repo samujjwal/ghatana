@@ -44,7 +44,7 @@ const variantToTone: Record<StatusVariant, 'success' | 'danger' | 'warning' | 'i
  * <StatusBadge status="Failed" variant="danger" />
  * ```
  */
-export const StatusBadge: React.FC<StatusBadgeProps> = ({
+export const StatusBadge: React.FC<StatusBadgeProps> = React.memo(({
   status,
   variant = 'neutral',
   className = ''
@@ -56,6 +56,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   >
     {status}
   </Badge>
-);
+));
 
 export default StatusBadge;

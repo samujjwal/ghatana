@@ -69,7 +69,7 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                minimum = "0.15".toBigDecimal()  // TODO: Raise back to 0.50 after adding more tests (currently at 15%)
+                minimum = "0.50".toBigDecimal()
             }
         }
     }
