@@ -20,6 +20,7 @@ import java.util.Map;
  * @doc.layer product
  * @doc.pattern Mapper
  */
+@SuppressWarnings("unchecked") // Unchecked conversions from Jackson deserialization; safe by design
 public class ConversationMapper {
 
     private final ObjectMapper objectMapper;

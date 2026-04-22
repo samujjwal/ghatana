@@ -1,23 +1,26 @@
 /**
- * Ambient Intelligence Bar Component
+ * Contextual Observability Bar Component (OBS-001)
  *
- * Bottom bar showing aggregated quality, cost, governance, learning, execution, and health metrics.
- * Provides passive notifications with click-to-expand functionality.
+ * Collapsible bottom bar showing quality, cost, governance, execution, and health
+ * metrics only when relevant. Starts collapsed by default; surfaces as a compact
+ * floating trigger until the user explicitly expands it. Unsupported placeholder
+ * metrics are filtered out to avoid ambient noise.
  *
  * Features:
- * - Always visible at bottom of screen
- * - Shows aggregated counts with color coding
+ * - Collapsed by default (persistent via localStorage)
+ * - Compact floating trigger with severity counts
+ * - Auto-expands when critical metrics appear (once per session)
  * - Click to expand inline panel (no page navigation)
- * - AI prioritizes what to show based on urgency
- * - Execution status for running pipelines
- * - System health indicators
+ * - Explicit close control for user dismissal
+ * - Unsupported boundary metrics are suppressed
  *
  * @doc.type component
- * @doc.purpose Passive ambient notifications bar
+ * @doc.purpose Contextual system status notifications bar (OBS-001)
  * @doc.layer frontend
+ * @doc.pattern Component
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   TrendingDown,
@@ -197,12 +200,86 @@ function DetailPanel({
   );
 }
 
+/** localStorage key for collapsed preference */
+const COLLAPSED_LS_KEY = 'ambient-intelligence-collapsed';
+
+/** Boundary summaries that are placeholder noise — suppressed in contextual mode */
+const UNSUPPORTED_PHRASES = [
+  'unavailable in the standalone launcher',
+  'summary unavailable',
+];
+
+function isUnsupportedMetric(metric: AmbientMetric): boolean {
+  return UNSUPPORTED_PHRASES.some((p) => metric.summary.toLowerCase().includes(p));
+}
+
+function readCollapsedPreference(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_LS_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+function writeCollapsedPreference(collapsed: boolean): void {
+  try {
+    localStorage.setItem(COLLAPSED_LS_KEY, String(collapsed));
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
- * Ambient Intelligence Bar Component
+ * Compact Floating Trigger — shown when the bar is collapsed and actionable
+ * metrics exist. Clicking expands the full bar.
+ */
+function CollapsedTrigger({
+  criticalCount,
+  warningCount,
+  onExpand,
+}: {
+  criticalCount: number;
+  warningCount: number;
+  onExpand: () => void;
+}) {
+  const total = criticalCount + warningCount;
+  if (total === 0) return null;
+
+  return (
+    <button
+      onClick={onExpand}
+      aria-label={`Expand observability bar. ${criticalCount} critical, ${warningCount} warning`}
+      className={cn(
+        'fixed bottom-4 right-4 z-50',
+        'flex items-center gap-2 px-3 py-2 rounded-full',
+        'shadow-lg border transition-all hover:scale-105',
+        criticalCount > 0
+          ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+          : 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+      )}
+    >
+      <Activity className="h-4 w-4" />
+      <span className="text-xs font-medium">
+        {criticalCount > 0 && (
+          <span className="text-red-600 dark:text-red-300 font-bold">{criticalCount}</span>
+        )}
+        {criticalCount > 0 && warningCount > 0 && (
+          <span className="mx-1 text-gray-400">|</span>
+        )}
+        {warningCount > 0 && (
+          <span className="text-amber-600 dark:text-amber-300 font-bold">{warningCount}</span>
+        )}
+      </span>
+      <ChevronUp className="h-3 w-3" />
+    </button>
+  );
+}
+
+/**
+ * Ambient Intelligence Bar Component — OBS-001 contextual mode
  */
 export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProps) {
   const {
-    metrics,
     qualityMetrics,
     costMetrics,
     governanceMetrics,
@@ -219,37 +296,60 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
   } = useAmbientIntelligence();
 
   const [expandedType, setExpandedType] = useState<AmbientMetricType | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(readCollapsedPreference);
+  const hasAutoExpanded = useRef(false);
+
+  // Auto-expand once per session when critical metrics appear and user hasn't
+  // explicitly interacted with the bar yet.
+  useEffect(() => {
+    if (criticalCount > 0 && isCollapsed && !hasAutoExpanded.current) {
+      hasAutoExpanded.current = true;
+      setIsCollapsed(false);
+      writeCollapsedPreference(false);
+    }
+    // hasAutoExpanded is a ref — identity never changes; included for lint completeness
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [criticalCount, isCollapsed]);
+
+  // Filter unsupported placeholder metrics to reduce ambient noise
+  const filterActionable = (list: AmbientMetric[]) => list.filter((m) => !isUnsupportedMetric(m));
+
+  const actionableQuality = filterActionable(qualityMetrics);
+  const actionableCost = filterActionable(costMetrics);
+  const actionableGovernance = filterActionable(governanceMetrics);
+  const actionableLearning = filterActionable(learningMetrics);
+  const actionableExecution = filterActionable(executionMetrics);
+  const actionableAlert = filterActionable(alertMetrics);
+  const actionableHealth = filterActionable(healthMetrics);
 
   // Group metrics by type and get the highest priority one per type
   const displayMetrics: AmbientMetric[] = [];
 
-  // Add one representative from each type with issues
-  if (qualityMetrics.length > 0) {
-    // Find the most severe one
-    const critical = qualityMetrics.find((m) => m.severity === 'critical');
-    displayMetrics.push(critical || qualityMetrics[0]);
+  if (actionableQuality.length > 0) {
+    const critical = actionableQuality.find((m) => m.severity === 'critical');
+    displayMetrics.push(critical || actionableQuality[0]);
   }
-  if (costMetrics.length > 0) {
-    displayMetrics.push(costMetrics[0]);
+  if (actionableCost.length > 0) {
+    displayMetrics.push(actionableCost[0]);
   }
-  if (governanceMetrics.length > 0) {
-    const critical = governanceMetrics.find((m) => m.severity === 'critical');
-    displayMetrics.push(critical || governanceMetrics[0]);
+  if (actionableGovernance.length > 0) {
+    const critical = actionableGovernance.find((m) => m.severity === 'critical');
+    displayMetrics.push(critical || actionableGovernance[0]);
   }
-  if (executionMetrics.length > 0) {
-    const critical = executionMetrics.find((m) => m.severity === 'critical');
-    displayMetrics.push(critical || executionMetrics[0]);
+  if (actionableExecution.length > 0) {
+    const critical = actionableExecution.find((m) => m.severity === 'critical');
+    displayMetrics.push(critical || actionableExecution[0]);
   }
-  if (healthMetrics.length > 0) {
-    const critical = healthMetrics.find((m) => m.severity === 'critical');
-    displayMetrics.push(critical || healthMetrics[0]);
+  if (actionableHealth.length > 0) {
+    const critical = actionableHealth.find((m) => m.severity === 'critical');
+    displayMetrics.push(critical || actionableHealth[0]);
   }
-  if (alertMetrics.length > 0) {
-    const critical = alertMetrics.find((m) => m.severity === 'critical');
-    displayMetrics.push(critical || alertMetrics[0]);
+  if (actionableAlert.length > 0) {
+    const critical = actionableAlert.find((m) => m.severity === 'critical');
+    displayMetrics.push(critical || actionableAlert[0]);
   }
-  if (learningMetrics.length > 0) {
-    displayMetrics.push(learningMetrics[0]);
+  if (actionableLearning.length > 0) {
+    displayMetrics.push(actionableLearning[0]);
   }
 
   const handleBadgeClick = (type: AmbientMetricType) => {
@@ -259,28 +359,46 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
   const getMetricsForType = (type: AmbientMetricType): AmbientMetric[] => {
     switch (type) {
       case 'quality':
-        return qualityMetrics;
+        return actionableQuality;
       case 'cost':
-        return costMetrics;
+        return actionableCost;
       case 'governance':
-        return governanceMetrics;
+        return actionableGovernance;
       case 'pattern':
       case 'learning':
-        return learningMetrics;
+        return actionableLearning;
       case 'execution':
-        return executionMetrics;
+        return actionableExecution;
       case 'alert':
-        return alertMetrics;
+        return actionableAlert;
       case 'health':
-        return healthMetrics;
+        return actionableHealth;
       default:
         return [];
     }
   };
 
-  // Don't show if no metrics
-  if (displayMetrics.length === 0 && !isLoading) {
+  const actionableCritical = displayMetrics.filter((m) => m.severity === 'critical').length;
+  const actionableWarning = displayMetrics.filter((m) => m.severity === 'warning').length;
+  const hasActionable = displayMetrics.length > 0 || isLoading;
+
+  // Completely hidden when there is nothing actionable
+  if (!hasActionable) {
     return null;
+  }
+
+  // Collapsed mode — show compact floating trigger only
+  if (isCollapsed) {
+    return (
+      <CollapsedTrigger
+        criticalCount={actionableCritical}
+        warningCount={actionableWarning}
+        onExpand={() => {
+          setIsCollapsed(false);
+          writeCollapsedPreference(false);
+        }}
+      />
+    );
   }
 
   return (
@@ -335,7 +453,7 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
             ))
           ) : (
             <span className="text-xs text-gray-500">
-              ✨ All systems healthy
+              All systems healthy
             </span>
           )}
         </div>
@@ -371,6 +489,19 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
           <RefreshCw
             className={cn('h-4 w-4 text-gray-400', isLoading && 'animate-spin')}
           />
+        </button>
+
+        {/* Collapse — OBS-001 explicit close control */}
+        <button
+          onClick={() => {
+            setIsCollapsed(true);
+            writeCollapsedPreference(true);
+            setExpandedType(null);
+          }}
+          aria-label="Collapse status bar"
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <X className="h-4 w-4 text-gray-400" />
         </button>
       </div>
     </div>

@@ -85,6 +85,7 @@ import java.util.Optional;
  * @see SecurityContext for authenticated context
  * @see SecurityContextHolder for ThreadLocal storage
  */
+@SuppressWarnings("removal") // Uses local SecurityContext; migration to platform SecurityContext tracked separately
 public class JwtAuthenticationFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";

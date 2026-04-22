@@ -78,7 +78,7 @@ class YamlAgentLoaderTest {
     void shouldLoadFromFile() throws IOException { // GH-90000
         // Given
         Path yamlFile = tempDir.resolve("test-agent.yaml [GH-90000]");
-        Files.writeString(yamlFile, """ // GH-90000
+        Files.writeString(yamlFile, """
             agent:
               id: test.agent
               name: "Test Agent"

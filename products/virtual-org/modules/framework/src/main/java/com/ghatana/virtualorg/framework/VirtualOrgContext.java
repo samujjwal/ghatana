@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
  * @doc.layer platform
  * @doc.pattern Facade, Context
  */
+@SuppressWarnings("removal") // Uses deprecated AgentRegistry; migration to platform AgentLogicProvider SPI tracked in docs/AGENT_REGISTRY_MIGRATION_GUIDE.md
 public class VirtualOrgContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(VirtualOrgContext.class);

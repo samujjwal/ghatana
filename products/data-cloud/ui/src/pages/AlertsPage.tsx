@@ -39,6 +39,7 @@ import {
 } from '../lib/theme';
 import { AlertRuleForm, type AlertRule } from '../components/alerts/AlertRuleForm';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
+import { SearchFilterBar } from '../components/common/SearchFilterBar';
 import { alertsSurfaceBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '../api/alerts.service';
 import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
@@ -158,7 +159,7 @@ function AlertGroupCard({
                                 <AlertTriangle className={cn(
                                     'h-4 w-4',
                                     alert.severity === 'critical' ? 'text-red-500' :
-                                    alert.severity === 'warning' ? 'text-amber-500' : 'text-blue-500'
+                                        alert.severity === 'warning' ? 'text-amber-500' : 'text-blue-500'
                                 )} />
                                 <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
                                     {alert.title}
@@ -307,6 +308,7 @@ export function AlertsPage(): React.ReactElement {
     const queryClient = useQueryClient();
     const [filter, setFilter] = useState<'all' | AlertSeverity>('all');
     const [statusFilter, setStatusFilter] = useState<'all' | AlertStatus>('active');
+    const [searchQuery, setSearchQuery] = useState('');
     const [isRuleFormOpen, setIsRuleFormOpen] = useState(false);
     const [selectedRule, setSelectedRule] = useState<AlertRule | undefined>(undefined);
     const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
@@ -389,6 +391,7 @@ export function AlertsPage(): React.ReactElement {
     const filteredAlerts = allAlerts.filter((alert) => {
         if (filter !== 'all' && alert.severity !== filter) return false;
         if (statusFilter !== 'all' && alert.status !== statusFilter) return false;
+        if (searchQuery.trim() && !alert.title.toLowerCase().includes(searchQuery.toLowerCase()) && !alert.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
         return true;
     });
 
@@ -515,6 +518,17 @@ export function AlertsPage(): React.ReactElement {
                 groupedCoverage={groupedCoverage}
                 suggestionCoverage={suggestionCoverage}
             />
+
+            {/* Search — OPS-001 */}
+            <div className="mb-6">
+                <SearchFilterBar
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    searchPlaceholder="Search alerts by title or description…"
+                    hasActiveFilters={!!searchQuery}
+                    onClear={() => setSearchQuery('')}
+                />
+            </div>
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

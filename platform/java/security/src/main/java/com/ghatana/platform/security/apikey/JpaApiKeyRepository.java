@@ -63,7 +63,8 @@ public class JpaApiKeyRepository implements ApiKeyRepository {
     }
 
     @Override
-    public ApiKey save(ApiKey apiKey) {
+    @SuppressWarnings("unchecked")
+    public <S extends ApiKey> S save(S apiKey) {
         Objects.requireNonNull(apiKey, "apiKey cannot be null");
         if (entityManager.find(ApiKey.class, apiKey.getId()) == null) {
             entityManager.persist(apiKey);

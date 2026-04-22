@@ -468,12 +468,24 @@ public class DataCloudRouterBuilder {
     }
 
     /**
+     * Adds admin settings CRUD endpoints (GH-90000 / ADMIN-004).
+     */
+    public DataCloudRouterBuilder withSettingsRoutes(SettingsHandler settingsHandler) {
+        builder
+            .with(HttpMethod.GET, "/api/v1/settings", settingsHandler::handleGetGeneralSettings)
+            .with(HttpMethod.POST, "/api/v1/settings", settingsHandler::handleUpdateGeneralSettings)
+            .with(HttpMethod.GET, "/api/v1/settings/security", settingsHandler::handleGetSecuritySettings)
+            .with(HttpMethod.POST, "/api/v1/settings/security", settingsHandler::handleUpdateSecuritySettings);
+        return this;
+    }
+
+    /**
      * Builds the routing servlet.
      *
      * @return the configured routing servlet
      */
     public RoutingServlet build() {
-        log.info("Data-Cloud router built with {} route groups", 25);
+        log.info("Data-Cloud router built with {} route groups", 26);
         return builder.build();
     }
 }

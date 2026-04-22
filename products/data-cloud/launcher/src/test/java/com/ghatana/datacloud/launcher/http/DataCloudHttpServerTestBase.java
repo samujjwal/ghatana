@@ -5,10 +5,10 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.testing.utils.NetworkTestUtils;
 import org.junit.jupiter.api.AfterEach;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -392,9 +392,7 @@ public abstract class DataCloudHttpServerTestBase {
      * @return available port number
      */
     protected static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
-            return socket.getLocalPort(); // GH-90000
-        }
+        return NetworkTestUtils.findFreePort();
     }
 
     /**
@@ -415,10 +413,7 @@ public abstract class DataCloudHttpServerTestBase {
             }
             Thread.sleep(50); // GH-90000
         }
-        throw new TimeoutException("Server did not become ready within " + maxWaitMs + "ms"); // GH-90000
+        NetworkTestUtils.waitForTcpPortOpen("127.0.0.1", port, maxWaitMs);
     }
 
-    private static class TimeoutException extends Exception {
-        TimeoutException(String msg) { super(msg); } // GH-90000
-    }
 }

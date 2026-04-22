@@ -57,7 +57,7 @@ class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
 
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                     CREATE TABLE IF NOT EXISTS change_requests ( // GH-90000
                         change_id         UUID         PRIMARY KEY,
                         tenant_id         VARCHAR(255) NOT NULL, // GH-90000

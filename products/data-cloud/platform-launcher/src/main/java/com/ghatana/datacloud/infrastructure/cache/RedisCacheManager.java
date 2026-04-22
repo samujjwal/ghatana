@@ -120,6 +120,7 @@ public class RedisCacheManager {
      * @param unit the time unit
      * @return Promise of cached value
      */
+    @SuppressWarnings("unchecked")
     public <T> Promise<T> getOrCompute(
             String key,
             java.util.function.Supplier<Promise<T>> loader,

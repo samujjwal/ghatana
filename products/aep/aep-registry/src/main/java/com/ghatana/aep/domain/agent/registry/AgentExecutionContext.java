@@ -15,6 +15,7 @@ import java.util.Set;
  * @doc.layer product
  * @doc.pattern ValueObject
  */
+@SuppressWarnings("removal") // References deprecated AEP SecurityContext; migration to platform SecurityContext tracked separately
 public interface AgentExecutionContext {
 
     /**

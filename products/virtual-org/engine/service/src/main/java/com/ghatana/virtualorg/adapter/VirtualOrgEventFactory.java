@@ -425,6 +425,7 @@ public class VirtualOrgEventFactory {
      * Convenience method for creating a map of string key-value pairs.
      */
     @SafeVarargs
+    @SuppressWarnings("unchecked")
     private static <K, V> Map<K, V> mapOf(K k1, V v1, Object... rest) {
         Map<K, V> map = new HashMap<>();
         map.put(k1, v1);

@@ -50,7 +50,8 @@ public class InMemoryApiKeyRepository implements ApiKeyRepository {
     }
 
     @Override
-    public ApiKey save(ApiKey apiKey) {
+    @SuppressWarnings("unchecked")
+    public <S extends ApiKey> S save(S apiKey) {
         if (apiKey == null) {
             throw new IllegalArgumentException("API key cannot be null");
         }

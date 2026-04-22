@@ -18,8 +18,9 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   AlertTriangle,
@@ -37,10 +38,11 @@ import {
   cn,
   cardStyles,
   textStyles,
-  bgStyles,
   buttonStyles,
 } from '../lib/theme';
 import { RBACGuard } from '../components/security/RBACGuard';
+import { useAlertsSummary } from '../api/alerts.service';
+import { useCapabilityRegistry, type CapabilitySignal } from '../api/capabilities.service';
 
 interface HealthStatus {
   component: string;
@@ -49,34 +51,42 @@ interface HealthStatus {
   uptime: string;
 }
 
-interface AlertSummary {
-  total: number;
-  critical: number;
-  warning: number;
-  info: number;
-}
-
-interface MetricCard {
-  title: string;
-  value: string;
-  change: string;
-  trend: 'up' | 'down' | 'stable';
+function mapCapabilitiesToHealth(capabilities: CapabilitySignal[]): HealthStatus[] {
+  return capabilities.map((cap) => {
+    const status: HealthStatus['status'] =
+      cap.status === 'active' ? 'healthy' : cap.status === 'degraded' ? 'degraded' : 'unhealthy';
+    return {
+      component: cap.label || cap.key,
+      status,
+      lastCheck: new Date().toLocaleTimeString(),
+      uptime: cap.summary || '-',
+    };
+  });
 }
 
 export const OperationsConsolePage: React.FC = () => {
-  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Real diagnostics data should come from backend health APIs.
-  // Stub arrays kept for type safety until API integration (ARCH-003).
-  const healthStatuses: HealthStatus[] = [];
-  const alertSummary: AlertSummary = { total: 0, critical: 0, warning: 0, info: 0 };
-  const metrics: MetricCard[] = [];
+  const {
+    data: capabilityRegistry,
+    isLoading: capabilitiesLoading,
+  } = useCapabilityRegistry();
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    // In production, fetch real data
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setRefreshing(false);
+  const {
+    data: alertSummary,
+    isLoading: alertsLoading,
+  } = useAlertsSummary();
+
+  const healthStatuses = React.useMemo(
+    () => (capabilityRegistry ? mapCapabilitiesToHealth(capabilityRegistry.capabilities) : []),
+    [capabilityRegistry]
+  );
+
+  const isLoading = capabilitiesLoading || alertsLoading;
+
+  const handleRefresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['capability-registry'] });
+    void queryClient.invalidateQueries({ queryKey: ['alerts-summary'] });
   };
 
   const getStatusIcon = (status: HealthStatus['status']) => {
@@ -117,14 +127,14 @@ export const OperationsConsolePage: React.FC = () => {
             </div>
             <button
               onClick={handleRefresh}
-              disabled={refreshing}
+              disabled={isLoading}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-lg',
                 buttonStyles.primary,
-                refreshing && 'opacity-50 cursor-not-allowed'
+                isLoading && 'opacity-50 cursor-not-allowed'
               )}
             >
-              <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+              <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
               Refresh
             </button>
           </div>
@@ -139,9 +149,14 @@ export const OperationsConsolePage: React.FC = () => {
                   System Health
                 </h2>
               </div>
-              {healthStatuses.length === 0 ? (
+              {isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading health data…
+                </div>
+              ) : healthStatuses.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Health data will appear here once the diagnostics API is integrated (ARCH-003).
+                  No capability signals available yet.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -188,19 +203,19 @@ export const OperationsConsolePage: React.FC = () => {
                 <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Critical</span>
                   <span className="text-2xl font-semibold text-red-600 dark:text-red-400">
-                    {alertSummary.critical}
+                    {alertSummary?.critical ?? 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Warning</span>
                   <span className="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">
-                    {alertSummary.warning}
+                    {alertSummary?.warning ?? 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Info</span>
                   <span className="text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                    {alertSummary.info}
+                    {alertSummary?.info ?? 0}
                   </span>
                 </div>
                 <div className="pt-3 border-t border-gray-200 dark:border-gray-700">

@@ -754,7 +754,7 @@ class AgentSpecLoaderTest {
         @DisplayName("loads spec from a YAML file [GH-90000]")
         void loadsFromFile(@TempDir Path dir) throws IOException { // GH-90000
             Path yamlFile = dir.resolve("test-agent.yaml [GH-90000]");
-            Files.writeString(yamlFile, """ // GH-90000
+            Files.writeString(yamlFile, """
                     metadata:
                       id: agent.file.test
                       name: File Agent
@@ -780,7 +780,7 @@ class AgentSpecLoaderTest {
         @DisplayName("scans directory and loads all YAML files [GH-90000]")
         void loadsDirectory(@TempDir Path dir) throws IOException { // GH-90000
             for (int i = 1; i <= 3; i++) { // GH-90000
-                Files.writeString(dir.resolve("agent-" + i + ".yaml"), """ // GH-90000
+                Files.writeString(dir.resolve("agent-" + i + ".yaml"), """
                         metadata:
                           id: agent.dir.%d
                           name: Dir Agent %d

@@ -11,6 +11,11 @@ sourceSets {
     }
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    // Generated protobuf code uses deprecated GeneratedMessageV3 APIs; suppress for generated sources
+    options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
+}
+
 dependencies {
     // Platform modules
     implementation(project(":platform:java:workflow"))

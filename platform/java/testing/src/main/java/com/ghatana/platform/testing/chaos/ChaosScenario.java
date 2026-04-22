@@ -322,7 +322,8 @@ public class ChaosScenario {
         /**
          * Asserts that failures were handled with expected exception types.
          */
-        public ChaosExecutionResult<T> assertFailuresAreExpected(Class<? extends Throwable>... expectedTypes) {
+        @SafeVarargs
+        public final ChaosExecutionResult<T> assertFailuresAreExpected(Class<? extends Throwable>... expectedTypes) {
             for (ExecutionOutcome<T> outcome : outcomes) {
                 if (outcome.isFailure()) {
                     boolean matched = false;

@@ -51,7 +51,8 @@ public class InMemoryPolicyRepository implements PolicyRepository {
     }
 
     @Override
-    public Policy save(Policy policy) {
+    @SuppressWarnings("unchecked")
+    public <S extends Policy> S save(S policy) {
         if (policy == null) {
             throw new IllegalArgumentException("Policy cannot be null");
         }

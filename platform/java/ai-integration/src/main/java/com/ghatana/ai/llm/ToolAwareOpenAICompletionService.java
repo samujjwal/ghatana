@@ -235,6 +235,7 @@ public class ToolAwareOpenAICompletionService extends OpenAICompletionService im
                     String argsJson = toolCallNode.path("function").path("arguments").asText();
 
                     // Parse arguments JSON
+                    @SuppressWarnings("unchecked")
                     Map<String, Object> arguments = objectMapper.readValue(argsJson, Map.class);
 
                     toolCalls.add(ToolCall.of(id, functionName, arguments));

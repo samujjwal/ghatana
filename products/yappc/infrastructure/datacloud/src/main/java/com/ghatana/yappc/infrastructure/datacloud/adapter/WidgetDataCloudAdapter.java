@@ -23,6 +23,7 @@ import java.util.UUID;
  * @doc.layer infrastructure
  * @doc.pattern Adapter
  */
+@SuppressWarnings("deprecation") // Uses deprecated YappcDataCloudRepository.findByFilter; migrate to typed query methods
 public class WidgetDataCloudAdapter {
 
     private static final String COLLECTION = "widget";

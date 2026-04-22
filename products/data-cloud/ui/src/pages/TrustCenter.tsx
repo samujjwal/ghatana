@@ -158,11 +158,11 @@ function parseCommaSeparatedValues(value: string): string[] | undefined {
 /** Map governance Policy type → display label */
 function mapPolicyType(type: GovPolicy['type']): Policy['type'] {
   switch (type) {
-    case 'PRIVACY':   return 'GDPR';
+    case 'PRIVACY': return 'GDPR';
     case 'RETENTION': return 'HIPAA';
-    case 'SECURITY':  return 'SOC2';
-    case 'ACCESS':    return 'PCI';
-    default:          return 'CUSTOM';
+    case 'SECURITY': return 'SOC2';
+    case 'ACCESS': return 'PCI';
+    default: return 'CUSTOM';
   }
 }
 
@@ -867,6 +867,7 @@ export function TrustCenter() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder='Search live safeguards or derived policy coverage'
+              aria-label="Search live safeguards or derived policy coverage"
               data-testid="trust-search-input"
               className={cn(
                 'w-full pl-9 pr-4 py-2 rounded-lg',
@@ -882,11 +883,11 @@ export function TrustCenter() {
             <Filter className="h-4 w-4 text-gray-400" />
           </button>
           <button
-              onClick={() => refetchPolicies()}
-              data-testid="trust-refresh-policies"
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-              aria-label="Refresh"
-            >
+            onClick={() => refetchPolicies()}
+            data-testid="trust-refresh-policies"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+            aria-label="Refresh"
+          >
             <RefreshCw className="h-4 w-4 text-gray-400" />
           </button>
         </div>

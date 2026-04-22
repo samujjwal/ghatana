@@ -9,39 +9,57 @@
  */
 
 // Brain & Workspace
-export * from './brain.service';
-export { brainService } from './brain.service';
+export * from "./brain.service";
+export { brainService } from "./brain.service";
 
 // Data Quality
-export * from './quality.service';
-export { qualityService } from './quality.service';
+export * from "./quality.service";
+export { qualityService } from "./quality.service";
 
 // Cost & Optimization
-export * from './cost.service';
-export { costService } from './cost.service';
+export * from "./cost.service";
+export { costService } from "./cost.service";
 
 // Lineage & Metadata
-export * from './lineage.service';
-export { lineageService } from './lineage.service';
+export * from "./lineage.service";
+export { lineageService } from "./lineage.service";
 
 // Governance & Policy
-export * from './governance.service';
-export { governanceService } from './governance.service';
+export * from "./governance.service";
+export { governanceService } from "./governance.service";
 
 // Schema (existing)
-export * from './schema.service';
+export * from "./schema.service";
 
 // Suggestion (existing)
-export * from './suggestion.service';
+export * from "./suggestion.service";
 
 // Events — AEP event fabric explorer
-export * from './events.service';
-export { eventsService } from './events.service';
+export * from "./events.service";
+export { eventsService } from "./events.service";
 
 // Memory — agent memory plane viewer
-export * from './memory.service';
-export { memoryService } from './memory.service';
+export * from "./memory.service";
+export { memoryService } from "./memory.service";
 
 // Analytics — DC-9 SQL query engine
-export * from './analytics.service';
+export * from "./analytics.service";
 
+// Alerts — operator alert triage
+export * from "./alerts.service";
+export { alertsService } from "./alerts.service";
+
+// Plugins — plugin management
+export * from "./plugin.service";
+export { pluginService } from "./plugin.service";
+
+// Capabilities — runtime capability registry
+export * from "./capabilities.service";
+
+// AI Observability — quality telemetry
+export * from "./ai-observability.service";
+
+// Agent Registry — agent management
+export * from "./agent-registry.service";
+
+// Client — import directly from './client' to avoid type collisions with service modules

@@ -1,18 +1,18 @@
 /**
  * Smart SQL Assistant Component
- * 
- * AI-powered SQL generation with real-time suggestions,
+ *
+ * SQL generation with real-time suggestions,
  * query optimization, and natural language understanding.
- * 
+ *
  * Features:
  * - Natural language to SQL conversion
- * - Real-time autocomplete with AI suggestions
+ * - Real-time autocomplete with smart suggestions
  * - Query optimization recommendations
  * - Confidence scoring
  * - Query explanation
- * 
+ *
  * @doc.type component
- * @doc.purpose AI-powered SQL assistance
+ * @doc.purpose Smart SQL assistance
  * @doc.layer frontend
  * @doc.pattern Container Component
  */
@@ -99,7 +99,7 @@ async function generateSQLFromNL(
     } else if (lowerQuery.includes('top') || lowerQuery.includes('highest') || lowerQuery.includes('most')) {
         const field = lowerQuery.includes('revenue') ? 'revenue'
             : lowerQuery.includes('sales') ? 'sales'
-            : lowerQuery.includes('amount') ? 'amount' : 'value';
+                : lowerQuery.includes('amount') ? 'amount' : 'value';
         sql = `SELECT *\nFROM ${collectionName}\nORDER BY ${field} DESC\nLIMIT 10;`;
         confidence = 0.88;
         explanation = `Finding top 10 records by ${field}.`;

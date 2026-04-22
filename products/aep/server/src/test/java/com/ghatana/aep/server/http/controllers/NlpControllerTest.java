@@ -70,7 +70,7 @@ class NlpControllerTest {
         @Test
         @DisplayName("returns 400 when query field is missing [GH-90000]")
         void missingQuery_returns400() throws Exception { // GH-90000
-            HttpRequest request = buildPostRequest(""" // GH-90000
+            HttpRequest request = buildPostRequest("""
                     {"tenantId":"tenant-a"}
                     """);
             Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
@@ -84,7 +84,7 @@ class NlpControllerTest {
         @Test
         @DisplayName("returns 400 when body is blank [GH-90000]")
         void blankQuery_returns400() throws Exception { // GH-90000
-            HttpRequest request = buildPostRequest(""" // GH-90000
+            HttpRequest request = buildPostRequest("""
                     {"query":"   ","tenantId":"tenant-a"}
                     """);
             Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000

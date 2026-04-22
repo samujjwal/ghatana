@@ -86,6 +86,7 @@ public class AnthropicLLMClient extends ManagedLLMClient implements LLMClient {
 
     @Override
     @NotNull
+    @SuppressWarnings("removal") // ChatLanguageModel.generate(List) deprecated in LangChain4J; migration to chat() API tracked separately
     public Promise<LLMResponse> reason(
             @NotNull TaskProto task,
             @NotNull String context,
@@ -129,6 +130,7 @@ public class AnthropicLLMClient extends ManagedLLMClient implements LLMClient {
 
     @Override
     @NotNull
+    @SuppressWarnings("removal") // ChatLanguageModel.generate(List) deprecated in LangChain4J; migration to chat() API tracked separately
     public Promise<String> generate(
             @NotNull String systemPrompt,
             @NotNull String userPrompt,

@@ -146,7 +146,7 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
         try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) { // GH-90000
             // Drop and recreate to avoid parallel test conflicts
             stmt.execute("DROP TABLE IF EXISTS test_entity CASCADE [GH-90000]");
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE TABLE test_entity ( // GH-90000
                     id BIGINT PRIMARY KEY,
                     name VARCHAR(255) // GH-90000

@@ -282,6 +282,7 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
      * @return Promise of list of matching entities
      * @deprecated Use explicit equality methods (findByFieldEquals) instead
      */
+    @Deprecated(since = "1.0")
     @NotNull
     public Promise<List<T>> findByFilter(
             @NotNull Map<String, Object> filter,

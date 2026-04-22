@@ -77,19 +77,19 @@ vi.mock('../../components/layout/PageLayout', () => ({
       {actions}
     </div>
   ),
-  PageContent: ({ children, aiSidebar }: { children: React.ReactNode; aiSidebar?: React.ReactNode }) => (
+  PageContent: ({ children, contextSidebar }: { children: React.ReactNode; contextSidebar?: React.ReactNode }) => (
     <div>
       <div>{children}</div>
-      <aside>{aiSidebar}</aside>
+      <aside>{contextSidebar}</aside>
     </div>
   ),
-  AISidebar: ({ title, children }: { title: string; children: React.ReactNode }) => (
+  ContextSidebar: ({ title, children }: { title: string; children: React.ReactNode }) => (
     <section>
       <h2>{title}</h2>
       {children}
     </section>
   ),
-  AISuggestion: ({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) => (
+  SuggestionCard: ({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) => (
     <div>
       <span>{title}</span>
       <span>{description}</span>

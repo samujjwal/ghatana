@@ -56,7 +56,7 @@ class PostgresKillSwitchServiceTest extends EventloopTestBase {
 
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                     CREATE TABLE IF NOT EXISTS kill_switch_state ( // GH-90000
                         scope           VARCHAR(512) PRIMARY KEY, // GH-90000
                         active          BOOLEAN      NOT NULL DEFAULT FALSE,

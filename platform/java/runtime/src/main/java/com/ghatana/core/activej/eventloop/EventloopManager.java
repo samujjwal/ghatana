@@ -169,7 +169,7 @@ public final class EventloopManager {
             })
             .build();
 
-        long threadId = Thread.currentThread().getId();
+        long threadId = Thread.currentThread().threadId();
         // Register eventloop under unique id so we can track multiple eventloops created on the same thread
         EVENTLOOP_REGISTRY.put(eventloopId, eventloop);
         // Mark this eventloop as the current one for this thread
@@ -210,7 +210,7 @@ public final class EventloopManager {
      * itself may still be running on another thread.
      */
     public static void clearCurrentEventloop() {
-        long threadId = Thread.currentThread().getId();
+        long threadId = Thread.currentThread().threadId();
         Long id = THREAD_EVENTLOOP_ID.remove(threadId);
         THREAD_LOCAL_EVENTLOOP.remove();
         if (id != null) {

@@ -14,6 +14,10 @@
 | [TESTING.md](./TESTING.md) | Test taxonomy, standards, CI quality gates |
 | [BUILD.md](./BUILD.md) | Build system, Gradle conventions, AEP conventions, profiler |
 | [ONBOARDING.md](./ONBOARDING.md) | Developer setup and first-build guide |
+| [audit-report-2026-04-22.md](./audit-report-2026-04-22.md) | Baseline audit findings and remediation IDs |
+| [AUDIT_REMEDIATION_IMPLEMENTATION_PLAN_2026-04-22.md](./AUDIT_REMEDIATION_IMPLEMENTATION_PLAN_2026-04-22.md) | Execution roadmap for remediation phases |
+| [AUDIT_REMEDIATION_TODO_LIST_2026-04-22.md](./AUDIT_REMEDIATION_TODO_LIST_2026-04-22.md) | Remediation tracker and status log |
+| [AUDIT_REMEDIATION_CLOSURE_EVIDENCE_2026-04-22.md](./AUDIT_REMEDIATION_CLOSURE_EVIDENCE_2026-04-22.md) | Verification commands, outcomes, and closure artifacts |
 
 ## Specialized Areas
 

@@ -50,9 +50,9 @@ vi.mock('../../lib/api/collections', () => ({
 
 vi.mock('../../components/layout/PageLayout', () => ({
     PageHeader: ({ title }: { title: string }) => <div><h1>{title}</h1></div>,
-    PageContent: ({ children, aiSidebar }: { children: React.ReactNode; aiSidebar?: React.ReactNode }) => <div>{children}{aiSidebar}</div>,
-    AISidebar: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
-    AISuggestion: ({ title, description }: { title: string; description: string }) => <div><span>{title}</span><span>{description}</span></div>,
+    PageContent: ({ children, contextSidebar }: { children: React.ReactNode; contextSidebar?: React.ReactNode }) => <div>{children}{contextSidebar}</div>,
+    ContextSidebar: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+    SuggestionCard: ({ title, description }: { title: string; description: string }) => <div><span>{title}</span><span>{description}</span></div>,
     StatCard: ({ label, value }: { label: string; value: React.ReactNode }) => <div><span>{label}</span><span>{String(value)}</span></div>,
 }));
 

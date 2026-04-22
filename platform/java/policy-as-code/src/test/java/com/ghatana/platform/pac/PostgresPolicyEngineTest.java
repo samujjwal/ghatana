@@ -57,7 +57,7 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
 
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                     CREATE TABLE IF NOT EXISTS policy_rules ( // GH-90000
                         id          BIGSERIAL    PRIMARY KEY,
                         tenant_id   VARCHAR(255) NOT NULL, // GH-90000
@@ -86,7 +86,7 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
 
     private void insertRule(String tenantId, String policyName, String effect, String reason) throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
-             PreparedStatement ps = conn.prepareStatement(""" // GH-90000
+             PreparedStatement ps = conn.prepareStatement("""
                      INSERT INTO policy_rules (tenant_id, policy_name, condition, effect, reason) // GH-90000
                      VALUES (?, ?, '{}', ?, ?) // GH-90000
                      """)) {
@@ -146,7 +146,7 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
     @DisplayName("disabled rules are ignored during evaluation [GH-90000]")
     void evaluate_disabledRule_isIgnored() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
-             PreparedStatement ps = conn.prepareStatement(""" // GH-90000
+             PreparedStatement ps = conn.prepareStatement("""
                      INSERT INTO policy_rules (tenant_id, policy_name, condition, effect, reason, enabled) // GH-90000
                      VALUES (?, ?, '{}', ?, ?, FALSE) // GH-90000
                      """)) {

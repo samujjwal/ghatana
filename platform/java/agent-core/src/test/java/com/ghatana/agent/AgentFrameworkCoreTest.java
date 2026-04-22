@@ -1023,7 +1023,7 @@ class AgentFrameworkCoreTest {
             AtomicInteger callbacks = new AtomicInteger(0);
 
             eventloop.post(() ->
-                Promise.all(firstAgent.initialize(firstConfig), secondAgent.initialize(secondConfig))
+                Promises.all(firstAgent.initialize(firstConfig), secondAgent.initialize(secondConfig))
                     .then(() -> Promises.toList(List.of(
                         firstAgent.process(ctx.toBuilder().agentId("ctx-agent-1").build(), 10),
                         secondAgent.process(ctx.toBuilder().agentId("ctx-agent-2").build(), 20)

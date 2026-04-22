@@ -11,6 +11,7 @@ import com.ghatana.agent.catalog.loader.CatalogLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -39,6 +40,7 @@ import java.util.*;
 public class AepCentralCatalogService {
 
     private static final Logger log = LoggerFactory.getLogger(AepCentralCatalogService.class);
+    private static final String CATALOG_ROOTS_MANIFEST = "platform/agent-catalog/catalog-roots.txt";
 
     private final CatalogLoader loader;
     private final CatalogRegistry registry;
@@ -59,7 +61,40 @@ public class AepCentralCatalogService {
      * Creates the service with a repository root, using default product paths.
      */
     public static AepCentralCatalogService fromRepositoryRoot(Path repositoryRoot) {
-        List<Path> roots = List.of(
+        List<Path> roots = loadCatalogRoots(repositoryRoot);
+        return new AepCentralCatalogService(roots);
+    }
+
+    private static List<Path> loadCatalogRoots(Path repositoryRoot) {
+        Path manifest = repositoryRoot.resolve(CATALOG_ROOTS_MANIFEST);
+        if (!Files.isRegularFile(manifest)) {
+            log.warn("Catalog-roots manifest not found at {}. Falling back to built-in defaults.", manifest);
+            return defaultRoots(repositoryRoot);
+        }
+
+        try {
+            List<Path> roots = Files.readAllLines(manifest).stream()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty())
+                    .filter(line -> !line.startsWith("#"))
+                    .map(repositoryRoot::resolve)
+                    .toList();
+
+            if (roots.isEmpty()) {
+                log.warn("Catalog-roots manifest at {} is empty. Falling back to built-in defaults.", manifest);
+                return defaultRoots(repositoryRoot);
+            }
+            return roots;
+        } catch (IOException e) {
+            log.warn("Failed to read catalog-roots manifest at {}: {}. Falling back to built-in defaults.",
+                    manifest,
+                    e.getMessage());
+            return defaultRoots(repositoryRoot);
+        }
+    }
+
+    private static List<Path> defaultRoots(Path repositoryRoot) {
+        return List.of(
                 repositoryRoot.resolve("platform/agent-catalog"),
                 repositoryRoot.resolve("products/aep/agent-catalog"),
                 repositoryRoot.resolve("products/data-cloud/agent-catalog"),
@@ -69,7 +104,6 @@ public class AepCentralCatalogService {
                 repositoryRoot.resolve("products/finance/config/agents"),
                 repositoryRoot.resolve("products/tutorputor/config/agents")
         );
-        return new AepCentralCatalogService(roots);
     }
 
     /**

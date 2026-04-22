@@ -9,11 +9,10 @@
  */
 
 // Command Bar
-export { CommandBar, CommandBarTrigger } from './CommandBar';
+export { CommandBar, CommandBarTrigger } from "./CommandBar";
 
-// Brain Sidebar
-export { BrainSidebar } from './BrainSidebar';
+// Context Sidebar
+export { ContextSidebar } from "./BrainSidebar";
 
 // Ambient Intelligence Bar
-export { AmbientIntelligenceBar } from './AmbientIntelligenceBar';
-
+export { AmbientIntelligenceBar } from "./AmbientIntelligenceBar";

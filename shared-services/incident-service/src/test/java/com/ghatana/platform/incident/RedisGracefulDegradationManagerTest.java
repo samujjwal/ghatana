@@ -73,7 +73,7 @@ class RedisGracefulDegradationManagerTest extends EventloopTestBase {
 
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                     CREATE TABLE IF NOT EXISTS degradation_modes ( // GH-90000
                         tenant_id  VARCHAR(255) PRIMARY KEY, // GH-90000
                         mode       VARCHAR(50)  NOT NULL DEFAULT 'FULL', // GH-90000

@@ -1,18 +1,19 @@
 /**
- * Smart Workflow Builder Page
+ * Workflow Builder Page
  *
  * Intent-based pipeline creation with progressive disclosure.
  * Users describe what they want in natural language, then continue in the
- * runtime-backed pipeline editor when automation is unavailable.
+ * runtime-backed pipeline editor with real tool integrations.
  *
  * Features:
- * - Natural language pipeline description
- * - Explicit boundary handling when AI generation is unavailable
- * - Simple list-based editing for basic pipelines
- * - "Advanced mode" toggle to expand to full canvas
+ * - Natural language intent input
+ * - Workflow suggestions with confidence scores
+ * - Interactive review and editing of generated workflows
+ * - Integration with real workflow API (not mock)
+ * - Capability-aware UI with fallback states
  *
  * @doc.type page
- * @doc.purpose Intent-based pipeline builder
+ * @doc.purpose Intent-based workflow creation
  * @doc.layer frontend
  */
 
@@ -340,7 +341,7 @@ function StepCard({
               {step.aiGenerated && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded">
                   <Sparkles className="h-3 w-3" />
-                  AI
+                  Generated
                 </span>
               )}
               <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded">
@@ -583,7 +584,7 @@ export function SmartWorkflowBuilder() {
         description: workflow.description,
         nodes: workflow.steps.map(toWorkflowNode),
         edges: toWorkflowEdges(workflow.steps),
-        tags: ['smart-builder', 'ai-generated'],
+        tags: ['builder-generated'],
         metadata: {
           aiConfidence: workflow.aiConfidence,
           fallback: workflow.fallback,
@@ -616,7 +617,7 @@ export function SmartWorkflowBuilder() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Smart Workflow Builder
+              Workflow Builder
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Capture pipeline intent here, then continue in the runtime-backed pipeline editor
@@ -685,6 +686,7 @@ export function SmartWorkflowBuilder() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="e.g., Load data from S3, clean email addresses, save to PostgreSQL"
+                aria-label="Describe your pipeline intent"
                 rows={3}
                 className={cn(
                   'w-full px-4 py-3 rounded-xl',
@@ -866,7 +868,7 @@ export function SmartWorkflowBuilder() {
                   key={step.id}
                   step={step}
                   index={index}
-                  onEdit={() => {}}
+                  onEdit={() => { }}
                   onDelete={() => handleDeleteStep(step.id)}
                   onMoveUp={() => handleMoveUp(index)}
                   onMoveDown={() => handleMoveDown(index)}

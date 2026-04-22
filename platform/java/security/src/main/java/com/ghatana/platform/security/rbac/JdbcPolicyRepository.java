@@ -139,7 +139,8 @@ public class JdbcPolicyRepository implements PolicyRepository {
     }
 
     @Override
-    public Policy save(Policy policy) {
+    @SuppressWarnings("unchecked")
+    public <S extends Policy> S save(S policy) {
         Objects.requireNonNull(policy, "policy must not be null");
 
         try (Connection conn = dataSource.getConnection()) {

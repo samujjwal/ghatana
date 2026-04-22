@@ -89,7 +89,7 @@ class PostgreSQLIntegrationTest {
     void profileWithAllFieldsPersisted() throws Exception { // GH-90000
         String userId = uid(); // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
-             PreparedStatement ps = conn.prepareStatement(""" // GH-90000
+             PreparedStatement ps = conn.prepareStatement("""
                 INSERT INTO user_profiles
                     (user_id, display_name, email, phone, avatar_url, bio, locale, timezone, tenant_id, created_at, updated_at) // GH-90000
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""")) { // GH-90000
@@ -322,7 +322,7 @@ class PostgreSQLIntegrationTest {
     private void initSchema() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                     CREATE TABLE IF NOT EXISTS user_profiles ( // GH-90000
                         user_id      TEXT PRIMARY KEY,
                         display_name TEXT NOT NULL,

@@ -26,6 +26,9 @@
 - `[x]` `D-8` re-enabled with active architecture boundary checks in `platform/java/testing`.
 - `[x]` `D-7` re-enabled with RabbitMQ consumer integration coverage and validated alongside Kafka/SQS broker tests.
 - `[x]` `HA-1..HA-3` completed in `plugin-human-approval` with FSM terminal-state coverage, quorum semantics, and timeout-expiration escalation.
+- `[x]` Filtered AEP server test runs no longer fail with `IntegrationTestSuite` `NoTestsDiscoveredException` during `--tests` execution; suite aggregator is excluded from default `test` task in `products/aep/server/build.gradle.kts`.
+- `[x]` Audited-root Java syntax sweep completed for invalid text-block openings (`""" // GH-90000`), and guardrail added in `scripts/check-test-authenticity.sh`.
+- `[x]` Post-remediation verification evidence captured in `docs/AUDIT_REMEDIATION_CLOSURE_EVIDENCE_2026-04-22.md`.
 
 ---
 
@@ -127,28 +130,32 @@
 - [x] Add committed eval fixtures for `platform/java/ai-integration`
 - [x] Add committed eval fixtures for `products/yappc/core/ai`
 - [x] Add committed eval fixtures for `products/aep/aep-agent-runtime`
-- [ ] Add performance/load tier for `aep-registry`
-- [ ] Add cold-start/warm-start performance tier for `data-cloud/platform-launcher`
-- [ ] Add performance tier for `audio-video/{audio,video}-streaming`
-- [ ] Add performance tier for `products/yappc/core/yappc-services`
+- [x] Add performance/load tier for `aep-registry`
+- [x] Add cold-start/warm-start performance tier for `data-cloud/platform-launcher`
+- [x] Add performance tier for `audio-video/{audio,video}-streaming`
+- [x] Add performance tier for `products/yappc/core/yappc-services`
 
 ## Phase 8 — Refactor and standardization follow-through
 
-- [ ] Consolidate duplicated product-local `platform-*` abstractions where truly shared
-- [ ] Promote reusable launcher-test patterns into `platform/java/testing`
-- [ ] Converge `agent-catalog` ownership on `platform/agent-catalog/`
-- [ ] Centralize agent-registry usage behind AEP where applicable
+- [x] Consolidate duplicated product-local `platform-*` abstractions where truly shared
+- [x] Promote reusable launcher-test patterns into `platform/java/testing`
+- [x] Converge `agent-catalog` ownership on `platform/agent-catalog/`
+- [x] Centralize agent-registry usage behind AEP where applicable
 - [x] Verify `gradle/doc-tag-check.gradle` is wired into standard checks
 - [x] Keep package-name, module-wiring, and anti-theatre guardrails enforced in CI
 
 ## Final closure
 
-- [ ] Verify every audit ID in the implementation plan is closed or explicitly waived with justification
+- [x] Verify every audit ID in the implementation plan is closed or explicitly waived with justification
 - [x] Verify no placeholder assertions remain in audited roots
 - [x] Verify no unticketed disabled tests remain on critical paths
-- [ ] Verify no forbidden `@ghatana/*` names remain in active source or live outputs
-- [ ] Verify all orphan/empty modules are resolved
+- [x] Verify no forbidden `@ghatana/*` names remain in active source or live outputs
+- [x] Verify all orphan/empty modules are resolved
 - [x] Verify AEP registry routes are covered by contract/integration tests
 - [x] Verify agent-core tenant isolation and kernel plugin lifecycle are covered
 - [x] Verify high-risk modules have been re-evaluated after remediation
+
+## Closure evidence
+
+- [x] Command and artifact evidence captured in `docs/AUDIT_REMEDIATION_CLOSURE_EVIDENCE_2026-04-22.md`
 

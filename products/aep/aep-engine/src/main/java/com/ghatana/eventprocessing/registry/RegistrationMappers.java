@@ -73,6 +73,7 @@ public final class RegistrationMappers {
      * @param payload event payload map from EventCloud
      * @return PatternRegistration instance
      */
+    @SuppressWarnings("unchecked")
     public static PatternRegistration patternFromEventPayload(
             java.util.Map<String, Object> payload) {
         if (payload == null || payload.isEmpty()) {
@@ -132,6 +133,7 @@ public final class RegistrationMappers {
      * @param payload event payload map from EventCloud
      * @return EventTypeRegistration instance
      */
+    @SuppressWarnings("unchecked")
     public static EventTypeRegistration eventTypeFromEventPayload(
             java.util.Map<String, Object> payload) {
         if (payload == null || payload.isEmpty()) {

@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
  * @doc.layer product
  * @doc.pattern Service
  */
+@SuppressWarnings("unchecked") // Unchecked casts from generic workflow context maps; safe by design
 public final class BuildStep implements WorkflowStep {
 
   private static final String COLLECTION_BUILD_RUNS = "build_runs";

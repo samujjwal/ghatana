@@ -1,14 +1,14 @@
 /**
- * AI Assistant Component
- * 
- * Chat interface for AI-powered data assistance including:
+ * Assistant Component
+ *
+ * Chat interface for smart data assistance including:
  * - Natural language to SQL conversion
  * - Query explanation
  * - Lineage exploration
  * - Semantic search
- * 
+ *
  * @doc.type component
- * @doc.purpose AI-powered chat assistant
+ * @doc.purpose Smart chat assistant
  * @doc.layer frontend
  * @doc.pattern Container Component
  */

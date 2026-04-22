@@ -188,7 +188,7 @@ class DiagnosticPerformanceBenchmarkTest {
     }
 
     private String generateJavaFile(int index) { // GH-90000
-        return String.format(""" // GH-90000
+        return String.format("""
             package com.example;
 
             public class TestClass%d {
@@ -219,7 +219,7 @@ class DiagnosticPerformanceBenchmarkTest {
     }
 
     private String generatePythonFile(int index) { // GH-90000
-        return String.format(""" // GH-90000
+        return String.format("""
             '''Test module %d'''
 
             def calculate(x): // GH-90000

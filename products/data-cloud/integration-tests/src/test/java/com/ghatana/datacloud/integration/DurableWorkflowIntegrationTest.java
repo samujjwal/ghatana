@@ -73,7 +73,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
     private void initializeSchema() throws SQLException { // GH-90000
         try (Statement stmt = connection.createStatement()) { // GH-90000
             // Create tenants table
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE TABLE IF NOT EXISTS tenants ( // GH-90000
                     id VARCHAR(255) PRIMARY KEY, // GH-90000
                     name VARCHAR(255) NOT NULL, // GH-90000
@@ -82,7 +82,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
             """);
 
             // Create workflows table with tenant isolation
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE TABLE IF NOT EXISTS workflows ( // GH-90000
                     id VARCHAR(255) PRIMARY KEY, // GH-90000
                     tenant_id VARCHAR(255) NOT NULL, // GH-90000
@@ -96,7 +96,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
             """);
 
             // Create workflow executions table for tracking execution state
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE TABLE IF NOT EXISTS workflow_executions ( // GH-90000
                     id VARCHAR(255) PRIMARY KEY, // GH-90000
                     workflow_id VARCHAR(255) NOT NULL, // GH-90000
@@ -112,10 +112,10 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
             """);
 
             // Create index for tenant isolation queries
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE INDEX IF NOT EXISTS idx_workflows_tenant_id ON workflows(tenant_id) // GH-90000
             """);
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE INDEX IF NOT EXISTS idx_executions_tenant_id ON workflow_executions(tenant_id) // GH-90000
             """);
         }

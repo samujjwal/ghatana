@@ -26,8 +26,6 @@ export interface PageHeaderProps {
   subtitle?: string;
   /** Optional icon element */
   icon?: React.ReactNode;
-  /** Show AI-powered badge */
-  aiPowered?: boolean;
   /** Right-side actions (buttons, etc.) */
   actions?: React.ReactNode;
   /** Breadcrumb items */
@@ -40,7 +38,6 @@ export function PageHeader({
   title,
   subtitle,
   icon,
-  aiPowered,
   actions,
   breadcrumbs,
   className,
@@ -84,9 +81,6 @@ export function PageHeader({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className={textStyles.h1}>{title}</h1>
-                {aiPowered && (
-                  <AILabel variant="badge" size="sm" />
-                )}
               </div>
               {subtitle && (
                 <p className={cn(textStyles.muted, 'mt-1')}>{subtitle}</p>
@@ -109,8 +103,8 @@ export interface PageContentProps {
   children: React.ReactNode;
   /** Optional left sidebar */
   sidebar?: React.ReactNode;
-  /** Optional right AI sidebar */
-  aiSidebar?: React.ReactNode;
+  /** Optional right context sidebar */
+  contextSidebar?: React.ReactNode;
   /** Full width (no max-width constraint) */
   fullWidth?: boolean;
   /** No padding */
@@ -122,7 +116,7 @@ export interface PageContentProps {
 export function PageContent({
   children,
   sidebar,
-  aiSidebar,
+  contextSidebar,
   fullWidth,
   noPadding,
   className,
@@ -151,14 +145,14 @@ export function PageContent({
         {children}
       </main>
 
-      {/* AI Sidebar */}
-      {aiSidebar && (
+      {/* Context Sidebar */}
+      {contextSidebar && (
         <aside className={cn(
           'w-80 flex-shrink-0 border-l overflow-y-auto',
           bgStyles.surfaceSecondary,
           borderStyles.divider
         )}>
-          {aiSidebar}
+          {contextSidebar}
         </aside>
       )}
     </div>
@@ -204,11 +198,11 @@ export function PageSection({
 }
 
 // =============================================================================
-// AI SIDEBAR PANEL
+// CONTEXT SIDEBAR PANEL
 // =============================================================================
 
-export interface AISidebarProps {
-  /** Sidebar title */
+export interface ContextPanelProps {
+  /** Panel title */
   title?: string;
   /** Content */
   children: React.ReactNode;
@@ -216,11 +210,11 @@ export interface AISidebarProps {
   className?: string;
 }
 
-export function AISidebar({
-  title = 'AI Assistant',
+export function ContextPanel({
+  title = 'Assistance Panel',
   children,
   className,
-}: AISidebarProps): React.ReactElement {
+}: ContextPanelProps): React.ReactElement {
   return (
     <div className={cn('p-4', className)}>
       <div className="flex items-center gap-2 mb-4">
@@ -235,10 +229,10 @@ export function AISidebar({
 }
 
 // =============================================================================
-// AI SUGGESTION CARD
+// SUGGESTION CARD
 // =============================================================================
 
-export interface AISuggestionProps {
+export interface SuggestionCardProps {
   /** Suggestion icon */
   icon: React.ReactNode;
   /** Suggestion title */
@@ -255,7 +249,7 @@ export interface AISuggestionProps {
   className?: string;
 }
 
-export function AISuggestion({
+export function SuggestionCard({
   icon,
   title,
   description,
@@ -263,7 +257,7 @@ export function AISuggestion({
   onAction,
   confidence,
   className,
-}: AISuggestionProps): React.ReactElement {
+}: SuggestionCardProps): React.ReactElement {
   return (
     <div
       className={cn(
@@ -317,8 +311,8 @@ export interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
-  /** AI suggestion */
-  aiSuggestion?: string;
+  /** Smart suggestion */
+  smartSuggestion?: string;
   /** Additional class names */
   className?: string;
 }
@@ -328,7 +322,7 @@ export function EmptyState({
   title,
   description,
   action,
-  aiSuggestion,
+  smartSuggestion,
   className,
 }: EmptyStateProps): React.ReactElement {
   return (
@@ -344,11 +338,11 @@ export function EmptyState({
           {description}
         </p>
       )}
-      {aiSuggestion && (
+      {smartSuggestion && (
         <div className="inline-flex items-center gap-2 px-3 py-2 mb-4 rounded-lg bg-purple-50 dark:bg-purple-900/20">
           <Sparkles className="h-4 w-4 text-purple-500" />
           <span className="text-sm text-purple-700 dark:text-purple-300">
-            {aiSuggestion}
+            {smartSuggestion}
           </span>
         </div>
       )}
@@ -446,8 +440,8 @@ export default {
   PageHeader,
   PageContent,
   PageSection,
-  AISidebar,
-  AISuggestion,
+  ContextPanel,
+  SuggestionCard,
   EmptyState,
   StatCard,
 };

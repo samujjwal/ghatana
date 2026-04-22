@@ -621,6 +621,7 @@ public class RedisHotTierPlugin implements StoragePlugin {
     }
 
     @Override
+    @SuppressWarnings("deprecation") // StreamEntryID.LAST_ENTRY deprecated in Jedis 5; no semantic replacement available
     public Promise<Offset> getCurrentOffset(String tenantId, String streamName, PartitionId partitionId) {
         try (Jedis jedis = jedisPool.getResource()) {
             String streamKey = buildStreamKey(tenantId, streamName);
@@ -643,6 +644,7 @@ public class RedisHotTierPlugin implements StoragePlugin {
     }
 
     @Override
+    @SuppressWarnings("deprecation") // StreamEntryID.LAST_ENTRY deprecated in Jedis 5; no semantic replacement available
     public Promise<Offset> getEarliestOffset(String tenantId, String streamName, PartitionId partitionId) {
         try (Jedis jedis = jedisPool.getResource()) {
             String streamKey = buildStreamKey(tenantId, streamName);

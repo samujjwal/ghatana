@@ -375,6 +375,7 @@ public class AiAssistHandler {
      * @param request HTTP request; body must contain {@code {"draft": {...}}}
      * @return 200 with validation results, suggested fixes, and AI confidence metadata
      */
+    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handlePipelineDraftRefine(HttpRequest request) {
         String draftId = request.getPathParameter("draftId");
         String tenantId = http.requireTenantIdOrFail(request);

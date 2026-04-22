@@ -133,7 +133,7 @@ class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
     private void initSchema() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE TABLE IF NOT EXISTS retention_policies ( // GH-90000
                     tenant_id              TEXT        NOT NULL,
                     data_id                TEXT        NOT NULL,

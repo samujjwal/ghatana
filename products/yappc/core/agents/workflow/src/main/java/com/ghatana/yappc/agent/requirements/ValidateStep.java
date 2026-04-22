@@ -41,6 +41,7 @@ import java.util.*;
  * @doc.layer product
  * @doc.pattern Service
  */
+@SuppressWarnings("unchecked") // Unchecked casts from generic workflow context maps; safe by design
 public final class ValidateStep implements WorkflowStep {
 
   private final DatabaseClient dbClient;

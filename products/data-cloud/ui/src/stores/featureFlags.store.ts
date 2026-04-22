@@ -9,8 +9,8 @@
  * @doc.layer frontend
  */
 
-import { atom } from 'jotai';
-import { atomWithStorage } from 'jotai/utils';
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
 /**
  * Feature flag definitions
@@ -22,8 +22,8 @@ export interface FeatureFlags {
   enableCommandBar: boolean;
   /** Enable the Ambient Intelligence Bar (bottom notifications) */
   enableAmbientIntelligence: boolean;
-  /** Enable the Brain Sidebar (always-visible AI assistant) */
-  enableBrainSidebar: boolean;
+  /** Enable the Context Sidebar (always-visible assistance panel) */
+  enableContextSidebar: boolean;
   /** Enable unified Data Explorer (merged pages) */
   enableUnifiedDataExplorer: boolean;
   /** Enable Smart Workflow Builder (intent-based) */
@@ -41,7 +41,7 @@ const defaultFlags: FeatureFlags = {
   enableIntelligentHub: true,
   enableCommandBar: true,
   enableAmbientIntelligence: true,
-  enableBrainSidebar: true,
+  enableContextSidebar: true,
   enableUnifiedDataExplorer: true,
   enableSmartWorkflowBuilder: true,
   legacyPagesEnabled: true, // Keep legacy for backwards compatibility
@@ -52,43 +52,43 @@ const defaultFlags: FeatureFlags = {
  * Feature flags atom with localStorage persistence
  */
 export const featureFlagsAtom = atomWithStorage<FeatureFlags>(
-  'data-cloud-feature-flags',
-  defaultFlags
+  "data-cloud-feature-flags",
+  defaultFlags,
 );
 
 /**
  * Derived atoms for individual flags
  */
 export const isIntelligentHubEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableIntelligentHub
+  (get) => get(featureFlagsAtom).enableIntelligentHub,
 );
 
 export const isCommandBarEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableCommandBar
+  (get) => get(featureFlagsAtom).enableCommandBar,
 );
 
 export const isAmbientIntelligenceEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableAmbientIntelligence
+  (get) => get(featureFlagsAtom).enableAmbientIntelligence,
 );
 
-export const isBrainSidebarEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableBrainSidebar
+export const isContextSidebarEnabledAtom = atom(
+  (get) => get(featureFlagsAtom).enableContextSidebar,
 );
 
 export const isUnifiedDataExplorerEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableUnifiedDataExplorer
+  (get) => get(featureFlagsAtom).enableUnifiedDataExplorer,
 );
 
 export const isSmartWorkflowBuilderEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableSmartWorkflowBuilder
+  (get) => get(featureFlagsAtom).enableSmartWorkflowBuilder,
 );
 
 export const isLegacyPagesEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).legacyPagesEnabled
+  (get) => get(featureFlagsAtom).legacyPagesEnabled,
 );
 
 export const isSimplifiedNavEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableSimplifiedNav
+  (get) => get(featureFlagsAtom).enableSimplifiedNav,
 );
 
 /**
@@ -102,18 +102,15 @@ export const updateFeatureFlagAtom = atom(
       ...current,
       [flag]: value,
     });
-  }
+  },
 );
 
 /**
  * Atom to reset all flags to defaults
  */
-export const resetFeatureFlagsAtom = atom(
-  null,
-  (_get, set) => {
-    set(featureFlagsAtom, defaultFlags);
-  }
-);
+export const resetFeatureFlagsAtom = atom(null, (_get, set) => {
+  set(featureFlagsAtom, defaultFlags);
+});
 
 /**
  * Check if we're in "simple" mode (all new features enabled)
@@ -124,7 +121,7 @@ export const isSimpleModeAtom = atom((get) => {
     flags.enableIntelligentHub &&
     flags.enableCommandBar &&
     flags.enableAmbientIntelligence &&
-    flags.enableBrainSidebar &&
+    flags.enableContextSidebar &&
     flags.enableSimplifiedNav
   );
 });
@@ -136,4 +133,3 @@ export const isAdvancedModeAtom = atom((get) => {
   const flags = get(featureFlagsAtom);
   return flags.legacyPagesEnabled && !flags.enableSimplifiedNav;
 });
-

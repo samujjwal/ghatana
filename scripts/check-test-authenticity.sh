@@ -144,9 +144,25 @@ check_disabled_java_tests() {
   fi
 }
 
+check_invalid_java_text_blocks() {
+  print_section "Checking invalid Java text block openings"
+
+  if rg -n '"""\s*//\s*GH-[0-9]+' \
+    "${ROOTS[@]}" \
+    -g "**/*.java" \
+    -g "!**/build/**" -g "!**/bin/**"; then
+    echo ""
+    echo "ERROR: Invalid Java text block openings detected (inline comments after \"\"\")."
+    EXIT_CODE=1
+  else
+    echo "OK: No invalid Java text block openings detected."
+  fi
+}
+
 check_placeholder_assertions
 check_skipped_ts_tests
 check_disabled_java_tests
+check_invalid_java_text_blocks
 
 if [ "$EXIT_CODE" -eq 0 ]; then
   echo ""

@@ -108,6 +108,10 @@ tasks.named<Test>("test") {
         "junit.jupiter.execution.timeout.thread.mode.default",
         System.getProperty("junit.jupiter.execution.timeout.thread.mode.default", "separate_thread")
     )
+
+    // Keep class-level --tests filtering stable by skipping the suite aggregator class.
+    // The underlying integration tests still run directly as normal JUnit classes.
+    exclude("**/IntegrationTestSuite.class")
 }
 
 // All previously-excluded tests are now fully implemented and enabled:

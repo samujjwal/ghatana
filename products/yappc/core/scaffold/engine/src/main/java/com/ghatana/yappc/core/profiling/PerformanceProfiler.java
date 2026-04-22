@@ -358,7 +358,7 @@ public class PerformanceProfiler {
 
         if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
             info.processCpuLoad = sunOsBean.getProcessCpuLoad();
-            info.systemCpuLoad = sunOsBean.getSystemCpuLoad();
+            info.systemCpuLoad = sunOsBean.getCpuLoad(); // getSystemCpuLoad() deprecated in Java 14; replaced by getCpuLoad()
             info.processCpuTime = sunOsBean.getProcessCpuTime();
         }
 

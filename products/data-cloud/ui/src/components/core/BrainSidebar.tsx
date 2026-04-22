@@ -1,7 +1,7 @@
 /**
- * Brain Sidebar Component
+ * Context Sidebar Component
  *
- * Always-visible collapsible sidebar that hosts AI assistant components.
+ * Always-visible collapsible sidebar that hosts assistance components.
  * Integrates existing SpotlightRing, AutonomyTimeline, FeedbackWidget, and O11y.
  *
  * Features:
@@ -12,7 +12,7 @@
  * - O11y tab for execution monitoring
  *
  * @doc.type component
- * @doc.purpose Always-visible AI assistant sidebar
+ * @doc.purpose Always-visible assistance sidebar
  * @doc.layer frontend
  */
 
@@ -36,9 +36,9 @@ import { cn } from '../../lib/theme';
 import { brainService, type SpotlightItem, type AutonomyAction, type LearningSignal } from '../../api/brain.service';
 import { O11yPanel } from './O11yPanel';
 
-type SidebarTab = 'brain' | 'o11y';
+type SidebarTab = 'spotlight' | 'o11y';
 
-interface BrainSidebarProps {
+interface ContextSidebarProps {
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   defaultTab?: SidebarTab;
@@ -185,14 +185,14 @@ function LearningSignalItem({ signal }: { signal: LearningSignal }) {
 }
 
 /**
- * Brain Sidebar Component
+ * Context Sidebar Component
  */
-export function BrainSidebar({
+export function ContextSidebar({
   collapsed: controlledCollapsed,
   onCollapsedChange,
-  defaultTab = 'brain',
+  defaultTab = 'spotlight',
   className,
-}: BrainSidebarProps) {
+}: ContextSidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<SidebarTab>(defaultTab);
   const collapsed = controlledCollapsed ?? internalCollapsed;
@@ -250,7 +250,7 @@ export function BrainSidebar({
               <Brain className="h-4 w-4 text-white" />
             </div>
             <span className="font-semibold text-gray-900 dark:text-gray-100">
-              Brain
+              Context
             </span>
           </div>
         )}
@@ -280,10 +280,10 @@ export function BrainSidebar({
           // Collapsed view - just icons
           <div className="flex flex-col items-center gap-4 py-4">
             <button
-              onClick={() => { setActiveTab('brain'); toggleCollapsed(); }}
+              onClick={() => { setActiveTab('spotlight'); toggleCollapsed(); }}
               className={cn(
                 'p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg relative',
-                activeTab === 'brain' && 'bg-purple-100 dark:bg-purple-900/30'
+                activeTab === 'spotlight' && 'bg-purple-100 dark:bg-purple-900/30'
               )}
               title="Spotlight"
             >
@@ -333,16 +333,16 @@ export function BrainSidebar({
             {/* Tab Switcher */}
             <div className="flex border-b border-gray-200 dark:border-gray-700 px-3">
               <button
-                onClick={() => setActiveTab('brain')}
+                onClick={() => setActiveTab('spotlight')}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-                  activeTab === 'brain'
+                  activeTab === 'spotlight'
                     ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 )}
               >
                 <Brain className="h-4 w-4" />
-                Brain
+                Spotlight
               </button>
               <button
                 onClick={() => setActiveTab('o11y')}
@@ -360,7 +360,7 @@ export function BrainSidebar({
 
             {/* Tab Content */}
             <div className="flex-1 overflow-y-auto p-3">
-              {activeTab === 'brain' ? (
+              {activeTab === 'spotlight' ? (
                 <div className="space-y-4">
                   {/* Spotlight Section */}
                   <div>
@@ -470,7 +470,7 @@ export function BrainSidebar({
             )}
           >
             <MessageSquare className="h-4 w-4" />
-            Ask Brain
+            Ask Assistant
           </button>
         </div>
       )}
@@ -478,5 +478,5 @@ export function BrainSidebar({
   );
 }
 
-export default BrainSidebar;
+export default ContextSidebar;
 

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Agent
  * @doc.gaa.lifecycle act
  */
+@SuppressWarnings("unchecked") // Unchecked casts from generic workflow context maps; safe by design
 public class DeriveTestPlanSpecialistAgent
     extends YAPPCAgentBase<DeriveTestPlanInput, DeriveTestPlanOutput> {
 

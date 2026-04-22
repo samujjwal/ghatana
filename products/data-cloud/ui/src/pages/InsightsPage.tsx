@@ -61,8 +61,8 @@ import { cn } from '../lib/theme';
 import {
   PageHeader,
   PageContent,
-  AISidebar,
-  AISuggestion,
+  ContextPanel,
+  SuggestionCard,
   StatCard,
 } from '../components/layout/PageLayout';
 import { SpotlightRing } from '../components/brain/SpotlightRing';
@@ -242,7 +242,7 @@ function OperatorDiagnosticsPanel({
   );
 }
 
-function AiTruthPanel({
+function ModelTelemetryPanel({
   qualitySummary,
 }: {
   qualitySummary?: AiQualitySummaryResult;
@@ -258,10 +258,10 @@ function AiTruthPanel({
     .slice(0, 4) ?? [];
 
   return (
-    <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4" data-testid="insights-ai-truth-panel">
+    <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4" data-testid="insights-model-telemetry-panel">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">AI Truth Snapshot</h3>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Model Telemetry</h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Launcher-process fallback and confidence telemetry for the AI routes behind query suggestions, workflow drafting, and explanation flows.
           </p>
@@ -274,12 +274,12 @@ function AiTruthPanel({
       </div>
 
       {!qualitySummary ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">AI quality telemetry is not available yet for this launcher session.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Assistance quality telemetry is not available yet for this launcher session.</p>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
             <article className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
-              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">AI Requests</div>
+              <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Assistance Requests</div>
               <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{qualitySummary.summary.requestCount}</div>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Observed by the current launcher process since startup.</p>
             </article>
@@ -405,7 +405,7 @@ function OverviewTab({
         capabilityRegistry={capabilityRegistry}
       />
 
-      <AiTruthPanel qualitySummary={aiQualitySummary} />
+      <ModelTelemetryPanel qualitySummary={aiQualitySummary} />
 
       <CapabilityTruthPanel
         title="Runtime Capability Truth"
@@ -473,7 +473,7 @@ function OverviewTab({
               ))
             ) : (
               <SpotlightItem
-                title="No active AI insights"
+                title="No active insights"
                 description="The analytics suggestion service has no current recommendations for this tenant."
                 type="insight"
               />
@@ -486,7 +486,7 @@ function OverviewTab({
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
               <Activity className="h-4 w-4 text-blue-500" />
-              Recent AI Actions
+              Recent Actions
             </h3>
             <button className="text-xs text-primary-600 dark:text-primary-400 hover:underline">
               View all
@@ -706,16 +706,16 @@ function AnalyticsTab({ collections }: { collections: string[] }) {
 
   return (
     <div className="space-y-6">
-      {/* AI Anomaly Hints Panel (E3 sprint-3 acceptance) */}
+      {/* Anomaly Hints Panel (E3 sprint-3 acceptance) */}
       {(suggestionsLoading || anomalySuggestions.length > 0) && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100">
-              AI Anomaly &amp; Warning Hints
+              Anomaly &amp; Warning Hints
             </h3>
             {!suggestionsLoading && anomalySuggestions.some((s) => s.fallback) && (
-              <span className="text-xs text-amber-600 italic">(heuristic — AI offline)</span>
+              <span className="text-xs text-amber-600 italic">(heuristic — assistance offline)</span>
             )}
           </div>
           {suggestionsLoading ? (
@@ -727,7 +727,7 @@ function AnalyticsTab({ collections }: { collections: string[] }) {
             <div className="space-y-2">
               {anomalySuggestions.map((s) => (
                 <div key={s.key} className="flex items-start gap-3">
-                  <AiSuggestionIcon type={s.type} />
+                  <SuggestionIcon type={s.type} />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
                       {s.title}
@@ -902,7 +902,7 @@ function CostTab({
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
         <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-purple-500" />
-          AI-Detected Optimization Opportunities
+          Detected Optimization Opportunities
         </h3>
         <div className="space-y-3">
           {optimizationSuggestions.length > 0 ? (
@@ -917,7 +917,7 @@ function CostTab({
           ) : (
             <OptimizationItem
               title="No optimization hints available"
-              description="The AI assistance service has no current cost-saving recommendations for this tenant."
+              description="The assistance service has no current cost-saving recommendations for this tenant."
               supportingText="waiting for signals"
             />
           )}
@@ -1131,7 +1131,7 @@ function CostBar({
 // =============================================================================
 
 /** Maps analytics suggestion type to icon + colour. */
-function AiSuggestionIcon({ type }: { type: AnalyticsAiSuggestion['type'] }) {
+function SuggestionIcon({ type }: { type: AnalyticsAiSuggestion['type'] }) {
   switch (type) {
     case 'optimization': return <TrendingUp className="h-4 w-4 text-green-600" />;
     case 'anomaly': return <AlertTriangle className="h-4 w-4 text-amber-600" />;
@@ -1146,7 +1146,7 @@ export function InsightsPage() {
   const sessionSnapshot = SessionBootstrap.bootstrap();
 
   /**
-   * Handle AI suggestion action with deep-link routing
+   * Handle analytics suggestion action with deep-link routing
    */
   const handleSuggestionAction = useCallback((suggestion: AnalyticsAiSuggestion) => {
     if (suggestion.type === 'optimization' && suggestion.reasons?.includes('query')) {
@@ -1215,18 +1215,18 @@ export function InsightsPage() {
     { id: 'cost', label: 'Cost', icon: <DollarSign className="h-4 w-4" /> },
   ];
 
-  // AI Sidebar content — wired to real POST /api/v1/analytics/suggest
-  const aiSidebarContent = (
-    <AISidebar title="AI Insights">
+  // Sidebar content — wired to real POST /api/v1/analytics/suggest
+  const sidebarContent = (
+    <ContextPanel title="Insights">
       {aiUnavailable ? (
         <CapabilityUnavailableState
-          title="AI insights unavailable"
-          message={aiAssistCapability?.detail ?? 'This deployment does not have the AI assistance capability enabled.'}
+          title="Insights unavailable"
+          message={aiAssistCapability?.detail ?? 'This deployment does not have the insights capability enabled.'}
         />
       ) : capabilitiesLoading && !capabilityRegistry ? (
         <CapabilityLoadingState
           title="Loading runtime capabilities"
-          message="Checking which optional insights dependencies are active before rendering AI suggestions."
+          message="Checking which optional insights dependencies are active before rendering insights."
         />
       ) : aiLoading ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-4 justify-center">
@@ -1241,9 +1241,9 @@ export function InsightsPage() {
             </p>
           )}
           {(aiSuggestions ?? []).map((s) => (
-            <AISuggestion
+            <SuggestionCard
               key={s.key}
-              icon={<AiSuggestionIcon type={s.type} />}
+              icon={<SuggestionIcon type={s.type} />}
               title={s.title}
               description={s.description}
               confidence={s.confidence > 0 ? s.confidence : undefined}
@@ -1256,12 +1256,12 @@ export function InsightsPage() {
           )}
           {aiSuggestions?.some((s) => s.fallback) && (
             <p className="text-xs text-gray-400 mt-2 italic">
-              AI service offline — showing heuristic suggestions.
+              Insights service offline — showing heuristic suggestions.
             </p>
           )}
         </div>
       )}
-    </AISidebar>
+    </ContextPanel>
   );
 
   return (
@@ -1295,7 +1295,7 @@ export function InsightsPage() {
         </div>
       </div>
 
-      <PageContent aiSidebar={aiSidebarContent}>
+      <PageContent contextSidebar={sidebarContent}>
         <div role="tabpanel" id={`insights-panel-${activeTab}`} aria-label={tabs.find((t) => t.id === activeTab)?.label ?? activeTab}>
           {activeTab === 'overview' && (
             <OverviewTab

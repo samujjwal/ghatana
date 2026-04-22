@@ -178,7 +178,7 @@ class AgentDefinitionLoaderTest {
         @Test
         @DisplayName("loads a valid YAML file from the filesystem [GH-90000]")
         void loadsYamlFile() throws IOException { // GH-90000
-            Path file = writeYaml(dir, "agent.yaml", """ // GH-90000
+            Path file = writeYaml(dir, "agent.yaml", """
                     id: file-agent
                     name: File Agent
                     type: HYBRID
@@ -192,13 +192,13 @@ class AgentDefinitionLoaderTest {
         @Test
         @DisplayName("resolves extends chain during load [GH-90000]")
         void loadsFileWithInheritance() throws IOException { // GH-90000
-            writeYaml(dir, "base.yaml", """ // GH-90000
+            writeYaml(dir, "base.yaml", """
                     id: base-agent
                     name: BaseName
                     type: DETERMINISTIC
                     timeout: 30
                     """);
-            Path child = writeYaml(dir, "child.yaml", """ // GH-90000
+            Path child = writeYaml(dir, "child.yaml", """
                     extends: base.yaml
                     id: child-agent
                     name: ChildName

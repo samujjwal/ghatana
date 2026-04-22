@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { SearchFilterBar } from '../components/common/SearchFilterBar';
 import { LoadingState, EmptyState, NotFoundState } from '../components/common/AsyncStates';
+import { TrustBadge } from '../components/governance/TrustSignal';
 import { getPipelineOptimisationHints, aiQueryKeys, type PipelineOptimisationHint } from '../lib/api/ai';
 import {
     WORKFLOW_HINTS_DEGRADED_DETAIL,
@@ -643,6 +644,21 @@ export function WorkflowsPage() {
                                     <p className="text-gray-900 dark:text-white">{selectedWorkflow.description}</p>
                                 </div>
                             )}
+
+                            {/* Trust Signals — pipeline policy impact */}
+                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-3 flex items-center gap-3 flex-wrap" data-testid="pipeline-trust-signals">
+                                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                    <Shield className="h-4 w-4 text-blue-500" />
+                                    <span className="font-medium">Policy impact:</span>
+                                </div>
+                                <TrustBadge status="compliant" label="Tenant-scoped data movement" />
+                                {selectedWorkflow.nodes.some((n: Workflow['nodes'][number]) => n.type === 'sink') && (
+                                    <TrustBadge status="pending-review" label="External sink detected — review required" />
+                                )}
+                                {selectedWorkflow.nodes.length > 5 && (
+                                    <TrustBadge status="warning" label={`Complex flow (${selectedWorkflow.nodes.length} steps) — approval recommended`} />
+                                )}
+                            </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>

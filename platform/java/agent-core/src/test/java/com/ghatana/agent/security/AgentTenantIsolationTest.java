@@ -261,10 +261,10 @@ class AgentTenantIsolationTest extends EventloopTestBase {
             Principal viewer = new Principal("viewer-user", List.of("viewer [GH-90000]"), TENANT_A);
 
             // Admin can execute agents
-            assertThat(admin.hasRole("agent-executor [GH-90000]")).isTrue();
+            assertThat(admin.hasRole("agent-executor")).isTrue();
 
             // Viewer cannot execute agents
-            assertThat(viewer.hasRole("agent-executor [GH-90000]")).isFalse();
+            assertThat(viewer.hasRole("agent-executor")).isFalse();
         }
 
         @Test
@@ -287,8 +287,8 @@ class AgentTenantIsolationTest extends EventloopTestBase {
             Principal svcAccount = new Principal("pipeline-orchestrator", // GH-90000
                     List.of("processor", "admin"), TENANT_A); // GH-90000
 
-            assertThat(svcAccount.hasRole("processor [GH-90000]")).isTrue();
-            assertThat(svcAccount.hasRole("admin [GH-90000]")).isTrue();
+            assertThat(svcAccount.hasRole("processor")).isTrue();
+            assertThat(svcAccount.hasRole("admin")).isTrue();
             assertThat(svcAccount.getTenantId()).isEqualTo(TENANT_A); // GH-90000
         }
     }

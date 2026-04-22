@@ -16,9 +16,6 @@ dependencies {
     // (AEP impl is wired at runtime via AepAgentRegistryAdapter in yappc-infrastructure)
     implementation(project(":products:yappc:core:yappc-shared"))
 
-    // DataCloud Agent Registry — DataCloudAgentRegistry implements AgentRegistry SPI for
-    // durable, cross-instance agent discovery.  Wired via YappcAgentSystem.Builder#platformRegistry().
-    implementation(project(":products:data-cloud:agent-registry"))
 
     // Platform Agent Framework (SECONDARY - for base interfaces)
     implementation(project(":platform:java:agent-core"))

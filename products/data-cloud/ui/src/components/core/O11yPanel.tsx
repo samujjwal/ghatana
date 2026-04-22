@@ -2,7 +2,7 @@
  * O11y Panel Component
  *
  * Unified observability panel showing executions, metrics, and traces.
- * Part of BrainSidebar, expandable to full view.
+ * Part of ContextSidebar, expandable to full view.
  *
  * Features:
  * - Active pipeline executions with real-time progress

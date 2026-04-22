@@ -217,6 +217,7 @@ public class SbomCommand implements Callable<Integer> {
                 try {
                     com.fasterxml.jackson.databind.ObjectMapper mapper =
                             new com.fasterxml.jackson.databind.ObjectMapper();
+                    @SuppressWarnings("unchecked")
                     java.util.Map<String, Object> data =
                             mapper.readValue(sbomFile.toFile(), java.util.Map.class);
                     if (data.containsKey("spdxVersion")) {
@@ -284,6 +285,7 @@ public class SbomCommand implements Callable<Integer> {
                 com.fasterxml.jackson.databind.ObjectMapper mapper =
                         new com.fasterxml.jackson.databind.ObjectMapper();
 
+                @SuppressWarnings("unchecked")
                 java.util.Map<String, Object> sbomData =
                         mapper.readValue(sbomFile.toFile(), java.util.Map.class);
 

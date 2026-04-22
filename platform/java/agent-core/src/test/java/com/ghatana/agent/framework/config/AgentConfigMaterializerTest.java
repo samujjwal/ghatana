@@ -324,7 +324,7 @@ class AgentConfigMaterializerTest {
     @DisplayName("Materialize from YAML file path [GH-90000]")
     void materializeFromFile() throws IOException { // GH-90000
         Path yaml = tempDir.resolve("agent.yaml [GH-90000]");
-        Files.writeString(yaml, """ // GH-90000
+        Files.writeString(yaml, """
                 agentId: file-agent
                 type: COMPOSITE
                 subtype: VOTING

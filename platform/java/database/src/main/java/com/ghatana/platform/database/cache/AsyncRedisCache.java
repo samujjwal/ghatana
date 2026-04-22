@@ -76,7 +76,7 @@ public final class AsyncRedisCache<T> implements AutoCloseable {
         }
 
         if (config.getPassword() != null && !config.getPassword().isEmpty()) {
-            uriBuilder.withPassword(config.getPassword());
+            uriBuilder.withPassword(config.getPassword().toCharArray());
         }
 
         this.client = RedisClient.create(uriBuilder.build());

@@ -1,0 +1,12 @@
+# Canonical catalog roots consumed by AEP central catalog service.
+# Paths are relative to repository root.
+
+platform/agent-catalog
+products/aep/agent-catalog
+products/data-cloud/agent-catalog
+products/yappc/config/agents
+products/software-org/config/agents
+products/virtual-org/config/agents
+products/finance/config/agents
+products/tutorputor/config/agents
+

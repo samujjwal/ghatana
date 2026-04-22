@@ -117,6 +117,7 @@ public class AggregationPipelineBuilder {
      * @param metrics    Metrics collector
      * @return This builder for fluent chaining
      */
+    @SuppressWarnings("unchecked")
     public AggregationPipelineBuilder withWindowing(
             WindowingOperator.WindowingStrategy strategy,
             StateStore stateStore,
@@ -139,6 +140,7 @@ public class AggregationPipelineBuilder {
      * @param metrics    Metrics collector
      * @return This builder for fluent chaining
      */
+    @SuppressWarnings("unchecked")
     public AggregationPipelineBuilder withAggregation(
             AggregationOperator.AggregationStrategy strategy,
             String fieldName,
@@ -164,6 +166,7 @@ public class AggregationPipelineBuilder {
      * @param metrics         Metrics collector
      * @return This builder for fluent chaining
      */
+    @SuppressWarnings("unchecked")
     public AggregationPipelineBuilder withJoin(
             String stream1KeyField,
             String stream2KeyField,

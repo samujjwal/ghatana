@@ -200,10 +200,16 @@ describe('CriticalPathJourney', () => {
         });
     });
 
-    describe('Step 9 — Access Intelligence Hub', () => {
-        it('IntelligentHub renders without crashing', () => {
+    describe('Step 9 — Access Home', () => {
+        it('Home renders without crashing', () => {
             render(<IntelligentHub />, { wrapper: TestWrapper });
             expect(document.body).toBeTruthy();
+            cleanup();
+        });
+
+        it('Home page contains canonical data-testid', () => {
+            const { container } = render(<IntelligentHub />, { wrapper: TestWrapper });
+            expect(container.querySelector('[data-testid="intelligent-hub-page"]')).toBeTruthy();
             cleanup();
         });
     });

@@ -78,10 +78,14 @@ public final class KernelCapability {
      */
     private Set<String> extractRequiredServices(Map<String, Object> metadata) {
         Object services = metadata.get("required_services");
-        if (services instanceof String) {
-            return new HashSet<>(Arrays.asList(((String) services).split(",")));
-        } else if (services instanceof List) {
-            return new HashSet<>((List<String>) services);
+        if (services instanceof String s) {
+            return new HashSet<>(Arrays.asList(s.split(",")));
+        } else if (services instanceof List<?> list) {
+            Set<String> result = new HashSet<>();
+            for (Object item : list) {
+                if (item instanceof String str) result.add(str);
+            }
+            return result;
         }
         return Collections.emptySet();
     }
@@ -91,10 +95,14 @@ public final class KernelCapability {
      */
     private Set<String> extractOptionalDependencies(Map<String, Object> metadata) {
         Object dependencies = metadata.get("optional_dependencies");
-        if (dependencies instanceof String) {
-            return new HashSet<>(Arrays.asList(((String) dependencies).split(",")));
-        } else if (dependencies instanceof List) {
-            return new HashSet<>((List<String>) dependencies);
+        if (dependencies instanceof String s) {
+            return new HashSet<>(Arrays.asList(s.split(",")));
+        } else if (dependencies instanceof List<?> list) {
+            Set<String> result = new HashSet<>();
+            for (Object item : list) {
+                if (item instanceof String str) result.add(str);
+            }
+            return result;
         }
         return Collections.emptySet();
     }
@@ -104,10 +112,14 @@ public final class KernelCapability {
      */
     private Set<String> extractSupportedProducts(Map<String, Object> metadata) {
         Object products = metadata.get("supported_products");
-        if (products instanceof String) {
-            return new HashSet<>(Arrays.asList(((String) products).split(",")));
-        } else if (products instanceof List) {
-            return new HashSet<>((List<String>) products);
+        if (products instanceof String s) {
+            return new HashSet<>(Arrays.asList(s.split(",")));
+        } else if (products instanceof List<?> list) {
+            Set<String> result = new HashSet<>();
+            for (Object item : list) {
+                if (item instanceof String str) result.add(str);
+            }
+            return result;
         }
         return Collections.emptySet();
     }

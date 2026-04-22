@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * MUI Material → @ghatana/ui + Tailwind CSS Component Migration Codemod
+ * MUI Material → @ghatana/design-system + Tailwind CSS Component Migration Codemod
  *
  * Transforms: import { Box, Typography, Button } from '@mui/material';
- * Into:       import { Box, Typography, Button } from '@ghatana/ui';
+ * Into:       import { Box, Typography, Button } from '@ghatana/design-system';
  *
  * Handles:
  * - Named imports from '@mui/material'
@@ -17,7 +17,7 @@
  * Usage: node migrate-mui-components.mjs [--dry-run] [--path <dir>]
  *
  * @doc.type script
- * @doc.purpose Automated MUI→@ghatana/ui component migration
+ * @doc.purpose Automated MUI→@ghatana/design-system component migration
  * @doc.layer tooling
  */
 
@@ -41,7 +41,7 @@ function findFiles(dir, extensions, ignore = ['node_modules', '.bak']) {
   return results;
 }
 
-// ─── Component mapping: MUI → @ghatana/ui ───────────────────────────────────
+// ─── Component mapping: MUI → @ghatana/design-system ───────────────────────
 
 const MUI_TO_GHATANA = {
   // Layout
@@ -160,7 +160,7 @@ const REMOVE_IMPORTS = new Set([
   'createTheme',
   'useTheme',     // MUI's useTheme — replaced by @ghatana/theme
   'styled',       // emotion-based styled() — use Tailwind
-  'useMediaQuery', // MUI's version — use @ghatana/ui hook
+  'useMediaQuery', // MUI's version — use @ghatana/design-system hook
   'alpha',        // MUI color utility — use Tailwind opacity
   'keyframes',    // MUI keyframes — use Tailwind animations
   'SvgIconProps', // MUI type — use lucide-react types
@@ -251,7 +251,7 @@ const dryRun = args.includes('--dry-run');
 const pathIdx = args.indexOf('--path');
 const searchPath = pathIdx !== -1 ? args[pathIdx + 1] : 'apps/web/src';
 
-console.log(`🔄 MUI Material → @ghatana/ui Component Migration`);
+console.log(`🔄 MUI Material → @ghatana/design-system Component Migration`);
 console.log(`  Search dir: ${searchPath}`);
 console.log(`  Mode: ${dryRun ? 'DRY RUN' : 'WRITE'}`);
 console.log('');
@@ -307,7 +307,7 @@ for (const file of files) {
     }
 
     if (mapped.length > 0) {
-      const newImport = `import { ${mapped.join(', ')} } from '@ghatana/ui';`;
+      const newImport = `import { ${mapped.join(', ')} } from '@ghatana/design-system';`;
       content = content.replace(match[0], newImport);
     } else {
       // All imports removed — delete the line
@@ -333,8 +333,8 @@ for (const file of files) {
     const ghatanaName = MUI_TO_GHATANA[componentName];
     if (ghatanaName) {
       const importLine = localName === ghatanaName
-        ? `import { ${ghatanaName} } from '@ghatana/ui';`
-        : `import { ${ghatanaName} as ${localName} } from '@ghatana/ui';`;
+        ? `import { ${ghatanaName} } from '@ghatana/design-system';`
+        : `import { ${ghatanaName} as ${localName} } from '@ghatana/design-system';`;
       content = content.replace(match[0], importLine);
       ghatanaImports.add(ghatanaName);
       modified = true;

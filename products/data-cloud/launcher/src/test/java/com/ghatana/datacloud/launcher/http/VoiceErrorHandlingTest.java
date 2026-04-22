@@ -6,6 +6,7 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.platform.testing.utils.NetworkTestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,9 +18,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -33,7 +31,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Tests for voice gateway error-handling paths that were not covered by
- * {@link DataCloudHttpServerVoiceTest}: STT low-confidence flow, audio format
+ * Data Cloud voice HTTP tests: STT low-confidence flow, audio format
  * errors, permission denials, intent resolution failures, and ambiguous utterance
  * handling.
  *
@@ -61,7 +59,7 @@ class VoiceErrorHandlingTest {
     @BeforeEach
     void setUp() throws Exception { // GH-90000
         mockClient = mock(DataCloudClient.class); // GH-90000
-        port       = findFreePort(); // GH-90000
+        port       = NetworkTestUtils.findFreePort(); // GH-90000
         server     = new DataCloudHttpServer(mockClient, port); // GH-90000
         server.start(); // GH-90000
         waitForServerReady(port); // GH-90000
@@ -362,22 +360,7 @@ class VoiceErrorHandlingTest {
             HttpResponse.BodyHandlers.ofString()); // GH-90000
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
-        }
-    }
-
     private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
-            try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
-                return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
-            }
-        }
-        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); // GH-90000
+        NetworkTestUtils.waitForTcpPortOpen("127.0.0.1", port, 5_000);
     }
 }

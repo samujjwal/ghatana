@@ -126,6 +126,19 @@ function EventDetailPanel({
             </pre>
           </div>
         )}
+
+        {/* Event Correlation — OPS-002 */}
+        {event.correlationId && (
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-semibold text-indigo-800">Correlation</span>
+            </div>
+            <p className="text-xs text-indigo-700 font-mono break-all">{event.correlationId}</p>
+            <p className="text-xs text-indigo-600 mt-1">
+              Events with this correlation ID are part of the same distributed trace or workflow.
+            </p>
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -150,6 +163,7 @@ export function EventExplorerPage(): React.ReactElement {
   const [liveEvents, setLiveEvents] = useState<EventEntry[]>([]);
   const [tierFilter, setTierFilter] = useState<EventTier | 'ALL'>('ALL');
   const [typeFilter, setTypeFilter] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
   const sseRef = useRef<EventSource | null>(null);
 
   const queryParams: EventQueryParams = {
@@ -262,11 +276,10 @@ export function EventExplorerPage(): React.ReactElement {
           <button
             key={t}
             onClick={() => setTierFilter(t)}
-            className={`px-2.5 py-1 text-xs rounded border transition-colors ${
-              tierFilter === t
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`px-2.5 py-1 text-xs rounded border transition-colors ${tierFilter === t
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
           >
             {t}
           </button>
@@ -276,8 +289,23 @@ export function EventExplorerPage(): React.ReactElement {
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           placeholder="Filter by event type…"
+          aria-label="Filter by event type"
           className="ml-4 px-3 py-1 text-sm border border-gray-300 rounded flex-1 max-w-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-2 py-1 text-xs rounded border ${viewMode === 'list' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+          >
+            List
+          </button>
+          <button
+            onClick={() => setViewMode('timeline')}
+            className={`px-2 py-1 text-xs rounded border ${viewMode === 'timeline' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+          >
+            Timeline
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -298,7 +326,51 @@ export function EventExplorerPage(): React.ReactElement {
               Waiting for events…
             </div>
           )}
-          {displayedEvents.length > 0 && (
+          {/* Timeline View — OPS-002 */}
+          {displayedEvents.length > 0 && viewMode === 'timeline' && (
+            <div className="p-4 space-y-4" data-testid="event-timeline">
+              {(() => {
+                const buckets: Record<string, EventEntry[]> = {};
+                displayedEvents.forEach((ev) => {
+                  const hour = new Date(ev.timestamp).toISOString().slice(0, 13) + ':00';
+                  (buckets[hour] = buckets[hour] || []).push(ev);
+                });
+                return Object.entries(buckets).sort((a, b) => b[0].localeCompare(a[0])).map(([hour, events]) => (
+                  <div key={hour}>
+                    <div className="sticky top-0 bg-white z-10 py-2 border-b border-gray-200 mb-2">
+                      <span className="text-xs font-semibold text-gray-500">{hour.replace('T', ' ')} UTC</span>
+                      <span className="ml-2 text-xs text-gray-400">{events.length} events</span>
+                    </div>
+                    <div className="space-y-2">
+                      {events.map((ev) => (
+                        <button
+                          key={ev.id}
+                          onClick={() => setSelectedEvent(ev)}
+                          className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${selectedEvent?.id === ev.id ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                        >
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ev.tier === 'HOT' ? '#ef4444' : ev.tier === 'WARM' ? '#f97316' : ev.tier === 'COOL' ? '#3b82f6' : '#64748b' }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900 truncate">{ev.eventType}</span>
+                              <TierBadge tier={ev.tier} />
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                              <span>{new Date(ev.timestamp).toLocaleTimeString()}</span>
+                              <span className="truncate max-w-[200px]">{ev.source ?? '—'}</span>
+                              {ev.correlationId && <span className="text-indigo-600">↔ correlated</span>}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+
+          {/* List View */}
+          {displayedEvents.length > 0 && viewMode === 'list' && (
             <table className="w-full text-left text-sm" aria-label="Event list">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">

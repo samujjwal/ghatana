@@ -79,6 +79,7 @@ import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
 import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
+import com.ghatana.datacloud.launcher.http.handlers.SettingsHandler;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
@@ -340,6 +341,7 @@ public class DataCloudHttpServer {
     private TierMigrationScheduler warmMigrationScheduler; // B10: L1→L2 warm tier scheduler
     private ArchiveMigrationScheduler coldMigrationScheduler; // B10: L2→L3 cold tier scheduler
     private TierMigrationHandler tierMigrationHandler; // B10: manual tier migration API (wired in start())
+    private SettingsHandler settingsHandler; // GH-90000: admin settings CRUD API
     private final Map<String, Supplier<Map<String, Object>>> healthSubsystemSuppliers = new LinkedHashMap<>();
 
     /**
@@ -1044,6 +1046,9 @@ public class DataCloudHttpServer {
         // B10: Tier migration handler — uses schedulers when they are configured via withTierMigrationSchedulers()
         tierMigrationHandler = new TierMigrationHandler(httpSupport, warmMigrationScheduler, coldMigrationScheduler);
 
+        // GH-90000: Admin settings handler — in-memory store; replace with persistent backend in production
+        settingsHandler = new SettingsHandler(httpSupport);
+
         log.info("[DC-CAP] Runtime capability summary {}", buildCapabilitySummaryLog());
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
@@ -1076,6 +1081,7 @@ public class DataCloudHttpServer {
             .withStorageCostRoutes(storageCostHandler, httpSupport)
             .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
             .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
+            .withSettingsRoutes(settingsHandler)
             .build();
 
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));

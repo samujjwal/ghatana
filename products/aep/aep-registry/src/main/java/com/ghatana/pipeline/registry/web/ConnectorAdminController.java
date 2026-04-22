@@ -92,6 +92,7 @@ public class ConnectorAdminController {
                 .build());
     }
 
+    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> createConnector(
             HttpRequest request,
             TenantId tenantId,
@@ -158,6 +159,7 @@ public class ConnectorAdminController {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public Promise<HttpResponse> updateConnector(
             HttpRequest request,
             TenantId tenantId,

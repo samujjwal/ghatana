@@ -41,6 +41,7 @@ import java.util.UUID;
  * @doc.layer platform
  * @doc.pattern Repository
 */
+@SuppressWarnings("deprecation") // Uses deprecated YappcDataCloudRepository.findByFilter; migrate to typed query methods
 public class TaskRepository {
 
   private final YappcDataCloudRepository<TaskEntity> delegate;

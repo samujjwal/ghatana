@@ -61,6 +61,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @doc.layer core
  * @doc.pattern Factory
  */
+@SuppressWarnings("removal") // Uses deprecated AgentRegistry; migration to platform AgentLogicProvider SPI tracked in docs/AGENT_REGISTRY_MIGRATION_GUIDE.md
 public class ConfigurableOrganization extends AbstractOrganization {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurableOrganization.class);

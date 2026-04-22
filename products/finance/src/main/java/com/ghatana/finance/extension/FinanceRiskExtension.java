@@ -33,6 +33,7 @@ import java.util.Set;
  * @deprecated Use {@link RiskManagementPlugin} directly via plugin system
  * @since 1.0.0
  */
+@Deprecated(since = "1.0.0")
 public class FinanceRiskExtension extends AbstractKernelExtension {
 
     private static final Logger LOG = LoggerFactory.getLogger(FinanceRiskExtension.class);

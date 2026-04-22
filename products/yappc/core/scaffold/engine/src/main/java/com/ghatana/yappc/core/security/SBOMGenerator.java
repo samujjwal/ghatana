@@ -207,6 +207,7 @@ public class SBOMGenerator {
         List<PackageInfo> packages = new ArrayList<>();
 
         try {
+            @SuppressWarnings("unchecked")
             Map<String, Object> packageData =
                     objectMapper.readValue(packageJson.toFile(), Map.class);
 

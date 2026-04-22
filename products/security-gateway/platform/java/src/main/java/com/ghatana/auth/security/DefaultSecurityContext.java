@@ -24,6 +24,7 @@ import java.util.Set;
  * @doc.layer product
  * @doc.pattern Value Object
  */
+@SuppressWarnings("removal") // Implementing the local SecurityContext; migration to platform SecurityContext tracked separately
 final class DefaultSecurityContext implements SecurityContext {
 
     private final UserPrincipal userPrincipal;

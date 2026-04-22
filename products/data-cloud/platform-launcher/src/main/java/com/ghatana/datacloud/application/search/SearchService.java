@@ -301,6 +301,7 @@ public final class SearchService {
      * @param query search query with filters and facets
      * @return Promise with SearchResultsWithFacets
      */
+    @SuppressWarnings("unchecked")
     public Promise<SearchResultsWithFacets> searchWithFacets(SearchQuery query) {
         Objects.requireNonNull(query, "query cannot be null");
 

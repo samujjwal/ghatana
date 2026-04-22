@@ -194,6 +194,8 @@ public class EventCloudMetadata implements ConnectorMetadata {
         return new ArrayList<>(tables.keySet());
     }
 
+    @Override
+    @SuppressWarnings("deprecation") // Overrides deprecated ConnectorMetadata.getTableHandle; required for Trino SPI compatibility
     public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
         if (!tables.containsKey(tableName)) {
             return null;
@@ -227,6 +229,7 @@ public class EventCloudMetadata implements ConnectorMetadata {
     }
 
     @Override
+    @SuppressWarnings("deprecation") // Overrides deprecated ConnectorMetadata.streamTableColumns; required for Trino SPI compatibility
     public Iterator<TableColumnsMetadata> streamTableColumns(
             ConnectorSession session,
             SchemaTablePrefix prefix) {

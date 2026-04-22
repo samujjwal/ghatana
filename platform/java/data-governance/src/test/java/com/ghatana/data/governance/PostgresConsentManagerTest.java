@@ -131,7 +131,7 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     private void initSchema() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute(""" // GH-90000
+            stmt.execute("""
                 CREATE TABLE IF NOT EXISTS consent_records ( // GH-90000
                     id          BIGSERIAL   PRIMARY KEY,
                     tenant_id   TEXT        NOT NULL,

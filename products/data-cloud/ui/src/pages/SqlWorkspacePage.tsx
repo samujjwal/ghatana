@@ -6,12 +6,12 @@
  *
  * Features:
  * - Schema-aware SQL editor
- * - AI-powered query assistance
+ * - Natural language query assistance
  * - Natural language to SQL conversion
  * - Query optimization suggestions
  *
  * @doc.type page
- * @doc.purpose SQL query editor with AI-powered assistance
+ * @doc.purpose SQL query editor with natural language assistance
  * @doc.layer frontend
  */
 
@@ -36,7 +36,9 @@ import {
   Network,
   AlertTriangle,
   Terminal,
+  Shield,
 } from 'lucide-react';
+import { TrustBadge, SensitivityBadge, AccessLevelIndicator } from '../components/governance/TrustSignal';
 import {
   cn,
   cardStyles,
@@ -490,6 +492,7 @@ function AIQueryAssist({
           value={naturalQuery}
           onChange={(e) => setNaturalQuery(e.target.value)}
           placeholder="Describe what you want to query... e.g., 'Show me top users by event count this week'"
+          aria-label="Natural language query description"
           className={cn(
             'flex-1 px-3 py-2 rounded-lg text-sm',
             'bg-white dark:bg-gray-800',
@@ -1106,6 +1109,7 @@ export function SqlWorkspacePage(): React.ReactElement {
                     placeholder="-- Write your SQL query here
 SELECT * FROM your_table
 LIMIT 100;"
+                    aria-label="SQL query editor"
                     className={cn(
                       'w-full h-48 font-mono text-sm p-4 rounded-lg resize-y',
                       'bg-gray-50 dark:bg-gray-900',
@@ -1118,6 +1122,22 @@ LIMIT 100;"
                 </div>
               </div>
             )}
+
+            {/* Trust Signals — query execution context */}
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-3 flex items-center gap-3 flex-wrap" data-testid="sql-trust-signals">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <Shield className="h-4 w-4 text-blue-500" />
+                <span className="font-medium">Data access:</span>
+              </div>
+              <AccessLevelIndicator level="tenant" />
+              <SensitivityBadge level="internal" />
+              {executionRecommendation.requiresReview && (
+                <TrustBadge status="warning" label="Review required before execution" />
+              )}
+              {queryPlan && queryPlan.dataSources.length > 1 && (
+                <TrustBadge status="warning" label={`Cross-source query (${queryPlan.dataSources.length} sources)`} />
+              )}
+            </div>
 
             {/* Results */}
             <div className={cn(cardStyles.base)} data-testid="sql-results-panel">

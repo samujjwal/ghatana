@@ -50,7 +50,7 @@ class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
         try (HikariDataSource dataSource = new HikariDataSource(config); // GH-90000
              Connection connection = dataSource.getConnection(); // GH-90000
              Statement statement = connection.createStatement()) { // GH-90000
-            statement.execute(""" // GH-90000
+            statement.execute("""
                 CREATE TABLE IF NOT EXISTS agent_execution_history ( // GH-90000
                     execution_id TEXT PRIMARY KEY,
                     agent_id TEXT NOT NULL,

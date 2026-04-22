@@ -50,6 +50,7 @@ import java.util.Objects;
  * @see SecurityContext for context interface
  * @see JwtAuthenticationFilter for integration example
  */
+@SuppressWarnings("removal") // Uses local SecurityContext; migration to platform SecurityContext tracked separately
 public final class SecurityContextHolder {
 
     private static final ThreadLocal<SecurityContext> CONTEXT_HOLDER = new ThreadLocal<>();

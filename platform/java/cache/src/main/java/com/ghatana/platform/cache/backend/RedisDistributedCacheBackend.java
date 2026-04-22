@@ -95,15 +95,16 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
 
         try {
             // Build Redis URI with optional password
-            RedisURI uri = RedisURI.Builder
+            RedisURI.Builder uriBuilder = RedisURI.Builder
                 .redis(host, port)
                 .withDatabase(database)
-                .withTimeout(java.time.Duration.ofMillis(timeoutMs))
-                .build();
+                .withTimeout(java.time.Duration.ofMillis(timeoutMs));
 
             if (password != null && !password.isEmpty()) {
-                uri.setPassword(password.toCharArray());
+                uriBuilder.withPassword(password.toCharArray());
             }
+
+            RedisURI uri = uriBuilder.build();
 
             // Create async Redis client with connection pooling
             RedisClient client = RedisClient.create(uri);

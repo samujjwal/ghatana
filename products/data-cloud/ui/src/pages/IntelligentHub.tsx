@@ -1,21 +1,17 @@
 /**
- * Intelligent Hub Page
+ * Home Page
  *
- * Unified home page that replaces 20+ separate pages with a single
- * adaptive interface. Features Command Bar, Brain Sidebar, and
- * Ambient Intelligence Bar.
+ * Unified home page with contextual recommendations based on user activity.
+ * Features Command Bar, Context Sidebar, and quick actions.
  *
- * Features:
- * - Single entry point for all actions
- * - Context-aware workspace that adapts to user intent
- * - Always-visible AI assistant sidebar
- * - Ambient notifications at bottom
- * - Personalized greeting with time-aware messaging
- * - Continue working section with recent items
- * - "Ask Anything" natural language input
+ * Layout:
+ * - Context Sidebar (collapsible) on the left
+ * - Main content area with sections:
+ *   - Outcome selection
+ *   - Natural language input
  *
  * @doc.type page
- * @doc.purpose Unified intelligent home page
+ * @doc.purpose Unified home page
  * @doc.layer frontend
  */
 
@@ -45,9 +41,11 @@ import {
   FileText,
   Table2,
   Layers,
+  User,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
-import { CommandBar, CommandBarTrigger, BrainSidebar, AmbientIntelligenceBar } from '../components/core';
+import { CommandBar, CommandBarTrigger, ContextSidebar, AmbientIntelligenceBar } from '../components/core';
 
 // =============================================================================
 // UTILITIES
@@ -322,7 +320,7 @@ function OutcomeActionCard({ action }: { action: OutcomeAction }) {
 
 function buildQuickActions(
   navigate: ReturnType<typeof useNavigate>,
-  logActivityMutation: { mutate: typeof logActivity },
+  logActivityMutation: { mutate: (data: Parameters<typeof logActivity>[0]) => void },
   shellRole: ShellRole,
 ): QuickAction[] {
   const actions: QuickAction[] = [
@@ -434,6 +432,7 @@ function AskAnythingInput({ onSubmit }: { onSubmit: (query: string) => void }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="What do you need to do? Ask a question, build a flow, or review trust issues"
+          aria-label="Ask a question, build a flow, or review trust issues"
           className={cn(
             'flex-1 bg-transparent border-none outline-none',
             'text-sm text-gray-900 dark:text-gray-100',
@@ -487,9 +486,15 @@ function RecentActivityItem({ item }: { item: ActivityItem }) {
 /**
  * Intelligent Hub Page
  */
+/**
+ * Persona type for progressive disclosure
+ */
+type Persona = 'primary' | 'operator' | 'admin';
+
 export function IntelligentHub(): React.ReactElement {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [persona, setPersona] = useState<Persona>('primary');
   const shellRole = SessionBootstrap.getShellRole();
 
   // Fetch brain stats
@@ -530,7 +535,7 @@ export function IntelligentHub(): React.ReactElement {
     [logActivityMutation, navigate, shellRole],
   );
 
-  // Insights — using real data wherever available
+  // Insights — using real data wherever available; filtered by persona
   const insights: Insight[] = [
     {
       id: 'collections',
@@ -544,18 +549,22 @@ export function IntelligentHub(): React.ReactElement {
       value: workflowsPage?.total ?? '–',
       icon: <Workflow className="h-5 w-5 text-purple-500" />,
     },
-    {
-      id: 'patterns',
-      title: 'Active Patterns',
-      value: brainStats?.activePatterns ?? '–',
-      icon: <BarChart3 className="h-5 w-5 text-green-500" />,
-    },
-    {
-      id: 'processed',
-      title: 'Records Processed',
-      value: brainStats?.totalRecordsProcessed ?? '–',
-      icon: <Sparkles className="h-5 w-5 text-amber-500" />,
-    },
+    ...(persona !== 'primary'
+      ? [
+        {
+          id: 'patterns',
+          title: 'Active Patterns',
+          value: brainStats?.activePatterns ?? ('–' as string | number),
+          icon: <BarChart3 className="h-5 w-5 text-green-500" />,
+        },
+        {
+          id: 'processed',
+          title: 'Records Processed',
+          value: brainStats?.totalRecordsProcessed ?? ('–' as string | number),
+          icon: <Sparkles className="h-5 w-5 text-amber-500" />,
+        },
+      ]
+      : []),
   ];
 
   // Recent activity and continue-working items from user-activity API
@@ -586,7 +595,8 @@ export function IntelligentHub(): React.ReactElement {
       },
     ];
 
-    if (canAccessShellRole(shellRole, 'operator')) {
+    // IA-004: Operator/admin personas expose additional actions
+    if (persona === 'operator' || persona === 'admin') {
       actions.push(
         {
           id: 'review-trust',
@@ -609,8 +619,22 @@ export function IntelligentHub(): React.ReactElement {
       );
     }
 
+    // IA-004: Admin persona adds workspace shortcuts
+    if (persona === 'admin') {
+      actions.push(
+        {
+          id: 'admin-settings',
+          title: 'System Settings',
+          description: 'Configure platform-wide preferences and controls.',
+          icon: <Table2 className="h-5 w-5 text-gray-500" />,
+          supportingText: 'Admin workspace with privileged controls and blast-radius awareness.',
+          onClick: () => navigate('/settings'),
+        },
+      );
+    }
+
     return actions;
-  }, [collectionsPage?.total, navigate, recentActivity.length, shellRole, workflowsPage?.total]);
+  }, [collectionsPage?.total, navigate, recentActivity.length, shellRole, workflowsPage?.total, persona]);
 
   const recommendationCards = useMemo(
     () => [
@@ -621,34 +645,36 @@ export function IntelligentHub(): React.ReactElement {
         icon: <TrendingUp className="h-4 w-4 text-purple-600" />,
         iconClassName: 'bg-purple-100 dark:bg-purple-900/50',
       },
-      ...(canAccessShellRole(shellRole, 'operator')
+      ...(persona === 'operator' || persona === 'admin'
         ? [
-            {
-              id: 'trust',
-              title: 'Review trust and retention actions',
-              description: 'Trust Center remains the canonical place for purge, redaction, and audit review.',
-              icon: <AlertTriangle className="h-4 w-4 text-amber-600" />,
-              iconClassName: 'bg-amber-100 dark:bg-amber-900/50',
-            },
-            {
-              id: 'ops',
-              title: 'Inspect runtime health before acting on failures',
-              description: 'Use Insights for operator diagnostics instead of the unsupported alerts surface.',
-              icon: <Clock className="h-4 w-4 text-green-600" />,
-              iconClassName: 'bg-green-100 dark:bg-green-900/50',
-            },
-          ]
+          {
+            id: 'trust',
+            title: 'Review trust and retention actions',
+            description: 'Trust Center remains the canonical place for purge, redaction, and audit review.',
+            icon: <AlertTriangle className="h-4 w-4 text-amber-600" />,
+            iconClassName: 'bg-amber-100 dark:bg-amber-900/50',
+          },
+          {
+            id: 'ops',
+            title: 'Inspect runtime health before acting on failures',
+            description: 'Use Insights for operator diagnostics instead of the unsupported alerts surface.',
+            icon: <Clock className="h-4 w-4 text-green-600" />,
+            iconClassName: 'bg-green-100 dark:bg-green-900/50',
+          },
+        ]
         : [
-            {
-              id: 'mode',
-              title: 'Stay in primary mode until you need deeper controls',
-              description: 'Switch the workspace view in the header to disclose operator and admin surfaces without changing backend permissions.',
-              icon: <Layers className="h-4 w-4 text-green-600" />,
-              iconClassName: 'bg-green-100 dark:bg-green-900/50',
-            },
-          ]),
+          {
+            id: 'mode',
+            title: persona === 'primary'
+              ? 'Stay focused — switch persona when you need deeper controls'
+              : 'Switch personas in the header to access operator or admin surfaces',
+            description: 'Operator and admin surfaces are hidden by default. Switch workspace view when you need them.',
+            icon: <Layers className="h-4 w-4 text-green-600" />,
+            iconClassName: 'bg-green-100 dark:bg-green-900/50',
+          },
+        ]),
     ],
-    [shellRole],
+    [persona],
   );
 
   // Handle ask anything
@@ -670,8 +696,8 @@ export function IntelligentHub(): React.ReactElement {
 
   return (
     <div className="flex h-full" data-testid="intelligent-hub-page">
-      {/* Brain Sidebar */}
-      <BrainSidebar
+      {/* Context Sidebar */}
+      <ContextSidebar
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
       />
@@ -688,7 +714,32 @@ export function IntelligentHub(): React.ReactElement {
               {formattedDate} • Here's what's happening with your data
             </p>
           </div>
-          <CommandBarTrigger />
+          <div className="flex items-center gap-3">
+            {/* Persona Switcher — IA-004 progressive disclosure */}
+            <div className="hidden sm:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1" data-testid="persona-switcher">
+              {([
+                { id: 'primary' as Persona, label: 'Primary', icon: <User className="h-3.5 w-3.5" /> },
+                { id: 'operator' as Persona, label: 'Operator', icon: <Wrench className="h-3.5 w-3.5" /> },
+                { id: 'admin' as Persona, label: 'Admin', icon: <Shield className="h-3.5 w-3.5" /> },
+              ] as { id: Persona; label: string; icon: React.ReactNode }[]).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setPersona(p.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
+                    persona === p.id
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  )}
+                  aria-pressed={persona === p.id}
+                >
+                  {p.icon}
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <CommandBarTrigger />
+          </div>
         </header>
 
         {/* Content Area */}
@@ -700,9 +751,11 @@ export function IntelligentHub(): React.ReactElement {
                 Launch the next action without choosing the architecture first
               </h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                {canAccessShellRole(shellRole, 'operator')
-                  ? 'Operator and admin modes expose diagnostics, trust workflows, and runtime investigation paths inline.'
-                  : 'Primary mode keeps the launcher focused on query and workflow outcomes while deeper controls stay out of the default shell.'}
+                {persona === 'primary'
+                  ? 'Primary mode keeps the launcher focused on query and workflow outcomes. Switch persona for diagnostics, trust, and admin controls.'
+                  : persona === 'operator'
+                    ? 'Operator mode exposes diagnostics, trust workflows, alerts, events, and runtime investigation paths inline.'
+                    : 'Admin mode surfaces privileged controls, system settings, and blast-radius warnings. Use with caution.'}
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">

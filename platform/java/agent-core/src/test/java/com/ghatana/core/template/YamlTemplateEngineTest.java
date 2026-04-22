@@ -135,7 +135,7 @@ class YamlTemplateEngineTest {
         @Test
         @DisplayName("file without extends is rendered directly [GH-90000]")
         void noExtendsFile() throws IOException { // GH-90000
-            Path file = createYaml(dir, "agent.yaml", """ // GH-90000
+            Path file = createYaml(dir, "agent.yaml", """
                     id: agent-001
                     name: {{ name }}
                     type: DETERMINISTIC
@@ -150,12 +150,12 @@ class YamlTemplateEngineTest {
         @Test
         @DisplayName("child overrides parent field and parent fields are merged [GH-90000]")
         void childOverridesParentField() throws IOException { // GH-90000
-            createYaml(dir, "base.yaml", """ // GH-90000
+            createYaml(dir, "base.yaml", """
                     id: base-id
                     name: BaseName
                     timeout: '30'
                     """);
-            Path child = createYaml(dir, "child.yaml", """ // GH-90000
+            Path child = createYaml(dir, "child.yaml", """
                     extends: base.yaml
                     name: ChildName
                     """);
@@ -171,16 +171,16 @@ class YamlTemplateEngineTest {
         @Test
         @DisplayName("three-level inheritance chain is resolved [GH-90000]")
         void threeLevelChain() throws IOException { // GH-90000
-            createYaml(dir, "grand.yaml", """ // GH-90000
+            createYaml(dir, "grand.yaml", """
                     level: grand
                     fromGrand: 'yes'
                     """);
-            createYaml(dir, "parent.yaml", """ // GH-90000
+            createYaml(dir, "parent.yaml", """
                     extends: grand.yaml
                     level: parent
                     fromParent: 'yes'
                     """);
-            Path child = createYaml(dir, "child.yaml", """ // GH-90000
+            Path child = createYaml(dir, "child.yaml", """
                     extends: parent.yaml
                     level: child
                     """);
@@ -197,11 +197,11 @@ class YamlTemplateEngineTest {
         @Test
         @DisplayName("renders {{ }} variables after inheritance merge [GH-90000]")
         void variablesSubstitutedAfterInheritanceMerge() throws IOException { // GH-90000
-            createYaml(dir, "base.yaml", """ // GH-90000
+            createYaml(dir, "base.yaml", """
                     model: base-model
                     tenantId: {{ tenantId }}
                     """);
-            Path child = createYaml(dir, "child.yaml", """ // GH-90000
+            Path child = createYaml(dir, "child.yaml", """
                     extends: base.yaml
                     name: {{ name }}
                     """);

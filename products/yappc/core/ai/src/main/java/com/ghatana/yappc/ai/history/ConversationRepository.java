@@ -52,6 +52,7 @@ import java.util.UUID;
  * @doc.layer product
  * @doc.pattern Repository
  */
+@SuppressWarnings("deprecation") // Uses deprecated YappcDataCloudRepository.findByFilter; migrate to typed query methods
 public final class ConversationRepository {
 
     private static final Logger log = LoggerFactory.getLogger(ConversationRepository.class);

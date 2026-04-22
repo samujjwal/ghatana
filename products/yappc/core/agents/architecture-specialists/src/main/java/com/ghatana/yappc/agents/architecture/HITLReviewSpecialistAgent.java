@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Agent
  * @doc.gaa.lifecycle act
  */
+@SuppressWarnings("unchecked") // Unchecked casts from generic workflow context maps; safe by design
 public class HITLReviewSpecialistAgent extends YAPPCAgentBase<HITLReviewInput, HITLReviewOutput> {
 
   private static final Logger log = LoggerFactory.getLogger(HITLReviewSpecialistAgent.class);

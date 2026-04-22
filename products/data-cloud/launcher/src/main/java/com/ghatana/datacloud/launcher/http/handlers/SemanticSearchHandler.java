@@ -184,6 +184,7 @@ public final class SemanticSearchHandler {
         return embedTextHash(content);
     }
 
+    @SuppressWarnings("unchecked")
     private float[] embedTextViaAI(String content, String tenantId) {
         try {
             HttpClient httpClient = HttpClient.newHttpClient();
