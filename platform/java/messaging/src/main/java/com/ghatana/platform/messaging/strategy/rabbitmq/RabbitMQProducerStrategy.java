@@ -15,6 +15,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,8 +64,9 @@ public class RabbitMQProducerStrategy extends AbstractResilientConnector impleme
 
                     connection = factory.newConnection();
                     channel = connection.createChannel();
-                    // Durable queue, non-exclusive, non-auto-delete
-                    channel.queueDeclare(config.queueName(), true, false, false, null);
+                    // Reuse pre-provisioned queues (e.g., DLQ args in integration tests)
+                    // and only declare when absent.
+                    ensureQueueExists(channel, config.queueName());
                     LOG.info("RabbitMQProducerStrategy started — queue={}", config.queueName());
                 } catch (Exception e) {
                     running.set(false);
@@ -134,5 +136,14 @@ public class RabbitMQProducerStrategy extends AbstractResilientConnector impleme
     @Override
     public boolean isRunning() {
         return running.get();
+    }
+
+    private static void ensureQueueExists(Channel channel, String queueName) throws Exception {
+        try {
+            channel.queueDeclarePassive(queueName);
+        } catch (IOException passiveDeclareFailure) {
+            // Queue does not exist (or is inaccessible) — create the default durable queue.
+            channel.queueDeclare(queueName, true, false, false, null);
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.ghatana.audio.video.infrastructure.messaging;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.messaging.strategy.rabbitmq.RabbitMQConfig;
 import com.ghatana.platform.messaging.strategy.rabbitmq.RabbitMQConsumerStrategy;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -53,7 +54,7 @@ import static org.mockito.Mockito.lenient;
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Transcription Messaging Integration Tests (AV-P0-04)")
-class TranscriptionMessagingIT {
+class TranscriptionMessagingIT extends EventloopTestBase {
 
     @Container
     static final RabbitMQContainer RABBIT = new RabbitMQContainer(
@@ -112,11 +113,11 @@ class TranscriptionMessagingIT {
     @AfterEach
     void tearDown() {
         try {
-            if (producer != null) producer.stop().getResult();
+            if (producer != null) runPromise(() -> producer.stop());
         } catch (Exception ignored) {
         }
         try {
-            if (consumer != null) consumer.stop().getResult();
+            if (consumer != null) runPromise(() -> consumer.stop());
         } catch (Exception ignored) {
         }
     }
@@ -134,14 +135,14 @@ class TranscriptionMessagingIT {
             return Promise.complete();
         });
 
-        producer.start().getResult();
-        consumer.start().getResult();
+        runPromise(() -> producer.start());
+        runPromise(() -> consumer.start());
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
                 new TranscriptionJobProducer.TranscriptionJobMessage(
                         UUID.randomUUID(), "tenant-1", UUID.randomUUID(), "en", "m1", Instant.now());
 
-        String messageId = producer.submitJob(job).getResult();
+        String messageId = runPromise(() -> producer.submitJob(job));
         assertThat(messageId).isNotNull();
 
         boolean delivered = latch.await(10, TimeUnit.SECONDS);
@@ -167,14 +168,14 @@ class TranscriptionMessagingIT {
             return Promise.complete();
         });
 
-        producer.start().getResult();
-        consumer.start().getResult();
+        runPromise(() -> producer.start());
+        runPromise(() -> consumer.start());
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
                 new TranscriptionJobProducer.TranscriptionJobMessage(
                         UUID.randomUUID(), "tenant-retry", UUID.randomUUID(), "en", "m1", Instant.now());
 
-        producer.submitJob(job).getResult();
+        runPromise(() -> producer.submitJob(job));
 
         boolean delivered = latch.await(15, TimeUnit.SECONDS);
         assertThat(delivered).isTrue();
@@ -212,14 +213,14 @@ class TranscriptionMessagingIT {
                 },
                 tag -> {});
 
-        producer.start().getResult();
-        consumer.start().getResult();
+        runPromise(() -> producer.start());
+        runPromise(() -> consumer.start());
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
                 new TranscriptionJobProducer.TranscriptionJobMessage(
                         UUID.randomUUID(), "tenant-dlq", UUID.randomUUID(), "en", "m1", Instant.now());
 
-        producer.submitJob(job).getResult();
+        runPromise(() -> producer.submitJob(job));
 
         boolean receivedInDlq = dlqLatch.await(30, TimeUnit.SECONDS);
         assertThat(receivedInDlq).isTrue();
@@ -245,8 +246,8 @@ class TranscriptionMessagingIT {
             return Promise.complete();
         });
 
-        producer.start().getResult();
-        consumer.start().getResult();
+        runPromise(() -> producer.start());
+        runPromise(() -> consumer.start());
 
         UUID jobId = UUID.randomUUID();
         TranscriptionJobProducer.TranscriptionJobMessage job =
@@ -254,8 +255,8 @@ class TranscriptionMessagingIT {
                         jobId, "tenant-dedup", UUID.randomUUID(), "en", "m1", Instant.now());
 
         // Submit same job twice
-        producer.submitJob(job).getResult();
-        producer.submitJob(job).getResult();
+        runPromise(() -> producer.submitJob(job));
+        runPromise(() -> producer.submitJob(job));
 
         boolean delivered = latch.await(10, TimeUnit.SECONDS);
         assertThat(delivered).isTrue();

@@ -11,6 +11,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import io.activej.promise.Promise;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -30,7 +31,7 @@ import java.util.function.Consumer;
 public class RabbitMQConsumerStrategy extends AbstractResilientConnector implements QueueConsumerStrategy {
 
     private final RabbitMQConfig config;
-    private final Consumer<String> messageHandler;
+    private volatile Consumer<String> messageHandler;
     private volatile Connection connection;
     private volatile Channel channel;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -53,6 +54,11 @@ public class RabbitMQConsumerStrategy extends AbstractResilientConnector impleme
     }
 
     @Override
+    public void setMessageHandler(Consumer<String> handler) {
+        this.messageHandler = handler != null ? handler : body -> {};
+    }
+
+    @Override
     public Promise<Void> start() {
         return Promise.ofBlocking(ioExecutor, () -> {
             if (running.compareAndSet(false, true)) {
@@ -69,8 +75,8 @@ public class RabbitMQConsumerStrategy extends AbstractResilientConnector impleme
 
                     connection = factory.newConnection();
                     channel = connection.createChannel();
-                    // Durable queue, non-exclusive, non-auto-delete
-                    channel.queueDeclare(config.queueName(), true, false, false, null);
+                    // Reuse pre-provisioned queues (e.g., DLQ args) and declare only when absent.
+                    ensureQueueExists(channel, config.queueName());
                     channel.basicQos(1); // one message at a time for fair dispatch
 
                     channel.basicConsume(config.queueName(), false,
@@ -118,5 +124,13 @@ public class RabbitMQConsumerStrategy extends AbstractResilientConnector impleme
     @Override
     public boolean isRunning() {
         return running.get();
+    }
+
+    private static void ensureQueueExists(Channel channel, String queueName) throws Exception {
+        try {
+            channel.queueDeclarePassive(queueName);
+        } catch (IOException passiveDeclareFailure) {
+            channel.queueDeclare(queueName, true, false, false, null);
+        }
     }
 }

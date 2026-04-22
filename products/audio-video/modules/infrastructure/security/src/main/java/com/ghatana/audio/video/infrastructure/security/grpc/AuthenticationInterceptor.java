@@ -111,8 +111,8 @@ public class AuthenticationInterceptor implements ServerInterceptor {
             }
             
         } catch (Exception e) {
-            LOG.error("Authentication error for method {}: {}", methodName, e.getMessage(), e);
-            call.close(Status.INTERNAL.withDescription("Authentication error"), new Metadata());
+            LOG.warn("Authentication rejected for method {}: {}", methodName, e.getMessage());
+            call.close(Status.UNAUTHENTICATED.withDescription("Token validation failed"), new Metadata());
             return new ServerCall.Listener<>() {};
         }
     }

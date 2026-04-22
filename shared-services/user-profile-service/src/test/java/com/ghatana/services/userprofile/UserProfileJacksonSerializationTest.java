@@ -10,8 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -59,8 +57,8 @@ class UserProfileJacksonSerializationTest {
     }
 
     @Test
-    @DisplayName("UserProfile with null avatarUrl serializes correctly")
-    void userProfile_nullAvatarUrl_serializesCorrectly() throws Exception {
+    @DisplayName("UserProfile with null avatarUrl omits the field (Jackson default)")
+    void userProfile_nullAvatarUrl_omitsField() throws Exception {
         UserProfile profile = UserProfile.builder()
                 .userId("user-123")
                 .tenantId("tenant-abc")
@@ -75,7 +73,10 @@ class UserProfileJacksonSerializationTest {
 
         String json = objectMapper.writeValueAsString(profile);
 
-        assertThat(json).contains("\"avatarUrl\":null");
+        // Jackson's default behavior is to omit null fields
+        assertThat(json).doesNotContain("avatarUrl");
+        assertThat(json).contains("\"userId\":\"user-123\"");
+        assertThat(json).contains("\"tenantId\":\"tenant-abc\"");
     }
 
     @Test

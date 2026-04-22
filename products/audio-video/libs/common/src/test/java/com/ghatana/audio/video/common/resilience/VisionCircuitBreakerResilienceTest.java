@@ -1,6 +1,7 @@
 package com.ghatana.audio.video.common.resilience;
 
 import com.ghatana.media.resilience.CircuitBreakerVisionEngine;
+import com.ghatana.media.vision.api.VisionEngine;
 import com.ghatana.media.common.ImageData;
 import com.ghatana.media.common.ColorSpace;
 import com.ghatana.media.common.ImageFormat;
@@ -94,7 +95,11 @@ class VisionCircuitBreakerResilienceTest {
                 .thenThrow(new RuntimeException("upstream failure #3"));
 
         for (int i = 0; i < 3; i++) {
-            protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            try {
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            } catch (RuntimeException ignored) {
+                // each individual failure propagates — that's expected
+            }
         }
 
         assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN);
@@ -108,7 +113,9 @@ class VisionCircuitBreakerResilienceTest {
 
         // Trip the circuit
         for (int i = 0; i < 3; i++) {
-            protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            try {
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            } catch (RuntimeException ignored) {}
         }
         assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN);
 
@@ -131,7 +138,9 @@ class VisionCircuitBreakerResilienceTest {
                 .thenReturn(new DetectionResult(List.of(), 0, 0, 0L, "recovered"));
 
         for (int i = 0; i < 3; i++) {
-            protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            try {
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            } catch (RuntimeException ignored) {}
         }
         assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN);
 
@@ -156,9 +165,11 @@ class VisionCircuitBreakerResilienceTest {
                 .thenThrow(new RuntimeException("down"));
 
         for (int i = 0; i < 3; i++) {
-            protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            try {
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
+            } catch (RuntimeException ignored) {}
         }
-        // One additional call after circuit opens → rejection
+        // One additional call after circuit opens → rejection (returns degraded, no exception)
         protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults());
 
         EngineMetrics metrics = protectedEngine.getMetrics();

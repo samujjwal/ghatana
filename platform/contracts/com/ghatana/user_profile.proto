@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package com.ghatana.services.userprofile;
+
+import "google/protobuf/timestamp.proto";
+
+/**
+ * User Profile Contract
+ *
+ * Defines the protobuf schema for user profile data shared across products.
+ * This contract enables cross-product user profile storage and access.
+ */
+
+/**
+ * Immutable snapshot of a user's profile and preferences.
+ *
+ * Scoped per tenantId so that the same physical user can hold
+ * different preferences across tenants (multi-tenant isolation).
+ */
+message UserProfile {
+  // Unique user identifier (sub claim from JWT)
+  string user_id = 1;
+  
+  // Tenant the profile belongs to
+  string tenant_id = 2;
+  
+  // Primary email address (read-only, sourced from IdP)
+  string email = 3;
+  
+  // User-chosen display name; falls back to email prefix
+  string display_name = 4;
+  
+  // Optional URL to profile picture
+  string avatar_url = 5;
+  
+  // BCP-47 language tag, e.g. "en-US"
+  string preferred_language = 6;
+  
+  // IANA timezone ID, e.g. "America/New_York"
+  string timezone = 7;
+  
+  // UI theme preference: "light", "dark", or "system"
+  string theme = 8;
+  
+  // Whether push/email notifications are enabled
+  bool notifications_enabled = 9;
+  
+  // Profile creation timestamp
+  google.protobuf.Timestamp created_at = 10;
+  
+  // Last modification timestamp
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+/**
+ * Request message for creating a user profile.
+ */
+message CreateUserProfileRequest {
+  string user_id = 1;
+  string tenant_id = 2;
+  string email = 3;
+  string display_name = 4;
+  string avatar_url = 5;
+  string preferred_language = 6;
+  string timezone = 7;
+  string theme = 8;
+  bool notifications_enabled = 9;
+}
+
+/**
+ * Request message for updating a user profile.
+ */
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  string tenant_id = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  string preferred_language = 5;
+  string timezone = 6;
+  string theme = 7;
+  bool notifications_enabled = 8;
+}
+
+/**
+ * Request message for getting a user profile.
+ */
+message GetUserProfileRequest {
+  string user_id = 1;
+  string tenant_id = 2;
+}
+
+/**
+ * Response message for user profile operations.
+ */
+message UserProfileResponse {
+  UserProfile profile = 1;
+}

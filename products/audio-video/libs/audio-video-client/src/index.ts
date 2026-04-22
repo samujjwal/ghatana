@@ -23,59 +23,11 @@ import type {
   ProgressCallback,
   ErrorCallback,
 } from '@audio-video/types';
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function isConfidence(value: unknown): value is number {
-  return typeof value === 'number' && value >= 0 && value <= 1;
-}
-
-function parseSTTResult(input: unknown): STTResult {
-  if (!isObject(input)) throw new Error('Invalid STT payload: not an object');
-  if (typeof input.text !== 'string') throw new Error('Invalid STT payload: text');
-  if (!isConfidence(input.confidence)) throw new Error('Invalid STT payload: confidence');
-  if (typeof input.processingTimeMs !== 'number') throw new Error('Invalid STT payload: processingTimeMs');
-  if (typeof input.language !== 'string') throw new Error('Invalid STT payload: language');
-  if (typeof input.model !== 'string') throw new Error('Invalid STT payload: model');
-  return input as unknown as STTResult;
-}
-
-function isBoundingBox(value: unknown): boolean {
-  return isObject(value)
-    && typeof value.x === 'number'
-    && typeof value.y === 'number'
-    && typeof value.width === 'number'
-    && typeof value.height === 'number';
-}
-
-function parseDetectionResult(input: unknown): DetectionResult {
-  if (!isObject(input)) throw new Error('Invalid detection payload: not an object');
-  if (!Array.isArray(input.objects)) throw new Error('Invalid detection payload: objects');
-  if (!isConfidence(input.confidence)) throw new Error('Invalid detection payload: confidence');
-  if (typeof input.processingTimeMs !== 'number') throw new Error('Invalid detection payload: processingTimeMs');
-  if (!isObject(input.imageSize) || typeof input.imageSize.width !== 'number' || typeof input.imageSize.height !== 'number') {
-    throw new Error('Invalid detection payload: imageSize');
-  }
-  for (const item of input.objects) {
-    if (!isObject(item) || typeof item.class !== 'string' || !isConfidence(item.confidence) || !isBoundingBox(item.bbox)) {
-      throw new Error('Invalid detection payload: objects[]');
-    }
-  }
-  return input as unknown as DetectionResult;
-}
-
-function parseMultimodalResult(input: unknown): MultimodalResult {
-  if (!isObject(input)) throw new Error('Invalid multimodal payload: not an object');
-  if (!('result' in input)) throw new Error('Invalid multimodal payload: result');
-  if (!isConfidence(input.confidence)) throw new Error('Invalid multimodal payload: confidence');
-  if (typeof input.processingTimeMs !== 'number') throw new Error('Invalid multimodal payload: processingTimeMs');
-  if (!Array.isArray(input.modalities) || !input.modalities.every(v => typeof v === 'string')) {
-    throw new Error('Invalid multimodal payload: modalities');
-  }
-  return input as unknown as MultimodalResult;
-}
+import {
+  parseSTTResult,
+  parseDetectionResult,
+  parseMultimodalResult,
+} from '@audio-video/types';
 
 /**
  * Configuration for service clients

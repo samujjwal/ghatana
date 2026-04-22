@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.*;
 import io.activej.inject.annotation.Provides;
@@ -55,13 +56,13 @@ public class IncidentServiceLauncher extends HttpServerLauncher {
     // ─── Providers ───────────────────────────────────────────────────────────
 
     @Provides
-    KillSwitchService killSwitchService(Optional<PostgresKillSwitchService> postgresService) {
+    KillSwitchService killSwitchService(Optional<KillSwitchService> postgresService) {
         // Prefer PostgreSQL implementation, fall back to in-memory
         return postgresService.orElse(new InMemoryKillSwitchService());
     }
 
     @Provides
-    GracefulDegradationManager degradationManager(Optional<RedisGracefulDegradationManager> redisManager) {
+    GracefulDegradationManager degradationManager(Optional<GracefulDegradationManager> redisManager) {
         // Prefer Redis implementation, fall back to in-memory
         return redisManager.orElse(new InMemoryGracefulDegradationManager());
     }
@@ -115,6 +116,7 @@ public class IncidentServiceLauncher extends HttpServerLauncher {
 
                     String bodyStr = body.getString(StandardCharsets.UTF_8);
                     try {
+                        @SuppressWarnings("unchecked")
                         Map<String, String> payload = objectMapper.readValue(bodyStr, Map.class);
                         String tenantId = payload.get("tenantId");
                         String reason = payload.get("reason");
@@ -168,6 +170,7 @@ public class IncidentServiceLauncher extends HttpServerLauncher {
 
                     String bodyStr = body.getString(StandardCharsets.UTF_8);
                     try {
+                        @SuppressWarnings("unchecked")
                         Map<String, String> payload = objectMapper.readValue(bodyStr, Map.class);
                         String tenantId = payload.get("tenantId");
                         String reason = payload.get("reason");
@@ -242,6 +245,7 @@ public class IncidentServiceLauncher extends HttpServerLauncher {
 
                     String bodyStr = body.getString(StandardCharsets.UTF_8);
                     try {
+                        @SuppressWarnings("unchecked")
                         Map<String, String> payload = objectMapper.readValue(bodyStr, Map.class);
                         String reason = payload.get("reason");
                         String incidentId = payload.get("incidentId");
@@ -286,6 +290,7 @@ public class IncidentServiceLauncher extends HttpServerLauncher {
 
                     String bodyStr = body.getString(StandardCharsets.UTF_8);
                     try {
+                        @SuppressWarnings("unchecked")
                         Map<String, String> payload = objectMapper.readValue(bodyStr, Map.class);
                         String tenantId = payload.get("tenantId");
                         String mode = payload.get("mode");
@@ -375,7 +380,19 @@ public class IncidentServiceLauncher extends HttpServerLauncher {
 
     public static void main(String[] args) throws Exception {
         log.info("Starting Incident Service v1...");
-        Launcher launcher = new IncidentServiceLauncher();
+        IncidentServiceLauncher launcher = new IncidentServiceLauncher();
+        
+        // Add shutdown hook for graceful shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutdown signal received, stopping Incident Service gracefully...");
+            try {
+                launcher.shutdown();
+                log.info("Incident Service stopped successfully");
+            } catch (Exception e) {
+                log.error("Error during shutdown", e);
+            }
+        }, "incident-service-shutdown"));
+        
         launcher.launch(args);
     }
 

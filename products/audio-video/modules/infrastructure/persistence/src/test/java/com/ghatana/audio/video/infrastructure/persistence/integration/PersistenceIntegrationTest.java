@@ -7,6 +7,7 @@ import com.ghatana.audio.video.infrastructure.persistence.repository.JpaTranscri
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
+import jakarta.persistence.RollbackException;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @doc.type class
@@ -266,6 +268,52 @@ class PersistenceIntegrationTest {
         assertThat(completedTranscriptions.get(0).getStatus()).isEqualTo(
             TranscriptionEntity.TranscriptionStatus.COMPLETED
         );
+    }
+
+    @Test
+    @DisplayName("GIVEN concurrent updates WHEN committing stale entity THEN optimistic lock prevents overwrite")
+    void testOptimisticLockingOnConcurrentUpdate() {
+        String tenantId = "tenant-lock";
+        AudioFileEntity base = createAudioFile(tenantId, "lock.mp3");
+        AudioFileEntity saved = audioFileRepository.save(tenantId, base);
+
+        EntityManager em1 = emf.createEntityManager();
+        EntityManager em2 = emf.createEntityManager();
+        try {
+            AudioFileEntity tx1Entity = em1.find(AudioFileEntity.class, saved.getId());
+            AudioFileEntity tx2Entity = em2.find(AudioFileEntity.class, saved.getId());
+
+            em1.getTransaction().begin();
+            tx1Entity.setFileName("lock-v1.mp3");
+            em1.getTransaction().commit();
+
+            em2.getTransaction().begin();
+            tx2Entity.setFileName("lock-v2.mp3");
+            assertThatThrownBy(() -> em2.getTransaction().commit())
+                .isInstanceOf(RollbackException.class);
+        } finally {
+            if (em1.getTransaction().isActive()) em1.getTransaction().rollback();
+            if (em2.getTransaction().isActive()) em2.getTransaction().rollback();
+            em1.close();
+            em2.close();
+        }
+    }
+
+    @Test
+    @DisplayName("GIVEN invalid entity WHEN save fails THEN transaction is rolled back")
+    void testSaveRollbackOnConstraintViolation() {
+        String tenantId = "tenant-rollback";
+        long before = audioFileRepository.countByTenantId(tenantId);
+
+        AudioFileEntity invalid = createAudioFile(tenantId, "bad.mp3");
+        invalid.setFileName(null); // file_name is NOT NULL
+
+        assertThatThrownBy(() -> audioFileRepository.save(tenantId, invalid))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Failed to save AudioFile");
+
+        long after = audioFileRepository.countByTenantId(tenantId);
+        assertThat(after).isEqualTo(before);
     }
 
     // Helper methods

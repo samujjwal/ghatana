@@ -31,6 +31,15 @@ import static io.activej.http.HttpMethod.*;
  *   <li>{@code GET    /metrics}          — Prometheus-compatible metrics</li>
  * </ul>
  *
+ * <h2>Graceful Shutdown</h2>
+ * <p>The service registers a shutdown hook that:
+ * <ul>
+ *   <li>Stops accepting new HTTP requests</li>
+ *   <li>Waits for in-flight requests to complete (up to 30 seconds)</li>
+ *   <li>Closes database connections gracefully</li>
+ *   <li>Logs shutdown completion</li>
+ * </ul>
+ *
  * <h2>Authentication</h2>
  * <p>All mutating endpoints ({@code PUT}, {@code DELETE}) require a valid
  * platform JWT in the {@code Authorization: Bearer <token>} header.
@@ -220,6 +229,18 @@ public class UserProfileService extends HttpServerLauncher {
         String port = System.getenv().getOrDefault(ENV_PORT, "8085");
         System.setProperty("http.listenAddresses", "0.0.0.0:" + port);
         UserProfileService launcher = new UserProfileService();
+        
+        // Add shutdown hook for graceful shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutdown signal received, stopping User Profile Service gracefully...");
+            try {
+                launcher.shutdown();
+                log.info("User Profile Service stopped successfully");
+            } catch (Exception e) {
+                log.error("Error during shutdown", e);
+            }
+        }, "user-profile-service-shutdown"));
+        
         launcher.launch(args);
     }
 

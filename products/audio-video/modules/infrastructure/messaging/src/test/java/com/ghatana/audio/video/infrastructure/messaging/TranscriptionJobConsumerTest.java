@@ -6,10 +6,16 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
+import java.util.UUID;
+import java.util.function.Consumer;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -61,6 +67,44 @@ class TranscriptionJobConsumerTest {
         verify(metricsCollector).incrementCounter("av.messaging.consumer.start", "queue", "av.jobs");
         verify(metricsCollector).incrementCounter("av.messaging.consumer.stop", "queue", "av.jobs");
     }
+
+    @Test
+    @DisplayName("start without processor does not move consumer to STARTED")
+    void startWithoutProcessorDoesNotChangeState() {
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector);
+
+        Promise<Void> firstStart = consumer.start();
+        assertThat(firstStart.getException()).isInstanceOf(IllegalStateException.class);
+
+        consumer.setJobProcessor(job -> Promise.complete());
+        when(consumerStrategy.start()).thenReturn(Promise.complete());
+
+        consumer.start().getResult();
+
+        verify(consumerStrategy).start();
+    }
+
+    @Test
+    @DisplayName("message handler rethrows processor failure for strategy nack/retry")
+    void messageHandlerRethrowsProcessorFailure() {
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector);
+        consumer.setJobProcessor(job -> Promise.ofException(new RuntimeException("simulated failure")));
+
+        when(consumerStrategy.start()).thenReturn(Promise.complete());
+
+        consumer.start().getResult();
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Consumer<String>> handlerCaptor =
+            (ArgumentCaptor<Consumer<String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Consumer.class);
+        verify(consumerStrategy).setMessageHandler(handlerCaptor.capture());
+
+        String payload = "{\"jobId\":\"" + UUID.randomUUID() +
+            "\",\"tenantId\":\"tenant-1\",\"audioFileId\":\"" + UUID.randomUUID() +
+            "\",\"language\":\"en\",\"modelId\":\"m1\",\"submittedAt\":\"" + Instant.now() + "\"}";
+
+        assertThatThrownBy(() -> handlerCaptor.getValue().accept(payload))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("simulated failure");
+    }
 }
-
-

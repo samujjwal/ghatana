@@ -98,6 +98,23 @@ class AuthenticationInterceptorTest {
     }
 
     @Test
+    @DisplayName("GIVEN expired token WHEN provider throws THEN closes as UNAUTHENTICATED")
+    void shouldRejectExpiredToken() {
+        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider);
+        TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
+        Metadata headers = new Metadata();
+        headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer expired-token");
+
+        when(authenticationProvider.authenticate(any(Credentials.class)))
+            .thenReturn(Promise.ofException(new IllegalStateException("token expired")));
+
+        interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {});
+
+        assertThat(call.closedStatus).isNotNull();
+        assertThat(call.closedStatus.getCode()).isEqualTo(Status.UNAUTHENTICATED.getCode());
+    }
+
+    @Test
     @DisplayName("GIVEN valid token and tenant header WHEN protected method THEN auth context and tenant context are set")
     void shouldPopulateAuthAndTenantContextForValidToken() {
         AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider);

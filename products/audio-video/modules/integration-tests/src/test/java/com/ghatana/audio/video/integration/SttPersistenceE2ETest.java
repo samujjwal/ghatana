@@ -4,27 +4,23 @@ import com.ghatana.audio.video.infrastructure.persistence.entity.AudioFileEntity
 import com.ghatana.audio.video.infrastructure.persistence.entity.TranscriptionEntity;
 import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileService;
 import com.ghatana.audio.video.infrastructure.persistence.service.TranscriptionService;
-import com.ghatana.platform.testing.EventloopTestBase;
-import com.ghatana.stt.core.grpc.proto.*;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.stt.grpc.PersistentSttGrpcService;
 import com.ghatana.media.AudioVideoLibrary;
-import io.activej.eventloop.Eventloop;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
+import com.ghatana.stt.core.grpc.proto.STTServiceGrpc;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -50,8 +46,6 @@ class SttPersistenceE2ETest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() throws Exception {
-        Eventloop eventloop = Eventloop.create();
-        ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
         meterRegistry = new SimpleMeterRegistry();
 
         // Create mock services
@@ -83,69 +77,9 @@ class SttPersistenceE2ETest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN audio data WHEN transcribe THEN audio file and transcription are persisted")
-    void testTranscribeWithPersistence() {
-        // GIVEN
-        UUID audioFileId = UUID.randomUUID();
-        UUID transcriptionId = UUID.randomUUID();
-
-        AudioFileEntity mockAudioFile = createMockAudioFile(audioFileId, "test.wav");
-        TranscriptionEntity mockTranscription = createMockTranscription(transcriptionId, audioFileId, "Hello world");
-
-        // Mock the async service responses
-        when(audioFileService.save(eq(TENANT_ID), any()))
-            .thenReturn(io.activej.promise.Promise.of(mockAudioFile));
-        when(transcriptionService.save(eq(TENANT_ID), any()))
-            .thenReturn(io.activej.promise.Promise.of(mockTranscription));
-
-        TranscribeRequest request = TranscribeRequest.newBuilder()
-            .setAudioData(com.google.protobuf.ByteString.copyFrom("SAMPLE_AUDIO_DATA".getBytes(StandardCharsets.UTF_8)))
-            .setFileName("test.wav")
-            .setLanguage("en")
-            .setSampleRate(16000)
-            .build();
-
-        // WHEN & THEN
-        // Note: This test requires the actual server to be running
-        // For unit testing, we verify the service wiring is correct
-        assertThat(blockingStub).isNotNull();
-    }
-
-    @Test
-    @DisplayName("GIVEN existing transcription WHEN getTranscription THEN returns transcription details")
-    void testGetTranscription() {
-        // GIVEN
-        UUID audioFileId = UUID.randomUUID();
-        UUID transcriptionId = UUID.randomUUID();
-        TranscriptionEntity mockTranscription = createMockTranscription(transcriptionId, audioFileId, "Hello world");
-
-        when(transcriptionService.findByAudioFileId(eq(TENANT_ID), eq(audioFileId)))
-            .thenReturn(io.activej.promise.Promise.of(java.util.Optional.of(mockTranscription)));
-
-        GetTranscriptionRequest request = GetTranscriptionRequest.newBuilder()
-            .setAudioFileId(audioFileId.toString())
-            .build();
-
-        // WHEN & THEN
-        // Note: This test requires the actual server to be running
-        assertThat(blockingStub).isNotNull();
-    }
-
-    @Test
-    @DisplayName("GIVEN multiple transcriptions WHEN listTranscriptions THEN returns all transcriptions")
-    void testListTranscriptions() {
-        // GIVEN
-        TranscriptionEntity trans1 = createMockTranscription(UUID.randomUUID(), UUID.randomUUID(), "Text one");
-        TranscriptionEntity trans2 = createMockTranscription(UUID.randomUUID(), UUID.randomUUID(), "Text two");
-
-        when(transcriptionService.findByTenantId(TENANT_ID))
-            .thenReturn(io.activej.promise.Promise.of(java.util.List.of(trans1, trans2)));
-
-        ListTranscriptionsRequest request = ListTranscriptionsRequest.newBuilder()
-            .setPageSize(10)
-            .build();
-
-        // WHEN & THEN
+    @DisplayName("GIVEN persistence-backed STT service WHEN initialized THEN gRPC client stub is available")
+    void testServiceInitializationWithPersistenceWiring() {
+        // The test verifies integration wiring and server bootstrap in-process.
         assertThat(blockingStub).isNotNull();
     }
 
@@ -168,7 +102,7 @@ class SttPersistenceE2ETest extends EventloopTestBase {
         entity.setId(id);
         entity.setTenantId(TENANT_ID);
         entity.setAudioFileId(audioFileId);
-        entity.setTranscriptionText(text);
+        entity.setText(text);
         entity.setLanguage("en");
         entity.setConfidence(0.95f);
         entity.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED);

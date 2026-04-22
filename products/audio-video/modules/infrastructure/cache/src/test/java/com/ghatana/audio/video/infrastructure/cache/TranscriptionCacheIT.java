@@ -3,6 +3,7 @@ package com.ghatana.audio.video.infrastructure.cache;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.audio.video.infrastructure.persistence.entity.TranscriptionEntity;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.cache.RedisDistributedCacheAdapter;
 import com.redis.testcontainers.RedisContainer;
 import io.activej.promise.Promise;
@@ -42,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Testcontainers
 @DisplayName("Transcription Cache Integration Tests (AV-P1-02)")
-class TranscriptionCacheIT {
+class TranscriptionCacheIT extends EventloopTestBase {
 
     @Container
     static final RedisContainer REDIS = new RedisContainer(
@@ -87,10 +88,10 @@ class TranscriptionCacheIT {
         String tenantId = "tenant-cache-1";
         TranscriptionEntity entity = buildEntity(tenantId);
 
-        cacheService.cacheTranscription(tenantId, entity).getResult();
+        runPromise(() -> cacheService.cacheTranscription(tenantId, entity));
 
         Optional<TranscriptionEntity> retrieved =
-                cacheService.getTranscription(tenantId, entity.getId()).getResult();
+                runPromise(() -> cacheService.getTranscription(tenantId, entity.getId()));
 
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getId()).isEqualTo(entity.getId());
@@ -101,7 +102,7 @@ class TranscriptionCacheIT {
     @DisplayName("Should return empty for cache miss")
     void shouldReturnEmptyForCacheMiss() {
         Optional<TranscriptionEntity> result =
-                cacheService.getTranscription("tenant-miss", UUID.randomUUID()).getResult();
+                runPromise(() -> cacheService.getTranscription("tenant-miss", UUID.randomUUID()));
 
         assertThat(result).isEmpty();
     }
@@ -117,11 +118,11 @@ class TranscriptionCacheIT {
         TranscriptionEntity entity1 = buildEntityWithIdAndText(tenant1, sharedId, "Transcript for tenant-1");
         TranscriptionEntity entity2 = buildEntityWithIdAndText(tenant2, sharedId, "Transcript for tenant-2");
 
-        cacheService.cacheTranscription(tenant1, entity1).getResult();
-        cacheService.cacheTranscription(tenant2, entity2).getResult();
+        runPromise(() -> cacheService.cacheTranscription(tenant1, entity1));
+        runPromise(() -> cacheService.cacheTranscription(tenant2, entity2));
 
-        Optional<TranscriptionEntity> t1Result = cacheService.getTranscription(tenant1, sharedId).getResult();
-        Optional<TranscriptionEntity> t2Result = cacheService.getTranscription(tenant2, sharedId).getResult();
+        Optional<TranscriptionEntity> t1Result = runPromise(() -> cacheService.getTranscription(tenant1, sharedId));
+        Optional<TranscriptionEntity> t2Result = runPromise(() -> cacheService.getTranscription(tenant2, sharedId));
 
         assertThat(t1Result).isPresent();
         assertThat(t2Result).isPresent();
@@ -136,16 +137,16 @@ class TranscriptionCacheIT {
         TranscriptionEntity entity = buildEntity(tenantId);
 
         // Cache with a 1-second TTL
-        cacheService.cacheTranscription(tenantId, entity, Duration.ofSeconds(1)).getResult();
+        runPromise(() -> cacheService.cacheTranscription(tenantId, entity, Duration.ofSeconds(1)));
 
         // Present before TTL
-        Optional<TranscriptionEntity> before = cacheService.getTranscription(tenantId, entity.getId()).getResult();
+        Optional<TranscriptionEntity> before = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId()));
         assertThat(before).isPresent();
 
         // Wait for TTL to expire
         Thread.sleep(1500);
 
-        Optional<TranscriptionEntity> after = cacheService.getTranscription(tenantId, entity.getId()).getResult();
+        Optional<TranscriptionEntity> after = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId()));
         assertThat(after).isEmpty();
     }
 
@@ -155,12 +156,12 @@ class TranscriptionCacheIT {
         String tenantId = "tenant-inval";
         TranscriptionEntity entity = buildEntity(tenantId);
 
-        cacheService.cacheTranscription(tenantId, entity).getResult();
-        assertThat(cacheService.getTranscription(tenantId, entity.getId()).getResult()).isPresent();
+        runPromise(() -> cacheService.cacheTranscription(tenantId, entity));
+        assertThat(runPromise(() -> cacheService.getTranscription(tenantId, entity.getId()))).isPresent();
 
-        cacheService.invalidateTranscription(tenantId, entity.getId()).getResult();
+        runPromise(() -> cacheService.invalidateTranscription(tenantId, entity.getId()));
 
-        Optional<TranscriptionEntity> after = cacheService.getTranscription(tenantId, entity.getId()).getResult();
+        Optional<TranscriptionEntity> after = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId()));
         assertThat(after).isEmpty();
     }
 
@@ -171,19 +172,19 @@ class TranscriptionCacheIT {
         UUID transcriptionId = UUID.randomUUID();
         TranscriptionEntity expected = buildEntityWithIdAndText(tenantId, transcriptionId, "Loaded from source");
 
-        TranscriptionEntity result = cacheService.getOrLoadTranscription(
+        TranscriptionEntity result = runPromise(() -> cacheService.getOrLoadTranscription(
                 tenantId, transcriptionId,
                 id -> Promise.of(Optional.of(expected))
-        ).getResult();
+        ));
 
         assertThat(result).isNotNull();
         assertThat(result.getText()).isEqualTo("Loaded from source");
 
         // Second call should hit cache (no loader call needed)
-        TranscriptionEntity cachedResult = cacheService.getOrLoadTranscription(
+        TranscriptionEntity cachedResult = runPromise(() -> cacheService.getOrLoadTranscription(
                 tenantId, transcriptionId,
                 id -> Promise.ofException(new RuntimeException("loader should not be called"))
-        ).getResult();
+        ));
 
         assertThat(cachedResult).isNotNull();
         assertThat(cachedResult.getId()).isEqualTo(transcriptionId);

@@ -13,6 +13,7 @@ import org.slf4j.MDC;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -93,15 +94,27 @@ public class TranscriptionJobConsumer {
      * Start consuming messages
      */
     public Promise<Void> start() {
+        if (jobProcessor == null) {
+            return Promise.ofException(new IllegalStateException("Job processor not set"));
+        }
+
         if (!state.compareAndSet(ConsumerState.CREATED, ConsumerState.STARTED)) {
             LOG.warn("Consumer already started or stopped");
             return Promise.complete();
         }
-        
-        if (jobProcessor == null) {
-            return Promise.ofException(new IllegalStateException("Job processor not set"));
-        }
-        
+
+        consumerStrategy.setMessageHandler(payload -> {
+            try {
+                processingExecutor.submit(() -> processMessageOrThrow(payload)).get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Consumer message processing interrupted", e);
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                throw new RuntimeException(cause);
+            }
+        });
+
         return consumerStrategy.start()
         .whenResult(v -> {
             LOG.info("TranscriptionJobConsumer started for queue: {}", queueName);
@@ -190,5 +203,21 @@ public class TranscriptionJobConsumer {
             return false;
         }
         return consumerStrategy.isRunning();
+    }
+
+    private void processMessageOrThrow(String payload) {
+        Promise<Void> processingPromise = processMessage(queueName, payload);
+        if (!processingPromise.isComplete()) {
+            IllegalStateException asyncNotSupported = new IllegalStateException(
+                "Transcription job processor must return a completed Promise in queue callback"
+            );
+            LOG.error("Processing did not complete synchronously; message will be retried");
+            throw asyncNotSupported;
+        }
+
+        Exception processingError = processingPromise.getException();
+        if (processingError != null) {
+            throw new RuntimeException(processingError);
+        }
     }
 }

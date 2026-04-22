@@ -1,0 +1,221 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shared-services-network-policy
+  namespace: shared-services
+  labels:
+    app: shared-services
+    component: network-policy
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow traffic from within the shared-services namespace (service-to-service)
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow traffic from monitoring systems (Prometheus, etc.)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8085
+        - protocol: TCP
+          port: 8086
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow traffic to PostgreSQL database
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow traffic to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow traffic to external APIs (if needed)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow traffic within shared-services namespace
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8085
+        - protocol: TCP
+          port: 8086
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-gateway-network-policy
+  namespace: shared-services
+  labels:
+    app: auth-gateway
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller (public endpoint)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow traffic to user-profile-service
+    - to:
+        - podSelector:
+            matchLabels:
+              app: user-profile-service
+      ports:
+        - protocol: TCP
+          port: 8085
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: user-profile-service-network-policy
+  namespace: shared-services
+  labels:
+    app: user-profile-service
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: user-profile-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from auth-gateway
+    - from:
+        - podSelector:
+            matchLabels:
+              app: auth-gateway
+      ports:
+        - protocol: TCP
+          port: 8085
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8085
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow traffic to PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: incident-service-network-policy
+  namespace: shared-services
+  labels:
+    app: incident-service
+    component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: incident-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8086
+    # Allow traffic from all services (incident response needs to be accessible)
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8086
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow traffic to PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow traffic to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379

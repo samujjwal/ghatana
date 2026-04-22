@@ -1,0 +1,178 @@
+/*
+ * Copyright (c) 2026 Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. ("Confidential Information").
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.userprofile.v1;
+
+option go_package = "github.com/ghatana/contracts/gen/go/userprofile/v1;userprofilev1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.userprofile.v1";
+option java_outer_classname = "UserProfileContractsProto";
+option csharp_namespace = "Ghatana.Contracts.UserProfile.V1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/common/v1/envelope.proto";
+
+// ===================== Service Definition =====================
+service UserProfileServiceProto {
+  // Get a user's profile by user ID
+  rpc GetProfile(GetProfileRequestProto) returns (UserProfileProto) {
+    option (google.api.http) = {
+      get: "/v1/profiles/{user_id}"
+      additional_bindings: {
+        get: "/v1/profiles/{tenant_id}/{user_id}"
+      }
+    };
+  }
+
+  // Create or update a user's profile (upsert)
+  rpc UpsertProfile(UpsertProfileRequestProto) returns (UserProfileProto) {
+    option (google.api.http) = {
+      put: "/v1/profiles/{profile.user_id}"
+      body: "profile"
+      additional_bindings: {
+        post: "/v1/profiles"
+        body: "profile"
+      }
+    };
+  }
+
+  // Delete a user's profile
+  rpc DeleteProfile(DeleteProfileRequestProto) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/profiles/{user_id}"
+      additional_bindings: {
+        delete: "/v1/profiles/{tenant_id}/{user_id}"
+      }
+    };
+  }
+
+  // Search for profiles by display name or email
+  rpc SearchProfiles(SearchProfilesRequestProto) returns (SearchProfilesResponseProto) {
+    option (google.api.http) = {
+      get: "/v1/profiles:search"
+    };
+  }
+
+  // List profiles for a tenant with pagination
+  rpc ListProfiles(ListProfilesRequestProto) returns (ListProfilesResponseProto) {
+    option (google.api.http) = {
+      get: "/v1/profiles"
+    };
+  }
+
+  // Batch get multiple profiles
+  rpc BatchGetProfiles(BatchGetProfilesRequestProto) returns (BatchGetProfilesResponseProto) {
+    option (google.api.http) = {
+      post: "/v1/profiles:batchGet"
+      body: "*"
+    };
+  }
+}
+
+// ===================== Messages =====================
+
+// User profile value object
+message UserProfileProto {
+  string user_id = 1;                      // Unique user identifier (sub claim from JWT)
+  string tenant_id = 2;                    // Tenant the profile belongs to
+  string email = 3;                        // Primary email address (read-only, sourced from IdP)
+  string display_name = 4;                 // User-chosen display name; falls back to email prefix
+  string avatar_url = 5;                   // Optional URL to profile picture
+  string preferred_language = 6;           // BCP-47 language tag, e.g. "en-US"
+  string timezone = 7;                     // IANA timezone ID, e.g. "America/New_York"
+  string theme = 8;                       // UI theme preference: "light", "dark", or "system"
+  bool notifications_enabled = 9;          // Whether push/email notifications are enabled
+  google.protobuf.Timestamp created_at = 10;  // Profile creation timestamp
+  google.protobuf.Timestamp updated_at = 11;  // Last modification timestamp
+}
+
+// Request to get a user profile
+message GetProfileRequestProto {
+  string user_id = 1;                     // User ID (required)
+  string tenant_id = 2;                    // Tenant ID (optional, inferred from auth if not provided)
+  google.protobuf.FieldMask read_mask = 3; // Fields to include in response
+  string request_id = 4;                   // Request ID for tracing
+}
+
+// Request to create or update a user profile
+message UpsertProfileRequestProto {
+  UserProfileProto profile = 1;           // Profile to upsert
+  google.protobuf.FieldMask update_mask = 2; // Fields to update (for partial updates)
+  bool validate_only = 3;                  // Validate but do not execute
+  string request_id = 4;                   // Request ID for idempotency
+}
+
+// Request to delete a user profile
+message DeleteProfileRequestProto {
+  string user_id = 1;                     // User ID to delete
+  string tenant_id = 2;                    // Tenant ID (optional, inferred from auth if not provided)
+  bool force = 3;                         // Force delete even if profile has dependencies
+  string request_id = 4;                   // Request ID for tracing
+}
+
+// Request to search for profiles
+message SearchProfilesRequestProto {
+  string tenant_id = 1;                    // Tenant ID (required)
+  string query = 2;                        // Search query (display name or email)
+  int32 page_size = 3;                     // Maximum results to return
+  string page_token = 4;                   // Pagination token
+  string request_id = 5;                   // Request ID for tracing
+}
+
+// Response from profile search
+message SearchProfilesResponseProto {
+  repeated UserProfileProto profiles = 1;   // Matching profiles
+  string next_page_token = 2;              // Next page token
+  int32 total_size = 3;                    // Total matching profiles
+  string request_id = 4;                   // Request ID for tracing
+}
+
+// Request to list profiles for a tenant
+message ListProfilesRequestProto {
+  string tenant_id = 1;                    // Tenant ID (required)
+  int32 page_size = 2;                     // Page size
+  string page_token = 3;                   // Pagination token
+  string filter = 4;                      // Filter expression
+  google.protobuf.FieldMask read_mask = 5; // Fields to include
+  string order_by = 6;                     // Sort order
+  string request_id = 7;                   // Request ID for tracing
+}
+
+// Response from listing profiles
+message ListProfilesResponseProto {
+  repeated UserProfileProto profiles = 1;   // Profiles
+  string next_page_token = 2;              // Next page token
+  int32 total_size = 3;                    // Total count
+  string request_id = 4;                   // Request ID for tracing
+}
+
+// Request to batch get multiple profiles
+message BatchGetProfilesRequestProto {
+  repeated string user_ids = 1;             // User IDs to fetch
+  string tenant_id = 2;                    // Tenant ID (required)
+  google.protobuf.FieldMask read_mask = 3; // Fields to include
+  string request_id = 4;                   // Request ID for tracing
+}
+
+// Response from batch get profiles
+message BatchGetProfilesResponseProto {
+  map<string, UserProfileProto> profiles = 1; // Map of user_id to profile
+  repeated string not_found = 2;            // User IDs that were not found
+  string request_id = 3;                   // Request ID for tracing
+}

@@ -58,12 +58,12 @@ class IncidentServiceLauncherIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("InMemoryGracefulDegradationManager defaults to NORMAL")
-    void inMemoryGracefulDegradationManager_defaultsToNormal() {
+    @DisplayName("InMemoryGracefulDegradationManager defaults to FULL")
+    void inMemoryGracefulDegradationManager_defaultsToFull() {
         GracefulDegradationManager manager = new InMemoryGracefulDegradationManager();
         
         DegradationMode mode = runPromise(() -> manager.getMode("tenant-new"));
-        assertThat(mode).isEqualTo(DegradationMode.NORMAL);
+        assertThat(mode).isEqualTo(DegradationMode.FULL);
     }
 
     @Test
@@ -84,14 +84,14 @@ class IncidentServiceLauncherIntegrationTest extends EventloopTestBase {
         assertThat(tenant3Active).isFalse();
         
         runPromise(() -> degradation.setMode("tenant-1", DegradationMode.READ_ONLY));
-        runPromise(() -> degradation.setMode("tenant-2", DegradationMode.DEGRADED));
+        runPromise(() -> degradation.setMode("tenant-2", DegradationMode.NOTIFICATIONS_ONLY));
         
         DegradationMode mode1 = runPromise(() -> degradation.getMode("tenant-1"));
         DegradationMode mode2 = runPromise(() -> degradation.getMode("tenant-2"));
         DegradationMode mode3 = runPromise(() -> degradation.getMode("tenant-3"));
         
         assertThat(mode1).isEqualTo(DegradationMode.READ_ONLY);
-        assertThat(mode2).isEqualTo(DegradationMode.DEGRADED);
-        assertThat(mode3).isEqualTo(DegradationMode.NORMAL);
+        assertThat(mode2).isEqualTo(DegradationMode.NOTIFICATIONS_ONLY);
+        assertThat(mode3).isEqualTo(DegradationMode.FULL);
     }
 }

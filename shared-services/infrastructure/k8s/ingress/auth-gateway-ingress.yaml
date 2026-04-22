@@ -1,0 +1,32 @@
+# Ingress for Auth Gateway with TLS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-gateway
+  namespace: ghatana
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  tls:
+  - hosts:
+    - auth.ghatana.com
+    secretName: auth-gateway-tls
+  rules:
+  - host: auth.ghatana.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-gateway
+            port:
+              number: 8080
